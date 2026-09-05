@@ -13,7 +13,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * An `exclude_namespace_channels` key reaches the run under the spelling its
+ * A `suppress_namespace_channels` key reaches the run under the spelling its
  * author wrote.
  *
  * Most channel names are kebab, and so is every name the computed-metric
@@ -148,7 +148,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
 
         $withoutKey = $this->runCheck($metric, disableComputed: false);
         $withKey = $this->runCheck(
-            $metric . "\nrules:\n  computed:\n    exclude_namespace_channels:\n      computed.my-score: ['Fx\\Deep']\n",
+            $metric . "\nrules:\n  computed:\n    suppress_namespace_channels:\n      computed.my-score: ['Fx\\Deep']\n",
             disableComputed: false,
         );
 
@@ -184,7 +184,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     {
         $option = $keyLine === ''
             ? ''
-            : "    exclude_namespace_channels:\n" . $keyLine . "\n";
+            : "    suppress_namespace_channels:\n" . $keyLine . "\n";
 
         return "paths: [src]\nrules:\n  size.class-count:\n    warning: 1\n    error: 50\n"
             . ($owner === 'size.class-count' ? $option : "  {$owner}:\n" . $option);

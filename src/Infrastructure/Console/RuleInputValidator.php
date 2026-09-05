@@ -26,7 +26,7 @@ use Symfony\Component\Console\Input\InputInterface;
 final readonly class RuleInputValidator
 {
     /** Both spellings the option is accepted under; see `RuleOptionsFactory`. */
-    private const array CHANNEL_EXCLUSION_KEYS = ['exclude_namespace_channels', 'excludeNamespaceChannels'];
+    private const array CHANNEL_EXCLUSION_KEYS = ['suppress_namespace_channels', 'suppressNamespaceChannels'];
 
     public function __construct(
         private RuleRegistryInterface $ruleRegistry,

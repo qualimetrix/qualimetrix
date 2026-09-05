@@ -301,7 +301,7 @@ paths:
   - src
 exclude:
   - vendor
-exclude_paths:
+suppress_paths:
   - src/Entity/*
 YAML);
 
@@ -310,17 +310,57 @@ YAML);
         self::assertArrayHasKey('rules', $config);
         self::assertArrayHasKey('cache', $config);
         self::assertSame('json', $config['format']);
-        self::assertSame(['src/Entity/*'], $config['excludePaths']);
+        self::assertSame(['src/Entity/*'], $config['suppressPaths']);
     }
 
     #[Test]
     public function itRejectsNonListExcludePaths(): void
     {
         $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, 'exclude_paths: not_a_list');
+        file_put_contents($path, 'suppress_paths: not_a_list');
 
         self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('"exclude_paths" must be a list');
+        self::expectExceptionMessage('"suppress_paths" must be a list');
+
+        $this->loader->load($path);
+    }
+
+    // The retired root-level `exclude_paths`/`exclude_namespaces` spelling
+    // must refuse by name (Х8), not fall through as a generic "unknown
+    // configuration key": Levenshtein suggestion isn't close enough between
+    // `exclude_paths` and `suppress_paths` to name the rename on its own, and
+    // the message must also point away from the unrelated top-level
+    // `exclude` — the mechanism readers have conflated with suppression.
+
+    #[Test]
+    public function itRefusesTheRetiredRootExcludePathsSpelling(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+exclude_paths:
+  - src/Entity/*
+YAML);
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"exclude_paths" was retired');
+        self::expectExceptionMessageMatches('/suppress_paths/');
+        self::expectExceptionMessageMatches('/"exclude" option instead/');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredRootExcludeNamespacesSpelling(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+excludeNamespaces:
+  - App\Tests
+YAML);
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"excludeNamespaces" was retired');
+        self::expectExceptionMessageMatches('/suppress_namespaces/');
 
         $this->loader->load($path);
     }
@@ -368,7 +408,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 disabled_rules:
   - size.method-count
-exclude_paths:
+suppress_paths:
   - vendor
 YAML);
 
@@ -376,9 +416,9 @@ YAML);
 
         // Root-level snake_case keys are normalized to camelCase
         self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('excludePaths', $config);
+        self::assertArrayHasKey('suppressPaths', $config);
         self::assertSame(['size.method-count'], $config['disabledRules']);
-        self::assertSame(['vendor'], $config['excludePaths']);
+        self::assertSame(['vendor'], $config['suppressPaths']);
     }
 
     #[Test]
@@ -802,7 +842,7 @@ architecture:
       patterns: ['App\Core']
 disabled_rules:
   - architecture.layer-violation
-exclude_paths:
+suppress_paths:
   - tests/
 YAML);
 
@@ -810,7 +850,7 @@ YAML);
 
         // CLI-style top-level snake_case keys are normalized to camelCase as before
         self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('excludePaths', $config);
+        self::assertArrayHasKey('suppressPaths', $config);
         // Architecture layer name preserved (as the value of `name`).
         self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
     }
@@ -837,7 +877,7 @@ YAML);
     }
 
     /**
-     * The keys of `exclude_namespace_channels` are channel names, and channel
+     * The keys of `suppress_namespace_channels` are channel names, and channel
      * names are kebab: camelCasing them produced a key naming no channel,
      * which the run then refused by the mangled spelling.
      */
@@ -848,7 +888,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 rules:
   size.class-count:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       size.class-count: ['App\Legacy']
       code-smell.*: ['App\Legacy']
       size.class-count:namespace: ['App\Legacy']
@@ -859,11 +899,11 @@ YAML);
 
         self::assertSame(
             ['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'],
-            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+            array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
         );
         self::assertSame(
             ['App\Legacy'],
-            $config['rules']['size.class-count']['excludeNamespaceChannels']['code-smell.*'],
+            $config['rules']['size.class-count']['suppressNamespaceChannels']['code-smell.*'],
         );
     }
 
@@ -875,7 +915,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 rules:
   size.class-count:
-    excludeNamespaceChannels:
+    suppressNamespaceChannels:
       size.class-count: ['App\Legacy']
 YAML);
 
@@ -883,7 +923,7 @@ YAML);
 
         self::assertSame(
             ['size.class-count'],
-            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+            array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
         );
     }
 
@@ -899,7 +939,7 @@ YAML);
 rules:
   size.class-count:
     warning_threshold: 3
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       size.class-count: ['App\Legacy']
     callable:
       warning_threshold: 5
@@ -908,7 +948,7 @@ YAML);
         $config = $this->loader->load($path);
 
         self::assertSame(
-            ['warningThreshold', 'excludeNamespaceChannels', 'callable'],
+            ['warningThreshold', 'suppressNamespaceChannels', 'callable'],
             array_keys($config['rules']['size.class-count']),
         );
         self::assertSame(['warningThreshold' => 5], $config['rules']['size.class-count']['callable']);

@@ -98,7 +98,7 @@ inline-directive errors carry it.
 
 A validator is not free-standing: `producerRuleName()` names the rule it belongs
 to, and that name is what registers its channels, what `--disable-rule`,
-`only_rules`, `exclude_paths` and `exclude_namespaces` address, what resolves its
+`only_rules`, `suppress_paths` and `suppress_namespaces` address, what resolves its
 description, documentation page and remediation estimate, and whose options —
 `enabled` included — it answers to. `RuleExecution` runs it in that rule's slot,
 so its findings keep their position in every report that does not sort, and

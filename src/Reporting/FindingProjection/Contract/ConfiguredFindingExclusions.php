@@ -7,10 +7,10 @@ namespace Qualimetrix\Reporting\FindingProjection\Contract;
 final readonly class ConfiguredFindingExclusions
 {
     /**
-     * @param list<string> $excludePaths
-     * @param list<string> $excludeNamespaces
+     * @param list<string> $suppressPaths
+     * @param list<string> $suppressNamespaces
      */
-    public function __construct(public array $excludePaths = [], public array $excludeNamespaces = []) {}
+    public function __construct(public array $suppressPaths = [], public array $suppressNamespaces = []) {}
 
     /**
      * @param list<string> $paths
@@ -19,8 +19,8 @@ final readonly class ConfiguredFindingExclusions
     public function withAdditional(array $paths, array $namespaces): self
     {
         return new self(
-            array_values(array_unique([...$this->excludePaths, ...$paths])),
-            array_values(array_unique([...$this->excludeNamespaces, ...$namespaces])),
+            array_values(array_unique([...$this->suppressPaths, ...$paths])),
+            array_values(array_unique([...$this->suppressNamespaces, ...$namespaces])),
         );
     }
 }

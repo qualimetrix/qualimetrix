@@ -16,11 +16,11 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itAccumulatesAndDeduplicatesConfiguredExclusions(): void
     {
         $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
-            ['source' => 'preset', 'values' => ['exclude_paths' => ['vendor'], 'exclude_namespaces' => ['Legacy']]],
-            ['source' => 'config', 'values' => ['exclude_paths' => ['vendor', 'build'], 'exclude_namespaces' => ['Generated']]],
+            ['source' => 'preset', 'values' => ['suppress_paths' => ['vendor'], 'suppress_namespaces' => ['Legacy']]],
+            ['source' => 'config', 'values' => ['suppress_paths' => ['vendor', 'build'], 'suppress_namespaces' => ['Generated']]],
         ], AbsolutePath::fromString('/project')));
 
-        self::assertSame(['vendor', 'build'], $resolved->excludePaths);
-        self::assertSame(['Legacy', 'Generated'], $resolved->excludeNamespaces);
+        self::assertSame(['vendor', 'build'], $resolved->suppressPaths);
+        self::assertSame(['Legacy', 'Generated'], $resolved->suppressNamespaces);
     }
 }

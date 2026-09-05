@@ -690,14 +690,14 @@ repository-governance step.
 
 **Decision framework** (in priority order):
 
-| Situation                                  | Action                                                |
-| ------------------------------------------ | ----------------------------------------------------- |
-| Real issue                                 | Fix the code                                          |
-| Structural (project nature)                | `exclude_paths` or `exclude_namespaces` in `qmx.yaml` |
-| Threshold mismatch                         | Tune threshold in `qmx.yaml`                          |
-| Legitimate exception for a specific symbol | `@qmx-threshold` on the class/method with reason      |
-| Genuinely inapplicable                     | `@qmx-ignore` with reason                             |
-| Generated or non-analyzable file           | `@qmx-ignore-file` with reason                        |
+| Situation                                  | Action                                                  |
+| ------------------------------------------ | ------------------------------------------------------- |
+| Real issue                                 | Fix the code                                            |
+| Structural (project nature)                | `suppress_paths` or `suppress_namespaces` in `qmx.yaml` |
+| Threshold mismatch                         | Tune threshold in `qmx.yaml`                            |
+| Legitimate exception for a specific symbol | `@qmx-threshold` on the class/method with reason        |
+| Genuinely inapplicable                     | `@qmx-ignore` with reason                               |
+| Generated or non-analyzable file           | `@qmx-ignore-file` with reason                          |
 
 **Key principles:**
 - **Refactoring is the default response, not threshold tweaking.** When a check signal flags real architectural debt (high WMC, low cohesion, complexity, coupling), prefer extracting a class, splitting responsibilities, or otherwise improving the architecture — that's why we measure. Refactoring cost is low for an AI agent; the metric is the signal. Threshold tweaking is reserved for cases where the metric mis-models the design (e.g., stateless utility classes have low cohesion *by construction*, not as a defect).
@@ -727,7 +727,7 @@ The project maintains a `CHANGELOG.md` following the [Keep a Changelog](https://
 - `Breaking` — backward-incompatible changes
 
 **Style:**
-- Write from the user's perspective: "`exclude_paths` option for finding suppression" not "Implemented ExcludePathFilter class"
+- Write from the user's perspective: "`suppress_paths` option for finding suppression" not "Implemented PathExclusionFilter class"
 - Aggregate related commits into a single entry
 - Keep entries concise (one line each)
 

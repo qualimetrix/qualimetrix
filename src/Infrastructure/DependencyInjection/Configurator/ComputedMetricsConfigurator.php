@@ -98,7 +98,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
      * That pass walks tagged rule **services** and therefore cannot see a
      * producer without one. Registering the six here is not only about the
      * `enabled` switch: `RuleOptionsFactory::create()` is where a producer's
-     * `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths`
+     * `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths`
      * keys are lifted into the exclusion providers, so a producer whose options
      * are never built passes validation and then excludes nothing.
      */

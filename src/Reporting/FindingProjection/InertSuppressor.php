@@ -10,7 +10,7 @@ namespace Qualimetrix\Reporting\FindingProjection;
  * A composition keyed by what fired cannot distinguish "this pattern exists
  * and matched zero findings" from "this pattern does not exist" — both are
  * simply absent from the list. Publishing the zero-count entries separately
- * is what makes a dead `exclude_paths` line (a typo'd path, a file the
+ * is what makes a dead `suppress_paths` line (a typo'd path, a file the
  * project deleted) visible instead of silently indistinguishable from never
  * having been written.
  *

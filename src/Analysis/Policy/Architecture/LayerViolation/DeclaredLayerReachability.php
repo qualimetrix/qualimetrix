@@ -232,8 +232,8 @@ final class DeclaredLayerReachability
                 \sprintf(
                     'Template layer "%s" expanded to zero concrete layers — no class in the analysed codebase '
                     . 'matched the template\'s criteria. Common causes: (1) a typo in the template name or '
-                    . 'pattern, (2) matching classes were filtered out by file discovery (`exclude_paths` / '
-                    . '`exclude_namespaces` at top level or in rule options), (3) the module disappeared in a '
+                    . 'pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / '
+                    . '`suppress_namespaces` at top level or in rule options), (3) the module disappeared in a '
                     . 'recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans '
                     . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
                     $template,

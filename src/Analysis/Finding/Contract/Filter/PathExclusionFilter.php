@@ -14,7 +14,7 @@ use Qualimetrix\Core\Util\PathMatcher;
  * diagnostics) are never filtered.
  *
  * Findings on a channel its owner declared **project-scoped** are exempt for
- * the same reason as in {@see NamespaceExclusionFilter}: `exclude_paths` means
+ * the same reason as in {@see NamespaceExclusionFilter}: `suppress_paths` means
  * "I don't want metrics for this code", but a project-level finding such as an
  * architecture boundary violation is not a metric — silently dropping it would
  * let a noisy-metric exclusion double as an undocumented way to disable

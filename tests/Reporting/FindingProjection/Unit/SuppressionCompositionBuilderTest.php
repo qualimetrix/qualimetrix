@@ -84,7 +84,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(excludePaths: ['src/Excluded']),
+            new FindingProjectionOptions(suppressPaths: ['src/Excluded']),
             suppressions: [],
         );
 
@@ -106,7 +106,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(excludeNamespaces: ['App\\Excluded']),
+            new FindingProjectionOptions(suppressNamespaces: ['App\\Excluded']),
             suppressions: [],
         );
 
@@ -178,7 +178,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration(['coupling.cbo' => ['exclude_namespaces' => ['App\\Excluded']]]),
+            $this->ruleConfiguration(['coupling.cbo' => ['suppress_namespaces' => ['App\\Excluded']]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -201,7 +201,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration(['code-smell.long-parameter-list' => ['exclude_paths' => ['src/Excluded']]]),
+            $this->ruleConfiguration(['code-smell.long-parameter-list' => ['suppress_paths' => ['src/Excluded']]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -218,7 +218,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             new FindingProjectionResult(findings: []),
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(excludePaths: ['src/NeverMatched.php']),
+            new FindingProjectionOptions(suppressPaths: ['src/NeverMatched.php']),
             suppressions: [],
         );
 
@@ -229,7 +229,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
     /**
      * Reproduces Ш6's own motivating example measured against this project's
-     * `qmx.yaml`: a per-rule `exclude_paths` entry naming a file that does
+     * `qmx.yaml`: a per-rule `suppress_paths` entry naming a file that does
      * not exist excludes nothing, and the composition keyed by what fired
      * cannot tell that apart from a pattern that was never written at all.
      */
@@ -239,7 +239,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $this->ruleExecution(),
-            $this->ruleConfiguration(['coupling.cbo' => ['exclude_paths' => ['src/DoesNotExist.php']]]),
+            $this->ruleConfiguration(['coupling.cbo' => ['suppress_paths' => ['src/DoesNotExist.php']]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -252,7 +252,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     /**
      * Reproduces the computed-metric family, where one rule instance
      * publishes findings under a `$ruleName` distinct from the producer whose
-     * `exclude_namespaces` actually excluded them ({@see \Qualimetrix\Analysis\Finding\RuleExecution::producerOf()}).
+     * `suppress_namespaces` actually excluded them ({@see \Qualimetrix\Analysis\Finding\RuleExecution::producerOf()}).
      * The composition must publish the ledger's recorded producer, not the
      * finding's own `ruleName` — the bug this guards against dropped the
      * finding from the composition entirely wherever the two names diverged.
@@ -271,7 +271,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration([$channel => ['exclude_namespaces' => ['App\\Excluded']]]),
+            $this->ruleConfiguration([$channel => ['suppress_namespaces' => ['App\\Excluded']]]),
             new FindingProjectionOptions(),
             suppressions: [],
         );
@@ -301,7 +301,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
             $ruleExecution,
-            $this->ruleConfiguration(['computed.health' => ['exclude_namespace_channels' => [
+            $this->ruleConfiguration(['computed.health' => ['suppress_namespace_channels' => [
                 $channel => ['App\\Excluded'],
                 $siblingChannel => ['App\\NeverMatched'],
             ]]]),
@@ -319,7 +319,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     }
 
     /**
-     * Two overlapping global `--exclude-path` patterns both independently
+     * Two overlapping global `--suppress-path` patterns both independently
      * match the same removed file. Crediting only the first-matched pattern
      * (the shape {@see \Qualimetrix\Core\Util\PathMatcher::matches()} returns)
      * would report the second as inert even though it excludes findings of
@@ -338,7 +338,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(excludePaths: ['src', 'src/Reporting']),
+            new FindingProjectionOptions(suppressPaths: ['src', 'src/Reporting']),
             suppressions: [],
         );
 
@@ -462,8 +462,8 @@ final class SuppressionCompositionBuilderTest extends TestCase
             public function isNamespaceExcluded(string $ruleName, string $namespace): bool
             {
                 /** @var list<string> $patterns */
-                $patterns = \is_array($this->rulesConfig[$ruleName]['exclude_namespaces'] ?? null)
-                    ? $this->rulesConfig[$ruleName]['exclude_namespaces']
+                $patterns = \is_array($this->rulesConfig[$ruleName]['suppress_namespaces'] ?? null)
+                    ? $this->rulesConfig[$ruleName]['suppress_namespaces']
                     : [];
 
                 return (new NamespaceMatcher($patterns))->matches($namespace) !== null;
@@ -477,8 +477,8 @@ final class SuppressionCompositionBuilderTest extends TestCase
             public function isPathExcluded(string $ruleName, RelativePath $path): bool
             {
                 /** @var list<string> $patterns */
-                $patterns = \is_array($this->rulesConfig[$ruleName]['exclude_paths'] ?? null)
-                    ? $this->rulesConfig[$ruleName]['exclude_paths']
+                $patterns = \is_array($this->rulesConfig[$ruleName]['suppress_paths'] ?? null)
+                    ? $this->rulesConfig[$ruleName]['suppress_paths']
                     : [];
 
                 return (new PathMatcher($patterns))->matches($path) !== null;

@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 
 /**
- * What to say about an `exclude_namespace_channels` key that can never exclude
+ * What to say about a `suppress_namespace_channels` key that can never exclude
  * anything.
  *
  * Separate from {@see ChannelExclusionKeyValidator} for the reason
@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  */
 final class ChannelExclusionKeyHints
 {
-    private const string OPTION = 'exclude_namespace_channels';
+    private const string OPTION = 'suppress_namespace_channels';
 
     /** The key is not in the grammar at all — nothing has been looked up yet. */
     public static function notASelector(string $ruleName, string $key): string

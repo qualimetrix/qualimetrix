@@ -41,7 +41,7 @@ use Symfony\Component\Process\Process;
  * once, in its `PROJECT_SCOPED_CHANNELS`, and every narrowing stage is then
  * supposed to honour that one answer; the defect this guards against was a
  * stage deciding for itself. `architecture.unassigned-class` was exempt from
- * `exclude_paths` and `exclude_namespaces` and dropped by a report narrowed
+ * `suppress_paths` and `suppress_namespaces` and dropped by a report narrowed
  * to a git range, which silently turned an enabled gate into a green build.
  * Reading the list from the declarations is what extends the guarantee to the
  * next project-scoped channel without anyone editing this file.
@@ -74,13 +74,13 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     #[Test]
     public function itSurvivesPathExclusionCoveringTheFile(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(excludePaths: ['src/**']));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressPaths: ['src/**']));
     }
 
     #[Test]
     public function itSurvivesNamespaceExclusionCoveringTheNamespace(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(excludeNamespaces: ['App\\**']));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressNamespaces: ['App\\**']));
     }
 
     #[Test]

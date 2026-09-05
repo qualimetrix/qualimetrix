@@ -16,8 +16,8 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Core\Util\PathMatcher;
 
 /**
- * Applies a producer's `exclude_namespaces`, `exclude_namespace_channels` and
- * `exclude_paths` to one finding, and remembers what that cost.
+ * Applies a producer's `suppress_namespaces`, `suppress_namespace_channels` and
+ * `suppress_paths` to one finding, and remembers what that cost.
  *
  * Its own subject is the run's exclusion account: which findings were counted
  * out, under whose name, and — when the run asked for it — the findings
@@ -86,7 +86,7 @@ final class FindingExclusionLedger
             $this->record($finding, new RuleExclusionAttribution(
                 $producerRuleName,
                 isPathExclusion: true,
-                matchedPatterns: $this->matchingPathPatterns($this->configuredPatterns($producerRuleName, 'excludePaths', 'exclude_paths'), $file),
+                matchedPatterns: $this->matchingPathPatterns($this->configuredPatterns($producerRuleName, 'suppressPaths', 'suppress_paths'), $file),
             ));
 
             return false;
@@ -135,7 +135,7 @@ final class FindingExclusionLedger
 
         if ($this->ruleOptionsRegistry->isNamespaceExcluded($producerRuleName, $namespace)) {
             $patterns = $this->matchingNamespacePatterns(
-                $this->configuredPatterns($producerRuleName, 'excludeNamespaces', 'exclude_namespaces'),
+                $this->configuredPatterns($producerRuleName, 'suppressNamespaces', 'suppress_namespaces'),
                 $namespace,
             );
 
@@ -184,7 +184,7 @@ final class FindingExclusionLedger
             return [];
         }
 
-        $channels = $options['excludeNamespaceChannels'] ?? $options['exclude_namespace_channels'] ?? [];
+        $channels = $options['suppressNamespaceChannels'] ?? $options['suppress_namespace_channels'] ?? [];
 
         return \is_array($channels) ? $channels : [];
     }
@@ -224,7 +224,7 @@ final class FindingExclusionLedger
     }
 
     /**
-     * Every `exclude_namespace_channels` selector/pattern pair that applies to
+     * Every `suppress_namespace_channels` selector/pattern pair that applies to
      * `$channel` at the namespace level and matches `$namespace` — every one,
      * not only the first, for the same reason {@see matchingNamespacePatterns()}
      * enumerates rather than short-circuits.

@@ -20,7 +20,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * Regression guard for `--show-suppressed` reporting per-rule
- * `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths`
+ * `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths`
  * suppressions ({@see RuleExclusionStats}): {@see FindingFilterOrchestrator}
  * reads them off {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult},
  * the value `AnalysisPipeline` carries on `AnalysisResult` out of the same
@@ -83,7 +83,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             <<<YAML
             rules:
               code-smell.long-parameter-list:
-                exclude_namespaces:
+                suppress_namespaces:
                   - App\Excluded
             YAML,
         );
@@ -108,7 +108,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         // output — proving the shared-instance assumption holds end-to-end,
         // not just in isolation.
         self::assertStringContainsString(
-            '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths',
+            '1 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths',
             $diagnostics,
         );
         self::assertStringContainsString('LongParams.php', $diagnostics);
@@ -167,7 +167,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
               health.cohesion: { warning: 100, error: 100 }
             rules:
               {$owner}:
-                exclude_namespaces:
+                suppress_namespaces:
                   - App\Excluded
             YAML,
         );
@@ -181,7 +181,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             '--only-rule' => [$owner],
         ], $exitCode, $diagnostics, OutputInterface::VERBOSITY_VERBOSE);
 
-        self::assertStringContainsString('suppressed by per-rule exclude_namespaces', $diagnostics);
+        self::assertStringContainsString('suppressed by per-rule suppress_namespaces', $diagnostics);
         self::assertMatchesRegularExpression(
             '/suppressed by per-rule [^(]+\(health\.cohesion: \d+\)/',
             $diagnostics,
@@ -241,7 +241,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             <<<YAML
             rules:
               code-smell.long-parameter-list:
-                exclude_namespaces:
+                suppress_namespaces:
                   - App\Excluded
             YAML,
         );
@@ -256,7 +256,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         ], $exitCode, $diagnostics);
 
         self::assertSame(0, $exitCode, $display);
-        self::assertStringNotContainsString('suppressed by per-rule exclude_namespaces', $diagnostics);
+        self::assertStringNotContainsString('suppressed by per-rule suppress_namespaces', $diagnostics);
     }
 
     /**

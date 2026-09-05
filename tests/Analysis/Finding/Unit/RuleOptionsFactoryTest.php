@@ -974,14 +974,14 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory->create('complexity.cyclomatic', TestRuleOptions::class);
     }
 
-    // --- exclude_namespaces extraction tests ---
+    // --- suppress_namespaces extraction tests ---
 
     #[Test]
     public function createExtractsExcludeNamespacesSnakeCase(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
-                'exclude_namespaces' => ['App\\Tests', 'App\\Legacy'],
+                'suppress_namespaces' => ['App\\Tests', 'App\\Legacy'],
                 'warningThreshold' => 5,
             ],
         ]);
@@ -997,7 +997,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
-                'excludeNamespaces' => ['App\\Tests'],
+                'suppressNamespaces' => ['App\\Tests'],
             ],
         ]);
 
@@ -1011,7 +1011,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
-                'exclude_namespaces' => 'App\\Tests',
+                'suppress_namespaces' => 'App\\Tests',
             ],
         ]);
 
@@ -1025,7 +1025,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespace_channels' => [
+                'suppress_namespace_channels' => [
                     'health.cohesion' => ['App\\Metrics'],
                     'health.typing' => ['App\\Generated'],
                 ],
@@ -1051,12 +1051,12 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespace_channels' => ['health.cohesion' => []],
+                'suppress_namespace_channels' => ['health.cohesion' => []],
             ],
         ]);
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('exclude_namespace_channels.health.cohesion');
+        self::expectExceptionMessage('suppress_namespace_channels.health.cohesion');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1066,7 +1066,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespace_channels' => ['health.cohesion' => ['']],
+                'suppress_namespace_channels' => ['health.cohesion' => ['']],
             ],
         ]);
 
@@ -1081,7 +1081,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespace_channels' => ['health.cohesion' => 'App\\Metrics'],
+                'suppress_namespace_channels' => ['health.cohesion' => 'App\\Metrics'],
             ],
         ]);
 
@@ -1096,7 +1096,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespace_channels' => ['' => ['App\\Metrics']],
+                'suppress_namespace_channels' => ['' => ['App\\Metrics']],
             ],
         ]);
 
@@ -1111,12 +1111,12 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespaces' => ['health.cohesion' => ['App\\Metrics']],
+                'suppress_namespaces' => ['health.cohesion' => ['App\\Metrics']],
             ],
         ]);
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('use "exclude_namespace_channels"');
+        self::expectExceptionMessage('use "suppress_namespace_channels"');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1126,7 +1126,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
-                'exclude_namespaces' => ['App\\Metrics', 42],
+                'suppress_namespaces' => ['App\\Metrics', 42],
             ],
         ]);
 
@@ -1141,7 +1141,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
-                'exclude_namespaces' => ['App\\Tests'],
+                'suppress_namespaces' => ['App\\Tests'],
                 'warningThreshold' => 7,
             ],
         ]);
@@ -1161,7 +1161,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $factory = new RuleOptionsFactory($registry);
 
         $registry->setConfigFileOptions([
-            'test.rule' => ['exclude_namespaces' => ['App\\Tests']],
+            'test.rule' => ['suppress_namespaces' => ['App\\Tests']],
         ]);
         $factory->create('test.rule', TestRuleOptions::class);
         self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
@@ -1171,12 +1171,12 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     // --- regression: a rule configured with ONLY framework-level keys
-    // (exclude_namespaces / exclude_paths) must stay enabled ---
+    // (suppress_namespaces / suppress_paths) must stay enabled ---
     //
     // Bug: an earlier version of create() decided "$userConfig === [] ->
     // fall back to $defaults" BEFORE extractExcludeNamespaces()/
     // extractExcludePaths() stripped the framework-level keys out of
-    // $userConfig. So a rule configured with ONLY `exclude_namespaces`
+    // $userConfig. So a rule configured with ONLY `suppress_namespaces`
     // looked "non-empty" at check time, $merged became $userConfig, THEN
     // extraction emptied it out to `[]`, and Options::fromArray([]) special-
     // cases an empty array as "disabled" for ~21 rule classes (including
@@ -1191,14 +1191,14 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'code-smell.long-parameter-list' => [
-                'exclude_namespaces' => ['App\\Tests'],
+                'suppress_namespaces' => ['App\\Tests'],
             ],
         ]);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
 
-        self::assertTrue($options->isEnabled(), 'A rule configured with only exclude_namespaces must stay enabled');
+        self::assertTrue($options->isEnabled(), 'A rule configured with only suppress_namespaces must stay enabled');
         self::assertSame(4, $options->warning);
         self::assertSame(6, $options->error);
         self::assertTrue($this->registry->isNamespaceExcluded('code-smell.long-parameter-list', 'App\\Tests'));
@@ -1209,14 +1209,14 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'code-smell.long-parameter-list' => [
-                'exclude_paths' => ['src/Legacy/**'],
+                'suppress_paths' => ['src/Legacy/**'],
             ],
         ]);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
 
-        self::assertTrue($options->isEnabled(), 'A rule configured with only exclude_paths must stay enabled');
+        self::assertTrue($options->isEnabled(), 'A rule configured with only suppress_paths must stay enabled');
         self::assertSame(4, $options->warning);
         self::assertSame(6, $options->error);
         self::assertTrue(
@@ -1232,7 +1232,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'code-smell.long-parameter-list' => [
-                'exclude_namespaces' => ['App\\Tests'],
+                'suppress_namespaces' => ['App\\Tests'],
                 'error' => 8,
             ],
         ]);
@@ -1249,17 +1249,93 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredViaCli(): void
     {
-        // No config file entry at all for this rule — exclude_namespaces
+        // No config file entry at all for this rule — suppress_namespaces
         // arrives purely through --rule-opt / addCliOption().
-        $this->registry->addCliOption('code-smell.long-parameter-list', 'excludeNamespaces', ['App\\Tests']);
+        $this->registry->addCliOption('code-smell.long-parameter-list', 'suppressNamespaces', ['App\\Tests']);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
 
-        self::assertTrue($options->isEnabled(), 'A rule configured with only a CLI exclude_namespaces must stay enabled');
+        self::assertTrue($options->isEnabled(), 'A rule configured with only a CLI suppress_namespaces must stay enabled');
         self::assertSame(4, $options->warning);
         self::assertSame(6, $options->error);
         self::assertTrue($this->registry->isNamespaceExcluded('code-smell.long-parameter-list', 'App\\Tests'));
+    }
+
+    // --- retired `exclude*` spelling refuses instead of warning ---
+    //
+    // Regression coverage for Х8: an unknown option key on a rule only ever
+    // produced a logged warning (RuleOptionsFactory::warnAboutUnknownKeys()),
+    // so a config still using the pre-rename spelling would keep the rule
+    // running with its suppression silently switched off. Each of the five
+    // retired spellings, snake_case and camelCase, must refuse by name
+    // instead, naming both the rule-level `suppress_*` replacement and the
+    // unrelated top-level `exclude` option.
+
+    // The config-file path runs snake_case keys through normalizeKeys()
+    // before this check ever sees them (see itNormalizesSnakeCaseKeys()),
+    // collapsing `exclude_namespaces` to `excludeNamespaces` on the way in —
+    // so the snake_case spelling is only observable, unnormalized, on the
+    // CLI/--rule-opt path (addCliOption() below bypasses that normalizer),
+    // and the camelCase spelling is exercised through the config file.
+
+    #[Test]
+    public function itRefusesTheRetiredSnakeCaseExcludeNamespacesSpelling(): void
+    {
+        $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_namespaces', ['App\\Tests']);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('exclude_namespaces');
+        self::expectExceptionMessageMatches('/suppress_namespaces/');
+        self::expectExceptionMessageMatches('/top-level "exclude"/');
+
+        $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredCamelCaseExcludeNamespacesSpelling(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => ['excludeNamespaces' => ['App\\Tests']],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/suppressNamespaces/');
+
+        $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredExcludeNamespaceChannelsSpelling(): void
+    {
+        $this->registry->addCliOption('computed.health', 'exclude_namespace_channels', ['health.cohesion' => ['App\\Metrics']]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/suppress_namespace_channels/');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredSnakeCaseExcludePathsSpelling(): void
+    {
+        $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_paths', ['src/Legacy/**']);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/suppress_paths/');
+
+        $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredCamelCaseExcludePathsSpelling(): void
+    {
+        $this->registry->addCliOption('code-smell.long-parameter-list', 'excludePaths', ['src/Legacy/**']);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/suppressPaths/');
+
+        $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
     }
 
     // --- flat `threshold:` shorthand through the full factory path ---

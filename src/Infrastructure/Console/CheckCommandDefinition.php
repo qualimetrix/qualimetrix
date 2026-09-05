@@ -77,14 +77,14 @@ final class CheckCommandDefinition
                 [],
             )
             ->addOption(
-                'exclude-path',
+                'suppress-path',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Suppress violations for files matching path prefix or glob pattern (can be repeated, e.g., src/Entity, src/Metrics/*Visitor.php)',
                 [],
             )
             ->addOption(
-                'exclude-namespace',
+                'suppress-namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Suppress violations for classes in namespace matching prefix or glob pattern (can be repeated, e.g., App\Entity, App\*Repository)',

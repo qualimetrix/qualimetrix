@@ -48,7 +48,7 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * The channel half moved with it, and narrowed: `channelsProducedBy()` used to
  * hand the one family producer the whole definition catalog, so an
- * `exclude_namespace_channels` key under it could name any dimension at all.
+ * `suppress_namespace_channels` key under it could name any dimension at all.
  * Now each producer answers with its own channel only.
  *
  * Answered against the production container's channel universe, because the
@@ -191,7 +191,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     }
 
     /**
-     * If this disappears, an `exclude_namespace_channels` key can go back to
+     * If this disappears, a `suppress_namespace_channels` key can go back to
      * being accepted under a producer that does not publish it — the silent
      * no-op the split repaired: the key looked configured, resolved to a real
      * channel, and excluded nothing, because the exclusion is applied under the
@@ -279,7 +279,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     private static function configurationExcluding(string $owner, string $key): FindingConfiguration
     {
         return new FindingConfiguration(
-            new RuleOptionsDocument([$owner => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]]]),
+            new RuleOptionsDocument([$owner => ['suppress_namespace_channels' => [$key => ['App\\Legacy']]]]),
             new FindingCliOverrides([]),
             new RuleSelection(),
         );

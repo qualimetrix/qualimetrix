@@ -25,7 +25,7 @@ use Symfony\Component\Console\Command\Command;
  * passed the flag to one and not the other is never told. Which way the set
  * moves decides what the surface must do about the flag:
  *
- * - **Narrowing flags are refused.** `--exclude-path`, `--exclude-namespace`
+ * - **Narrowing flags are refused.** `--suppress-path`, `--suppress-namespace`
  *   and `--no-suppression-annotations` only ever remove findings from a
  *   report. A capture taken under one of them records less than `check`
  *   measures, and the entries it did not write are debt nothing bounds.
@@ -50,7 +50,7 @@ use Symfony\Component\Console\Command\Command;
 #[CoversClass(BaselineExplainCommand::class)]
 final class BaselineCommandOptionSurfaceTest extends TestCase
 {
-    private const array FORBIDDEN_OPTIONS = ['exclude-path', 'exclude-namespace', 'no-suppression-annotations'];
+    private const array FORBIDDEN_OPTIONS = ['suppress-path', 'suppress-namespace', 'no-suppression-annotations'];
 
     /**
      * The options that decide which rules run and against which thresholds.

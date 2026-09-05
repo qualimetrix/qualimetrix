@@ -55,7 +55,7 @@ final class SuppressedFormatterTest extends TestCase
         $payload = $this->decode($this->format($composition));
 
         self::assertSame(1, $payload['byMechanism']['suppression']);
-        self::assertSame(1, $payload['byMechanism']['path-exclusion']);
+        self::assertSame(1, $payload['byMechanism']['path-suppression']);
         self::assertSame(0, $payload['byMechanism']['baseline']);
         self::assertCount(2, $payload['suppressed']);
         self::assertSame('suppression', $payload['suppressed'][0]['mechanism']);
@@ -74,7 +74,7 @@ final class SuppressedFormatterTest extends TestCase
 
         self::assertSame([], $payload['suppressed']);
         self::assertCount(1, $payload['neverMatched']);
-        self::assertSame('rule-path-exclusion', $payload['neverMatched'][0]['mechanism']);
+        self::assertSame('rule-path-suppression', $payload['neverMatched'][0]['mechanism']);
         self::assertSame('coupling.cbo: src/Gone.php', $payload['neverMatched'][0]['suppressor']);
     }
 

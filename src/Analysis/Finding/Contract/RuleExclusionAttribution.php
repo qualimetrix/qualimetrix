@@ -23,17 +23,17 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * independently match this finding — not only the one the short-circuit
  * happened to reach first — because a consumer computing "which configured
  * patterns fired nothing this run" needs every pattern that could have fired,
- * not one arbitrary witness: two overlapping `exclude_paths` entries both
+ * not one arbitrary witness: two overlapping `suppress_paths` entries both
  * matching the same file must both count as fired, or the second is
  * misreported as dead.
  */
 final readonly class RuleExclusionAttribution
 {
     /**
-     * @param list<string> $matchedPatterns Every `exclude_namespaces` (or, for a path
-     *                                      exclusion, `exclude_paths`) pattern matching this finding.
+     * @param list<string> $matchedPatterns Every `suppress_namespaces` (or, for a path
+     *                                      exclusion, `suppress_paths`) pattern matching this finding.
      * @param list<array{selector: string, pattern: string}> $matchedChannelPatterns Every
-     *                                                                               `exclude_namespace_channels` selector/pattern pair matching
+     *                                                                               `suppress_namespace_channels` selector/pattern pair matching
      *                                                                               this finding. Populated only for a namespace-channel exclusion.
      */
     public function __construct(

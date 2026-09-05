@@ -338,8 +338,8 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     {
         $definition = new InputDefinition([
             new InputOption('baseline', mode: InputOption::VALUE_OPTIONAL),
-            new InputOption('exclude-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
-            new InputOption('exclude-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
+            new InputOption('suppress-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
+            new InputOption('suppress-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('report-strict', mode: InputOption::VALUE_NONE),
             new InputOption('no-suppression-annotations', mode: InputOption::VALUE_NONE),
             new InputOption('show-resolved', mode: InputOption::VALUE_NONE),

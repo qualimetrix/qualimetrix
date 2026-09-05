@@ -75,11 +75,11 @@ final class RuleOptionsFactory
 
         $userConfig = $this->deepMerge($normalizedFileOptions, $cliRuleOptions, $ruleName);
 
-        // 3. Extract and store framework-level keys (exclude_namespaces,
-        // exclude_namespace_channels, exclude_paths) BEFORE deciding whether $userConfig counts as
+        // 3. Extract and store framework-level keys (suppress_namespaces,
+        // suppress_namespace_channels, suppress_paths) BEFORE deciding whether $userConfig counts as
         // "empty" below. These keys are consumed by the framework — they
         // never reach Options::fromArray() — so a rule configured with
-        // ONLY these keys (e.g. `{ exclude_namespaces: [App\Tests] }` and
+        // ONLY these keys (e.g. `{ suppress_namespaces: [App\Tests] }` and
         // nothing else) must still be treated as "unconfigured" for the
         // fromArray() input, not as "configured with an empty rest-of-
         // config". Stripping them first and THEN checking for emptiness is
@@ -91,8 +91,9 @@ final class RuleOptionsFactory
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
-        $this->extractExcludeNamespaces($ruleName, $userConfig);
-        $this->extractExcludePaths($ruleName, $userConfig);
+        $this->refuseLegacyExclusionSpelling($ruleName, $userConfig);
+        $this->extractSuppressNamespaces($ruleName, $userConfig);
+        $this->extractSuppressPaths($ruleName, $userConfig);
 
         // 4. $merged is what Options::fromArray() actually receives.
         //
@@ -132,33 +133,76 @@ final class RuleOptionsFactory
     }
 
     /**
-     * Extracts exclude_namespaces from merged options and stores them in the provider.
+     * Refuses the pre-Х8 `exclude*` spelling instead of letting it fall
+     * through to {@see warnAboutUnknownKeys()} as a mere warning.
+     *
+     * A silently-ignored key would keep the rule running while its
+     * suppression config stopped applying — findings the user configured
+     * away would resurface with nothing but a swallowed log line to explain
+     * it (measured: the unknown-key path is a `warning`, not a refusal). The
+     * message names both live spellings so a reader who meant to suppress
+     * findings on this rule reaches `suppress_*`, and a reader who actually
+     * meant to exclude files from analysis entirely reaches the root-level
+     * `exclude` — the two were conflated under one word for three follow-up
+     * rounds running.
+     *
+     * @param array<string, mixed> $userConfig
+     */
+    private function refuseLegacyExclusionSpelling(string $ruleName, array $userConfig): void
+    {
+        static $legacyToCurrent = [
+            'exclude_namespace_channels' => 'suppress_namespace_channels',
+            'excludeNamespaceChannels' => 'suppressNamespaceChannels',
+            'exclude_namespaces' => 'suppress_namespaces',
+            'excludeNamespaces' => 'suppressNamespaces',
+            'exclude_paths' => 'suppress_paths',
+            'excludePaths' => 'suppressPaths',
+        ];
+
+        foreach ($legacyToCurrent as $legacyKey => $currentKey) {
+            if (!\array_key_exists($legacyKey, $userConfig)) {
+                continue;
+            }
+
+            throw new InvalidArgumentException(\sprintf(
+                'Rule "%s" uses the retired option "%s". To suppress findings this rule already produces, '
+                . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
+                . 'top-level "exclude" option instead — it is a different mechanism, not a renamed one.',
+                $ruleName,
+                $legacyKey,
+                $currentKey,
+            ));
+        }
+    }
+
+    /**
+     * Extracts suppress_namespaces from merged options and stores them in the provider.
      *
      * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
-    private function extractExcludeNamespaces(string $ruleName, array &$merged): void
+    private function extractSuppressNamespaces(string $ruleName, array &$merged): void
     {
-        $namespaces = $this->takeAliasedOption($merged, 'excludeNamespaces', 'exclude_namespaces');
+        $namespaces = $this->takeAliasedOption($merged, 'suppressNamespaces', 'suppress_namespaces');
         $this->registry->configureNamespaceExclusions($ruleName, $namespaces);
 
-        $channels = $this->takeAliasedOption($merged, 'excludeNamespaceChannels', 'exclude_namespace_channels');
+        $channels = $this->takeAliasedOption($merged, 'suppressNamespaceChannels', 'suppress_namespace_channels');
         $this->registry->configureNamespaceChannelExclusions($ruleName, $channels);
     }
 
     /**
-     * Extracts exclude_paths from merged options and stores them in the provider.
+     * Extracts suppress_paths from merged options and stores them in the provider.
      *
      * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
-    private function extractExcludePaths(string $ruleName, array &$merged): void
+    private function extractSuppressPaths(string $ruleName, array &$merged): void
     {
-        $raw = $this->takeAliasedOption($merged, 'excludePaths', 'exclude_paths');
+        $raw = $this->takeAliasedOption($merged, 'suppressPaths', 'suppress_paths');
 
         if (\is_string($raw)) {
             $patterns = [$raw];
@@ -330,7 +374,7 @@ final class RuleOptionsFactory
      * any extra keys the Options class declares via
      * {@see ShorthandOptionKeysInterface} or
      * {@see AdditionalOptionKeysInterface}. Framework-level keys
-     * (excludeNamespaces, excludePaths) are excluded since they are
+     * (suppressNamespaces, suppressPaths) are excluded since they are
      * extracted before fromArray().
      *
      * > **Note:** reflection only sees constructor parameter names. Any
@@ -359,12 +403,12 @@ final class RuleOptionsFactory
     {
         // Framework-level keys that are valid but not in the options constructor
         static $frameworkKeys = [
-            'excludeNamespaces',
-            'exclude_namespaces',
-            'excludeNamespaceChannels',
-            'exclude_namespace_channels',
-            'excludePaths',
-            'exclude_paths',
+            'suppressNamespaces',
+            'suppress_namespaces',
+            'suppressNamespaceChannels',
+            'suppress_namespace_channels',
+            'suppressPaths',
+            'suppress_paths',
         ];
 
         $acceptedExtraKeys = $this->acceptedExtraOptionKeysFor($optionsClass);

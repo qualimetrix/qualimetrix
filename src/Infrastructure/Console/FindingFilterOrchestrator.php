@@ -42,9 +42,9 @@ final readonly class FindingFilterOrchestrator
         GitScopeResolution $scope,
     ): FindingProjectionOptions {
         /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('exclude-path');
+        $cliExcludePaths = $input->getOption('suppress-path');
         /** @var list<string> $cliExcludeNamespaces */
-        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
+        $cliExcludeNamespaces = $input->getOption('suppress-namespace');
         $exclusions = $configuredExclusions->withAdditional($cliExcludePaths, $cliExcludeNamespaces);
 
         $gitScope = null;
@@ -60,8 +60,8 @@ final readonly class FindingFilterOrchestrator
 
         return new FindingProjectionOptions(
             baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            excludePaths: $exclusions->excludePaths,
-            excludeNamespaces: $exclusions->excludeNamespaces,
+            suppressPaths: $exclusions->suppressPaths,
+            suppressNamespaces: $exclusions->suppressNamespaces,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
             gitScope: $gitScope,
         );
@@ -279,8 +279,8 @@ final readonly class FindingFilterOrchestrator
     }
 
     /**
-     * Reports findings suppressed by per-rule `exclude_namespaces`,
-     * `exclude_namespace_channels`, or `exclude_paths` (any rule, set via
+     * Reports findings suppressed by per-rule `suppress_namespaces`,
+     * `suppress_namespace_channels`, or `suppress_paths` (any rule, set via
      * `rules: {<rule-name>: {...}}` in `qmx.yaml` —
      * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
      * mechanism runs inside rule execution itself, before the findings even
@@ -297,7 +297,7 @@ final readonly class FindingFilterOrchestrator
         if ($input->getOption('show-suppressed') === true && $stats->excludedFindings !== []) {
             $output->writeln('');
             $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths:</info>',
+                '<info>%d violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:</info>',
                 \count($stats->excludedFindings),
             ));
 
@@ -309,8 +309,8 @@ final readonly class FindingFilterOrchestrator
         }
 
         $breakdowns = [
-            'exclude_paths' => [$stats->totalPathExclusions(), $stats->pathExclusionsByRule],
-            'exclude_namespaces/exclude_namespace_channels' => [
+            'suppress_paths' => [$stats->totalPathExclusions(), $stats->pathExclusionsByRule],
+            'suppress_namespaces/suppress_namespace_channels' => [
                 $stats->totalNamespaceExclusions(),
                 $stats->namespaceExclusionsByRule,
             ],

@@ -35,8 +35,8 @@ final class ConfigSchema
     public const string RULES = 'rules';
     public const string DISABLED_RULES = 'disabled_rules';
     public const string ONLY_RULES = 'only_rules';
-    public const string EXCLUDE_PATHS = 'exclude_paths';
-    public const string EXCLUDE_NAMESPACES = 'exclude_namespaces';
+    public const string SUPPRESS_PATHS = 'suppress_paths';
+    public const string SUPPRESS_NAMESPACES = 'suppress_namespaces';
     public const string FAIL_ON = 'fail_on';
     public const string CACHE_DIR = 'cache.dir';
     public const string CACHE_ENABLED = 'cache.enabled';
@@ -107,8 +107,8 @@ final class ConfigSchema
         [self::RULES, self::RULES, self::MIXED, null],
         ['disabledRules', self::DISABLED_RULES, self::LIST, null],
         ['onlyRules', self::ONLY_RULES, self::LIST, null],
-        ['excludePaths', self::EXCLUDE_PATHS, self::LIST, null],
-        ['excludeNamespaces', self::EXCLUDE_NAMESPACES, self::LIST, null],
+        ['suppressPaths', self::SUPPRESS_PATHS, self::LIST, null],
+        ['suppressNamespaces', self::SUPPRESS_NAMESPACES, self::LIST, null],
         ['failOn', self::FAIL_ON, self::SCALAR, null],
 
         // Section sub-keys (root type derived as 'section')
@@ -218,8 +218,8 @@ final class ConfigSchema
             self::FORMAT => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'disabledRules' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'onlyRules' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'excludePaths' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'excludeNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'suppressPaths' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'suppressNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'failOn' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             self::EXCLUDE_HEALTH => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'includeGenerated' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
@@ -253,7 +253,7 @@ final class ConfigSchema
      * {@see SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN} does one
      * level higher.
      *
-     * `exclude_namespace_channels` is keyed by channel names, and channel
+     * `suppress_namespace_channels` is keyed by channel names, and channel
      * names are kebab. Sitting at level 3 of the `rules` section, its keys were
      * camelCased into names addressing no channel — `code-smell.boolean-argument`
      * reached the validator as `codeSmell.booleanArgument` and ended the run.
@@ -271,7 +271,7 @@ final class ConfigSchema
      */
     public static function identifierKeyedOptions(): array
     {
-        return ['excludeNamespaceChannels'];
+        return ['suppressNamespaceChannels'];
     }
 
     /**

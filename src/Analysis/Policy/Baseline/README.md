@@ -77,12 +77,12 @@ JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Findings
 ```
 
 The stage runs **fourth** in Reporting's finding-projection sequence, after `@qmx-ignore` and the
-`exclude_paths` / `exclude_namespaces` filters and immediately before git scope. That
+`suppress_paths` / `suppress_namespaces` filters and immediately before git scope. That
 position is what gives the run a single measured set: suppression is per line while an
 identity spans a file or a class, so a baseline placed first would judge *n* findings
 where capture recorded *n−1*. A consequence worth stating: a hand-written `@qmx-ignore`
 now outranks a generated entry, and an excluded finding is neither captured nor judged —
-except on `architecture.*` channels, which `exclude_namespaces` does not apply to at all
+except on `architecture.*` channels, which `suppress_namespaces` does not apply to at all
 and which therefore reach the baseline even inside an excluded namespace.
 
 Two kinds of group never become an entry: one on a channel no rule declares, and a

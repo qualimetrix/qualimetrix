@@ -240,17 +240,17 @@ final class YamlKeyReachabilityTest extends TestCase
             ['complexity.cyclomatic'],
         ];
 
-        yield 'exclude_paths → excludePaths (list)' => [
-            'exclude_paths',
-            "exclude_paths:\n  - src/Generated/*\n",
-            ['excludePaths'],
+        yield 'suppress_paths → suppressPaths (list)' => [
+            'suppress_paths',
+            "suppress_paths:\n  - src/Generated/*\n",
+            ['suppressPaths'],
             ['src/Generated/*'],
         ];
 
-        yield 'exclude_namespaces → excludeNamespaces (list)' => [
-            'exclude_namespaces',
-            "exclude_namespaces:\n  - App\\Generated\n",
-            ['excludeNamespaces'],
+        yield 'suppress_namespaces → suppressNamespaces (list)' => [
+            'suppress_namespaces',
+            "suppress_namespaces:\n  - App\\Generated\n",
+            ['suppressNamespaces'],
             ['App\\Generated'],
         ];
 

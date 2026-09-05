@@ -162,16 +162,16 @@ and still judged by `directives`.
 
 The ban is not an exemption from the report. Unlike the three configuration
 errors, a finding on this channel stays inside the pipeline: the top-level
-`exclude_paths` drops it, a baseline ceiling accepts it, a git scope narrows it,
+`suppress_paths` drops it, a baseline ceiling accepts it, a git scope narrows it,
 and the run's channel selection decides it exactly as it decides every other
 channel — `--disable-rule=annotation.unused-directive` silences it, an
 `--only-rule` that never names it does not report it, and both spellings reach
 it through `RuleExecutionInterface::publishable()`, which
 `AnalysisPipeline::reportedFindings()` asks at the point the channel is
-assembled. Three exclusions never reach it: the top-level `exclude_namespaces`
+assembled. Three exclusions never reach it: the top-level `suppress_namespaces`
 matches on a namespace, and this finding's subject is the **file** the
-annotation sits in; and the producer's own `exclude_paths` /
-`exclude_namespaces` run inside `RuleExecution`, whose exclusion ledger is
+annotation sits in; and the producer's own `suppress_paths` /
+`suppress_namespaces` run inside `RuleExecution`, whose exclusion ledger is
 closed — its counters, its `--show-suppressed` retention and its attributions
 are read into the execution result before this channel exists, so applying it
 here would remove a finding that the run's own account of removals never

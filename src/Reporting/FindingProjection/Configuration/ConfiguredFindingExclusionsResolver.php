@@ -14,13 +14,13 @@ final class ConfiguredFindingExclusionsResolver implements ConfiguredFindingExcl
     public function resolve(ConfigurationDocument $document): ConfiguredFindingExclusions
     {
         $paths = [];
-        foreach ($document->contributions(ConfigSchema::EXCLUDE_PATHS) as $value) {
+        foreach ($document->contributions(ConfigSchema::SUPPRESS_PATHS) as $value) {
             if (\is_array($value)) {
                 array_push($paths, ...array_filter($value, is_string(...)));
             }
         }
         $namespaces = [];
-        foreach ($document->contributions(ConfigSchema::EXCLUDE_NAMESPACES) as $value) {
+        foreach ($document->contributions(ConfigSchema::SUPPRESS_NAMESPACES) as $value) {
             if (\is_array($value)) {
                 array_push($namespaces, ...array_filter($value, is_string(...)));
             }

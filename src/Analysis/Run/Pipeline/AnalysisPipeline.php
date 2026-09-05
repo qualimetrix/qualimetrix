@@ -318,8 +318,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      *
      * **The audit is asked about `produced`, not `published`, and the two
      * differ by exactly the wrong thing.** `published` has already lost the
-     * per-rule `exclude_namespaces` / `exclude_namespace_channels` /
-     * `exclude_paths` ledger and the per-finding channel selection — decisions
+     * per-rule `suppress_namespaces` / `suppress_namespace_channels` /
+     * `suppress_paths` ledger and the per-finding channel selection — decisions
      * about what a *report* shows. Judging an annotation by them means a
      * suppression covering a finding the ledger would have dropped anyway is
      * reported as silencing nothing: a statement about configuration dressed

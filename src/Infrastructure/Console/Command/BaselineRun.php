@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * **The set comes from configuration, never from this command's flags**
  * (ADR 0017). None of the five commands declares
- * `--exclude-path`, `--exclude-namespace` or `--no-suppression-annotations`,
+ * `--suppress-path`, `--suppress-namespace` or `--no-suppression-annotations`,
  * so there is nothing here to read them from: exclusions arrive through
  * `qmx.yaml` and suppression through the source's own annotations, which is
  * precisely what makes a baseline command and `check` measure one set instead
@@ -78,8 +78,8 @@ final readonly class BaselineRun implements BaselineRunInterface
             $configuration,
             null,
             new FindingProjectionOptions(
-                excludePaths: $exclusions->excludePaths,
-                excludeNamespaces: $exclusions->excludeNamespaces,
+                suppressPaths: $exclusions->suppressPaths,
+                suppressNamespaces: $exclusions->suppressNamespaces,
             ),
         );
 

@@ -22,7 +22,7 @@ use Symfony\Component\Process\Process;
  * {@see \Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest}
  * pins the same promise per stage. This class exists because the defect was
  * only visible end to end: `architecture.unassigned-class` was exempt from
- * `exclude_paths` and `exclude_namespaces` and silently dropped by the git
+ * `suppress_paths` and `suppress_namespaces` and silently dropped by the git
  * scope, so `--report=git:staged` turned the gate a user had switched on into
  * a green build with nothing printed to say what had happened.
  *

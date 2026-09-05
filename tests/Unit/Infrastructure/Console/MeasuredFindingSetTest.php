@@ -73,8 +73,8 @@ final class MeasuredFindingSetTest extends TestCase
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $options = new FindingProjectionOptions(
-            excludePaths: ['generated'],
-            excludeNamespaces: ['App\\Vendor'],
+            suppressPaths: ['generated'],
+            suppressNamespaces: ['App\\Vendor'],
         );
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
@@ -110,7 +110,7 @@ final class MeasuredFindingSetTest extends TestCase
         // run — it just does not redefine what the baseline measures.
         self::assertSame([], $set->forRun(
             $this->configuration(),
-            options: new FindingProjectionOptions(excludePaths: ['vendor']),
+            options: new FindingProjectionOptions(suppressPaths: ['vendor']),
         ));
     }
 
@@ -118,8 +118,8 @@ final class MeasuredFindingSetTest extends TestCase
     public function itListsOnlyStagesThatDefineTheMeasuredSet(): void
     {
         $set = $this->createSet([], new FindingProjectionOptions(
-            excludePaths: ['generated'],
-            excludeNamespaces: ['App\\Vendor'],
+            suppressPaths: ['generated'],
+            suppressNamespaces: ['App\\Vendor'],
         ));
 
         foreach ([FindingFilterStage::Suppression, FindingFilterStage::PathExclusion, FindingFilterStage::NamespaceExclusion] as $stage) {

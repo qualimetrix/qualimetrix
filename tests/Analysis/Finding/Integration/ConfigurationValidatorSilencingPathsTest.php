@@ -26,9 +26,9 @@ use Symfony\Component\Console\Tester\CommandTester;
  * about who can silence them. Each of the eight is addressable by its own
  * name and by its producer's, in both directions of selection — `--disable-rule`
  * and `only_rules`, which resolve a selector through two different mechanisms —
- * `exclude_paths` keyed by the producer reaches
+ * `suppress_paths` keyed by the producer reaches
  * the three that carry a file and none of the five that do not,
- * `exclude_namespaces` reaches none of them, and the producer's `enabled`
+ * `suppress_namespaces` reaches none of them, and the producer's `enabled`
  * option switches the whole family off. All four are behaviour of the
  * producer name, which is exactly the binding
  * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface::producerRuleName()}
@@ -39,7 +39,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * without a row here.
  *
  * The gate cannot see any of this: no corpus case uses `--disable-rule`,
- * `only_rules` or a non-empty `exclude_paths`.
+ * `only_rules` or a non-empty `suppress_paths`.
  */
 final class ConfigurationValidatorSilencingPathsTest extends TestCase
 {
@@ -188,7 +188,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * The binding itself, read off the assembled universe.
      *
      * Every one of the eight resolves to the producer that owns it, and that
-     * one answer is what `--disable-rule`, `exclude_paths`, the channel
+     * one answer is what `--disable-rule`, `suppress_paths`, the channel
      * description, the documentation page and the remediation estimate are
      * all looked up through. A validator that named a different producer
      * would move all five at once, silently.
@@ -294,7 +294,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     }
 
     /**
-     * Path 3: `exclude_paths` keyed by the producer. Live for the three
+     * Path 3: `suppress_paths` keyed by the producer. Live for the three
      * directive diagnostics, which carry the file the annotation is written
      * in; inert for the five layer diagnostics, whose location is
      * `Location::none()`.
@@ -304,20 +304,20 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     {
         self::assertSame(
             self::LAYER_DIAGNOSTICS,
-            $this->diagnosticsFrom(['--rule-opt' => [self::DIRECTIVE_PRODUCER . ':exclude_paths=**']]),
+            $this->diagnosticsFrom(['--rule-opt' => [self::DIRECTIVE_PRODUCER . ':suppress_paths=**']]),
             'A directive diagnostic carries its file, so a path exclusion keyed by its producer reaches it.',
         );
 
         self::assertSame(
             self::allDiagnostics(),
-            $this->diagnosticsFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':exclude_paths=**']]),
+            $this->diagnosticsFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_paths=**']]),
             'A layer diagnostic has no file, so a path exclusion cannot reach it. This is today\'s behaviour,'
             . ' pinned so the move out of the rule class does not change it by accident.',
         );
     }
 
     /**
-     * Path 4: `exclude_namespaces` keyed by the producer — inert for all
+     * Path 4: `suppress_namespaces` keyed by the producer — inert for all
      * eight, because a project-level and a file-level subject carry no
      * namespace for the filter to compare.
      */
@@ -327,8 +327,8 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         self::assertSame(
             self::allDiagnostics(),
             $this->diagnosticsFrom(['--rule-opt' => [
-                self::LAYER_PRODUCER . ':exclude_namespaces=Silencing',
-                self::DIRECTIVE_PRODUCER . ':exclude_namespaces=Silencing',
+                self::LAYER_PRODUCER . ':suppress_namespaces=Silencing',
+                self::DIRECTIVE_PRODUCER . ':suppress_namespaces=Silencing',
             ]]),
         );
     }

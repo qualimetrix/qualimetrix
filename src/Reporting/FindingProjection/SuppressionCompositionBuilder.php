@@ -115,12 +115,12 @@ final readonly class SuppressionCompositionBuilder
             return '(no file)';
         }
 
-        return (new PathMatcher($options->excludePaths))->matches($finding->location->file)->pattern ?? '(unresolved pattern)';
+        return (new PathMatcher($options->suppressPaths))->matches($finding->location->file)->pattern ?? '(unresolved pattern)';
     }
 
     private function namespaceExclusionSuppressor(Finding $finding, FindingProjectionOptions $options): string
     {
-        return (new NamespaceMatcher($options->excludeNamespaces))
+        return (new NamespaceMatcher($options->suppressNamespaces))
             ->matches($this->namespaceOf($finding))->pattern ?? '(unresolved pattern)';
     }
 
@@ -160,7 +160,7 @@ final readonly class SuppressionCompositionBuilder
      * Every configured pattern is tested against every removed finding
      * independently, rather than crediting only the pattern
      * {@see PathMatcher::matches()} / {@see NamespaceMatcher::matches()}
-     * happened to reach first. Two overlapping `exclude_paths` entries can
+     * happened to reach first. Two overlapping `suppress_paths` entries can
      * both match the same file; a first-match-only credit would report the
      * second as inert even though it independently excludes findings of its
      * own — the reader would remove a live line believing it dead.
@@ -171,19 +171,19 @@ final readonly class SuppressionCompositionBuilder
     {
         $pathHits = $this->patternsThatFired(
             $filterResult->removedBy(FindingFilterStage::PathExclusion),
-            $options->excludePaths,
+            $options->suppressPaths,
             static fn(Finding $f, string $pattern): bool => $f->location->file !== null
                 && (new PathMatcher([$pattern]))->matches($f->location->file) !== null,
         );
         $namespaceHits = $this->patternsThatFired(
             $filterResult->removedBy(FindingFilterStage::NamespaceExclusion),
-            $options->excludeNamespaces,
+            $options->suppressNamespaces,
             fn(Finding $f, string $pattern): bool => (new NamespaceMatcher([$pattern]))->matches($this->namespaceOf($f)) !== null,
         );
 
         return [
-            ...$this->inertPatterns(SuppressionMechanism::PathExclusion, $options->excludePaths, $pathHits),
-            ...$this->inertPatterns(SuppressionMechanism::NamespaceExclusion, $options->excludeNamespaces, $namespaceHits),
+            ...$this->inertPatterns(SuppressionMechanism::PathExclusion, $options->suppressPaths, $pathHits),
+            ...$this->inertPatterns(SuppressionMechanism::NamespaceExclusion, $options->suppressNamespaces, $namespaceHits),
         ];
     }
 

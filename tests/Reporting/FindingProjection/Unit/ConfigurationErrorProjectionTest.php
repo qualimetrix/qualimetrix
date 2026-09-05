@@ -142,7 +142,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(excludePaths: ['src']),
+            new FindingProjectionOptions(suppressPaths: ['src']),
         );
 
         self::assertSame([$configurationError], $result->findings);
@@ -157,7 +157,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(excludeNamespaces: [self::NAMESPACE]),
+            new FindingProjectionOptions(suppressNamespaces: [self::NAMESPACE]),
         );
 
         self::assertSame([$configurationError], $result->findings);
