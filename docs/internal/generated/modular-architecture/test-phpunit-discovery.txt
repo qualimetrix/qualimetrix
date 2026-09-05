@@ -940,6 +940,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itStillAppliesTotalTrivialClassExemption
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsNonEmptyArrayOfConstantsReturnAsTrivialAndStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnArrayOfConstantsAsStateless
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnForeignClassConstantAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnSelfConstantAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGeneratesError
@@ -6213,6 +6214,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesTheBannedChannelInsideEveryStageAfterSuppression
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles
@@ -6232,6 +6234,15 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, that group at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
