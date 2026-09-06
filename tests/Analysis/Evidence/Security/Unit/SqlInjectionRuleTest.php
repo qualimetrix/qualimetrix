@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -73,6 +74,36 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertSame('file:src/Controller/UserController.php', $findings[0]->subject->toCanonical());
         self::assertSame('Use parameterized queries or prepared statements.', $findings[0]->recommendation);
         self::assertTrue($findings[0]->location->precise);
+    }
+
+    /**
+     * Pins `occurrence` to `PATTERN_TYPE` read off a finding produced by
+     * {@see SqlInjectionRule::analyze()} itself, so a future edit to
+     * `PATTERN_TYPE` reddens this test even though it looks like a
+     * same-shaped refactor of the `security.{$type}` bag key
+     * `AbstractSecurityPatternRule::analyze()` shares with every other
+     * security-pattern rule. {@see itGroupsOnlySemanticPatternEvidenceRatherThanLinesOrRawContext}
+     * only checks relative equality between two findings of this same rule,
+     * so it would not catch a `PATTERN_TYPE` edit that moved both findings'
+     * occurrence together — this test compares against the literal instead.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnPatternType(): void
+    {
+        $rule = new SqlInjectionRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 15, 'superglobal' => '']),
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('sql_injection', ['type' => 'sql_injection', 'superglobal' => ''])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

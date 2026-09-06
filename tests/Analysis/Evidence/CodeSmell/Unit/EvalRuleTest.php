@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -96,5 +97,45 @@ final class EvalRuleTest extends TestCase
         self::assertSame('eval() usage detected - security risk', $findings[0]->message);
         self::assertSame('code-smell.eval', $findings[0]->ruleName);
         self::assertSame(1.0, $findings[0]->metricValue);
+    }
+
+    /**
+     * Pins `occurrence` to `SMELL_TYPE` read off a finding produced by
+     * {@see EvalRule::analyze()} itself, so a future edit to `SMELL_TYPE`
+     * reddens this test even though it looks like a same-shaped refactor of
+     * the `codeSmell.{$type}` bag key `AbstractCodeSmellRule::analyze()`
+     * shares with every other code-smell rule.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnSmellType(): void
+    {
+        $rule = new EvalRule(new CodeSmellOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 42]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('eval', [
+                'type' => 'eval',
+                'extra' => '',
+                'hasExtra' => false,
+                'promoted' => false,
+                'hasPromoted' => false,
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 }

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -97,6 +98,47 @@ final class ErrorSuppressionRuleTest extends TestCase
         self::assertSame(22, $findings[1]->location->line);
         self::assertSame('code-smell.error-suppression', $findings[0]->ruleName);
         self::assertSame(1.0, $findings[0]->metricValue);
+    }
+
+    /**
+     * Pins `occurrence` to `SMELL_TYPE` read off a finding produced by
+     * {@see ErrorSuppressionRule::analyze()} itself, so a future edit to
+     * `SMELL_TYPE` reddens this test even though it looks like a
+     * same-shaped refactor of the `codeSmell.{$type}` bag key
+     * `AbstractCodeSmellRule::analyze()` shares with every other
+     * code-smell rule.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnSmellType(): void
+    {
+        $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 8]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('error_suppression', [
+                'type' => 'error_suppression',
+                'extra' => '',
+                'hasExtra' => false,
+                'promoted' => false,
+                'hasPromoted' => false,
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]
