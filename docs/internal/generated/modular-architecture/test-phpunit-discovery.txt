@@ -493,12 +493,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ControlFlowSmellsTest::itSkipsCountCallsInsideClosuresAndArrows
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ControlFlowSmellsTest::itTreatsNestedIfElseifAndElseChainSignalsAsForeachControlFlow
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::smellDetectedProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeDocumentationConsistencyTest::documentedSeverityMatchesEffectiveSeverity
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::optionsClassIsCorrect
@@ -508,6 +510,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itRecognizesOutputCallsButNotReturnModeOrDebugApis
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DuplicateDeclarationWireSubjectTest::itTransportsTheOrdinalOfTheSecondDeclarationOfOneIdentity
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::optionsClassIsCorrect
@@ -523,6 +526,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::allowedFunctionIsFiltered
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::disabledRuleReturnsNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::emptyExtraFallsBackToBaseTemplate
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::messageIncludesFunctionName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::methodCallNotFilteredByAllowedFunctions
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::nameAndDescriptionAreCorrect
@@ -530,16 +534,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ErrorSuppressionRuleTest::smellDetectedProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EvalRuleTest::smellDetectedProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ExitRuleTest::smellDetectedProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::optionsClassIsCorrect
@@ -760,6 +767,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\RepeatedExpressionsTest::itUsesTheOfficialSigilAsTheClosedOperatorBoundary"suspicious xor"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\RepeatedExpressionsTest::itUsesTheOfficialSigilAsTheClosedOperatorBoundary"suspicious ||"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::disabledRuleReturnsNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::noSmellsProducesNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::optionsClassIsCorrect
@@ -3273,6 +3281,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itGroupsOnlySemanticPatternEvidenceRatherThanLinesOrRawContext
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itHasCorrectNameAndCategory
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itIncludesSuperglobalInFindingMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itKeysOccurrenceToItsOwnPatternType
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itLoadsOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SqlInjectionRuleTest::itReturnsNoFindingsWhenDisabled
@@ -3333,6 +3342,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itCreatesMultipleFindingsForMultipleFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itHasCorrectNameAndCategory
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itIncludesSuperglobalInFindingMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itKeysOccurrenceToItsOwnPatternType
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itReturnsNoFindingsWhenNoFindings
@@ -3815,6 +3825,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesWhenNoPatterns
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itPinsTheHashOfFixedInputsAsLiteralHexToCatchMechanismDrift
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itTruncatesTheSameSha256ItWouldHaveReturnedInFull
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
@@ -5139,7 +5150,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithOne
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithTwo
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput

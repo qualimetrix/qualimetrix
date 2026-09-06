@@ -614,6 +614,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryRejection'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryUpdateOutcome'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryValues'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException'
