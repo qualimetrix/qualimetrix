@@ -13,6 +13,7 @@ values only where an effective boundary must be explained.
 ```
 Baseline/
 ├── Baseline.php                 # VO: a loaded/captured file (generated, scope, entries, inert entries)
+├── BaselineFormatVersion.php    # The current file format's version number, read by the loader, writer, and the v5/carry paths that never build a Baseline
 ├── BaselineIdentity.php         # VO: what an entry is about — symbol + channel + dependency edge
 ├── BaselineEdge.php             # VO: the dependency edge half of an identity
 ├── BaselineEntry.php            # VO: one accepted group (identity, magnitudes, count, mode)

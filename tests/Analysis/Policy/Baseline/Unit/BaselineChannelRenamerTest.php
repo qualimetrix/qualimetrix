@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
@@ -289,7 +290,7 @@ final class BaselineChannelRenamerTest extends TestCase
             self::fail('Expected the carry to be refused.');
         } catch (ChannelRenameRefusal $e) {
             self::assertStringContainsString('version 5', $e->getMessage());
-            self::assertStringContainsString('version ' . Baseline::VERSION, $e->getMessage());
+            self::assertStringContainsString('version ' . BaselineFormatVersion::CURRENT, $e->getMessage());
         }
 
         self::assertSame($contents, (string) file_get_contents($path));
@@ -317,7 +318,7 @@ final class BaselineChannelRenamerTest extends TestCase
     public function itRefusesADocumentWithoutAnEntriesObject(): void
     {
         $path = $this->tempDir . '/no-entries.json';
-        $contents = (string) json_encode(['version' => Baseline::VERSION], \JSON_THROW_ON_ERROR);
+        $contents = (string) json_encode(['version' => BaselineFormatVersion::CURRENT], \JSON_THROW_ON_ERROR);
         file_put_contents($path, $contents);
 
         $this->expectRefusal($path, $contents, "mid.two\tmid.renamed");
@@ -334,7 +335,7 @@ final class BaselineChannelRenamerTest extends TestCase
     {
         $path = $this->tempDir . '/odd-block.json';
         $contents = (string) json_encode([
-            'version' => Baseline::VERSION,
+            'version' => BaselineFormatVersion::CURRENT,
             'entries' => ['class:App\Foo' => ['channel' => 'mid.two']],
         ], \JSON_THROW_ON_ERROR);
         file_put_contents($path, $contents);
@@ -540,7 +541,7 @@ final class BaselineChannelRenamerTest extends TestCase
     {
         $path = $this->tempDir . '/raw.json';
         file_put_contents($path, (string) json_encode([
-            'version' => Baseline::VERSION,
+            'version' => BaselineFormatVersion::CURRENT,
             'generated' => '2026-01-01T00:00:00+00:00',
             'scope' => ['src'],
             'entries' => $entries,

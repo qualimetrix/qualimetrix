@@ -82,7 +82,7 @@ final readonly class BaselineWriter
     private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
     {
         return [
-            'version' => Baseline::VERSION,
+            'version' => BaselineFormatVersion::CURRENT,
             'generated' => $baseline->generated->format('c'),
             'scope' => $baseline->scope,
             'entries' => $this->serializeEntries($baseline, $projectRoot),

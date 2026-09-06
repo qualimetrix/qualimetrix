@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that no declared name was close to it: `complexity.ccn` is eight edits from
   `complexity.cyclomatic`, so a near-spelling search could never reach the
   answer.
+- `baseline:rename-channels <baseline> <map>` carries an existing baseline onto
+  renamed channel names along a declared tab-separated map, without running an
+  analysis — use it instead of regenerating, which silently accepts whatever
+  the tree has accumulated. **Carrying an entry changes its selector** (a
+  selector is a digest of the identity, and the channel name is part of it),
+  so a saved `baseline:cleanup --remove=<selector>` stops addressing a carried
+  entry; re-read selectors from a fresh `baseline:cleanup` listing.
 
 ### Fixed
 

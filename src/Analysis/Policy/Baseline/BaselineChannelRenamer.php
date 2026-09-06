@@ -146,14 +146,14 @@ final readonly class BaselineChannelRenamer
             throw new ChannelRenameRefusal(\sprintf('%s has no integer "version"; it is not a baseline file.', $path));
         }
 
-        if ($version !== Baseline::VERSION) {
+        if ($version !== BaselineFormatVersion::CURRENT) {
             throw new ChannelRenameRefusal(\sprintf(
                 '%s is a version %d baseline and this build carries version %d. A carry substitutes a name and '
                 . 'converts nothing, so the file has to be brought to version %d first.',
                 $path,
                 $version,
-                Baseline::VERSION,
-                Baseline::VERSION,
+                BaselineFormatVersion::CURRENT,
+                BaselineFormatVersion::CURRENT,
             ));
         }
 

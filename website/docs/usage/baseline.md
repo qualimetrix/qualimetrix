@@ -108,8 +108,8 @@ not a JSON array; two rows rename one name; two rows produce one name; a row's
 two sides are equal; one row's target is renamed again by another; or the carry
 would give two entries in one subject a single identity. A declared rename that
 matches nothing in this file is reported, not refused. Exit codes: `0` carried
-(including "nothing matched"), `1` refused, `2` the baseline or the map is not a
-readable file.
+(including "nothing matched"), `1` refused on content or the baseline or the
+map is not a readable file, `2` a malformed `--format` value.
 
 Two consequences are worth knowing before you run it:
 

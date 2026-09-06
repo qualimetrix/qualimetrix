@@ -84,7 +84,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
             if (!is_file($path) || !is_readable($path)) {
                 $output->writeln(\sprintf('<error>Not a readable file: %s</error>', $path));
 
-                return self::EXIT_INVALID_INPUT;
+                return self::FAILURE;
             }
         }
 

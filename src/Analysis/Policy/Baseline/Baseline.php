@@ -10,26 +10,20 @@ use InvalidArgumentException;
 /**
  * A loaded or freshly captured baseline file (ADR 0017): when it was written, over which paths, and the entries it holds.
  *
- * The version is a constant rather than a field. This type *is* the version
- * 13 shape; a file carrying any other version never becomes an instance of
- * it, because {@see BaselineLoader} refuses to build one. Keeping a
- * `version` field would invite code that reads it and branches, which is the
- * shim the project's compatibility policy rules out.
+ * The version is not a field of this type; {@see BaselineFormatVersion} owns
+ * it, because it names a fact about the *format*, not about a loaded
+ * snapshot. This type *is* the current format's shape; a file carrying any
+ * other version never becomes an instance of it, because {@see BaselineLoader}
+ * refuses to build one. A `version` field here would invite code that reads
+ * it and branches, which is the shim the project's compatibility policy rules
+ * out.
  *
  * Valid and inert entries are kept apart (see {@see InertBaselineEntry}).
  * Everything that suppresses reads {@see $entries}; everything that reports
  * problems reads {@see $inertEntries}; nothing has to remember to filter.
- *
- * @qmx-threshold coupling.cbo 21 -- The capability's own aggregate root: raw
- *                CBO 20 is almost entirely fan-in from the classes that read a
- *                baseline, so splitting a reader in two raises it without
- *                coupling this type to anything new.
  */
 final readonly class Baseline
 {
-    /** The only file version this type represents (ADR 0017). */
-    public const int VERSION = 13;
-
     /** @var array<string, BaselineEntry> identity key => entry */
     private array $byIdentityKey;
 

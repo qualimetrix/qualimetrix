@@ -44,7 +44,7 @@ final readonly class BaselineLoader
     /**
      * Rejection reasons for baseline versions this build refuses outright,
      * keyed by the version number found in the file. Each holds a `%v%`
-     * placeholder for {@see Baseline::VERSION}, so bumping that constant
+     * placeholder for {@see BaselineFormatVersion::CURRENT}, so bumping that constant
      * cannot leave a message naming a stale target version. Adding "this
      * build's own previous version is now rejected" when `VERSION` moves is
      * one line of data here, not a fourth `if` branch to write from scratch.
@@ -163,11 +163,11 @@ final readonly class BaselineLoader
     /**
      * Version 5 and version 10 are historical formats, not alternate routes
      * into the current schema: their logical symbol keys cannot determine
-     * the exact declaration subjects a {@see Baseline::VERSION} baseline
+     * the exact declaration subjects a {@see BaselineFormatVersion::CURRENT} baseline
      * requires, so their accepted entries need explicit mapping and review.
      * Version 11 already carries exact declaration subjects — it is refused
      * for a different reason: this build has no converter for the "count"
-     * removal or the shortened occurrence key {@see Baseline::VERSION}
+     * removal or the shortened occurrence key {@see BaselineFormatVersion::CURRENT}
      * introduces.
      */
     private function assertVersion(mixed $version): void
@@ -176,19 +176,19 @@ final readonly class BaselineLoader
             throw new BaselineLoadException('Baseline "version" must be an integer');
         }
 
-        if ($version === Baseline::VERSION) {
+        if ($version === BaselineFormatVersion::CURRENT) {
             return;
         }
 
         $reason = self::REJECTED_VERSION_REASONS[$version] ?? null;
         if ($reason !== null) {
-            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) Baseline::VERSION]));
+            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) BaselineFormatVersion::CURRENT]));
         }
 
         throw new BaselineLoadException(\sprintf(
             'Unsupported baseline version: %d. Expected version %d.',
             $version,
-            Baseline::VERSION,
+            BaselineFormatVersion::CURRENT,
         ));
     }
 

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
@@ -127,12 +127,12 @@ final class BaselineRenameChannelsCommandTest extends TestCase
     }
 
     /**
-     * A file that is not there is the user's environment rather than
-     * something they authored, and is answered apart from a refusal so a
-     * script can tell "I pointed at the wrong path" from "the tool declined".
+     * Without this assertion, a missing file could regress to exit code 2 —
+     * the malformed-CLI-value code the other four baseline commands never
+     * use for a missing/unreadable file (they answer that with 1 instead).
      */
     #[Test]
-    public function itAnswersAnUnreachableFileWithTwo(): void
+    public function itAnswersAnUnreachableFileWithOne(): void
     {
         $map = $this->map("alpha.one\talpha.renamed");
         $status = 0;
@@ -142,20 +142,20 @@ final class BaselineRenameChannelsCommandTest extends TestCase
             escapeshellarg($this->tempDir . '/absent.json'),
             escapeshellarg($map),
         ), $status);
-        self::assertSame(2, $status);
+        self::assertSame(1, $status);
 
         $this->qmx(\sprintf(
             'baseline:rename-channels %s %s',
             escapeshellarg($this->baseline([])),
             escapeshellarg($this->tempDir . '/absent.tsv'),
         ), $status);
-        self::assertSame(2, $status);
+        self::assertSame(1, $status);
     }
 
     /**
      * @param array<string, mixed> $entries
      */
-    private function baseline(array $entries, int $version = Baseline::VERSION): string
+    private function baseline(array $entries, int $version = BaselineFormatVersion::CURRENT): string
     {
         $path = $this->tempDir . '/baseline-' . $version . '-' . \count($entries) . '.json';
         file_put_contents($path, (string) json_encode([
