@@ -137,8 +137,9 @@ final class BaselineChannelRenamerTest extends TestCase
     }
 
     /**
-     * The claim {@see BaselineEntryPayload} is built on, checked rather than
-     * argued: a carried file is the file the product itself would write.
+     * The part of {@see BaselineEntryPayload}'s claim this fixture can prove:
+     * every line lands where the product's own writer would put it, and a
+     * line this build cannot read comes through byte for byte.
      *
      * The fixture is deliberately made of the lines where a second reading of
      * the parser's rules would have drifted — a channel that is the empty
@@ -147,6 +148,14 @@ final class BaselineChannelRenamerTest extends TestCase
      * separator, and a line with no `channel` key at all. Each sorts by a
      * different branch, and an ordering that predicted the parser instead of
      * asking it would put at least one of them somewhere else.
+     *
+     * It proves *placement and byte-preservation*, and deliberately not more:
+     * none of these channels is declared by the stub registry, so the loader
+     * demotes every line to inert and the writer echoes an inert line from its
+     * raw value — which makes the payload halves of this comparison equal by
+     * construction. The line whose channel this build *does* declare is
+     * {@see self::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt()},
+     * where the two sides can and do differ.
      */
     #[Test]
     public function itLeavesTheFileTheProductWouldHaveWritten(): void
@@ -175,6 +184,13 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringContainsString('"channel":"b.renamed"', $carried);
     }
 
+    /**
+     * A line this build cannot read is counted, not skipped: the last entry
+     * below names the renamed channel *and* carries a malformed occurrence,
+     * and it is renamed like any other. Leaving it behind on a retired name
+     * because one of its other fields is broken would strand exactly the line
+     * a migration most needs to move.
+     */
     #[Test]
     public function itCarriesALineThisBuildCannotReadInsteadOfDroppingIt(): void
     {
@@ -185,6 +201,7 @@ final class BaselineChannelRenamerTest extends TestCase
                 ['no channel at all' => true],
                 ['channel' => 'odd.occurrence', 'occurrence' => 17, 'count' => 1],
                 ['channel' => 'odd.edge', 'edge' => ['target' => 'class:App\Baz', 'type' => 'no-such-type'], 'count' => 1],
+                ['channel' => 'mid.two', 'occurrence' => 17, 'count' => 2],
             ],
         ]);
 
@@ -192,15 +209,86 @@ final class BaselineChannelRenamerTest extends TestCase
 
         $carried = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertCount(5, $carried['entries']['class:App\Foo']);
-        self::assertSame(1, $report->renamedEntries);
+        self::assertCount(6, $carried['entries']['class:App\Foo']);
+        self::assertSame(2, $report->renamedEntries);
         self::assertSame(
             [
                 ChannelRenameReport::UNREADABLE_NO_CHANNEL => 1,
-                ChannelRenameReport::UNREADABLE_MALFORMED_IDENTITY => 2,
+                ChannelRenameReport::UNREADABLE_MALFORMED_IDENTITY => 3,
             ],
             $report->unreadable,
         );
+        self::assertStringNotContainsString('"channel":"mid.two"', (string) file_get_contents($path));
+    }
+
+    /**
+     * The other half of {@see self::itLeavesTheFileTheProductWouldHaveWritten()},
+     * on channels this build *does* declare — where the two sides can differ,
+     * and where the split of ownership is therefore visible.
+     *
+     * The writer owns where a line goes; the file owns what a line says. So
+     * the carried document places its lines exactly where a load-and-rewrite
+     * places them, while each line keeps the field order and the magnitude
+     * list the file was written with. The last assertion is the accepted
+     * divergence stated outright rather than left to be discovered: the two
+     * files are not byte-identical, and a later command that rewrites this
+     * baseline re-renders those two lines in place without moving them.
+     *
+     * The fixture is deliberately out of canonical order, so the rename has to
+     * move a line for the placements to agree: a carry that skipped sorting
+     * fails the first assertion rather than passing it by accident.
+     */
+    #[Test]
+    public function itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt(): void
+    {
+        $path = $this->rawFixture([
+            'class:App\Foo' => [
+                ['magnitudes' => [3.0, 1.0, 2.0], 'channel' => 'complexity.cyclomatic'],
+                ['count' => 2, 'channel' => 'code-smell.goto', 'occurrence' => 'occ1'],
+            ],
+        ]);
+
+        $this->renamer->carry($path, $this->map("complexity.cyclomatic\tmaintainability.index.class"));
+        $carried = (string) file_get_contents($path);
+
+        $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
+        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+        $rewritten = (string) file_get_contents($path);
+
+        self::assertSame(
+            self::placements($carried),
+            self::placements($rewritten),
+            'A carried line must sit where the writer would have put it.',
+        );
+        self::assertStringContainsString(
+            '{"count":2,"channel":"code-smell.goto"',
+            $carried,
+            'A carried line keeps the field order the file spelled it in.',
+        );
+        self::assertStringContainsString('"magnitudes":[3,1,2]', $carried);
+        self::assertNotSame($rewritten, $carried, 'The divergence this case exists to name is gone.');
+    }
+
+    /**
+     * Subject key and channel per line, in file order — the placement both
+     * producers must agree on, with the per-line rendering they need not.
+     *
+     * @return list<string>
+     */
+    private static function placements(string $document): array
+    {
+        /** @var array{entries: array<string, list<array<string, mixed>>>} $decoded */
+        $decoded = json_decode($document, true, 512, \JSON_THROW_ON_ERROR);
+        $places = [];
+
+        foreach ($decoded['entries'] as $subjectKey => $lines) {
+            foreach ($lines as $line) {
+                $places[] = $subjectKey . ' ' . json_encode($line['channel'] ?? null, \JSON_THROW_ON_ERROR)
+                    . ' ' . json_encode($line['occurrence'] ?? null, \JSON_THROW_ON_ERROR);
+            }
+        }
+
+        return $places;
     }
 
     /**
@@ -238,6 +326,56 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertTrue($report->written);
         self::assertSame(2, array_sum($report->unreadable));
         self::assertStringContainsString('"channel":"twin.channel"', (string) file_get_contents($path));
+    }
+
+    /**
+     * The same pre-existing duplicate, now standing on the channel being
+     * renamed — the case counting cannot tell from a collision, because a
+     * rename moves the identity key itself and the pair arrives at a key
+     * nothing held before. Refusing here would block the whole file over a
+     * duplicate the carry did not make, and would advise deleting one of two
+     * lines on a false premise.
+     */
+    #[Test]
+    public function itCarriesADuplicateThatStandsOnTheRenamedChannel(): void
+    {
+        $path = $this->rawFixture([
+            'class:App\Foo' => [
+                ['channel' => 'twin.channel', 'count' => 1],
+                ['channel' => 'twin.channel', 'count' => 2],
+            ],
+        ]);
+
+        $report = $this->renamer->carry($path, $this->map("twin.channel\ttwin.renamed"));
+
+        self::assertTrue($report->written);
+        self::assertSame(2, $report->renamedEntries);
+        self::assertSame(
+            [ChannelRenameReport::UNREADABLE_ALREADY_DUPLICATE => 2],
+            $report->unreadable,
+        );
+        self::assertStringNotContainsString('"channel":"twin.channel"', (string) file_get_contents($path));
+    }
+
+    /**
+     * The control for the case above: a fix that simply stopped refusing on a
+     * duplicated key would pass it. Two lines already share an identity and a
+     * third, distinct one is renamed onto theirs — three lines, two
+     * pre-images, so this collision *is* the carry's making.
+     */
+    #[Test]
+    public function itRefusesWhenADistinctEntryJoinsAnExistingDuplicate(): void
+    {
+        $path = $this->rawFixture([
+            'class:App\Foo' => [
+                ['channel' => 'twin.channel', 'count' => 1],
+                ['channel' => 'twin.channel', 'count' => 2],
+                ['channel' => 'mid.two', 'count' => 3],
+            ],
+        ]);
+        $before = (string) file_get_contents($path);
+
+        $this->expectRefusal($path, $before, "mid.two\ttwin.channel");
     }
 
     /**
@@ -314,33 +452,126 @@ final class BaselineChannelRenamerTest extends TestCase
         $this->expectRefusal($path, '[1, 2, 3]', "mid.two\tmid.renamed");
     }
 
+    /**
+     * The envelope is otherwise complete, so this refuses on the missing
+     * `entries` and not on a field that happened to be absent too.
+     */
     #[Test]
     public function itRefusesADocumentWithoutAnEntriesObject(): void
     {
         $path = $this->tempDir . '/no-entries.json';
-        $contents = (string) json_encode(['version' => BaselineFormatVersion::CURRENT], \JSON_THROW_ON_ERROR);
+        $contents = (string) json_encode([
+            'version' => BaselineFormatVersion::CURRENT,
+            'generated' => '2026-01-01T00:00:00+00:00',
+            'scope' => ['src'],
+        ], \JSON_THROW_ON_ERROR);
         file_put_contents($path, $contents);
 
         $this->expectRefusal($path, $contents, "mid.two\tmid.renamed");
     }
 
     /**
-     * A subject block that is not a JSON array has no entry lines to carry
-     * one by one, and the two alternatives — rendering it as the writer never
-     * would, or reshaping it — both decide something about a line the user
-     * wrote. The refusal leaves the file alone.
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function provideEnvelopeDefects(): iterable
+    {
+        yield 'no generated' => [['scope' => ['src']], 'Baseline "generated" must be a string'];
+        yield 'unparseable generated' => [
+            ['generated' => 'tomorrow', 'scope' => ['src']],
+            'Baseline "generated" must be an ISO 8601 datetime',
+        ];
+        yield 'no scope' => [['generated' => '2026-01-01T00:00:00+00:00'], 'Baseline "scope" must be an array'];
+        yield 'scope of non-strings' => [
+            ['generated' => '2026-01-01T00:00:00+00:00', 'scope' => [17]],
+            'Baseline "scope" must hold strings',
+        ];
+    }
+
+    /**
+     * An envelope the loader would refuse is refused here too, in the
+     * loader's own words: a carry writes the envelope back as it found it, so
+     * accepting one would produce a file this build's own `check` cannot
+     * read.
+     *
+     * @param array<string, mixed> $envelope
      */
     #[Test]
-    public function itRefusesASubjectBlockThatIsNotAnArray(): void
+    #[DataProvider('provideEnvelopeDefects')]
+    public function itRefusesAnEnvelopeTheLoaderWouldRefuse(array $envelope, string $expected): void
     {
-        $path = $this->tempDir . '/odd-block.json';
+        $path = $this->tempDir . '/odd-envelope.json';
         $contents = (string) json_encode([
             'version' => BaselineFormatVersion::CURRENT,
-            'entries' => ['class:App\Foo' => ['channel' => 'mid.two']],
+            ...$envelope,
+            'entries' => ['class:App\Foo' => [['channel' => 'mid.two', 'count' => 1]]],
         ], \JSON_THROW_ON_ERROR);
         file_put_contents($path, $contents);
 
-        $this->expectRefusal($path, $contents, "mid.two\tmid.renamed");
+        try {
+            $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+            self::fail('Expected the carry to be refused.');
+        } catch (ChannelRenameRefusal $e) {
+            self::assertStringContainsString($expected, $e->getMessage());
+        }
+
+        self::assertSame($contents, (string) file_get_contents($path));
+    }
+
+    /**
+     * A subject block that is not a JSON array is not this command's opinion
+     * to hold: the loader demotes exactly this block to one inert line and
+     * the writer puts that line back as a one-element list, so the carry does
+     * the same. Nothing inside it is renamed — the loader reads no channel
+     * there either — and the resulting file is the one the product would
+     * write, which for an inert line means byte-for-byte the same block.
+     */
+    #[Test]
+    public function itCarriesASubjectBlockThatIsNotAnArray(): void
+    {
+        $path = $this->rawFixture([
+            'class:App\Foo' => ['channel' => 'mid.two', 'count' => 1],
+            'class:App\Bar' => [['channel' => 'mid.two', 'count' => 1]],
+        ]);
+
+        $report = $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+        $carried = (string) file_get_contents($path);
+
+        self::assertSame(1, $report->renamedEntries);
+        self::assertSame(
+            [ChannelRenameReport::UNREADABLE_BLOCK_NOT_AN_ARRAY => 1],
+            $report->unreadable,
+        );
+        self::assertStringContainsString('"class:App\\\\Foo": [' . "\n", $carried);
+        self::assertStringContainsString('{"channel":"mid.two","count":1}', $carried);
+
+        $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
+        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+
+        self::assertSame($carried, (string) file_get_contents($path));
+    }
+
+    /**
+     * An envelope field the build does not know is carried through, and a
+     * numeric name for one still comes back a quoted JSON key: `json_decode`
+     * turns `"0"` into an `int` array key, and encoding it as it stands would
+     * spell a document nothing can read back.
+     */
+    #[Test]
+    public function itQuotesANumericEnvelopeFieldName(): void
+    {
+        $path = $this->tempDir . '/numeric-field.json';
+        file_put_contents($path, (string) json_encode([
+            'version' => BaselineFormatVersion::CURRENT,
+            'generated' => '2026-01-01T00:00:00+00:00',
+            'scope' => ['src'],
+            '0' => 'a field from another build',
+            'entries' => ['class:App\Foo' => [['channel' => 'mid.two', 'count' => 1]]],
+        ], \JSON_THROW_ON_ERROR));
+
+        $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+
+        $carried = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame('a field from another build', $carried[0]);
     }
 
     /**

@@ -86,6 +86,13 @@ final class OccurrenceKeyTest extends TestCase
      *   string in one payload; the float is a whole number (2.0), which pins
      *   `JSON_PRESERVE_ZERO_FRACTION` (without it, `2.0` encodes as `2` and
      *   the digest — and this literal — would differ).
+     * - `1f87f4725f39c69f` — evidence containing a literal `/`, the exact
+     *   `detail` shape {@see \Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedExpressions::binaryFinding()}
+     *   produces for `$a / $a` (`'... / ...'`); pins `JSON_UNESCAPED_SLASHES`.
+     *   None of the other three inputs contains `/`, so removing that flag
+     *   would leave them unchanged and only this case would catch it —
+     *   without the escaped form, the payload hashes to `1a1f35ec7f642d86`
+     *   instead.
      *
      * strlen() on each pins the truncation length independently of the
      * literals' own length, so a `LENGTH` change is caught even if a shorter
@@ -97,13 +104,19 @@ final class OccurrenceKeyTest extends TestCase
         $ordinary = OccurrenceKey::semantic('code-smell', ['type' => 'superglobal', 'name' => '_GET']);
         $unsortedInput = OccurrenceKey::semantic('complexity', ['gamma' => 'x', 'alpha' => 'z', 'beta' => 'y']);
         $scalarDiversity = OccurrenceKey::semantic('coupling', ['ratio' => 2.0, 'active' => true, 'label' => 'x', 'count' => 3]);
+        $unescapedSlash = OccurrenceKey::semantic('code-smell.identical-subexpression', [
+            'type' => 'identical_operands',
+            'detail' => '... / ...',
+        ]);
 
         self::assertSame('dbbe0e35ed4a985b', $ordinary->value);
         self::assertSame('30e2c440d8e96d81', $unsortedInput->value);
         self::assertSame('e4e9e77c9057a83b', $scalarDiversity->value);
+        self::assertSame('1f87f4725f39c69f', $unescapedSlash->value);
 
         self::assertSame(16, \strlen($ordinary->value));
         self::assertSame(16, \strlen($unsortedInput->value));
         self::assertSame(16, \strlen($scalarDiversity->value));
+        self::assertSame(16, \strlen($unescapedSlash->value));
     }
 }

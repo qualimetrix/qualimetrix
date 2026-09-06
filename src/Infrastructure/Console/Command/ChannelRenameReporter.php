@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Infrastructure\Console\Command;
+
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\OutputInterface;
+
+/**
+ * Renders a `baseline:rename-channels` outcome — a refusal or a
+ * {@see ChannelRenameReport} — in the caller's chosen format.
+ *
+ * Mirrors {@see BaselineCaptureReporter}: the command resolves and validates
+ * `--format` itself, this class only renders what the command already
+ * decided to report.
+ */
+final class ChannelRenameReporter
+{
+    /**
+     * The refusal, in the format the caller asked for.
+     *
+     * The exit code is the one {@see BaselineCommand} gives every refusal of
+     * this family, so answering here changes what is printed and nothing
+     * else — hence {@see Command::FAILURE} rather than a value owned by this
+     * class, which is not itself a command.
+     */
+    public static function refuse(string $message, string $format, OutputInterface $output): int
+    {
+        $output->writeln($format === 'json'
+            ? json_encode(['error' => $message], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT)
+            : \sprintf('<error>%s</error>', $message));
+
+        return Command::FAILURE;
+    }
+
+    public static function report(ChannelRenameReport $report, string $format, OutputInterface $output): void
+    {
+        if ($format === 'json') {
+            self::reportAsJson($report, $output);
+        } else {
+            self::reportAsText($report, $output);
+        }
+    }
+
+    private static function reportAsText(ChannelRenameReport $report, OutputInterface $output): void
+    {
+        $output->writeln($report->written
+            ? \sprintf(
+                '<info>Carried %d of %d entries onto a new channel name.</info>',
+                $report->renamedEntries,
+                $report->totalEntries,
+            )
+            : \sprintf(
+                '<info>No entry of the %d in this baseline matched the map; the file is unchanged.</info>',
+                $report->totalEntries,
+            ));
+
+        foreach ($report->idleRows() as $old) {
+            $output->writeln(\sprintf('<comment>Declared rename of "%s" matched no entry.</comment>', $old));
+        }
+
+        // "Carried, not dropped" rather than "carried unchanged": a line this
+        // build cannot read still names a channel, so the map renames it like
+        // any other, and calling the whole set unchanged would be false for
+        // exactly the lines a migration most needs to move.
+        foreach ($report->unreadable as $reason => $count) {
+            $output->writeln(\sprintf(
+                '<comment>%d entr%s carried rather than dropped, unread by this build, because %s.</comment>',
+                $count,
+                $count === 1 ? 'y was' : 'ies were',
+                $reason,
+            ));
+        }
+    }
+
+    private static function reportAsJson(ChannelRenameReport $report, OutputInterface $output): void
+    {
+        $output->writeln(json_encode([
+            'written' => $report->written,
+            'entries' => $report->totalEntries,
+            'renamed' => $report->renamedEntries,
+            'rows' => $report->rowHits,
+            'idle_rows' => $report->idleRows(),
+            'unreadable' => $report->unreadable,
+        ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
+    }
+}

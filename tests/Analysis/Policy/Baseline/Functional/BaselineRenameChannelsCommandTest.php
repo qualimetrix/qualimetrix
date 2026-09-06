@@ -106,6 +106,35 @@ final class BaselineRenameChannelsCommandTest extends TestCase
         self::assertSame($before, (string) file_get_contents($baseline));
     }
 
+    /**
+     * A caller that asked for a machine format asked for every outcome in it.
+     * Answering a refusal in prose leaves a script to tell the outcomes apart
+     * by exit code alone, which is the one thing `--format=json` exists to
+     * spare it.
+     */
+    #[Test]
+    public function itAnswersARefusalInTheChosenFormat(): void
+    {
+        $map = escapeshellarg($this->map("alpha.one\talpha.renamed"));
+
+        foreach ([$this->baseline([], version: 5), $this->tempDir . '/absent.json'] as $baseline) {
+            $status = 0;
+
+            $output = $this->qmx(\sprintf(
+                'baseline:rename-channels %s %s --format=json',
+                escapeshellarg($baseline),
+                $map,
+            ), $status);
+
+            self::assertSame(1, $status, $output);
+
+            $decoded = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+            self::assertIsArray($decoded);
+            self::assertArrayHasKey('error', $decoded);
+            self::assertNotSame('', $decoded['error']);
+        }
+    }
+
     #[Test]
     public function itAnswersAMalformedMapWithOne(): void
     {

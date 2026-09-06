@@ -813,6 +813,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRunContext'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand'
+        - 'Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter'
         - 'Qualimetrix\Infrastructure\Console\Command\CheckCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\DirectivesCommand'

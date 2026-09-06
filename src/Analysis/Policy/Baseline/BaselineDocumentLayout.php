@@ -97,6 +97,12 @@ final class BaselineDocumentLayout
      * this method never has to know which fields an envelope has — only that
      * `entries` is the one that expands, and that it is written last.
      *
+     * Both key casts are the same guard against the same PHP behaviour:
+     * `json_decode(..., true)` turns an object key spelled `"0"` into an `int`
+     * array key, and encoding that key as it stands would spell a bare `0`
+     * where JSON requires a quoted name — a document this class claims to
+     * render valid.
+     *
      * @param array<string, mixed> $envelope
      * @param array<string, list<mixed>> $entries
      */
@@ -105,7 +111,7 @@ final class BaselineDocumentLayout
         $document = "{\n";
 
         foreach ($envelope as $key => $value) {
-            $document .= self::INDENT . self::encode($key) . ': ' . self::encode($value) . ",\n";
+            $document .= self::INDENT . self::encode((string) $key) . ': ' . self::encode($value) . ",\n";
         }
 
         $blocks = [];

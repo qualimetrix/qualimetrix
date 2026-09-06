@@ -102,14 +102,20 @@ old	new	reason
 complexity.cyclomatic	complexity.ccn	renamed in vX.Y
 ```
 
-It is refused, with the file left byte-identical, when: the file is not version
-13; its envelope is not a readable baseline document; a subject's entries are
-not a JSON array; two rows rename one name; two rows produce one name; a row's
-two sides are equal; one row's target is renamed again by another; or the carry
-would give two entries in one subject a single identity. A declared rename that
-matches nothing in this file is reported, not refused. Exit codes: `0` carried
-(including "nothing matched"), `1` refused on content or the baseline or the
-map is not a readable file, `2` a malformed `--format` value.
+Of the file itself it refuses exactly what loading it would refuse, and nothing
+more; the map has refusals of its own. So it is refused, with the file left
+byte-identical, when: the file is not version
+13; its envelope is not a readable baseline document, including a `generated`
+that is not an ISO 8601 datetime or a `scope` that is not a list of paths; two
+rows rename one name; two rows produce one name; a row's two sides are equal;
+one row's target is renamed again by another; or *this carry* would give two
+entries in one subject a single identity — a duplicate the file already held is
+carried, not refused, even when it stands on a renamed channel. A declared
+rename that matches nothing in this file is reported, not refused. Exit codes:
+`0` carried (including "nothing matched"), `1` refused on content or the
+baseline or the map is not a readable file, `2` a malformed `--format` value.
+A refusal is reported in the chosen format: under `--format=json` it is an
+object with an `error` key.
 
 Two consequences are worth knowing before you run it:
 
@@ -122,16 +128,23 @@ Two consequences are worth knowing before you run it:
   stops addressing a carried entry. Re-read the selectors from a fresh
   `baseline:cleanup` listing.
 
-Entries this build cannot read are carried through unchanged rather than
-dropped, and counted in the report. That count is deliberately narrower than
-what `check` calls inert: the carry runs no analysis, so it only counts what
-the document itself shows — an entry that is not an object, one without a
-readable `channel`, one whose `occurrence` or `edge` is malformed, and one that
-already shared its identity with another.
+Entries this build cannot read are carried rather than dropped, and counted in
+the report. Counted is not skipped: such an entry still names a channel, so the
+map renames it like any other — leaving it behind on a retired name is the one
+outcome worse than carrying it. The count is deliberately narrower than what
+`check` calls inert: the carry runs no analysis, so it only counts what the
+document itself shows — an entry that is not an object, one without a readable
+`channel`, one whose `occurrence` or `edge` is malformed, one that already
+shared its identity with another, and a subject that stores its entries as
+something other than a JSON array.
 
-Renaming a channel can move an entry among its siblings. The carried file is
-written in the same canonical order the product itself writes, so a later
-command that rewrites the file does not move a line again.
+Renaming a channel can move an entry among its siblings. The carried file
+places every line in the same canonical order the product itself writes, so a
+later command that rewrites the file does not move a line again. Each line
+keeps the bytes the file spelled it in, which is what lets a file written by
+another build come through unreshaped; a hand-edited line whose fields are in
+an unusual order is therefore re-rendered in place — not moved — the next time
+a command rewrites the file.
 
 ### Explain a boundary
 

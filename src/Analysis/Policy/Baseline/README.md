@@ -563,16 +563,29 @@ subject keys if the file was not already canonical. Everything else — subject 
 `occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope`, `generated`, and any
 envelope field this build does not know — is carried through untouched.
 
-Two guards are specific to the raw path:
+Reading raw is not a licence to hold a private opinion of what a baseline is, so three
+owners decide what a carried file is and the carry is only one of them:
 
-- The writer's refusal of two entries collapsing onto one identity is bypassed, so the
-  carry checks the *resulting* set itself, before it writes. It refuses only a collision
-  the carry would create; a pair the file already held is left alone, because refusing
-  on it would let one pre-existing duplicate block the rename of everything else.
-- A subject whose entries are not a JSON array is refused rather than carried. There are
-  no entry lines to enumerate under it, and both alternatives — rendering it as the
-  writer never would, or reshaping it into a one-element block — would decide something
-  about a line the user wrote.
+- **`BaselineLoader` owns what a document is.** The carry refuses exactly the
+  document-level defects it refuses — invalid JSON, a root that is not an object, a
+  version this build does not hold, a missing `entries` object, an unreadable `generated`
+  or `scope` — asking the loader's own checks rather than keeping a second copy of them,
+  so a carry cannot write an envelope this build's `check` then declines to load. What
+  the loader merely demotes, the carry merely counts: a subject whose entries are not a
+  JSON array becomes the same single unreadable line the loader makes of it, and the
+  writer puts that line back as a one-element block.
+- **`BaselineWriter` owns what a file looks like** — block shape and line order, through
+  the shared `BaselineDocumentLayout` and `BaselineEntryOrder`.
+- **The file owns each line's bytes.** A payload is echoed in the field order it was
+  decoded in; a later command that loads and rewrites the file may re-render such a line
+  in place, but will not move it.
+
+One guard is the carry's own: the writer's refusal of two entries collapsing onto one
+identity is bypassed by the raw path, so the carry checks the *resulting* set itself,
+before it writes. It refuses only a collision the carry would create — measured by
+whether the lines now sharing a key were distinct beforehand, not by counting entries
+under a key, because a rename moves the key itself. A pair the file already held is
+carried, including when it stands on the renamed channel.
 
 A new name is validated for *form* only, never against the channel registry: the carry
 is released before the renames it exists to perform, so an entry it writes is normally

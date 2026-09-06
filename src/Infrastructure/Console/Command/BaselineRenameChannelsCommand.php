@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
-use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -69,7 +69,10 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 . 'reports such an entry as one it cannot apply.' . "\n\n"
                 . 'Entry selectors are derived from the identity a channel name is part' . "\n"
                 . 'of, so a carried entry gets a new selector: a saved' . "\n"
-                . '"baseline:cleanup --remove SELECTOR" stops addressing it.',
+                . '"baseline:cleanup --remove SELECTOR" stops addressing it.' . "\n\n"
+                . 'A refusal is reported in the chosen format too: with --format=json it' . "\n"
+                . 'is an object with an "error" key, so a script does not have to read the' . "\n"
+                . 'outcome off the exit code alone.',
             );
     }
 
@@ -80,69 +83,48 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         /** @var string $mapPath */
         $mapPath = $input->getArgument('map');
 
-        foreach ([$baselinePath, $mapPath] as $path) {
-            if (!is_file($path) || !is_readable($path)) {
-                $output->writeln(\sprintf('<error>Not a readable file: %s</error>', $path));
-
-                return self::FAILURE;
-            }
-        }
-
         $format = $input->getOption('format');
 
+        // Resolved before the file checks, not after: a caller that asked for
+        // a machine format has asked for every outcome in it, and an
+        // unreadable path is one of the outcomes. The only failure this
+        // command still answers in prose is a `--format` value it could not
+        // read, where there is no chosen format to answer in.
         if ($format !== 'text' && $format !== 'json') {
             $output->writeln('<error>Unknown --format; expected text or json.</error>');
 
             return self::EXIT_INVALID_INPUT;
         }
 
-        $report = $this->renamer->carry($baselinePath, ChannelRenameMap::fromFile($mapPath));
-
-        if ($format === 'json') {
-            self::reportAsJson($report, $output);
-        } else {
-            self::reportAsText($report, $output);
+        foreach ([$baselinePath, $mapPath] as $path) {
+            if (!is_file($path) || !is_readable($path)) {
+                return ChannelRenameReporter::refuse(\sprintf('Not a readable file: %s', $path), $format, $output);
+            }
         }
+
+        try {
+            $report = $this->renamer->carry($baselinePath, ChannelRenameMap::fromFile($mapPath));
+        } catch (RuntimeException $e) {
+            // Only the machine format is answered here. Text is BaselineCommand's,
+            // unchanged, because that is where a refusal still carries its trace
+            // under -v — and the trace matters most exactly when the guess that a
+            // refusal is the user's to fix turns out wrong. A JSON caller trades
+            // it for an outcome it can parse.
+            //
+            // Every refusal this command can reach is a RuntimeException: a map or
+            // content refusal, a compare-and-swap conflict, a file that could not
+            // be replaced. Anything else is a defect in this tool rather than an
+            // outcome of the carry, and goes on to be labelled as one — a bug is
+            // not a machine-readable result.
+            if ($format !== 'json') {
+                throw $e;
+            }
+
+            return ChannelRenameReporter::refuse($e->getMessage(), $format, $output);
+        }
+
+        ChannelRenameReporter::report($report, $format, $output);
 
         return self::SUCCESS;
-    }
-
-    private static function reportAsText(ChannelRenameReport $report, OutputInterface $output): void
-    {
-        $output->writeln($report->written
-            ? \sprintf(
-                '<info>Carried %d of %d entries onto a new channel name.</info>',
-                $report->renamedEntries,
-                $report->totalEntries,
-            )
-            : \sprintf(
-                '<info>No entry of the %d in this baseline matched the map; the file is unchanged.</info>',
-                $report->totalEntries,
-            ));
-
-        foreach ($report->idleRows() as $old) {
-            $output->writeln(\sprintf('<comment>Declared rename of "%s" matched no entry.</comment>', $old));
-        }
-
-        foreach ($report->unreadable as $reason => $count) {
-            $output->writeln(\sprintf(
-                '<comment>%d entr%s carried through unchanged because %s.</comment>',
-                $count,
-                $count === 1 ? 'y was' : 'ies were',
-                $reason,
-            ));
-        }
-    }
-
-    private static function reportAsJson(ChannelRenameReport $report, OutputInterface $output): void
-    {
-        $output->writeln(json_encode([
-            'written' => $report->written,
-            'entries' => $report->totalEntries,
-            'renamed' => $report->renamedEntries,
-            'rows' => $report->rowHits,
-            'idle_rows' => $report->idleRows(),
-            'unreadable' => $report->unreadable,
-        ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
     }
 }

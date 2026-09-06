@@ -200,7 +200,14 @@ final readonly class BaselineDocumentWriter
             // Both calls warn on failure and both failures become exceptions
             // naming the same paths, so the native warning adds nothing but
             // noise on top of a message the caller already gets.
-            if (@file_put_contents($tempPath, $json) === false) {
+            //
+            // Compared against the length rather than against `false`: a short
+            // write — a full disk, an exceeded quota, an I/O error partway —
+            // returns the count it managed, and the `rename()` below would
+            // then atomically put a truncated document in place of a sound
+            // baseline. The temp file is removed by the `finally` either way,
+            // so the target is left exactly as it was.
+            if (@file_put_contents($tempPath, $json) !== \strlen($json)) {
                 throw new RuntimeException("Failed to write baseline to: {$tempPath}");
             }
 

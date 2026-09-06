@@ -279,6 +279,87 @@ function measure(array $rows, array $surfaceContents, array $surfaceOrder): arra
 }
 
 /**
+ * Channel literals a private `OCCURRENCE_KIND` constant deliberately freezes
+ * at today's spelling (X10, `01-freeze-kind.md`): the discriminator
+ * `OccurrenceKey::semantic()` hashes with, kept equal to the channel's
+ * current code on purpose and NOT meant to follow a future rename of that
+ * channel — moving it moves `occurrence` for every already-accepted baseline
+ * entry on the channel. Derived by scanning src/ for the declaration's exact
+ * shape, not by a hand-kept class list, so a future family adopting the same
+ * declaration shape is picked up on the next run with no edit here — and a
+ * family that regresses to `self::NAME` silently drops out instead of being
+ * remembered as still frozen.
+ *
+ * @return array<string, int> channel literal => number of declarations found
+ */
+function frozenKindLiterals(string $srcContent): array
+{
+    if (preg_match_all("/private const string OCCURRENCE_KIND = '((?:[^'\\\\]|\\\\.)*)';/", $srcContent, $matches) === false) {
+        throw new RuntimeException('Regex failure while scanning src/ for OCCURRENCE_KIND declarations.');
+    }
+
+    $counts = [];
+
+    foreach ($matches[1] as $literal) {
+        $literal = stripcslashes($literal);
+        $counts[$literal] = ($counts[$literal] ?? 0) + 1;
+    }
+
+    return $counts;
+}
+
+/**
+ * Channel literals a `itKeysOccurrenceToTheFrozenChannelSpelling*` pin test
+ * asserts against — the test-side counterpart of {@see frozenKindLiterals()}.
+ * Derived the same way: every actual DECLARATION of the method (`function
+ * itKeysOccurrenceToTheFrozenChannelSpelling...(): void`, never a docblock or
+ * comment merely naming it) is followed by a bounded window of text, searched
+ * for the one `OccurrenceKey::semantic('<literal>'` call the method makes
+ * near its start — not a hand-kept file list, so a new pin adopting the same
+ * naming convention is picked up automatically.
+ *
+ * The window is bounded rather than parsed to the enclosing method's closing
+ * brace: brace-matching PHP needs a real parser, and a generous flat window
+ * reaches every pin method's own `semantic()` call, which the naming
+ * convention places within the method's first few lines. A marker with no
+ * call inside its window fails loudly instead of silently counting nothing,
+ * because a silent miss here is indistinguishable from "no pin protects this
+ * literal any more".
+ *
+ * @return array<string, int> channel literal => number of pin methods asserting it
+ */
+function frozenPinLiterals(string $testsContent): array
+{
+    $window = 4000;
+
+    if (preg_match_all('/function itKeysOccurrenceToTheFrozenChannelSpelling\w*\(\)/', $testsContent, $matches, PREG_OFFSET_CAPTURE) === false) {
+        throw new RuntimeException('Regex failure while scanning tests/ for frozen-occurrence pin methods.');
+    }
+
+    $counts = [];
+
+    foreach ($matches[0] as [$declaration, $pos]) {
+        $slice = substr($testsContent, $pos, $window);
+
+        if (preg_match("/OccurrenceKey::semantic\\(\\s*\\n?\\s*'((?:[^'\\\\]|\\\\.)*)'/", $slice, $match) !== 1) {
+            throw new RuntimeException(sprintf(
+                'Found pin method declaration "%s" at byte offset %d of the tests surface, but no'
+                . ' `OccurrenceKey::semantic(\'literal\')` call within %d characters of it. Widen the window or'
+                . ' investigate the method — a silent miss here would misreport a protected literal as unprotected.',
+                $declaration,
+                $pos,
+                $window,
+            ));
+        }
+
+        $literal = stripcslashes($match[1]);
+        $counts[$literal] = ($counts[$literal] ?? 0) + 1;
+    }
+
+    return $counts;
+}
+
+/**
  * Reads the previously generated file (if any) and returns the decided columns
  * — `new` and the `step` that decision belongs to — for every row that had one
  * filled in, keyed by "old\tkind".
@@ -918,19 +999,34 @@ HEADER;
 /**
  * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
  * @param list<string> $surfaceOrder
+ * @param array<string, int> $frozenKind channel literal => frozen OCCURRENCE_KIND declaration count
+ * @param array<string, int> $frozenPin channel literal => frozen pin-test count
  */
-function renderTsv(array $rows, array $surfaceOrder): string
+function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $frozenPin): string
 {
     usort($rows, static fn(array $a, array $b): int => [$a['kind'], $a['old']] <=> [$b['kind'], $b['old']]);
 
-    $header = ['old', 'kind', 'new', 'step', ...$surfaceOrder];
+    $header = ['old', 'kind', 'new', 'step', ...$surfaceOrder, 'frozen_kind', 'frozen_pin'];
     $lines = [implode("\t", $header)];
+    $frozenRows = 0;
 
     foreach ($rows as $row) {
         $line = [$row['old'], $row['kind'], $row['new'], $row['step']];
 
         foreach ($surfaceOrder as $surfaceKey) {
             $line[] = (string) $row['counts'][$surfaceKey];
+        }
+
+        // Only a `channel` row can carry a frozen occurrence discriminator or
+        // a pin asserting one — a producer name or metric key never reaches
+        // OccurrenceKey::semantic() as its first argument.
+        $kindCount = $row['kind'] === 'channel' ? ($frozenKind[$row['old']] ?? 0) : 0;
+        $pinCount = $row['kind'] === 'channel' ? ($frozenPin[$row['old']] ?? 0) : 0;
+        $line[] = (string) $kindCount;
+        $line[] = (string) $pinCount;
+
+        if ($kindCount > 0 || $pinCount > 0) {
+            $frozenRows++;
         }
 
         $lines[] = implode("\t", $line);
@@ -940,7 +1036,7 @@ function renderTsv(array $rows, array $surfaceOrder): string
     $producerCount = count(array_filter($rows, static fn(array $row): bool => $row['kind'] === 'producer'));
     $metricKeyCount = count(array_filter($rows, static fn(array $row): bool => $row['kind'] === 'metric-key'));
 
-    return implode("\n", $lines) . "\n" . footer($surfaceOrder, $channelCount, $producerCount, $metricKeyCount);
+    return implode("\n", $lines) . "\n" . footer($surfaceOrder, $channelCount, $producerCount, $metricKeyCount, $frozenRows);
 }
 
 /**
@@ -953,13 +1049,14 @@ function renderTsv(array $rows, array $surfaceOrder): string
  *
  * @param list<string> $surfaceOrder
  */
-function footer(array $surfaceOrder, int $channelCount, int $producerCount, int $metricKeyCount): string
+function footer(array $surfaceOrder, int $channelCount, int $producerCount, int $metricKeyCount, int $frozenRows): string
 {
     $surfaceList = implode(', ', $surfaceOrder);
 
     return <<<FOOTER
 #
-# ROW COUNTS: {$channelCount} channel, {$producerCount} producer, {$metricKeyCount} metric-key
+# ROW COUNTS: {$channelCount} channel, {$producerCount} producer, {$metricKeyCount} metric-key,
+# {$frozenRows} channel row(s) carrying a frozen occurrence discriminator (see `frozen_kind`/`frozen_pin` below)
 #
 # HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
 # - `channel` rows: {$channelCount} keys from
@@ -999,6 +1096,37 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `--emit-maps=<step>` renders one step's decisions as map rows, and refuses a
 # step that has already landed, whose maps are in git.
 #
+# `frozen_kind` AND `frozen_pin` NAME OCCURRENCES A RENAME SWEEP MUST SKIP.
+# X10 (`01-freeze-kind.md`) froze six channels' `OccurrenceKey` discriminator
+# away from the channel code: each carries a private `OCCURRENCE_KIND`
+# constant, equal to today's spelling ON PURPOSE, that must NOT follow a
+# future rename of the channel — moving it would move `occurrence` for every
+# already-accepted baseline entry on that channel. `frozen_kind` counts that
+# constant's declaration (`private const string OCCURRENCE_KIND = '<this
+# channel's literal>';`) found under src/; `frozen_pin` counts the
+# `itKeysOccurrenceToTheFrozenChannelSpelling*` test method(s) that assert the
+# constant still equals this literal. Both are DERIVED by scanning current
+# source text for those two exact shapes (see frozenKindLiterals() and
+# frozenPinLiterals() in this script) — never a hand-kept list of class or
+# file names — so a family frozen the same way after this file was last
+# regenerated is flagged with no edit here, and a family whose freeze
+# regresses (the constant rewritten as `self::NAME`, or the pin deleted)
+# silently drops back to `0` instead of staying flagged by memory alone.
+#
+# A row with `frozen_kind` or `frozen_pin` greater than zero MUST NOT have
+# every one of its counted occurrences renamed by a mechanical sweep: the
+# `OCCURRENCE_KIND` declaration(s) and the pin-test literal(s) these two
+# columns count are exactly the occurrences that keep their PRE-rename
+# spelling forever, by design — renaming them along with the channel silently
+# ends the freeze and moves `occurrence` for the channel's accepted entries.
+# Every other occurrence the row's surface counts include (selectors,
+# `@qmx-ignore` targets, other tests, docs, config) renames normally.
+# `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
+# re-derives the same frozen set independently on every `composer test` run
+# and fails if the count drifts from what 01-freeze-kind.md names or if a
+# frozen constant no longer equals its rule's channel code — so a sweep that
+# renamed a frozen occurrence by mistake is caught there, not only here.
+#
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from
 #    `RuleMetadata::name` in code and stored under a different local
@@ -1021,7 +1149,13 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 #    where `ruleName` differs from `violationCode` (the diagnostics on
 #    `architecture.layer-violation` and `annotation.directive`), the
 #    `ruleName` half's occurrences show up in the corresponding `producer`
-#    row instead, because the two strings are identical text.
+#    row instead, because the two strings are identical text;
+#  - `frozen_kind`/`frozen_pin` name WHICH channels carry protected
+#    occurrences and HOW MANY, not WHERE (no file:line). Locating them for a
+#    sweep still needs `grep -rn "OCCURRENCE_KIND = '<literal>'" src/` and
+#    `grep -rln "itKeysOccurrenceToTheFrozenChannelSpelling" tests/` for that
+#    one literal; both columns exist so a sweep knows it has to run those
+#    greps at all, for exactly the rows where the count is nonzero.
 FOOTER;
 }
 
@@ -1062,8 +1196,11 @@ function renderCurrentState(string $root, string $outputPath, string $executedPa
     $finalRows = mergeExistingNewColumn($measuredRows, $existingNew);
     assertEveryDecisionNamesItsStep([...$finalRows, ...$executedRows]);
 
+    $frozenKind = frozenKindLiterals($surfaceContents['src']);
+    $frozenPin = frozenPinLiterals($surfaceContents['tests']);
+
     return [
-        'content' => renderTsv($finalRows, $surfaceOrder),
+        'content' => renderTsv($finalRows, $surfaceOrder, $frozenKind, $frozenPin),
         'executedContent' => renderExecutedTsv($executedRows),
         // Only the measured rows answer `--emit-maps`. A landed step's rows are
         // history, and its maps are already in git — see the refusal in main().

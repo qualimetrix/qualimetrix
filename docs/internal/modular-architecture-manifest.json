@@ -19349,10 +19349,18 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter",
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter": {
+      "path": "src/Infrastructure/Console/Command/ChannelRenameReporter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand": {
       "path": "src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php",

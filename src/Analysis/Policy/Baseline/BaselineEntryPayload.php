@@ -40,6 +40,7 @@ final readonly class BaselineEntryPayload
         public string $subjectKey,
         public mixed $raw,
         private ?array $fields,
+        private ?string $forcedUnreadableReason = null,
     ) {}
 
     public static function of(string $subjectKey, mixed $raw): self
@@ -47,6 +48,22 @@ final readonly class BaselineEntryPayload
         $fields = \is_array($raw) && !array_is_list($raw) ? $raw : null;
 
         return new self($subjectKey, $raw, $fields);
+    }
+
+    /**
+     * A whole subject block that is not a JSON array, read as the one line it
+     * becomes.
+     *
+     * {@see BaselineLoader} demotes such a block to a single inert entry whose
+     * raw value is the block, and {@see BaselineWriter} writes that entry back
+     * as a one-element list. This constructor is what makes a carry answer the
+     * same way: the block reads no `channel` — an object block would otherwise
+     * look like an ordinary line and have its channel renamed, which the
+     * loader never does — and it carries its own reason into the report.
+     */
+    public static function ofUncarriableBlock(string $subjectKey, mixed $block): self
+    {
+        return new self($subjectKey, $block, null, ChannelRenameReport::UNREADABLE_BLOCK_NOT_AN_ARRAY);
     }
 
     /**
@@ -128,6 +145,10 @@ final readonly class BaselineEntryPayload
      */
     public function unreadableReason(): ?string
     {
+        if ($this->forcedUnreadableReason !== null) {
+            return $this->forcedUnreadableReason;
+        }
+
         if ($this->fields === null) {
             return ChannelRenameReport::UNREADABLE_NOT_AN_OBJECT;
         }

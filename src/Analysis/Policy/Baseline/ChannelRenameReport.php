@@ -16,8 +16,13 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  * design — would report every computed entry in a user's file as unreadable
  * and frighten them about lines that are perfectly live. So only defects
  * decidable from the document itself are counted, and the report says so.
- * Nothing is removed on account of being counted here; the lines are carried
- * through untouched either way.
+ *
+ * **Counted is not the same as skipped.** Nothing is removed on account of
+ * being counted here, and nothing is exempted from the map either: a line
+ * whose `occurrence` or `edge` is malformed still names a channel, and a
+ * migration that left it behind on a retired name would be the one outcome
+ * worse than carrying it. Such a line is renamed like any other and appears
+ * in both counts — so a report of this set must not call it unchanged.
  */
 final readonly class ChannelRenameReport
 {
@@ -28,6 +33,8 @@ final readonly class ChannelRenameReport
     public const string UNREADABLE_MALFORMED_IDENTITY = 'the entry\'s "occurrence" or "edge" is malformed';
 
     public const string UNREADABLE_ALREADY_DUPLICATE = 'the entry already shared its identity with another';
+
+    public const string UNREADABLE_BLOCK_NOT_AN_ARRAY = 'the subject stores its entries as something other than a JSON array';
 
     /**
      * @param int $totalEntries every entry line the document carries

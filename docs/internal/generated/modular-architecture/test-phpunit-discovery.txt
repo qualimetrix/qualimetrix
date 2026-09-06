@@ -3599,6 +3599,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"coupling.instability"
  - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsALevelAsNotRunOnlyWhereADefaultSwitchesItOff
  - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsEveryLevelTheChannelsDeclare
+ - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceKindFreezeGuardTest::everyFrozenOccurrenceKindIsStillAPlainLiteralMatchingItsPin
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
@@ -5150,6 +5151,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersARefusalInTheChosenFormat
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
@@ -5243,11 +5245,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPreservesTheInputOrderAcrossMixedVerdicts
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPromotesEveryMemberOfAMeasuredBreachAndNamesTheAcceptedMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itReportsFourErrorsWhenAGroupOfFourExceedsACountOfThree
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesADuplicateThatStandsOnTheRenamedChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesAFileThatAlreadyHeldADuplicateIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesALineThisBuildCannotReadInsteadOfDroppingIt
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesASubjectBlockThatIsNotAnArray
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itQuotesANumericEnvelopeFieldName
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesACarryThatWouldGiveTwoEntriesOneIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a chain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a wrong header"
@@ -5258,9 +5264,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADocumentWithoutAnEntriesObject
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAFileOfAnotherVersionAndNamesBoth
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAFileThatIsNotJson
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesASubjectBlockThatIsNotAnArray
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"no generated"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"no scope"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"scope of non-strings"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"unparseable generated"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesToReplaceASymbolicLink
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesToWriteOverAFileThatChangedSinceItWasRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesWhenADistinctEntryJoinsAnExistingDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itReportsADeclaredRenameThatMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRestoresTheCanonicalOrderAfterARenameThatMovesAnEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itWaitsForTheLockAndGivesUpNamingIt

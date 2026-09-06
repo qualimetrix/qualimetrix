@@ -33,6 +33,45 @@ use RuntimeException;
  * already canonical. Subject keys, `occurrence`, `count`, `magnitudes`,
  * `mode`, `edge`, `scope`, `generated` and any envelope field this build does
  * not know are carried through untouched.
+ *
+ * **Three owners decide what a carried file is, and this class is only one of
+ * them.** Reading a document raw is not a licence to hold a private opinion of
+ * what a baseline is:
+ *
+ * - the **loader** owns what a *document* is — this carry refuses exactly the
+ *   document-level defects it refuses (invalid JSON, a root that is not an
+ *   object, a version this build does not hold, a missing `entries` object,
+ *   an unreadable `generated` or `scope`) and demotes exactly what it demotes,
+ *   counting the line rather than refusing the file;
+ * - the **writer** owns what a *file* looks like — block shape and line order
+ *   are {@see BaselineDocumentLayout} and {@see BaselineEntryOrder}, so a
+ *   carried file is laid out where {@see BaselineWriter} would have laid it
+ *   out;
+ * - the **file** owns each *line's bytes* — a payload is echoed in the field
+ *   order it was decoded in, because reshaping a line written by another
+ *   build is the one thing the raw path exists to avoid. A later command that
+ *   loads and rewrites the file may therefore re-render such a line in place;
+ *   it will not move it.
+ *
+ * What is left for this class alone is the map, and the one collision a carry
+ * can create that no other writer would.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 error=0.95 -- Measured Ca=2, Ce=9
+ *                (I=0.818182): the two afferent edges are one real consumer,
+ *                `BaselineRenameChannelsCommand`, counted twice because its
+ *                `OutputConfigurator` DI registration is a second constructor
+ *                reference to the same class — the shape `min_afferent: 2`
+ *                exists to discount, just one edge short of Ca=1. The nine
+ *                efferent edges are the loader, writer and layout this class's
+ *                own docblock defers correctness to, plus the map, refusal,
+ *                report and payload types of its one tested contract — none
+ *                droppable without moving a metric rather than a design flaw.
+ *                Refactoring the metric's own cure — adding a dependent to cut
+ *                Ca's discount, or splitting a two-subject writer/layout pair
+ *                the docblock above argues for keeping separate — does not
+ *                apply to a leaf orchestrator with one caller. The raised
+ *                warning stays live: one more efferent edge (Ce=10) trips it
+ *                again at I=0.833.
  */
 final readonly class BaselineChannelRenamer
 {
@@ -60,6 +99,7 @@ final readonly class BaselineChannelRenamer
 
         $document = self::decode($contents, $path);
         $entries = self::readEntries($document, $path);
+        self::assertEnvelopeLoads($document, $path);
         unset($document['entries']);
 
         $rowHits = array_fill_keys($map->oldNames(), 0);
@@ -70,13 +110,13 @@ final readonly class BaselineChannelRenamer
 
         foreach ($entries as $subjectKey => $payloads) {
             $before = [];
-            $after = [];
+            $moved = [];
             $ordered = [];
 
-            foreach ($payloads as $raw) {
+            foreach ($payloads as $entry) {
                 ++$total;
-                $entry = BaselineEntryPayload::of($subjectKey, $raw);
-                $before[] = $entry->identityKey();
+                $wasKey = $entry->identityKey();
+                $before[] = $wasKey;
 
                 $channel = $entry->channel();
                 $replacement = $channel === null ? null : $map->translate($channel);
@@ -87,12 +127,12 @@ final readonly class BaselineChannelRenamer
                     ++$renamed;
                 }
 
-                $after[] = $entry->identityKey();
+                $moved[] = ['before' => $wasKey, 'after' => $entry->identityKey()];
                 $ordered[] = ['sort' => $entry->orderingKey(), 'payload' => $entry->raw];
                 self::count($entry->unreadableReason(), $unreadable);
             }
 
-            self::assertNoCarriedCollision($subjectKey, $before, $after);
+            self::assertNoCarriedCollision($subjectKey, $moved);
             self::countPreexistingDuplicates($before, $unreadable);
 
             usort($ordered, static fn(array $a, array $b): int => strcmp($a['sort'], $b['sort']));
@@ -121,8 +161,14 @@ final readonly class BaselineChannelRenamer
     }
 
     /**
-     * The envelope, checked only as far as a carry needs it: this is not the
-     * loader, and a defect inside an entry is carried rather than refused.
+     * The document as a whole, down to the version.
+     *
+     * The version is read here rather than with the rest of the envelope
+     * because it decides whether anything below it can be read at all: a file
+     * of another format is refused before its fields are judged by this one's
+     * rules. What remains of the envelope is checked in
+     * {@see self::assertEnvelopeLoads()}, in the loader's order. A defect
+     * inside an entry is neither: it is carried and counted.
      *
      * @throws ChannelRenameRefusal
      *
@@ -162,18 +208,50 @@ final readonly class BaselineChannelRenamer
     }
 
     /**
-     * A subject whose block is not a JSON array is refused rather than
-     * carried: there are no entry lines to enumerate under it, and the two
-     * alternatives are worse. Rendering it verbatim would spell a document
-     * the writer never produces, and reshaping it into a one-element block
-     * would be this command deciding what a line the user wrote means. A
-     * refusal leaves the file byte-identical and names the subject.
+     * The rest of the envelope, checked with the loader's own eyes.
+     *
+     * A carry that left `generated` or `scope` as it found them could write a
+     * file this build's own `check` then refuses to load — the raw path being
+     * more permissive than the loader is a defect in the same family as it
+     * being stricter. The checks are the loader's rather than a second copy
+     * of them, and they run in the loader's order, so a document gets one
+     * verdict whichever of the two reads it. Only the exception type differs:
+     * nothing was written, so this is a refusal.
+     *
+     * @param array<string, mixed> $document
+     *
+     * @throws ChannelRenameRefusal
+     */
+    private static function assertEnvelopeLoads(array $document, string $path): void
+    {
+        try {
+            BaselineLoader::parseGenerated($document['generated'] ?? null);
+            BaselineLoader::parseScope($document['scope'] ?? null);
+        } catch (BaselineLoadException $e) {
+            throw new ChannelRenameRefusal(\sprintf(
+                '%s: %s. A carry writes the envelope back as it found it, so the file is left untouched.',
+                $path,
+                $e->getMessage(),
+            ));
+        }
+    }
+
+    /**
+     * A subject whose block is not a JSON array holds no entry lines to
+     * enumerate, and it is carried rather than refused: the loader demotes
+     * exactly this block to a single inert line (ADR 0017) and the writer
+     * puts that line back as a one-element list, so refusing would make the
+     * carry the only member of the family with an opinion — and would let one
+     * hand-edited block, possibly under a subject the map never touches,
+     * block the rename of everything else. The line is counted in the report
+     * and its bytes are untouched; in particular no `channel` inside it is
+     * renamed, because the loader reads no channel there either.
      *
      * @param array<string, mixed> $document
      *
      * @throws ChannelRenameRefusal
      *
-     * @return array<string, list<mixed>>
+     * @return array<string, list<BaselineEntryPayload>>
      */
     private static function readEntries(array $document, string $path): array
     {
@@ -189,15 +267,18 @@ final readonly class BaselineChannelRenamer
             $subjectKey = (string) $subjectKey;
 
             if (!\is_array($block) || !array_is_list($block)) {
-                throw new ChannelRenameRefusal(\sprintf(
-                    '%s stores the entries of "%s" as something other than a JSON array, so they cannot be '
-                    . 'carried one by one. Repair that block first; the file is left untouched.',
-                    $path,
-                    $subjectKey,
-                ));
+                $blocks[$subjectKey] = [BaselineEntryPayload::ofUncarriableBlock($subjectKey, $block)];
+
+                continue;
             }
 
-            $blocks[$subjectKey] = $block;
+            $lines = [];
+
+            foreach ($block as $raw) {
+                $lines[] = BaselineEntryPayload::of($subjectKey, $raw);
+            }
+
+            $blocks[$subjectKey] = $lines;
         }
 
         return $blocks;
@@ -215,18 +296,39 @@ final readonly class BaselineChannelRenamer
      * ({@see BaselineWriter::serializeEntries()}) is bypassed by the raw
      * path.
      *
-     * @param list<?string> $before
-     * @param list<?string> $after
+     * "Created" is therefore a question about the *pre-images* of a shared
+     * key, not about counts under it: a rename moves the identity key itself,
+     * so a pair that was already twinned on the old name arrives at the new
+     * one as a key nothing held before, and counting would read that as a
+     * collision the carry made. What actually distinguishes the two is
+     * whether the lines now sharing a key were distinct beforehand.
+     *
+     * @param list<array{before: ?string, after: ?string}> $moved
      *
      * @throws ChannelRenameRefusal
      */
-    private static function assertNoCarriedCollision(string $subjectKey, array $before, array $after): void
+    private static function assertNoCarriedCollision(string $subjectKey, array $moved): void
     {
-        $beforeCounts = array_count_values(array_filter($before, static fn(?string $key): bool => $key !== null));
-        $afterCounts = array_count_values(array_filter($after, static fn(?string $key): bool => $key !== null));
+        /** @var array<string, array{origins: array<string, true>, lines: int}> $groups */
+        $groups = [];
 
-        foreach ($afterCounts as $key => $count) {
-            if ($count < 2 || $count <= ($beforeCounts[$key] ?? 0)) {
+        foreach ($moved as $index => $line) {
+            if ($line['after'] === null) {
+                continue;
+            }
+
+            // A line that formed no identity before shared one with nothing,
+            // so it is its own pre-image rather than a twin of every other
+            // such line.
+            $origin = $line['before'] ?? self::KEY_SEPARATOR . $index;
+
+            $groups[$line['after']] ??= ['origins' => [], 'lines' => 0];
+            $groups[$line['after']]['origins'][$origin] = true;
+            ++$groups[$line['after']]['lines'];
+        }
+
+        foreach ($groups as $key => $group) {
+            if (\count($group['origins']) < 2) {
                 continue;
             }
 
@@ -234,7 +336,7 @@ final readonly class BaselineChannelRenamer
                 'Carrying "%s" would give %d entries of "%s" one identity, and a baseline cannot hold two '
                 . 'ceilings for one thing. Nothing was written; decide which of them survives first.',
                 $subjectKey,
-                $count,
+                $group['lines'],
                 explode(self::KEY_SEPARATOR, (string) $key)[1] ?? '',
             ));
         }

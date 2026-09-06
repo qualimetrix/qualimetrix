@@ -340,7 +340,7 @@ The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
-- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Exit `1` covers a refusal on content or an unreadable baseline or map file; `2` is a malformed `--format` value. Either way the baseline is left byte-identical. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
+- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Exit `1` covers a refusal on content or an unreadable baseline or map file; `2` is a malformed `--format` value. Either way the baseline is left byte-identical, and the refusal is reported in the chosen format — under `--format=json` as an object with an `error` key. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
 
 The four analysing commands refuse incomplete analysis with exit 4 before interpreting
 or writing a baseline. `--force` overrides file/scope guards only; it cannot make
