@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-09-06
+
 ### Changed
 
 - The progress bar is drawn on standard error instead of standard output, so a
@@ -924,7 +926,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...v0.22.0
