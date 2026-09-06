@@ -371,6 +371,13 @@ with `--fail-on=warning`.
 The direct declaration counts are 35, 21 and 20. Neither series is what the rule
 puts against the threshold; the recursive sum is, and it is the series above.
 
+**The rule's own reading is now pinned (X10).** No corpus run can tell "declares
+the base" from "declares the sum" here — the two diverge only on a non-leaf
+subject, which this rule skips — so the claim is held by a unit instead:
+`ClassCountRuleTest` feeds a bag whose base and `.sum` deliberately disagree and
+asserts the finding follows `.sum`, in both directions. A rule rewritten to read
+the base fails it.
+
 The rule is right to distinguish the two cases: the aggregate it reads sums the
 children and would double-count them. What it lacks is the direct-count reading
 that makes a parent judgeable on its own classes. Fixing it means giving the rule
@@ -397,6 +404,20 @@ a leaf's `.sum` exceed its base without any child namespace existing. E5
 deliberately did not build a corpus fixture on it — a case standing on an
 attribution defect would redden the day the defect is fixed. Details and the
 measurement commands: `X9-gate-holes/followups/e5.md`.
+
+**Closed 2026-09-06 as not reproducible.** This entry was written by reading the
+code; E5 said as much ("не эксплуатируется здесь"). X10 measured it instead: a
+file holding two `namespace` blocks, against a control holding the same blocks in
+separate files, compared over the full namespace metric set of every namespace —
+**zero differences**, measured twice by two readers. The path the entry describes
+is not reached: `collectExplicitNamespaceValues()` marks a definition
+`namespaceProvided` when the namespace bag carries its own value, and
+`collectFromFiles()` skips those. An enumeration of every File-collected
+`MetricDefinition` (10, in `ClassCountCollector` and `LocCollector`) found a
+per-namespace source for all ten, so no definition can reach the path at all.
+Numbers, commands and the enumeration:
+`X10-freeze-and-carry/followups/d.md` and
+`X10-freeze-and-carry/enumeration-file-level-namespace-metrics.tsv`.
 
 ## Disposition
 
