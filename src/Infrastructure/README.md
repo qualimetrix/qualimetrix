@@ -152,6 +152,8 @@ Infrastructure/
         ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file
         ├── BaselineUpdateCommand.php   # `baseline:update` — direction-aware monotonic tightening of an existing baseline in place
         ├── BaselineCleanupCommand.php  # `baseline:cleanup` — lists removal candidates (stale/undeclared/inert entries) and removes only the selectors named via --remove
+        ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
+        ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)

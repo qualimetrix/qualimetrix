@@ -44,7 +44,7 @@ final readonly class BaselineLoader
     /**
      * Rejection reasons for baseline versions this build refuses outright,
      * keyed by the version number found in the file. Each holds a `%v%`
-     * placeholder for {@see Baseline::VERSION}, so bumping that constant
+     * placeholder for {@see BaselineFormatVersion::CURRENT}, so bumping that constant
      * cannot leave a message naming a stale target version. Adding "this
      * build's own previous version is now rejected" when `VERSION` moves is
      * one line of data here, not a fourth `if` branch to write from scratch.
@@ -120,8 +120,8 @@ final readonly class BaselineLoader
         [$entries, $inertEntries] = $this->parseEntries($data['entries'] ?? null);
 
         return new Baseline(
-            generated: $this->parseGenerated($data['generated'] ?? null),
-            scope: $this->parseScope($data['scope'] ?? null),
+            generated: self::parseGenerated($data['generated'] ?? null),
+            scope: self::parseScope($data['scope'] ?? null),
             entries: $entries,
             inertEntries: $inertEntries,
             sourceContentHash: $contentHash,
@@ -152,8 +152,8 @@ final readonly class BaselineLoader
         [$entries, $inertEntries] = $this->separateDuplicates($canonical['entries'], $canonical['inert']);
 
         return new Baseline(
-            generated: $this->parseGenerated($envelope['generated'] ?? null),
-            scope: $this->parseScope($envelope['scope'] ?? null),
+            generated: self::parseGenerated($envelope['generated'] ?? null),
+            scope: self::parseScope($envelope['scope'] ?? null),
             entries: $entries,
             inertEntries: $inertEntries,
             sourceContentHash: $canonical['contentHash'],
@@ -163,11 +163,11 @@ final readonly class BaselineLoader
     /**
      * Version 5 and version 10 are historical formats, not alternate routes
      * into the current schema: their logical symbol keys cannot determine
-     * the exact declaration subjects a {@see Baseline::VERSION} baseline
+     * the exact declaration subjects a {@see BaselineFormatVersion::CURRENT} baseline
      * requires, so their accepted entries need explicit mapping and review.
      * Version 11 already carries exact declaration subjects — it is refused
      * for a different reason: this build has no converter for the "count"
-     * removal or the shortened occurrence key {@see Baseline::VERSION}
+     * removal or the shortened occurrence key {@see BaselineFormatVersion::CURRENT}
      * introduces.
      */
     private function assertVersion(mixed $version): void
@@ -176,19 +176,19 @@ final readonly class BaselineLoader
             throw new BaselineLoadException('Baseline "version" must be an integer');
         }
 
-        if ($version === Baseline::VERSION) {
+        if ($version === BaselineFormatVersion::CURRENT) {
             return;
         }
 
         $reason = self::REJECTED_VERSION_REASONS[$version] ?? null;
         if ($reason !== null) {
-            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) Baseline::VERSION]));
+            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) BaselineFormatVersion::CURRENT]));
         }
 
         throw new BaselineLoadException(\sprintf(
             'Unsupported baseline version: %d. Expected version %d.',
             $version,
-            Baseline::VERSION,
+            BaselineFormatVersion::CURRENT,
         ));
     }
 
@@ -203,8 +203,13 @@ final readonly class BaselineLoader
      * instant is reported as such. Warnings are treated as failures too:
      * `createFromFormat` happily rolls `2026-13-45` over into February and
      * only mentions it in `getLastErrors()`.
+     *
+     * Public because {@see BaselineChannelRenamer} asks this class what a
+     * readable envelope is instead of holding a second opinion of it: a raw
+     * carry that wrote an envelope this loader refuses would produce a file
+     * only one half of the capability can read.
      */
-    private function parseGenerated(mixed $generated): DateTimeImmutable
+    public static function parseGenerated(mixed $generated): DateTimeImmutable
     {
         if (!\is_string($generated)) {
             throw new BaselineLoadException('Baseline "generated" must be a string (ISO 8601 datetime)');
@@ -231,9 +236,11 @@ final readonly class BaselineLoader
      * normal form, so a hand-written `["src/", "src"]` becomes `["src"]`
      * there rather than being carried into a comparison unnormalised.
      *
+     * Public for the same reason as {@see self::parseGenerated()}.
+     *
      * @return list<string>
      */
-    private function parseScope(mixed $scope): array
+    public static function parseScope(mixed $scope): array
     {
         if (!\is_array($scope) || !array_is_list($scope)) {
             throw new BaselineLoadException('Baseline "scope" must be an array of analysed paths');

@@ -29,6 +29,13 @@ final class CodeDuplicationRule extends AbstractRule
     public const string NAME = 'duplication.code-duplication';
     public const string DOCS_PAGE = 'rules/duplication.md';
 
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see NAME}. Changing this value moves the
+     * `occurrence` of every already-accepted finding on this channel.
+     */
+    private const string OCCURRENCE_KIND = 'duplication.code-duplication';
+
     public const int REMEDIATION_MINUTES = 15;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
@@ -135,7 +142,7 @@ final class CodeDuplicationRule extends AbstractRule
             metricValue: $block->lines,
             relatedLocations: $relatedFindingLocations,
             recommendation: 'Extract duplicated code into a shared method or class.',
-            occurrenceKey: OccurrenceKey::semantic(self::NAME, ['contentHash' => $block->contentHash]),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['contentHash' => $block->contentHash]),
         );
     }
 

@@ -154,10 +154,10 @@ final readonly class V5BaselineReader
             return;
         }
 
-        if ($version === Baseline::VERSION) {
+        if ($version === BaselineFormatVersion::CURRENT) {
             throw new RuntimeException(\sprintf(
                 'This baseline is already version %d; there is nothing to migrate.',
-                Baseline::VERSION,
+                BaselineFormatVersion::CURRENT,
             ));
         }
 

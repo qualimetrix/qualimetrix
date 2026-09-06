@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -1390,6 +1391,50 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         self::assertSame($location, $finding->toFindings()[0]->location);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling by constructing two
+     * {@see LayerViolationFinding} instances directly — production code of
+     * the finding's own class — from the same dependency and evidence but
+     * different `ruleName` constructor arguments. `code` must follow
+     * `ruleName`; `occurrence` must not, because it reads the finding's own
+     * frozen constant rather than the constructor argument. A future
+     * regression that swaps the occurrence call site's argument back to
+     * `$this->ruleName` reddens the second assertion.
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToRuleName(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $dependency = $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('src/Controller.php'), 12));
+        $fromMatch = (new LayerRegistry([new LayerDefinition('controller', new MembershipSpec(['App\\Controller']))]))->resolveAll($source)[0];
+        $toMatch = (new LayerRegistry([new LayerDefinition('repository', new MembershipSpec(['App\\Repository']))]))->resolveAll($target)[0];
+
+        $buildFinding = static fn(string $ruleName): LayerViolationFinding => new LayerViolationFinding(
+            dependency: $dependency,
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: [],
+            ruleName: $ruleName,
+            severity: Severity::Warning,
+            recommendation: 'Move the dependency behind an allowed boundary.',
+        );
+
+        $withRealName = $buildFinding(LayerViolationRule::NAME)->toFindings()[0];
+        $withDifferentName = $buildFinding('not-the-real-channel-code')->toFindings()[0];
+
+        self::assertNotSame($withRealName->code, $withDifferentName->code);
+        self::assertSame($withRealName->occurrenceKey?->value, $withDifferentName->occurrenceKey?->value);
+        self::assertSame(
+            OccurrenceKey::semantic('architecture.layer-violation', [
+                'source' => $dependency->source->toCanonical(),
+                'target' => $dependency->targetLogical()->toCanonical(),
+                'type' => $dependency->type->value,
+            ])->value,
+            $withRealName->occurrenceKey?->value,
+        );
     }
 
     #[Test]

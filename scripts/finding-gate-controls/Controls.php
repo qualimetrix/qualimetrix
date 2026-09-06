@@ -20,12 +20,15 @@ use RuntimeException;
  * the one Х5-G adds for the other half of that — a derivation that *passed*,
  * which must write the declaration back — and the one Х9-A1 adds for a report
  * value renamed with no `report-values.tsv` row to translate it —
- * plus four green ones: the positive control, without which nineteen reds could
+ * plus five green ones: the positive control, without which nineteen reds could
  * all be reds for an environmental reason, Ш5b0's declared rename, which asserts
  * that a change the maps declare is absorbed by the declaration and by nothing
- * else, and the two Х9-A1 adds for the same reason on the step's other two
+ * else, the two Х9-A1 adds for the same reason on the step's other two
  * shapes — a root configuration key translated by the fourth `inputs.tsv` form,
- * and a report value translated by `report-values.tsv`.
+ * and a report value translated by `report-values.tsv` — and the one Х10-B adds
+ * for the identity shape none of them reached: a declared rename of a channel
+ * whose findings carry an `occurrence` hash, which the rename must leave where
+ * it is ({@see occurrenceFrozenUnderDeclaredRename()}).
  *
  * {@see deriveRefusesBrokenRun()} and {@see deriveWritesOnAGreenRun()} are the
  * only controls whose subject is not in the report at all. A derivation that
@@ -76,6 +79,7 @@ final class Controls
             self::fingerprintUnexplained(),
             self::fingerprintSelfDisagreement(),
             self::fingerprintDeclaredRename(),
+            self::occurrenceFrozenUnderDeclaredRename(),
             self::splitRowIdle(),
             self::splitWithoutRow(),
             self::movedAggregatedSpelling(),
@@ -865,8 +869,8 @@ final class Controls
      * SARIF surface, its twelve findings publish four identities of the form
      * `channel:subject`, three findings to each class. So the substitution is
      * exercised on the two-part shape, and the shape *with* an occurrence is
-     * exercised by no control — a gap worth naming rather than a reason to move
-     * again.
+     * exercised by {@see occurrenceFrozenUnderDeclaredRename()}, which Х10-B adds over
+     * `security.sensitive-parameter` for exactly that reason.
      *
      * The claim and the tracked declaration fixture move with the rename because
      * they are declarations of the channel, not evidence about it: leaving them
@@ -891,6 +895,107 @@ final class Controls
                     "the step's own rows, plus the one row that declares this control's rename",
                 )),
         );
+    }
+
+    /**
+     * A channel rename that is declared, on a channel whose findings carry an
+     * `occurrence`: the channel code moves and the hash beside it does not.
+     *
+     * This is the gap {@see fingerprintDeclaredRename()} names in its own
+     * record. That control renames `code-smell.unused-private`, whose findings
+     * publish the two-part identity `channel:subject`, so no control had ever
+     * watched a rename cross an identity that *has* a third part. The third
+     * part is the interesting one: `OccurrenceKey::semantic()` hashes a
+     * discriminator plus the evidence, and until X10 six families passed their
+     * channel code in as that discriminator — so a rename silently moved the
+     * `occurrence` of every finding on the channel, and no consumer can
+     * recompute it, because an accepted baseline entry stores the digest and
+     * never the evidence.
+     *
+     * What a GREEN run here asserts, and why each half needs the other:
+     *
+     * - the mutation bit — a declared row that translated nothing is
+     *   `map-stale`, so green means the row did the absorbing and the rename
+     *   reached the product;
+     * - the hash did not move — a moved `occurrence` is untranslatable (no row
+     *   can declare `9477b3c7… -> 1228709c…`, {@see \QmxFindingGate\Fingerprints}),
+     *   so it can only arrive as `surface-mismatch` on `case:security`;
+     * - the case still reports something — the claim moves with the rename, so
+     *   zero findings on the renamed channel is `case-claim-mismatch`;
+     * - the run happened — the harness holds a green control to exit 0, which a
+     *   rename that failed to survive the container build cannot reach.
+     *
+     * `security.sensitive-parameter` is the family with the least coupling
+     * between its channel code and any case's configuration: no `rules:`, no
+     * `suppress_*`, no `--disable-rule` skip path (which `duplication` and
+     * `architecture.circular-dependency` both have), no layer policy, and no
+     * directive addressing it. The rule reads its collector entries through
+     * `MetricName::SECURITY_SENSITIVE_PARAMETER`, a literal of its own, so
+     * renaming `NAME` moves the published channel without emptying the run.
+     * It is also the only one of the six that reports more than one finding in
+     * the corpus — two, from different `paramName` evidence, so the hashes
+     * being compared are two distinct values rather than one constant.
+     *
+     * The claim and the tracked declaration fixture move with the rename for
+     * the same reason they do in the fingerprint pair: they are declarations of
+     * the channel, not evidence about it.
+     *
+     * Measured counterfactually against `01f02856` — the tree before the freeze
+     * — with the same rename over the same case: the two findings' `occurrence`
+     * moved from `9477b3c7e0459483`, `d8c7c1c77a1276d8` to `1228709cb1ed5411`,
+     * `1a56f589a6c3dd25` while every other key group held. On that tree this
+     * control cannot be green, and no declaration could make it so.
+     */
+    private static function occurrenceFrozenUnderDeclaredRename(): Control
+    {
+        return Control::greenWith(
+            'occurrence-declared-rename',
+            'a declared rename of a channel whose findings carry an occurrence hash',
+            self::sensitiveParameterChannelMutation()
+                ->and(self::sensitiveParameterRenameDeclarations())
+                ->and(self::trackedChannelMapPlus(
+                    [
+                        "security.sensitive-parameter\tsecurity.sensitive-paramete2\t"
+                            . "the control renames the channel's code",
+                    ],
+                    "the step's own rows, plus the one row that declares this control's rename",
+                )),
+        );
+    }
+
+    /**
+     * The rename itself: `NAME` only.
+     *
+     * `OCCURRENCE_KIND` is deliberately left alone — it is the constant under
+     * test, and moving it with the channel would restore exactly the coupling
+     * this control exists to disprove. The new spelling is the same length as
+     * the old one because two surfaces pad the channel column and a row cannot
+     * declare padding.
+     */
+    private static function sensitiveParameterChannelMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Analysis/Evidence/Security/SensitiveParameterRule.php',
+            [
+                "public const string NAME = 'security.sensitive-parameter';"
+                    => "public const string NAME = 'security.sensitive-paramete2';",
+            ],
+            'channel security.sensitive-parameter -> security.sensitive-paramete2, its code and published rule'
+                . ' field together, leaving OCCURRENCE_KIND where it is',
+        );
+    }
+
+    private static function sensitiveParameterRenameDeclarations(): Mutation
+    {
+        return Mutation::edit(
+            'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+            ['security.sensitive-parameter - callable' => 'security.sensitive-paramete2 - callable'],
+            'the tracked declaration fixture names the new channel',
+        )->and(Mutation::edit(
+            'finding-gate/cases/security/case.json',
+            ['"security.sensitive-parameter@callable"' => '"security.sensitive-paramete2@callable"'],
+            'the case claims the new channel',
+        ));
     }
 
     /**

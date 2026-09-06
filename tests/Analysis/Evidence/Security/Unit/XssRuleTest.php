@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\XssRule;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -73,6 +74,32 @@ final class XssRuleTest extends TestCase
         self::assertSame('file:src/View/Template.php', $findings[0]->subject->toCanonical());
         self::assertSame('Escape output with htmlspecialchars() or use a template engine with auto-escaping.', $findings[0]->recommendation);
         self::assertTrue($findings[0]->location->precise);
+    }
+
+    /**
+     * Pins `occurrence` to `PATTERN_TYPE` read off a finding produced by
+     * {@see XssRule::analyze()} itself, so a future edit to `PATTERN_TYPE`
+     * reddens this test even though it looks like a same-shaped refactor of
+     * the `security.{$type}` bag key `AbstractSecurityPatternRule::analyze()`
+     * shares with every other security-pattern rule.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnPatternType(): void
+    {
+        $rule = new XssRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 8, 'superglobal' => '']),
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('xss', ['type' => 'xss', 'superglobal' => ''])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -77,6 +78,32 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame('security.hardcoded-credentials', $findings[0]->ruleName);
         self::assertStringContainsString('variable assignment', $findings[0]->message);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see HardcodedCredentialsRule::analyze()} itself, so a
+     * future regression that swaps the occurrence call site's argument back
+     * to `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('security.hardcoded-credentials', ['pattern' => 'variable'])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

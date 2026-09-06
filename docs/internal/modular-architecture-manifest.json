@@ -2356,11 +2356,6 @@
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEdge",
           "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryParser",
-          "closes_in": null
         }
       ]
     },
@@ -7033,6 +7028,16 @@
       "visibility": "contract",
       "closure_package": "P6-A",
       "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryPayload",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ChannelRenameMap",
+          "closes_in": null
+        },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
@@ -19249,6 +19254,127 @@
           "closes_in": null,
           "operations": [
             "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineChannelRenamer": {
+      "path": "src/Analysis/Policy/Baseline/BaselineChannelRenamer.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "closure_package": "P6-C",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentLayout": {
+      "path": "src/Analysis/Policy/Baseline/BaselineDocumentLayout.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter": {
+      "path": "src/Analysis/Policy/Baseline/BaselineDocumentWriter.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFormatVersion": {
+        "path": "src/Analysis/Policy/Baseline/BaselineFormatVersion.php",
+        "kind": "class",
+        "owner": "Analysis.Policy.Baseline",
+        "visibility": "internal",
+        "closure_package": "P6-C",
+        "consumers": []
+      },
+      "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryOrder": {
+      "path": "src/Analysis/Policy/Baseline/BaselineEntryOrder.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryPayload": {
+      "path": "src/Analysis/Policy/Baseline/BaselineEntryPayload.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\ChannelRenameMap": {
+      "path": "src/Analysis/Policy/Baseline/ChannelRenameMap.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "closure_package": "P6-C",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\ChannelRenameRefusal": {
+      "path": "src/Analysis/Policy/Baseline/ChannelRenameRefusal.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\ChannelRenameReport": {
+      "path": "src/Analysis/Policy/Baseline/ChannelRenameReport.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "closure_package": "P6-C",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter": {
+      "path": "src/Infrastructure/Console/Command/ChannelRenameReporter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand": {
+      "path": "src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
             "service_registration"
           ]
         }

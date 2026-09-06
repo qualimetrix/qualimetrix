@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -46,6 +47,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
@@ -194,6 +196,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
                 . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
+                . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
+                . 'BaselineFormatVersion.php,'
+                . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
                 . 'ExplainedSubject.php}',
         );
     }
@@ -508,6 +513,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineCleaner::class),
                 new Reference(BaselineWriter::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
+            ])
+            ->setPublic(true);
+
+        // The one baseline command with no measured run: a carry substitutes a
+        // declared name in a file and consults no analysis, so it takes the
+        // renamer and nothing else.
+        $container->register(BaselineRenameChannelsCommand::class)
+            ->setArguments([
+                new Reference(BaselineChannelRenamer::class),
             ])
             ->setPublic(true);
 

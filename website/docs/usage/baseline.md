@@ -79,6 +79,75 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
+### Carry a baseline onto renamed channels
+
+```bash
+bin/qmx baseline:rename-channels baseline.json channels.tsv
+bin/qmx baseline:rename-channels baseline.json channels.tsv --format=json
+```
+
+`baseline:rename-channels <baseline> <map>` rewrites the `channel` field of the
+entries a declared map names, and nothing else. It **runs no analysis**: subject
+keys, `occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope` and
+`generated` are carried through untouched, and no project code is read. Use it
+when an upgrade renames a channel you have accepted debt on, instead of
+regenerating — a regeneration silently accepts whatever the tree has
+accumulated since.
+
+The map is tab-separated with the header `old`, `new`, `reason`, one row per
+rename; blank lines and `#` comments are skipped:
+
+```text
+old	new	reason
+complexity.cyclomatic	complexity.ccn	renamed in vX.Y
+```
+
+Of the file itself it refuses exactly what loading it would refuse, and nothing
+more; the map has refusals of its own. So it is refused, with the file left
+byte-identical, when: the file is not version
+13; its envelope is not a readable baseline document, including a `generated`
+that is not an ISO 8601 datetime or a `scope` that is not a list of paths; two
+rows rename one name; two rows produce one name; a row's two sides are equal;
+one row's target is renamed again by another; or *this carry* would give two
+entries in one subject a single identity — a duplicate the file already held is
+carried, not refused, even when it stands on a renamed channel. A declared
+rename that matches nothing in this file is reported, not refused. Exit codes:
+`0` carried (including "nothing matched"), `1` refused on content or the
+baseline or the map is not a readable file, `2` a malformed `--format` value.
+A refusal is reported in the chosen format: under `--format=json` it is an
+object with an `error` key.
+
+Two consequences are worth knowing before you run it:
+
+- **A new name is not checked against the channels this build declares.** The
+  carry is released before the renames it exists to perform, so until the
+  release that declares the new name lands, `check` reports a carried entry as
+  one it cannot apply. That intermediate state is by design.
+- **Entry selectors change.** A selector is a digest of the identity, which the
+  channel name is part of, so a saved `baseline:cleanup --remove=<selector>`
+  stops addressing a carried entry. Re-read the selectors from a fresh
+  `baseline:cleanup` listing.
+
+Entries this build cannot read are carried rather than dropped, and counted in
+the report. The count is deliberately narrower than what `check` calls inert:
+the carry runs no analysis, so it only counts what the document itself
+shows. Of the five kinds it counts, two still have a readable `channel` and
+are renamed like any other entry — one whose `occurrence` or `edge` is
+malformed, and one that already shared its identity with another. The other
+three have no channel for the map to act on and are carried unchanged: an
+entry that is not an object, one without a readable `channel`, and a subject
+that stores its entries as something other than a JSON array. Being counted
+never means dropped either way — an unreadable entry is never removed from
+the file — but only the first two are renamed onto the new spelling.
+
+Renaming a channel can move an entry among its siblings. The carried file
+places every line in the same canonical order the product itself writes, so a
+later command that rewrites the file does not move a line again. Each line
+keeps the bytes the file spelled it in, which is what lets a file written by
+another build come through unreshaped; a hand-edited line whose fields are in
+an unusual order is therefore re-rendered in place — not moved — the next time
+a command rewrites the file.
+
 ### Explain a boundary
 
 ```bash

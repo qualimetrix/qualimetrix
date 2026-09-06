@@ -328,16 +328,18 @@ bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
 bin/qmx baseline:update   <baseline> [<paths>...] [--force]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
+bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 ```
 
-Все четыре команды принимают `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE` и `--rule-opt=RULE-OPT`. Ни одна не принимает опции исключения или suppression.
+Первые четыре команды принимают `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE` и `--rule-opt=RULE-OPT`. Ни одна не принимает опции исключения или suppression. `baseline:rename-channels` не принимает ни одной из них: она не запускает анализ, поэтому измеряемого набора, который они определяли бы, нет.
 
 - `baseline:generate` захватывает текущие измеряемые нарушения. По умолчанию используется `--mode=ratchet`; `--mode=suppress` записывает безусловное принятие захваченных идентичностей. Его `--force` перезаписывает существующий файл.
 - `baseline:update` только ужесточает существующие записи. Его `--force` снимает проверку покрытия записанной области.
 - `baseline:cleanup` по умолчанию выводит кандидатов и удаляет только повторяемые селекторы `--remove=REMOVE`. Его `--force` также снимает проверку области.
 - `baseline:explain` показывает порог из конфигурации, принятую величину baseline и override из исходника для канонического символа; `--channel=CHANNEL` сужает ответ.
+- `baseline:rename-channels` переписывает поле `channel` записей, названных объявленной табличной картой, и больше ничего, не анализируя код. Код `1` покрывает и отказ по содержимому, и недоступный файл baseline или карты; `2` — некорректное значение `--format`. В обоих случаях baseline остаётся побайтово неизменным, а сам отказ сообщается в выбранном формате — при `--format=json` объектом с ключом `error`. См. [Перенос baseline на переименованные каналы](baseline.ru.md#перенос-baseline-на-переименованные-каналы) — учти, что перенос записи меняет её селектор.
 
-Все lifecycle-команды отказываются интерпретировать или записывать baseline при
+Четыре анализирующие команды отказываются интерпретировать или записывать baseline при
 неполном анализе и завершаются с кодом 4. `--force` снимает только ограничения
 файла/области; он не делает частичный набор измерений допустимым. Существующий
 файл остаётся побайтово неизменным, а `baseline:generate` не создаёт отсутствующий файл.

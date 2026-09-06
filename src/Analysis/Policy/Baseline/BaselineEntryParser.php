@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -136,27 +135,6 @@ final readonly class BaselineEntryParser
     }
 
     /**
-     * @param array<mixed, mixed> $object
-     *
-     * @throws BaselineEntryRejection
-     *
-     * @return ?array<mixed, mixed>
-     */
-    private static function readOptionalObject(array $object, string $field, string $label): ?array
-    {
-        $value = $object[$field] ?? null;
-        if ($value === null) {
-            return null;
-        }
-
-        if (!\is_array($value) || array_is_list($value)) {
-            throw new BaselineEntryRejection(InertEntryReason::Malformed, $label);
-        }
-
-        return $value;
-    }
-
-    /**
      * @param array<mixed, mixed> $raw
      *
      * @throws BaselineEntryRejection
@@ -218,52 +196,10 @@ final readonly class BaselineEntryParser
      */
     private static function readEdge(array $raw): ?BaselineEdge
     {
-        $edge = self::readOptionalObject($raw, 'edge', '"edge" must be a JSON object');
-        if ($edge === null) {
-            return null;
+        try {
+            return BaselineEdge::fromArray($raw['edge'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
         }
-
-        return new BaselineEdge(
-            self::readRequiredNonEmptyString(
-                $edge,
-                'target',
-                '"edge.target" must be a non-empty canonical symbol path',
-            ),
-            self::readEdgeType($edge),
-        );
-    }
-
-    /**
-     * @param array<mixed, mixed> $edge
-     *
-     * @throws BaselineEntryRejection
-     */
-    private static function readEdgeType(array $edge): ?DependencyType
-    {
-        $type = $edge['type'] ?? null;
-        if ($type === null) {
-            return null;
-        }
-
-        $dependencyType = \is_string($type) ? DependencyType::tryFrom($type) : null;
-
-        if ($dependencyType === null) {
-            throw new BaselineEntryRejection(
-                InertEntryReason::Malformed,
-                \sprintf('"edge.type" is not a known dependency type: %s', self::describe($type)),
-            );
-        }
-
-        return $dependencyType;
-    }
-
-    /**
-     * Names a rejected value in a message. Strings are quoted rather than
-     * reported as `string`, because for `mode` and `edge.type` the offending
-     * value *is* the information a user needs.
-     */
-    private static function describe(mixed $value): string
-    {
-        return \is_string($value) ? '"' . $value . '"' : get_debug_type($value);
     }
 }

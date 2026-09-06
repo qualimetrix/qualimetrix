@@ -13,6 +13,7 @@ values only where an effective boundary must be explained.
 ```
 Baseline/
 ├── Baseline.php                 # VO: a loaded/captured file (generated, scope, entries, inert entries)
+├── BaselineFormatVersion.php    # The current file format's version number, read by the loader, writer, and the v5/carry paths that never build a Baseline
 ├── BaselineIdentity.php         # VO: what an entry is about — symbol + channel + dependency edge
 ├── BaselineEdge.php             # VO: the dependency edge half of an identity
 ├── BaselineEntry.php            # VO: one accepted group (identity, magnitudes, count, mode)
@@ -31,7 +32,11 @@ Baseline/
 ├── BaselineLoader.php           # Loads the exact typed-subject version 13 file
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
-├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
+├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
+├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
+├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename
+├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
+├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
@@ -44,6 +49,11 @@ Baseline/
 ├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
 ├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
+│
+├── BaselineChannelRenamer.php   # `baseline:rename-channels`: carries a raw document onto renamed channels, analysing nothing
+├── ChannelRenameMap.php         # VO: the declared old -> new map, read from the gate's channels.tsv format
+├── ChannelRenameReport.php      # VO: what a carry did — entries moved, idle rows, lines this build cannot read
+├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
 ├── BaselineMigrator.php         # Historical continuity report logic for a fresh capture against v5 records; not a v12 conversion route
 ├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
@@ -504,7 +514,14 @@ how the file is turned into entries, not in what is kept afterwards.
 
 ### Writes
 
-`BaselineWriter` writes to a temporary file and renames. A sibling `<baseline>.lock`
+`BaselineWriter` decides what a `Baseline` serializes to; `BaselineDocumentLayout`
+decides how that document is spelled and `BaselineDocumentWriter` how the file is
+replaced. The split is not decoration: `BaselineChannelRenamer` renders and replaces
+the same document without ever building a `Baseline`, and a second spelling of either
+half would show up as an unexplained diff in a user's baseline rather than as a
+failing test. `BaselineEntryOrder` is shared for the same reason.
+
+`BaselineDocumentWriter` writes to a temporary file and renames. A sibling `<baseline>.lock`
 file (worth adding to `.gitignore`) holds an exclusive lock across both the
 content-hash check and the rename, so a read-modify-write cannot silently discard a
 concurrent writer: a `Baseline` loaded from a file carries that file's content hash,
@@ -525,6 +542,59 @@ of them can share, because resolving such a clash by overwriting would delete a 
 nobody decided to delete. Two identities that are distinct in memory but collapse onto
 one symbol key once `file:` paths are made project-relative are refused outright rather
 than merged.
+
+### Carrying a baseline onto renamed channels
+
+`baseline:rename-channels` substitutes the `channel` field of the entries a declared
+map names. It **runs no analysis**, and it works on the raw decoded document rather
+than on a loaded `Baseline`.
+
+Both are load-bearing. A rename cannot recompute `occurrence`, which is frozen against
+the channel name and is not derivable from a baseline at all — so a carry that measured
+would be recomputing identities against a tree that is not the one the entries were
+accepted against. And a load-rewrite-save cycle would be lossy in exactly the case that
+matters: the loader demotes a line it cannot apply to an `InertBaselineEntry` keyed by
+*this* build's declarations, so carrying a file written for another build through it
+would quietly reshape lines nobody decided to touch.
+
+What a carry changes is therefore exactly: the value of a named `channel`, the position
+of an entry among its siblings when the new name sorts differently, and the order of
+subject keys if the file was not already canonical. Everything else — subject keys,
+`occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope`, `generated`, and any
+envelope field this build does not know — is carried through untouched.
+
+Reading raw is not a licence to hold a private opinion of what a baseline is, so three
+owners decide what a carried file is and the carry is only one of them:
+
+- **`BaselineLoader` owns what a document is.** The carry refuses exactly the
+  document-level defects it refuses — invalid JSON, a root that is not an object, a
+  version this build does not hold, a missing `entries` object, an unreadable `generated`
+  or `scope` — so a carry cannot write an envelope this build's `check` then declines to
+  load. `generated` and `scope` ask the loader's own checks directly
+  (`BaselineLoader::parseGenerated()`/`parseScope()`); JSON validity, root-object shape,
+  version and the `entries` object are a second, independently written set of checks that
+  agrees with the loader's verdict today but is not the same code path — a future change
+  to the loader's rules there needs its counterpart here updated by hand. What the loader
+  merely demotes, the carry merely counts: a subject whose entries are not a JSON array
+  becomes the same single unreadable line the loader makes of it, and the writer puts
+  that line back as a one-element block.
+- **`BaselineWriter` owns what a file looks like** — block shape and line order, through
+  the shared `BaselineDocumentLayout` and `BaselineEntryOrder`.
+- **The file owns each line's bytes.** A payload is echoed in the field order it was
+  decoded in; a later command that loads and rewrites the file may re-render such a line
+  in place, but will not move it.
+
+One guard is the carry's own: the writer's refusal of two entries collapsing onto one
+identity is bypassed by the raw path, so the carry checks the *resulting* set itself,
+before it writes. It refuses only a collision the carry would create — measured by
+whether the lines now sharing a key were distinct beforehand, not by counting entries
+under a key, because a rename moves the key itself. A pair the file already held is
+carried, including when it stands on the renamed channel.
+
+A new name is validated for *form* only, never against the channel registry: the carry
+is released before the renames it exists to perform, so an entry it writes is normally
+on a name this build has never heard of, and `check` reporting it as inapplicable until
+the naming release lands is the intended intermediate state.
 
 ## Related Documents
 

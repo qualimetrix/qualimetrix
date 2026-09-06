@@ -34,6 +34,13 @@ final class CircularDependencyRule extends AbstractRule
     public const string NAME = CircularDependencyPreparationInterface::PRODUCER_RULE_NAME;
     public const string DOCS_PAGE = 'rules/architecture.md';
 
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see NAME}. Changing this value moves the
+     * `occurrence` of every already-accepted finding on this channel.
+     */
+    private const string OCCURRENCE_KIND = 'architecture.circular-dependency';
+
     public const int REMEDIATION_MINUTES = 120;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
@@ -105,7 +112,7 @@ final class CircularDependencyRule extends AbstractRule
                 severity: $severity,
                 metricValue: $size,
                 recommendation: $recommendation,
-                occurrenceKey: OccurrenceKey::semantic(self::NAME, [
+                occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
                     'members' => implode(',', $memberCanonicals),
                 ]),
             );

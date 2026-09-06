@@ -34,6 +34,53 @@ final readonly class BaselineEdge
     }
 
     /**
+     * The edge a decoded `edge` field spells, or `null` when the field is
+     * absent.
+     *
+     * Reading the field is this type's job rather than each caller's: the
+     * parser turns a refusal here into an inert entry, and the channel carry
+     * turns it into "this line has no identity to sort or collide on", and
+     * two readers of one shape would drift into disagreeing about which
+     * lines those are.
+     *
+     * @throws InvalidArgumentException when the field is present but is not an edge
+     */
+    public static function fromArray(mixed $edge): ?self
+    {
+        if ($edge === null) {
+            return null;
+        }
+
+        if (!\is_array($edge) || array_is_list($edge)) {
+            throw new InvalidArgumentException('"edge" must be a JSON object');
+        }
+
+        $target = $edge['target'] ?? null;
+
+        if (!\is_string($target) || $target === '') {
+            throw new InvalidArgumentException('"edge.target" must be a non-empty canonical symbol path');
+        }
+
+        return new self($target, self::readType($edge['type'] ?? null));
+    }
+
+    /**
+     * @throws InvalidArgumentException when a type is written that no dependency kind spells
+     */
+    private static function readType(mixed $type): ?DependencyType
+    {
+        if ($type === null) {
+            return null;
+        }
+
+        return (\is_string($type) ? DependencyType::tryFrom($type) : null)
+            ?? throw new InvalidArgumentException(\sprintf(
+                '"edge.type" is not a known dependency type: %s',
+                \is_string($type) ? '"' . $type . '"' : get_debug_type($type),
+            ));
+    }
+
+    /**
      * Stable string form, used inside an identity key and for deterministic
      * ordering of the entries under one symbol.
      */

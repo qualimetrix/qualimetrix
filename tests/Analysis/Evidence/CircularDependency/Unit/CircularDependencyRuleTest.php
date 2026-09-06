@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -65,6 +66,34 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $findings[0]->subject->toCanonical());
         self::assertNotNull($findings[0]->occurrenceKey);
         self::assertStringContainsString('Circular dependency (2 classes)', $findings[0]->message);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see CircularDependencyRule::analyze()} itself, so a
+     * future regression that swaps the occurrence call site's argument back
+     * to `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $this->analysis->replace([
+            new Cycle($this->paths(['App\\A', 'App\\B']), $this->paths(['App\\A', 'App\\B', 'App\\A'])),
+        ]);
+        $rule = $this->rule(new CircularDependencyOptions());
+
+        $findings = $rule->analyze(new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+        ));
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('architecture.circular-dependency', [
+                'members' => 'class:App\\A,class:App\\B',
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]
