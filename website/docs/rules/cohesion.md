@@ -50,7 +50,9 @@ graph nodes, and the metric is the number of connected components.
     `return` of a class constant qualifies regardless of which class the
     constant belongs to -- `self::X`, `static::X`, `parent::X`, an imported
     class's `Foo::X`, and an enum case such as `Suit::Hearts` all read no
-    instance state, so they are all recognized as constant expressions.
+    instance state, so they are all recognized as constant expressions. A
+    dynamic class or constant name (`$var::X`, `Foo::{$name}`) is resolved at
+    run time and is not.
     Constructors and destructors
     (`__construct`, `__destruct`) are excluded from the method set entirely,
     consistent with how TCC/LCC already treats them (see "Implementation

@@ -387,6 +387,17 @@ removes the entry is the leaf test alone — distributing the classes over four
 subjects gave `Design` children and stopped it being a leaf. The blind spot is
 the mechanism of the removal, not a detail standing beside it.
 
+### A file with several `namespace` blocks inflates the namespace `.sum`
+
+Found by X9's E5 while hunting a corpus subject where `size.class-count` base
+and `.sum` diverge on a leaf: `NamespaceMetricContributions::mapNamespacesToFileSymbols`
+attributes a multi-namespace file's symbols in a way that double-counts into
+the recursive `.sum`, so a single file holding two `namespace` blocks can make
+a leaf's `.sum` exceed its base without any child namespace existing. E5
+deliberately did not build a corpus fixture on it — a case standing on an
+attribution defect would redden the day the defect is fixed. Details and the
+measurement commands: `X9-gate-holes/followups/e5.md`.
+
 ## Disposition
 
 In scope for the rules-and-metrics pass: A1, A2, the `ViolationChannel` half of

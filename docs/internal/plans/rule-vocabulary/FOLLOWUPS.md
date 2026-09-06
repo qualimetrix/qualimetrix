@@ -2770,6 +2770,15 @@ tests/Analysis/Evidence/Cohesion/Unit/LcomCollectorTest.php`, снято до
   количественно неверными; абзацы, специфичные к само-референции
   `annotation.unused-directive` (`DirectiveUsage.php:34-44`), не тронуты —
   они остаются верны независимо от того, сколько ещё каналов забанено.
+- **Чем держится запрет — теми же тестами, не корпусом.** Единственная
+  корпусная директива к этому каналу
+  (`cases/annotations/src/Directives.php:67`, форма `:class`) отказывается как
+  невозможная пара РАНЬШЕ бана — порядок закреплён
+  `DirectiveAddressabilityTest::itJudgesAnImpossiblePairBeforeTheBanOnAChannelBothReject`.
+  Собственный отказ бана (точное имя, файловая форма) ни один кейс корпуса не
+  публикует, так что версионная сверка его текста не видит — держат
+  функциональные тесты обеих проекций. Та же честность, что у записи «чем
+  доказана эквивалентность Э2».
 - **Реализация не расходится между `check` и `directives`**: обе точки читают
   один и тот же `DirectiveChannelBan`, доказано исполнением, не чтением кода —
   `tests/Infrastructure/Console/Functional/DirectivesCommandTest.php::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan`
