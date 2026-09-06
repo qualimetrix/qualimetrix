@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -82,6 +83,34 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('operator', $findings[0]->message);
         self::assertSame('code-smell.identical-subexpression', $findings[0]->code);
         self::assertSame(1.0, $findings[0]->metricValue);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see IdenticalSubExpressionRule::analyze()} itself, so a
+     * future regression that swaps the occurrence call site's argument back
+     * to `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 10, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('code-smell.identical-subexpression', [
+                'type' => 'identical_operands',
+                'detail' => '',
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

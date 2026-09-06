@@ -36,6 +36,13 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public const string NAME = 'code-smell.identical-subexpression';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see NAME}. Changing this value moves the
+     * `occurrence` of every already-accepted finding on this channel.
+     */
+    private const string OCCURRENCE_KIND = 'code-smell.identical-subexpression';
+
     public const int REMEDIATION_MINUTES = 15;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
@@ -100,7 +107,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
                         severity: Severity::Warning,
                         metricValue: 1.0,
                         recommendation: 'This looks like a copy-paste error. Verify the intended logic.',
-                        occurrenceKey: OccurrenceKey::semantic(self::NAME, [
+                        occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
                             'type' => $type,
                             'detail' => (string) ($entry['detail'] ?? ''),
                         ]),

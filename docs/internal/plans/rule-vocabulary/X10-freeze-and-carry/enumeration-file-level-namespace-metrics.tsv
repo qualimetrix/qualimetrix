@@ -1,0 +1,58 @@
+# How obtained: cross-referenced two independent static-analysis passes over src/Analysis, each
+# targeting a distinct registration channel; no single grep-by-class-name was treated as sufficient.
+#   Pass 1 (definition inventory): `grep -rn "collectedAt: SymbolLevel::" src/Analysis --include=*.php`
+#     over every `new MetricDefinition(...)` construction site (found via
+#     `grep -rln "new MetricDefinition(" src/Analysis --include=*.php`), which enumerates ALL
+#     File/Class_/Callable/Namespace_-collected definitions regardless of producing collector kind
+#     (plain FileMeasurementCollector, GlobalContextCollector, DerivedCollector all construct
+#     MetricDefinition the same way — this pass does not distinguish them, which is why Pass 3
+#     exists). Filtered to `collectedAt: SymbolLevel::File`, because
+#     `NamespaceMetricContributions::collectFromFiles()` (the code path the AUDIT record names) is
+#     the only place a *File*-collected definition can reach namespace aggregation without an
+#     explicit per-namespace source; Class_/Callable/Namespace_-collected definitions never enter
+#     that function's file-attribution branch and are out of scope for this table.
+#   Pass 2 (namespace-owned-source inventory): `grep -rln "NamespaceMetricProviderInterface"
+#     src/Analysis/Evidence --include=*.php`, then read each implementor's `getNamespacesWithMetrics()`
+#     body for the exact `MetricName::*` keys it emits. This is the interface
+#     `Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface`
+#     (consumed by `FileProcessor::extractNamespaceMetrics()`, which is what feeds the
+#     `SymbolType::Namespace_` `SymbolInfo` entries that `collectExplicitNamespaceValues()` reads to
+#     build the `$namespaceProvided` set `collectFromFiles()` checks). A definition's own namespace
+#     block gets its value from this channel, correctly attributed per `namespace {}` block during
+#     AST traversal — NOT from whole-file totals.
+#   Pass 3 (channel coverage, confirms Pass 1 is complete for File level): every collector
+#     implementing `Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface`
+#     or `...\DerivedCollectorInterface` was checked against Pass 1's per-file `collectedAt` table
+#     (`grep -rln "DerivedCollectorInterface\|GlobalContextCollectorInterface" src/Analysis
+#     --include=*.php`): AbstractnessCollector, ClassRankCollector, CouplingCollector,
+#     DistanceCollector, DitGlobalCollector, NocCollector, TypeCoveragePercentCollector,
+#     MaintainabilityIndexCollector — none of these register a File-collected MetricDefinition
+#     (their definitions are Namespace_ or Class_), so this channel contributes zero rows here.
+#   Pass 4 (configuration channel): `grep -rn "collectedAt" src/Analysis/Evidence/ComputedMetrics
+#     --include=*.php` returns nothing — user-defined/computed metrics are formula outputs derived
+#     from already-aggregated values, not raw `MetricDefinition` registrations, so they never pass
+#     through `NamespaceMetricContributions::collectValues()` and contribute zero rows here.
+#   Pass 5 (direct-call channel): confirmed via `grep -rn "NamespaceMetricContributions::collectValues("
+#     src/Analysis --include=*.php` that the only three call sites are `ClassToNamespaceAggregator`,
+#     `NamespaceToProjectAggregator`, and `TreeAwareNamespaceAggregator` — all three pass the full,
+#     unfiltered `$definitions` list from the metric registry, so no bypass of Pass 1's inventory
+#     exists on this path.
+# What this method does NOT see: a MetricDefinition constructed dynamically (interpolated
+# `collectedAt` value) rather than as a literal `SymbolLevel::File` — grepped for and found none
+# (`grep -rn "collectedAt" ... | grep -v "SymbolLevel::"` returned only the constructor's own
+# parameter declaration). A collector that emits a `NamespaceWithMetrics` under a metric NAME that
+# does not exactly match its own File-level definition NAME would be invisible to this cross-
+# reference (a naming mismatch, not an attribution defect, and not observed in either collector
+# below). This table is current as of the code read on 2026-09-06 (X10-freeze-and-carry, package D)
+# and is not re-derived automatically — a future collector must be added here by hand.
+metric_name	collecting_class	collectedAt_definition_line	has_own_namespace_source_(namespaceProvided)	providing_class::method
+size.class-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:125	yes	ClassCountCollector::getNamespacesWithMetrics
+size.abstract-class-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:130	yes	ClassCountCollector::getNamespacesWithMetrics
+size.interface-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:135	yes	ClassCountCollector::getNamespacesWithMetrics
+size.trait-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:140	yes	ClassCountCollector::getNamespacesWithMetrics
+size.enum-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:145	yes	ClassCountCollector::getNamespacesWithMetrics
+size.implementing-enum-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:150	yes	ClassCountCollector::getNamespacesWithMetrics
+size.function-count	ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php:155	yes	ClassCountCollector::getNamespacesWithMetrics
+size.loc	LocCollector	src/Analysis/Evidence/Size/LocCollector.php:310	yes	LocCollector::getNamespacesWithMetrics
+size.lloc	LocCollector	src/Analysis/Evidence/Size/LocCollector.php:315	yes	LocCollector::getNamespacesWithMetrics
+size.cloc	LocCollector	src/Analysis/Evidence/Size/LocCollector.php:320	yes	LocCollector::getNamespacesWithMetrics

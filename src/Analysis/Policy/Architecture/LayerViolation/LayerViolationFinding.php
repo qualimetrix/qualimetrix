@@ -25,6 +25,15 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  */
 final readonly class LayerViolationFinding
 {
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule::NAME},
+     * which is what `$ruleName` below carries in production. Changing this
+     * value moves the `occurrence` of every already-accepted finding on
+     * this channel.
+     */
+    private const string OCCURRENCE_KIND = 'architecture.layer-violation';
+
     public function __construct(
         private Dependency $dependency,
         private LayerMatch $fromMatch,
@@ -89,7 +98,7 @@ final readonly class LayerViolationFinding
             recommendation: $this->recommendation,
             dependencyTarget: $this->dependency->targetLogical(),
             dependencyType: $this->dependency->type,
-            occurrenceKey: OccurrenceKey::semantic($this->ruleName, $evidence),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, $evidence),
         );
     }
 

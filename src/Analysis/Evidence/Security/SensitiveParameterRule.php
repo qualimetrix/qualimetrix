@@ -28,6 +28,13 @@ final class SensitiveParameterRule extends AbstractRule
     public const string NAME = 'security.sensitive-parameter';
     public const string DOCS_PAGE = 'rules/security.md';
 
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see NAME}. Changing this value moves the
+     * `occurrence` of every already-accepted finding on this channel.
+     */
+    private const string OCCURRENCE_KIND = 'security.sensitive-parameter';
+
     public const int REMEDIATION_MINUTES = 10;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
@@ -103,7 +110,7 @@ final class SensitiveParameterRule extends AbstractRule
             severity: $severity,
             metricValue: 1.0,
             recommendation: 'Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.',
-            occurrenceKey: OccurrenceKey::semantic(self::NAME, ['paramName' => (string) $entry['paramName']]),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['paramName' => (string) $entry['paramName']]),
         );
     }
 

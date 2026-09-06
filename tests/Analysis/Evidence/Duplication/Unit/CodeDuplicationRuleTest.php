@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -118,6 +119,43 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertStringContainsString('16 lines', $v->message);
         self::assertStringContainsString('2 occurrences', $v->message);
         self::assertStringContainsString('src/B.php:30-45', $v->message);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see CodeDuplicationRule::analyze()} itself, so a future
+     * regression that swaps the occurrence call site's argument back to
+     * `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $rule = $this->createRule();
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $context = $this->contextWithBlocks(
+            $repository,
+            [
+                new DuplicateBlock(
+                    locations: [
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                    ],
+                    lines: 16,
+                    tokens: 80,
+                    contentHash: self::CONTENT_HASH,
+                ),
+            ],
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

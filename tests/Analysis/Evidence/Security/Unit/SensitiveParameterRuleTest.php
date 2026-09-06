@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -72,6 +73,32 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame('security.sensitive-parameter', $findings[0]->ruleName);
         self::assertStringContainsString('SensitiveParameter', $findings[0]->message);
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see SensitiveParameterRule::analyze()} itself, so a
+     * future regression that swaps the occurrence call site's argument back
+     * to `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 12, 'paramName' => 'password']),
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('security.sensitive-parameter', ['paramName' => 'password'])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]

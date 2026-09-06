@@ -208,6 +208,69 @@ final class ClassCountRuleTest extends TestCase
         yield 'above error' => [20, 10, 15, Severity::Error];
     }
 
+    /**
+     * ADR 0046 declares the channel judges the recursive `.sum`, not the
+     * namespace's own count (`AUDIT.md`, X9 followup E5): a corpus run
+     * cannot distinguish the two because the rule skips every non-leaf
+     * subject where they diverge. Here the divergence is injected directly
+     * into the `MetricBag`, so a rule that regressed to reading the base
+     * key would flip this assertion.
+     */
+    #[Test]
+    public function itFollowsSumWhenSumCrossesThresholdButBaseDoesNot(): void
+    {
+        $rule = new ClassCountRule(new ClassCountOptions());
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
+
+        // Base (own namespace count) stays below warning; only .sum crosses it.
+        $metricBag = (new MetricBag())
+            ->with('size.class-count', 3)
+            ->with('size.class-count.sum', 18);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$namespaceInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(18, $findings[0]->metricValue);
+    }
+
+    /**
+     * Mirror of the case above: base crosses the error threshold while
+     * `.sum` stays below every threshold. A rule reading the base key would
+     * wrongly emit a finding here.
+     */
+    #[Test]
+    public function itStaysSilentWhenBaseCrossesThresholdButSumDoesNot(): void
+    {
+        $rule = new ClassCountRule(new ClassCountOptions());
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
+
+        // Base (own namespace count) is above error; only .sum stays below warning.
+        $metricBag = (new MetricBag())
+            ->with('size.class-count', 30)
+            ->with('size.class-count.sum', 5);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$namespaceInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
     #[Test]
     public function itLoadsOptionsDefaultsFromArray(): void
     {

@@ -28,6 +28,13 @@ final class HardcodedCredentialsRule extends AbstractRule
     public const string NAME = 'security.hardcoded-credentials';
     public const string DOCS_PAGE = 'rules/security.md';
 
+    /**
+     * Frozen to today's channel spelling on purpose — it does not follow a
+     * future rename of {@see NAME}. Changing this value moves the
+     * `occurrence` of every already-accepted finding on this channel.
+     */
+    private const string OCCURRENCE_KIND = 'security.hardcoded-credentials';
+
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
@@ -103,7 +110,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                 severity: $severity,
                 metricValue: 1.0,
                 recommendation: 'Move secrets to environment variables or a secrets manager.',
-                occurrenceKey: OccurrenceKey::semantic(self::NAME, ['pattern' => $pattern]),
+                occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['pattern' => $pattern]),
             );
         }
 
