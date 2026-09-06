@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * The four declared maps: channel names, symbols (FQN or path), metric keys and
- * inputs (option keys, flag aliases, names inside selectors).
+ * The five declared maps: channel names, symbols (FQN or path), metric keys,
+ * inputs (option keys, flag aliases, names inside selectors) and report values
+ * (a string value of an enumerable report field).
  *
  * Direction is declared per map, not assumed. Forward (old -> new) is applied to
  * the REFERENCE tree's artifacts, because the reference predates the rename and
@@ -52,6 +53,25 @@ namespace QmxFindingGate;
  * would hand the reference `classRank` and `classCount` as rules it does not
  * have. A metric key that ever does need translating on the input says so with
  * an `inputs.tsv` row, exactly as a channel does.
+ *
+ * `report-values.tsv` is forward-only for a narrower reason: it names a value of
+ * an enumerable REPORT field, never a name the corpus could address on its own
+ * input, so there is no backwards direction to check injectivity of in the first
+ * place. It is also the only map read on one surface: measured, `format:suppressed`
+ * is the sole surface that publishes such a value today, so the map is declared
+ * to reach that surface and no other — a value that later leaks into a second
+ * surface is therefore reported as an undeclared diff rather than silently
+ * translated there too. A row translates the value only where it appears QUOTED,
+ * exactly as a metric key does and for the same reason: the vocabulary is
+ * deliberately plain kebab-case, and a bare word would be indistinguishable from
+ * prose the same surface may print beside it. So `REPORT_VALUES` is excluded
+ * from the bare spelling every other role gets — the same exclusion
+ * `METRIC_KEYS` has, and for the same reason: a two-role declaration naming one
+ * string in both would otherwise leak a bare substitution into prose through the
+ * role that has none of its own. And a row states a VALUE, never its position:
+ * if a step reordered the enumeration a surface lists such
+ * values in, no row expresses that — measured against `730941c1`, the order
+ * agrees today.
  *
  * A metric key is published bare AND once per aggregation strategy declared for
  * it, so a `metric-keys.tsv` row also translates its own `<key>.<strategy>`
@@ -114,6 +134,7 @@ final class RenameMaps
     public const SYMBOLS = 'symbols.tsv';
     public const METRIC_KEYS = 'metric-keys.tsv';
     public const INPUTS = 'inputs.tsv';
+    public const REPORT_VALUES = 'report-values.tsv';
 
     /**
      * Map file => the surface classes it may be applied to, or `null` for all.
@@ -133,10 +154,16 @@ final class RenameMaps
      * NOT silently translated: it stands as an undeclared difference and the run
      * goes red, which is the direction this has to fail in.
      *
+     * `REPORT_VALUES` is restricted the same way, and the measurement is
+     * narrower still: `format:suppressed` is the only surface that publishes an
+     * enumerable report field's string value at all, so the row has one surface
+     * to be declared against rather than a short list.
+     *
      * @var array<string, list<string>|null>
      */
     private const SURFACES = [
         self::METRIC_KEYS => ['format:json', 'format:metrics', 'format:html'],
+        self::REPORT_VALUES => ['format:suppressed'],
     ];
 
     /** Map file => whether it may also be applied backwards. */
@@ -145,6 +172,7 @@ final class RenameMaps
         self::SYMBOLS => true,
         self::METRIC_KEYS => false,
         self::INPUTS => true,
+        self::REPORT_VALUES => false,
     ];
 
     /** What continues a name, and therefore what may not end a match. */
@@ -588,9 +616,10 @@ final class RenameMaps
             // backwards direction — substituting, on the input, a spelling only
             // an artifact ever carries.
             $keyRole = self::applies(self::METRIC_KEYS, $pair['sources'], $forward);
+            $reportValueRole = self::applies(self::REPORT_VALUES, $pair['sources'], $forward);
             $otherRoles = array_values(array_filter(
                 $pair['sources'],
-                static fn(string $source): bool => $source !== self::METRIC_KEYS,
+                static fn(string $source): bool => $source !== self::METRIC_KEYS && $source !== self::REPORT_VALUES,
             ));
 
             $spellings = [];
@@ -631,6 +660,15 @@ final class RenameMaps
                 foreach ($this->vocabulary->suffixes as $suffix) {
                     $spellings[] = ['"' . $from . '.' . $suffix . '"', '"' . $to . '.' . $suffix . '"'];
                 }
+            }
+
+            // A report value travels the same way, for the same reason and with
+            // no suffix to expand: the vocabulary is plain kebab-case, so a bare
+            // occurrence would be indistinguishable from prose the same surface
+            // may print beside it — measured on `format:suppressed`'s own `note`
+            // field, which is prose.
+            if ($reportValueRole) {
+                $spellings[] = ['"' . $from . '"', '"' . $to . '"'];
             }
 
             $titled = [self::titleCase($from), self::titleCase($to)];
@@ -790,6 +828,32 @@ final class RenameMaps
             $declared[$key] = $declaration;
         }
 
+        // Grouping a pair declared by two maps into one declaration is
+        // legitimate — it is what lets one name serve two roles at once, per
+        // the docblock above. What is refused here is REPORT_VALUES sharing
+        // that grouping specifically: every other role publishes bare, so
+        // merging sources leaves the combined declaration unrestricted
+        // (appliesToSurface() passes if ANY source is), and REPORT_VALUES then
+        // inherits a spelling and a surface it never declared for itself — a
+        // quoted-only, format:suppressed-only value would travel unquoted,
+        // everywhere, exactly as codex-01 measured. Refused at load time
+        // instead of letting REPORT_VALUES lose the one restriction that is
+        // its whole point.
+        foreach ($declared as $declaration) {
+            $sources = $declaration['sources'];
+
+            if (\in_array(self::REPORT_VALUES, $sources, true) && \count($sources) > 1) {
+                throw new GateError(\sprintf(
+                    'Report value "%s" -> "%s" is also declared by %s. A report-values row must not share its'
+                    . ' (old, new) spelling with another map: the roles would merge and the value would stop'
+                    . ' being quoted-only and format:suppressed-only. Give the report value its own spelling.',
+                    $declaration['old'],
+                    $declaration['new'],
+                    implode(', ', array_values(array_diff($sources, [self::REPORT_VALUES]))),
+                ));
+            }
+        }
+
         $unique = [];
 
         foreach ($declared as $declaration) {
@@ -805,6 +869,14 @@ final class RenameMaps
 
                 foreach ($images as $image) {
                     self::assertWholeInputToken($image, $row);
+                }
+            }
+
+            if (\in_array(self::REPORT_VALUES, $sources, true)) {
+                self::assertReportValueSpelling($old, $row);
+
+                foreach ($images as $image) {
+                    self::assertReportValueSpelling($image, $row);
                 }
             }
 
@@ -935,13 +1007,58 @@ final class RenameMaps
     }
 
     /**
+     * A `report-values.tsv` row names a plain kebab-case report value.
+     *
+     * `#`, `:`, a doubled dash and a dot are all refused, none of them because a
+     * particular surface happens to use them as a separator — the enumerable
+     * report values this map is for are, as a matter of the product's own
+     * vocabulary, single kebab-case words (`{@see
+     * \Qualimetrix\Reporting\FindingProjection\SuppressionMechanism}`), and a
+     * spelling outside that shape is a spelling no surface can publish. A
+     * substitution nothing can match is the same rubber stamp
+     * {@see assertPlainMetricKey()} refuses.
+     */
+    private static function assertReportValueSpelling(string $value, string $row): void
+    {
+        if (preg_match('~^[a-z0-9]+(?:-[a-z0-9]+)*$~', $value) === 1) {
+            return;
+        }
+
+        throw new GateError(\sprintf(
+            '%s: "%s" is not a plain kebab-case report value. A report-values row translates a single value of an'
+            . ' enumerable report field, and the product\'s own vocabulary for those is lowercase words joined by a'
+            . ' single dash — a spelling outside that shape is one no surface can publish.',
+            $row,
+            $value,
+        ));
+    }
+
+    /**
      * An `inputs.tsv` row names a whole token, never a name inside one.
      *
-     * Three shapes are whole tokens on the input: `rule:option-key` as it is
-     * written inside `--rule-opt=`, a flag together with its two dashes, and a
+     * Four shapes are whole tokens on the input: `rule:option-key` as it is
+     * written inside `--rule-opt=`, a flag together with its two dashes, a
      * dotted producer name as a selector writes it (`--disable-rule=`,
-     * `only_rules:`). A bare undotted word is refused, because "the option key
-     * without its rule" would also translate the same key on some other rule.
+     * `only_rules:`), and a configuration key as a YAML document writes it, with
+     * its trailing colon. A bare undotted word is refused, because "the option
+     * key without its rule" would also translate the same key on some other
+     * rule.
+     *
+     * The fourth shape is deliberately blind to level: `key:` matches a root key
+     * and a per-rule key of the same spelling alike, at any indent, because both
+     * are the same token in the document's own grammar and the map has no way to
+     * tell which one a step renamed. What it does NOT express is "this rule's
+     * option, not that rule's" — a per-rule key renamed for one rule while
+     * another rule keeps the old name would be translated on both, and staleness
+     * would not catch it, because the row does fire. That is exactly the gap the
+     * bare-word refusal above exists to close, and it is not closed here: a step
+     * renaming a per-rule option needs `rule:option-key`, the first shape, not
+     * this one.
+     *
+     * It also never matches inside `--rule-opt=rule:option=value`: that shape
+     * carries the option name between a colon and an `=`, never followed by a
+     * colon of its own, so the whole-token text this shape declares — ending in
+     * `:` — does not occur there at all.
      */
     private static function assertWholeInputToken(string $token, string $row): void
     {
@@ -950,6 +1067,7 @@ final class RenameMaps
             'a rule and its option key' => '~^' . $dottedName . ':[A-Za-z0-9][A-Za-z0-9._-]*$~',
             'a flag with its two dashes' => '~^--[A-Za-z0-9][A-Za-z0-9._-]*$~',
             'a dotted producer name as a selector writes it' => '~^' . $dottedName . '$~',
+            'a configuration key as a document writes it' => '~^[A-Za-z0-9][A-Za-z0-9_-]*:$~',
         ];
 
         foreach ($shapes as $pattern) {

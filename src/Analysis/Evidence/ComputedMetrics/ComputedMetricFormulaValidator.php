@@ -6,15 +6,21 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use ReflectionClass;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
- * circular dependencies, and cross-metric references.
+ * circular dependencies, cross-metric references, and that every other
+ * addressed metric key exists in the catalog.
  */
 final class ComputedMetricFormulaValidator
 {
     private readonly ComputedMetricExpression $expression;
+
+    /** @var array<string, true>|null */
+    private static ?array $catalogBaseKeys = null;
 
     public function __construct()
     {
@@ -34,6 +40,7 @@ final class ComputedMetricFormulaValidator
         $this->validateFormulaCoverage($definitions);
         $this->validateCircularDependencies($definitions);
         $this->validateComputedMetricReferences($definitions);
+        $this->validateMetricKeyExistence($definitions);
     }
 
     /**
@@ -194,6 +201,91 @@ final class ComputedMetricFormulaValidator
     private function extractComputedMetricReferences(string $formula): array
     {
         return $this->expression->computedReferencesOf($formula);
+    }
+
+    /**
+     * Validates that every metric key a formula addresses, other than a
+     * `health.*`/`computed.*` cross-reference (checked above), names a metric
+     * the product actually publishes.
+     *
+     * @param list<ComputedMetricDefinition> $definitions
+     */
+    private function validateMetricKeyExistence(array $definitions): void
+    {
+        foreach ($definitions as $definition) {
+            foreach ($definition->formulas as $formula) {
+                $this->validateFormulaMetricKeys($definition->name, $formula);
+            }
+        }
+    }
+
+    private function validateFormulaMetricKeys(string $definitionName, string $formula): void
+    {
+        foreach ($this->expression->keysOf($formula) as $key) {
+            $this->assertKeyIsCatalogued($definitionName, $key, $formula);
+        }
+    }
+
+    private function assertKeyIsCatalogued(string $definitionName, string $key, string $formula): void
+    {
+        if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
+            return; // Cross-references, validated above against declared definitions.
+        }
+
+        if ($this->existsInCatalog($key)) {
+            return;
+        }
+
+        throw new ComputedMetricConfigurationException(\sprintf(
+            'Computed metric "%s" references unknown metric key "%s" in formula: %s',
+            $definitionName,
+            $key,
+            $formula,
+        ));
+    }
+
+    /**
+     * Whether a key exists once its aggregation suffix (if any) is stripped
+     * by {@see MetricName::base()}, whose suffix list comes from
+     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy}.
+     *
+     * The catalog is read via reflection over {@see MetricName}'s public
+     * constants rather than a hand-kept list, so it cannot drift from the
+     * names collectors actually use.
+     * `X9-gate-holes/enumeration-c1-catalog.tsv` re-measured the
+     * runtime-published universe against these constants and found the gap
+     * empty — every base key a collector emits (outside
+     * `health.*`/`computed.*`, which this validator's fourth check already
+     * owns) has a constant here — so the constant list is the catalog rather
+     * than a narrower stand-in for it. A future collector that publishes a
+     * key with no `MetricName` constant would reopen that gap and this check
+     * would need to read the wider, republished universe instead.
+     */
+    private function existsInCatalog(string $key): bool
+    {
+        return isset(self::catalogBaseKeys()[MetricName::base($key)]);
+    }
+
+    /** @return array<string, true> */
+    private static function catalogBaseKeys(): array
+    {
+        if (self::$catalogBaseKeys !== null) {
+            return self::$catalogBaseKeys;
+        }
+
+        $keys = [];
+        foreach ((new ReflectionClass(MetricName::class))->getReflectionConstants() as $constant) {
+            if (!$constant->isPublic()) {
+                continue;
+            }
+
+            $value = $constant->getValue();
+            if (\is_string($value)) {
+                $keys[$value] = true;
+            }
+        }
+
+        return self::$catalogBaseKeys = $keys;
     }
 
 }

@@ -516,7 +516,7 @@ itself contain the private name, so echoing it would leak it into the build log.
 ```bash
 # Project validation
 composer check          # everything below, in the order a failure is cheapest to read
-composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, cross-tool
+composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, JS tests, cross-tool
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
 composer check:self     # what the product says about this repo: gate self-test + qmx ratchet + directive audit
@@ -593,7 +593,7 @@ bin/qmx check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
+- **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Efficient validation order
@@ -615,7 +615,7 @@ For multi-package changes, fail fast before paying for the full test suite:
 
 `composer check` is four groups plus the leak scan, and each group is named by
 what invalidates it, so a change that touched one thing pays for one group:
-`check:code` (style, static analysis, tests), `check:docs` (strict mkdocs),
+`check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the gate's self-test, the qmx ratchet, and the
 inline-directive audit). Sizes

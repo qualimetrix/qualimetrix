@@ -45,6 +45,15 @@ final class DirectivesCommandTest extends TestCase
      */
     private const string WITHOUT_COUPLING = "disabled_rules: ['coupling.*']\n";
 
+    /**
+     * The duplication-ban fixtures build a class long enough to cross the
+     * duplication floor, which also moves the maintainability and computed
+     * health channels — disabled here so a case about one channel is not
+     * read against noise from three others.
+     */
+    private const string WITHOUT_COUPLING_HEALTH_AND_MAINTAINABILITY =
+        "disabled_rules: ['coupling.*', 'health.*', 'maintainability.*']\n";
+
     private string $tempDir;
 
     protected function setUp(): void
@@ -602,6 +611,215 @@ final class DirectivesCommandTest extends TestCase
             'symbol' => [\sprintf($body, '', "    /** @qmx-ignore {$target} -- tested */"), 7],
             default => throw new LogicException('unknown tag ' . $tag),
         };
+    }
+
+    /**
+     * `duplication.code-duplication` reports one project-wide finding per
+     * duplicate block ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
+     * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
+     * nothing else), and no directive form binds to a project aggregate: a
+     * symbol directive binds to the declaration it decorates, never the
+     * project, and a file or next-line directive is judged by
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter}
+     * against the finding's `Location`, which the rule sets to whichever copy
+     * the duplicate scan visits first — not the file the directive happens to
+     * be written in.
+     *
+     * Measured pre-fix on this same two-file shape
+     * (`docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/d2.md`): a
+     * symbol directive never suppressed the finding regardless of which copy
+     * carried it; a file or next-line directive suppressed it only when
+     * placed in whichever copy happened to be the first occurrence, and did
+     * nothing — silently, reported as `annotation.unused-directive` — when
+     * placed in the other. The ban refuses every form where it is written
+     * instead, so the outcome no longer depends on which copy the scan visits
+     * first, and `check` and `directives` are asked about the same fixture so
+     * a form one command refused and the other still judged would be caught
+     * here.
+     *
+     * The underlying `duplication.code-duplication` finding is never
+     * suppressible by any directive ({@see DirectiveChannelBan::covers()}
+     * short-circuits {@see SuppressionFilter::applies()} for it), so it stays
+     * in the report beside the refusal — two violations, not one.
+     */
+    #[Test]
+    #[DataProvider('provideFormsThatReachTheDuplicationBan')]
+    public function itRefusesEveryDirectiveFormThatReachesTheDuplicationBan(string $tag, string $target): void
+    {
+        [$sourceA, $sourceB, $line] = self::duplicationDirectiveFixture($tag, $target);
+        $this->writeSource('DupA.php', $sourceA);
+        $this->writeSource('DupB.php', $sourceB);
+        $config = $this->writeConfig(self::WITHOUT_COUPLING_HEALTH_AND_MAINTAINABILITY);
+
+        $check = $this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $report = self::decode($check->getDisplay());
+
+        self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
+        self::assertCount(2, $report['violations'], $check->getDisplay());
+
+        $byChannel = [];
+        foreach ($report['violations'] as $violation) {
+            $byChannel[(string) $violation['channel']] = $violation;
+        }
+
+        self::assertArrayHasKey('annotation.unresolved-directive', $byChannel);
+        self::assertArrayHasKey('duplication.code-duplication', $byChannel);
+        self::assertSame($line, $byChannel['annotation.unresolved-directive']['line']);
+        self::assertStringContainsString(
+            'duplication.code-duplication',
+            $byChannel['annotation.unresolved-directive']['message'],
+        );
+        self::assertStringContainsString(
+            'Disable the rule instead',
+            $byChannel['annotation.unresolved-directive']['message'],
+        );
+
+        $audit = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $verdicts = self::decode($audit->getDisplay())['directives'];
+
+        self::assertCount(1, $verdicts);
+        self::assertSame('unmeasured', $verdicts[0]['effect']);
+        self::assertSame('already-refused', $verdicts[0]['reason']);
+        self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideFormsThatReachTheDuplicationBan(): iterable
+    {
+        foreach (['file', 'next-line', 'symbol'] as $tag) {
+            foreach ([
+                'the exact name' => 'duplication.code-duplication',
+                'the exact name at project level' => 'duplication.code-duplication:project',
+                'a group that covers it' => 'duplication.*',
+            ] as $shape => $target) {
+                yield $tag . ', ' . $shape => [$tag, $target];
+            }
+        }
+    }
+
+    /**
+     * The complaint the ban closes, reproduced directly: before the ban
+     * existed, a file directive written on the copy the scan does not visit
+     * first did nothing and was reported as `annotation.unused-directive` —
+     * the report's evidence that the directive did nothing further, and the
+     * scan visiting `DupA.php` first is exactly this shape (`DupA` sorts
+     * before `DupB`, and the provider builds the hash index in path order).
+     * Now the same directive is refused before either file is judged for
+     * suppression, so the channel that used to (and, on the other copy,
+     * still could) hide the mistake never appears at all.
+     */
+    #[Test]
+    public function itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead(): void
+    {
+        [$bodyA, $bodyB] = self::duplicationBodies();
+        $this->writeSource('DupA.php', $bodyA);
+        $this->writeSource(
+            'DupB.php',
+            "<?php\n// @qmx-ignore-file duplication.code-duplication -- was silently inert on this copy pre-ban\n\n"
+                . self::stripPhpTag($bodyB),
+        );
+        $config = $this->writeConfig(self::WITHOUT_COUPLING_HEALTH_AND_MAINTAINABILITY);
+
+        $report = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ])->getDisplay());
+
+        $channels = array_column($report['violations'], 'channel');
+
+        self::assertNotContains(
+            'annotation.unused-directive',
+            $channels,
+            'The directive must be refused, never silently swallowed as unused: '
+                . json_encode($report['violations'], \JSON_PRETTY_PRINT),
+        );
+        self::assertContains('annotation.unresolved-directive', $channels);
+    }
+
+    /**
+     * One fixture pair whose bodies are identical apart from the class name,
+     * long enough to cross {@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions}'s
+     * default `min_lines`/`min_tokens` floor and short enough to stay under
+     * the maintainability/health thresholds this suite disables anyway — kept
+     * small so a future threshold change cannot silently reintroduce that
+     * noise. The directive is authored on the first file only, in each of the
+     * three physical forms; the line is read back off the built source rather
+     * than hand-counted, so a change to the template cannot silently drift
+     * from the assertion.
+     *
+     * @return array{string, string, int} the two sources and the line the
+     *                                    directive sits on in the first
+     */
+    private static function duplicationDirectiveFixture(string $tag, string $target): array
+    {
+        [$bodyA, $bodyB] = self::duplicationBodies();
+
+        [$needle, $sourceA] = match ($tag) {
+            'file' => [
+                '@qmx-ignore-file',
+                "<?php\n// @qmx-ignore-file {$target} -- tested\n\n" . self::stripPhpTag($bodyA),
+            ],
+            'next-line' => [
+                '@qmx-ignore-next-line',
+                str_replace(
+                    '    public function work(',
+                    "    // @qmx-ignore-next-line {$target} -- tested\n    public function work(",
+                    $bodyA,
+                ),
+            ],
+            'symbol' => [
+                '@qmx-ignore ',
+                str_replace(
+                    '    public function work(',
+                    "    /** @qmx-ignore {$target} -- tested */\n    public function work(",
+                    $bodyA,
+                ),
+            ],
+            default => throw new LogicException('unknown tag ' . $tag),
+        };
+
+        $line = substr_count(substr($sourceA, 0, (int) strpos($sourceA, $needle)), "\n") + 1;
+
+        return [$sourceA, $bodyB, $line];
+    }
+
+    /**
+     * Thirty three-line statements: comfortably above
+     * {@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions}'s
+     * default 5-line/70-token floor, and short enough that the resulting
+     * class stays out of the maintainability/health warnings a longer body
+     * measurably triggers (checked empirically while writing this fixture).
+     *
+     * @return array{string, string}
+     */
+    private static function duplicationBodies(): array
+    {
+        $block = '';
+        for ($i = 1; $i <= 10; ++$i) {
+            $block .= "        \$sum += {$i};\n        \$sum -= {$i};\n        \$sum *= 2;\n";
+        }
+
+        $template = "<?php\n\ndeclare(strict_types=1);\n\nnamespace Fixture;\n\nfinal class %s\n{\n"
+            . "    public function work(int \$x): int\n    {\n        \$sum = 0;\n%s        return \$sum;\n    }\n}\n";
+
+        return [
+            \sprintf($template, 'DupA', $block),
+            \sprintf($template, 'DupB', $block),
+        ];
+    }
+
+    private static function stripPhpTag(string $source): string
+    {
+        return str_starts_with($source, "<?php\n") ? substr($source, \strlen("<?php\n")) : $source;
     }
 
     /**

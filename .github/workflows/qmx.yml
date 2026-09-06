@@ -129,6 +129,18 @@ jobs:
       - name: Install documentation dependencies
         run: pip install -r website/requirements.txt
 
+      # `composer check` runs the report template's JS tests (vitest) inside
+      # check:code, so the JS toolchain has to be present here too — otherwise
+      # that step fails on a missing runner instead of on JS problems.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'src/Reporting/Template/package-lock.json'
+
+      - name: Install report template dependencies
+        run: npm ci --prefix src/Reporting/Template
+
       - name: Run full validation
         env:
           # Feeds the name half of scripts/check-private-leaks.sh, which runs

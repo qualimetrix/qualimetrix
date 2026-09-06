@@ -38,7 +38,7 @@ Inline/
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
 │   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
-│   ├── DirectiveChannelBan.php     # the one channel no directive may address or silence
+│   ├── DirectiveChannelBan.php     # the channels no directive may address or silence
 │   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query, incl. metric -> judging channel
 │   ├── DirectiveRejection.php
@@ -147,7 +147,7 @@ addressed something real and matched nothing this run. It defaults below
 enabled rules, and only files this run analysed. The rule emits nothing itself;
 it arms the usage report, which can only be assembled after every rule has run.
 
-**The fourth channel is the one channel a directive may not address.**
+**The fourth channel is one of two channels a directive may not address.**
 `DirectiveChannelBan` refuses every directive whose target reaches
 `annotation.unused-directive` — the exact name, `annotation.*`, either of them
 with `:file`, under any of the three tags — with an
@@ -177,6 +177,18 @@ are read into the execution result before this channel exists, so applying it
 here would remove a finding that the run's own account of removals never
 mentions. What the ban removes is only the ability to hide the finding with the
 mechanism it exists to audit.
+
+**The second banned channel is `duplication.code-duplication`, for a different
+reason** — no directive form binds to its project-wide finding in a way an
+author controls; see the `DirectiveChannelBan` docblock for the mechanism.
+Every form is refused at the line it is written on, with the same
+`annotation.unresolved-directive` code and its own wording; the working path
+is channel-level (`disabled_rules` / `--disable-rule` / baseline), not a
+directive. A bare directive that named no channel and used to silence a
+duplication finding by covering everything no longer does — see
+`SuppressionFilter` above — and, if that directive silenced nothing else, it
+now surfaces as `annotation.unused-directive` where it previously produced no
+finding at all.
 
 **All four channels report once per authored annotation.** The extractor binds
 a class docblock to the class and to every declaration inside it, so a single

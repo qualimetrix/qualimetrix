@@ -1,3 +1,14 @@
+# STATIC channels: this table is about the static half of the channel
+# universe only — every producer tagged `qmx.rule` (plus the classless
+# computed-metric family entry), resolved once when the container compiles,
+# from `ChannelUniverseInterface::staticDeclarations()`. It does not include
+# the computed-metric channels themselves (`health.*` built-ins,
+# `computed.*` user-defined): those resolve later, at metric-lookup time
+# from configuration, and are enumerated separately in
+# `../enumeration-runtime-channels.tsv`. The two tables are never merged —
+# they answer "which channels exist" at two different times, and merging
+# them would lose that distinction. Run `composer enumeration:channel-universe`
+# to print both halves and their sum together, without merging the files.
 code	producer	owner_capability	shape	declared_direction	levels	requires_list	judged_metric_key	judged_metric_source	code_equals_judged_key	threshold_option_keys	notes
 annotation.invalid-threshold	annotation.directive	Inline	occurrence	NULL	file	NONE	NONE	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:212-216 (no metricValue set)	NA	NONE	NONE
 annotation.unresolved-directive	annotation.directive	Inline	occurrence	NULL	file	NONE	NONE	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:255-259 (no metricValue set)	NA	NONE	NONE

@@ -60,58 +60,150 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     private const string COMPUTED_METRICS_CAPABILITY_ROOT = 'Analysis/Evidence/ComputedMetrics';
 
     /**
-     * Files legitimately allowed to hold a rule-name or channel-code literal
-     * outside the capability that owns it, each with why it cannot be
-     * derived instead. An entry with no argument is indistinguishable from
-     * an oversight in six months — see
-     * `dvizh-vr-workflow:agent-instructions` on decisions without reasons.
+     * Why {@see MetricName}'s own const declarations are exempt: this file is
+     * where each metric key's spelling is authored, so there is nothing to
+     * derive it from — the channel of the same spelling is declared by its
+     * own producing rule under another capability root, and pointing the
+     * constant at that declaration would invert the dependency Measurement is
+     * allowed to have. Curing a declaration site is not possible in the sense
+     * other sites were cured — a definition cannot reference itself.
+     */
+    private const string METRIC_NAME_DECLARATION_REASON =
+        'The const declaration that mints this string. This file is where a metric'
+        . ' key\'s spelling is authored, so there is nothing here to derive it from:'
+        . ' the channel of the same spelling is declared by its own producing rule'
+        . ' under another capability root, and pointing the constant at that'
+        . ' declaration would invert the dependency Measurement is allowed to have.'
+        . ' Curing a declaration site is not possible in the sense other sites were'
+        . ' cured — a definition cannot reference itself.';
+
+    /**
+     * Why {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry}'s
+     * hand-kept key spellings are exempt: its own docblock argues why it
+     * cannot be derived at configuration-merge time.
+     */
+    private const string RULE_THRESHOLD_KEY_GROUP_REASON =
+        'Declared, audited hand-kept copy of a rule\'s ThresholdParser::parse() key'
+        . ' spelling. Its own docblock argues why it cannot be derived at'
+        . ' configuration-merge time: RuleOptionThresholdModeResolver runs before'
+        . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
+        . ' with their owning rule capability, which Configuration may not depend'
+        . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
+        . ' ConfigurationMergerTest. See'
+        . ' docs/internal/plans/sarif-channel-descriptions.md, "Two sites checked'
+        . ' and cleared".';
+
+    /**
+     * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
+     * the published JSON key carrying $issue->classRank, sibling to authored
+     * output vocabulary (rank, file, line, symbol, rule, severity, message,
+     * impactScore, debtMinutes) in the same array literal.
+     */
+    private const string JSON_FORMATTER_CLASS_RANK_REASON =
+        'Key of the published JSON object carrying $issue->classRank, whose sibling'
+        . ' keys in the same array literal (rank, file, line, symbol, rule,'
+        . ' severity, message, impactScore, debtMinutes) are authored output'
+        . ' vocabulary. The name belongs to the wire contract the finding gate'
+        . ' compares, not to the metric or the channel universe, so spelling it'
+        . ' through MetricName would let an internal metric rename silently'
+        . ' rewrite published output.';
+
+    /**
+     * Why `JsonOffenderSection`'s `size.class-count` output key is exempt: it
+     * is the published JSON key carrying $offender->classCount, sibling to
+     * authored output vocabulary in the same array literal.
+     */
+    private const string JSON_OFFENDER_CLASS_COUNT_REASON =
+        'Key of the published JSON object carrying $offender->classCount, whose'
+        . ' sibling keys in the same array literal (symbolPath, healthOverall,'
+        . ' label, reason, violationCount, violationDensity, healthScores) are'
+        . ' authored output vocabulary. Same argument as JsonFormatter.php: the'
+        . ' wire contract must not move when a metric key is renamed.';
+
+    /**
+     * Literals legitimately allowed to sit outside the capability that owns
+     * them, one pair (file, literal) at a time — not one file-wide waiver.
+     * Only a literal actually keyed here is exempt; a new literal appearing
+     * in one of these files, allowed or not, is judged like any other file's
+     * literal and must earn its own pair before it stops failing
+     * {@see noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral()}.
      *
      * **An argument is not enough on its own: the entry must still be
-     * earned.** This list once held `RuleCategory.php`, whose argument said
-     * deriving a display group from a producer name would make the name
-     * space's spelling a behavioural contract again. The enum was retired and
-     * the group became derived ({@see RuleFamily}); an allowance for a file
-     * that no longer exists would have sat here arguing against a decision
-     * already taken, and nothing would have failed. So
-     * {@see everyNamedFileStillEarnsItsEntry()} re-runs the check the
-     * entry suppresses and fails when it finds nothing left to suppress.
+     * earned.** This list once held a file-wide waiver for `RuleCategory.php`,
+     * whose argument said deriving a display group from a producer name would
+     * make the name space's spelling a behavioural contract again. The enum
+     * was retired and the group became derived ({@see RuleFamily}); a waiver
+     * for a file that no longer exists would have sat here arguing against a
+     * decision already taken, and nothing would have failed. So
+     * {@see everyNamedFileStillEarnsItsEntry()} re-runs the check each pair
+     * suppresses and fails when it finds nothing left to suppress.
      *
-     * @var array<string, string>
+     * Removing one pair here reddens the primary guard for exactly that
+     * literal, never {@see everyNamedFileStillEarnsItsEntry()}: the meta-guard
+     * only walks the pairs still present in this list, so a removed pair is
+     * invisible to it by construction — the same asymmetry the file-wide
+     * waiver had, now scoped to one literal instead of one file.
+     *
+     * @var array<string, array<string, string>> file => [literal => reason]
      */
-    private const array ALLOWED_FILES = [
-        'src/Analysis/Evidence/Measurement/Contract/MetricName.php' =>
-            'The const declarations that mint the strings. Eighteen metric keys are'
-            . ' spelled the same as a channel code, and this file is where that'
-            . ' spelling is authored, so there is nothing here to derive it from: the'
-            . ' channel of the same spelling is declared by its own producing rule'
-            . ' under another capability root, and pointing the constant at that'
-            . ' declaration would invert the dependency Measurement is allowed to'
-            . ' have. Curing a declaration site is not possible in the sense the'
-            . ' other sites were cured — a definition cannot reference itself.',
-        'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' =>
-            'Declared, audited hand-kept copy of each rule\'s ThresholdParser::parse()'
-            . ' key spelling. Its own docblock argues why it cannot be derived at'
-            . ' configuration-merge time: RuleOptionThresholdModeResolver runs before'
-            . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
-            . ' with their owning rule capability, which Configuration may not depend'
-            . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
-            . ' ConfigurationMergerTest. See'
-            . ' docs/internal/plans/sarif-channel-descriptions.md, "Two sites checked'
-            . ' and cleared".',
-        'src/Reporting/Formatter/Json/JsonFormatter.php' =>
-            'Key of the published JSON object carrying $issue->classRank, whose sibling'
-            . ' keys in the same array literal (rank, file, line, symbol, rule,'
-            . ' severity, message, impactScore, debtMinutes) are authored output'
-            . ' vocabulary. The name belongs to the wire contract the finding gate'
-            . ' compares, not to the metric or the channel universe, so spelling it'
-            . ' through MetricName would let an internal metric rename silently'
-            . ' rewrite published output.',
-        'src/Reporting/Formatter/Json/JsonOffenderSection.php' =>
-            'Key of the published JSON object carrying $offender->classCount, whose'
-            . ' sibling keys in the same array literal (symbolPath, healthOverall,'
-            . ' label, reason, violationCount, violationDensity, healthScores) are'
-            . ' authored output vocabulary. Same argument as JsonFormatter.php: the'
-            . ' wire contract must not move when a metric key is renamed.',
+    private const array ALLOWED_LITERALS = [
+        'src/Analysis/Evidence/Measurement/Contract/MetricName.php' => [
+            'complexity.cognitive' => self::METRIC_NAME_DECLARATION_REASON,
+            'complexity.npath' => self::METRIC_NAME_DECLARATION_REASON,
+            'complexity.wmc' => self::METRIC_NAME_DECLARATION_REASON,
+            'coupling.cbo' => self::METRIC_NAME_DECLARATION_REASON,
+            'coupling.instability' => self::METRIC_NAME_DECLARATION_REASON,
+            'coupling.distance' => self::METRIC_NAME_DECLARATION_REASON,
+            'coupling.class-rank' => self::METRIC_NAME_DECLARATION_REASON,
+            'cohesion.lcom' => self::METRIC_NAME_DECLARATION_REASON,
+            'design.type-coverage.param' => self::METRIC_NAME_DECLARATION_REASON,
+            'design.type-coverage.return' => self::METRIC_NAME_DECLARATION_REASON,
+            'design.type-coverage.property' => self::METRIC_NAME_DECLARATION_REASON,
+            'design.noc' => self::METRIC_NAME_DECLARATION_REASON,
+            'security.hardcoded-credentials' => self::METRIC_NAME_DECLARATION_REASON,
+            'security.sensitive-parameter' => self::METRIC_NAME_DECLARATION_REASON,
+            'size.class-count' => self::METRIC_NAME_DECLARATION_REASON,
+            'size.method-count' => self::METRIC_NAME_DECLARATION_REASON,
+            'size.property-count' => self::METRIC_NAME_DECLARATION_REASON,
+            'code-smell.unreachable-code' => self::METRIC_NAME_DECLARATION_REASON,
+        ],
+        'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' => [
+            'design.type-coverage.param' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'design.type-coverage.return' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'design.type-coverage.property' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'complexity.cyclomatic' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'complexity.cognitive' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'complexity.npath' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'coupling.cbo' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'coupling.instability' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'coupling.distance' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'coupling.class-rank' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'code-smell.long-parameter-list' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'code-smell.constructor-overinjection' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'code-smell.unreachable-code' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'maintainability.index' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'size.method-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'size.class-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'size.property-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'design.inheritance' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'design.noc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'cohesion.lcom' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'complexity.wmc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'duplication.code-duplication' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+        ],
+        'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php' => [
+            'duplication.code-duplication' => 'The ban must name the second channel no directive may silence,'
+                . ' and Inline may not import a Duplication rule class across capabilities to spell it.'
+                . ' The first banned name needs no entry here because Inline owns it'
+                . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'
+                . ' Inline to borrow a constant from.',
+        ],
+        'src/Reporting/Formatter/Json/JsonFormatter.php' => [
+            'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,
+        ],
+        'src/Reporting/Formatter/Json/JsonOffenderSection.php' => [
+            'size.class-count' => self::JSON_OFFENDER_CLASS_COUNT_REASON,
+        ],
     ];
 
     /**
@@ -175,25 +267,26 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
         foreach (self::productionPhpFiles($root) as $absolutePath) {
             $relative = substr($absolutePath, \strlen($root) + 1);
+            $allowedLiterals = self::ALLOWED_LITERALS[$relative] ?? [];
 
-            if (\array_key_exists($relative, self::ALLOWED_FILES)) {
-                continue;
-            }
-
-            $findings = [...$findings, ...self::foreignLiterals($absolutePath, $relative, $ownerByLiteral)];
+            $findings = [
+                ...$findings,
+                ...self::foreignLiterals($absolutePath, $relative, $ownerByLiteral, $allowedLiterals),
+            ];
         }
 
         self::assertSame([], $findings, "\n" . implode("\n", $findings));
     }
 
     /**
-     * Every file this guard names by hand must still be the file it was named
-     * for — on both lists, and for the same reason.
+     * Every pair or file this guard names by hand must still earn its entry —
+     * on both lists, and for the same reason.
      *
-     * A stale entry is invisible by construction. An allowance makes the guard
-     * skip its file, so an allowance for a deleted file, or for one that no
-     * longer holds a foreign literal, silently protects nothing while reading
-     * as a live argument. An existence-checked entry is the mirror image: the
+     * A stale entry is invisible by construction. An allowed pair makes the
+     * guard skip exactly that (file, literal), so a pair naming a deleted
+     * file, a literal the file no longer spells, or a literal that is no
+     * longer foreign to the file silently protects nothing while reading as a
+     * live argument. An existence-checked entry is the mirror image: the
      * regexes read one shape of hand-spelled code, and a file that stopped
      * carrying that shape — renamed, rewritten, or never carrying it at all —
      * is checked against an empty set of literals and passes whatever it says.
@@ -209,7 +302,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         $root = self::projectRoot();
         $stale = [];
 
-        foreach (array_keys(self::ALLOWED_FILES) as $relative) {
+        foreach (self::ALLOWED_LITERALS as $relative => $literalReasons) {
             $absolutePath = $root . '/' . $relative;
 
             if (!is_file($absolutePath)) {
@@ -218,8 +311,25 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 continue;
             }
 
-            if (self::foreignLiterals($absolutePath, $relative, $ownerByLiteral) === []) {
-                $stale[] = \sprintf('%s is allowed but holds no literal owned by another capability.', $relative);
+            $fileLiterals = self::stringLiterals($absolutePath);
+            $fileOwner = self::capabilityRootFromRelativePath($relative);
+
+            foreach (array_keys($literalReasons) as $literal) {
+                if (!\in_array($literal, $fileLiterals, true)) {
+                    $stale[] = \sprintf('%s:%s is allowed but the file no longer holds that literal.', $relative, $literal);
+
+                    continue;
+                }
+
+                $literalOwner = $ownerByLiteral[$literal] ?? null;
+
+                if ($literalOwner === null || $literalOwner === $fileOwner) {
+                    $stale[] = \sprintf(
+                        '%s:%s is allowed but is no longer owned by another capability.',
+                        $relative,
+                        $literal,
+                    );
+                }
             }
         }
 
@@ -245,14 +355,21 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
     /**
      * The rule-name and channel-code literals in one file that belong to a
-     * capability other than the file's own, phrased as findings.
+     * capability other than the file's own, phrased as findings — except a
+     * literal named in $allowedLiterals, which is exempt by its own pair, not
+     * by the file it sits in.
      *
      * @param array<string, string> $ownerByLiteral
+     * @param array<string, string> $allowedLiterals literal => reason, for this file only
      *
      * @return list<string>
      */
-    private static function foreignLiterals(string $absolutePath, string $relative, array $ownerByLiteral): array
-    {
+    private static function foreignLiterals(
+        string $absolutePath,
+        string $relative,
+        array $ownerByLiteral,
+        array $allowedLiterals = [],
+    ): array {
         $fileOwner = self::capabilityRootFromRelativePath($relative);
         $findings = [];
 
@@ -264,6 +381,10 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             $literalOwner = $ownerByLiteral[$literal];
 
             if ($literalOwner === $fileOwner) {
+                continue;
+            }
+
+            if (\array_key_exists($literal, $allowedLiterals)) {
                 continue;
             }
 

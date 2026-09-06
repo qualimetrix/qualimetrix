@@ -30,9 +30,10 @@ final class Enumerator
     public static function main(array $arguments): int
     {
         $check = \in_array('--check', $arguments, true);
+        $write = \in_array('--write', $arguments, true);
         $positional = array_values(array_filter(
             $arguments,
-            static fn(string $argument): bool => $argument !== '--check',
+            static fn(string $argument): bool => $argument !== '--check' && $argument !== '--write',
         ));
 
         $root = getcwd();
@@ -55,6 +56,10 @@ final class Enumerator
             fwrite(\STDERR, $error->getMessage() . "\n");
 
             return self::FAILURE;
+        }
+
+        if ($write) {
+            return self::writeArtifact($root, $rows, $directory);
         }
 
         if (!$check) {
@@ -92,6 +97,66 @@ final class Enumerator
         );
     }
 
+    /**
+     * Replaces the artifact's rows with a fresh measurement, keeping its
+     * hand-authored header verbatim.
+     *
+     * The header (the file's leading `#` lines) is the only part of the
+     * artifact this script does not measure — it is prose about the method,
+     * not the method's output — so a write must carry it forward rather than
+     * truncate it the way a stdout redirect does.
+     *
+     * @param list<string> $rows
+     */
+    private static function writeArtifact(string $root, array $rows, string $directory): int
+    {
+        $path = $root . '/' . self::ARTIFACT;
+        $existing = is_file($path) ? file_get_contents($path) : false;
+
+        if ($existing === false) {
+            fwrite(\STDERR, self::ARTIFACT . " is missing; there is no header left to preserve, so a write refuses.\n");
+
+            return self::FAILURE;
+        }
+
+        $content = self::headerOf($existing) . implode('', $rows);
+
+        $tmp = $path . '.tmp.' . getmypid();
+
+        if (file_put_contents($tmp, $content) === false) {
+            fwrite(\STDERR, \sprintf("%s: could not write %s.\n", self::ARTIFACT, $tmp));
+
+            return self::FAILURE;
+        }
+
+        if (!rename($tmp, $path)) {
+            @unlink($tmp);
+            fwrite(\STDERR, \sprintf("%s: could not rename %s to %s.\n", self::ARTIFACT, $tmp, $path));
+
+            return self::FAILURE;
+        }
+
+        fwrite(\STDERR, \sprintf("%s: wrote %d authored site(s) from %s.\n", self::ARTIFACT, \count($rows), $directory));
+
+        return 0;
+    }
+
+    /** The file's leading `#` lines, verbatim, followed by the newline that separates them from data. */
+    private static function headerOf(string $committed): string
+    {
+        $header = [];
+
+        foreach (explode("\n", $committed) as $line) {
+            if (!str_starts_with($line, '#')) {
+                break;
+            }
+
+            $header[] = $line;
+        }
+
+        return $header === [] ? '' : implode("\n", $header) . "\n";
+    }
+
     /** @param list<string> $rows */
     private static function compareWithArtifact(string $root, array $rows): int
     {
@@ -119,7 +184,7 @@ final class Enumerator
 
         fwrite(\STDERR, \sprintf(
             "%s is stale: it lists %d authored site(s) and a fresh measurement finds %d."
-            . " Refresh it with `php scripts/enumerate-inline-directives.php src`.\n",
+            . " Refresh it with `php scripts/enumerate-inline-directives.php src --write`.\n",
             self::ARTIFACT,
             substr_count($tracked, "\n"),
             \count($rows),

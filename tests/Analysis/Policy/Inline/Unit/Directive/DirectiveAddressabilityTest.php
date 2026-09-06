@@ -155,6 +155,29 @@ final class DirectiveAddressabilityTest extends TestCase
         self::assertStringNotContainsString('is not a level', $message);
     }
 
+    /**
+     * The corpus directive fixed by codex-01/claude-11 stays GREEN only because
+     * of this ordering: `duplication.code-duplication:class` names an
+     * impossible pair (the channel reports at project level only) AND reaches
+     * the ban, and {@see DirectiveAddressability::problemWithSuppression()}
+     * asks the pair grammar first. Reordering the two checks would silently
+     * swap the published refusal text — and pass this test only if it were
+     * changed to match, which is the point of pinning it here rather than
+     * trusting the docblock alone.
+     */
+    #[Test]
+    public function itJudgesAnImpossiblePairBeforeTheBanOnAChannelBothReject(): void
+    {
+        $message = self::addressability()->problemWithSuppression(
+            self::suppression('duplication.code-duplication:class'),
+        );
+
+        self::assertNotNull($message);
+        self::assertStringContainsString('does not report at level "class"', $message);
+        self::assertStringContainsString('The pair can never match anything', $message);
+        self::assertStringNotContainsString('no directive may silence', $message);
+    }
+
     private static function addressability(): DirectiveAddressability
     {
         return new DirectiveAddressability(new ChannelUniverse(
@@ -165,14 +188,20 @@ final class DirectiveAddressabilityTest extends TestCase
                     SymbolLevel::Class_,
                 ),
                 'coupling.cbo' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+                'duplication.code-duplication' => ChannelDeclaration::magnitude(
+                    WorseDirection::Higher,
+                    SymbolLevel::Project,
+                ),
             ],
             [
                 'complexity.cyclomatic' => ['complexity.cyclomatic'],
                 'coupling.cbo' => ['coupling.cbo'],
+                'duplication.code-duplication' => ['duplication.code-duplication'],
             ],
             [
                 'complexity.cyclomatic' => true,
                 'coupling.cbo' => true,
+                'duplication.code-duplication' => true,
             ],
             new ResolvedComputedMetricDefinitions([]),
         ));

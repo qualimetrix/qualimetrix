@@ -1315,6 +1315,65 @@ PHP;
     }
 
     #[Test]
+    public function itTreatsReturnForeignClassConstantAsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OtherClass
+{
+    public const TYPE = 'service';
+}
+
+class WithForeignConstant
+{
+    public const NAME = 'test';
+
+    public function getName(): string { return self::NAME; }
+    public function getType(): string { return OtherClass::TYPE; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Regression: a foreign class constant (OtherClass::TYPE) reads no instance
+        // state just like self::NAME, so getType() must merge into the same stateless
+        // virtual node as getName() instead of standing as its own isolated component.
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithForeignConstant'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatDynamicConstantNameAsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithDynamicConstantName
+{
+    public const NAME = 'value';
+
+    private string $prop = 'NAME';
+
+    public function getViaDynamicName(): string { return self::{$this->prop}; }
+
+    public function getName(): string { return 'test'; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Regression: self::{$this->prop} (PHP 8.3+ dynamic constant name) reads
+        // $this->prop through the NAME operand, not just the class operand that
+        // isConstantExpression() checks — so it must NOT merge into the same
+        // stateless virtual node as getName(). Two components => LCOM 2.
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithDynamicConstantName'));
+    }
+
+    #[Test]
     public function itDoesNotTreatMethodAccessingPropertyViaCallAsStateless(): void
     {
         $code = <<<'PHP'

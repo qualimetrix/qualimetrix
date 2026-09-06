@@ -1,0 +1,62 @@
+# X9 E2 measurement (a): every ChannelDeclaration::judging()-declaring class,
+# with its current dogfooded coupling.cbo value and whether its JudgedMetrics/
+# MetricName import is used ONLY inside the method holding the judging() call
+# (declaration-only) or also elsewhere in the class body.
+#
+# Obtained by (same-reader rule): a nikic/php-parser AST walk
+# (scratchpad/e2-enumerate.php), NOT grep/token text matching. For every PHP
+# file under src/, parsed with NameResolver + ParentConnectingVisitor, finds
+# every static call ChannelDeclaration::judging(...), resolves the enclosing
+# class and the enclosing method (the "declaring method" -- always
+# channelDeclarations() for every hit found, never hardcoded as that name),
+# then for JudgedMetrics and MetricName separately collects every resolved Name
+# node in the whole class and classifies each as inside or outside that method.
+# coupling.cbo values are the project's own measurement:
+# bin/qmx check src/ --format=metrics --workers=0 (raw metrics dump, not a
+# findings report, so classes below threshold are visible too), matched by FQCN.
+#
+# What this does not see: an import resolved to a class of the same short name
+# in a different namespace would be misattributed by the AST reader if such a
+# name existed unimported in the same file (none does here -- verified by the
+# import list carried in the raw enumerator output, not reproduced in this table).
+# A class using judging() through a helper/wrapper method other than
+# channelDeclarations() itself would still be found by the StaticCall search,
+# but is not exercised anywhere in this tree (all 20 hits are literally in a
+# method named channelDeclarations).
+#
+# Population: 20 producer files declaring judging() (covering 22 concrete rules
+# -- AbstractTypeCoverageRule is one shared abstract base for
+# ParamTypeCoverageRule/PropertyTypeCoverageRule/ReturnTypeCoverageRule, so 3
+# concrete rules share one CBO-paying file). ClassRankRule was confirmed by this
+# same AST reader NOT to call judging() (it calls occurrence()) -- the reader
+# checks the mechanism, not the rule's own docblock claim.
+#
+# Headline result: JudgedMetrics is declaration-only in all 20/20 files --
+# every single import exists solely to spell the judging() call. MetricName is
+# declaration-only in 0/19 files that import it at all (AbstractTypeCoverageRule
+# does not import MetricName -- its subclasses supply the metric key via
+# coverageMetric(), so the base class never names MetricName directly); every
+# other file already reads MetricName elsewhere in its body (metric lookups),
+# so removing the declaration-only credit would not remove that import.
+#
+# rule_class	file	is_abstract_base	coupling.cbo	JudgedMetrics_totalUses	JudgedMetrics_outsideDeclUses	JudgedMetrics_declarationOnly	MetricName_totalUses	MetricName_outsideDeclUses	MetricName_declarationOnly
+Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	no	14	1	0	yes	2	1	no
+Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	no	16	1	0	yes	3	2	no
+Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	no	16	1	0	yes	3	2	no
+Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	no	14	1	0	yes	5	4	no
+Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	src/Analysis/Evidence/Cohesion/LcomRule.php	no	16	1	0	yes	4	3	no
+Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	no	19	1	0	yes	6	3	no
+Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php	no	19	1	0	yes	7	4	no
+Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	no	17	1	0	yes	6	3	no
+Qualimetrix\Analysis\Evidence\Complexity\WmcRule	src/Analysis/Evidence/Complexity/WmcRule.php	no	15	1	0	yes	4	3	no
+Qualimetrix\Analysis\Evidence\Coupling\CboRule	src/Analysis/Evidence/Coupling/CboRule.php	no	21	1	0	yes	10	8	no
+Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	no	20	1	0	yes	6	5	no
+Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php	no	19	1	0	yes	9	8	no
+Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule	src/Analysis/Evidence/Design/DataClass/DataClassRule.php	no	16	1	0	yes	3	2	no
+Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	no	16	1	0	yes	2	1	no
+Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	src/Analysis/Evidence/Design/Inheritance/NocRule.php	no	15	1	0	yes	2	1	no
+Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	yes	18	1	0	yes	0	0	n/a
+Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	no	16	1	0	yes	3	2	no
+Qualimetrix\Analysis\Evidence\Size\ClassCountRule	src/Analysis/Evidence/Size/ClassCountRule.php	no	15	1	0	yes	4	2	no
+Qualimetrix\Analysis\Evidence\Size\MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php	no	16	1	0	yes	2	1	no
+Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php	no	16	1	0	yes	4	3	no

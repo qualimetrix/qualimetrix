@@ -324,7 +324,7 @@ final class Harness
             $control->mutation->apply($scratch, $this->repository);
             $report = \dirname($scratch->tree) . '/report.json';
             $survivors = self::digestsOf($scratch, $control->unchangedAfterRun);
-            $tracked = self::digestsOf($this->repository, $control->restoredAfterRun);
+            $tracked = self::digestsOf($this->repository, $control->restoredAfterRun, $control->restoredContent);
             $child = Shell::start(
                 [
                     \PHP_BINARY,
@@ -361,16 +361,26 @@ final class Harness
      * that deletes the diff directory and writes it back identically has still
      * written, and the only reason to care is that the run said it had not.
      *
+     * `$contentOverrides` lets a caller state the expected bytes of a path
+     * directly instead of reading them off `$root` — see
+     * {@see Control::rewriting()}'s `$restoredContent` for why a
+     * `restoredAfterRun` path sometimes needs one: a repository that tracks no
+     * declaration at all has no file whose bytes mean "nothing declared" in the
+     * shape a correct write produces.
+     *
      * @param list<string> $paths
+     * @param array<string, string> $contentOverrides path => its expected bytes, in place of reading $root
      *
      * @return array<string, string>
      */
-    private static function digestsOf(Scratch|string $root, array $paths): array
+    private static function digestsOf(Scratch|string $root, array $paths, array $contentOverrides = []): array
     {
         $digests = [];
 
         foreach ($paths as $path) {
-            $digests[$path] = self::digestOf($root instanceof Scratch ? $root->path($path) : $root . '/' . $path);
+            $digests[$path] = \array_key_exists($path, $contentOverrides)
+                ? 'file:' . hash('sha256', $contentOverrides[$path])
+                : self::digestOf($root instanceof Scratch ? $root->path($path) : $root . '/' . $path);
         }
 
         return $digests;

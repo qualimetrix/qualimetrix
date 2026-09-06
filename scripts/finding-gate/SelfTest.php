@@ -24,6 +24,8 @@ final class SelfTest
     public function run(): array
     {
         $this->maps();
+        $this->documentKeyInputForm();
+        $this->reportValues();
         $this->metricKeys();
         $this->channelRowShapes();
         $this->claims();
@@ -254,6 +256,175 @@ final class SelfTest
             '"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Finding@src/x.php"',
             $symbols->forward('"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Violation@src/x.php"', 'format:json'),
             'a symbol row maps its JSON-escaped form as well as its raw form',
+        );
+    }
+
+    /**
+     * The fourth `inputs.tsv` shape: a configuration key exactly as a YAML
+     * document writes it, colon included.
+     *
+     * The other three shapes all require a dot, so a bare configuration key like
+     * `suppress_namespaces` matched none of them — the row that would state such
+     * a rename had no shape to be written in at all.
+     */
+    private function documentKeyInputForm(): void
+    {
+        $this->assert(
+            !self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => RenameMaps::INPUTS],
+            ])),
+            'a configuration key as the document writes it, with its trailing colon, is a whole input token',
+        );
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'suppress_namespaces', 'new' => 'suppress_ns', 'source' => RenameMaps::INPUTS],
+            ])),
+            'the same key without its colon is still refused: an undotted bare word is not a whole token',
+        );
+        $this->assert(
+            !self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'design.type-coverage:param_warning', 'new' => 'design.param-typing:warning', 'source' => RenameMaps::INPUTS],
+            ])),
+            'a rule and its option key still matches the first shape, not the fourth',
+        );
+
+        $documentKey = RenameMaps::fromPairs([
+            ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => RenameMaps::INPUTS],
+        ]);
+
+        // The form is deliberately blind to indent: a root key and a per-rule
+        // key of the same spelling are one token in the document's own grammar,
+        // and this is what lets one row address both levels of
+        // finding-gate/cases/rule-exclusion-ledger/qmx.yaml at once.
+        $this->same(
+            "suppress_namespaces:\n  - App\nrules:\n  some.rule:\n    suppress_namespaces:\n      - App\\Sub",
+            $documentKey->reverse("suppress_ns:\n  - App\nrules:\n  some.rule:\n    suppress_ns:\n      - App\\Sub"),
+            'the row translates the key at root indent and at per-rule indent alike',
+        );
+
+        // The counterexample the plan requires: --rule-opt writes a per-rule
+        // option as "rule:option=value", with an "=" after the option name, never
+        // a second ":" — so the whole-token text this shape declares, ending in
+        // ":", is not a substring of it at all.
+        $this->same(
+            '--rule-opt=some.rule:suppress_ns=value',
+            $documentKey->reverse('--rule-opt=some.rule:suppress_ns=value'),
+            'the row does not fire inside a --rule-opt argument, where the same name is followed by "=" rather than ":"',
+        );
+
+        // The known counterexample on the forward side: FindingFilterOrchestrator
+        // prints the old per-rule vocabulary in one stderr sentence, and the
+        // writing "suppress_paths:" is right there in it — but a "/" precedes it,
+        // and "/" continues a name, so the left boundary refuses the match. This
+        // is not something A1 fixes; A3 covers the surface with a declared delta.
+        $pathsKey = RenameMaps::fromPairs([
+            ['old' => 'suppress_paths:', 'new' => 'suppress-paths:', 'source' => RenameMaps::INPUTS],
+        ]);
+        $stderrLine = '<info>3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:</info>';
+        $this->same(
+            $stderrLine,
+            $pathsKey->forward($stderrLine, 'stderr'),
+            'the writing "suppress_paths:" is present in this stderr artifact, and forward substitution does not'
+            . ' touch it: "/" precedes it and continues a name',
+        );
+    }
+
+    /**
+     * The fifth map: a string value of an enumerable report field.
+     *
+     * `format:suppressed` is the one surface {@see RenameMaps::SURFACES}
+     * declares for it, the substitution is quoted only, and there is no bare
+     * spelling — {@see RenameMaps} excludes `REPORT_VALUES` from the role every
+     * other map gets, exactly as it excludes `METRIC_KEYS`.
+     */
+    private function reportValues(): void
+    {
+        $values = RenameMaps::fromPairs([
+            ['old' => 'namespace-suppression', 'new' => 'namespace-block', 'source' => RenameMaps::REPORT_VALUES],
+        ]);
+
+        $this->same(
+            '"mechanism": "namespace-block"',
+            $values->forward('"mechanism": "namespace-suppression"', 'format:suppressed'),
+            'a report-values row translates the quoted value',
+        );
+        $this->same(
+            'namespace-suppression is a report value',
+            $values->forward('namespace-suppression is a report value', 'format:suppressed'),
+            'and there is no bare substitution: the same word unquoted, as prose beside it might carry, is left alone',
+        );
+        $this->same(
+            '"mechanism": "namespace-suppression"',
+            $values->forward('"mechanism": "namespace-suppression"', 'format:json'),
+            'the row reaches only the surface it is declared for: format:json publishes no report value',
+        );
+        $this->same(
+            '"mechanism": "namespace-block"',
+            $values->reverse('"mechanism": "namespace-block"'),
+            'the map is forward-only: reverse leaves the new spelling exactly as it found it',
+        );
+
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'Namespace-Suppression', 'new' => 'namespace-block', 'source' => RenameMaps::REPORT_VALUES],
+            ])),
+            'an uppercase report value is refused: the product\'s own vocabulary is plain kebab-case',
+        );
+
+        foreach (['a#b', 'a:b', 'a--b', 'a.b', '--a', 'a-'] as $invalid) {
+            $this->assert(
+                self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                    ['old' => $invalid, 'new' => 'ok-value', 'source' => RenameMaps::REPORT_VALUES],
+                ])),
+                \sprintf('"%s" is refused: not a plain kebab-case report value', $invalid),
+            );
+        }
+
+        // The tracked file is read through the gate's own loader, exactly as the
+        // other four maps are proved to load in maps() above.
+        $refusal = null;
+
+        try {
+            RenameMaps::load(
+                $this->candidateRoot . '/finding-gate/maps',
+                MetricVocabulary::ofTree($this->candidateRoot),
+            );
+        } catch (GateError $error) {
+            $refusal = $error->getMessage();
+        }
+
+        $this->assert($refusal === null, 'the tracked report-values map does not load: ' . ($refusal ?? ''));
+
+        $idle = RenameMaps::fromPairs([
+            ['old' => 'never-observed', 'new' => 'nor-published', 'source' => RenameMaps::REPORT_VALUES],
+        ]);
+        $idle->forward('nothing this row can translate', 'format:suppressed');
+        $this->same(
+            [RenameMaps::REPORT_VALUES . ': "never-observed" -> "nor-published"'],
+            $idle->staleRows(),
+            'a report-value row that translated nothing is reported stale',
+        );
+        $this->same([], $values->staleRows(), 'and one that fired is not');
+
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'a-value', 'new' => 'b-value', 'source' => RenameMaps::REPORT_VALUES],
+                ['old' => 'a-value', 'new' => 'c-value', 'source' => RenameMaps::REPORT_VALUES],
+            ])),
+            'two report-value rows renaming one value stay refused, exactly as for the other maps',
+        );
+
+        // codex-01: a report-values row colliding on (old, new) with another
+        // map's row must not silently merge into one declaration — that would
+        // hand REPORT_VALUES the other role's unrestricted surface and bare
+        // spelling.
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'shared-spelling', 'new' => 'shared-target', 'source' => RenameMaps::REPORT_VALUES],
+                ['old' => 'shared-spelling', 'new' => 'shared-target', 'source' => RenameMaps::CHANNELS],
+            ])),
+            'a report-value row colliding with a channels row on the same (old, new) spelling is refused'
+            . ' at load, not merged into a bare, every-surface substitution',
         );
     }
 

@@ -1332,11 +1332,73 @@ HEADER;
     return $header . "\n" . ($lines === [] ? '' : implode("\n", $lines) . "\n");
 }
 
+/**
+ * The number of declared channel rows in the STATIC half's own artifact
+ * (`enumeration-channels.tsv`): every non-blank, non-comment line minus the
+ * one column-header line. Read from that file rather than re-measured from
+ * the container, because the static half already has its own measurement
+ * process (see that file's header) and a second one here would be a second
+ * authority for the same count.
+ */
+function staticChannelCount(string $path): int
+{
+    if (!is_file($path)) {
+        throw new RuntimeException(sprintf('Static channel enumeration not found: %s', $path));
+    }
+
+    $lines = array_values(array_filter(
+        explode("\n", (string) file_get_contents($path)),
+        static fn(string $line): bool => $line !== '' && !str_starts_with($line, '#'),
+    ));
+
+    if ($lines === []) {
+        throw new RuntimeException(sprintf('%s has no header row; an empty static half is a broken measurement.', $path));
+    }
+
+    return count($lines) - 1;
+}
+
+/**
+ * Prints the two halves of the channel universe and their sum, without
+ * merging their source files: the static half resolves once when the
+ * container compiles, the runtime half resolves later, at metric-lookup
+ * time from configuration, and merging the files would lose that
+ * distinction. Each half is read through its own artifact/measurement — see
+ * `staticChannelCount()` and `runtimeChannelRows()`.
+ *
+ * @param list<array{channel: string, origin: string, source: string, producer: string, step: string}> $runtimeRows
+ */
+function renderChannelUniverseReport(int $staticCount, string $staticSource, array $runtimeRows, string $runtimeSource): string
+{
+    $builtinCount = count(array_filter($runtimeRows, static fn(array $row): bool => $row['origin'] === 'builtin'));
+    $observedCount = count($runtimeRows) - $builtinCount;
+    $runtimeCount = $builtinCount + $observedCount;
+    $total = $staticCount + $runtimeCount;
+
+    return <<<REPORT
+Channel universe, two halves, two resolution times — never merged into one file or one count:
+
+  STATIC   {$staticCount} channels   resolved once, at container-compile time
+           source: {$staticSource}
+
+  RUNTIME  {$runtimeCount} channels   ({$builtinCount} builtin + {$observedCount} corpus-observed), resolved later, at metric-lookup time from configuration
+           source: {$runtimeSource}
+
+  TOTAL    {$total} channels   = STATIC + RUNTIME
+
+The corpus-observed count is a lower bound: a computed metric declared in a
+qmx.yaml outside the gate corpus is not enumerable, only observable, and only
+over the corpus this run read.
+
+REPORT;
+}
+
 function main(): int
 {
     $arguments = array_slice($_SERVER['argv'] ?? [], 1);
     $check = in_array('--check', $arguments, true);
     $runtimeChannels = in_array('--runtime-channels', $arguments, true);
+    $channelUniverse = in_array('--channel-universe', $arguments, true);
     $emitStep = null;
 
     foreach ($arguments as $argument) {
@@ -1349,6 +1411,7 @@ function main(): int
         $arguments,
         static fn(string $argument): bool => $argument !== '--check'
             && $argument !== '--runtime-channels'
+            && $argument !== '--channel-universe'
             && !str_starts_with($argument, '--emit-maps='),
     ));
 
@@ -1361,6 +1424,25 @@ function main(): int
     $root = dirname(__DIR__);
     $outputPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames.tsv';
     $executedPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames-executed.tsv';
+
+    // Handled before anything touches the container, same as --runtime-channels
+    // below: neither half this prints needs the compiled container, and this
+    // mode never writes a file — it only reads the static half's own artifact
+    // and re-derives the runtime half, then prints both plus their sum.
+    if ($channelUniverse) {
+        $staticPath = $root . '/docs/internal/plans/rule-vocabulary/X8-one-string-two-jobs/enumeration-channels.tsv';
+        $staticCount = staticChannelCount($staticPath);
+        $runtimeSourcePath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv';
+
+        fwrite(STDOUT, renderChannelUniverseReport(
+            $staticCount,
+            relativeToRoot($staticPath, $root),
+            runtimeChannelRows($root),
+            relativeToRoot($runtimeSourcePath, $root) . ' (re-derived here; run --runtime-channels --check to prove the file agrees)',
+        ));
+
+        return 0;
+    }
 
     // Handled before anything touches the container: this half is resolved from
     // the definition catalog, not from the static declarations, so it needs no

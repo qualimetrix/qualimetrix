@@ -91,6 +91,7 @@
         "enumeration:renames:check": "php scripts/generate-rename-enumeration.php --check",
         "enumeration:runtime-channels": "php scripts/generate-rename-enumeration.php --runtime-channels",
         "enumeration:runtime-channels:check": "php scripts/generate-rename-enumeration.php --runtime-channels --check",
+        "enumeration:channel-universe": "php scripts/generate-rename-enumeration.php --channel-universe",
         "enumeration:directives": "php scripts/enumerate-inline-directives.php src",
         "enumeration:directives:check": "php scripts/enumerate-inline-directives.php src --check",
         "suppression-snapshot": "php scripts/generate-suppression-snapshot.php",
@@ -134,6 +135,7 @@
             "@cs-check",
             "@phpstan",
             "@test",
+            "@test:js",
             "@test:cross-tool"
         ],
         "check:docs": [

@@ -1,0 +1,45 @@
+population	subject	file	lcom_before	lcom_after	obtained_by
+src	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	4	3	bin/qmx check src/ --format=metrics --workers=0, cohesion.lcom per class symbol, before/after diff on candidate fix
+src	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	3	2	same
+src	Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector	src/Analysis/Evidence/Cohesion/LcomCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector	src/Analysis/Evidence/Cohesion/TccLccCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityCollector	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityCollector	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	5	4	same
+src	Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	src/Analysis/Evidence/Coupling/ClassRankCollector.php	5	3	same
+src	Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	src/Analysis/Evidence/Coupling/CouplingCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	src/Analysis/Evidence/Coupling/DistanceCollector.php	5	3	same
+src	Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php	3	2	same
+src	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	src/Analysis/Evidence/Design/Inheritance/NocCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php	2	1	same
+src	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php	2	1	same
+src	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/ReturnTypeCoverageRule.php	2	1	same
+src	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoveragePercentCollector	src/Analysis/Evidence/Design/TypeCoverage/TypeCoveragePercentCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsCollector	src/Analysis/Evidence/Security/Credential/HardcodedCredentialsCollector.php	3	2	same
+src	Qualimetrix\Analysis\Evidence\Security\SensitiveParameterCollector	src/Analysis/Evidence/Security/SensitiveParameterCollector.php	3	2	same
+src	Qualimetrix\Analysis\Evidence\Size\ClassCountCollector	src/Analysis/Evidence/Size/ClassCountCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Size\LocCollector	src/Analysis/Evidence/Size/LocCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Size\MethodCountCollector	src/Analysis/Evidence/Size/MethodCountCollector.php	4	3	same
+src	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	4	3	same
+src	Qualimetrix\Reporting\Formatter\CheckstyleFormatter	src/Reporting/Formatter/CheckstyleFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\GithubActionsFormatter	src/Reporting/Formatter/GithubActionsFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	src/Reporting/Formatter/Health/HealthTextFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Html\HtmlFormatter	src/Reporting/Formatter/Html/HtmlFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Json\JsonFormatter	src/Reporting/Formatter/Json/JsonFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	src/Reporting/Formatter/MetricsJsonFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	src/Reporting/Formatter/Sarif/SarifFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter	src/Reporting/Formatter/Summary/SummaryFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\TextFormatter	src/Reporting/Formatter/TextFormatter.php	3	2	same
+src	Qualimetrix\Reporting\Formatter\TextVerboseFormatter	src/Reporting/Formatter/TextVerboseFormatter.php	3	2	same
+gate-corpus	Corpus\Complexity\ConstantAccess	finding-gate/cases/complexity/src/ConstantAccess.php	2	1	bin/qmx check src --format=metrics --workers=0 --config=qmx.yaml run from finding-gate/cases/complexity; before-fix number required a fixture add (corpus was blind: no chujaya class-constant existed in any case), fixture added in this pass
+gate-corpus	Corpus\Complexity\Router	finding-gate/cases/complexity/src/Router.php	2	2	same run, unchanged (control: no foreign class constant in this subject)
+gate-corpus	Corpus\Complexity\Scattered	finding-gate/cases/complexity/src/Scattered.php	4	4	same run, unchanged (control: no foreign class constant in this subject)
+benchmarks	(not run — orchestrator runs composer benchmark:check per plan instructions for this pass)	—	—	—	not measured by this package; see plan step 3, run reserved for the orchestrator's acceptance

@@ -15,7 +15,7 @@ declare(strict_types=1);
  * namespaces have no PSR-4 entry, the same way `scripts/finding-gate.php` loads
  * its own parts.
  *
- * Usage: php scripts/enumerate-inline-directives.php [directory] [--check]
+ * Usage: php scripts/enumerate-inline-directives.php [directory] [--check|--write]
  */
 
 foreach (['EnumeratedSite', 'ThresholdDirectiveScan', 'Enumerator'] as $part) {

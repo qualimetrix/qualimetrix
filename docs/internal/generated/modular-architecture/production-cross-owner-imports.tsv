@@ -413,6 +413,7 @@ Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qu
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract	P4
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults	Analysis.Evidence.ComputedMetrics	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader	Analysis.Evidence.ComputedMetrics	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8

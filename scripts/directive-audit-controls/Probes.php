@@ -977,6 +977,22 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name"',
+                    // Measured directly (emptied the coverage field, reran):
+                    // every one of these errors on a null `directives` key —
+                    // the second half of the case reads `audit()`'s report,
+                    // which this mutation breaks wholesale, exactly as it
+                    // breaks every other `audit()`-reading case above. The
+                    // regression case beside these nine does not call
+                    // `audit()` and stays green.
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled',
@@ -1574,18 +1590,61 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                    // `duplication.code-duplication` is the second banned
+                    // channel this same loop refuses (X9 D2): one `foreach`,
+                    // no branch per channel, so emptying it accepts both
+                    // equally and both belong to this one probe rather than a
+                    // second copy of it — measured directly (patched the
+                    // loop to `foreach ([] as $channel)`, all ten cases below
+                    // went red, none stayed green).
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead',
                 ],
             ),
             Probe::breaking(
                 'ban-spreads-to-configuration-errors',
                 'the ban creeps onto the three neighbouring channels, which are accepted and judged inert',
                 self::BAN,
-                ['        return $code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;'
-                    => "        return str_starts_with(\$code, 'annotation.');"],
+                // Re-pointed for X9 D2: `covers()` grew a second branch
+                // (`duplication.code-duplication`, unrelated to this claim),
+                // so the exact-match line this mutation used to target no
+                // longer stands on its own. Only the `annotation.*` branch is
+                // widened; the duplication branch is untouched, and still
+                // does not match any of the three `annotation.*` names this
+                // claim is about.
+                ["        return \$code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME
+            || \$code === self::PROJECT_ONLY_DUPLICATION_NAME;"
+                    => "        return str_starts_with(\$code, 'annotation.')
+            || \$code === self::PROJECT_ONLY_DUPLICATION_NAME;", ],
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                    // Measured directly (applied the widened `covers()`,
+                    // reran): X9 D2 gave `problemWith()` a per-channel
+                    // `message()` dispatch instead of one hardcoded string, so
+                    // a group selector that expands to a wrongly-covered
+                    // neighbour before it reaches `annotation.unused-directive`
+                    // now throws — `message()`'s `default` arm — rather than
+                    // printing the old channel's wording regardless of which
+                    // one actually matched. Every case built on `annotation.*`
+                    // or `annotation.*:file` goes red for that reason; the
+                    // exact-name cases above stay on their own three.
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, that group at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, that group at file level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, a group that covers it"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                 ],
             ),
             Probe::breaking(
@@ -1625,6 +1684,20 @@ final class Probes
                     // so without this branch it silences the complaint about
                     // the line below it as readily as the bare form does.
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                    // Measured directly (patched the branch out, reran): a
+                    // file-form directive addressing `duplication.code-duplication`
+                    // matches this finding's `Location` — the primary
+                    // occurrence's own file — as readily as it matches any
+                    // ordinary file-subject finding, so without this branch it
+                    // silences the finding the ban exists to keep reportable.
+                    // Only the three `file` data sets go red: next-line's
+                    // comment line never lands on the block's own start line,
+                    // and symbol's declaration subject is never `project:`, so
+                    // both keep missing on `matches()`/subject equality with
+                    // or without this branch — measured, not assumed.
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
                 ],
             ),
             Probe::breaking(

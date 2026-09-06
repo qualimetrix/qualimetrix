@@ -1689,9 +1689,6 @@ rules:
   cohesion.lcom:
     warning: 5
     error: 5
-    suppress_paths:
-      # Derived metric collectors are thin wrappers (low cohesion by nature)
-      - src/Analysis/Evidence/Coupling/*Collector.php
 
   design.inheritance:
     warning: 4

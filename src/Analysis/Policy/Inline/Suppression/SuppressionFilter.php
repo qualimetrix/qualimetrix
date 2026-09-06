@@ -125,7 +125,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * after it.
      *
      * {@see DirectiveChannelBan} is asked first and about the finding alone:
-     * no directive silences the banned channel, the form that names it having
+     * no directive silences a banned channel, the form that names it having
      * been refused where it was written and the form that names nothing having
      * covered it only by covering everything. Asking here rather than in the
      * two callers is what makes publication and the usage accounting one

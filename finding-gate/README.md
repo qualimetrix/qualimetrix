@@ -29,7 +29,10 @@ finding-gate/
 │   ├── symbols.tsv        # old FQN or path -> new (generated from git diff --find-renames)
 │   ├── metric-keys.tsv    # old metric key -> new metric key; forward only, and a
 │   │                      # row covers each `<key>.<strategy>` spelling too
-│   └── inputs.tsv         # option keys, flag aliases, names inside selectors
+│   ├── inputs.tsv         # option keys, flag aliases, names inside selectors,
+│   │                      # and configuration keys as a document writes them
+│   └── report-values.tsv # old -> new value of an enumerable report field;
+│                          # forward only, format:suppressed only, quoted only
 ├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
 ├── declared-delta/        # with one exact unified diff each. Both appear only
 │                          # when a step declares one
@@ -387,12 +390,13 @@ declaration to these properties:
 A map is applied backwards **if and only if it is injective in both
 directions**, and that is checked when it loads rather than promised.
 
-| Map               | Applied      | To what                                                                                         |
-| ----------------- | ------------ | ----------------------------------------------------------------------------------------------- |
-| `channels.tsv`    | forward only | reference artifacts: the whole `rule#code` key and each unambiguous half                        |
-| `symbols.tsv`     | both ways    | reference artifacts; and input — `baseline:explain` subjects, configuration text                |
-| `metric-keys.tsv` | forward only | reference artifacts: the key, and each `<key>.<strategy>` spelling of it                        |
-| `inputs.tsv`      | both ways    | option keys, flag aliases, names in selectors: they live on the input and in the rules snapshot |
+| Map                 | Applied      | To what                                                                                         |
+| ------------------- | ------------ | ----------------------------------------------------------------------------------------------- |
+| `channels.tsv`      | forward only | reference artifacts: the whole `rule#code` key and each unambiguous half                        |
+| `symbols.tsv`       | both ways    | reference artifacts; and input — `baseline:explain` subjects, configuration text                |
+| `metric-keys.tsv`   | forward only | reference artifacts: the key, and each `<key>.<strategy>` spelling of it                        |
+| `inputs.tsv`        | both ways    | option keys, flag aliases, names in selectors: they live on the input and in the rules snapshot |
+| `report-values.tsv` | forward only | `format:suppressed` only: a quoted string value of an enumerable report field                   |
 
 Forward means the *reference's* output restated in the candidate's vocabulary.
 Backward means the *candidate's* input restated in the reference's, because the
@@ -482,10 +486,67 @@ needs it and has no row makes the reference refuse its input with exit 3, which
 the gate reports as `reference-input-untranslated` rather than letting it arrive
 as twelve surface diffs and an empty findings section.
 
-An `inputs.tsv` row names a **whole token**: `rule:option-key` as `--rule-opt=`
-writes it, a flag together with its two dashes, or a dotted producer name as a
-selector writes it. A bare undotted word is refused — "the option key without its
-rule" would translate the same key on every other rule too.
+An `inputs.tsv` row names a **whole token**, in one of four shapes:
+`rule:option-key` as `--rule-opt=` writes it, a flag together with its two
+dashes, a dotted producer name as a selector writes it, or a configuration key
+as a YAML document writes it — the bare key with its trailing colon,
+`suppress_namespaces:`. A bare undotted word with no colon is refused — "the
+option key without its rule" would translate the same key on every other rule
+too.
+
+#### A configuration key as the document writes it
+
+The fourth shape exists because the first three all require a dot: a root
+key like `suppress_namespaces` has none, so a step renaming it had no shape to
+declare the row in at all.
+
+```
+old                    new              reason
+suppress_namespaces:   suppress_ns:     the root option is renamed
+```
+
+Two things follow from the shape being the key **as the document writes it**,
+not as the rule that reads it:
+
+- **it fires at any indent.** A root key and a per-rule key of the same
+  spelling are one token in YAML's own grammar, and the map has no way to tell
+  which one a step renamed — so both translate under one row.
+  `finding-gate/cases/rule-exclusion-ledger/qmx.yaml` carries both:
+  `suppress_namespaces:` at the top of the file and again nested under
+  `rules: {code-smell.long-parameter-list: {...}}`. Renaming only the root one
+  in product code and leaving the corpus' per-rule occurrence unrenamed keeps
+  the two apart in practice, but the row itself does not know the difference,
+  and a step that *does* rename both writes one row for both;
+- **it does not say "this rule's option, not that rule's".** A per-rule option
+  renamed for one rule while another rule keeps the old name under the same
+  key is not expressible by this shape — a blanket rename would translate it on
+  both, and staleness would not catch it, because the row does fire. That gap
+  is not new: it is the same one the bare-word refusal above exists against,
+  and a step that renames one rule's option needs the first shape,
+  `rule:option-key`, not this one.
+
+It never fires inside `--rule-opt=rule:option=value`: that shape holds the
+option name between one colon and an `=`, never followed by a second colon, so
+the whole-token text this shape declares — ending in `:` — is not a substring
+of it.
+
+This shape, like the other three `inputs.tsv` shapes, is matched textually
+across the whole artifact — there is no YAML parse, so the substitution cannot
+tell a document's key position from a comment or a quoted string that happens
+to contain the same characters. `# suppress_namespaces:` in a comment, or
+`"suppress_namespaces:"` inside a string value, is substituted exactly like the
+key itself. This is the mechanism every row shares, not a defect specific to
+the fourth shape: the map is a spelling declaration, not a document model, and
+that is the price of not parsing the twelve surfaces it runs against.
+
+One known counterexample is worth naming rather than silently working around:
+`FindingFilterOrchestrator` prints the old per-rule vocabulary in one stderr
+sentence, `suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:`,
+and the writing `suppress_paths:` sits right there in it. The substitution does
+not reach it — a `/` precedes it, and `/` continues a name, so the left
+boundary refuses the match — and that is a legitimate structural difference in
+the message text, not a hole in this shape; a step that needs that surface
+covered declares a delta for it.
 
 #### One old token, several new ones
 
@@ -523,6 +584,42 @@ The obligations are the ordinary ones, and one is decided rather than inherited:
 - Several tokens on the **old** side are refused: that would make the backwards
   direction the undecidable one. A collapse on the way out needs no such shape —
   `channels.tsv` is forward-only and expresses it with two ordinary rows.
+
+### Report values
+
+`report-values.tsv` is the fifth map, and it is about neither a name nor a
+key: it is the **value** of an enumerable report field —
+`SuppressionMechanism`'s seven values today, the only closed report-field
+vocabulary the product publishes as a string.
+
+```
+old                     new                reason
+namespace-suppression   namespace-block    the mechanism value is renamed
+```
+
+Four properties, and every one of them is narrower than the other maps':
+
+- **it is declared against one surface, and enforced there.** `format:suppressed`
+  is the only surface `RenameMaps::SURFACES` lists for it, because it is the
+  only surface measured to publish such a value at all. A value that later
+  leaks into a second surface is an undeclared diff there, not a silent
+  translation;
+- **the substitution is quoted only**, exactly as a metric key's is and for the
+  same reason: the vocabulary is deliberately plain kebab-case, and a bare
+  word would be indistinguishable from prose the same surface prints beside
+  it — `format:suppressed`'s own `note` field is prose;
+- **there is no bare spelling at all**, not even for a declaration that also
+  carries another role. `REPORT_VALUES` is excluded from the role every other
+  map gets, the same exclusion `METRIC_KEYS` has;
+- **it states a value, never its position.** If a step reordered the array a
+  surface lists such values in, no row expresses that. Not a live gap today —
+  measured against `730941c1`, the mechanism order agrees — but a limit worth
+  naming rather than discovering the day it stops holding.
+
+It has no backwards direction (`FILES[REPORT_VALUES] = false`) for a reason
+narrower than `channels.tsv`'s or `metric-keys.tsv`'s: it names a value the
+corpus has no way to address on its own input in the first place, so there is
+no injectivity to check in a direction that never applies.
 
 ### Splitting and collapsing
 
@@ -687,12 +784,12 @@ to touch this list; it exists because the last change to the claim format
 recorded its blast radius as "one literal, one mutation" and two of these four
 survived by luck.
 
-| Consumer                                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `scripts/finding-gate-controls/Controls.php`                              | eight exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv`, `declared-field-moves.tsv`; it also reads `maps/channels.tsv` to write it back with a control's row, creates `declared-delta/control-*.diff`, and digests `declared-delta.tsv` and `declared-delta/` around a derive run |
-| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                 |
-| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                  |
+| Consumer                                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `scripts/finding-gate-controls/Controls.php`                              | eleven exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `cases/rule-exclusion-ledger/qmx.yaml`, `maps/channels.tsv`, `maps/inputs.tsv`, `maps/report-values.tsv`, `declared-delta.tsv`, `declared-field-moves.tsv`; it also reads `maps/channels.tsv`, `maps/inputs.tsv` and `maps/report-values.tsv` to write each back with a control's own row, creates `declared-delta/control-*.diff`, and digests `declared-delta.tsv` and `declared-delta/` around a derive run |
+| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
 stopped tree, minus prose. The product test is one field-read away from breaking
@@ -711,10 +808,11 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs twenty controls, each on its own hardlink clone:
-eighteen planted breakages and two green ones. Sixteen of the eighteen are each
-required to produce a named failure class at a named surface; the two derive
-controls are judged by what the run left on disk instead. `moved-aggregated-spelling`
+`composer gate:controls` runs twenty-three controls, each on its own hardlink
+clone: nineteen planted breakages and four green ones. Seventeen of the
+nineteen are each required to produce a named failure class at a named
+surface; the two derive controls are judged by what the run left on disk
+instead. `moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
 keys stay exactly where they are, and the gate has to be red rather than absorbing
@@ -818,9 +916,9 @@ differs. Three properties of the declaration are worth knowing before adding one
   movement test, and both controls still PASS — a corpus run cannot see the
   difference, because the records in it move. Those two properties are held by
   self-test cases (`producerMoves()`) and by them alone.
-- `field-move-stale`, `derive-refuses-broken-run` and `derive-writes-green-run`
-  are the three newest, and the last two are the only controls in this harness
-  whose subject is not in the report at all. `field-move-stale` replaces `declared-field-moves.tsv` with one row
+- `derive-refuses-broken-run` and `derive-writes-green-run` are the only
+  controls in this harness whose subject is not in the report at all.
+  `field-move-stale` replaces `declared-field-moves.tsv` with one row
   licensing a move on a surface where nothing moves; the step's own licence goes
   with the replacement, so the move that *does* happen returns to being
   `delta-overreach` on a surface the step declares and is absorbed as declaration

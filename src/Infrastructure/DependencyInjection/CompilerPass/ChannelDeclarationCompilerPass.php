@@ -91,9 +91,17 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * A key a channel names must exist in the metric catalog, and only a
  * `magnitude` producer may name one at all — see
  * {@see JudgedMetricDeclarationGuard::assertDeclarable()}, which also names the
- * six channels the check says nothing about. It lives beside this pass for the
+ * channels the check says nothing about. It lives beside this pass for the
  * same reason the shape checks do: {@see ChannelDeclaration} would otherwise
  * have to import the metric catalog across a capability boundary to assert it.
+ * The computed-metric family is silent in that list for a different reason
+ * than the five static exceptions are: it resolves at metric-lookup time,
+ * after this compiler pass has already finished, so nothing build-time could
+ * see its keys — a fact about *when* the channel is known, not an oversight
+ * in this pass. `composer enumeration:channel-universe` prints both halves of
+ * the channel universe — this pass's static half and that runtime half —
+ * side by side, with their own counts; this docblock does not repeat those
+ * counts in prose.
  *
  * The capability-owned channel family contract supplies the names and the
  * facts of the classless producers. The pass never imports the internal rule
