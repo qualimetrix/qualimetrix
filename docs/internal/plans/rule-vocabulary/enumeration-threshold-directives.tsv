@@ -73,7 +73,6 @@ src/Analysis/Evidence/Measurement/Contract/MetricName.php	33	coupling.cbo	73 -- 
 src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	16	coupling.cbo	47 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 46.
 src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	10	coupling.cbo	23 -- Measurement visitors intentionally share this lifecycle promise; current raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.cbo	22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
-src/Analysis/Policy/Baseline/Baseline.php	23	coupling.cbo	21 -- The capability's own aggregate root: raw
 src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	80	coupling.cbo	21 -- Raw CBO 20: an audit that answers what a directive did must
 src/Reporting/FormatterContext.php	14	coupling.cbo	warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's              formatter (                     ) is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
