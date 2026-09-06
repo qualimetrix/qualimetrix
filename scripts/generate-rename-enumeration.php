@@ -1123,9 +1123,12 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `@qmx-ignore` targets, other tests, docs, config) renames normally.
 # `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
 # re-derives the same frozen set independently on every `composer test` run
-# and fails if the count drifts from what 01-freeze-kind.md names or if a
-# frozen constant no longer equals its rule's channel code — so a sweep that
-# renamed a frozen occurrence by mistake is caught there, not only here.
+# and fails if the count drifts from what 01-freeze-kind.md names, if a
+# frozen constant no longer equals its own pin, or if the constant is no
+# longer what `OccurrenceKey::semantic()` is called with — so a sweep that
+# renamed a frozen occurrence by mistake is caught there, not only here. A
+# frozen constant reading differently from `NAME` after a future channel
+# rename is the freeze working as designed, not a drift to reconcile.
 #
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from

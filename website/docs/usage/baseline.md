@@ -129,14 +129,16 @@ Two consequences are worth knowing before you run it:
   `baseline:cleanup` listing.
 
 Entries this build cannot read are carried rather than dropped, and counted in
-the report. Counted is not skipped: such an entry still names a channel, so the
-map renames it like any other — leaving it behind on a retired name is the one
-outcome worse than carrying it. The count is deliberately narrower than what
-`check` calls inert: the carry runs no analysis, so it only counts what the
-document itself shows — an entry that is not an object, one without a readable
-`channel`, one whose `occurrence` or `edge` is malformed, one that already
-shared its identity with another, and a subject that stores its entries as
-something other than a JSON array.
+the report. The count is deliberately narrower than what `check` calls inert:
+the carry runs no analysis, so it only counts what the document itself
+shows. Of the five kinds it counts, two still have a readable `channel` and
+are renamed like any other entry — one whose `occurrence` or `edge` is
+malformed, and one that already shared its identity with another. The other
+three have no channel for the map to act on and are carried unchanged: an
+entry that is not an object, one without a readable `channel`, and a subject
+that stores its entries as something other than a JSON array. Being counted
+never means dropped either way — an unreadable entry is never removed from
+the file — but only the first two are renamed onto the new spelling.
 
 Renaming a channel can move an entry among its siblings. The carried file
 places every line in the same canonical order the product itself writes, so a

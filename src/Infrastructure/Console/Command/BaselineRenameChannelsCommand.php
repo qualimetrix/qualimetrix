@@ -111,11 +111,11 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
             // refusal is the user's to fix turns out wrong. A JSON caller trades
             // it for an outcome it can parse.
             //
-            // Every refusal this command can reach is a RuntimeException: a map or
-            // content refusal, a compare-and-swap conflict, a file that could not
-            // be replaced. Anything else is a defect in this tool rather than an
-            // outcome of the carry, and goes on to be labelled as one — a bug is
-            // not a machine-readable result.
+            // The `{"error": ...}` envelope answers every RuntimeException on this
+            // path alike, including one that means a defect in this tool rather
+            // than an outcome of the carry (e.g. {@see BaselineDocumentLayout}'s
+            // own `ini_set` failure surfaces as one); this surface cannot tell the
+            // two apart today.
             if ($format !== 'json') {
                 throw $e;
             }

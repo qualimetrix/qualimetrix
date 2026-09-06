@@ -37,6 +37,15 @@ use RuntimeException;
  * a class silently losing its literal form (rewritten as `self::NAME`, or as
  * any other expression) drops out of the measured set instead of quietly
  * passing.
+ *
+ * The declaration alone is not the freeze: a constant nobody reads is dead
+ * code, and `OccurrenceKey::semantic()`'s first argument is where the
+ * discriminator actually lands. This guard therefore also reads, per
+ * declaring file, every `OccurrenceKey::semantic(` call and requires the
+ * first argument to spell `self::OCCURRENCE_KIND` — so swapping the call
+ * site back to `self::NAME` (or any other expression) while leaving the
+ * declaration untouched fails here, instead of leaving a frozen constant
+ * that nothing in production consults.
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
@@ -152,9 +161,61 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
                     $expectedSpelling,
                 );
             }
+
+            $callSiteMismatch = self::findCallSiteMismatch($declaration['file'], $class);
+
+            if ($callSiteMismatch !== null) {
+                $mismatches[] = $callSiteMismatch;
+            }
         }
 
         self::assertSame([], $mismatches, "\n" . implode("\n", $mismatches));
+    }
+
+    /**
+     * The declaration proves the constant exists; this proves it is used.
+     * Every `OccurrenceKey::semantic(` call in the declaring file must pass
+     * `self::OCCURRENCE_KIND` as its first argument — a call site rewritten
+     * to `self::NAME` (or anything else) leaves the declaration in place
+     * while the discriminator it froze quietly starts following the channel
+     * code again, which the declaration-only checks above cannot see.
+     */
+    private static function findCallSiteMismatch(string $file, string $class): ?string
+    {
+        $source = file_get_contents($file);
+
+        if ($source === false) {
+            throw new RuntimeException(\sprintf('Could not read %s.', $file));
+        }
+
+        preg_match_all('/OccurrenceKey::semantic\(\s*([^,]+?)\s*,/', $source, $matches);
+        $firstArguments = $matches[1];
+
+        if ($firstArguments === []) {
+            return \sprintf(
+                '%s: declares OCCURRENCE_KIND but calls no OccurrenceKey::semantic() in the same file — the'
+                . ' constant is unused.',
+                $class,
+            );
+        }
+
+        $wrongArguments = array_values(array_unique(array_filter(
+            $firstArguments,
+            static fn(string $argument): bool => $argument !== 'self::OCCURRENCE_KIND',
+        )));
+
+        if ($wrongArguments !== []) {
+            return \sprintf(
+                '%s: OccurrenceKey::semantic() is called with "%s" as its first argument instead of'
+                . ' self::OCCURRENCE_KIND — the frozen constant is declared but no longer used to key the'
+                . ' occurrence, so it is dead code and the discriminator has silently gone back to following'
+                . ' whatever that expression evaluates to.',
+                $class,
+                implode('", "', $wrongArguments),
+            );
+        }
+
+        return null;
     }
 
     /**

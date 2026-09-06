@@ -117,6 +117,15 @@ final class BaselineDocumentLayout
         $blocks = [];
 
         foreach ($entries as $subjectKey => $payloads) {
+            // A subject with no payload is not a shape the writer produces —
+            // {@see BaselineWriter::serializeEntries()} only opens a subject
+            // key alongside at least one line — so a carry that read one from
+            // a hand-edited file drops it here instead of rendering a block
+            // no reader agrees is a subject with entries.
+            if ($payloads === []) {
+                continue;
+            }
+
             $lines = [];
 
             foreach ($payloads as $payload) {

@@ -2677,6 +2677,8 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/fix2.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/fix3.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/fix4.md',
+        'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/foreign.md',
+        'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/fix5.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/followups/pins.md',
         'docs/internal/plans/README.md',
         'src/Core/Path/README.md',

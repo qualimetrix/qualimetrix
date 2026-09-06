@@ -551,6 +551,34 @@ final class BaselineChannelRenamerTest extends TestCase
     }
 
     /**
+     * A subject block with no lines is a shape the writer never produces —
+     * {@see BaselineWriter::serializeEntries()} only opens a subject key
+     * alongside at least one payload — so a carry that read one from a
+     * hand-edited file drops it rather than rendering `"subject": []`
+     * (or the malformed multi-line form the naive renderer used to print),
+     * a form `load()` + `write()` would erase on its own next pass anyway.
+     */
+    #[Test]
+    public function itDropsAnEmptySubjectBlock(): void
+    {
+        $path = $this->rawFixture([
+            'class:App\Empty' => [],
+            'class:App\Bar' => [['channel' => 'mid.two', 'count' => 1]],
+        ]);
+
+        $report = $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+        $carried = (string) file_get_contents($path);
+
+        self::assertSame(1, $report->renamedEntries);
+        self::assertStringNotContainsString('App\\\\Empty', $carried);
+
+        $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
+        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+
+        self::assertSame($carried, (string) file_get_contents($path));
+    }
+
+    /**
      * An envelope field the build does not know is carried through, and a
      * numeric name for one still comes back a quoted JSON key: `json_decode`
      * turns `"0"` into an `int` array key, and encoding it as it stands would

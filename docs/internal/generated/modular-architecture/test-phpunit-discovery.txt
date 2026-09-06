@@ -5250,6 +5250,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesALineThisBuildCannotReadInsteadOfDroppingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesASubjectBlockThatIsNotAnArray
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itDropsAnEmptySubjectBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt

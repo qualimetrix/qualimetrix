@@ -61,10 +61,11 @@ final class ChannelRenameReporter
             $output->writeln(\sprintf('<comment>Declared rename of "%s" matched no entry.</comment>', $old));
         }
 
-        // "Carried, not dropped" rather than "carried unchanged": a line this
-        // build cannot read still names a channel, so the map renames it like
-        // any other, and calling the whole set unchanged would be false for
-        // exactly the lines a migration most needs to move.
+        // "Carried, not dropped" rather than "carried unchanged": only entries
+        // with a readable channel (a malformed occurrence/edge, or an
+        // already-duplicate identity) are renamed here; an entry that is not
+        // an object, has no readable channel, or sits in a non-array block
+        // has no channel for the map to act on and passes through unchanged.
         foreach ($report->unreadable as $reason => $count) {
             $output->writeln(\sprintf(
                 '<comment>%d entr%s carried rather than dropped, unread by this build, because %s.</comment>',

@@ -42,7 +42,13 @@ use RuntimeException;
  *   document-level defects it refuses (invalid JSON, a root that is not an
  *   object, a version this build does not hold, a missing `entries` object,
  *   an unreadable `generated` or `scope`) and demotes exactly what it demotes,
- *   counting the line rather than refusing the file;
+ *   counting the line rather than refusing the file. `generated` and `scope`
+ *   ask the loader's own checks directly ({@see BaselineLoader::parseGenerated()},
+ *   {@see BaselineLoader::parseScope()}); JSON validity, root-object shape,
+ *   version and the `entries` object are a second, independently written set
+ *   of checks that agrees with the loader's verdict today but is not the same
+ *   code path — a future change to the loader's rules there needs its
+ *   counterpart here updated by hand;
  * - the **writer** owns what a *file* looks like — block shape and line order
  *   are {@see BaselineDocumentLayout} and {@see BaselineEntryOrder}, so a
  *   carried file is laid out where {@see BaselineWriter} would have laid it

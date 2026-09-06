@@ -569,11 +569,15 @@ owners decide what a carried file is and the carry is only one of them:
 - **`BaselineLoader` owns what a document is.** The carry refuses exactly the
   document-level defects it refuses — invalid JSON, a root that is not an object, a
   version this build does not hold, a missing `entries` object, an unreadable `generated`
-  or `scope` — asking the loader's own checks rather than keeping a second copy of them,
-  so a carry cannot write an envelope this build's `check` then declines to load. What
-  the loader merely demotes, the carry merely counts: a subject whose entries are not a
-  JSON array becomes the same single unreadable line the loader makes of it, and the
-  writer puts that line back as a one-element block.
+  or `scope` — so a carry cannot write an envelope this build's `check` then declines to
+  load. `generated` and `scope` ask the loader's own checks directly
+  (`BaselineLoader::parseGenerated()`/`parseScope()`); JSON validity, root-object shape,
+  version and the `entries` object are a second, independently written set of checks that
+  agrees with the loader's verdict today but is not the same code path — a future change
+  to the loader's rules there needs its counterpart here updated by hand. What the loader
+  merely demotes, the carry merely counts: a subject whose entries are not a JSON array
+  becomes the same single unreadable line the loader makes of it, and the writer puts
+  that line back as a one-element block.
 - **`BaselineWriter` owns what a file looks like** — block shape and line order, through
   the shared `BaselineDocumentLayout` and `BaselineEntryOrder`.
 - **The file owns each line's bytes.** A payload is echoed in the field order it was
