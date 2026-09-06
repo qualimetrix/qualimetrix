@@ -135,6 +135,7 @@
             "@cs-check",
             "@phpstan",
             "@test",
+            "@test:js",
             "@test:cross-tool"
         ],
         "check:docs": [
