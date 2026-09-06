@@ -79,6 +79,60 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
+### Carry a baseline onto renamed channels
+
+```bash
+bin/qmx baseline:rename-channels baseline.json channels.tsv
+bin/qmx baseline:rename-channels baseline.json channels.tsv --format=json
+```
+
+`baseline:rename-channels <baseline> <map>` rewrites the `channel` field of the
+entries a declared map names, and nothing else. It **runs no analysis**: subject
+keys, `occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope` and
+`generated` are carried through untouched, and no project code is read. Use it
+when an upgrade renames a channel you have accepted debt on, instead of
+regenerating — a regeneration silently accepts whatever the tree has
+accumulated since.
+
+The map is tab-separated with the header `old`, `new`, `reason`, one row per
+rename; blank lines and `#` comments are skipped:
+
+```text
+old	new	reason
+complexity.cyclomatic	complexity.ccn	renamed in vX.Y
+```
+
+It is refused, with the file left byte-identical, when: the file is not version
+13; its envelope is not a readable baseline document; a subject's entries are
+not a JSON array; two rows rename one name; two rows produce one name; a row's
+two sides are equal; one row's target is renamed again by another; or the carry
+would give two entries in one subject a single identity. A declared rename that
+matches nothing in this file is reported, not refused. Exit codes: `0` carried
+(including "nothing matched"), `1` refused, `2` the baseline or the map is not a
+readable file.
+
+Two consequences are worth knowing before you run it:
+
+- **A new name is not checked against the channels this build declares.** The
+  carry is released before the renames it exists to perform, so until the
+  release that declares the new name lands, `check` reports a carried entry as
+  one it cannot apply. That intermediate state is by design.
+- **Entry selectors change.** A selector is a digest of the identity, which the
+  channel name is part of, so a saved `baseline:cleanup --remove=<selector>`
+  stops addressing a carried entry. Re-read the selectors from a fresh
+  `baseline:cleanup` listing.
+
+Entries this build cannot read are carried through unchanged rather than
+dropped, and counted in the report. That count is deliberately narrower than
+what `check` calls inert: the carry runs no analysis, so it only counts what
+the document itself shows — an entry that is not an object, one without a
+readable `channel`, one whose `occurrence` or `edge` is malformed, and one that
+already shared its identity with another.
+
+Renaming a channel can move an entry among its siblings. The carried file is
+written in the same canonical order the product itself writes, so a later
+command that rewrites the file does not move a line again.
+
 ### Explain a boundary
 
 ```bash

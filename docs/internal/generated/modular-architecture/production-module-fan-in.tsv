@@ -39,7 +39,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInt
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	25	8
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	7	4
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	8	4
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	7	4
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	21	8
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	32	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
@@ -97,7 +97,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	62	17
-Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	14	6
+Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	16	6
 Qualimetrix\Analysis\Finding\Contract\JudgedMetrics	Analysis.Finding	20	7
 Qualimetrix\Analysis\Finding\Contract\LevelActivity	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	38	14
@@ -153,6 +153,7 @@ Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterfac
 Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface	Analysis.Policy.Architecture	1	1
 Qualimetrix\Analysis\Policy\Baseline\Baseline	Analysis.Policy.Baseline	3	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineCapture	Analysis.Policy.Baseline	1	1
+Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer	Analysis.Policy.Baseline	2	2
 Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner	Analysis.Policy.Baseline	2	2
 Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason	Analysis.Policy.Baseline	1	1
@@ -169,6 +170,8 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	4	2
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.Baseline	2	2
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus	Analysis.Policy.Baseline	1	1
+Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	1	1
+Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1

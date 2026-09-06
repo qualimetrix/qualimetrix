@@ -331,16 +331,18 @@ bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
 bin/qmx baseline:update   <baseline> [<paths>...] [--force]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
+bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 ```
 
-All four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option.
+The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option. `baseline:rename-channels` accepts none of them: it runs no analysis, so there is no measured set for them to define.
 
 - `baseline:generate` captures the current measured findings. `--mode=ratchet` is the default; `--mode=suppress` records unconditional acceptance for captured identities. Its `--force` overwrites an existing file.
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
+- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Exit `1` is a refusal on content and `2` an unreadable file; either way the baseline is left byte-identical. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
 
-All lifecycle commands refuse incomplete analysis with exit 4 before interpreting
+The four analysing commands refuse incomplete analysis with exit 4 before interpreting
 or writing a baseline. `--force` overrides file/scope guards only; it cannot make
 a partial measured set acceptable. Existing destinations remain byte-identical,
 and `baseline:generate` does not create a missing destination.

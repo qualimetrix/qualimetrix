@@ -256,6 +256,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itIncludesAbstractionGuidanceForMediumCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itIncludesInterfaceGuidanceForSmallCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsCycleIdentityStableWhenMemberOrderChanges
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itLabelsCategoryAsLargeForBigCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRespectsMaxCycleSize
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsCorrectName
@@ -548,6 +549,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itMultipleFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsDefaultEnabled
@@ -2373,6 +2375,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::duplicateBlockProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::duplicateBlockWithHintIncludesHintInMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::duplicateBlockWithoutHintOmitsHintFromMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesOnlyProjectAndContentForDuplicateGroupIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::largeDuplicateIsError
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::multipleBlocksProduceMultipleFindings
@@ -2983,6 +2986,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itCreatesOneFindingForSingleFinding
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itGroupsEqualPatternEvidenceRegardlessOfLineAndNeverReceivesSecretValues
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itHasCorrectNameAndCategory
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itLoadsOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itPreservesRepositoryFileAndEntryOrderAcrossBatches
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itProducesCorrectMessageForEnumCasePattern
@@ -3216,6 +3220,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itCreatesFindingForSingleFinding
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itCreatesMultipleFindingsForMultipleFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itHasCorrectNameAndCategory
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itLoadsOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itReturnsNoFindingsWhenDisabled
@@ -3364,6 +3369,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itReportsImplementingEnumsPerNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itFollowsSumWhenSumCrossesThresholdButBaseDoesNot
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesWarning
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsCliAliases
@@ -3380,6 +3386,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itRespectsBoundaryThresholds"below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itStaysSilentWhenBaseCrossesThresholdButSumDoesNot
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsComplexFile
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsDocBlock
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsHashComment
@@ -5005,6 +5012,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsIdenticalSemanticEdgesStableAcrossUseSiteLocations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsTargetSymbolControlsIndependentWhileUseSitePhysicalControlsApplyToEveryProjection
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsTheDiagnosticWhenTheTwoCriteriaAreNotComparable
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToRuleName
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itPreservesTheDependencyLocationIdentityWhenProjectingAFinding
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsAStructuredDependencyLocationIntoAFindingLocation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsEveryOwnedDuplicateTargetInCanonicalOrder
@@ -5129,6 +5137,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithTwo
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itLeavesAConfiguredComputedEntryAloneInCleanup
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itReportsAConfiguredComputedEntryInExplain
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itStillRefusesAnEntryOnAChannelNothingDeclares"cleanup"
@@ -5218,6 +5232,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPreservesTheInputOrderAcrossMixedVerdicts
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPromotesEveryMemberOfAMeasuredBreachAndNamesTheAcceptedMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itReportsFourErrorsWhenAGroupOfFourExceedsACountOfThree
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesAFileThatAlreadyHeldADuplicateIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itCarriesALineThisBuildCannotReadInsteadOfDroppingIt
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesACarryThatWouldGiveTwoEntriesOneIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a chain"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a wrong header"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"both sides equal"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"two rows for one old name"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"two rows onto one new name"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADocumentWhoseRootIsNotAnObject
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesADocumentWithoutAnEntriesObject
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAFileOfAnotherVersionAndNamesBoth
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesAFileThatIsNotJson
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesASubjectBlockThatIsNotAnArray
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesToReplaceASymbolicLink
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRefusesToWriteOverAFileThatChangedSinceItWasRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itReportsADeclaredRenameThatMatchedNothing
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itRestoresTheCanonicalOrderAfterARenameThatMovesAnEntry
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineChannelRenamerTest::itWaitsForTheLockAndGivesUpNamingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itCarriesTheSourceContentHashForward
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itDoesNotListAnEntryThatIsStillMeasuredAndDeclared
@@ -5236,6 +5271,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnInertEntryWithAnIdentityThatIdentitysSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnUnreadableEntryASelectorAnyway
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itKeepsTheRawPayloadOfAnInertEntry
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itNamesWhatIsWrongWithAMalformedEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAMagnitudeEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAnOccurrenceEntryWithAnEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesSemanticOccurrencesAsDistinctSelectorBearingIdentities
@@ -5440,6 +5476,43 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentEdgeIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentOccurrenceIdentities
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"chain"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"crlf-line-endings"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"empty-new-field"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"header-only"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"header-with-extra-column"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"leading-space-in-old"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"name-carrying-a-level-separator"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"one-row"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"renames-nothing"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"retired-pair-spelling"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"row-missing-a-field"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"the-same-row-twice"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itReadsTheRepositorysOwnDeclaredChannelMap
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itReadsTheRowsItAccepted
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itRefusesAMapFileItCannotRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"crlf-line-endings"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"empty-new-field"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-only"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-with-extra-column"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"leading-space-in-old"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"name-carrying-a-level-separator"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"one-row"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"renames-nothing"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"retired-pair-spelling"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"row-missing-a-field"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"the-same-row-twice"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itDoesNotCaptureAConfigurationErrorFindingIntoAGeneratedBaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itListsSuchAnEntryForCleanupOnItsOwnReasonEvenWhileTheFindingIsStillMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itNeverAcceptsAConfigurationErrorGroupAtTheCeilingAndReportsTheEntryAsInert
@@ -6306,6 +6379,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"baseline:cleanup"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"baseline:explain"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"baseline:generate"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"baseline:rename-channels"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"baseline:update"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"check"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"debug:layer-assignment"

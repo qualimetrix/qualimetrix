@@ -271,6 +271,35 @@ final class BaselineEntryParserTest extends TestCase
         self::assertSame('"edge" must be a JSON object', $entry->detail);
     }
 
+    /**
+     * The `edge` field is read by {@see BaselineEdge::fromArray()} for both
+     * this parser and the channel carry, so the sentence a user sees for a
+     * malformed edge is pinned here rather than left to whichever caller
+     * happens to run.
+     */
+    #[Test]
+    public function itNamesWhatIsWrongWithAMalformedEdge(): void
+    {
+        $cases = [
+            [[], '"edge" must be a JSON object'],
+            [['target' => ''], '"edge.target" must be a non-empty canonical symbol path'],
+            [['target' => 12], '"edge.target" must be a non-empty canonical symbol path'],
+            [['target' => 'class:App\\Target', 'type' => 'teleports-into'], '"edge.type" is not a known dependency type: "teleports-into"'],
+            [['target' => 'class:App\\Target', 'type' => 1], '"edge.type" is not a known dependency type: int'],
+        ];
+
+        foreach ($cases as [$edge, $detail]) {
+            $entry = $this->parser->parse('callable:App\Foo::bar', [
+                'channel' => 'architecture.layer-violation',
+                'edge' => $edge,
+                'count' => 1,
+            ]);
+
+            self::assertInstanceOf(InertBaselineEntry::class, $entry);
+            self::assertSame($detail, $entry->detail);
+        }
+    }
+
     #[Test]
     public function itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput(): void
     {

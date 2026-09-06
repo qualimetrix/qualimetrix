@@ -1,0 +1,190 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
+
+/**
+ * The command through the binary a user actually runs — registration
+ * included, because a service the container knows and `bin/qmx` does not
+ * offer is a command nobody can call.
+ */
+#[CoversClass(BaselineRenameChannelsCommand::class)]
+final class BaselineRenameChannelsCommandTest extends TestCase
+{
+    private string $tempDir;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = TempDirectory::create('qmx-rename-channels-');
+    }
+
+    protected function tearDown(): void
+    {
+        TempDirectory::remove($this->tempDir);
+    }
+
+    #[Test]
+    public function itIsRegisteredAsAPublicServiceAndOfferedByTheBinary(): void
+    {
+        $container = (new ContainerFactory())->create();
+
+        self::assertTrue($container->has(BaselineRenameChannelsCommand::class));
+        $status = 0;
+        self::assertStringContainsString('baseline:rename-channels', $this->qmx('list', $status));
+    }
+
+    /**
+     * The command measures nothing, so it must not offer the input that
+     * defines a measured set: an accepted-and-inert `--preset` would tell a
+     * user their carry honoured a configuration it never read.
+     */
+    #[Test]
+    public function itOffersNoMeasuredRunInput(): void
+    {
+        $command = (new ContainerFactory())->create()->get(BaselineRenameChannelsCommand::class);
+        self::assertInstanceOf(BaselineRenameChannelsCommand::class, $command);
+        $definition = $command->getDefinition();
+
+        foreach (['config', 'preset', 'rule-opt', 'only-rule', 'disable-rule'] as $option) {
+            self::assertFalse($definition->hasOption($option));
+        }
+
+        self::assertFalse($definition->hasArgument('paths'));
+        self::assertTrue($definition->hasArgument('map'));
+        self::assertTrue($definition->hasOption('format'));
+    }
+
+    #[Test]
+    public function itCarriesAndReportsInJson(): void
+    {
+        $baseline = $this->baseline([
+            'class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]],
+        ]);
+        $map = $this->map("alpha.one\talpha.renamed");
+
+        $status = 0;
+
+        $output = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s --format=json',
+            escapeshellarg($baseline),
+            escapeshellarg($map),
+        ), $status);
+
+        self::assertSame(0, $status, $output);
+
+        $report = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertTrue($report['written']);
+        self::assertSame(1, $report['renamed']);
+        self::assertSame(['alpha.one' => 1], $report['rows']);
+        self::assertStringContainsString('"channel":"alpha.renamed"', (string) file_get_contents($baseline));
+    }
+
+    #[Test]
+    public function itAnswersAContentRefusalWithOne(): void
+    {
+        $baseline = $this->baseline([], version: 5);
+        $before = (string) file_get_contents($baseline);
+
+        $status = 0;
+
+        $output = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s',
+            escapeshellarg($baseline),
+            escapeshellarg($this->map("alpha.one\talpha.renamed")),
+        ), $status);
+
+        self::assertSame(1, $status, $output);
+        self::assertSame($before, (string) file_get_contents($baseline));
+    }
+
+    #[Test]
+    public function itAnswersAMalformedMapWithOne(): void
+    {
+        $baseline = $this->baseline(['class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]]]);
+        $before = (string) file_get_contents($baseline);
+        $map = $this->tempDir . '/bad.tsv';
+        file_put_contents($map, "from\tto\treason\n");
+
+        $status = 0;
+
+        $output = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s',
+            escapeshellarg($baseline),
+            escapeshellarg($map),
+        ), $status);
+
+        self::assertSame(1, $status, $output);
+        self::assertSame($before, (string) file_get_contents($baseline));
+    }
+
+    /**
+     * A file that is not there is the user's environment rather than
+     * something they authored, and is answered apart from a refusal so a
+     * script can tell "I pointed at the wrong path" from "the tool declined".
+     */
+    #[Test]
+    public function itAnswersAnUnreachableFileWithTwo(): void
+    {
+        $map = $this->map("alpha.one\talpha.renamed");
+        $status = 0;
+
+        $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s',
+            escapeshellarg($this->tempDir . '/absent.json'),
+            escapeshellarg($map),
+        ), $status);
+        self::assertSame(2, $status);
+
+        $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s',
+            escapeshellarg($this->baseline([])),
+            escapeshellarg($this->tempDir . '/absent.tsv'),
+        ), $status);
+        self::assertSame(2, $status);
+    }
+
+    /**
+     * @param array<string, mixed> $entries
+     */
+    private function baseline(array $entries, int $version = Baseline::VERSION): string
+    {
+        $path = $this->tempDir . '/baseline-' . $version . '-' . \count($entries) . '.json';
+        file_put_contents($path, (string) json_encode([
+            'version' => $version,
+            'generated' => '2026-01-01T00:00:00+00:00',
+            'scope' => ['src'],
+            'entries' => $entries,
+        ], \JSON_THROW_ON_ERROR));
+
+        return $path;
+    }
+
+    private function map(string $row): string
+    {
+        $path = $this->tempDir . '/map.tsv';
+        file_put_contents($path, "old\tnew\treason\n" . $row . "\twhy\n");
+
+        return $path;
+    }
+
+    private function qmx(string $arguments, int &$status): string
+    {
+        $output = [];
+        exec(
+            \sprintf('%s %s %s 2>&1', escapeshellarg(\PHP_BINARY), escapeshellarg(\dirname(__DIR__, 5) . '/bin/qmx'), $arguments),
+            $output,
+            $status,
+        );
+
+        return implode("\n", $output);
+    }
+}
