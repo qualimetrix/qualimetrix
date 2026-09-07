@@ -92,22 +92,40 @@ Costs, both measured as `sites` sums over `../enumeration-renames.tsv`:
 The nine rows P1 must rule on individually, by reading each rule rather than by
 classifying its name:
 
-| row                                    | why it is here                                     | sites |
-| -------------------------------------- | -------------------------------------------------- | ----- |
-| `coupling.class-rank`                  | subject form, judges nothing                       | 188   |
-| `code-smell.constructor-overinjection` | judgment form, judges `code-smell.parameter-count` | 58    |
-| `code-smell.long-parameter-list`       | judgment form, judges the same key                 | 156   |
-| `code-smell.unreachable-code`          | judgment form, judges a key of its own name        | 74    |
-| `code-smell.unused-private`            | judgment form, judges `…​.total`                   | 26    |
-| `design.data-class`                    | judgment form, judges `design.woc`                 | 79    |
-| `architecture.coverage`                | ambiguous: one word, neither subject nor judgment  | 133   |
-| `code-smell.error-suppression`         | ambiguous: mechanism or judgment                   | 34    |
-| `duplication.code-duplication`         | ambiguous, and tautological in spelling            | 159   |
+| row                                    | why it is here                                                                                                                                                                        | sites |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `coupling.class-rank`                  | subject form, `judging()` declares nothing — but the rule **does** judge a magnitude against a project-size-scaled threshold, so the anomaly is in the declaration, not the behaviour | 188   |
+| `code-smell.constructor-overinjection` | judgment form, judges `code-smell.parameter-count`                                                                                                                                    | 58    |
+| `code-smell.long-parameter-list`       | judgment form, judges the same key                                                                                                                                                    | 156   |
+| `code-smell.unreachable-code`          | judgment form, judges a key of its own name                                                                                                                                           | 74    |
+| `code-smell.unused-private`            | judgment form, judges `…​.total`                                                                                                                                                      | 26    |
+| `design.data-class`                    | judgment form, judges `design.woc`                                                                                                                                                    | 79    |
+| `architecture.coverage`                | ambiguous: one word, neither subject nor judgment                                                                                                                                     | 133   |
+| `code-smell.error-suppression`         | ambiguous: mechanism or judgment                                                                                                                                                      | 34    |
+| `duplication.code-duplication`         | ambiguous, and tautological in spelling                                                                                                                                               | 159   |
 
-Orchestrator's prior, to be confirmed or refuted by reading, **not** a decision:
-the two `parameter-count` rows stay (legitimate many-to-one, two situations of
-one metric); `duplication.code-duplication` and `architecture.coverage` are the
-weakest names of the 52.
+That prior was half refuted by measurement, and the refutation is recorded here
+rather than quietly dropped:
+
+- **`duplication.code-duplication` and `architecture.coverage` are the weakest
+  names — confirmed, and for mechanical reasons.** The first is a tautology (the
+  leaf repeats the group), emits unconditionally, judges no catalog key, and
+  publishes a block's line count. The second is a **configuration diagnostic**,
+  not a coverage measure: no metric value, no threshold, severity from an
+  `ignore/warn/error` mode, and its own class docblock says it "reports a
+  mistake in the configuration rather than debt in the code" — while
+  `design.type-coverage.*` in the same run prints a judged percentage. One word,
+  two meanings.
+- **The two `parameter-count` rows are NOT a clean many-to-one — refuted.**
+  `LongParameterListRule` does not exclude `__construct`, so a fat non-VO
+  constructor raises **both** findings on one declaration. Measured
+  independently: an 8-parameter constructor prints
+  `code-smell.constructor-overinjection` (threshold 8) and
+  `code-smell.long-parameter-list` (threshold 6) together. They are not two
+  situations of one metric; one is a subset of the other with a softer threshold
+  pair, reported twice. Whether that is intended layering or noise is a question
+  for the owner about behaviour, and the ADR must not settle it silently by
+  choosing names.
 
 ### Q2 — the six `health.*` names → **keep the `health.<dimension>` form**
 
