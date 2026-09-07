@@ -639,28 +639,40 @@ direction, but each bounds what an empty residue proves.
   warn-and-default surface. Second, an option's addressing moves with its rule
   half while the option word stays, so `duplication.code-duplication:min-tokens`
   becomes `duplication.clone:min-tokens`.
-- **Third: `architecture.coverage` survives the rename as a configuration key.**
+- **Third: `architecture.coverage`'s configuration key moves with the channel.**
   The same dotted string names two different things — the channel this step
   renames to `architecture.coverage-gap`, and the key of the `architecture:`
   configuration section that sets the `ignore` / `warn` / `error` mode the
   channel takes its severity from (`qmx.yaml`'s own `architecture: coverage:
   error`, parsed by
   `src/Analysis/Policy/Architecture/Configuration/CoverageValidator.php`, taught
-  by `website/docs/rules/architecture.md`). **Only the channel moves.** The
-  configuration key is a key of a configuration section, not one of the five
-  sets of §1, so this ADR does not rule on it and the rename step must not touch
-  it. After the step a consumer *configures* `coverage:` and *silences*
-  `architecture.coverage-gap`. The divergence was not weighed when the channel
-  decision was taken, and it is accepted now on its measured failure mode, which
-  is the mildest of the classes: a consumer who "helpfully" migrates the
-  configuration key is **refused loudly at once** — measured, `Configuration
-  error: architecture: unknown key "coverage-gap". Allowed keys: "layers",
-  "allow", "coverage", "max_expanded_layers".`, exit 3. No other renamed channel
-  raises the question: `architecture:` is the only configuration section whose
-  own keys are spelled like a channel leaf, and the other four moves reach
-  configuration only through their `rules:` key, which moves with the producer
-  half and is likewise refused loudly when stale (measured, `Unknown rule
-  "complexity.ccn" in qmx.yaml`, exit 3).
+  by `website/docs/rules/architecture.md`). **The key is renamed too**, to
+  `coverage-gap`, by the same step.
+
+  The reason is not the collision that moved the channel. In the position of a
+  section key, `coverage` is a mode switch and is compared with nothing, so the
+  clash with the judged proportion `design.type-coverage.*` publishes does not
+  arise there. The reason is narrower and is enough on its own: a consumer would
+  otherwise **configure one word and silence another**, permanently, for a
+  string that names one subject.
+
+  It carries no row in `decision-table.tsv`, and that absence is deliberate
+  rather than an oversight: a configuration section key is emitted by none of
+  the five oracles of §1, and giving it a row would mean enumerating every
+  section key in the product — a sixth set, and work this pass did not scope.
+  It is recorded here as a rider on the channel's own decision, and the rename
+  step carries it from here.
+
+  The failure mode is the mildest of the five classes, measured on both sides:
+  a stale key is **refused loudly at once** (`Configuration error: architecture:
+  unknown key "coverage-gap". Allowed keys: "layers", "allow", "coverage",
+  "max_expanded_layers".`, exit 3), and so is the new key before the step lands.
+  No other renamed channel raises the question: `architecture:` is the only
+  configuration section whose own keys are spelled like a channel leaf, and the
+  other four moves reach configuration only through their `rules:` key, which
+  moves with the producer half and is likewise refused loudly when stale
+  (measured, `Unknown rule "complexity.ccn" in qmx.yaml`, exit 3).
+
 - **`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md:119-136` is closed by this
   ADR** — the three word pairs are decided, in favour of the metric word, by
   moving the channel. The aggregation-suffix entry at `:13` is converted from an
