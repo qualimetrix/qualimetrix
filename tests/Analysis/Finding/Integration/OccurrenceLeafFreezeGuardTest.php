@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\Security\XssRule;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionMethod;
 use RuntimeException;
 
 /**
@@ -56,10 +57,17 @@ use RuntimeException;
  * it fills `leaf_const`/`leaf_pin` — so a family that stops declaring the
  * constant drops out of the count instead of quietly passing, and a
  * thirteenth family adopting the shape fails here until it is pinned.
+ *
+ * Source text is not execution, though, so the pins it finds are additionally
+ * held to being tests PHPUnit runs — see
+ * {@see everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared()}. Nothing here
+ * compares a frozen constant to a rule's `NAME`, by design.
  */
 final class OccurrenceLeafFreezeGuardTest extends TestCase
 {
     private const int EXPECTED_LEAF_COUNT = 12;
+
+    private const string DISCOVERY_ARTIFACT = 'docs/internal/generated/modular-architecture/test-phpunit-discovery.txt';
 
     /**
      * The frozen leaf itself, pinned by literal rather than derived from any
@@ -199,7 +207,7 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
     #[Test]
     public function everyFrozenLeafIsAssertedByExactlyOnePinTest(): void
     {
-        $asserted = self::findPinnedLeaves(self::projectRoot());
+        $asserted = array_count_values(array_column(self::findPinTests(self::projectRoot()), 'leaf'));
         $expected = array_count_values(array_values(self::FROZEN_LEAF));
         ksort($asserted);
         ksort($expected);
@@ -213,6 +221,152 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
             . ' no family declares, so it protects nothing. Restore the pin rather than relaxing this'
             . " assertion.\n",
         );
+    }
+
+    /**
+     * The two assertions above read the pins out of SOURCE TEXT, and source
+     * text is not execution: a pin method that has lost its `#[Test]`
+     * attribute still reads exactly like a pin, so the freeze would keep
+     * reporting the leaf as protected while nothing re-runs the rule. That is
+     * a one-line, review-sized edit, and it was measured: dropping `#[Test]`
+     * from EvalRuleTest's pin left both assertions above green and its own
+     * class green while `AbstractCodeSmellRule` keyed `occurrence` on `NAME`.
+     *
+     * So every pin the scan finds must also be a test PHPUnit actually runs,
+     * and that is checked twice because neither half covers the other:
+     *
+     * - Reflection proves the method is executable AS A TEST — public,
+     *   non-static, on a concrete `TestCase`, carrying `#[Test]`. This is the
+     *   half that reddens under `vendor/bin/phpunit` alone.
+     * - The generated discovery listing proves PHPUnit's own run enrols the
+     *   class, which reflection cannot see: a test file outside every suite of
+     *   `phpunit.xml.dist` reflects perfectly and is never executed. That file
+     *   is a snapshot, so it lags an edit made after it was generated —
+     *   `composer architecture:check` is what holds it fresh, and this
+     *   assertion says so in its failure text rather than pretending the
+     *   snapshot is live.
+     *
+     * This checks REGISTRATION only. It deliberately says nothing about what a
+     * pin asserts, and in particular never compares a constant to a rule's
+     * `NAME`: after the final rename step the leaf and the channel code read
+     * differently on purpose.
+     */
+    #[Test]
+    public function everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared(): void
+    {
+        $root = self::projectRoot();
+        $pins = self::findPinTests($root);
+        $discovered = self::discoveredTestNames($root);
+        $unregistered = [];
+
+        foreach ($pins as $pin) {
+            $name = $pin['class'] . '::' . $pin['method'];
+
+            if (!class_exists($pin['class'])) {
+                $unregistered[] = \sprintf('%s: %s is not a loadable class.', $pin['file'], $pin['class']);
+
+                continue;
+            }
+
+            $reflection = new ReflectionClass($pin['class']);
+
+            if ($reflection->isAbstract() || !$reflection->isSubclassOf(TestCase::class)) {
+                $unregistered[] = \sprintf(
+                    '%s declares a pin but is not a concrete PHPUnit TestCase, so the pin never runs.',
+                    $pin['class'],
+                );
+
+                continue;
+            }
+
+            if (!$reflection->hasMethod($pin['method'])) {
+                $unregistered[] = \sprintf(
+                    '%s: the pin text is in the file but %s is not a method of the declared class — the file'
+                    . ' declares more than one class, or the scan read the wrong one.',
+                    $pin['file'],
+                    $name,
+                );
+
+                continue;
+            }
+
+            $method = new ReflectionMethod($pin['class'], $pin['method']);
+
+            if (!$method->isPublic() || $method->isStatic() || $method->getAttributes(Test::class) === []) {
+                $unregistered[] = \sprintf(
+                    '%s is not runnable as a PHPUnit test (public: %s, static: %s, #[Test]: %s). The pin still'
+                    . ' reads like a pin to the text scan above, so the leaf would be reported as protected'
+                    . ' while nothing re-executes the rule.',
+                    $name,
+                    $method->isPublic() ? 'yes' : 'no',
+                    $method->isStatic() ? 'yes' : 'no',
+                    $method->getAttributes(Test::class) === [] ? 'absent' : 'present',
+                );
+
+                continue;
+            }
+
+            if (!isset($discovered[$name])) {
+                $unregistered[] = \sprintf(
+                    '%s is not listed in %s. Either the class sits outside every suite of phpunit.xml.dist and'
+                    . ' PHPUnit never runs it, or that generated listing is stale — regenerate it with'
+                    . ' `composer architecture:check` and read this again.',
+                    $name,
+                    self::DISCOVERY_ARTIFACT,
+                );
+            }
+        }
+
+        self::assertSame(
+            [],
+            $unregistered,
+            "\nA pin found by the source scan is not a test PHPUnit runs, so the leaf it names is unprotected"
+            . " despite looking pinned:\n" . implode("\n", $unregistered) . "\n",
+        );
+
+        self::assertCount(
+            self::EXPECTED_LEAF_COUNT,
+            $pins,
+            \sprintf(
+                'Expected the scan to find exactly %d pin tests, one per frozen leaf, but it found %d. The'
+                . ' pin-to-leaf comparison above already rejects a wrong population; this states the count on'
+                . " its own so a failure here reads as a number rather than as a diff of two maps.\n",
+                self::EXPECTED_LEAF_COUNT,
+                \count($pins),
+            ),
+        );
+    }
+
+    /**
+     * The test names PHPUnit's own `--list-tests` produced when the modular
+     * architecture artifacts were last generated, as a set. Names of cases fed
+     * by a data provider carry a trailing quoted label; pin tests take no
+     * arguments, so the bare `Class::method` form is the whole name.
+     *
+     * @return array<string, true>
+     */
+    private static function discoveredTestNames(string $root): array
+    {
+        $path = $root . '/' . self::DISCOVERY_ARTIFACT;
+        $names = [];
+
+        foreach (explode("\n", self::read($path)) as $line) {
+            if (!str_starts_with($line, ' - ')) {
+                continue;
+            }
+
+            $names[rtrim(substr($line, 3))] = true;
+        }
+
+        if ($names === []) {
+            throw new RuntimeException(\sprintf(
+                '%s lists no test at all. It is generated from `phpunit --list-tests`; regenerate it with'
+                . ' `composer architecture:check` before reading a verdict out of it.',
+                self::DISCOVERY_ARTIFACT,
+            ));
+        }
+
+        return $names;
     }
 
     /**
@@ -245,29 +399,30 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
     }
 
     /**
-     * Every leaf literal a pin test asserts, counted. Read from test source
-     * text the same bounded-window way the enumeration generator reads it:
-     * find each pin method's declaration, then the one
+     * Every pin test the tests tree declares: the class and method that
+     * declare it, and the leaf literal it asserts. Read from test source text
+     * the same bounded-window way the enumeration generator reads it: find
+     * each pin method's declaration, then the one
      * `OccurrenceKey::semantic('<literal>'` call the naming convention places
      * near its start. A marker with no call in its window throws rather than
      * counting nothing, because a silent miss is indistinguishable from an
      * unprotected leaf.
      *
-     * @return array<string, int>
+     * @return list<array{file: string, class: string, method: string, leaf: string}>
      */
-    private static function findPinnedLeaves(string $root): array
+    private static function findPinTests(string $root): array
     {
         $window = 4000;
-        $counts = [];
+        $pins = [];
 
         foreach (self::phpFilesIn($root . '/tests') as $path) {
             $source = self::read($path);
 
-            if (preg_match_all('/function itKeysOccurrenceToItsOwn(?:Smell|Pattern)Type\w*\(\)/', $source, $matches, \PREG_OFFSET_CAPTURE) === false) {
+            if (preg_match_all('/function (itKeysOccurrenceToItsOwn(?:Smell|Pattern)Type\w*)\(\)/', $source, $matches, \PREG_OFFSET_CAPTURE) === false) {
                 throw new RuntimeException(\sprintf('Regex failure while scanning %s for pin methods.', $path));
             }
 
-            foreach ($matches[0] as [$declaration, $pos]) {
+            foreach ($matches[0] as $index => [$declaration, $pos]) {
                 $slice = substr($source, $pos, $window);
 
                 if (preg_match("/OccurrenceKey::semantic\\(\\s*\\n?\\s*'((?:[^'\\\\]|\\\\.)*)'/", $slice, $match) !== 1) {
@@ -281,12 +436,39 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
                     ));
                 }
 
-                $leaf = stripcslashes($match[1]);
-                $counts[$leaf] = ($counts[$leaf] ?? 0) + 1;
+                $pins[] = [
+                    'file' => $path,
+                    'class' => self::classFromTestSource($source, $path),
+                    'method' => $matches[1][$index][0],
+                    'leaf' => stripcslashes($match[1]),
+                ];
             }
         }
 
-        return $counts;
+        usort($pins, static fn(array $a, array $b): int => [$a['class'], $a['method']] <=> [$b['class'], $b['method']]);
+
+        return $pins;
+    }
+
+    /**
+     * The declaring class of a test file, parsed from the same source text the
+     * pin scan already holds rather than mapped from the path: `tests/` is not
+     * required to mirror `src/`, and a wrong mapping here would silently drop
+     * a pin from the registration check below.
+     */
+    private static function classFromTestSource(string $source, string $path): string
+    {
+        if (
+            preg_match('/^namespace\s+([^;]+);/m', $source, $namespace) !== 1
+            || preg_match('/^(?:final\s+|abstract\s+|readonly\s+)*class\s+(\w+)/m', $source, $class) !== 1
+        ) {
+            throw new RuntimeException(\sprintf(
+                'Could not read a namespace and a class declaration out of %s, which declares a pin method.',
+                $path,
+            ));
+        }
+
+        return trim($namespace[1]) . '\\' . $class[1];
     }
 
     /**

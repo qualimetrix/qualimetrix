@@ -3604,6 +3604,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceKindFreezeGuardTest::everyFrozenOccurrenceKindIsStillAPlainLiteralMatchingItsPin
  - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyFrozenLeafIsAssertedByExactlyOnePinTest
  - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyLeafOccurrenceConstantIsStillAPlainLiteralMatchingItsPin
+ - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage

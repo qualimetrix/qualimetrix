@@ -1,4 +1,4 @@
-# P2 follow-up — text for `FOLLOWUPS.md`, and two defects found in closed artifacts
+# P2 follow-up — text for `FOLLOWUPS.md`, and what was reported against the decision table
 
 Written by the package that produced `docs/adr/0048-the-final-published-name-vocabulary.md`.
 This package does not edit `FOLLOWUPS.md` or `AUDIT.md`; the orchestrator merges
@@ -117,35 +117,72 @@ published, so ADR 0048 excludes them from the vocabulary.
 
 ---
 
-## Two defects found in closed artifacts — reported, not fixed
+## What was reported against `decision-table.tsv`, and where it now stands
 
-Both are in `decision-table.tsv`, which this package was instructed not to edit.
-Neither changes a decision; both are stale prose in the header or in reason
-cells, left behind when the last three rows were decided.
+The three items below were reported by the package that wrote ADR 0048, which
+was instructed not to edit `decision-table.tsv`. Re-checked on 2026-09-07:
+**all three are repaired in the table.** The first two landed in `eef70210`; the
+third's per-cell repair was still an uncommitted working-tree change when this
+was written, so re-check it against the tree rather than against the commit.
+They are kept here because the third one repaired badly first, and how it did is
+worth more than the defect was.
 
-1. **The header's self-check (f) prose miscounts the ten renames.** It says
-   "four channels, their three cascaded producers (`architecture.coverage` has
-   none of its own), and one metric key" — which is eight, not ten. The list it
-   prints immediately below is correct and contains **five** channel codes
-   (`architecture.coverage`, `complexity.cyclomatic`, `design.inheritance`,
-   `duplication.code-duplication`, `maintainability.index`), **four** producer
-   rule names and **one** metric key. The same stale arithmetic appears in the
-   header's `Q1''` paragraph ("3 of the 7 renames are producers"), which was
-   written while the file held seven renames. ADR 0048 §3 states five / four /
-   one.
+1. **The header's self-check (f) miscounted the ten renames — repaired.** It
+   said "four channels, their three cascaded producers, and one metric key",
+   which is eight. The header now reads "five channels, the four cascaded
+   producers of" (`decision-table.tsv:329`), and the stale `Q1''` arithmetic
+   that said "3 of the 7 renames are producers" now reads "4 of the 10 renames
+   are producers" (`:148`). Agrees with ADR 0048 §3: five channel codes, four
+   producer rule names, one metric key.
 
-2. **39 reason cells still describe an owner channel as `PENDING`.** Eleven rule
-   option keys (`min-tokens`, `vo-warning`, `woc-threshold`, …) and 28 CLI
-   aliases (`cyclomatic-warning`, `dit-error`, `mi-min-statements`, …) carry a
-   sentence of the form "Its owner … is a PENDING channel row, so this key's
-   `<rule>:<option>` addressing moves with that fork". No row is pending; the
-   header says so explicitly. The substantive claim in those cells — that the
-   addressing moves with the rule half while the option word stays — is correct
-   and is carried into ADR 0048's Consequences; only the word `PENDING` is stale.
+2. **The `declared_shape` column description undercounted `no-judged-key` —
+   repaired.** It said "the three channels that declare a magnitude whose number
+   is not a catalog metric"; there are four non-`health.*` such channels
+   (`architecture.circular-dependency`, `architecture.unassigned-class`,
+   `design.god-class`, `duplication.code-duplication`) plus the six `health.*`
+   rows carrying the same value. `:187` now reads "the four channels that
+   declare".
 
-A third, smaller one: the header's description of the `declared_shape` column
-says `no-judged-key` is used "for the three channels that declare a magnitude
-whose number is not a catalog metric". There are **four** such non-`health.*`
-channels — `architecture.circular-dependency`, `architecture.unassigned-class`,
-`design.god-class`, `duplication.code-duplication` — plus the six `health.*`
-rows, which carry the same value.
+   Note for the reader who joins this description to ADR 0048 §4: the two do not
+   partition the same way, and the gap is not the compound pair. §4 counts **2**
+   kept channels under clause `no-magnitude` (`architecture.circular-dependency`,
+   `architecture.unassigned-class`) against the column's **4** non-`health.*`
+   `no-judged-key` rows. The other two are `design.god-class`, which ADR 0048 §2
+   decides by its new `compound` clause instead, and
+   `duplication.code-duplication`, which is renamed and so is not among the kept.
+   `design.data-class` is *not* in either of those four: its `declared_shape` is
+   `magnitude:lower:judges=design.woc`, and it reaches `compound` precisely
+   because the clause reads the rule body rather than that declaration. The
+   column measures the declaration; the clause decides the name. They are allowed
+   to differ.
+
+3. **39 `reason` cells described an owner channel as `PENDING` — repaired, but
+   the first repair was a sweep, and the sweep asserted falsehoods.** Eleven
+   rule option keys and 28 CLI aliases carried "Its owner … is a PENDING channel
+   row, so this key's `<rule>:<option>` addressing moves with that fork". No row
+   was pending. The substantive claim was correct and is carried into ADR 0048's
+   Consequences; only the word was stale.
+
+   The first repair replaced the sentence uniformly: every one of the 39 cells
+   came out saying the owner "is a channel row renamed by this step". But the 39
+   cells did not share one truth — some owners are renamed by the step and some
+   are kept. Measured against the channel-code rows, by diffing that commit's
+   table against the repaired one: 14 of the 39 owners are renamed, so **25 of
+   the 39 cells asserted a falsehood** (9 of them about `design.data-class`, 7
+   about `code-smell.long-parameter-list`, the rest spread over five more kept
+   channels). A stale cell had become a false one. That has
+   since been repaired per-cell, and re-verified here rather than spot-checked:
+   for all 123 option-key and alias rows, the owner channel named in the cell
+   was joined to that channel's own `decision` row, and "IS renamed by this
+   step" appears in exactly the cells whose owner is `rename` — **0 mismatches,
+   0 remaining `PENDING`**. Fifteen rows name no channel at all; those are the
+   shared options (`enabled`, `error`, `warning`, `threshold`, `suppress_*`, the
+   per-level map introducers) that genuinely have no single owner.
+
+   **The lesson, which outlives the defect: a sweep-replace inside the decision
+   artifact is a defect generator, not a repair.** Every cell in `reason` is an
+   individual claim with an individual truth value; the shape of the sentence is
+   shared and the content is not. A uniform edit over a column of claims
+   converts a *stale* cell into a *false* one, and a false cell reads as
+   decided. The table is a snapshot of 314 individual decisions and must be
+   edited one row at a time, with the joined check above as the acceptance test.

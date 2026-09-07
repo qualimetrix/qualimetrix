@@ -83,11 +83,36 @@ lower bound rather than an exact identity.
 
 **The open set is ruled on by shape, never by name.** A consumer's
 `computed_metrics:` entries become both channel codes and metric keys that this
-repository never sees. The product imposes on them, and continues to impose,
-exactly the ADR 0035 grammar — `family.metric`, lower-case kebab — enforced by
-the name validator; and one shared producer, `computed`, per ADR 0032, because a
-user metric's name is not known when the build-time validator runs. No other
-constraint is added and none is removed.
+repository never sees, so this ADR rules on the shape the product already
+enforces and changes none of it. That shape is *narrower* than the ADR 0035
+grammar in one direction and *wider* in another, and stating it as "the ADR 0035
+grammar" would misdescribe it in both. It is
+`ComputedMetricDefinition::NAME_TEMPLATE`
+(`/^(?:health|computed)(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$/`) plus
+`ComputedMetricsConfigResolver.php:80-86`. Every bullet below was measured by
+running it, not read off the regex:
+
+- The family segment is **fixed**, not free. A name must begin `computed.`;
+  `mystuff.load` is refused at configuration time (exit 3). ADR 0035's rule that
+  the family is the subject the metric belongs to does not extend to a user
+  metric — a user metric's subject is not addressable in its family.
+- `health.*` is **reserved**. A new definition under it is refused — *"uses
+  reserved `health.*` prefix. Use `computed.*` prefix for user-defined
+  metrics."*, exit 3. A `health.*` entry naming one of the six built-ins of §5 is
+  accepted, as an override of it (measured: `health.typing:` with a formula
+  runs).
+- Every segment after the family is lower-case kebab, and there may be **more
+  than one**: `computed.a.b` is accepted and published as a metric key (measured
+  under `--format=metrics`), so the space is wider than the two-segment
+  `family.metric`.
+- The last segment may not be the name of an aggregation strategy.
+  `computed.load.sum` is refused (exit 3), because `MetricName::base()` would
+  otherwise cut it off and the key would be indistinguishable from an aggregated
+  spelling of `computed.load`.
+- One shared producer, `computed`, per ADR 0032, because a user metric's name is
+  not known when the build-time validator runs.
+
+This ADR adds no constraint to that set and removes none.
 
 **What is deliberately outside the universe**, so that "is that all?" has no
 content for a reader who knows these strings exist:
@@ -110,41 +135,91 @@ content for a reader who knows these strings exist:
 
 ### 2. The naming rule, stated so it decides a name that does not exist yet
 
-A channel is named in these clauses, in order. The first clause that applies
-decides. The two family clauses come first, and deliberately: a computed-metric
-channel is declared at run time from a formula and has no catalog key **by
-construction**, so reading its declaration can never tell it apart from clause 5
-— the family of the producer emitting it settles the name before any declaration
-is read.
+A channel is named by these clauses, in the order printed. The first clause that
+applies decides.
 
-1. **It is one of the six built-in health dimensions.** `health.<dimension>`,
-   per §5.
-2. **It is a user-defined computed metric.** Shape only, per §1: the ADR 0035
-   grammar and nothing else.
+**Each clause carries a stable label, and every reference to a clause anywhere
+in this ADR uses the label, never the position.** The list has been re-ordered
+once already, and the back-references did not move with it. A label cannot go
+stale under a re-ordering; a number silently can.
 
-Otherwise, read **the channel's own declaration**:
+The two family clauses come first, and deliberately: a computed-metric channel
+is declared at run time from a formula and has no catalog key **by
+construction**, so reading its declaration can never tell it apart from
+`no-magnitude` — the family of the producer emitting it settles the name before
+any declaration is read.
 
-3. **It declares `judging()` with exactly one judged base key, and no sibling
-   channel judges that key.** The channel code *is* that key, spelled
-   identically. An aggregate-shaped suffix on the judged key (`.sum`, `.total`)
-   is stripped for this comparison, and its presence is not a spelling
-   divergence: `size.class-count` judging `size.class-count.sum` and
-   `code-smell.unused-private` judging `code-smell.unused-private.total` are
-   conforming.
-4. **Two channels judge the same key.** Neither may take it, because a code is
-   unique. Each names its own judgment instead. This is the
+1. `health` — **it is one of the six built-in health dimensions.**
+   `health.<dimension>`, per §5.
+2. `user-computed` — **it is a user-defined computed metric.** Shape only, per
+   §1: the shape the product already enforces, neither widened nor narrowed
+   here.
+
+Otherwise, read **the channel's own declaration** — with the one exception the
+next clause states in its own text:
+
+3. `compound` — **the rule's firing condition is a conjunction of two or more
+   independent thresholds, or a tally of matched criteria.** A rule of that
+   shape has no single magnitude to offer, so the channel names the verdict it
+   reaches. This is the one clause that reads the **rule body** rather than the
+   declaration, and it says so because it must: a conjunction is invisible in
+   `channelDeclarations()`. `design.data-class` declares
+   `judging(WorseDirection::Lower, JudgedMetrics::of(MetricName::DESIGN_WOC), …)`
+   — *exactly one* judged key (`DataClassRule.php:167-174`) — and would otherwise
+   be taken by `sole-key`, while its firing condition is `woc` **and** `wmc`
+   (`:120`). Its sibling `design.god-class` has the identical multi-criterion
+   shape and declares a plain `magnitude()` with no judged key at all
+   (`GodClassRule.php:195`). Reading the body is what keeps that difference *in
+   the declaration* from splitting a pair that behaves alike. The set is closed
+   and named: `design.data-class`, `design.god-class`. Exclusions and filters —
+   which narrow *which* declarations a rule evaluates — do not make a rule
+   compound; `size.method-count` is not compound. What stays open is whether a
+   multi-criterion rule should declare a judged key at all: a question about the
+   declaration, not about any name, and one this ADR does not settle.
+4. `sole-key` — **it declares `judging()` with exactly one judged magnitude, and
+   no sibling channel judges that magnitude.** The channel code *is* that
+   magnitude's key, spelled identically. What counts as one judged magnitude is
+   defined immediately below.
+5. `shared-key` — **two channels judge the same key.** Neither may take it,
+   because a code is unique. Each names its own judgment instead. This is the
    `code-smell.constructor-overinjection` / `code-smell.long-parameter-list`
    pair, both judging `code-smell.parameter-count`.
-5. **It declares a magnitude but no single catalog key** — a conjunction of two
-   thresholds, a tally of matched criteria, a cycle's class count, a block's line
-   count. There is no magnitude to name; the channel names the verdict it reaches
-   or the fact it reports. `design.data-class`, `design.god-class`,
-   `architecture.circular-dependency`, `architecture.unassigned-class`.
-6. **It declares an occurrence.** The channel names the fact the reader is told
-   about — the mechanism, the annotation, the defect. Inside the architecture
-   diagnostics the established shape is `<adjective>-<noun>` naming what is
-   wrong: `unassigned-class`, `unreachable-layer`, `empty-template`,
+6. `no-magnitude` — **it declares a magnitude but no single catalog key** — a
+   cycle's class count, a count of unassigned classes, a block's line count.
+   One plain number, not a conjunction and not a tally of criteria.
+   There is no magnitude to name; the channel names the verdict it reaches or the
+   fact it reports. `architecture.circular-dependency`,
+   `architecture.unassigned-class`, and — after §3 — `duplication.clone`.
+7. `occurrence` — **it declares an occurrence.** The channel names the fact the
+   reader is told about — the mechanism, the annotation, the defect. Inside the
+   architecture diagnostics the established shape is `<adjective>-<noun>` naming
+   what is wrong: `unassigned-class`, `unreachable-layer`, `empty-template`,
    `potential-shadow`, `pending-layer-matched`.
+
+**What counts as one judged magnitude, for clause `sole-key`.** A declaration
+lists judged *keys*; the clause is about *magnitudes*, and two things collapse a
+list of keys to one magnitude. Without both, the clause decides the wrong name
+for six channels that are not in dispute.
+
+- **An aggregate-shaped suffix is stripped before the comparison**, by
+  `MetricName::base()` against the closed `AggregationStrategy` list, so the
+  strip is mechanical rather than a judgement. Its presence is not a spelling
+  divergence. Two channels judge only the suffixed spelling —
+  `size.class-count` judging `size.class-count.sum`, `code-smell.unused-private`
+  judging `code-smell.unused-private.total`. Three more declare the base key
+  **and** its `.max` companion — `complexity.cognitive`, `complexity.npath`, and
+  `complexity.cyclomatic` (`complexity.ccn` after §3) — where the two entries
+  collapse to the one magnitude the base key names.
+- **A variant key of the same magnitude counts once.** `coupling.cbo` declares
+  `judging(COUPLING_CBO, COUPLING_CBO_APP)` (`CboRule.php:131-138`): the second
+  key is the application-internal variant of the first, not a second magnitude,
+  so the clause applies and the channel keeps the base key's spelling. This is
+  **named here, not derived**: `coupling.cbo-app` is the only `-app` key in
+  `MetricName`, so nothing mechanical separates a variant from a genuine second
+  magnitude. A future declaration listing two keys that are *not* one magnitude
+  is an ADR-level decision, not a call at the site — the clause does not reach
+  it, and none of `shared-key`, `no-magnitude` or `occurrence` describes it
+  either.
 
 Two things this rule is *not*. It is not a preference for subjects over
 judgments: the product publishes 82 metric keys and, since ADR 0046, the
@@ -157,10 +232,13 @@ by the severity, the message text and the judged metric that travel with the
 finding — a judgement, accepted openly, not a measurement.
 
 The rule was measured before it was adopted, over the 22 channels whose
-declaration carries a judged key: **14** already spell their judged metric
-exactly, **2** differ only by an aggregate-shaped suffix (clause 1), **3** are
-the channels clauses 2 and 3 do not reach, and exactly **3** differ in spelling
-over one magnitude. Those three are the renames of §3.
+declaration carries a judged key: **14** already spell their judged magnitude
+exactly and **2** differ from it only by an aggregate-shaped suffix — 16 under
+clause `sole-key`; **2** are the pair that share one judged key, clause
+`shared-key`; **1** is `design.data-class`, which declares a judged key its own
+conjunction does not entitle it to, clause `compound`; and exactly **3** differ
+in spelling over one magnitude. Those three are the renames of §3.
+14 + 2 + 2 + 1 + 3 = 22.
 
 **One channel is a deliberate exception at the declaration, not at the name.**
 `coupling.class-rank` judges a project-size-scaled threshold in its body and
@@ -186,7 +264,7 @@ reasons and `file:line` sit in the `reason` column of `decision-table.tsv`.
 | `architecture.coverage`        | `architecture.coverage-gap` | channel code only                       |
 | `design.type-coverage.pct`     | `design.type-coverage.all`  | metric key                              |
 
-**The first three are clause 1 applied.** Each channel judges one key and spells
+**The first three are clause `sole-key` applied.** Each channel judges one key and spells
 it differently: `complexity.ccn`, `maintainability.mi`, `design.dit`. The
 direction is **channel to metric**, never the reverse, for a reason about cost
 rather than taste: a metric key is what a consumer writes inside
@@ -225,7 +303,10 @@ three. The new leaf names the defect, as every sibling diagnostic in the group
 does, and keeps the recognisable word so the channel stays findable. It has **no
 producer of its own spelling** — it is emitted by
 `architecture.layer-violation`, which is kept — so it is a channel-code move
-alone.
+alone. That the same dotted string is *also* a configuration key —
+`architecture: coverage:`, the very mode this channel takes its severity from —
+is a divergence the move creates deliberately and does not repair; it is stated
+with its measurement in the Consequences.
 
 **`design.type-coverage.pct` → `design.type-coverage.all`.** The leaf named a
 *unit* where its three siblings name an *area*. Re-verified for this decision:
@@ -262,21 +343,36 @@ By group rule, with every exception named.
 declared shape plus a reading of the rule body where the two disagree — not by
 classifying the name's grammar.
 
-- The 25 kept occurrence channels name the fact reported and conform to clause 4.
-- The 17 magnitude channels whose judged key they already spell exactly, plus
-  the 2 that differ only by an aggregate-shaped suffix, conform to clause 1.
-- The 3 kept magnitude channels with no catalog key conform to clause 3, and the
-  6 `health.*` to clause 5.
-- Named exceptions, kept with the reason stated rather than the anomaly hidden:
-  - `coupling.class-rank` — deliberate occurrence declaration, §2.
+The six clause groups below **partition** the 53; nothing is counted twice. The
+list of named exceptions after them explains individual rows and adds nothing to
+the total — every row it names is already inside one of the six.
+
+- **25** kept occurrence channels name the fact reported: clause `occurrence`.
+- **14** magnitude channels already spell their judged magnitude exactly and
+  **2** differ from it only by an aggregate-shaped suffix: clause `sole-key`,
+  16 in all.
+- **2** are the pair that share one judged key: clause `shared-key`.
+- **2** are compound: clause `compound`.
+- **2** declare a magnitude with no catalog key: clause `no-magnitude`.
+- **6** are `health.*`: clause `health`.
+
+25 + 14 + 2 + 2 + 2 + 2 + 6 = 53.
+
+Named exceptions, kept with the reason stated rather than the anomaly hidden:
+
+  - `coupling.class-rank` — deliberate occurrence declaration, §2; inside the 25.
   - `code-smell.constructor-overinjection`, `code-smell.long-parameter-list` —
-    clause 2. See §7 for the behaviour question they raise.
+    clause `shared-key`. See §7 for the behaviour question they raise.
   - `design.data-class` (a conjunction of `woc` and `wmc` plus five exclusions)
-    and `design.god-class` (a tally of matched criteria) — clause 3. Naming one
-    by a magnitude and not the other would split a pair that behaves alike.
+    and `design.god-class` (a tally of matched criteria) — clause `compound`.
+    They are the whole of it. `design.data-class` declares one judged key and
+    `design.god-class` declares none, and the clause reads the rule body
+    precisely so that difference in the declaration does not split a pair that
+    behaves alike. Neither is a "magnitude with no catalog key": the
+    declaration of the first carries one.
   - `architecture.circular-dependency` and `architecture.unassigned-class` —
-    clause 3; both declare a magnitude with no catalog key, chosen so a count
-    can be ratcheted down.
+    clause `no-magnitude`; both declare a magnitude with no catalog key, chosen
+    so a count can be ratcheted down.
   - `code-smell.unreachable-code` — the channel and its judged key are already
     one string; its default warning threshold of 1 makes the threshold a
     presence test, so it behaves as the occurrence its name describes. What
@@ -289,7 +385,7 @@ classifying the name's grammar.
     ("error suppression" reads as a verdict as readily as it reads as PHP's own
     name for the `@` operator), and the behaviour resolves it. An English
     ambiguity the behaviour resolves does not buy a rename.
-  - `size.method-count` — conforming under clause 1; what is wrong with it is a
+  - `size.method-count` — conforming under clause `sole-key`; what is wrong with it is a
     behaviour-and-documentation question, §7.
 
 **Metric keys (81 kept).** The ADR 0035 grammar holds for every one:
@@ -325,8 +421,8 @@ half of a channel/producer pair. Three are named individually:
 **This is deliberate identity, not a collision to be removed.**
 
 Today 18 channel codes are spelled identically to a metric key; after the three
-clause-1 renames of §3 there are **21**. That is the naming rule doing its job:
-clause 1 *produces* the identity. ADR 0035 already permits a metric and the rule
+clause-`sole-key` renames of §3 there are **21**. That is the naming rule doing
+its job: clause `sole-key` *produces* the identity. ADR 0035 already permits a metric and the rule
 checking it to be the same string on purpose and records the two costs of it — a
 literal guard that can no longer tell them apart, and a key map that must not
 touch prose. Those costs stand; nothing here adds a third.
@@ -471,13 +567,40 @@ rm -f oracles.php
 
 Run on `2026-09-07` against this branch: both empty, 314 against 314.
 
-**Two properties of the check a reader must know.** It is *one-sided by six*: the
-`health.*` metric-key halves are accounted for and emitted by no oracle, so the
-first `comm` is a lower bound on completeness, never an over-count. And after the
-rename step it must be run against the **`proposed`** column (field 7) instead of
-`name`, because `name` will then hold spellings the product no longer publishes.
-That column was checked for collisions now: the 314 `proposed` + `role` pairs are
-distinct, and none of the six new spellings already exists in its role.
+**Four properties of the check a reader must know.** The first three are
+one-sidednesses; none of them can turn a real gap into a green run in the other
+direction, but each bounds what an empty residue proves.
+
+1. **One-sided by six.** The `health.*` metric-key halves are accounted for and
+   emitted by no oracle, so the first `comm` is a lower bound on completeness,
+   never an over-count.
+2. **One-sided by everything the five oracles do not emit — and the product
+   publishes such names.** The check's universe *is* the five oracles, so an
+   empty residue proves that no oracle-emitted name is unaccounted for; it does
+   not prove that the vocabulary has no unaccounted published name. Three known
+   populations sit outside it. §1's nested option keys — `max_warning` /
+   `max_error`, and `warning` / `error` inside a per-level map — are published,
+   validated by nothing, and emitted by no oracle. **22 of the 80 alias rows**
+   state in their own `reason` that the alias addresses "a spelling the
+   rule-option-key set does not carry", so for those the alias is the only
+   published spelling of the option behind it. And `architecture.coverage` is
+   also a **configuration key** under the `architecture:` section, which no
+   oracle emits either — see the Consequences. This is the larger of the three,
+   and unlike the first it has no fixed size.
+3. **The kebab fold in step 2 is many-to-one, so the check never sees a declared
+   spelling.** Row identity is `ConfigKeySpelling`'s canonical form:
+   `minTokens` and `min_tokens` both fold to `min-tokens`. The check therefore
+   compares the spellings a consumer *writes*, never the spellings the Options
+   classes *declare* — and §6 keeps the declared spellings deliberately
+   inconsistent, 27 camelCase and 5 snake_case. Two differently declared keys
+   that fold together collapse into one row, and the collision cannot redden
+   the check. Today the 43 folded keys are 43 distinct strings; that is a
+   measurement of this tree, not a property the check enforces.
+4. **After the rename step it must be run against the `proposed` column**
+   (field 7) instead of `name`, because `name` will then hold spellings the
+   product no longer publishes. That column was checked for collisions now: the
+   314 `proposed` + `role` pairs are distinct, and none of the six new spellings
+   already exists in its role.
 
 ## Consequences
 
@@ -510,12 +633,34 @@ distinct, and none of the six new spellings already exists in its role.
   re-binds every accepted baseline entry at every consumer. This is a standing
   invariant, not a step-local caution: a guard that compares the two would redden
   by design and be "fixed" by ending the freeze.
-- **Two surfaces deliberately diverge after the step, and that is not a defect
-  to repair later.** `complexity.ccn`'s CLI aliases stay `cyclomatic-warning` /
-  `cyclomatic-error`, because §6 does not rename into a warn-and-default surface;
-  and an option's addressing moves with its rule half while the option word
-  stays, so `duplication.code-duplication:min-tokens` becomes
-  `duplication.clone:min-tokens`.
+- **Three surfaces deliberately diverge after the step, and none is a defect to
+  repair later.** First, `complexity.ccn`'s CLI aliases stay
+  `cyclomatic-warning` / `cyclomatic-error`, because §6 does not rename into a
+  warn-and-default surface. Second, an option's addressing moves with its rule
+  half while the option word stays, so `duplication.code-duplication:min-tokens`
+  becomes `duplication.clone:min-tokens`.
+- **Third: `architecture.coverage` survives the rename as a configuration key.**
+  The same dotted string names two different things — the channel this step
+  renames to `architecture.coverage-gap`, and the key of the `architecture:`
+  configuration section that sets the `ignore` / `warn` / `error` mode the
+  channel takes its severity from (`qmx.yaml`'s own `architecture: coverage:
+  error`, parsed by
+  `src/Analysis/Policy/Architecture/Configuration/CoverageValidator.php`, taught
+  by `website/docs/rules/architecture.md`). **Only the channel moves.** The
+  configuration key is a key of a configuration section, not one of the five
+  sets of §1, so this ADR does not rule on it and the rename step must not touch
+  it. After the step a consumer *configures* `coverage:` and *silences*
+  `architecture.coverage-gap`. The divergence was not weighed when the channel
+  decision was taken, and it is accepted now on its measured failure mode, which
+  is the mildest of the classes: a consumer who "helpfully" migrates the
+  configuration key is **refused loudly at once** — measured, `Configuration
+  error: architecture: unknown key "coverage-gap". Allowed keys: "layers",
+  "allow", "coverage", "max_expanded_layers".`, exit 3. No other renamed channel
+  raises the question: `architecture:` is the only configuration section whose
+  own keys are spelled like a channel leaf, and the other four moves reach
+  configuration only through their `rules:` key, which moves with the producer
+  half and is likewise refused loudly when stale (measured, `Unknown rule
+  "complexity.ccn" in qmx.yaml`, exit 3).
 - **`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md:119-136` is closed by this
   ADR** — the three word pairs are decided, in favour of the metric word, by
   moving the channel. The aggregation-suffix entry at `:13` is converted from an

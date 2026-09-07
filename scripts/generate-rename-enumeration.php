@@ -382,6 +382,15 @@ function frozenPinLiterals(string $testsContent): array
  * one channel, or two channels sharing one leaf (which would make the
  * inversion {@see leafPinLiterals()} needs ambiguous).
  *
+ * `byChannel` therefore carries a PRESENCE FLAG, always 1, and the emitted
+ * `leaf_const` column is the only one of the freeze quartet that is not a
+ * count. Counting is what the refusals above rule out: multiplicity here is
+ * an error state, not a magnitude, and reporting it as `2` would state as a
+ * measurement what the binding cannot express.
+ *
+ * `byChannel` maps a channel code to the flag 1; `channelByLeaf` inverts leaf
+ * literal => channel code.
+ *
  * @return array{byChannel: array<string, int>, channelByLeaf: array<string, string>}
  */
 function leafConstantChannels(string $root): array
@@ -1148,11 +1157,16 @@ HEADER;
 }
 
 /**
+ * `$leafConst` is a PRESENCE FLAG rather than a count, unlike the other three:
+ * {@see leafConstantChannels()} binds one declaring file per channel and throws
+ * on a second, so `leaf_const` is the one column of the freeze quartet whose
+ * value never exceeds 1.
+ *
  * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
  * @param list<string> $surfaceOrder
  * @param array<string, int> $frozenKind channel literal => frozen OCCURRENCE_KIND declaration count
  * @param array<string, int> $frozenPin channel literal => frozen pin-test count
- * @param array<string, int> $leafConst channel literal => leaf SMELL_TYPE/PATTERN_TYPE declaration count
+ * @param array<string, int> $leafConst channel literal => 1 where a leaf constant is declared
  * @param array<string, int> $leafPin channel literal => leaf pin-test count
  */
 function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $frozenPin, array $leafConst, array $leafPin): string
@@ -1301,8 +1315,11 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `OccurrenceKey::semantic()` through its finding VO. That constant holds the
 # channel's LEAF in snake_case (`'eval'` for `code-smell.eval`,
 # `'sql_injection'` for `security.sql-injection`), so it does not resemble
-# the channel code and cannot be matched to it by spelling. `leaf_const`
-# counts its declaration under src/; `leaf_pin` counts the
+# the channel code and cannot be matched to it by spelling. `leaf_const` is a
+# FLAG, 0 or 1, and not a count like the other three columns: the leaf is
+# bound to its channel by ONE declaring file, and a second file claiming the
+# same channel is refused with an exception rather than added up, so a value
+# above 1 is unreachable by construction. `leaf_pin` counts the
 # `itKeysOccurrenceToItsOwnSmellType`/`...PatternType` test method(s) that
 # assert a finding this rule produced still keys on that literal. Both are
 # DERIVED — the leaf is bound to its channel by the same-file co-location of

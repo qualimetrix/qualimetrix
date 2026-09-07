@@ -1,5 +1,19 @@
 # P1 — the decision table, and the forks the owner has settled
 
+> **STATE: written before the decisions, kept as it was.** This is the P1
+> PLANNING document, as it stood when the forks below were still open. It is
+> deliberately not updated to the answers: its value is that it shows what each
+> question looked like *before* it had one — including passages that still read
+> as open, such as "the nine rows P1 must rule on individually" and "Q4 — read
+> the artifact first, then decide". Those rows have since been ruled on.
+>
+> **It is not the source of truth for any decision.** As of 2026-09-07 the
+> table is closed: 314 rows, 304 `keep`, 10 `rename`, 0 `pending`. The decisions
+> live in `decision-table.tsv` (the dated snapshot that carries them) and in
+> `docs/adr/0048-the-final-published-name-vocabulary.md` (the accepted ADR).
+> Where this document and either of those disagree, they are right and this one
+> is simply older.
+
 The ADR of П3 has one job: name the final vocabulary **whole**, so that after it
 the question "is that all?" has no content. This package produces the table it
 is written from.

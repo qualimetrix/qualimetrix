@@ -269,8 +269,11 @@ size.property-count	producer	?		18	38	2	2	0	26	0	3	0	0	0	0
 # `OccurrenceKey::semantic()` through its finding VO. That constant holds the
 # channel's LEAF in snake_case (`'eval'` for `code-smell.eval`,
 # `'sql_injection'` for `security.sql-injection`), so it does not resemble
-# the channel code and cannot be matched to it by spelling. `leaf_const`
-# counts its declaration under src/; `leaf_pin` counts the
+# the channel code and cannot be matched to it by spelling. `leaf_const` is a
+# FLAG, 0 or 1, and not a count like the other three columns: the leaf is
+# bound to its channel by ONE declaring file, and a second file claiming the
+# same channel is refused with an exception rather than added up, so a value
+# above 1 is unreachable by construction. `leaf_pin` counts the
 # `itKeysOccurrenceToItsOwnSmellType`/`...PatternType` test method(s) that
 # assert a finding this rule produced still keys on that literal. Both are
 # DERIVED — the leaf is bound to its channel by the same-file co-location of
