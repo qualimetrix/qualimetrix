@@ -35,10 +35,10 @@ observation is a property of the corpus, not of the declaration.
 **The residue is the finding.** Seven names were published that neither declared
 set contains:
 
-| name                                                                                                                   | why it is outside both sets                                                                                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `health.complexity`, `health.cohesion`, `health.coupling`, `health.typing`, `health.maintainability`, `health.overall` | shipped by the product, but declared in neither oracle: they are cases of the `HealthDimension` enum (`src/Analysis/Evidence/ComputedMetrics/HealthDimension.php:16-21`), instantiated as computed metrics by `ComputedMetricDefaults` |
-| `computed.branch-load`                                                                                                 | the gate corpus's user-defined computed metric — an instance of the open-ended user family, not a product name                                                                                                                         |
+| name                                                                                                                   | why it is outside both sets                                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `health.complexity`, `health.cohesion`, `health.coupling`, `health.typing`, `health.maintainability`, `health.overall` | shipped by the product, but declared in neither oracle: they are cases of the `HealthDimension` enum (`src/Analysis/Evidence/ComputedMetrics/Contract/Definition/HealthDimension.php:16-21`), instantiated as computed metrics by `ComputedMetricDefaults` |
+| `computed.branch-load`                                                                                                 | the gate corpus's user-defined computed metric — an instance of the open-ended user family, not a product name                                                                                                                                             |
 
 The six `health.*` names do **two jobs with one string**: they are metric keys
 (a formula addresses them — `ComputedMetricDefaults.php:123` reads
@@ -71,6 +71,11 @@ which is exactly what П3 exists to remove.
 - Aggregation suffixes were stripped mechanically by a fixed list
   (`avg|sum|max|min|p5|p95|median|count|stddev`) taken from what witness B
   printed; a suffix no run produced would have been read as part of a base key.
+  Two of those nine — `median` and `stddev` — are **not** product suffixes:
+  `AggregationStrategy` declares exactly seven (`sum, avg, max, min, count,
+  p95, p5`). The list was therefore wider than the vocabulary, which cannot
+  have hidden anything (a base key ending in `.median` would have had to exist
+  to be mis-stripped, and none does), but it is not the oracle it looked like.
 - Neither witness covers a name assembled at runtime from parts; witness A's
   header names that blind spot for text counting, and witness B inherits it in
   the opposite direction (it sees the assembled result, not the parts).
@@ -138,3 +143,25 @@ today, and FOLLOWUPS (Ш5e3-0) promised to re-measure and retire that caveat onc
 it had. The caveat should not simply be deleted, because this reconciliation shows
 the population is still partial, for a different reason: the six `HealthDimension`
 keys are published and are not `MetricName` constants.
+
+## Correction: the channel oracle here is the narrow one, by the product's own account
+
+This file's headline — that six `health.*` names are "declared in neither
+oracle" — is true of the two oracles it used and misleading about the product.
+`ChannelDeclarationRegistryInterface::staticDeclarations()` says in its own
+docblock that it "excludes the run-time `computed.*` / `health.*` family by
+construction", and exists to compare against a tracked fixture, not to enumerate
+the universe. The universe is `ChannelIdentityInterface::channels()`
+(`src/Infrastructure/Rule/ChannelUniverse.php:135`): the static set plus every
+configured computed-metric definition.
+
+So witness B did not find names the product ships undeclared. It rediscovered,
+from the outside, exactly the boundary the narrow accessor documents — which is
+a real result about **this reconciliation's choice of oracle**, and the reason
+the plan's decision table is built on `channels()`.
+
+What survives unchanged, and is what the plan actually rests on: a decision
+table built on `staticDeclarations()` would have omitted six product-shipped
+names, each simultaneously a metric key and a channel code; and the rest of that
+family is open by construction, because a consumer's own `computed_metrics:`
+entries are channels too.

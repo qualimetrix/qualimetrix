@@ -1,51 +1,59 @@
-# P1 — the decision table, and the forks that must be settled before the ADR
+# P1 — the decision table, and the forks the owner has settled
 
 The ADR of П3 has one job: name the final vocabulary **whole**, so that after it
 the question "is that all?" has no content. This package produces the table it
-is written from. It decides nothing on its own about the largest forks — those
-go to the owner in plain text, with a measured cost per branch.
+is written from.
 
 ## The artifact
 
-`decision-table.tsv` in this folder. One row per name in the vocabulary, across
-all four sets:
+`decision-table.tsv` in this folder. **The unit of a row is a name in a role,
+not a name.** Eighteen channel codes are spelled identically to a metric key,
+and the six `health.*` names are a key and a code at once; a single-decision row
+cannot express "rename the channel, keep the key". A name in two roles is two
+rows, joined by a shared `name` column.
 
-| set                     | count | oracle                                           |
-| ----------------------- | ----- | ------------------------------------------------ |
-| channel codes           | 52    | the channel registry on the production container |
-| metric keys             | 82    | `MetricName` constants                           |
-| `HealthDimension` names | 6     | the enum; each is a key **and** a code           |
-| producer rule names     | 51    | `RuleExecutionInterface::allRules()`             |
+Sets and their oracles:
 
-191 rows, minus the overlaps the table itself states (a producer name equal to
-its channel code is one row carrying both roles, not two).
+| set                 | count                                              | oracle                                                                                                              |
+| ------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| channel codes       | 52 static + the configured `computed.*`/`health.*` | `ChannelIdentityInterface::channels()` — **not** `staticDeclarations()`, which excludes that family by construction |
+| metric keys         | 82                                                 | `MetricName` constants                                                                                              |
+| producer rule names | 51                                                 | `ChannelIdentityInterface::ruleNames()`                                                                             |
+| rule option keys    | 27                                                 | the options each rule declares                                                                                      |
+| CLI flag aliases    | 80                                                 | the console definition                                                                                              |
 
 Columns:
 
-| column                 | filled from                                                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------------------- |
-| `name`, `set`, `roles` | the four oracles above                                                                             |
-| `current_form`         | `enumeration-channel-naming.tsv` / `enumeration-metric-key-naming.tsv`                             |
-| `decision`             | `keep` / `rename` — the decision this package proposes                                             |
-| `proposed`             | the new spelling, or the current one when `keep`                                                   |
-| `reason`               | why, in one clause; **required for `keep` as much as for `rename`**                                |
-| `sites`                | the occurrence total from `../enumeration-renames.tsv`                                             |
-| `declarable_by`        | which gate map states this move, or `none` + why                                                   |
-| `migration_class`      | `command` / `refuse-loud` / `inert-detected` / `silent`, from `enumeration-migration-surfaces.tsv` |
-| `frozen`               | `kind` / `pin` / `no`, from the derived columns — never a hand list                                |
+| column                | filled from                                                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `set`, `role` | the five oracles above                                                                                                      |
+| `current_form`        | `enumeration-channel-naming.tsv` / `enumeration-metric-key-naming.tsv`                                                      |
+| `decision`            | `keep` / `rename` / `pending`                                                                                               |
+| `proposed`            | the new spelling, or the current one when `keep`; empty only while `pending`                                                |
+| `reason`              | why, in one clause — **required for `keep` exactly as for `rename`**; a `pending` row instead carries the fork's identifier |
+| `sites`               | the occurrence total from `../enumeration-renames.tsv`                                                                      |
+| `declarable_by`       | which gate map states this move, or `none` + why                                                                            |
+| `migration_class`     | `command` / `refuse-loud` / `inert-detected` / `warn-and-default` / `silent`                                                |
+| `frozen`              | `kind` / `bag` / `no`, from the derived columns as P0 leaves them — never a hand list                                       |
 
 A `keep` row without a reason is the defect this package exists to prevent: it
-is exactly how the last vocabulary pass left the question open.
+is exactly how the last vocabulary pass left the question open. A `pending` row
+is the one shape allowed to lack a `proposed`, and only until its fork is
+answered; the DoD counts them and names them rather than tolerating blanks.
 
-## The forks, and why the plan does not settle them
+**Freshness.** `decision-table.tsv` is a **dated snapshot**, not a checked
+artifact: it carries decisions, which no measurement can re-derive, and П4 makes
+it historical by construction. Its header says so, and says which command
+re-derives the *name* column so a reader can tell a stale row from a decided one.
 
-Each is stated to the owner in plain text with the cost of each branch. The ADR
-records the answer; this package does not choose.
+## The forks, as the owner settled them
 
-### Q1 — do channel names read as subjects or as judgments?
+Recorded here because the ADR must reproduce the reasoning, not just the verdict.
 
-The canon calls this the largest question and says it is not measured. It is now
-partly measured, and the measurement **narrows the cost, not the choice**:
+### Q1 — do channel names read as subjects or as judgments? → **branch (a)**
+
+The canon called this the largest question and unmeasured. It is now measured on
+the cost side:
 
 | current form                                | judges a metric | judges nothing |
 | ------------------------------------------- | --------------- | -------------- |
@@ -56,66 +64,117 @@ partly measured, and the measurement **narrows the cost, not the choice**:
 
 The subject-form set is exactly the metric-named groups (`complexity.*`,
 `coupling.*`, `cohesion.lcom`, `design.*`, `maintainability.index`, `size.*`),
-so the correlation is structural — it follows the group, and is not an artifact
-of one reader's classification.
+so the correlation is structural.
 
-- **Branch (a) — codify the bimodal rule.** A channel that judges a magnitude
-  names the magnitude; a channel that reports an occurrence names the
-  occurrence. **0 form-driven renames**; the work is ruling on the 6 rows that
-  break the pattern and the 3 ambiguous ones.
-- **Branch (b) — one form for all, ESLint's `max-lines` shape.** ~18 channels
-  change spelling. Cost is the `sites` sum of those rows plus every consumer's
-  configuration and directives; the ADR would also have to say what happens to
-  the 18 codes that today coincide with a metric key.
+**Decision: codify the bimodal rule.** A channel that judges a magnitude names
+the magnitude; a channel that reports an occurrence names the occurrence.
 
-The six pattern-breakers, named so the owner can rule on them either way:
-`coupling.class-rank` (subject form, judges nothing);
-`code-smell.constructor-overinjection` and `code-smell.long-parameter-list`
-(judgment form, both judging `code-smell.parameter-count` — the legitimate
-many-to-one); `code-smell.unreachable-code`; `code-smell.unused-private`;
-`design.data-class` (judges `design.woc`). Ambiguous:
-`architecture.coverage`, `code-smell.error-suppression`,
-`duplication.code-duplication`.
+The reason, which the ADR must carry: the ESLint analogy does not transfer.
+`max-lines` must carry its judgment because ESLint publishes no metric layer to
+name; this product publishes 82 keys, and since Х8 the relation "this channel
+judges that metric" is **data** (`ChannelDeclaration::judging()`, printed by
+`bin/qmx rules`). `complexity.cyclomatic` plus a declared judged-metric link
+says more than `max-cyclomatic` does.
 
-### Q2 — the six `health.*` names
+The counter-argument the ADR must state rather than hide: a subject-form name
+alone does not tell a report's reader that a threshold was exceeded. Held to be
+covered by severity, message text and the judged metric travelling with the
+finding — a judgement, not a measurement.
 
-They are a metric key and a channel code at once, they are outside both oracles,
-and this repository's own ratchet carries two of them (`health.cohesion` ×16,
-`health.typing` ×1 of 20 channels in `qmx-baseline.json`) — so a rename here is
-one of the few that our own dogfood migration actually exercises. They are
-declarable on either map: the gate does not check membership. Branches: keep the
-`health.<dimension>` form as already-decided (check ADR 0032/0033/0036 first —
-do not relitigate a settled form), or fold them into the ruling of Q1.
+Costs, both measured as `sites` sums over `../enumeration-renames.tsv`:
 
-### Q3 — `.avg` / `.sum` / `.p5`
+- **branch (a)** — 0 form-driven renames; the work is the nine rows below, whose
+  sites total **907** if every one of them were renamed (the realistic figure is
+  lower, and is what P1 determines).
+- **branch (b)** — the 18 subject-form channels alone total **3705** sites,
+  before any consumer's configuration, directives and dashboards.
 
-**Not a row-shaped question.** The gate stops before reading any map row when
-the two trees' suffix lists differ (`MetricVocabulary.php:91`), so this step
-cannot be run through the gate at all. Branches: decide `keep` with that reason
-recorded, or accept a separate preceding step that builds a declaration whose
-unit is the strategy. The plan recommends `keep`; the ADR must say so explicitly
-rather than omitting the question.
+The nine rows P1 must rule on individually, by reading each rule rather than by
+classifying its name:
 
-### Q4 — the 51 producer names
+| row                                    | why it is here                                     | sites |
+| -------------------------------------- | -------------------------------------------------- | ----- |
+| `coupling.class-rank`                  | subject form, judges nothing                       | 188   |
+| `code-smell.constructor-overinjection` | judgment form, judges `code-smell.parameter-count` | 58    |
+| `code-smell.long-parameter-list`       | judgment form, judges the same key                 | 156   |
+| `code-smell.unreachable-code`          | judgment form, judges a key of its own name        | 74    |
+| `code-smell.unused-private`            | judgment form, judges `…​.total`                   | 26    |
+| `design.data-class`                    | judgment form, judges `design.woc`                 | 79    |
+| `architecture.coverage`                | ambiguous: one word, neither subject nor judgment  | 133   |
+| `code-smell.error-suppression`         | ambiguous: mechanism or judgment                   | 34    |
+| `duplication.code-duplication`         | ambiguous, and tautological in spelling            | 159   |
 
-Nine differ from their channel code. A consumer writes them in four places.
-**This package must first measure which map declares a producer rename** —
-`channels.tsv` declares a channel key and `inputs.tsv` declares names inside
-selectors and option keys; whether either covers a `rules:` key is a fact, not a
-guess. If none does, that is a third structural gate gap and the honest branch
-is `keep` for all 51, recorded with that reason.
+Orchestrator's prior, to be confirmed or refuted by reading, **not** a decision:
+the two `parameter-count` rows stay (legitimate many-to-one, two situations of
+one metric); `duplication.code-duplication` and `architecture.coverage` are the
+weakest names of the 52.
+
+### Q2 — the six `health.*` names → **keep the `health.<dimension>` form**
+
+Three reasons, two of them measured: the form is settled by earlier ADRs and
+re-opening it without cause is the worst kind of work; this repository's own
+ratchet carries two of them (`health.cohesion` ×16, `health.typing` ×1 of the 20
+channels in `qmx-baseline.json`), so the cost is not zero even in-tree; and
+consumers address them in formulas, where the spelling has already spread.
+
+What the ADR must say about them beyond the verdict — and what nothing in the
+tree says today: **these are run-time-declared channels, absent from the static
+registry by construction.** A future reader who builds a completeness check on
+`staticDeclarations()` repeats this plan's own first mistake. That sentence is
+the durable value of the row; `keep` is not.
+
+P1 reads ADR 0032/0033/0036 first and cites whichever already settles the form.
+
+### Q3 — `.avg` / `.sum` / `.p5` → **keep, and say so as a decision**
+
+The gate stops before reading the first map row when the two trees' suffix lists
+differ (`MetricVocabulary.php:91`), so this step cannot be run through the gate
+at all; building a declaration whose unit is the strategy costs more than
+`avg → average` returns. The ADR records `keep` **with that reason** — a settled
+question, not a deferral. `02` treats it accordingly and does not list it among
+what the ADR declines to decide.
+
+The seven suffixes are `sum, avg, max, min, count, p95, p5`
+(`AggregationStrategy`). Where the reconciliation stripped nine, two of them
+(`median`, `stddev`) are not product suffixes; the artifact's header is corrected
+rather than its conclusion, which no row depended on.
+
+### Q4 — the 51 producer names → **read the artifact first, then decide**
+
+`enumeration-gate-map-shapes.tsv` says `inputs.tsv` declares "option keys, flag
+aliases, and names inside selectors" — which a `rules:` key and an `only_rules`
+entry plausibly satisfy. So "keep because nothing can declare it" is probably a
+false premise, and P1 confirms or refutes that one line in
+`scripts/finding-gate/` with `file:line` rather than re-measuring from scratch.
+What then remains substantive is the nine names that differ from their channel
+code, which are ruled on individually.
+
+### Q5 — rule option keys and CLI aliases → **name them, keep them, defer the fix**
+
+27 option keys, several camelCase in a kebab-case product, plus 80 flag aliases.
+The ADR states the spelling rule they will follow from now on and keeps every
+current spelling. The reason is their migration class: a renamed option key
+produces one stderr `[WARNING]` and **the run continues with the default**, so
+the consumer's analysis silently changes result while their CI stays green.
+Renaming into that behaviour is worse than leaving the spelling inconsistent.
+
+"Make that refusal loud" is a separate decision about a mechanism, not about a
+name; it goes to `followups/` with the measurement, and the ADR names it as
+knowingly out of scope.
 
 ## Definition of Done
 
-- `decision-table.tsv` exists with one row per name in all four sets; every row
-  carries a `reason`, including every `keep`.
-- The set of names in the table equals the union of the four oracles, proved by
-  a command quoted in the file's header.
+- `decision-table.tsv` exists with one row per name-and-role across the five
+  sets; the set of `name`+`role` pairs equals the union of the five oracles,
+  proved by a command quoted in the file's header.
+- Every row carries a `reason`. A row may be `pending` only if it belongs to a
+  fork this plan leaves open; the report lists every `pending` row by name, and
+  the count is zero unless the report explains each one.
 - The header carries "how this was produced" and "what this method does not
-  see", per the same rule the other artifacts in this folder follow.
-- Q4's declarability is answered by reading `scripts/finding-gate/`, with
-  `file:line`, not asserted.
-- The four forks are put to the owner in plain text with cost per branch, and
-  the table's `decision` column for the affected rows stays unfilled until the
-  answer arrives.
+  see", and states that the file is a dated snapshot rather than a checked
+  artifact.
+- Q4's declarability is answered by reading `scripts/finding-gate/` with
+  `file:line`.
+- ADR 0032/0033/0036 are read and the one that settles `health.<dimension>` is
+  cited in Q2's rows.
 - No file outside this folder is touched. Nothing is renamed.
