@@ -360,6 +360,157 @@ function frozenPinLiterals(string $testsContent): array
 }
 
 /**
+ * Channels whose occurrence discriminator is a `SMELL_TYPE`/`PATTERN_TYPE`
+ * constant holding the channel's LEAF rather than its code — the second,
+ * differently shaped freeze `leaf_const`/`leaf_pin` mark (see the footer).
+ * `AbstractCodeSmellRule` and `AbstractSecurityPatternRule` pass that
+ * constant to `OccurrenceKey::semantic()` through their finding VO, so its
+ * value is the discriminator for every family deriving from them, exactly as
+ * `OCCURRENCE_KIND` is for the six.
+ *
+ * Read FILE BY FILE rather than off the concatenated `src` surface on
+ * purpose: the constant holds `'eval'`, never `'code-smell.eval'`, so nothing
+ * in its text says which channel it belongs to. The binding is the same-file
+ * coincidence of `public const string NAME = '<channel>'` with the leaf
+ * constant, and concatenating the surface destroys exactly that. The binding
+ * is therefore DERIVED, with no hand-kept list of classes, files or pairs —
+ * a thirteenth family declaring the same shape is picked up on the next run,
+ * and a family that stops declaring it drops out instead of being remembered.
+ *
+ * Every way the derivation could silently under-report throws instead: a leaf
+ * constant in a file with no channel `NAME` to bind it to, two files claiming
+ * one channel, or two channels sharing one leaf (which would make the
+ * inversion {@see leafPinLiterals()} needs ambiguous).
+ *
+ * @return array{byChannel: array<string, int>, channelByLeaf: array<string, string>}
+ */
+function leafConstantChannels(string $root): array
+{
+    $byChannel = [];
+    $channelByLeaf = [];
+
+    $finder = new Finder();
+    $finder->files()->in($root . '/src')->name('*.php');
+
+    foreach ($finder as $file) {
+        $source = readFileOrFail($file->getPathname());
+
+        if (preg_match("/const string (?:SMELL_TYPE|PATTERN_TYPE) = '((?:[^'\\\\]|\\\\.)*)';/", $source, $leafMatch) !== 1) {
+            continue;
+        }
+
+        $leaf = stripcslashes($leafMatch[1]);
+
+        // The two abstract bases declare the constant empty so every concrete
+        // subclass must state its own; an empty leaf names no family.
+        if ($leaf === '') {
+            continue;
+        }
+
+        $relative = ltrim(substr($file->getPathname(), strlen($root)), '/');
+
+        if (preg_match("/const string NAME = '((?:[^'\\\\]|\\\\.)*)';/", $source, $nameMatch) !== 1 || $nameMatch[1] === '') {
+            throw new RuntimeException(sprintf(
+                '%s declares a leaf occurrence constant ("%s") but no non-empty `const string NAME` in the same'
+                . ' file to bind it to a channel. The binding is derived from that co-location; without it the'
+                . ' protected literal would be silently reported as unprotected.',
+                $relative,
+                $leaf,
+            ));
+        }
+
+        $channel = stripcslashes($nameMatch[1]);
+
+        if (isset($byChannel[$channel])) {
+            throw new RuntimeException(sprintf(
+                'Channel "%s" carries a leaf occurrence constant in more than one file (last: %s). One channel'
+                . ' must bind to one declaring file for the count to mean anything.',
+                $channel,
+                $relative,
+            ));
+        }
+
+        if (isset($channelByLeaf[$leaf])) {
+            throw new RuntimeException(sprintf(
+                'Leaf "%s" is declared by both "%s" and "%s". The pin scan inverts leaf => channel; two channels'
+                . ' sharing a leaf makes that inversion ambiguous and would attribute a pin to the wrong row.',
+                $leaf,
+                $channelByLeaf[$leaf],
+                $channel,
+            ));
+        }
+
+        $byChannel[$channel] = 1;
+        $channelByLeaf[$leaf] = $channel;
+    }
+
+    return ['byChannel' => $byChannel, 'channelByLeaf' => $channelByLeaf];
+}
+
+/**
+ * Channel literals an `itKeysOccurrenceToItsOwnSmellType`/`...PatternType`
+ * pin test asserts against — the test-side counterpart of
+ * {@see leafConstantChannels()}, and the leaf-shaped analogue of
+ * {@see frozenPinLiterals()}.
+ *
+ * Derived the same bounded-window way as the frozen pins: every actual
+ * DECLARATION of such a method is followed by a window of text searched for
+ * the one `OccurrenceKey::semantic('<leaf>'` call it makes. The leaf is then
+ * translated to its channel through the inversion of the src-side binding, so
+ * the column lands on the row a sweep would actually be renaming.
+ *
+ * A marker whose window holds no call, and a pin naming a leaf no src file
+ * declares, both fail loudly: a silent miss here is indistinguishable from
+ * "no pin protects this literal any more".
+ *
+ * @param array<string, string> $channelByLeaf leaf literal => channel code
+ *
+ * @return array<string, int> channel literal => number of pin methods asserting its leaf
+ */
+function leafPinLiterals(string $testsContent, array $channelByLeaf): array
+{
+    $window = 4000;
+
+    if (preg_match_all('/function itKeysOccurrenceToItsOwn(?:Smell|Pattern)Type\w*\(\)/', $testsContent, $matches, PREG_OFFSET_CAPTURE) === false) {
+        throw new RuntimeException('Regex failure while scanning tests/ for leaf-occurrence pin methods.');
+    }
+
+    $counts = [];
+
+    foreach ($matches[0] as [$declaration, $pos]) {
+        $slice = substr($testsContent, $pos, $window);
+
+        if (preg_match("/OccurrenceKey::semantic\\(\\s*\\n?\\s*'((?:[^'\\\\]|\\\\.)*)'/", $slice, $match) !== 1) {
+            throw new RuntimeException(sprintf(
+                'Found pin method declaration "%s" at byte offset %d of the tests surface, but no'
+                . ' `OccurrenceKey::semantic(\'literal\')` call within %d characters of it. Widen the window or'
+                . ' investigate the method — a silent miss here would misreport a protected literal as unprotected.',
+                $declaration,
+                $pos,
+                $window,
+            ));
+        }
+
+        $leaf = stripcslashes($match[1]);
+        $channel = $channelByLeaf[$leaf] ?? null;
+
+        if ($channel === null) {
+            throw new RuntimeException(sprintf(
+                'Pin method "%s" asserts the leaf "%s", which no src/ file declares as a SMELL_TYPE/PATTERN_TYPE'
+                . ' constant. Either the constant was renamed and the pin was not (the pin is now stale and'
+                . ' protects nothing), or the pin belongs to a family that no longer keys occurrence this way.',
+                $declaration,
+                $leaf,
+            ));
+        }
+
+        $counts[$channel] = ($counts[$channel] ?? 0) + 1;
+    }
+
+    return $counts;
+}
+
+/**
  * Reads the previously generated file (if any) and returns the decided columns
  * — `new` and the `step` that decision belongs to — for every row that had one
  * filled in, keyed by "old\tkind".
@@ -1001,14 +1152,17 @@ HEADER;
  * @param list<string> $surfaceOrder
  * @param array<string, int> $frozenKind channel literal => frozen OCCURRENCE_KIND declaration count
  * @param array<string, int> $frozenPin channel literal => frozen pin-test count
+ * @param array<string, int> $leafConst channel literal => leaf SMELL_TYPE/PATTERN_TYPE declaration count
+ * @param array<string, int> $leafPin channel literal => leaf pin-test count
  */
-function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $frozenPin): string
+function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $frozenPin, array $leafConst, array $leafPin): string
 {
     usort($rows, static fn(array $a, array $b): int => [$a['kind'], $a['old']] <=> [$b['kind'], $b['old']]);
 
-    $header = ['old', 'kind', 'new', 'step', ...$surfaceOrder, 'frozen_kind', 'frozen_pin'];
+    $header = ['old', 'kind', 'new', 'step', ...$surfaceOrder, 'frozen_kind', 'frozen_pin', 'leaf_const', 'leaf_pin'];
     $lines = [implode("\t", $header)];
     $frozenRows = 0;
+    $leafRows = 0;
 
     foreach ($rows as $row) {
         $line = [$row['old'], $row['kind'], $row['new'], $row['step']];
@@ -1022,11 +1176,19 @@ function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $f
         // OccurrenceKey::semantic() as its first argument.
         $kindCount = $row['kind'] === 'channel' ? ($frozenKind[$row['old']] ?? 0) : 0;
         $pinCount = $row['kind'] === 'channel' ? ($frozenPin[$row['old']] ?? 0) : 0;
+        $leafConstCount = $row['kind'] === 'channel' ? ($leafConst[$row['old']] ?? 0) : 0;
+        $leafPinCount = $row['kind'] === 'channel' ? ($leafPin[$row['old']] ?? 0) : 0;
         $line[] = (string) $kindCount;
         $line[] = (string) $pinCount;
+        $line[] = (string) $leafConstCount;
+        $line[] = (string) $leafPinCount;
 
         if ($kindCount > 0 || $pinCount > 0) {
             $frozenRows++;
+        }
+
+        if ($leafConstCount > 0 || $leafPinCount > 0) {
+            $leafRows++;
         }
 
         $lines[] = implode("\t", $line);
@@ -1036,7 +1198,7 @@ function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $f
     $producerCount = count(array_filter($rows, static fn(array $row): bool => $row['kind'] === 'producer'));
     $metricKeyCount = count(array_filter($rows, static fn(array $row): bool => $row['kind'] === 'metric-key'));
 
-    return implode("\n", $lines) . "\n" . footer($surfaceOrder, $channelCount, $producerCount, $metricKeyCount, $frozenRows);
+    return implode("\n", $lines) . "\n" . footer($surfaceOrder, $channelCount, $producerCount, $metricKeyCount, $frozenRows, $leafRows);
 }
 
 /**
@@ -1049,14 +1211,15 @@ function renderTsv(array $rows, array $surfaceOrder, array $frozenKind, array $f
  *
  * @param list<string> $surfaceOrder
  */
-function footer(array $surfaceOrder, int $channelCount, int $producerCount, int $metricKeyCount, int $frozenRows): string
+function footer(array $surfaceOrder, int $channelCount, int $producerCount, int $metricKeyCount, int $frozenRows, int $leafRows): string
 {
     $surfaceList = implode(', ', $surfaceOrder);
 
     return <<<FOOTER
 #
 # ROW COUNTS: {$channelCount} channel, {$producerCount} producer, {$metricKeyCount} metric-key,
-# {$frozenRows} channel row(s) carrying a frozen occurrence discriminator (see `frozen_kind`/`frozen_pin` below)
+# {$frozenRows} channel row(s) carrying a frozen occurrence discriminator (see `frozen_kind`/`frozen_pin` below),
+# {$leafRows} channel row(s) carrying a leaf occurrence discriminator (see `leaf_const`/`leaf_pin` below)
 #
 # HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
 # - `channel` rows: {$channelCount} keys from
@@ -1130,6 +1293,49 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # frozen constant reading differently from `NAME` after a future channel
 # rename is the freeze working as designed, not a drift to reconcile.
 #
+# `leaf_const` AND `leaf_pin` NAME A SECOND, DIFFERENTLY SHAPED FREEZE.
+# Twelve further channels — the nine `code-smell.*` families deriving from
+# `AbstractCodeSmellRule` and the three `security.*` families deriving from
+# `AbstractSecurityPatternRule` — key `occurrence` off a
+# `SMELL_TYPE`/`PATTERN_TYPE` constant instead, which the base passes to
+# `OccurrenceKey::semantic()` through its finding VO. That constant holds the
+# channel's LEAF in snake_case (`'eval'` for `code-smell.eval`,
+# `'sql_injection'` for `security.sql-injection`), so it does not resemble
+# the channel code and cannot be matched to it by spelling. `leaf_const`
+# counts its declaration under src/; `leaf_pin` counts the
+# `itKeysOccurrenceToItsOwnSmellType`/`...PatternType` test method(s) that
+# assert a finding this rule produced still keys on that literal. Both are
+# DERIVED — the leaf is bound to its channel by the same-file co-location of
+# `public const string NAME = '<channel>'` with the leaf constant, never by a
+# hand-kept list — so a thirteenth family adopting the shape is flagged with
+# no edit here, and a family that stops declaring it drops back to `0`.
+#
+# THE DANGER THESE TWO COLUMNS MARK IS NOT THE ONE `frozen_kind` MARKS.
+# The six frozen literals ARE among their row's counted src/tests
+# occurrences, so a mechanical whole-identifier sweep would rename them. A
+# leaf is counted NOWHERE in its row: the row's search identifier is
+# `code-smell.eval`, and neither `'eval'` nor the bag key `codeSmell.eval`
+# matches it. The mechanical sweep will therefore leave these alone by
+# construction; what moves them is a CONSISTENCY rename done by hand ("the
+# channel is now `code-smell.dynamic-eval`, so the constant should read
+# `dynamic_eval`"). A nonzero `leaf_const` says: this channel has a
+# snake_case twin outside the sweep's reach that MUST keep its pre-rename
+# spelling, because moving it moves `occurrence` for every already-accepted
+# baseline entry on the channel, exactly as with the six.
+#
+# The leaf's occurrences are not listed here either. Locating them for one
+# channel needs `grep -rn "SMELL_TYPE = '<leaf>'\|PATTERN_TYPE = '<leaf>'"
+# src/`, plus its list entry in `CodeSmellCollector::SMELL_TYPES` /
+# `SecurityPatternCollector::PATTERN_TYPES`, its `CodeSmellLocation('<leaf>'`
+# / equivalent producer literal in the capability's visitor, and the
+# `'codeSmell.<leaf>'` / `'security.<leaf>'` bag keys throughout tests/.
+# `tests/Analysis/Finding/Integration/OccurrenceLeafFreezeGuardTest.php`
+# re-derives this set independently on every `composer test` run and fails if
+# the twelve drift, if a leaf stops matching its own pin, or if a family
+# loses its pin — a consistent sweep that renamed a leaf everywhere at once
+# (src, collector, visitor and every test, which the full suite otherwise
+# passes green) is caught there and nowhere else.
+#
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from
 #    `RuleMetadata::name` in code and stored under a different local
@@ -1153,6 +1359,11 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 #    `architecture.layer-violation` and `annotation.directive`), the
 #    `ruleName` half's occurrences show up in the corresponding `producer`
 #    row instead, because the two strings are identical text;
+#  - `leaf_const`/`leaf_pin` bind a leaf to a channel by same-file
+#    co-location with `NAME`. A family that split the two across files, or
+#    computed either from parts, would not bind — the script fails loudly
+#    rather than reporting zero, but the shape it can read is the one every
+#    family uses today, not a general rule about PHP;
 #  - `frozen_kind`/`frozen_pin` name WHICH channels carry protected
 #    occurrences and HOW MANY, not WHERE (no file:line). Locating them for a
 #    sweep still needs `grep -rn "OCCURRENCE_KIND = '<literal>'" src/` and
@@ -1201,9 +1412,11 @@ function renderCurrentState(string $root, string $outputPath, string $executedPa
 
     $frozenKind = frozenKindLiterals($surfaceContents['src']);
     $frozenPin = frozenPinLiterals($surfaceContents['tests']);
+    $leaf = leafConstantChannels($root);
+    $leafPin = leafPinLiterals($surfaceContents['tests'], $leaf['channelByLeaf']);
 
     return [
-        'content' => renderTsv($finalRows, $surfaceOrder, $frozenKind, $frozenPin),
+        'content' => renderTsv($finalRows, $surfaceOrder, $frozenKind, $frozenPin, $leaf['byChannel'], $leafPin),
         'executedContent' => renderExecutedTsv($executedRows),
         // Only the measured rows answer `--emit-maps`. A landed step's rows are
         // history, and its maps are already in git — see the refusal in main().

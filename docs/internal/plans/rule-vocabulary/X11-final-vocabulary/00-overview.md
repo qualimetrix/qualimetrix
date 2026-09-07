@@ -131,13 +131,21 @@ Measured, not reasoned. A coordinated rename of `SMELL_TYPE = 'eval'` across all
 of its sites (rule constant, visitor literal, collector list, four test files)
 leaves the **entire 8174-test suite green, exit 0**, while the occurrence hash
 moves from `cb4db382fbd60b86` to `044e26abaa4cfd73` — silently re-binding every
-accepted baseline entry on `code-smell.eval` at every consumer. A *partial*
-sweep reddens 8 tests; the complete one, which is what П4 performs, reddens
-nothing.
+accepted baseline entry on `code-smell.eval` at every consumer.
 
-This is the single irreversible way to spoil П4, it is independent of every
-naming decision, and until it is closed all downstream work runs over it. Hence
-P0 before P1.
+P0's own measurement then sharpened *which* hand is dangerous, and the plan
+follows it rather than the wording above. A leaf constant is counted **nowhere**
+in its channel's row: the row's search identifier is `code-smell.eval`, and
+neither `'eval'` nor `codeSmell.eval` matches it. So the mechanical sweep P4
+performs leaves these twelve alone by construction. What moves them is a
+**hand consistency rename** — "the channel now reads `code-smell.dynamic-eval`,
+so the constant should read `dynamic_eval`" — which is precisely the tidying
+instinct a rename step invites, and which no test in the tree reddened before
+P0. That is the irreversible way to spoil П4: not the sweep, the tidy-up after
+it.
+
+It is independent of every naming decision, and until it is closed all
+downstream work runs over it. Hence P0 before P1.
 
 ## Order
 

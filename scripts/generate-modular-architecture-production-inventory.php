@@ -2667,6 +2667,7 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/01-decision-table.md',
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/02-adr.md',
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/enumeration-universe-reconciliation.md',
+        'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/followups/freeze-coverage.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/00-overview.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/01-freeze-kind.md',
         'docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/02-baseline-channel-carry.md',

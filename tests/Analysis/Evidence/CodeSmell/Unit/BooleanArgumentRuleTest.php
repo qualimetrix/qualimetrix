@@ -432,4 +432,47 @@ final class BooleanArgumentRuleTest extends TestCase
 
         self::assertSame([], $findings);
     }
+
+    /**
+     * Pins `occurrence` to `SMELL_TYPE` read off a finding produced by
+     * {@see BooleanArgumentRule::analyze()} itself, so a future edit to
+     * `SMELL_TYPE` reddens this test even though it looks like a same-shaped
+     * refactor of the `codeSmell.{$type}` bag key
+     * `AbstractCodeSmellRule::analyze()` shares with every other code-smell
+     * rule. The expected leaf is written as a literal on purpose:
+     * substituting `BooleanArgumentRule::SMELL_TYPE` would make the
+     * comparison tautological and it would stop catching the move.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnSmellType(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite', 'promoted' => false]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('boolean_argument', [
+                'type' => 'boolean_argument',
+                'extra' => 'overwrite',
+                'hasExtra' => true,
+                'promoted' => false,
+                'hasPromoted' => true,
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
+    }
 }
