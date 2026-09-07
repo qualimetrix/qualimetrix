@@ -8,8 +8,7 @@
 # confirm that "annotation.directive" is an internal producer-rule-name that is never itself
 # published as a finding channel (its four concrete children are). This is noted inline below.
 #
-# All commands were run from the repository root
-# (the repository root) on branch
+# All commands were run from the repository root, on branch
 # claude/x11-final-vocabulary, with `php bin/qmx` (project dev checkout, not a phar).
 #
 # ---- Channel-observing runs (bin/qmx check ... --format=json, field "channel" in "violations") ----
