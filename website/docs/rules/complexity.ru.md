@@ -8,7 +8,7 @@
 
 ## Цикломатическая сложность
 
-**Rule ID:** `complexity.cyclomatic`
+**Rule ID:** `complexity.ccn`
 
 **Судимые метрики:** `complexity.ccn`, `complexity.ccn.max`
 
@@ -108,7 +108,7 @@ Qualimetrix использует расширенный вариант цикл�
 ```yaml
 # qmx.yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -121,17 +121,17 @@ rules:
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       threshold: 15   # warning=15, error=15 → все нарушения — ошибки
 ```
 
 ```bash
 # CLI overrides
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.error=25"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.error=25"
+bin/qmx check src/ --rule-opt="complexity.ccn:class.max_warning=40"
+bin/qmx check src/ --rule-opt="complexity.ccn:class.enabled=false"
 ```
 
 ---

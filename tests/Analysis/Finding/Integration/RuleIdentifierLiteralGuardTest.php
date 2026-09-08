@@ -148,6 +148,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      */
     private const array ALLOWED_LITERALS = [
         'src/Analysis/Evidence/Measurement/Contract/MetricName.php' => [
+            'complexity.ccn' => self::METRIC_NAME_DECLARATION_REASON,
             'complexity.cognitive' => self::METRIC_NAME_DECLARATION_REASON,
             'complexity.npath' => self::METRIC_NAME_DECLARATION_REASON,
             'complexity.wmc' => self::METRIC_NAME_DECLARATION_REASON,
@@ -160,18 +161,20 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'design.type-coverage.return' => self::METRIC_NAME_DECLARATION_REASON,
             'design.type-coverage.property' => self::METRIC_NAME_DECLARATION_REASON,
             'design.noc' => self::METRIC_NAME_DECLARATION_REASON,
+            'design.dit' => self::METRIC_NAME_DECLARATION_REASON,
             'security.hardcoded-credentials' => self::METRIC_NAME_DECLARATION_REASON,
             'security.sensitive-parameter' => self::METRIC_NAME_DECLARATION_REASON,
             'size.class-count' => self::METRIC_NAME_DECLARATION_REASON,
             'size.method-count' => self::METRIC_NAME_DECLARATION_REASON,
             'size.property-count' => self::METRIC_NAME_DECLARATION_REASON,
             'code-smell.unreachable-code' => self::METRIC_NAME_DECLARATION_REASON,
+            'maintainability.mi' => self::METRIC_NAME_DECLARATION_REASON,
         ],
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' => [
             'design.type-coverage.param' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'design.type-coverage.return' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'design.type-coverage.property' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.cyclomatic' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'complexity.ccn' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'complexity.cognitive' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'complexity.npath' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'coupling.cbo' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
@@ -181,18 +184,18 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'code-smell.long-parameter-list' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'code-smell.constructor-overinjection' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'code-smell.unreachable-code' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'maintainability.index' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'maintainability.mi' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'size.method-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'size.class-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'size.property-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.inheritance' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'design.dit' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'design.noc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'cohesion.lcom' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'complexity.wmc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'duplication.code-duplication' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+            'duplication.clone' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
         ],
         'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php' => [
-            'duplication.code-duplication' => 'The ban must name the second channel no directive may silence,'
+            'duplication.clone' => 'The ban must name the second channel no directive may silence,'
                 . ' and Inline may not import a Duplication rule class across capabilities to spell it.'
                 . ' The first banned name needs no entry here because Inline owns it'
                 . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'

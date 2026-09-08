@@ -121,7 +121,7 @@ final class ConfigSchema
         ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR, self::BOOLEAN],
         ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR, self::STRING],
 
-        // Architecture: free-form map with layers/allow/coverage sub-structure.
+        // Architecture: free-form map with layers/allow/coverage-gap sub-structure.
         // Treated as MIXED because sub-keys are user-defined layer names, not a fixed schema.
         [self::ARCHITECTURE, self::ARCHITECTURE, self::MIXED, null],
     ];

@@ -451,13 +451,13 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('type-coverage-pct');
         $derivedCollector->method('requires')->willReturn(['type-coverage']);
-        $derivedCollector->method('provides')->willReturn(['design.type-coverage.pct']);
+        $derivedCollector->method('provides')->willReturn(['design.type-coverage.all']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('design.type-coverage.pct', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.all', SymbolLevel::Class_),
         ]);
         $derivedCollector->method('calculate')->willReturnCallback(
             static fn(MetricBag $metrics): MetricBag => (new MetricBag())->with(
-                'design.type-coverage.pct',
+                'design.type-coverage.all',
                 ($metrics->get('design.type-coverage.param.typed') ?? 0) === ($metrics->get('design.type-coverage.param.total') ?? 0)
                     ? 100.0
                     : 0.0,
@@ -470,8 +470,8 @@ final class CompositeCollectorTest extends TestCase
             RelativePath::fromString('CompositeCollectorTest.php'),
         );
 
-        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('design.type-coverage.pct', $class->subject)));
-        self::assertFalse($result->metrics->has('design.type-coverage.pct:callable:' . $class->declarationPath->toCanonical()));
+        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('design.type-coverage.all', $class->subject)));
+        self::assertFalse($result->metrics->has('design.type-coverage.all:callable:' . $class->declarationPath->toCanonical()));
     }
 
     #[Test]

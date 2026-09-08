@@ -154,7 +154,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
             'path' => 'website/docs/rules/architecture.md',
             'pattern' => '/the others are(?<list>.*?)\. All\s+(?<count>\S+) fail the run unconditionally/su',
             'set' => 'layer-policy-config-error',
-            'omitted' => ['architecture.coverage'],
+            'omitted' => ['architecture.coverage-gap'],
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
@@ -198,7 +198,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
             'path' => 'website/docs/rules/architecture.ru.md',
             'pattern' => '/остальные (?<count>\S+) —(?<list>.*?)\. Все\s+\S+ валят прогон безусловно/su',
             'set' => 'layer-policy-config-error',
-            'omitted' => ['architecture.coverage'],
+            'omitted' => ['architecture.coverage-gap'],
             'count' => 'enumerated',
         ],
         [
@@ -403,7 +403,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
     {
         $documentation = $this->readSweptDocumentation();
         $path = 'website/docs/usage/baseline.md';
-        $documentation[$path] .= "\n\nThe two layer-policy diagnostics `architecture.coverage` and `architecture.empty-template` gate the run.\n";
+        $documentation[$path] .= "\n\nThe two layer-policy diagnostics `architecture.coverage-gap` and `architecture.empty-template` gate the run.\n";
 
         self::assertNotSame([], $this->unregisteredStatements($documentation));
     }

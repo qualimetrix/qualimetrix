@@ -48,7 +48,7 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * - it cannot tell a genuine `threshold`-shorthand key from a legacy alias
  *   that merely *ends* in the substring "Threshold" while representing a
  *   `warning`/`error` value (e.g. `warningThreshold` — see the registry's
- *   `complexity.cyclomatic`/`cognitive`/`npath` top-level entries, which
+ *   `complexity.ccn`/`cognitive`/`npath` top-level entries, which
  *   exist specifically to correct this);
  * - it requires the threshold key's prefix to match the graduated keys'
  *   prefix exactly, which several real Options classes don't follow (a

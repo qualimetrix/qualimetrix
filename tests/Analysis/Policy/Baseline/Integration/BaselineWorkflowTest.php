@@ -72,8 +72,8 @@ final class BaselineWorkflowTest extends TestCase
         $findings = [
             new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculateDiscount"), 45),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
@@ -150,8 +150,8 @@ final class BaselineWorkflowTest extends TestCase
         // Step 5: Test new finding (not in baseline)
         $newFinding = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "processOrder"), 100),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
@@ -256,8 +256,8 @@ final class BaselineWorkflowTest extends TestCase
         $initialFindings = [
             new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method1"), 10),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -266,8 +266,8 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method2"), 20),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
@@ -289,8 +289,8 @@ final class BaselineWorkflowTest extends TestCase
         $currentFindings = [
             new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method1"), 10),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -329,8 +329,8 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Finding(
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod("App\\Service", "Service", "handle"), RelativePath::fromString("src/Service.php"), DeclarationOrdinal::fromRank(0))),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 15',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'handle'),
@@ -371,8 +371,8 @@ final class BaselineWorkflowTest extends TestCase
         // Same finding at different lines
         $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -382,8 +382,8 @@ final class BaselineWorkflowTest extends TestCase
 
         $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -405,8 +405,8 @@ final class BaselineWorkflowTest extends TestCase
         // Same finding with different numeric values
         $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -416,8 +416,8 @@ final class BaselineWorkflowTest extends TestCase
 
         $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -438,8 +438,8 @@ final class BaselineWorkflowTest extends TestCase
     {
         $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 45),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -449,8 +449,8 @@ final class BaselineWorkflowTest extends TestCase
 
         $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "compute"), 45),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method

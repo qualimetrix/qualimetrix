@@ -22,10 +22,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * the configuration rather than debt in the code. None of them can be
  * accepted by a baseline. Four of the five also share {@see DIAGNOSTIC_SEVERITY}
  * instead of taking a severity option; `coverage()` is the exception, because
- * its severity has always come from the three-state `coverage:` mode
+ * its severity has always come from the three-state `coverage-gap:` mode
  * (`ignore`/`warn`/`error`) rather than a fixed value.
  *
- * - `architecture.coverage` — dependency-edge ends and analysed classes that
+ * - `architecture.coverage-gap` — dependency-edge ends and analysed classes that
  *   fall outside every declared layer, seen through the mode that also
  *   classifies out-of-tree namespaces. That breadth is what makes the number
  *   unusable as a gate on one's own code — see `architecture.unassigned-class`
@@ -53,7 +53,7 @@ final class DeclaredLayerReachability
     private const int SHADOW_SAMPLE_LIMIT = 5;
 
     /**
-     * The `architecture.coverage` diagnostic, or none when the mode declines
+     * The `architecture.coverage-gap` diagnostic, or none when the mode declines
      * it or nothing was left out of a layer.
      *
      * Severity mirrors the mode name exactly (`warn` → {@see Severity::Warning},
@@ -93,15 +93,15 @@ final class DeclaredLayerReachability
             ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             code: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             message: \sprintf(
-                'Architecture coverage: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
+                'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
                 $state['sourceEdges'],
                 $state['targetEdges'],
                 \count($unmatched),
             ),
             severity: $severity,
             recommendation: $sampleList === null
-                ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".'
-                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage on "ignore".',
+                ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".'
+                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".',
         )];
     }
 

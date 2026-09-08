@@ -38,7 +38,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * self-allow-only, a {@code source → marker} edge produces a finding iff
  * the source class is actually assigned to a non-{@code marker} layer.
  * Excluded classes (those filtered by the exclude clause) fall outside
- * every layer under {@code coverage: ignore} and produce no finding —
+ * every layer under {@code coverage-gap: ignore} and produce no finding —
  * that absence is the evidence of correct exclusion.
  */
 #[Group('integration')]
@@ -169,7 +169,7 @@ final class LayerExcludeIntegrationTest extends TestCase
                 service: []
                 'module-{m}': []
                 marker: []
-              coverage: ignore
+              coverage-gap: ignore
             YAML);
 
         try {
@@ -255,7 +255,7 @@ final class LayerExcludeIntegrationTest extends TestCase
                 'module-{m}' => [],
                 'marker' => [],
             ],
-            'coverage' => 'ignore',
+            'coverage-gap' => 'ignore',
         ];
     }
 

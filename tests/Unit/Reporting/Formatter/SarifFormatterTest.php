@@ -26,11 +26,11 @@ use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\ReportBuilder;
 
 /**
- * Some fixtures below use `complexity.cyclomatic` without its `.callable` /
+ * Some fixtures below use `complexity.ccn` without its `.callable` /
  * `.class` suffix and other made-up codes the product never emits — kept as
  * they were to test SarifFormatter's own JSON-shaping mechanics, not the
  * channel/rule join. Real container so rule descriptions that ARE real
- * channels (`cohesion.lcom`, `design.inheritance`, `code-smell.boolean-argument`)
+ * channels (`cohesion.lcom`, `design.dit`, `code-smell.boolean-argument`)
  * assert their actual text; see
  * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`
  * for the guard that sweeps every real channel.
@@ -76,8 +76,8 @@ final class SarifFormatterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Same message must not participate in the fingerprint',
             severity: Severity::Warning,
         );
@@ -96,8 +96,8 @@ final class SarifFormatterTest extends TestCase
         $unrelated = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'An unrelated finding',
             severity: Severity::Warning,
         );
@@ -178,8 +178,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -187,8 +187,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -206,8 +206,8 @@ final class SarifFormatterTest extends TestCase
         // Should have 1 unique rule (both findings use same rule)
         self::assertCount(1, $run['tool']['driver']['rules']);
         $rule = $run['tool']['driver']['rules'][0];
-        self::assertSame('complexity.cyclomatic', $rule['id']);
-        self::assertSame('Complexity Cyclomatic', $rule['name']);
+        self::assertSame('complexity.ccn', $rule['id']);
+        self::assertSame('Complexity Ccn', $rule['name']);
         self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
         // Max severity is Error, so defaultConfiguration level should be 'error'
         self::assertSame('error', $rule['defaultConfiguration']['level']);
@@ -217,7 +217,7 @@ final class SarifFormatterTest extends TestCase
 
         // First finding
         $result1 = $run['results'][0];
-        self::assertSame('complexity.cyclomatic', $result1['ruleId']);
+        self::assertSame('complexity.ccn', $result1['ruleId']);
         self::assertSame('error', $result1['level']);
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold', $result1['message']['text']);
         self::assertSame('src/Service/UserService.php', $result1['locations'][0]['physicalLocation']['artifactLocation']['uri']);
@@ -227,7 +227,7 @@ final class SarifFormatterTest extends TestCase
 
         // Second finding
         $result2 = $run['results'][1];
-        self::assertSame('complexity.cyclomatic', $result2['ruleId']);
+        self::assertSame('complexity.ccn', $result2['ruleId']);
         self::assertSame('warning', $result2['level']);
         self::assertSame('Cyclomatic complexity of 12 exceeds threshold', $result2['message']['text']);
         self::assertSame(120, $result2['locations'][0]['physicalLocation']['region']['startLine']);
@@ -240,8 +240,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity too high',
                 severity: Severity::Error,
             ))
@@ -275,13 +275,13 @@ final class SarifFormatterTest extends TestCase
         self::assertCount(3, $run['tool']['driver']['rules']);
 
         $ruleIds = array_map(fn(array $r): string => $r['id'], $run['tool']['driver']['rules']);
-        self::assertContains('complexity.cyclomatic', $ruleIds);
+        self::assertContains('complexity.ccn', $ruleIds);
         self::assertContains('class-size', $ruleIds);
         self::assertContains('maintainability-index', $ruleIds);
 
         // Check rule names are formatted correctly
         $ruleNames = array_map(fn(array $r): string => $r['name'], $run['tool']['driver']['rules']);
-        self::assertContains('Complexity Cyclomatic', $ruleNames);
+        self::assertContains('Complexity Ccn', $ruleNames);
         self::assertContains('Class Size', $ruleNames);
         self::assertContains('Maintainability Index', $ruleNames);
 
@@ -357,8 +357,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class is not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -392,8 +392,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'design.inheritance',
-                code: 'design.inheritance',
+                ruleName: 'design.dit',
+                code: 'design.dit',
                 message: 'Inheritance too deep',
                 severity: Severity::Warning,
             ))
@@ -414,7 +414,7 @@ final class SarifFormatterTest extends TestCase
             if ($rule['id'] === 'cohesion.lcom') {
                 $lcomRule = $rule;
             }
-            if ($rule['id'] === 'design.inheritance') {
+            if ($rule['id'] === 'design.dit') {
                 $inheritanceRule = $rule;
             }
         }
@@ -474,8 +474,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -525,8 +525,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('home/user/project/src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -583,8 +583,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -619,7 +619,7 @@ final class SarifFormatterTest extends TestCase
         }
 
         // Known categories map to their docs page
-        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.ccn']['helpUri']);
         self::assertSame('https://qualimetrix.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
 
         // Unknown category falls back to repository URL
@@ -636,7 +636,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'cyclomatic-complexity',
-                code: 'complexity.cyclomatic',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -649,7 +649,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rule = $data['runs'][0]['tool']['driver']['rules'][0];
-        // Should use the description matching 'complexity.cyclomatic', not 'cyclomatic-complexity'
+        // Should use the description matching 'complexity.ccn', not 'cyclomatic-complexity'
         self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
     }
 
@@ -660,8 +660,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
-                ruleName: 'duplication.code-duplication',
-                code: 'duplication.code-duplication',
+                ruleName: 'duplication.clone',
+                code: 'duplication.clone',
                 message: 'Duplicated code block (20 lines, 3 occurrences)',
                 severity: Severity::Warning,
                 metricValue: 20,
@@ -707,8 +707,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -733,8 +733,8 @@ final class SarifFormatterTest extends TestCase
             ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -764,8 +764,8 @@ final class SarifFormatterTest extends TestCase
         $breach = (self::finding(
             location: new Location(RelativePath::fromString('src/A.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'A'),
-            ruleName: 'duplication.code-duplication',
-            code: 'duplication.code-duplication',
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
             message: 'Duplicated code block accepted at 20 lines',
             severity: Severity::Warning,
             metricValue: 35,
@@ -798,7 +798,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'cyclomatic-complexity',
-                code: 'complexity.cyclomatic',
+                code: 'complexity.ccn',
                 message: 'Warning level',
                 severity: Severity::Warning,
             ))
@@ -806,7 +806,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'cyclomatic-complexity',
-                code: 'complexity.cyclomatic',
+                code: 'complexity.ccn',
                 message: 'Error level',
                 severity: Severity::Error,
             ))
@@ -832,8 +832,8 @@ final class SarifFormatterTest extends TestCase
             $rulesByCode[$rule['id']] = $rule;
         }
 
-        // complexity.cyclomatic has both Warning and Error findings -> max is Error
-        self::assertSame('error', $rulesByCode['complexity.cyclomatic']['defaultConfiguration']['level']);
+        // complexity.ccn has both Warning and Error findings -> max is Error
+        self::assertSame('error', $rulesByCode['complexity.ccn']['defaultConfiguration']['level']);
 
         // size.class has only Warning findings -> Warning
         self::assertSame('warning', $rulesByCode['size.class']['defaultConfiguration']['level']);

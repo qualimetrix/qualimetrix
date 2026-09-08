@@ -103,7 +103,7 @@ final readonly class BaselineEntry
      * makes the stored value round-trip to itself regardless of the reader's
      * ini — and therefore what earns the zero tolerance in the comparison.
      * Values that their own rules already rounded (one decimal place for
-     * `maintainability.index` and computed metrics) pass through unchanged.
+     * `maintainability.mi` and computed metrics) pass through unchanged.
      *
      * Negative zero collapses to positive zero: the two are numerically
      * equal but spell differently in JSON, and one written form per value is

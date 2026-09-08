@@ -6,12 +6,12 @@
 
 ## Правила сложности (Complexity)
 
-| Правило               | ID                      | Минуты |
-| --------------------- | ----------------------- | ------ |
-| Cyclomatic Complexity | `complexity.cyclomatic` | 30     |
-| Cognitive Complexity  | `complexity.cognitive`  | 30     |
-| NPath Complexity      | `complexity.npath`      | 30     |
-| WMC                   | `complexity.wmc`        | 30     |
+| Правило               | ID                     | Минуты |
+| --------------------- | ---------------------- | ------ |
+| Cyclomatic Complexity | `complexity.ccn`       | 30     |
+| Cognitive Complexity  | `complexity.cognitive` | 30     |
+| NPath Complexity      | `complexity.npath`     | 30     |
+| WMC                   | `complexity.wmc`       | 30     |
 
 ## Правила связанности (Coupling)
 
@@ -32,7 +32,7 @@
 
 | Правило                    | ID                              | Минуты |
 | -------------------------- | ------------------------------- | ------ |
-| DIT (глубина наследования) | `design.inheritance`            | 30     |
+| DIT (глубина наследования) | `design.dit`                    | 30     |
 | NOC                        | `design.noc`                    | 20     |
 | Покрытие типами параметров | `design.type-coverage.param`    | 15     |
 | Покрытие типами возврата   | `design.type-coverage.return`   | 15     |
@@ -50,9 +50,9 @@
 
 ## Правила сопровождаемости (Maintainability)
 
-| Правило               | ID                      | Минуты |
-| --------------------- | ----------------------- | ------ |
-| Maintainability Index | `maintainability.index` | 60     |
+| Правило               | ID                   | Минуты |
+| --------------------- | -------------------- | ------ |
+| Maintainability Index | `maintainability.mi` | 60     |
 
 ## Code Smell правила
 
@@ -85,9 +85,9 @@
 
 ## Правила дублирования (Duplication)
 
-| Правило          | ID                             | Минуты |
-| ---------------- | ------------------------------ | ------ |
-| Code Duplication | `duplication.code-duplication` | 15     |
+| Правило          | ID                  | Минуты |
+| ---------------- | ------------------- | ------ |
+| Code Duplication | `duplication.clone` | 15     |
 
 ## Архитектурные правила
 

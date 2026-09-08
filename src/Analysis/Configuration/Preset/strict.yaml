@@ -4,7 +4,7 @@
 failOn: warning
 
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 7
       error: 15
@@ -34,7 +34,7 @@ rules:
   size.property-count:
     warning: 10
     error: 15
-  maintainability.index:
+  maintainability.mi:
     warning: 50
     error: 30
   cohesion.lcom:
@@ -43,7 +43,7 @@ rules:
   design.noc:
     warning: 7
     error: 10
-  design.inheritance:
+  design.dit:
     warning: 3
     error: 5
   coupling.cbo:

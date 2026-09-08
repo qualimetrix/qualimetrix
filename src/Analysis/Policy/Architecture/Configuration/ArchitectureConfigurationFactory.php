@@ -27,7 +27,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *       patterns: ['App\Repository\**']
  *   allow:
  *     controller: [repository]
- *   coverage: ignore
+ *   coverage-gap: ignore
  * ```
  *
  * `layers` is an **ordered list**; the first layer whose patterns match a class
@@ -39,7 +39,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration}; this class is a
  * thin orchestrator that:
  *
- * 1. Validates the top-level shape (`layers`, `allow`, `coverage` keys only).
+ * 1. Validates the top-level shape (`layers`, `allow`, `coverage-gap` keys only).
  * 2. Runs the validators in a deterministic order
  *    ({@see LayersValidator} → {@see AllowValidator} →
  *    {@see ExactAllowCycleValidator} → {@see CoverageValidator} →
@@ -60,7 +60,7 @@ final class ArchitectureConfigurationFactory
 {
     private const string CONFIG_PATH = 'architecture';
 
-    private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage', 'max_expanded_layers'];
+    private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage-gap', 'max_expanded_layers'];
 
     private readonly LayersValidator $layersValidator;
 
@@ -125,7 +125,7 @@ final class ArchitectureConfigurationFactory
         );
         $this->exactAllowCycleValidator->validate($allowEntries);
 
-        $coverage = $this->coverageValidator->validate($raw['coverage'] ?? null);
+        $coverage = $this->coverageValidator->validate($raw['coverage-gap'] ?? null);
         $maxExpandedLayers = self::validateMaxExpandedLayers(
             $raw['max_expanded_layers'] ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
         );
@@ -282,7 +282,7 @@ final class ArchitectureConfigurationFactory
 
     /**
      * Validates that {@code $raw} is an associative map whose keys are exactly
-     * the well-known top-level architecture keys (`layers`, `allow`, `coverage`).
+     * the well-known top-level architecture keys (`layers`, `allow`, `coverage-gap`).
      *
      * @param array<string, mixed>|array<int, mixed> $raw
      */
@@ -291,7 +291,7 @@ final class ArchitectureConfigurationFactory
         if (array_is_list($raw)) {
             throw new ArchitectureConfigurationException(
                 self::CONFIG_PATH,
-                'architecture: must be a map with keys "layers", "allow", "coverage"; a sequential list is not allowed.',
+                'architecture: must be a map with keys "layers", "allow", "coverage-gap"; a sequential list is not allowed.',
             );
         }
 

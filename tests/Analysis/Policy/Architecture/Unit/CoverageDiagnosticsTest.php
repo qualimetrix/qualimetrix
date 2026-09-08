@@ -102,10 +102,10 @@ final class CoverageDiagnosticsTest extends TestCase
         self::assertCount(1, $diagnostics);
 
         $diagnostic = $diagnostics[0];
-        self::assertSame('architecture.coverage', $diagnostic->ruleName);
-        self::assertSame('architecture.coverage', $diagnostic->code);
+        self::assertSame('architecture.coverage-gap', $diagnostic->ruleName);
+        self::assertSame('architecture.coverage-gap', $diagnostic->code);
         self::assertSame(Severity::Warning, $diagnostic->severity);
-        self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
+        self::assertStringContainsString('Architecture coverage-gap:', $diagnostic->message);
         self::assertStringContainsString('2 edge(s) with unmatched source layer', $diagnostic->message);
         self::assertStringContainsString('2 edge(s) with unmatched target layer', $diagnostic->message);
         // Two distinct out-of-layer FQNs across the three edges (Vendor\Foo\A, Vendor\Bar\B) — dedup is intentional.

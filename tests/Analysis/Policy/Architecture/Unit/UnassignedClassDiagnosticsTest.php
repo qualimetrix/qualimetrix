@@ -41,7 +41,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 
 /**
  * `architecture.unassigned-class` — the gate "every declaration I analysed is
- * assigned to a layer", which `architecture.coverage` cannot express because
+ * assigned to a layer", which `architecture.coverage-gap` cannot express because
  * it also counts dependency-edge ends outside the analysed set.
  */
 #[CoversClass(LayerViolationRule::class)]
@@ -71,7 +71,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
 
     /**
      * The whole point of the separate gate, and "only the gate" means only the
-     * gate: `coverage: ignore` **and** the neighbouring layer-violation rule
+     * gate: `coverage-gap: ignore` **and** the neighbouring layer-violation rule
      * switched off in options. This case used to pass the neighbour enabled,
      * which is why the coupling below went unnoticed until review.
      */
@@ -100,7 +100,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
 
     /**
      * A dependency into a class outside the analysed set is what drowns
-     * `architecture.coverage`; the count reported here must not move because
+     * `architecture.coverage-gap`; the count reported here must not move because
      * of it.
      */
     #[Test]

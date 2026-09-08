@@ -16,7 +16,7 @@ use ReflectionClass;
  * one shared implementation reading `static::SHAPE`, so a rule states its
  * answer through a `SHAPE` constant alone, without repeating the same
  * three-line method on every class — the exact duplication
- * `duplication.code-duplication` measured before that method existed. That
+ * `duplication.clone` measured before that method existed. That
  * convenience is also the one hole a required interface method would not
  * otherwise have: a rule that extends {@see AbstractRule} and never declares
  * its own `SHAPE` still compiles, and silently reports `AbstractRule::SHAPE`'s

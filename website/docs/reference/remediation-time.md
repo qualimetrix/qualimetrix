@@ -6,12 +6,12 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Complexity Rules
 
-| Rule                  | ID                      | Minutes |
-| --------------------- | ----------------------- | ------- |
-| Cyclomatic Complexity | `complexity.cyclomatic` | 30      |
-| Cognitive Complexity  | `complexity.cognitive`  | 30      |
-| NPath Complexity      | `complexity.npath`      | 30      |
-| WMC                   | `complexity.wmc`        | 30      |
+| Rule                  | ID                     | Minutes |
+| --------------------- | ---------------------- | ------- |
+| Cyclomatic Complexity | `complexity.ccn`       | 30      |
+| Cognitive Complexity  | `complexity.cognitive` | 30      |
+| NPath Complexity      | `complexity.npath`     | 30      |
+| WMC                   | `complexity.wmc`       | 30      |
 
 ## Coupling Rules
 
@@ -32,7 +32,7 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 | Rule                    | ID                              | Minutes |
 | ----------------------- | ------------------------------- | ------- |
-| DIT (Inheritance Depth) | `design.inheritance`            | 30      |
+| DIT (Inheritance Depth) | `design.dit`                    | 30      |
 | NOC                     | `design.noc`                    | 20      |
 | Parameter Type Coverage | `design.type-coverage.param`    | 15      |
 | Return Type Coverage    | `design.type-coverage.return`   | 15      |
@@ -50,9 +50,9 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Maintainability Rules
 
-| Rule                  | ID                      | Minutes |
-| --------------------- | ----------------------- | ------- |
-| Maintainability Index | `maintainability.index` | 60      |
+| Rule                  | ID                   | Minutes |
+| --------------------- | -------------------- | ------- |
+| Maintainability Index | `maintainability.mi` | 60      |
 
 ## Code Smell Rules
 
@@ -85,9 +85,9 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Duplication Rules
 
-| Rule             | ID                             | Minutes |
-| ---------------- | ------------------------------ | ------- |
-| Code Duplication | `duplication.code-duplication` | 15      |
+| Rule             | ID                  | Minutes |
+| ---------------- | ------------------- | ------- |
+| Code Duplication | `duplication.clone` | 15      |
 
 ## Architecture Rules
 

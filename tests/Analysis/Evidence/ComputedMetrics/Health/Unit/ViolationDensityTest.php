@@ -280,8 +280,8 @@ final class ViolationDensityTest extends TestCase
                 location: new Location(RelativePath::fromString("src/{$class}.php"), $i + 1),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString("src/{$class}.php"), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass($namespace, $class),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: "test violation {$i}",
                 severity: Severity::Error,
             );

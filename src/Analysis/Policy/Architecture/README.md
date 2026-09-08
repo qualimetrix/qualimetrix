@@ -81,14 +81,14 @@ unprepared collector.
 `LayerDeclarationValidator` is the verdict on the **declaration** and is a
 `ConfigurationValidatorInterface`, not a rule — which is the whole statement
 that its five channels are configuration errors. `DeclaredLayerReachability`
-builds all five: `architecture.coverage`, `architecture.unreachable-layer`,
+builds all five: `architecture.coverage-gap`, `architecture.unreachable-layer`,
 `architecture.pending-layer-matched`, `architecture.potential-shadow` and
 `architecture.empty-template`. The validator declares `architecture.layer-violation`
 as its producer, so all five are registered, addressed, excluded, described and
 switched off exactly as they were while the rule declared them, and it runs in
 the rule's slot so their position in an unsorted report is unchanged.
 `DiagnosticSampleList` formats the bounded FQN samples both
-`architecture.coverage` and `architecture.unassigned-class` print, and is the
+`architecture.coverage-gap` and `architecture.unassigned-class` print, and is the
 one piece of code shared across the code/declaration split — a narrow
 formatting utility with no policy semantics of its own.
 

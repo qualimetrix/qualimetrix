@@ -13,9 +13,9 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
+        "complexity.ccn@callable",
         "complexity.cognitive@callable",
-        "complexity.cognitive@class",
-        "complexity.cyclomatic@callable"
+        "complexity.cognitive@class"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\AppliedThreshold\\Retuned::classify@src/Retuned.php",

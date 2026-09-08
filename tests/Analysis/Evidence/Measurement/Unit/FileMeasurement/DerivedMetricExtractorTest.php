@@ -106,10 +106,10 @@ final class DerivedMetricExtractorTest extends TestCase
     public function itExtractsDerivedMetricsOnlyForTheirDeclaredTypedTargets(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['maintainability.mi', 'design.type-coverage.pct']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi', 'design.type-coverage.all']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
             new MetricDefinition('maintainability.mi', SymbolLevel::Callable),
-            new MetricDefinition('design.type-coverage.pct', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.all', SymbolLevel::Class_),
         ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
@@ -137,7 +137,7 @@ final class DerivedMetricExtractorTest extends TestCase
             $repository,
             MetricBag::fromArray([
                 $this->derivedKey('maintainability.mi', $callable) => 83.5,
-                $this->derivedClassKey('design.type-coverage.pct', $class) => 100.0,
+                $this->derivedClassKey('design.type-coverage.all', $class) => 100.0,
             ]),
             [$callable],
             $file,
@@ -145,8 +145,8 @@ final class DerivedMetricExtractorTest extends TestCase
         );
 
         self::assertSame(83.5, $repository->getSubject($this->declarationSubject($callable))->get('maintainability.mi'));
-        self::assertNull($repository->getSubject($this->declarationSubject($callable))->get('design.type-coverage.pct'));
-        self::assertSame(100.0, $repository->getSubject($class->subject)->get('design.type-coverage.pct'));
+        self::assertNull($repository->getSubject($this->declarationSubject($callable))->get('design.type-coverage.all'));
+        self::assertSame(100.0, $repository->getSubject($class->subject)->get('design.type-coverage.all'));
         self::assertNull($repository->getSubject($class->subject)->get('maintainability.mi'));
     }
 

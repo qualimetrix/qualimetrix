@@ -75,12 +75,12 @@ suppress_paths:
     Что остаётся для подавления такой находки, зависит от канала.
     `architecture.layer-violation` — настоящий долг кода, поэтому к нему по-прежнему применимы
     и `@qmx-ignore architecture.layer-violation`, и запись в baseline. Пять диагностик
-    рядом с ним — `architecture.coverage`, `architecture.unreachable-layer`,
+    рядом с ним — `architecture.coverage-gap`, `architecture.unreachable-layer`,
     `architecture.pending-layer-matched`, `architecture.potential-shadow` и
     `architecture.empty-template` — сообщают об ошибке в
     *конфигурации*, поэтому к ним неприменимо ни то, ни другое; см.
     [«Правила > Архитектура»](../rules/architecture.ru.md). Для них остаются блок `exclude:`
-    внутри самой конфигурации архитектурных слоёв и, отдельно для покрытия, `coverage: ignore`.
+    внутри самой конфигурации архитектурных слоёв и, отдельно для покрытия, `coverage-gap: ignore`.
 
     Как и для `suppress_namespaces`, это исключение действует только для **глобального**
     механизма — исключение на уровне правила `suppress_paths`, описанное ниже, для
@@ -109,10 +109,10 @@ suppress_namespaces:
 
     К `architecture.layer-violation` по-прежнему применимы `@qmx-ignore
     architecture.layer-violation` и запись в baseline. К четырём диагностикам —
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`
+    `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.potential-shadow`
     и `architecture.empty-template` — они **неприменимы**: те сообщают об ошибке конфигурации,
     а не о долге кода. Для них используйте блок `exclude:` внутри конфигурации архитектурных
-    слоёв, а для диагностики покрытия — `coverage: ignore`.
+    слоёв, а для диагностики покрытия — `coverage-gap: ignore`.
 
     Это исключение действует только для **глобального** механизма. Исключение на уровне правила
     `suppress_namespaces` / `suppress_paths`, описанное ниже
@@ -141,7 +141,7 @@ rules:
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -155,7 +155,7 @@ rules:
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       threshold: 15    # warning=15 и error=15 → все нарушения становятся ошибками
 
@@ -183,9 +183,9 @@ rules:
 bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 ```
 
-То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `callable:`/`class:` у `complexity.cyclomatic`).
+То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `callable:`/`class:` у `complexity.ccn`).
 
-`coupling.cbo` и `coupling.instability` тоже принимают голый `threshold` на своём верхнем уровне, но с другим эффектом, чем у `complexity.cyclomatic`: поскольку их дефолты для `class`/`namespace` совпадают, `threshold` на верхнем уровне применяется РАВНОМЕРНО к ОБОИМ уровням сразу, а не только к более детальному:
+`coupling.cbo` и `coupling.instability` тоже принимают голый `threshold` на своём верхнем уровне, но с другим эффектом, чем у `complexity.ccn`: поскольку их дефолты для `class`/`namespace` совпадают, `threshold` на верхнем уровне применяется РАВНОМЕРНО к ОБОИМ уровням сразу, а не только к более детальному:
 
 ```yaml
 rules:
@@ -203,7 +203,7 @@ rules:
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
       - App\Legacy
@@ -273,7 +273,7 @@ rules:
     Опция фильтрует нарушения, чей субъект — **неймспейс**. У правила, которое сообщает
     поштучно (`code-smell.*`, `security.*`, `architecture.layer-violation`) или только на
     уровне класса (`cohesion.lcom`), удалять ей нечего: ключ с таким каналом принимается и
-    ничего не делает. Диагностики политики слоёв — `architecture.coverage`,
+    ничего не делает. Диагностики политики слоёв — `architecture.coverage-gap`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — сообщают о проекте целиком и тоже вне её досягаемости;
     для них используйте блок `exclude:` внутри конфигурации архитектурных слоёв.
@@ -321,7 +321,7 @@ rules:
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40
+ * @qmx-threshold complexity.ccn warning=20 error=40
  */
 class ComplexStateMachine
 {
@@ -340,11 +340,11 @@ class ComplexStateMachine
 CLI-эквиваленты, `suppress_namespace_channels` и семейство `@qmx-ignore` в исходном коде, — имя
 читается одинаково:
 
-| Форма                    | Что означает                                                                                                                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `complexity.cyclomatic`  | **ровно** это имя и ничего больше                                                                                                                                                                     |
-| `complexity.*`           | **строго потомки** `complexity` — `complexity.cyclomatic`, `complexity.wmc` и так далее. Сам `complexity` не входит; если имя одновременно называет правило и канал, адресуйте их отдельными записями |
-| `coupling.cbo:namespace` | канал, сужённый до одного уровня дерева агрегации. Уровень — один из `callable`, `class`, `file`, `namespace`, `project`, и канал обязан на нём сообщать                                              |
+| Форма                    | Что означает                                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `complexity.ccn`         | **ровно** это имя и ничего больше                                                                                                                                                              |
+| `complexity.*`           | **строго потомки** `complexity` — `complexity.ccn`, `complexity.wmc` и так далее. Сам `complexity` не входит; если имя одновременно называет правило и канал, адресуйте их отдельными записями |
+| `coupling.cbo:namespace` | канал, сужённый до одного уровня дерева агрегации. Уровень — один из `callable`, `class`, `file`, `namespace`, `project`, и канал обязан на нём сообщать                                       |
 
 Голый префикс группой **не является**. `complexity` сам по себе не выбирает ничего и
 отвергается:
@@ -385,10 +385,10 @@ Rule selector "complexity" does not match any registered producer, group, or cha
 ```yaml
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication.code-duplication
+  - duplication.clone
 ```
 
-Эквивалент в CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication.code-duplication`
+Эквивалент в CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication.clone`
 
 Чтобы отключить группу целиком, используйте wildcard:
 
@@ -403,11 +403,11 @@ disabled_rules:
 
 ```yaml
 only_rules:
-  - complexity.cyclomatic
+  - complexity.ccn
   - complexity.cognitive
 ```
 
-Эквивалент в CLI: `--only-rule=complexity.cyclomatic --only-rule=complexity.cognitive`
+Эквивалент в CLI: `--only-rule=complexity.ccn --only-rule=complexity.cognitive`
 
 ### Условие завершения с ошибкой (fail_on)
 
@@ -439,7 +439,7 @@ fail_on: error    # Завершение с ошибкой только при e
 !!! warning "`fail_on` не управляет ошибками конфигурации"
     Часть каналов сообщает об ошибке в
     конфигурации, а не о долге в коде: пять диагностик политики слоёв
-    (`architecture.coverage`, `architecture.unreachable-layer`,
+    (`architecture.coverage-gap`, `architecture.unreachable-layer`,
     `architecture.pending-layer-matched`, `architecture.potential-shadow`,
     `architecture.empty-template`) и три диагностики инлайн-директив
     (`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
@@ -555,7 +555,7 @@ architecture:
       - target: 'domain-{m}'
         relations: [implements, extends]              # whitelist видов зависимостей
 
-  coverage: ignore                                    # ignore | warn | error
+  coverage-gap: ignore                                # ignore | warn | error
   max_expanded_layers: 500                            # кумулятивный лимит на раскрытие шаблонов
 ```
 
@@ -644,10 +644,10 @@ exclude_health:
 
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication.code-duplication
+  - duplication.clone
 
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
     suppress_paths:
@@ -706,7 +706,7 @@ Invalid value for "cache.enabled": expected boolean, got string
 Опечатки в именах правил в секции `rules:` отклоняются:
 
 ```
-Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.cyclomatic"?
+Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
 ```
 
 !!! tip

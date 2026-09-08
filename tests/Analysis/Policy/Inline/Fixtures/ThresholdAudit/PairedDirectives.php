@@ -19,7 +19,7 @@ final class PairedDirectives
     /**
      * @qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live: without it the
      *                seven parameters below are reported.
-     * @qmx-threshold complexity.cyclomatic warning=50 error=80 — inert: a straight-line method
+     * @qmx-threshold complexity.ccn warning=50 error=80 — inert: a straight-line method
      *                never reaches any boundary, raised or default.
      */
     public function configure(

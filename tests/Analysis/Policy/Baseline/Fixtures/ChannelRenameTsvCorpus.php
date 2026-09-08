@@ -79,7 +79,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'leading-space-in-old',
-                'contents' => "old\tnew\treason\n complexity.cyclomatic\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\n complexity.ccn\tcomplexity.ccn\tX10\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'Matching is exact equality, so an invisible edge matches nothing.',
@@ -132,7 +132,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'retired-pair-spelling',
-                'contents' => "old\tnew\treason\ncomplexity#complexity.cyclomatic\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity#complexity.ccn\tcomplexity.ccn\tX10\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence. The gate still expands the retired rule#code spelling, because a '

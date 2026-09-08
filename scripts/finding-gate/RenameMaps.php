@@ -110,12 +110,11 @@ namespace QmxFindingGate;
  * rewrite, and both are enforced here rather than promised in prose.
  *
  * A row translates a whole name, never a prefix of a longer one. The vocabulary
- * is full of prefix siblings — `complexity.cyclomatic` is a proper prefix of
- * `complexity.cyclomatic.callable`, and the level segments are exactly what the
- * plan's later steps rename — so a substring rewrite would let a step rename
- * three codes, declare one, and stay green. Boundaries are therefore literal:
- * everything a name can be built from (letters, digits, `_`, `-`, `.`, `/`, `\`)
- * continues a name, and only a character outside that set ends one.
+ * is full of prefix siblings — `architecture.coverage-gap` is a proper prefix of
+ * `architecture.coverage-gap.source` — so a substring rewrite would let a step
+ * rename both under one declared row and stay green. Boundaries are therefore
+ * literal: everything a name can be built from (letters, digits, `_`, `-`, `.`,
+ * `/`, `\`) continues a name, and only a character outside that set ends one.
  *
  * And substitution happens in one pass over the original text. Applied
  * sequentially, a row whose target contains a name another row renames would
@@ -671,11 +670,36 @@ final class RenameMaps
                 $spellings[] = ['"' . $from . '"', '"' . $to . '"'];
             }
 
-            $titled = [self::titleCase($from), self::titleCase($to)];
+            // The title-cased spelling travels only as a WHOLE quoted value and
+            // only on the surface that publishes it, for the same reason the
+            // key role above is quoted: the quotes are the boundary the
+            // name-character rule cannot supply, and here the surface is a
+            // second boundary of the same kind.
+            //
+            // Title-casing a channel code produces live English prose.
+            // `titleCase('maintainability.index')` is "Maintainability Index",
+            // which is what the product calls the metric in a finding's own
+            // message, in the rule's description and as a label in the HTML
+            // report. Measured 2026-09-08 against `ec1597d6`: the bare spelling
+            // rewrote the reference's "Maintainability Index is 47.4, below
+            // threshold" into "Maintainability Mi is 47.4, ...", and 24 of the
+            // run's 33 refusals were that one sentence on nine surfaces.
+            // Quoting alone is not enough either: SARIF's own
+            // `"text": "Checks Maintainability Index (...)"` stops matching once
+            // quoted, but the HTML report's `"label": "Maintainability Index"`
+            // is a whole quoted value and would still be rewritten. Only
+            // `format:sarif` publishes a channel code title-cased as a rule
+            // name, so only there is the spelling a name rather than prose.
+            $titled = ['"' . self::titleCase($from) . '"', '"' . self::titleCase($to) . '"'];
 
-            if (self::applies(self::CHANNELS, $pair['sources'], $forward)
+            // `null` is the surface-less build the constructor makes for the
+            // conflict guard alone ({@see __construct()}); dropping the spelling
+            // there would take it out of the one check that refuses two rows
+            // reaching one spelling.
+            if (($surfaceClass === null || $surfaceClass === 'format:sarif')
+                && self::applies(self::CHANNELS, $pair['sources'], $forward)
                 && !str_contains($pair['old'] . $pair['new'], '#')
-                && $titled !== [$from, $to]
+                && [self::titleCase($from), self::titleCase($to)] !== [$from, $to]
             ) {
                 $spellings[] = $titled;
             }

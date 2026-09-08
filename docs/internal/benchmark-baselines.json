@@ -181,7 +181,7 @@
         "php-parser": {
             "path": "benchmarks\/vendor\/nikic\/php-parser\/lib",
             "disable_rules": [
-                "duplication.code-duplication"
+                "duplication.clone"
             ],
             "expectations": {
                 "health.complexity": [

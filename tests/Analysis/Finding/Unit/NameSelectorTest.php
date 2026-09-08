@@ -16,10 +16,10 @@ final class NameSelectorTest extends TestCase
     #[Test]
     public function itMatchesOnlyTheExactName(): void
     {
-        $selector = NameSelector::tryParse('architecture.coverage');
+        $selector = NameSelector::tryParse('architecture.coverage-gap');
 
         self::assertNotNull($selector);
-        self::assertTrue($selector->matches('architecture.coverage'));
+        self::assertTrue($selector->matches('architecture.coverage-gap'));
         self::assertFalse($selector->matches('architecture'));
         self::assertFalse($selector->matches('architecture.coverage.source'));
     }
@@ -32,7 +32,7 @@ final class NameSelectorTest extends TestCase
         self::assertNotNull($selector);
         self::assertTrue($selector->matches('architecture.coverage.source'));
         self::assertTrue($selector->matches('architecture.coverage.source.deep'));
-        self::assertFalse($selector->matches('architecture.coverage'));
+        self::assertFalse($selector->matches('architecture.coverage-gap'));
         self::assertFalse($selector->matches('architecture.coverage-ish'));
     }
 

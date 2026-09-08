@@ -48,39 +48,39 @@ final class DebtCalculatorTest extends TestCase
     public function itCalculatesDebtForSingleFinding(): void
     {
         $findings = [
-            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
+            $this->createFinding('src/Foo.php', 'complexity.ccn'),
         ];
 
         $summary = $this->calculator->calculate($findings);
 
         self::assertSame(30, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 30], $summary->perFile);
-        self::assertSame(['complexity.cyclomatic' => 30], $summary->perRule);
+        self::assertSame(['complexity.ccn' => 30], $summary->perRule);
     }
 
     #[Test]
     public function itAccumulatesDebtForMultipleFindingsSameRule(): void
     {
         $findings = [
-            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
-            $this->createFinding('src/Bar.php', 'complexity.cyclomatic'),
-            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
+            $this->createFinding('src/Foo.php', 'complexity.ccn'),
+            $this->createFinding('src/Bar.php', 'complexity.ccn'),
+            $this->createFinding('src/Foo.php', 'complexity.ccn'),
         ];
 
         $summary = $this->calculator->calculate($findings);
 
         self::assertSame(90, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 60, 'src/Bar.php' => 30], $summary->perFile);
-        self::assertSame(['complexity.cyclomatic' => 90], $summary->perRule);
+        self::assertSame(['complexity.ccn' => 90], $summary->perRule);
     }
 
     #[Test]
     public function itCalculatesDebtForMixedRules(): void
     {
         $findings = [
-            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),   // 30
+            $this->createFinding('src/Foo.php', 'complexity.ccn'),   // 30
             $this->createFinding('src/Foo.php', 'code-smell.debug-code'),   // 5
-            $this->createFinding('src/Bar.php', 'maintainability.index'),   // 60
+            $this->createFinding('src/Bar.php', 'maintainability.mi'),   // 60
         ];
 
         $summary = $this->calculator->calculate($findings);
@@ -88,9 +88,9 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(95, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 35, 'src/Bar.php' => 60], $summary->perFile);
         self::assertSame([
-            'complexity.cyclomatic' => 30,
+            'complexity.ccn' => 30,
             'code-smell.debug-code' => 5,
-            'maintainability.index' => 60,
+            'maintainability.mi' => 60,
         ], $summary->perRule);
     }
 
@@ -141,8 +141,8 @@ final class DebtCalculatorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Test violation',
             severity: Severity::Warning,
             metricValue: 50,
@@ -153,7 +153,7 @@ final class DebtCalculatorTest extends TestCase
 
         self::assertSame(30, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 30], $summary->perFile);
-        self::assertSame(['complexity.cyclomatic' => 30], $summary->perRule);
+        self::assertSame(['complexity.ccn' => 30], $summary->perRule);
     }
 
     #[Test]
@@ -165,8 +165,8 @@ final class DebtCalculatorTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 1),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass('App', 'TestClass'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Test',
                 severity: Severity::Warning,
                 metricValue: 50,

@@ -4,7 +4,7 @@ Qualimetrix содержит набор встроенных правил для
 
 ## Идентификаторы правил и судимые метрики
 
-Идентификатор правила и ключ метрики -- это два имени из двух словарей, и они не одно и то же даже там, где выглядят похоже. Идентификатор правила -- `complexity.cyclomatic` -- это то, что настраивают, подавляют и перенастраивают. Ключ метрики -- `complexity.ccn` -- это измеренное число, которое правило сравнивает со своими порогами.
+Идентификатор правила и ключ метрики -- это два имени из двух словарей, и они не одно и то же даже там, где выглядят похоже. Идентификатор правила -- `complexity.ccn` -- это то, что настраивают, подавляют и перенастраивают. Ключ метрики -- `complexity.ccn` -- это измеренное число, которое правило сравнивает со своими порогами.
 
 Там, где правило берёт своё число из каталога метрик, раздел правила на странице группы называет его как **Судимая метрика**, сразу под идентификатором правила; ту же пару печатает `bin/qmx rules`. Правила, публикующие величину собственного изготовления -- размер цикла, число сработавших критериев, -- не называют метрики, и вывод команды тоже.
 
@@ -24,12 +24,12 @@ Qualimetrix содержит набор встроенных правил для
 
 Эти правила измеряют, насколько запутан и ветвист ваш код. Сложный код труднее понять, протестировать и безопасно изменить.
 
-| Правило                                       | ID                      | Что проверяет                               | Warning     | Error        |
-| --------------------------------------------- | ----------------------- | ------------------------------------------- | ----------- | ------------ |
-| [Цикломатическая сложность](complexity.ru.md) | `complexity.cyclomatic` | Количество путей принятия решений в методе  | 10 (метод)  | 20 (метод)   |
-| [Когнитивная сложность](complexity.ru.md)     | `complexity.cognitive`  | Насколько трудно понять код                 | 15 (метод)  | 30 (метод)   |
-| [NPath-сложность](complexity.ru.md)           | `complexity.npath`      | Общее количество возможных путей выполнения | 200 (метод) | 1000 (метод) |
-| [WMC](complexity.ru.md)                       | `complexity.wmc`        | Суммарная сложность всех методов класса     | 50          | 80           |
+| Правило                                       | ID                     | Что проверяет                               | Warning     | Error        |
+| --------------------------------------------- | ---------------------- | ------------------------------------------- | ----------- | ------------ |
+| [Цикломатическая сложность](complexity.ru.md) | `complexity.ccn`       | Количество путей принятия решений в методе  | 10 (метод)  | 20 (метод)   |
+| [Когнитивная сложность](complexity.ru.md)     | `complexity.cognitive` | Насколько трудно понять код                 | 15 (метод)  | 30 (метод)   |
+| [NPath-сложность](complexity.ru.md)           | `complexity.npath`     | Общее количество возможных путей выполнения | 200 (метод) | 1000 (метод) |
+| [WMC](complexity.ru.md)                       | `complexity.wmc`       | Суммарная сложность всех методов класса     | 50          | 80           |
 
 [Подробнее о правилах сложности --&gt;](complexity.ru.md)
 
@@ -51,7 +51,7 @@ Qualimetrix содержит набор встроенных правил для
 
 | Правило                                    | ID                              | Что проверяет                                                  | Warning     | Error        |
 | ------------------------------------------ | ------------------------------- | -------------------------------------------------------------- | ----------- | ------------ |
-| [Глубина наследования](design.ru.md)       | `design.inheritance`            | Глубина цепочки наследования                                   | 4           | 6            |
+| [Глубина наследования](design.ru.md)       | `design.dit`                    | Глубина цепочки наследования                                   | 4           | 6            |
 | [NOC](design.ru.md)                        | `design.noc`                    | Количество классов, наследующих от данного                     | 10          | 15           |
 | [Покрытие типами параметров](design.ru.md) | `design.type-coverage.param`    | Процент типизированных параметров                              | 80% (ниже)  | 50% (ниже)   |
 | [Покрытие типами возврата](design.ru.md)   | `design.type-coverage.return`   | Процент типизированных возвращаемых значений                   | 80% (ниже)  | 50% (ниже)   |
@@ -94,9 +94,9 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила поддерживаемости
 
-| Правило                                          | ID                      | Что проверяет                      | Warning | Error  |
-| ------------------------------------------------ | ----------------------- | ---------------------------------- | ------- | ------ |
-| [Индекс поддерживаемости](maintainability.ru.md) | `maintainability.index` | Общая оценка поддерживаемости кода | &lt;40  | &lt;20 |
+| Правило                                          | ID                   | Что проверяет                      | Warning | Error  |
+| ------------------------------------------------ | -------------------- | ---------------------------------- | ------- | ------ |
+| [Индекс поддерживаемости](maintainability.ru.md) | `maintainability.mi` | Общая оценка поддерживаемости кода | &lt;40  | &lt;20 |
 
 [Подробнее о правилах поддерживаемости --&gt;](maintainability.ru.md)
 
@@ -113,9 +113,9 @@ Qualimetrix содержит набор встроенных правил для
 
 Эти правила обнаруживают дублированные блоки кода по всей кодовой базе с помощью анализа потока токенов.
 
-| Правило                                | ID                             | Что обнаруживает                               | Warning    | Error       |
-| -------------------------------------- | ------------------------------ | ---------------------------------------------- | ---------- | ----------- |
-| [Дублирование кода](duplication.ru.md) | `duplication.code-duplication` | Структурно идентичные блоки кода между файлами | < 50 строк | >= 50 строк |
+| Правило                                | ID                  | Что обнаруживает                               | Warning    | Error       |
+| -------------------------------------- | ------------------- | ---------------------------------------------- | ---------- | ----------- |
+| [Дублирование кода](duplication.ru.md) | `duplication.clone` | Структурно идентичные блоки кода между файлами | < 50 строк | >= 50 строк |
 
 [Подробнее о правилах дублирования --&gt;](duplication.ru.md)
 
@@ -184,14 +184,14 @@ bin/qmx check src/ --disable-rule=code-smell.*
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
       - App\Legacy
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:suppress_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=App\Tests"
 ```
 
 Это полезно для тестового кода, сгенерированного кода или legacy-модулей, которые вы хотите сохранить в метриках, но исключить из отчёта о нарушениях для конкретного правила.
@@ -201,7 +201,7 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:suppress_namespaces=App\Tes
 Переопределение любого порога через командную строку:
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.warning=15"
 bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```
 
@@ -209,7 +209,7 @@ bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -222,14 +222,14 @@ rules:
 <!-- llms-only
 Компактный каталог правил. Значения порогов warning/error — в [справочнике порогов](../reference/default-thresholds.ru.md). Синтаксис конфигурации — в [Configuration](../getting-started/configuration.ru.md).
 
-- **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
+- **Complexity:** `complexity.ccn`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
-- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
+- **Design:** `design.dit`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
-- **Maintainability:** `maintainability.index`
+- **Maintainability:** `maintainability.mi`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
-- **Duplication:** `duplication.code-duplication`
+- **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (публикуется через четыре канала — см. [Правила аннотаций](annotation.ru.md))

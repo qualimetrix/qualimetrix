@@ -73,7 +73,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itFailsOnAGroupNoProducerHas(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
         $other = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$rule, $other]));
@@ -92,7 +92,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itFailsOnAGroupThatDiffersOnlyInCase(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute(['--group' => 'Complexity']);
@@ -104,7 +104,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itListsRulesUnderGroupHeaders(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleA = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
@@ -115,7 +115,7 @@ final class RulesCommandTest extends TestCase
         self::assertSame(0, $tester->getStatusCode());
         self::assertStringContainsString('2 rules available', $display);
         self::assertStringContainsString('Complexity', $display);
-        self::assertStringContainsString('complexity.cyclomatic', $display);
+        self::assertStringContainsString('complexity.ccn', $display);
         self::assertStringContainsString('Cyclomatic complexity', $display);
         self::assertStringContainsString('Size', $display);
         self::assertStringContainsString('size.class-count', $display);
@@ -124,7 +124,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itFiltersRulesByGroup(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleA = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
@@ -134,7 +134,7 @@ final class RulesCommandTest extends TestCase
 
         self::assertSame(0, $tester->getStatusCode());
         self::assertStringContainsString('1 rules available', $display);
-        self::assertStringContainsString('complexity.cyclomatic', $display);
+        self::assertStringContainsString('complexity.ccn', $display);
         self::assertStringNotContainsString('size.class-count', $display);
     }
 
@@ -149,7 +149,7 @@ final class RulesCommandTest extends TestCase
         $display = $tester->getDisplay();
 
         self::assertStringContainsString('--cyclomatic-warning', $display);
-        self::assertStringContainsString('complexity.cyclomatic:warning_threshold', $display);
+        self::assertStringContainsString('complexity.ccn:warning_threshold', $display);
     }
 
     #[Test]
@@ -180,7 +180,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysUsageHints(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
@@ -200,16 +200,16 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itPrintsTheMetricsAChannelDeclaresItJudges(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand(
             [$rule],
-            ['complexity.cyclomatic' => ['complexity.cyclomatic' => ['complexity.ccn', 'complexity.ccn.max']]],
+            ['complexity.ccn' => ['complexity.ccn' => ['complexity.ccn', 'complexity.ccn.max']]],
         ));
         $tester->execute([], ['decorated' => false]);
 
         self::assertStringContainsString(
-            'complexity.cyclomatic judges complexity.ccn, complexity.ccn.max',
+            'complexity.ccn judges complexity.ccn, complexity.ccn.max',
             $tester->getDisplay(),
         );
     }
@@ -327,7 +327,7 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
 {
     public function getName(): string
     {
-        return 'complexity.cyclomatic';
+        return 'complexity.ccn';
     }
 
     public function getDescription(): string

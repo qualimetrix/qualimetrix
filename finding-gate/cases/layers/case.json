@@ -13,7 +13,7 @@
         "--rule-opt=architecture.unassigned-class:mode=error"
     ],
     "channels": [
-        "architecture.coverage@project",
+        "architecture.coverage-gap@project",
         "architecture.empty-template@project",
         "architecture.layer-violation@class",
         "architecture.pending-layer-matched@project",

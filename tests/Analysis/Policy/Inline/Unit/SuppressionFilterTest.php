@@ -229,7 +229,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
             code: 'complexity.cyclomatic.callable',
             message: 'Test message',
             severity: Severity::Warning,
@@ -419,13 +419,13 @@ final class SuppressionFilterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Source.php'), 42),
             subject: $targetSubject,
             symbolPath: $targetDeclaration->logical,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Target finding reported at its use site',
             severity: Severity::Warning,
         );
         $targetControl = new Suppression(
-            'complexity.cyclomatic',
+            'complexity.ccn',
             null,
             10,
             SuppressionType::Symbol,
@@ -433,7 +433,7 @@ final class SuppressionFilterTest extends TestCase
             controlScope: ControlScope::Callable,
         );
         $sourceControl = new Suppression(
-            'complexity.cyclomatic',
+            'complexity.ccn',
             null,
             10,
             SuppressionType::Symbol,

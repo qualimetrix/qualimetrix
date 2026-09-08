@@ -36,7 +36,7 @@ final class HealthDimensionCatalogTest extends TestCase
         self::assertSame(['complexity.ccn.avg', 'complexity.cognitive.avg', 'complexity.ccn.p95', 'complexity.cognitive.p95'], $this->provider->getDecomposition('health.complexity'));
         self::assertSame(['cohesion.tcc.avg', 'cohesion.lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
         self::assertSame(['coupling.ce.avg', 'coupling.ce-packages.avg', 'coupling.distance.avg'], $this->provider->getDecomposition('health.coupling'));
-        self::assertSame(['design.type-coverage.pct'], $this->provider->getDecomposition('health.typing'));
+        self::assertSame(['design.type-coverage.all'], $this->provider->getDecomposition('health.typing'));
         self::assertSame(['maintainability.mi.avg', 'maintainability.mi.p5', 'maintainability.mi.min'], $this->provider->getDecomposition('health.maintainability'));
         self::assertSame([], $this->provider->getDecomposition('health.overall'));
         self::assertSame(

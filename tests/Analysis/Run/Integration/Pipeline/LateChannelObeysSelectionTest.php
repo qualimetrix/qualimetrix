@@ -59,7 +59,7 @@ final class LateChannelObeysSelectionTest extends TestCase
     private const string PRODUCER = InlineDirectivePolicyInterface::PRODUCER_RULE_NAME;
 
     /** The rule the stale suppression names; keeping it on is what makes the directive measurable. */
-    private const string MEASURED = 'complexity.cyclomatic';
+    private const string MEASURED = 'complexity.ccn';
 
     /** @var list<string> */
     private const array ALL_CHANNELS = [
@@ -88,7 +88,7 @@ final class LateChannelObeysSelectionTest extends TestCase
             class Sample
             {
                 /**
-                 * @qmx-ignore complexity.cyclomatic -- nothing complex here any more
+                 * @qmx-ignore complexity.ccn -- nothing complex here any more
                  */
                 public function simple(): int
                 {

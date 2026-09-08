@@ -116,7 +116,7 @@ final class CheckCommandInputValidationTest extends TestCase
             [
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                 '--format' => 'json',
-                '--only-rule' => ['complexity.cyclomatic#complexity.cyclomatic'],
+                '--only-rule' => ['complexity.ccn#complexity.ccn'],
             ],
             ['capture_stderr_separately' => true],
         );
@@ -124,7 +124,7 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString(
-            'Write "complexity.cyclomatic"',
+            'Write "complexity.ccn"',
             $tester->getErrorOutput(),
         );
     }
@@ -195,7 +195,7 @@ final class CheckCommandInputValidationTest extends TestCase
     {
         $tester = $this->tester();
         $tester->execute(
-            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--rule-opt' => ['complexity.cyclomatic#callable:warning=8']],
+            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--rule-opt' => ['complexity.ccn#callable:warning=8']],
             ['capture_stderr_separately' => true],
         );
 

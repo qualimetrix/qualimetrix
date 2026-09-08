@@ -37,7 +37,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
     #[Test]
     public function itProvidesTypeCoveragePctMetric(): void
     {
-        self::assertSame([MetricName::DESIGN_TYPE_COVERAGE_PCT], $this->collector->provides());
+        self::assertSame([MetricName::DESIGN_TYPE_COVERAGE_ALL], $this->collector->provides());
     }
 
     #[Test]
@@ -46,7 +46,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         $definitions = $this->collector->getMetricDefinitions();
 
         self::assertCount(1, $definitions);
-        self::assertSame(MetricName::DESIGN_TYPE_COVERAGE_PCT, $definitions[0]->name);
+        self::assertSame(MetricName::DESIGN_TYPE_COVERAGE_ALL, $definitions[0]->name);
         self::assertSame(SymbolLevel::Class_, $definitions[0]->collectedAt);
         self::assertSame([], $definitions[0]->aggregations);
     }
@@ -64,7 +64,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
 
         $result = $this->collector->calculate($bag);
 
-        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 
     #[Test]
@@ -80,7 +80,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
 
         $result = $this->collector->calculate($bag);
 
-        self::assertSame(50.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(50.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 
     #[Test]
@@ -96,7 +96,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
 
         $result = $this->collector->calculate($bag);
 
-        self::assertSame(0.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(0.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 
     #[Test]
@@ -112,7 +112,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
 
         $result = $this->collector->calculate($bag);
 
-        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 
     #[Test]
@@ -120,7 +120,7 @@ final class TypeCoveragePercentCollectorTest extends TestCase
     {
         $result = $this->collector->calculate(new MetricBag());
 
-        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(100.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 
     #[Test]
@@ -133,6 +133,6 @@ final class TypeCoveragePercentCollectorTest extends TestCase
 
         $result = $this->collector->calculate($bag);
 
-        self::assertSame(0.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_PCT));
+        self::assertSame(0.0, $result->get(MetricName::DESIGN_TYPE_COVERAGE_ALL));
     }
 }

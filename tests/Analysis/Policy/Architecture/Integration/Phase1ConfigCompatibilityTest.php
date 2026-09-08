@@ -149,7 +149,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
                 'repository' => ['domain'],
                 'domain' => [],
             ],
-            'coverage' => $coverage,
+            'coverage-gap' => $coverage,
         ];
     }
 

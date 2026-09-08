@@ -38,7 +38,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 #[CliAlias('mi-min-statements', 'minStatements')]
 final class MaintainabilityRule extends AbstractRule
 {
-    public const string NAME = 'maintainability.index';
+    public const string NAME = 'maintainability.mi';
     public const string DOCS_PAGE = 'rules/maintainability.md';
 
     public const int REMEDIATION_MINUTES = 60;
@@ -138,7 +138,7 @@ final class MaintainabilityRule extends AbstractRule
     }
 
     /**
-     * `maintainability.index` reports the Maintainability Index itself
+     * `maintainability.mi` reports the Maintainability Index itself
      * (`round($miValue, 1)`) as `metricValue` — see the emission above —
      * and is judged worse the lower it goes, per
      * `MaintainabilityOptions::getSeverity()`'s `$value < $this->error` /

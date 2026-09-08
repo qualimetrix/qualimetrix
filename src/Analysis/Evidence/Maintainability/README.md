@@ -3,7 +3,7 @@
 ## Subject and boundary
 
 `Analysis\\Evidence\\Maintainability` owns the Halstead input evidence, the
-derived Maintainability Index (MI), and the `maintainability.index` rule and
+derived Maintainability Index (MI), and the `maintainability.mi` rule and
 its options. Halstead is an input to MI's lifecycle rather than a separate
 capability.
 
@@ -259,7 +259,7 @@ Read this README with:
 Changes are complete when the seven flat leaf declarations retain collector
 name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
-`maintainability.index` ID, aliases, channels, option defaults, thresholds,
+`maintainability.mi` ID, aliases, channels, option defaults, thresholds,
 and 101 owned PHPUnit IDs. Do not add a `Contract/` directory without a named
 external consumer.
 

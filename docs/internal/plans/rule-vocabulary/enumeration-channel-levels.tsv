@@ -4,7 +4,7 @@ annotation.unresolved-directive#annotation.unresolved-directive	file	no	no	C3	bo
 annotation.unsupported-threshold#annotation.unsupported-threshold	file	no	no	C3	both
 annotation.unused-directive#annotation.unused-directive	file	no	no	C3	both
 architecture.circular-dependency#architecture.circular-dependency	project	no	no	C5	both
-architecture.coverage#architecture.coverage	project	no	no	C4	both
+architecture.coverage-gap#architecture.coverage-gap	project	no	no	C4	both
 architecture.empty-template#architecture.empty-template	project	no	no	C4	both
 architecture.layer-violation#architecture.layer-violation	class	no	no	C4	both
 architecture.pending-layer-matched#architecture.pending-layer-matched	project	no	no	C4	both
@@ -28,8 +28,8 @@ code-smell.unused-private#code-smell.unused-private	class	no	no	C2 C4	both
 cohesion.lcom#cohesion.lcom	class	no	no	C1 C2	both
 complexity.cognitive#complexity.cognitive.callable	callable	no	yes	C1 C2	both
 complexity.cognitive#complexity.cognitive.class	class	no	yes	C1 C2	both
-complexity.cyclomatic#complexity.cyclomatic.callable	callable	no	yes	C1 C2	both
-complexity.cyclomatic#complexity.cyclomatic.class	class	no	yes	C1 C2	both
+complexity.ccn#complexity.ccn.callable	callable	no	yes	C1 C2	both
+complexity.ccn#complexity.ccn.class	class	no	yes	C1 C2	both
 complexity.npath#complexity.npath.callable	callable	no	yes	C1 C2	both
 complexity.npath#complexity.npath.class	class	no	yes	C1	both
 complexity.wmc#complexity.wmc	class	no	no	C1 C2	both
@@ -47,13 +47,13 @@ coupling.instability#coupling.instability.class	class	no	yes	C1 C2	both
 coupling.instability#coupling.instability.namespace	namespace	no	yes	C1	both
 design.data-class#design.data-class	class	no	no	C1 C2	both
 design.god-class#design.god-class	class	no	no	C1 C2	both
-design.inheritance#design.inheritance	class	no	no	C1 C2	both
+design.dit#design.dit	class	no	no	C1 C2	both
 design.noc#design.noc	class	no	no	C2	both
 design.type-coverage.param#design.type-coverage.param	class	no	no	C2	both
 design.type-coverage.property#design.type-coverage.property	class	no	no	C2	both
 design.type-coverage.return#design.type-coverage.return	class	no	no	C2	both
-duplication.code-duplication#duplication.code-duplication	project	no	no	C1	both
-maintainability.index#maintainability.index	callable	no	no	C1 C2	both
+duplication.clone#duplication.clone	project	no	no	C1	both
+maintainability.mi#maintainability.mi	callable	no	no	C1 C2	both
 security.command-injection#security.command-injection	callable	no	no	C2	both
 security.hardcoded-credentials#security.hardcoded-credentials	class	no	no	C2	both
 security.sensitive-parameter#security.sensitive-parameter	callable	no	no	C2	both
@@ -137,7 +137,7 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #    static 57 nothing does.
 #  - a user-defined `computed.*` metric declares its own `levels:` in
 #    `qmx.yaml` and is outside any fixed enumeration by construction.
-#  - `duplication.code-duplication` and `architecture.circular-dependency`
+#  - `duplication.clone` and `architecture.circular-dependency`
 #    report at project level because they summarise; their per-copy locations
 #    travel in `relatedLocations`, which this table does not model.
 #  - C1's option flooring makes some rules fire on a zero measurement

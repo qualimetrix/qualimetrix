@@ -26,7 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final class CodeDuplicationRule extends AbstractRule
 {
-    public const string NAME = 'duplication.code-duplication';
+    public const string NAME = 'duplication.clone';
     public const string DOCS_PAGE = 'rules/duplication.md';
 
     /**
@@ -77,7 +77,7 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * `duplication.code-duplication` reports the duplicated block's line
+     * `duplication.clone` reports the duplicated block's line
      * count (`$block->lines` — see the emission above) as `metricValue`,
      * judged worse the higher it goes:
      * {@see CodeDuplicationOptions::getSeverity()}'s `$value >=

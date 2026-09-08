@@ -495,7 +495,7 @@ PHP;
     {
         $ruleConfiguration = new RuleOptionsRegistry();
         $ruleConfiguration->setConfigFileOptions([
-            'duplication.code-duplication' => [
+            'duplication.clone' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,
             ],

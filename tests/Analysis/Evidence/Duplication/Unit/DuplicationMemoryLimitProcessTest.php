@@ -56,10 +56,10 @@ final class DuplicationMemoryLimitProcessTest extends TestCase
         $this->createCorpus();
         $configPath = $this->tmpDir . '/qmx.yaml';
         file_put_contents($configPath, <<<'YAML'
-onlyRules: ['duplication.code-duplication']
+onlyRules: ['duplication.clone']
 failOn: none
 rules:
-  duplication.code-duplication:
+  duplication.clone:
     min_tokens: 20
     min_lines: 3
 YAML);
@@ -72,7 +72,7 @@ YAML);
         $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
         self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
         self::assertContains(
-            'duplication.code-duplication',
+            'duplication.clone',
             array_column($report['violations'] ?? [], 'rule'),
             $stdout,
         );

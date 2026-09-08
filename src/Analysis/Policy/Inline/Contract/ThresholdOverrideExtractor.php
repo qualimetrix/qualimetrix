@@ -16,9 +16,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * Extracts `@qmx-threshold` annotations from docblock comments.
  *
  * Supported syntaxes:
- * - Shorthand: `@qmx-threshold complexity.cyclomatic 15`
- * - Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
- * - Partial: `@qmx-threshold complexity.cyclomatic warning=15`
+ * - Shorthand: `@qmx-threshold complexity.ccn 15`
+ * - Explicit: `@qmx-threshold complexity.ccn warning=15 error=25`
+ * - Partial: `@qmx-threshold complexity.ccn warning=15`
  * - Float: `@qmx-threshold coupling.instability 0.8`
  *
  * Invalid annotations produce diagnostics instead of being silently ignored:

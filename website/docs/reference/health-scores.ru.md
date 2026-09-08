@@ -242,7 +242,7 @@ computed_metrics:
 | `coupling.distance` / `coupling.distance.avg`                                        | Distance from Main Sequence                      | namespace / project        |
 | `maintainability.mi.avg`, `maintainability.mi.min`                                   | Средний и минимальный Maintainability Index      | class, namespace, project  |
 | `maintainability.mi.p5`                                                              | 5-й перцентиль MI                                | namespace, project         |
-| `design.type-coverage.pct`                                                           | Процент покрытия типами                          | class                      |
+| `design.type-coverage.all`                                                           | Процент покрытия типами                          | class                      |
 | `design.type-coverage.param.total.sum` и аналогичные `.return.` / `.property.` суммы | Суммы typed/total по пространству имён           | namespace, project         |
 | `size.method-count`                                                                  | Количество методов в классе                      | class                      |
 | `size.symbol-method-count`                                                           | Количество методов в области видимости символа   | namespace, project         |

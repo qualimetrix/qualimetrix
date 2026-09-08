@@ -154,7 +154,7 @@ bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 **Flat threshold shorthand (both levels at once):** a bare `threshold` at the
 rule's own top level -- not nested under `class:`/`namespace:` -- sets
 `warning`/`error` to the same value on **both** the class and namespace
-dimensions in one go. This differs from `complexity.cyclomatic`'s top-level
+dimensions in one go. This differs from `complexity.ccn`'s top-level
 `threshold`, which applies to the callable level only: CBO's class/namespace
 defaults already match (14/20), so there is no single "primary" level to
 prefer.

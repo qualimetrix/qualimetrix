@@ -42,7 +42,7 @@ final class RuleNameReader
         }
 
         throw new LogicException(\sprintf(
-            'Rule class %s must declare a string NAME constant holding its rule slug (e.g. "complexity.cyclomatic").',
+            'Rule class %s must declare a string NAME constant holding its rule slug (e.g. "complexity.ccn").',
             $ruleClass,
         ));
     }

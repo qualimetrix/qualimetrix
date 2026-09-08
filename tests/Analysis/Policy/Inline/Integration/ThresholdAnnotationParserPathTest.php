@@ -89,7 +89,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         $result = $this->extract(
             ruleName: MaintainabilityRule::NAME,
             validator: MaintainabilityOptions::getOverrideValidator(),
-            docblock: '/** @qmx-threshold maintainability.index warning=50 error=30 */',
+            docblock: '/** @qmx-threshold maintainability.mi warning=50 error=30 */',
         );
 
         self::assertSame(InvertedOverrideValidator::instance(), MaintainabilityOptions::getOverrideValidator());
@@ -105,7 +105,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         $result = $this->extract(
             ruleName: MaintainabilityRule::NAME,
             validator: MaintainabilityOptions::getOverrideValidator(),
-            docblock: '/** @qmx-threshold maintainability.index warning=20 error=40 */',
+            docblock: '/** @qmx-threshold maintainability.mi warning=20 error=40 */',
         );
 
         self::assertCount(0, $result->overrides);
@@ -216,7 +216,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         // HierarchicalRuleOptionsInterface (not directly ThresholdAware), but
         // its level Options (MethodComplexityOptions, ClassComplexityOptions)
         // are Standard ThresholdAware. The factory now walks levels so the
-        // parser actually receives a validator for complexity.cyclomatic
+        // parser actually receives a validator for complexity.ccn
         // instead of silently skipping it.
         $rootOptions = ComplexityOptions::fromArray([]);
         $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Callable);
@@ -227,7 +227,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         $result = $this->extract(
             ruleName: ComplexityRule::NAME,
             validator: $validator,
-            docblock: '/** @qmx-threshold complexity.cyclomatic warning=25 error=15 */',
+            docblock: '/** @qmx-threshold complexity.ccn warning=25 error=15 */',
         );
 
         self::assertCount(0, $result->overrides);

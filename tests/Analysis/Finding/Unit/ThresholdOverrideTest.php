@@ -20,7 +20,7 @@ final class ThresholdOverrideTest extends TestCase
     public function itMatchesExact(): void
     {
         $override = new ThresholdOverride(
-            rulePattern: 'complexity.cyclomatic',
+            rulePattern: 'complexity.ccn',
             warning: 15,
             error: 25,
             line: 10,
@@ -28,7 +28,7 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($override->matches('complexity.cyclomatic'));
+        self::assertTrue($override->matches('complexity.ccn'));
         self::assertFalse($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
     }
@@ -45,7 +45,7 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('complexity.ccn'));
         self::assertFalse($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
     }
@@ -64,7 +64,7 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('complexity.ccn'));
         self::assertFalse($override->matches('complexity.cognitive'));
     }
 
@@ -82,7 +82,7 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('complexity.ccn'));
         self::assertFalse($override->matches('coupling.cbo'));
         self::assertFalse($override->matches('anything'));
     }
@@ -91,7 +91,7 @@ final class ThresholdOverrideTest extends TestCase
     public function itFieldsAreAccessible(): void
     {
         $override = new ThresholdOverride(
-            rulePattern: 'complexity.cyclomatic',
+            rulePattern: 'complexity.ccn',
             warning: 15,
             error: 25,
             line: 10,
@@ -100,7 +100,7 @@ final class ThresholdOverrideTest extends TestCase
             endLine: 50,
         );
 
-        self::assertSame('complexity.cyclomatic', $override->rulePattern);
+        self::assertSame('complexity.ccn', $override->rulePattern);
         self::assertSame(15, $override->warning);
         self::assertSame(25, $override->error);
         self::assertSame(10, $override->line);
@@ -111,7 +111,7 @@ final class ThresholdOverrideTest extends TestCase
     public function itNullWarningAndError(): void
     {
         $override = new ThresholdOverride(
-            rulePattern: 'complexity.cyclomatic',
+            rulePattern: 'complexity.ccn',
             warning: null,
             error: 25,
             line: 10,

@@ -4,7 +4,7 @@
 
 `Analysis\\Evidence\\Complexity` owns the cyclomatic, cognitive and NPath
 evidence collectors, their visitors and expression calculator, and the four
-rules that interpret that evidence: `complexity.cyclomatic`,
+rules that interpret that evidence: `complexity.ccn`,
 `complexity.cognitive`, `complexity.npath`, and `complexity.wmc`.
 
 The leaf does not publish a `Contract/` surface. It consumes Measurement's

@@ -204,7 +204,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     {
         $this->provider->setChannelExclusions(
             'architecture.layer-violation',
-            'architecture.coverage',
+            'architecture.coverage-gap',
             ['App\\Metrics'],
         );
         $this->provider->setChannelExclusions(
@@ -215,14 +215,14 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
 
         self::assertTrue($this->provider->isChannelExcluded(
             'architecture.layer-violation',
-            new FindingChannel('architecture.coverage'),
+            new FindingChannel('architecture.coverage-gap'),
             'App\\Metrics\\Coupling',
         ));
         // The owner's own name as a key addresses the owner's channel, not the
         // one the owner also emits under another name.
         self::assertFalse($this->provider->isChannelExcluded(
             'architecture.unassigned-class',
-            new FindingChannel('architecture.coverage'),
+            new FindingChannel('architecture.coverage-gap'),
             'App\\Metrics\\Coupling',
         ));
     }

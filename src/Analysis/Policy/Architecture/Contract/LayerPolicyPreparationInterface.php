@@ -19,7 +19,7 @@ interface LayerPolicyPreparationInterface
      * literal, readable by a cross-owner consumer without importing either
      * producer.
      */
-    public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
+    public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage-gap';
 
     public const string UNASSIGNED_CLASS_DIAGNOSTIC_NAME = 'architecture.unassigned-class';
 

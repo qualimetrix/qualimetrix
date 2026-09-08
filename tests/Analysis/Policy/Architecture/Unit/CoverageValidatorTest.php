@@ -56,7 +56,7 @@ final class CoverageValidatorTest extends TestCase
     public function unknownCoverageValueIsRejected(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
-        $this->expectExceptionMessage('architecture.coverage');
+        $this->expectExceptionMessage('architecture.coverage-gap');
 
         $this->validator->validate('verbose');
     }
@@ -65,7 +65,7 @@ final class CoverageValidatorTest extends TestCase
     public function coverageOfWrongTypeIsRejected(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
-        $this->expectExceptionMessage('architecture.coverage');
+        $this->expectExceptionMessage('architecture.coverage-gap');
 
         $this->validator->validate(42);
     }

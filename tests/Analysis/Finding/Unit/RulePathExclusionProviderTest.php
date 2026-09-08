@@ -58,7 +58,7 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider->setExclusions('coupling.cbo', ['src/Metrics']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/SomeFile.php')));
-        self::assertFalse($provider->isExcluded('complexity.cyclomatic', RelativePath::fromString('src/Metrics/SomeFile.php')));
+        self::assertFalse($provider->isExcluded('complexity.ccn', RelativePath::fromString('src/Metrics/SomeFile.php')));
     }
 
     #[Test]

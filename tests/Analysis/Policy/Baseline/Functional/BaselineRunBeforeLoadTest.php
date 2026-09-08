@@ -383,8 +383,8 @@ final class BaselineRunBeforeLoadTest extends TestCase
      * A channel-to-producer edge for the fixtures below: the channel's own name,
      * minus a trailing level segment where it carries one. That is exactly the
      * relation the retired left half of a channel key encoded, so a fixture
-     * naming `complexity.cyclomatic` still resolves to the rule a
-     * `@qmx-threshold complexity.cyclomatic` addresses.
+     * naming `complexity.ccn` still resolves to the rule a
+     * `@qmx-threshold complexity.ccn` addresses.
      */
     private static function producerEdge(): ChannelIdentityInterface
     {

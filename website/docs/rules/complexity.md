@@ -8,7 +8,7 @@ Think of it like directions to someone's house: "go straight, then turn left" is
 
 ## Cyclomatic Complexity
 
-**Rule ID:** `complexity.cyclomatic`
+**Rule ID:** `complexity.ccn`
 
 **Judged metrics:** `complexity.ccn`, `complexity.ccn.max`
 
@@ -108,7 +108,7 @@ This is a deliberate choice: all these constructs represent hidden branching. Fo
 ```yaml
 # qmx.yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -121,17 +121,17 @@ For a simple pass/fail threshold (all violations become errors):
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       threshold: 15   # equivalent to warning: 15, error: 15
 ```
 
 ```bash
 # CLI overrides
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.error=25"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.error=25"
+bin/qmx check src/ --rule-opt="complexity.ccn:class.max_warning=40"
+bin/qmx check src/ --rule-opt="complexity.ccn:class.enabled=false"
 ```
 
 ---

@@ -18,9 +18,9 @@ final class RuleNameValidatorTest extends TestCase
     public function exactMatch_noException(): void
     {
         RuleNameValidator::validateRuleNames(
-            ['rules' => ['complexity.cyclomatic' => ['callable' => ['warning' => 10]]]],
+            ['rules' => ['complexity.ccn' => ['callable' => ['warning' => 10]]]],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -38,7 +38,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity' => ['cyclomatic' => ['callable' => ['warning' => 10]]]]],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic', 'complexity.cognitive']),
+            $this->createProvider(['complexity.ccn', 'complexity.cognitive']),
             '/path/to/test.yaml',
         );
     }
@@ -52,7 +52,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.cyclomatic.callable' => ['warning' => 10]]],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
     }
@@ -65,7 +65,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.*' => ['warning' => 10]]],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
     }
@@ -79,7 +79,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => ['nonexistent.rule' => ['warning' => 10]]],
             'preset:strict',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/preset.yaml',
         );
     }
@@ -90,7 +90,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => []],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -103,7 +103,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['format' => 'json'],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -123,7 +123,7 @@ final class RuleNameValidatorTest extends TestCase
                 'nonexistent.two' => ['warning' => 10],
             ]],
             'test.yaml',
-            $this->createProvider(['complexity.cyclomatic']),
+            $this->createProvider(['complexity.ccn']),
             '/path/to/test.yaml',
         );
     }
@@ -137,7 +137,7 @@ final class RuleNameValidatorTest extends TestCase
         RuleNameValidator::validateRuleNames(
             ['rules' => ['bogus.rule' => ['warning' => 5]]],
             'qmx.yaml',
-            $this->createProvider(['complexity.cyclomatic', 'cohesion.lcom4']),
+            $this->createProvider(['complexity.ccn', 'cohesion.lcom4']),
             '/project/qmx.yaml',
         );
     }
@@ -163,7 +163,7 @@ final class RuleNameValidatorTest extends TestCase
             RuleNameValidator::validateRuleNames(
                 ['rules' => ['zzzzz' => ['warning' => 10]]],
                 'qmx.yaml',
-                $this->createProvider(['complexity.cyclomatic', 'cohesion.lcom4']),
+                $this->createProvider(['complexity.ccn', 'cohesion.lcom4']),
                 '/project/qmx.yaml',
             );
             self::fail('Expected ConfigLoadException');
@@ -203,7 +203,7 @@ final class RuleNameValidatorTest extends TestCase
                     'bogus.two' => ['warning' => 10],
                 ]],
                 'qmx.yaml',
-                $this->createProvider(['complexity.cyclomatic']),
+                $this->createProvider(['complexity.ccn']),
                 '/project/qmx.yaml',
             );
             self::fail('Expected ConfigLoadException');

@@ -79,13 +79,13 @@ final class RemediationTimeRegistryTest extends TestCase
 
         self::expectException(LogicException::class);
 
-        $registry->getBaseMinutes('complexity.cyclomatic');
+        $registry->getBaseMinutes('complexity.ccn');
     }
 
     #[Test]
     public function itUsesBaseMinutesForFindingWithoutMetricValue(): void
     {
-        $finding = $this->createFinding('complexity.cyclomatic');
+        $finding = $this->createFinding('complexity.ccn');
 
         self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
@@ -93,7 +93,7 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itUsesBaseMinutesForFindingWithoutThreshold(): void
     {
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 25);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 25);
 
         self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
@@ -102,7 +102,7 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itGivesBaseDebtForMinorCcnOvershoot(): void
     {
         // CCN=21, threshold=20: ln(1.05)=0.049 < 1 → base * max(1, 0.049) = 30 * 1 = 30
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 21, threshold: 20);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 21, threshold: 20);
 
         $minutes = $this->registry->getMinutesForFinding($finding);
 
@@ -113,7 +113,7 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itGivesBaseDebtForModerateCcnOvershoot(): void
     {
         // CCN=50, threshold=20: ln(2.5)=0.916 < 1 → base * max(1, 0.916) = 30 * 1 = 30
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 50, threshold: 20);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 50, threshold: 20);
 
         $minutes = $this->registry->getMinutesForFinding($finding);
 
@@ -124,7 +124,7 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itScalesDebtAboveBaseForLargeOvershoot(): void
     {
         // CCN=60, threshold=20: ln(3.0)=1.099 > 1 → 30 * 1.099 ≈ 33
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 60, threshold: 20);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 60, threshold: 20);
 
         $minutes = $this->registry->getMinutesForFinding($finding);
 
@@ -146,17 +146,17 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itHandlesInvertedRuleForMaintainabilityIndex(): void
     {
         // Direction is read from the declaration, not from a private copy —
-        // maintainability.index is declared Lower (a magnitude decreasing
+        // maintainability.mi is declared Lower (a magnitude decreasing
         // below its threshold is worse), so the overshoot ratio flips.
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'maintainability.index' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+                'maintainability.mi' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
 
         // MI=30, threshold=50 (inverted): ratio=50/30=1.667, ln(1.667)=0.511, max(1, 0.511)=1 → 60*1=60
-        $finding = $this->createFinding('maintainability.index', metricValue: 30, threshold: 50);
+        $finding = $this->createFinding('maintainability.mi', metricValue: 30, threshold: 50);
 
         $minutes = $registry->getMinutesForFinding($finding);
 
@@ -227,7 +227,7 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itUsesBaseMinutesForZeroThreshold(): void
     {
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 25, threshold: 0);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 25, threshold: 0);
 
         self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
@@ -235,7 +235,7 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itUsesBaseMinutesForZeroMetricValue(): void
     {
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 0, threshold: 20);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 0, threshold: 20);
 
         self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
@@ -244,7 +244,7 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itUsesBaseMinutesWhenMetricEqualsThreshold(): void
     {
         // Ratio = 1, ln(1) = 0 → base fallback
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 20, threshold: 20);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 20, threshold: 20);
 
         self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
@@ -299,7 +299,7 @@ final class RemediationTimeRegistryTest extends TestCase
             StubRemediationMinutes::withRealValues(),
         );
 
-        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 1000, threshold: 1);
+        $finding = $this->createFinding('complexity.ccn', metricValue: 1000, threshold: 1);
 
         self::assertSame(30, $registry->getMinutesForFinding($finding));
     }

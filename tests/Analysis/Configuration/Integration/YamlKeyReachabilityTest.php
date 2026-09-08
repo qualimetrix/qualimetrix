@@ -228,16 +228,16 @@ final class YamlKeyReachabilityTest extends TestCase
 
         yield 'disabled_rules → disabledRules (list)' => [
             'disabled_rules',
-            "disabled_rules:\n  - complexity.cyclomatic\n",
+            "disabled_rules:\n  - complexity.ccn\n",
             ['disabledRules'],
-            ['complexity.cyclomatic'],
+            ['complexity.ccn'],
         ];
 
         yield 'only_rules → onlyRules (list)' => [
             'only_rules',
-            "only_rules:\n  - complexity.cyclomatic\n",
+            "only_rules:\n  - complexity.ccn\n",
             ['onlyRules'],
-            ['complexity.cyclomatic'],
+            ['complexity.ccn'],
         ];
 
         yield 'suppress_paths → suppressPaths (list)' => [
@@ -324,9 +324,9 @@ final class YamlKeyReachabilityTest extends TestCase
     {
         // rules.<rule-name> — name preserved verbatim (identifier section).
         yield 'rules: dotted rule name preserved' => [
-            'rules.complexity.cyclomatic',
-            "rules:\n  complexity.cyclomatic:\n    enabled: true\n",
-            ['rules', 'complexity.cyclomatic', 'enabled'],
+            'rules.complexity.ccn',
+            "rules:\n  complexity.ccn:\n    enabled: true\n",
+            ['rules', 'complexity.ccn', 'enabled'],
             true,
         ];
 
@@ -347,16 +347,16 @@ final class YamlKeyReachabilityTest extends TestCase
         // Rule option keys: snake_case normalized to camelCase under the
         // (preserved) rule identifier.
         yield 'rules: option warning_threshold → warningThreshold' => [
-            'rules.complexity.cyclomatic.warning_threshold',
-            "rules:\n  complexity.cyclomatic:\n    warning_threshold: 10\n",
-            ['rules', 'complexity.cyclomatic', 'warningThreshold'],
+            'rules.complexity.ccn.warning_threshold',
+            "rules:\n  complexity.ccn:\n    warning_threshold: 10\n",
+            ['rules', 'complexity.ccn', 'warningThreshold'],
             10,
         ];
 
         yield 'rules: option error_threshold → errorThreshold' => [
-            'rules.complexity.cyclomatic.error_threshold',
-            "rules:\n  complexity.cyclomatic:\n    error_threshold: 20\n",
-            ['rules', 'complexity.cyclomatic', 'errorThreshold'],
+            'rules.complexity.ccn.error_threshold',
+            "rules:\n  complexity.ccn:\n    error_threshold: 20\n",
+            ['rules', 'complexity.ccn', 'errorThreshold'],
             20,
         ];
 
@@ -412,11 +412,11 @@ final class YamlKeyReachabilityTest extends TestCase
             ['b'],
         ];
 
-        // `coverage` is a single-word key — survives unchanged.
-        yield 'architecture.coverage (single-word scalar)' => [
-            'architecture.coverage',
-            "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n  coverage: ignore\n",
-            ['architecture', 'coverage'],
+        // `coverage-gap` is a single-word key — survives unchanged.
+        yield 'architecture.coverage-gap (single-word scalar)' => [
+            'architecture.coverage-gap',
+            "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n  coverage-gap: ignore\n",
+            ['architecture', 'coverage-gap'],
             'ignore',
         ];
 

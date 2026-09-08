@@ -51,7 +51,7 @@ final class ChannelSuggestionTieTest extends TestCase
     private const string MOVED = 'architecture.unassigned-class';
 
     private const array MOVED_PAST = [
-        'architecture.coverage',
+        'architecture.coverage-gap',
         'architecture.unreachable-layer',
         'architecture.potential-shadow',
         'architecture.empty-template',

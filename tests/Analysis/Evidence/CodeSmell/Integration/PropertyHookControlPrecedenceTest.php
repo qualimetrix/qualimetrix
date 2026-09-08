@@ -43,12 +43,12 @@ final class PropertyHookControlPrecedenceTest extends TestCase
             <?php
             namespace App;
 
-            /** @qmx-threshold complexity.cyclomatic 10 */
+            /** @qmx-threshold complexity.ccn 10 */
             class Record
             {
-                /** @qmx-threshold complexity.cyclomatic 30 */
+                /** @qmx-threshold complexity.ccn 30 */
                 public int $value {
-                    /** @qmx-threshold complexity.cyclomatic 50 */
+                    /** @qmx-threshold complexity.ccn 50 */
                     get => 1;
                 }
             }
@@ -156,14 +156,14 @@ final class PropertyHookControlPrecedenceTest extends TestCase
         self::assertSame(50, (new AnalysisContext(
             self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: ['test.php' => $hookControls],
-        ))->getThresholdOverride('complexity.cyclomatic', $subject)?->warning);
+        ))->getThresholdOverride('complexity.ccn', $subject)?->warning);
         self::assertSame(30, (new AnalysisContext(
             self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: ['test.php' => array_values(array_filter($hookControls, static fn($override) => $override->controlScope !== ControlScope::Hook))],
-        ))->getThresholdOverride('complexity.cyclomatic', $subject)?->warning);
+        ))->getThresholdOverride('complexity.ccn', $subject)?->warning);
         self::assertSame(10, (new AnalysisContext(
             self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: ['test.php' => array_values(array_filter($hookControls, static fn($override) => $override->controlScope === ControlScope::Class_))],
-        ))->getThresholdOverride('complexity.cyclomatic', $subject)?->warning);
+        ))->getThresholdOverride('complexity.ccn', $subject)?->warning);
     }
 }

@@ -80,7 +80,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'controller' => ['service'],
                 'service' => [],
             ],
-            'coverage' => 'warn',
+            'coverage-gap' => 'warn',
         ]);
 
         $config = $result->configuration;
@@ -120,7 +120,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ['layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
             ]],
-            ['coverage' => 'error'],
+            ['coverage-gap' => 'error'],
         ]);
 
         self::assertSame(['controller'], $result->configuration->registry()->layerNames());
@@ -146,8 +146,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function architectureCoverageScalarIsOverridden(): void
     {
         $result = $this->factory->fromContributions([
-            ['coverage' => 'warn'],
-            ['coverage' => 'error'],
+            ['coverage-gap' => 'warn'],
+            ['coverage-gap' => 'error'],
         ]);
 
         self::assertSame(CoverageMode::Error, $result->configuration->coverage());
@@ -173,9 +173,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function architectureKeepsPresetLayersAcrossPresetAndProjectContributions(): void
     {
         $result = $this->factory->fromContributions([
-            ['layers' => $this->mergeRegressionLayers(), 'coverage' => 'ignore'],
-            ['allow' => ['controller' => ['service']], 'coverage' => 'warn'],
-            ['allow' => ['service' => ['repository']], 'coverage' => 'error'],
+            ['layers' => $this->mergeRegressionLayers(), 'coverage-gap' => 'ignore'],
+            ['allow' => ['controller' => ['service']], 'coverage-gap' => 'warn'],
+            ['allow' => ['service' => ['repository']], 'coverage-gap' => 'error'],
         ]);
 
         self::assertSame(['controller', 'service', 'repository', 'shared'], $result->configuration->registry()->layerNames());
@@ -397,7 +397,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         try {
             $this->factory->fromArray([
                 'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
-                'coverage' => 'verbose',
+                'coverage-gap' => 'verbose',
             ]);
             self::fail('Expected ArchitectureConfigurationException');
         } catch (ArchitectureConfigurationException $e) {

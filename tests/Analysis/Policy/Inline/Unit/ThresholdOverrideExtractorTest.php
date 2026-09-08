@@ -29,7 +29,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     {
         $validator = StandardOverrideValidator::instance();
         $this->extractor = new ThresholdOverrideExtractor([
-            'complexity.cyclomatic' => $validator,
+            'complexity.ccn' => $validator,
             'coupling.instability' => $validator,
             'coupling.cbo' => $validator,
         ]);
@@ -41,7 +41,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.ccn 15
              */
             DOC,
             10,
@@ -51,7 +51,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
-        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
         self::assertSame(15, $overrides[0]->warning);
         self::assertSame(15, $overrides[0]->error);
         self::assertSame(11, $overrides[0]->line);
@@ -95,7 +95,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=15 error=25
+             * @qmx-threshold complexity.ccn warning=15 error=25
              */
             DOC,
             10,
@@ -105,7 +105,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
-        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
         self::assertSame(15, $overrides[0]->warning);
         self::assertSame(25, $overrides[0]->error);
     }
@@ -116,7 +116,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=15
+             * @qmx-threshold complexity.ccn warning=15
              */
             DOC,
             10,
@@ -136,7 +136,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic error=25
+             * @qmx-threshold complexity.ccn error=25
              */
             DOC,
             10,
@@ -196,7 +196,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.ccn 15
              * @qmx-threshold coupling.cbo 30
              */
             DOC,
@@ -207,7 +207,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $overrides = $this->extract($node);
 
         self::assertCount(2, $overrides);
-        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
         self::assertSame('coupling.cbo', $overrides[1]->rulePattern);
     }
 
@@ -238,7 +238,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic not-a-number
+             * @qmx-threshold complexity.ccn not-a-number
              */
             DOC,
             10,
@@ -256,7 +256,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=-5 error=10
+             * @qmx-threshold complexity.ccn warning=-5 error=10
              */
             DOC,
             10,
@@ -276,7 +276,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=25 error=10
+             * @qmx-threshold complexity.ccn warning=25 error=10
              */
             DOC,
             10,
@@ -323,7 +323,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 20
+             * @qmx-threshold complexity.ccn 20
              */
             DOC,
             20,
@@ -338,7 +338,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
-        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
         self::assertSame(20, $overrides[0]->warning);
         self::assertSame(20, $overrides[0]->error);
         self::assertSame(21, $overrides[0]->line);
@@ -364,7 +364,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity', $overrides[0]->rulePattern);
-        self::assertFalse($overrides[0]->matches('complexity.cyclomatic'));
+        self::assertFalse($overrides[0]->matches('complexity.ccn'));
         self::assertFalse($overrides[0]->matches('complexity.cognitive'));
     }
 
@@ -378,7 +378,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic not-a-number
+             * @qmx-threshold complexity.ccn not-a-number
              */
             DOC,
             10,
@@ -391,7 +391,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(1, $result->diagnostics);
         self::assertSame(11, $result->diagnostics[0]->line);
         self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
-        self::assertStringContainsString('complexity.cyclomatic', $result->diagnostics[0]->message);
+        self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
         self::assertStringContainsString('not-a-number', $result->diagnostics[0]->message);
     }
 
@@ -401,7 +401,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic method.warning=15 method.error=25
+             * @qmx-threshold complexity.ccn method.warning=15 method.error=25
              */
             DOC,
             10,
@@ -431,7 +431,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             'error=NaN',
         ] as $valueString) {
             $node = $this->createClassNodeWithDoc(
-                "/** @qmx-threshold complexity.cyclomatic {$valueString} */",
+                "/** @qmx-threshold complexity.ccn {$valueString} */",
                 10,
                 50,
             );
@@ -449,7 +449,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic error=25 warning=15 — legacy adapter boundary
+             * @qmx-threshold complexity.ccn error=25 warning=15 — legacy adapter boundary
              */
             DOC,
             10,
@@ -470,7 +470,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15 -- legacy adapter boundary
+             * @qmx-threshold complexity.ccn 15 -- legacy adapter boundary
              */
             DOC,
             10,
@@ -491,7 +491,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=25 error=10
+             * @qmx-threshold complexity.ccn warning=25 error=10
              */
             DOC,
             10,
@@ -532,8 +532,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
-             * @qmx-threshold complexity.cyclomatic 20
+             * @qmx-threshold complexity.ccn 15
+             * @qmx-threshold complexity.ccn 20
              */
             DOC,
             10,
@@ -546,7 +546,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(15, $result->overrides[0]->warning);
         self::assertCount(1, $result->diagnostics);
         self::assertStringContainsString('duplicate annotation', $result->diagnostics[0]->message);
-        self::assertStringContainsString('complexity.cyclomatic', $result->diagnostics[0]->message);
+        self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
     }
 
     #[Test]
@@ -555,7 +555,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.ccn 15
              * @qmx-threshold coupling.cbo 30
              */
             DOC,
@@ -575,7 +575,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=10 error=20
+             * @qmx-threshold complexity.ccn warning=10 error=20
              */
             DOC,
             10,
@@ -624,7 +624,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic warning=25 error=10
+             * @qmx-threshold complexity.ccn warning=25 error=10
              * @qmx-threshold coupling.cbo not-a-number
              */
             DOC,
@@ -646,10 +646,10 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic not-a-number
+             * @qmx-threshold complexity.ccn not-a-number
              * @qmx-threshold coupling.cbo warning=30 error=10
-             * @qmx-threshold complexity.cyclomatic 15
-             * @qmx-threshold complexity.cyclomatic 20
+             * @qmx-threshold complexity.ccn 15
+             * @qmx-threshold complexity.ccn 20
              */
             DOC,
             30,
@@ -669,7 +669,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     public function itCountsCrLfLineEndingsOncePerPhysicalLine(): void
     {
         $node = $this->createClassNodeWithDoc(
-            "/**\r\n * context\r\n * @qmx-threshold complexity.cyclomatic invalid\r\n */",
+            "/**\r\n * context\r\n * @qmx-threshold complexity.ccn invalid\r\n */",
             40,
             50,
         );
@@ -683,7 +683,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     public function itKeepsASingleLineTagOnTheDocblockStartLine(): void
     {
         $node = $this->createClassNodeWithDoc(
-            '/** @qmx-threshold complexity.cyclomatic invalid */',
+            '/** @qmx-threshold complexity.ccn invalid */',
             50,
             50,
         );
@@ -699,7 +699,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.ccn 15
              * @qmx-threshold coupling.cbo warning=30 error=10
              * @qmx-threshold cohesion.lcom4 20
              */
@@ -711,7 +711,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(2, $result->overrides);
-        self::assertSame('complexity.cyclomatic', $result->overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $result->overrides[0]->rulePattern);
         self::assertSame('cohesion.lcom4', $result->overrides[1]->rulePattern);
         self::assertCount(1, $result->diagnostics);
         self::assertStringContainsString('coupling.cbo', $result->diagnostics[0]->message);
@@ -723,7 +723,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * Use `@qmx-threshold complexity.cyclomatic 15` to override thresholds.
+             * Use `@qmx-threshold complexity.ccn 15` to override thresholds.
              */
             DOC,
             10,
@@ -741,7 +741,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.ccn 15
              * See also `@qmx-threshold coupling.cbo 30` for coupling.
              */
             DOC,
@@ -752,7 +752,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
-        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame('complexity.ccn', $overrides[0]->rulePattern);
         self::assertSame(15, $overrides[0]->warning);
     }
 
@@ -762,7 +762,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
-             * Example: `@qmx-threshold complexity.cyclomatic not-a-number`
+             * Example: `@qmx-threshold complexity.ccn not-a-number`
              */
             DOC,
             10,

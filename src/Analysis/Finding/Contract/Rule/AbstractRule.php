@@ -39,7 +39,7 @@ abstract class AbstractRule implements RuleInterface
      * Shared by every concrete rule, so that "read the declared shape" is
      * written once instead of once per rule class — {@see UnusedPrivateRule},
      * to name one, repeated exactly this body before this method existed, and
-     * `duplication.code-duplication` said so first. A rule expresses its own
+     * `duplication.clone` said so first. A rule expresses its own
      * answer entirely through the `SHAPE` constant it declares; this method
      * never varies.
      */

@@ -172,8 +172,8 @@ final class SummaryFormatterTest extends TestCase
                 self::finding(
                     location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                    ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic',
+                    ruleName: 'complexity.ccn',
+                    code: 'complexity.ccn',
                     message: 'Too complex',
                     severity: Severity::Error,
                 ),
@@ -841,8 +841,8 @@ final class SummaryFormatterTest extends TestCase
                 self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
-                    ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic',
+                    ruleName: 'complexity.ccn',
+                    code: 'complexity.ccn',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -935,8 +935,8 @@ final class SummaryFormatterTest extends TestCase
                 self::finding(
                     location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
-                    ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic',
+                    ruleName: 'complexity.ccn',
+                    code: 'complexity.ccn',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
                     recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -956,7 +956,7 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Violations', $output);
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('too many code paths', $output);
-        self::assertStringContainsString('[complexity.cyclomatic]', $output);
+        self::assertStringContainsString('[complexity.ccn]', $output);
         self::assertStringContainsString('ERROR', $output);
     }
 
@@ -1174,8 +1174,8 @@ final class SummaryFormatterTest extends TestCase
             $findings[] = self::finding(
                 location: new Location(RelativePath::fromString('src/File' . $i . '.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'Class' . $i),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex #' . $i,
                 severity: Severity::Error,
                 recommendation: 'Cyclomatic complexity too high #' . $i,
@@ -1205,8 +1205,8 @@ final class SummaryFormatterTest extends TestCase
             $findings[] = self::finding(
                 location: new Location(RelativePath::fromString('src/Foo' . $i . '.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo' . $i),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             );
@@ -1228,7 +1228,7 @@ final class SummaryFormatterTest extends TestCase
 
         // Debt breakdown must show ALL rules, not just those within the display limit
         self::assertStringContainsString('Technical debt by rule:', $output);
-        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         // Finding counts in breakdown must reflect all findings
         self::assertStringContainsString('3 violations', $output);

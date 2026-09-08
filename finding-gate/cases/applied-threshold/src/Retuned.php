@@ -12,7 +12,7 @@ class Retuned
      * case firing nothing on this channel, which is a claim its `channels`
      * makes.
      *
-     * @qmx-threshold complexity.cyclomatic warning=2
+     * @qmx-threshold complexity.ccn warning=2
      */
     public function classify(int $value, string $mode): string
     {

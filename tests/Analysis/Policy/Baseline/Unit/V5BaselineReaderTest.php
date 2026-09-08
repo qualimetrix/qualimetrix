@@ -48,7 +48,7 @@ final class V5BaselineReaderTest extends TestCase
                 "symbolCount": 2,
                 "violations": {
                     "method:App\\OrderService::calculate": [
-                        {"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"},
+                        {"rule": "complexity.ccn", "hash": "0123456789abcdef"},
                         {"rule": "coupling.cbo", "hash": "abcdef0123456789"}
                     ],
                     "class:App\\Web\\Controller": [
@@ -66,7 +66,7 @@ final class V5BaselineReaderTest extends TestCase
         }
 
         self::assertSame(
-            ['complexity.cyclomatic', 'coupling.cbo'],
+            ['complexity.ccn', 'coupling.cbo'],
             $bySymbol['method:App\\OrderService::calculate'],
         );
         self::assertSame(['design.god-class'], $bySymbol['class:App\\Web\\Controller']);
@@ -87,7 +87,7 @@ final class V5BaselineReaderTest extends TestCase
         $baseline = $this->readJson(self::fileWithMalformedRows());
 
         self::assertCount(1, $baseline->entries);
-        self::assertSame('complexity.cyclomatic', $baseline->entries[0]->rule);
+        self::assertSame('complexity.ccn', $baseline->entries[0]->rule);
     }
 
     /**
@@ -144,7 +144,7 @@ final class V5BaselineReaderTest extends TestCase
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
                 "violations": {
-                    "class:App\\Foo": [{"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"}]
+                    "class:App\\Foo": [{"rule": "complexity.ccn", "hash": "0123456789abcdef"}]
                 }
             }
             JSON);
@@ -164,7 +164,7 @@ final class V5BaselineReaderTest extends TestCase
                 "generated": "2026-01-01T00:00:00+00:00",
                 "violations": {
                     "class:App\\Foo": [
-                        {"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"},
+                        {"rule": "complexity.ccn", "hash": "0123456789abcdef"},
                         {"rule": "no-hash-here"},
                         {"neither": "field"},
                         "not-even-an-object"
@@ -185,7 +185,7 @@ final class V5BaselineReaderTest extends TestCase
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
                 "entries": {
-                    "class:App\\Foo": [{"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"}]
+                    "class:App\\Foo": [{"rule": "complexity.ccn", "hash": "0123456789abcdef"}]
                 }
             }
             JSON);

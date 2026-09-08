@@ -98,7 +98,7 @@ bin/qmx check src/ --rule-opt="design.noc:error=20"
 
 ## Глубина наследования
 
-**Rule ID:** `design.inheritance`
+**Rule ID:** `design.dit`
 
 **Судимая метрика:** `design.dit`
 
@@ -194,14 +194,14 @@ class UserEntity extends TenantEntity {}                  // DIT = 6  -> Error!
 ```yaml
 # qmx.yaml
 rules:
-  design.inheritance:
+  design.dit:
     warning: 5
     error: 7
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.inheritance:warning=5"
-bin/qmx check src/ --rule-opt="design.inheritance:error=7"
+bin/qmx check src/ --rule-opt="design.dit:warning=5"
+bin/qmx check src/ --rule-opt="design.dit:error=7"
 ```
 
 ---

@@ -64,7 +64,7 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('LowImpactService.php', $output);
 
         // Rule name and message on the second line
-        self::assertStringContainsString('complexity.cyclomatic: Cyclomatic complexity is 45', $output);
+        self::assertStringContainsString('complexity.ccn: Cyclomatic complexity is 45', $output);
 
         // Method-level symbol in parentheses
         self::assertStringContainsString('(HighImpactService::process)', $output);
@@ -149,8 +149,8 @@ final class TopIssuesRendererTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 42, precise: true),
             symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'process'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 45',
             severity: Severity::Error,
         );
@@ -280,8 +280,8 @@ final class TopIssuesRendererTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/helpers.php'), 10, precise: true),
             symbolPath: SymbolPath::forGlobalFunction('App\Utils', 'calculateHash'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 30',
             severity: Severity::Error,
         );
@@ -427,8 +427,8 @@ final class TopIssuesRendererTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString(ltrim($file, '/')), $line),
             symbolPath: SymbolPath::forMethod('App\Service', $symbol, 'process'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 45',
             severity: $severity,
         );

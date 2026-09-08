@@ -3,7 +3,7 @@
 # Disables noise-heavy rules to focus on critical issues.
 
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 20
       error: 40
@@ -33,7 +33,7 @@ rules:
   size.property-count:
     warning: 25
     error: 35
-  maintainability.index:
+  maintainability.mi:
     warning: 25
     error: 10
   cohesion.lcom:
@@ -42,7 +42,7 @@ rules:
   design.noc:
     warning: 15
     error: 25
-  design.inheritance:
+  design.dit:
     warning: 6
     error: 8
   coupling.cbo:

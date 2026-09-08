@@ -1,10 +1,10 @@
 mechanism	suppressor
 rule-namespace-suppression	coupling.class-rank: Qualimetrix\Analysis\Finding\Rule
+rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
+rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Coupling/*Visitor.php
+rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Security/*Visitor.php
 rule-path-suppression	complexity.cognitive: src/Analysis/Evidence/Coupling/*Visitor.php
 rule-path-suppression	complexity.cognitive: src/Analysis/Evidence/Security/*Visitor.php
-rule-path-suppression	complexity.cyclomatic: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
-rule-path-suppression	complexity.cyclomatic: src/Analysis/Evidence/Coupling/*Visitor.php
-rule-path-suppression	complexity.cyclomatic: src/Analysis/Evidence/Security/*Visitor.php
 rule-path-suppression	complexity.npath: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 rule-path-suppression	complexity.npath: src/Analysis/Evidence/Coupling/*Visitor.php
 rule-path-suppression	complexity.npath: src/Analysis/Evidence/Security/*Visitor.php
@@ -13,7 +13,7 @@ rule-path-suppression	complexity.wmc: src/Analysis/Evidence/Security/*Visitor.ph
 rule-path-suppression	coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php
 rule-path-suppression	coupling.cbo: src/Analysis/Evidence/Security/*Visitor.php
 rule-path-suppression	coupling.instability: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
-rule-path-suppression	duplication.code-duplication: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
-rule-path-suppression	duplication.code-duplication: src/Analysis/Evidence/Maintainability/*Options.php
-rule-path-suppression	duplication.code-duplication: src/Analysis/Evidence/Security/*Options.php
-rule-path-suppression	duplication.code-duplication: src/Analysis/Evidence/Size/*Options.php
+rule-path-suppression	duplication.clone: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+rule-path-suppression	duplication.clone: src/Analysis/Evidence/Maintainability/*Options.php
+rule-path-suppression	duplication.clone: src/Analysis/Evidence/Security/*Options.php
+rule-path-suppression	duplication.clone: src/Analysis/Evidence/Size/*Options.php

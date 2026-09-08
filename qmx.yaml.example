@@ -110,8 +110,8 @@
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/complexity/
 
   # Cyclomatic complexity (McCabe). Counts decision points in code.
-  # complexity.cyclomatic:
-  #   method:
+  # complexity.ccn:
+  #   callable:
   #     warning: 10              # default: 10
   #     error: 20                # default: 20
   #   class:
@@ -120,13 +120,13 @@
 
   # Cognitive complexity. Measures how hard code is to understand.
   # complexity.cognitive:
-  #   method:
+  #   callable:
   #     warning: 15              # default: 15
   #     error: 30                # default: 30
 
   # NPATH complexity. Number of acyclic execution paths.
   # complexity.npath:
-  #   method:
+  #   callable:
   #     warning: 200             # default: 200
   #     error: 1000              # default: 1000
 
@@ -166,7 +166,7 @@
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/design/
 
   # DIT — Depth of Inheritance Tree.
-  # design.inheritance:
+  # design.dit:
   #   warning: 4                 # default: 4
   #   error: 6
 
@@ -206,7 +206,7 @@
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/maintainability/
 
   # Maintainability Index. Inverted: values BELOW the threshold trigger violations.
-  # maintainability.index:
+  # maintainability.mi:
   #   warning: 40                # default: 40
   #   error: 20
   #   exclude_tests: true
@@ -294,7 +294,7 @@
 
   # — Duplication —
   # Code duplication detection (memory-intensive, skipped when disabled).
-  # duplication.code-duplication:
+  # duplication.clone:
   #   warning: 5                 # duplicate block count
   #   error: 50
   #   min_lines: 5
@@ -397,5 +397,5 @@
 #       - target: doctrine
 #         relations: [implements, extends, type_reference]
 #
-#   coverage: ignore                     # ignore (default) | warn | error
+#   coverage-gap: ignore                 # ignore (default) | warn | error
 #   max_expanded_layers: 500             # cumulative cap for template expansion

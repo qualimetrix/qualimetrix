@@ -65,7 +65,7 @@ final class MetricSubjectCodec
     /**
      * @param array<string, int|string> $components
      *
-     * @qmx-threshold complexity.cyclomatic warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
+     * @qmx-threshold complexity.ccn warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
      * @qmx-threshold complexity.npath warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
      */
     public static function decode(array $components, RelativePath $containerFile): MetricSubject

@@ -257,9 +257,9 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
 - Generated `qmx.yaml` contains one semantic-owner layer per owner, no singleton
-  enforcement seams and final `external`; `coverage: error` keeps isolated and
-  edge-connected project declarations fail-closed. The qmx graph is coarse and
-  does not replace the manifest checker.
+  enforcement seams and final `external`; `coverage-gap: error` keeps isolated
+  and edge-connected project declarations fail-closed. The qmx graph is coarse
+  and does not replace the manifest checker.
 
 ### 2. Stateless Rules, Stateful-per-file Collectors
 
@@ -290,7 +290,7 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 - **Discovery** — finding PHP files for analysis
 - **Collection** — the only parallelizable phase (85-95% of total time)
 - **Aggregation/RuleExecution/Reporting** — sequential, fast
-- **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.code-duplication` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
+- **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.clone` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
 
 ### 4. SymbolPath for Identification
 

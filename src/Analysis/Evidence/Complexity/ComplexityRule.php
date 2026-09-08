@@ -39,7 +39,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CliAlias('cyclomatic-class-error', 'class.max_error')]
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
-    public const string NAME = 'complexity.cyclomatic';
+    public const string NAME = 'complexity.ccn';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;

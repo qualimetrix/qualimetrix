@@ -599,7 +599,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $diagnostics[] = new ThresholdDiagnostic(
                 line: 13,
                 subject: $subject,
-                message: '@qmx-threshold complexity.cyclomatic: invalid syntax',
+                message: '@qmx-threshold complexity.ccn: invalid syntax',
             );
         }
         $policy->prepare([], [self::FILE => $overrides], [self::FILE => $diagnostics]);

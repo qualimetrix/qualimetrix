@@ -58,7 +58,7 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 #[CoversClass(ChannelDeclaration::class)]
 final class ConfigurationErrorChannelRejectionTest extends TestCase
 {
-    private const string RULE_NAME = 'architecture.coverage';
+    private const string RULE_NAME = 'architecture.coverage-gap';
 
     #[Test]
     public function itRefusesToLoadAHandWrittenEntryOnAConfigurationErrorChannel(): void

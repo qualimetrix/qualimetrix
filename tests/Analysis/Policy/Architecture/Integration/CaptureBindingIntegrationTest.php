@@ -103,7 +103,7 @@ final class CaptureBindingIntegrationTest extends TestCase
                 'app-{module}':
                   - target: 'domain-{module}'
                     allow_cross_instance: true
-              coverage: ignore
+              coverage-gap: ignore
             YAML);
 
         try {
@@ -161,7 +161,7 @@ final class CaptureBindingIntegrationTest extends TestCase
             'allow' => [
                 'app-{module}' => ['domain-{module}'],
             ],
-            'coverage' => 'ignore',
+            'coverage-gap' => 'ignore',
         ];
     }
 

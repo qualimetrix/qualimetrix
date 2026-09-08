@@ -4,7 +4,7 @@ Qualimetrix ships with a set of built-in rules that check your PHP code for comm
 
 ## Rule IDs and Judged Metrics
 
-A rule ID and a metric key are two names in two vocabularies, and they are not the same name even where they look alike. The rule ID -- `complexity.cyclomatic` -- is what you configure, suppress and retune. The metric key -- `complexity.ccn` -- is the measured number the rule compares against its thresholds.
+A rule ID and a metric key are two names in two vocabularies, and they are not the same name even where they look alike. The rule ID -- `complexity.ccn` -- is what you configure, suppress and retune. The metric key -- `complexity.ccn` -- is the measured number the rule compares against its thresholds.
 
 Where a rule reads its number out of the metric catalog, its section on the group page names it as **Judged metric**, right below the rule ID; `bin/qmx rules` prints the same pair. Rules that report a number of their own making -- a cycle's member count, a count of matched criteria -- name no metric, and neither does the listing.
 
@@ -24,12 +24,12 @@ You can customize all thresholds via configuration file or command-line options.
 
 These rules measure how tangled and branching your code is. Complex code is harder to understand, test, and change safely.
 
-| Rule                                   | ID                      | What it checks                             | Default Warning | Default Error |
-| -------------------------------------- | ----------------------- | ------------------------------------------ | --------------- | ------------- |
-| [Cyclomatic Complexity](complexity.md) | `complexity.cyclomatic` | Number of decision paths in a method       | 10 (method)     | 20 (method)   |
-| [Cognitive Complexity](complexity.md)  | `complexity.cognitive`  | How hard the code is to understand         | 15 (method)     | 30 (method)   |
-| [NPath Complexity](complexity.md)      | `complexity.npath`      | Total number of possible execution paths   | 200 (method)    | 1000 (method) |
-| [WMC](complexity.md)                   | `complexity.wmc`        | Total complexity of all methods in a class | 50              | 80            |
+| Rule                                   | ID                     | What it checks                             | Default Warning | Default Error |
+| -------------------------------------- | ---------------------- | ------------------------------------------ | --------------- | ------------- |
+| [Cyclomatic Complexity](complexity.md) | `complexity.ccn`       | Number of decision paths in a method       | 10 (method)     | 20 (method)   |
+| [Cognitive Complexity](complexity.md)  | `complexity.cognitive` | How hard the code is to understand         | 15 (method)     | 30 (method)   |
+| [NPath Complexity](complexity.md)      | `complexity.npath`     | Total number of possible execution paths   | 200 (method)    | 1000 (method) |
+| [WMC](complexity.md)                   | `complexity.wmc`       | Total complexity of all methods in a class | 50              | 80            |
 
 [Read more about Complexity rules --&gt;](complexity.md)
 
@@ -51,7 +51,7 @@ These rules check inheritance depth, type coverage, and structural problems.
 
 | Rule                                 | ID                              | What it checks                                         | Default Warning | Default Error |
 | ------------------------------------ | ------------------------------- | ------------------------------------------------------ | --------------- | ------------- |
-| [Inheritance Depth](design.md)       | `design.inheritance`            | How deep the inheritance chain is                      | 4               | 6             |
+| [Inheritance Depth](design.md)       | `design.dit`                    | How deep the inheritance chain is                      | 4               | 6             |
 | [NOC](design.md)                     | `design.noc`                    | Number of classes inheriting from this one             | 10              | 15            |
 | [Parameter Type Coverage](design.md) | `design.type-coverage.param`    | Percentage of typed parameters                         | 80% (below)     | 50% (below)   |
 | [Return Type Coverage](design.md)    | `design.type-coverage.return`   | Percentage of typed return declarations                | 80% (below)     | 50% (below)   |
@@ -94,9 +94,9 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 ### Maintainability Rules
 
-| Rule                                        | ID                      | What it checks                     | Default Warning | Default Error |
-| ------------------------------------------- | ----------------------- | ---------------------------------- | --------------- | ------------- |
-| [Maintainability Index](maintainability.md) | `maintainability.index` | Overall code maintainability score | &lt;40          | &lt;20        |
+| Rule                                        | ID                   | What it checks                     | Default Warning | Default Error |
+| ------------------------------------------- | -------------------- | ---------------------------------- | --------------- | ------------- |
+| [Maintainability Index](maintainability.md) | `maintainability.mi` | Overall code maintainability score | &lt;40          | &lt;20        |
 
 [Read more about Maintainability rules --&gt;](maintainability.md)
 
@@ -113,9 +113,9 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 These rules detect duplicated code blocks across your codebase using token-stream analysis.
 
-| Rule                               | ID                             | What it detects                                 | Default Warning | Default Error |
-| ---------------------------------- | ------------------------------ | ----------------------------------------------- | --------------- | ------------- |
-| [Code Duplication](duplication.md) | `duplication.code-duplication` | Structurally identical code blocks across files | < 50 lines      | >= 50 lines   |
+| Rule                               | ID                  | What it detects                                 | Default Warning | Default Error |
+| ---------------------------------- | ------------------- | ----------------------------------------------- | --------------- | ------------- |
+| [Code Duplication](duplication.md) | `duplication.clone` | Structurally identical code blocks across files | < 50 lines      | >= 50 lines   |
 
 [Read more about Duplication rules --&gt;](duplication.md)
 
@@ -184,14 +184,14 @@ Any rule supports `suppress_namespaces` to suppress violations from specific nam
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
       - App\Legacy
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:suppress_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.ccn:suppress_namespaces=App\Tests"
 ```
 
 This is useful for test code, generated code, or legacy modules that you want to keep in metrics but exclude from violation reports for a specific rule.
@@ -201,7 +201,7 @@ This is useful for test code, generated code, or legacy modules that you want to
 Override any threshold via the command line:
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.ccn:callable.warning=15"
 bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```
 
@@ -209,7 +209,7 @@ Or in your `qmx.yaml` configuration file:
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -222,14 +222,14 @@ rules:
 <!-- llms-only
 Compact rule catalog. For warning/error thresholds, see [Default Thresholds Reference](../reference/default-thresholds.md). For configuration syntax, see [Configuration](../getting-started/configuration.md).
 
-- **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
+- **Complexity:** `complexity.ccn`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
-- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
+- **Design:** `design.dit`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (rule); `cohesion.tcc`, `cohesion.lcc` (metrics only, no rule — used as inputs by `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
-- **Maintainability:** `maintainability.index`
+- **Maintainability:** `maintainability.mi`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
-- **Duplication:** `duplication.code-duplication`
+- **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))

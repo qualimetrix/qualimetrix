@@ -118,7 +118,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             subject: $subject,
             controlScope: ControlScope::Class_,
         );
-        $override = new ThresholdOverride('complexity.cyclomatic', 10, 20, 13, $subject, ControlScope::Class_);
+        $override = new ThresholdOverride('complexity.ccn', 10, 20, 13, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(14, $subject, 'invalid threshold');
 
         $result = FileProcessingResult::success(

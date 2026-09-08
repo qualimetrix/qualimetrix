@@ -128,8 +128,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -146,7 +146,7 @@ final class DetailedFindingRendererTest extends TestCase
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule, isGroupByExplicit: true);
         $output = $this->detailRenderer->render($findings, $context);
 
-        self::assertStringContainsString('complexity.cyclomatic (1)', $output);
+        self::assertStringContainsString('complexity.ccn (1)', $output);
         self::assertStringContainsString('size.method-count (1)', $output);
     }
 
@@ -157,8 +157,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -180,8 +180,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -230,8 +230,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Test',
                 severity: Severity::Error,
             ),
@@ -240,7 +240,7 @@ final class DetailedFindingRendererTest extends TestCase
         $context = new FormatterContext(useColor: false);
         $output = $this->detailRenderer->render($findings, $context);
 
-        self::assertStringContainsString('[complexity.cyclomatic]', $output);
+        self::assertStringContainsString('[complexity.ccn]', $output);
     }
 
     #[Test]
@@ -270,16 +270,16 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'b'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -296,7 +296,7 @@ final class DetailedFindingRendererTest extends TestCase
         $output = $this->debtRenderer->render($findings);
 
         self::assertStringContainsString('Technical debt by rule:', $output);
-        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('2 violations', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('1 violation', $output);
@@ -309,8 +309,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -331,7 +331,7 @@ final class DetailedFindingRendererTest extends TestCase
 
         // Debt breakdown must include the rule from $allFindings, not just $displayed
         self::assertStringContainsString('cohesion.lcom', $output);
-        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('complexity.ccn', $output);
     }
 
     #[Test]
@@ -341,8 +341,8 @@ final class DetailedFindingRendererTest extends TestCase
             (self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -362,8 +362,8 @@ final class DetailedFindingRendererTest extends TestCase
             self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,

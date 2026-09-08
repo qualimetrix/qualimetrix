@@ -205,7 +205,7 @@ const hintsFixture = {
       ],
       formatTemplate: null,
     },
-    'design.type-coverage.pct': {
+    'design.type-coverage.all': {
       label: 'Type coverage',
       ranges: [
         { max: 49, text: 'Low type coverage' },
@@ -265,7 +265,7 @@ const hintsFixture = {
     },
     'health.typing': {
       inputs: [
-        { key: 'design.type-coverage.pct', altKey: null, label: 'Coverage', ideal: '100%', direction: 'higher' },
+        { key: 'design.type-coverage.all', altKey: null, label: 'Coverage', ideal: '100%', direction: 'higher' },
       ],
     },
     'health.maintainability': {
@@ -311,7 +311,7 @@ describe('resolveBaseKey', () => {
 
   it('preserves dotted keys that are exact matches', () => {
     expect(resolveBaseKey('size.class-count.sum')).toBe('size.class-count.sum');
-    expect(resolveBaseKey('design.type-coverage.pct')).toBe('design.type-coverage.pct');
+    expect(resolveBaseKey('design.type-coverage.all')).toBe('design.type-coverage.all');
   });
 
   it('returns original key when no match', () => {
@@ -511,10 +511,10 @@ describe('getMetricHint', () => {
   });
 
   // Type coverage
-  it('hints for typeCoverage.pct', () => {
-    expect(getMetricHint('design.type-coverage.pct', 30)).toBe('Low type coverage');
-    expect(getMetricHint('design.type-coverage.pct', 60)).toBe('Moderate type coverage');
-    expect(getMetricHint('design.type-coverage.pct', 95)).toBe('Good type coverage');
+  it('hints for design.type-coverage.all', () => {
+    expect(getMetricHint('design.type-coverage.all', 30)).toBe('Low type coverage');
+    expect(getMetricHint('design.type-coverage.all', 60)).toBe('Moderate type coverage');
+    expect(getMetricHint('design.type-coverage.all', 95)).toBe('Good type coverage');
   });
 
   it('hints for rfc', () => {
@@ -625,7 +625,7 @@ describe('getHealthHint', () => {
     const node = {
       metrics: {
         'health.typing': 80,
-        'design.type-coverage.pct': 85,
+        'design.type-coverage.all': 85,
       },
     };
     const result = getHealthHint('health.typing', node);

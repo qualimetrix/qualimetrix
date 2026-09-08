@@ -139,8 +139,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 25 exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -150,8 +150,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 12 exceeds threshold of 10',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -174,8 +174,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(42, $v1['line']);
         self::assertSame('App\Service\UserService::calculateDiscount', $v1['symbol']);
         self::assertSame('App\Service', $v1['namespace']);
-        self::assertSame('complexity.cyclomatic', $v1['rule']);
-        self::assertSame('complexity.cyclomatic', $v1['code']);
+        self::assertSame('complexity.ccn', $v1['rule']);
+        self::assertSame('complexity.ccn', $v1['code']);
         self::assertSame('error', $v1['severity']);
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold of 10', $v1['message']);
         self::assertSame(25, $v1['metricValue']);
@@ -626,8 +626,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'maintainability.index',
-                code: 'maintainability.index',
+                ruleName: 'maintainability.mi',
+                code: 'maintainability.mi',
                 message: 'MI is NaN',
                 severity: Severity::Warning,
                 metricValue: \NAN,
@@ -635,8 +635,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'maintainability.index',
-                code: 'maintainability.index',
+                ruleName: 'maintainability.mi',
+                code: 'maintainability.mi',
                 message: 'MI is INF',
                 severity: Severity::Warning,
                 metricValue: \INF,
@@ -720,16 +720,16 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class not assigned to a layer',
                 severity: Severity::Info,
             ))
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 12',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -738,8 +738,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'C'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complexity 25',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -1362,16 +1362,16 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'process'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Also complex',
                 severity: Severity::Warning,
             ))
@@ -1421,8 +1421,8 @@ final class JsonFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))

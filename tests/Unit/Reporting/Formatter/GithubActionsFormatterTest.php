@@ -61,8 +61,8 @@ final class GithubActionsFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity 15 exceeds warning threshold 10',
                 severity: Severity::Warning,
                 metricValue: 15,
@@ -75,7 +75,7 @@ final class GithubActionsFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertSame(
-            "::warning file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity 15 exceeds warning threshold 10\n",
+            "::warning file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 15 exceeds warning threshold 10\n",
             $output,
         );
     }
@@ -87,8 +87,8 @@ final class GithubActionsFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity 25 exceeds error threshold 20',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -101,7 +101,7 @@ final class GithubActionsFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertSame(
-            "::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity 25 exceeds error threshold 20\n",
+            "::error file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 25 exceeds error threshold 20\n",
             $output,
         );
     }
@@ -113,8 +113,8 @@ final class GithubActionsFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -135,8 +135,8 @@ final class GithubActionsFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -303,8 +303,8 @@ final class GithubActionsFormatterTest extends TestCase
             ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity 31 exceeds threshold 25',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -317,7 +317,7 @@ final class GithubActionsFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertSame(
-            "::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity 31 exceeds threshold 25 (accepted at 25, now 31)\n",
+            "::error file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 31 exceeds threshold 25 (accepted at 25, now 31)\n",
             $output,
         );
     }

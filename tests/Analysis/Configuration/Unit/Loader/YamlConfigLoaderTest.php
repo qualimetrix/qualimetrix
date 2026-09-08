@@ -601,7 +601,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     warning_threshold: 10
   size.method-count:
     warning_threshold: 15
@@ -614,13 +614,13 @@ YAML);
         $config = $this->loader->load($path);
 
         // All rule name keys are preserved exactly as written
-        self::assertArrayHasKey('complexity.cyclomatic', $config['rules']);
+        self::assertArrayHasKey('complexity.ccn', $config['rules']);
         self::assertArrayHasKey('size.method-count', $config['rules']);
         self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
         self::assertArrayHasKey('simple_rule', $config['rules']);
 
         // Option keys are still normalized
-        self::assertSame(10, $config['rules']['complexity.cyclomatic']['warningThreshold']);
+        self::assertSame(10, $config['rules']['complexity.ccn']['warningThreshold']);
         self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
     }
 

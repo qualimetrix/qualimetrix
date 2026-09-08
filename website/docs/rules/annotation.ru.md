@@ -61,7 +61,7 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 ```php
 /**
- * @qmx-threshold coupling.cbo.class warning=20
+ * @qmx-threshold coupling.cbo:class warning=20
  */
 final class OrderAggregate
 {
@@ -69,17 +69,18 @@ final class OrderAggregate
 }
 ```
 
-`@qmx-threshold` всегда адресуется к *правилу*, никогда к каналу —
-`coupling.cbo.class` является каналом правила `coupling.cbo`. Это тоже
-публикует `annotation.unresolved-directive`:
+`@qmx-threshold` всегда адресуется к *правилу*, никогда к каналу, суженному
+до уровня — `coupling.cbo:class` называет правило `coupling.cbo` на его
+уровне `class`, а порог не различает уровни. Это тоже публикует
+`annotation.unresolved-directive`:
 
 ```
-@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of rule "coupling.cbo" — a threshold addresses the rule.
+@qmx-threshold "coupling.cbo:class" addresses a rule at a level, and a threshold addresses the producing rule by its own name: it does not distinguish levels (ADR 0024). Retune the whole rule "coupling.cbo", or set the level alone with --rule-opt coupling.cbo:class.<option>=<value>.
 ```
 
 ```php
 /**
- * @qmx-ignore complexity.cyclomatic.callable reason="stable for now"
+ * @qmx-ignore complexity.ccn:callable reason="stable for now"
  */
 public function calculateShipping(Order $order): float
 {
@@ -88,10 +89,9 @@ public function calculateShipping(Order $order): float
 ```
 
 Аннотация корректна и когда-то подавляла реальную находку, но
-`calculateShipping()` больше не срабатывает по
-`complexity.cyclomatic.callable`. Это публикует `annotation.unused-directive`
-с severity `Info` — напоминание удалить бесполезную аннотацию, а не ошибка
-конфигурации.
+`calculateShipping()` больше не срабатывает по `complexity.ccn` на уровне
+`callable`. Это публикует `annotation.unused-directive` с severity `Info` —
+напоминание удалить бесполезную аннотацию, а не ошибка конфигурации.
 
 ```php
 /**
@@ -118,7 +118,7 @@ Suppression "Generated" addresses no channel. No declared name is close to it. P
 
 `--` обязателен только для этого неоднозначного случая. У `@qmx-ignore` и
 `@qmx-ignore-next-line` аргумент канала обязателен и всегда идёт первым,
-поэтому `@qmx-ignore complexity.cyclomatic.callable Legacy state machine`
+поэтому `@qmx-ignore complexity.ccn:callable Legacy state machine`
 однозначен и без разделителя — хотя написать `--` и там тоже полезно, чтобы
 все три тега читались одинаково.
 

@@ -20,7 +20,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * on the configuration.
  *
  * Kept apart from the per-edge diagnostic: this channel shares its sample
- * formatting with the unrelated `architecture.coverage` diagnostic (both
+ * formatting with the unrelated `architecture.coverage-gap` diagnostic (both
  * delegate to {@see DiagnosticSampleList}), but nothing else — it is debt a
  * project can record and pay down, gated by {@see UnassignedClassMode}, and
  * it is why this class has one consumer rather than sharing a class with the

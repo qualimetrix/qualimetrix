@@ -32,7 +32,7 @@ use RuntimeException;
  * producer, no matter how that channel's identity was built.
  *
  * Totality is the whole point. A "did you mean" answer that works for
- * `coupling.cbo.class` and gives up on `architecture.coverage` is worse than
+ * `coupling.cbo.class` and gives up on `architecture.coverage-gap` is worse than
  * none — it teaches the reader that the diagnostic knows the vocabulary, then
  * silently omits the cases where the name is least guessable.
  *
@@ -203,7 +203,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         self::assertTrue($universe->supportsThresholdOverride('coupling.cbo'));
 
         // Where suffix stripping would answer wrongly rather than merely fail:
-        // "architecture.coverage" minus its last segment is "architecture",
+        // "architecture.coverage-gap" minus its last segment is "architecture",
         // which is not a rule at all, while the producer is a rule whose name
         // shares no suffix relation with the channel.
         self::assertFalse($universe->hasRule('architecture'));

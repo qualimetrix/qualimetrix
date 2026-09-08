@@ -59,7 +59,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineConfiguredThresholds::class)]
 final class BaselineExplainCommandTest extends TestCase
 {
-    private const string CCN_CHANNEL = 'complexity.cyclomatic';
+    private const string CCN_CHANNEL = 'complexity.ccn';
     private const string CBO_CHANNEL = 'coupling.cbo';
     private const string LONG_PARAMETER_LIST_CHANNEL = 'code-smell.long-parameter-list';
     private const string SYMBOL_FILE = 'src/OrderService.php';
@@ -98,7 +98,7 @@ final class BaselineExplainCommandTest extends TestCase
             [self::finding($symbol, self::CCN_CHANNEL, 31.0)],
             ['--baseline' => $this->baselinePath],
             [self::SYMBOL_FILE => [new ThresholdOverride(
-                'complexity.cyclomatic',
+                'complexity.ccn',
                 40,
                 60,
                 1,
@@ -126,7 +126,7 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
         $findings = [self::finding($symbol, self::CCN_CHANNEL, 31.0)];
 
-        $withZero = $this->execute($findings, [], [], ['complexity.cyclomatic' => ['callable' => ['warning' => 0, 'error' => 5]]]);
+        $withZero = $this->execute($findings, [], [], ['complexity.ccn' => ['callable' => ['warning' => 0, 'error' => 5]]]);
         $withNothing = $this->execute($findings, [], [], [], registerRules: false);
 
         self::assertStringContainsString('qmx.yaml:      0', $withZero->getDisplay());
@@ -213,10 +213,10 @@ final class BaselineExplainCommandTest extends TestCase
     #[Test]
     public function itRejectsAChannelWrittenInTheRetiredPairForm(): void
     {
-        $tester = $this->execute([], ['--channel' => 'complexity.cyclomatic#complexity.cyclomatic']);
+        $tester = $this->execute([], ['--channel' => 'complexity.ccn#complexity.ccn']);
 
         self::assertSame(Command::INVALID, $tester->getStatusCode());
-        self::assertStringContainsString('Write "complexity.cyclomatic"', $tester->getDisplay());
+        self::assertStringContainsString('Write "complexity.ccn"', $tester->getDisplay());
     }
 
     #[Test]
@@ -272,7 +272,7 @@ final class BaselineExplainCommandTest extends TestCase
             measured: [],
             options: ['--channel' => self::CCN_CHANNEL],
             overrides: [self::SYMBOL_FILE => [new ThresholdOverride(
-                'complexity.cyclomatic',
+                'complexity.ccn',
                 40,
                 60,
                 1,
@@ -434,8 +434,8 @@ final class BaselineExplainCommandTest extends TestCase
      * A channel-to-producer edge for the fixtures below: the channel's own name,
      * minus a trailing level segment where it carries one. That is exactly the
      * relation the retired left half of a channel key encoded, so a fixture
-     * naming `complexity.cyclomatic` still resolves to the rule a
-     * `@qmx-threshold complexity.cyclomatic` addresses.
+     * naming `complexity.ccn` still resolves to the rule a
+     * `@qmx-threshold complexity.ccn` addresses.
      */
     private static function producerEdge(): ChannelIdentityInterface
     {

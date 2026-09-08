@@ -35,7 +35,7 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        self::assertSame('maintainability.index', $rule->getName());
+        self::assertSame('maintainability.mi', $rule->getName());
     }
 
     #[Test]
@@ -128,7 +128,7 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertStringContainsString('Maintainability Index is 30.0', $findings[0]->message);
         self::assertSame(30.0, $findings[0]->metricValue);
-        self::assertSame('maintainability.index', $findings[0]->ruleName);
+        self::assertSame('maintainability.mi', $findings[0]->ruleName);
     }
 
     #[Test]

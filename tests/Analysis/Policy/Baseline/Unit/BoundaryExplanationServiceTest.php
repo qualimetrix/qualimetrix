@@ -58,8 +58,8 @@ final class BoundaryExplanationServiceTest extends TestCase
      * A channel-to-producer edge for the fixtures below: the channel's own name,
      * minus a trailing level segment where it carries one. That is exactly the
      * relation the retired left half of a channel key encoded, so a fixture
-     * naming `complexity.cyclomatic` still resolves to the rule a
-     * `@qmx-threshold complexity.cyclomatic` addresses.
+     * naming `complexity.ccn` still resolves to the rule a
+     * `@qmx-threshold complexity.ccn` addresses.
      */
     private static function producerEdge(): ChannelIdentityInterface
     {
@@ -78,7 +78,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentRepository = $this->repositoryWithCallableSubject(
             SymbolPath::forMethod('App', 'Foo', 'bar'),
@@ -131,7 +131,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itCollectsAllThreeSourcesWhenAllThreeApply(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentFinding = $this->finding($channel, metricValue: 31);
 
@@ -166,7 +166,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentFinding = $this->finding($channel, metricValue: 31);
 
@@ -202,7 +202,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $this->baselineWithEntry(
-                new FindingChannel('complexity.cyclomatic'),
+                new FindingChannel('complexity.ccn'),
                 magnitudes: [25],
                 count: 1,
             ),
@@ -258,7 +258,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itDiscoversEveryApplicableChannelWhenNoneIsRequested(): void
     {
-        $baselinedChannel = new FindingChannel('complexity.cyclomatic');
+        $baselinedChannel = new FindingChannel('complexity.ccn');
         $firingOnlyChannel = new FindingChannel('coupling.cbo');
 
         $baseline = $this->baselineWithEntry($baselinedChannel, magnitudes: [25], count: 1);
@@ -290,7 +290,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationWhenNoSourceLocatesTheSymbol(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
@@ -316,7 +316,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itFindsTheAnnotationForASymbolThatViolatesNothing(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
@@ -341,7 +341,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesTheFirstExactMeasuredSubjectAcrossDifferentOccurrenceIdentities(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $baselineIdentity = new BaselineIdentity(self::SYMBOL_KEY, $channel, 'stored-occurrence');
         $baseline = new Baseline(
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
@@ -371,7 +371,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesTheFirstExactMeasuredSubjectAcrossDifferentEdgeIdentities(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $target = SymbolPath::forClass('App\Dependency', 'Target');
         $baselineIdentity = new BaselineIdentity(
             self::SYMBOL_KEY,
@@ -407,7 +407,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationForASymbolTheRunNeverMeasured(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
@@ -427,7 +427,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns(): void
     {
-        $channel = new FindingChannel('complexity.cyclomatic');
+        $channel = new FindingChannel('complexity.ccn');
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
         $override = static fn(string $pattern, int $warning, ControlScope $scope, int $line, ?int $endLine): ThresholdOverride => new ThresholdOverride(
             $pattern,
@@ -447,8 +447,8 @@ final class BoundaryExplanationServiceTest extends TestCase
             ['src/Foo.php' => [
                 $override('*', 1, ControlScope::Class_, 1, 2),
                 $override('complexity', 2, ControlScope::Callable, 1, 100),
-                $override('complexity.cyclomatic', 3, ControlScope::Callable, 10, 20),
-                $override('complexity.cyclomatic', 4, ControlScope::Callable, 10, 20),
+                $override('complexity.ccn', 3, ControlScope::Callable, 10, 20),
+                $override('complexity.ccn', 4, ControlScope::Callable, 10, 20),
             ]],
             [],
             $this->repositoryWithCallableSubject(SymbolPath::forMethod('App', 'Foo', 'bar'), 'src/Foo.php', 14),
@@ -599,7 +599,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     private function thresholdOverride(int $line): ThresholdOverride
     {
         return new ThresholdOverride(
-            'complexity.cyclomatic',
+            'complexity.ccn',
             15,
             40,
             $line,

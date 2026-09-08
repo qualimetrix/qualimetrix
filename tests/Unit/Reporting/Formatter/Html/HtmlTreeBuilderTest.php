@@ -285,8 +285,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 25),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 15',
             severity: Severity::Warning,
             metricValue: 15,
@@ -313,8 +313,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertCount(1, $classNode['violations']);
 
         $v = $classNode['violations'][0];
-        self::assertSame('complexity.cyclomatic', $v['ruleName']);
-        self::assertSame('complexity.cyclomatic', $v['violationCode']);
+        self::assertSame('complexity.ccn', $v['ruleName']);
+        self::assertSame('complexity.ccn', $v['violationCode']);
         self::assertSame('Cyclomatic complexity is 15', $v['message']);
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
@@ -344,8 +344,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Error,
             metricValue: 10,
@@ -362,8 +362,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $v3 = self::finding(
             location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complex',
             severity: Severity::Warning,
             metricValue: 5,
@@ -453,8 +453,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
             metricValue: 10,
@@ -470,7 +470,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $result = $this->builder->build($report, new FormatterContext());
 
-        // complexity.cyclomatic = 30 minutes per RemediationTimeRegistry
+        // complexity.ccn = 30 minutes per RemediationTimeRegistry
         $tree = $result['tree'];
         self::assertSame(30, $tree['debtMinutes']);
         self::assertSame(30, $result['summary']['totalDebtMinutes']);
@@ -661,8 +661,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'maintainability.index',
-            code: 'maintainability.index',
+            ruleName: 'maintainability.mi',
+            code: 'maintainability.mi',
             message: 'Low maintainability',
             severity: Severity::Warning,
             metricValue: \NAN,
@@ -841,8 +841,8 @@ final class HtmlTreeBuilderTest extends TestCase
         $classFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complex',
             severity: Severity::Error,
         );

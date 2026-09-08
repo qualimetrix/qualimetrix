@@ -10,7 +10,7 @@
 
 ## Индекс поддерживаемости (Maintainability Index)
 
-**Идентификатор правила:** `maintainability.index`
+**Идентификатор правила:** `maintainability.mi`
 
 **Судимая метрика:** `maintainability.mi`
 
@@ -187,7 +187,7 @@ MI = 171 - 5.2 x ln(V) - 0.23 x CCN - 16.2 x ln(LOC)
 ```yaml
 # qmx.yaml
 rules:
-  maintainability.index:
+  maintainability.mi:
     warning: 40
     error: 20
     exclude_tests: true
@@ -195,6 +195,6 @@ rules:
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="maintainability.index:warning=35"
-bin/qmx check src/ --rule-opt="maintainability.index:min_statements=15"
+bin/qmx check src/ --rule-opt="maintainability.mi:warning=35"
+bin/qmx check src/ --rule-opt="maintainability.mi:min_statements=15"
 ```

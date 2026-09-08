@@ -19,7 +19,7 @@ class Directives
     }
 
     /**
-     * @qmx-threshold complexity.cyclomatic warning=notanumber — unparseable threshold value
+     * @qmx-threshold complexity.ccn warning=notanumber — unparseable threshold value
      */
     public function invalid(): void
     {
@@ -64,7 +64,7 @@ class Directives
      * resolves, so what is unaddressable here is the pair -- the one shape the
      * level vocabulary added and the corpus did not yet hold.
      *
-     * @qmx-ignore duplication.code-duplication:class -- that channel reports at project level only
+     * @qmx-ignore duplication.clone:class -- that channel reports at project level only
      */
     public function impossiblePair(): void
     {

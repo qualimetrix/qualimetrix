@@ -147,7 +147,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @qmx-ignore complexity.cyclomatic#complexity.cyclomatic.callable -- explicit
+             * @qmx-ignore complexity.ccn#complexity.cyclomatic.callable -- explicit
              */
             DOC,
             10,
@@ -160,7 +160,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn#complexity.cyclomatic.callable', $suppressions[0]->rule);
         // The separator is still inside the grammar of a directive target, so
         // the retired spelling is extracted rather than skipped — which is what
         // lets it be refused by name instead of silently addressing nothing.
@@ -686,7 +686,7 @@ final class SuppressionExtractorTest extends TestCase
     public function itExtractsSuppressionFromLineComment(): void
     {
         $comment = new Comment(
-            '// @qmx-ignore complexity.cyclomatic',
+            '// @qmx-ignore complexity.ccn',
             startLine: 10,
             endLine: 10,
         );
@@ -697,7 +697,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertNull($suppressions[0]->reason);
         self::assertSame(10, $suppressions[0]->line);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
@@ -708,7 +708,7 @@ final class SuppressionExtractorTest extends TestCase
     public function itExtractsSuppressionFromBlockComment(): void
     {
         $comment = new Comment(
-            '/* @qmx-ignore complexity.cyclomatic */',
+            '/* @qmx-ignore complexity.ccn */',
             startLine: 10,
             endLine: 10,
         );
@@ -719,7 +719,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
@@ -727,7 +727,7 @@ final class SuppressionExtractorTest extends TestCase
     public function itExtractsNextLineFromLineComment(): void
     {
         $comment = new Comment(
-            '// @qmx-ignore-next-line complexity.cyclomatic',
+            '// @qmx-ignore-next-line complexity.ccn',
             startLine: 15,
             endLine: 15,
         );
@@ -738,7 +738,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
         // Line should be endLine (15) so that filter targets line 16
         self::assertSame(15, $suppressions[0]->line);
@@ -768,7 +768,7 @@ final class SuppressionExtractorTest extends TestCase
     public function itLineCommentWithReason(): void
     {
         $comment = new Comment(
-            '// @qmx-ignore complexity.cyclomatic Legacy algorithm, too costly to refactor',
+            '// @qmx-ignore complexity.ccn Legacy algorithm, too costly to refactor',
             startLine: 10,
             endLine: 10,
         );
@@ -779,7 +779,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame('Legacy algorithm, too costly to refactor', $suppressions[0]->reason);
     }
 
@@ -867,7 +867,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             <<<'COMMENT'
             /*
-             * @qmx-ignore-next-line complexity.cyclomatic
+             * @qmx-ignore-next-line complexity.ccn
              */
             COMMENT,
             startLine: 10,
@@ -880,7 +880,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
         // Line should be endLine (12) so that filter targets line 13
         self::assertSame(12, $suppressions[0]->line);

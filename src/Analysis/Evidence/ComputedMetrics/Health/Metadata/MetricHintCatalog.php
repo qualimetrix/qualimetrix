@@ -18,7 +18,7 @@ final class MetricHintCatalog
      * @var array<string, array{label: string, direction: string, goodValue: string, badExplanation: string, goodExplanation: string}>
      */
     private const array METRICS = [
-        'complexity.ccn' => [
+        MetricName::COMPLEXITY_CCN => [
             'label' => 'Cyclomatic',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 4',
@@ -151,7 +151,7 @@ final class MetricHintCatalog
             'badExplanation' => 'coupling hotspot, many depend on this',
             'goodExplanation' => 'peripheral, low risk',
         ],
-        'design.dit' => [
+        MetricName::DESIGN_DIT => [
             'label' => 'DIT',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 3',
@@ -193,7 +193,7 @@ final class MetricHintCatalog
             'badExplanation' => 'too many classes in namespace',
             'goodExplanation' => 'focused namespace',
         ],
-        'maintainability.mi' => [
+        MetricName::MAINTAINABILITY_MI => [
             'label' => 'MI',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 65',
@@ -214,7 +214,7 @@ final class MetricHintCatalog
             'badExplanation' => 'worst methods are hard to maintain',
             'goodExplanation' => 'even worst methods are maintainable',
         ],
-        'design.type-coverage.pct' => [
+        'design.type-coverage.all' => [
             'label' => 'Type coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
@@ -274,7 +274,7 @@ final class MetricHintCatalog
      */
     private const array RANGES = [
         // Complexity
-        'complexity.ccn' => [
+        MetricName::COMPLEXITY_CCN => [
             ['max' => 4, 'text' => 'Simple, easy to test'],
             ['max' => 10, 'text' => 'Moderate complexity'],
             ['max' => 20, 'text' => 'Complex, consider refactoring'],
@@ -348,7 +348,7 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Critical coupling point'],
         ],
         // Design
-        'design.dit' => [
+        MetricName::DESIGN_DIT => [
             ['max' => 0, 'text' => 'Root class'],
             ['max' => 3, 'text' => 'Normal depth'],
             ['max' => 6, 'text' => 'Deep hierarchy'],
@@ -386,7 +386,7 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Bloated namespace'],
         ],
         // Maintainability
-        'maintainability.mi' => [
+        MetricName::MAINTAINABILITY_MI => [
             ['max' => 19, 'text' => 'Critical — very hard to maintain'],
             ['max' => 39, 'text' => 'Poor — refactoring recommended'],
             ['max' => 64, 'text' => 'Moderate — could benefit from simplification'],
@@ -394,7 +394,7 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Excellent maintainability'],
         ],
         // Type Coverage
-        'design.type-coverage.pct' => [
+        'design.type-coverage.all' => [
             ['max' => 49, 'text' => 'Low type coverage'],
             ['max' => 79, 'text' => 'Moderate type coverage'],
             ['above' => true, 'text' => 'Good type coverage'],
@@ -437,7 +437,7 @@ final class MetricHintCatalog
      * @var array<string, string>
      */
     private const array HTML_LABELS = [
-        'complexity.ccn' => 'Cyclomatic Complexity',
+        MetricName::COMPLEXITY_CCN => 'Cyclomatic Complexity',
         MetricName::COMPLEXITY_COGNITIVE => 'Cognitive Complexity',
         MetricName::COMPLEXITY_NPATH => 'NPath Complexity',
         'cohesion.tcc' => 'Tight Class Cohesion',
@@ -446,10 +446,10 @@ final class MetricHintCatalog
         MetricName::COUPLING_CBO => 'Coupling Between Objects',
         'coupling.ce' => 'Efferent Coupling',
         'coupling.ce-packages' => 'Efferent Packages',
-        'design.dit' => 'Depth of Inheritance Tree',
+        MetricName::DESIGN_DIT => 'Depth of Inheritance Tree',
         MetricName::DESIGN_NOC => 'Number of Children',
         'coupling.rfc' => 'Response for a Class',
-        'maintainability.mi' => 'Maintainability Index',
+        MetricName::MAINTAINABILITY_MI => 'Maintainability Index',
         MetricName::SIZE_METHOD_COUNT => 'Method Count',
         MetricName::SIZE_PROPERTY_COUNT => 'Property Count',
         'size.class-count.sum' => 'Class Count',

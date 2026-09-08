@@ -6,7 +6,7 @@ Code duplication is one of the most common sources of technical debt. When the s
 
 ## Code Duplication
 
-**Rule ID:** `duplication.code-duplication`
+**Rule ID:** `duplication.clone`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -131,15 +131,15 @@ this ownership change does not alter the rule id, options, algorithm or output.
     fingerprint.
 
 !!! warning "Inline `@qmx-ignore` cannot suppress this channel"
-    `duplication.code-duplication` reports at project level only, so no inline
+    `duplication.clone` reports at project level only, so no inline
     directive can bind to it reliably: `@qmx-ignore` binds to the declaration
     it decorates, which the project never is, and `@qmx-ignore-file` /
     `@qmx-ignore-next-line` are matched against the finding's primary
     location — the copy the scan happens to visit first, an implementation
     detail rather than something you control. All three forms are refused
     (`annotation.unresolved-directive`) wherever they are written. Disable the
-    rule instead — `disabled_rules: [duplication.code-duplication]` in the
-    configuration, or `--disable-rule=duplication.code-duplication` — or
+    rule instead — `disabled_rules: [duplication.clone]` in the
+    configuration, or `--disable-rule=duplication.clone` — or
     accept a specific occurrence into the baseline.
 
 !!! info "Constant and property arrays are always excluded"
@@ -167,7 +167,7 @@ The preview uses normalized tokens (variables replaced with `$_`, strings with `
 ```yaml
 # qmx.yaml
 rules:
-  duplication.code-duplication:
+  duplication.clone:
     enabled: true
     min_lines: 5
     min_tokens: 70
@@ -175,17 +175,17 @@ rules:
 
 ```bash
 # Increase minimum token threshold to reduce noise
-bin/qmx check src/ --rule-opt="duplication.code-duplication:min_tokens=100"
+bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
 
 # Increase minimum line count
-bin/qmx check src/ --rule-opt="duplication.code-duplication:min_lines=10"
+bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
 ```
 
 You can also disable the rule entirely:
 
 ```bash
-bin/qmx check src/ --disable-rule=duplication.code-duplication
+bin/qmx check src/ --disable-rule=duplication.clone
 ```
 
 !!! note "Memory usage"
-    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication.code-duplication` skips the detection phase entirely and frees the memory.
+    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication.clone` skips the detection phase entirely and frees the memory.

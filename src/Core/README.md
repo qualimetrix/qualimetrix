@@ -356,8 +356,8 @@ A user-authored selector over the rule / channel name space. Exactly two forms;
 nothing is inferred from the number of dot-separated segments.
 
 **Forms:**
-- `X` — equality. `architecture.coverage` addresses that name and nothing else;
-  it does **not** swallow `architecture.coverage.source`
+- `X` — equality. `architecture.coverage-gap` addresses that name and nothing else;
+  it does **not** swallow `architecture.coverage-gap.source`
 - `X.*` — strict descendants of `X`; `X` itself is not included. A directive
   meaning both is written twice
 
@@ -591,7 +591,7 @@ The address of a *kind* of finding: one name that can appear on an emitted `Find
 
 Channels are **not** in bijection with rule classes, which is why nothing downstream may key on a rule class:
 
-- one rule class can emit several channels, some under rule names no class declares as its own (`LayerViolationRule` emits `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template` besides its own name);
+- one rule class can emit several channels, some under rule names no class declares as its own (`LayerViolationRule` emits `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template` besides its own name);
 - one rule class can emit one channel per configured definition (`ComputedMetricRule`, one per `health.*` / `computed.*` metric), each with its own thresholds and inversion;
 - one rule class can emit one channel whose boundaries depend on the symbol (`LongParameterListRule`).
 
@@ -791,9 +791,9 @@ Defines the scope of a suppression tag.
 Value Object representing a `@qmx-threshold` annotation from a docblock. Allows per-symbol threshold overrides.
 
 **Syntaxes:**
-- Shorthand: `@qmx-threshold complexity.cyclomatic 15` (sets both warning and error)
-- Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
-- Partial: `@qmx-threshold complexity.cyclomatic warning=15` (override warning only)
+- Shorthand: `@qmx-threshold complexity.ccn 15` (sets both warning and error)
+- Explicit: `@qmx-threshold complexity.ccn warning=15 error=25`
+- Partial: `@qmx-threshold complexity.ccn warning=15` (override warning only)
 - Explicit keys may appear in either order; only the generic `warning` and `error` keys are accepted
 - Values are non-negative integers or decimals
 - An optional non-empty reason must follow `--` or an em dash (`—`)

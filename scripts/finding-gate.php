@@ -45,6 +45,7 @@ foreach (
         'EquivalenceTuple',
         'FingerprintSubstitution',
         'Fingerprints',
+        'PublishedOrder',
         'ReportPayload',
         'ChannelWitness',
         'ChannelCoverage',

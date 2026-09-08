@@ -30,7 +30,7 @@ Each baseline entry identifies a canonical typed subject, a channel, an optional
 
 The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
-Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
+Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
 
 ## Lifecycle commands
 
@@ -152,7 +152,7 @@ a command rewrites the file.
 
 ```bash
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.callable'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=complexity.ccn
 ```
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
@@ -184,12 +184,12 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Use an inline suppression for an intentional exception rather than silently accepting it in a baseline. The tags work in PHPDoc, line comments, and block comments; place them on a separate line before their target.
 
-| Tag                                           | Scope                 | Example                                                              |
-| --------------------------------------------- | --------------------- | -------------------------------------------------------------------- |
-| `@qmx-ignore <channel> [-- reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
-| `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                                  |
-| `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
-| `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`           |
+| Tag                                           | Scope                 | Example                                                       |
+| --------------------------------------------- | --------------------- | ------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Symbol                | `@qmx-ignore complexity.ccn:callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                           |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`    |
+| `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`    |
 
 ### Reason separator
 
@@ -213,7 +213,7 @@ same way.
 
 `@qmx-ignore`, `@qmx-ignore-next-line`, and `@qmx-ignore-file` address a **channel** — the exact `violationCode` a finding is reported under — not the producer rule that emits it. A channel selector is either:
 
-- an **exact** channel name (`complexity.wmc`, `code-smell.eval`), or
+- an **exact** channel name (`complexity.wmc`, `code-smell.eval`), optionally narrowed with `:<level>` (`complexity.ccn:callable`) when the channel reports at more than one level, or
 - `X.*` for strictly the **descendants** of `X` — `X` itself is not included, so write two directives if you mean both.
 
 A bare prefix without the star (`@qmx-ignore complexity`) is an error, not a guess at intent, and an `X.*` that matches nothing is an error too:
@@ -222,22 +222,22 @@ A bare prefix without the star (`@qmx-ignore complexity`) is an error, not a gue
 Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
 ```
 
-For most rules the rule name and its one channel are the same string, so the distinction never surfaces. It surfaces for the rules below, which report through more than one channel — their bare rule name is **not** a valid `@qmx-ignore` argument:
+Every rule now reports through exactly one channel, but the channel itself can report at more than one level of the symbol tree — a class-level and a namespace-level view of coupling, or a method-level and a class-level view of complexity. The bare channel name addresses **every** level at once; the rules below are the ones where that matters, because their two levels disagree often enough that suppressing only one is the common case:
 
-| Rule                    | Channels                                                        |
-| ----------------------- | --------------------------------------------------------------- |
-| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
-| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
-| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`           |
-| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
-| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`  |
+| Channel                | Levels               |
+| ---------------------- | -------------------- |
+| `complexity.ccn`       | `callable`, `class`  |
+| `complexity.cognitive` | `callable`, `class`  |
+| `complexity.npath`     | `callable`, `class`  |
+| `coupling.cbo`         | `class`, `namespace` |
+| `coupling.instability` | `class`, `namespace` |
 
-Suppress one channel with its exact name, or every channel of the rule with the wildcard, e.g. `@qmx-ignore complexity.cyclomatic.*`.
+Suppress every level with the bare channel name, or one level with `:level`, e.g. `@qmx-ignore complexity.ccn:callable`.
 
 A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — valid as long as `computed_metrics:` still defines that metric. Removing the metric turns the annotation into an error: a dangling reference is the same mistake as a typo.
 
 !!! warning "Five channels can never be suppressed here"
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
+    `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage-gap: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
 
 ### When a directive is wrong
 
@@ -269,7 +269,7 @@ Use `@qmx-threshold` when a symbol needs a different limit but should still be c
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40 -- Legacy state machine
+ * @qmx-threshold complexity.ccn warning=20 error=40 -- Legacy state machine
  */
 final class ComplexStateMachine
 {
@@ -281,11 +281,12 @@ final class ComplexStateMachine
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
 
-`@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a wildcard. A threshold belongs to the rule's one options object, not to an individual channel, so `@qmx-threshold complexity.cyclomatic.callable` is an error even though `complexity.cyclomatic` has two channels; use the rule name `complexity.cyclomatic` instead:
+`@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a level. A threshold belongs to the rule's one options object, not to an individual level, so `@qmx-threshold complexity.ccn:callable` is an error even though `complexity.ccn` reports at two levels; use the rule name `complexity.ccn` instead, or narrow with `--rule-opt` if only one level's options need to change:
 
 ```text
-@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of
-rule "coupling.cbo" — a threshold addresses the rule.
+@qmx-threshold "complexity.ccn:callable" addresses a rule at a level, and a threshold addresses the
+producing rule by its own name: it does not distinguish levels (ADR 0024). Retune the whole rule
+"complexity.ccn", or set the level alone with --rule-opt complexity.ccn:callable.<option>=<value>.
 ```
 
 This is the mirror image of `@qmx-ignore`, which always addresses the channel — the asymmetry is deliberate. `@qmx-threshold` on a disabled rule is valid and silent: enabledness is an execution filter, not a fact about whether the rule name exists.

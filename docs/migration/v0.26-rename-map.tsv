@@ -1,0 +1,6 @@
+old	new	reason
+architecture.coverage	architecture.coverage-gap	The layer-coverage diagnostic is now named for what it reports: a gap, not coverage.
+complexity.cyclomatic	complexity.ccn	The channel now carries the same name as the metric it judges (CCN).
+design.inheritance	design.dit	The channel now carries the same name as the metric it judges (DIT).
+duplication.code-duplication	duplication.clone	The channel no longer repeats its own group name.
+maintainability.index	maintainability.mi	The channel now carries the same name as the metric it judges (MI).

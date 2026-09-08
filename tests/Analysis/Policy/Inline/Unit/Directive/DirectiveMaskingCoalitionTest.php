@@ -151,9 +151,9 @@ final class DirectiveMaskingCoalitionTest extends TestCase
     public function itHasNoCoalitionWhenTheNeighboursAddressAnotherRule(): void
     {
         $groups = [
-            self::group(5, warning: 30, scope: ControlScope::Class_, rule: 'complexity.cyclomatic'),
+            self::group(5, warning: 30, scope: ControlScope::Class_, rule: 'complexity.ccn'),
             self::group(9, warning: 30),
-            self::group(13, warning: 30, scope: ControlScope::Hook, rule: 'complexity.cyclomatic'),
+            self::group(13, warning: 30, scope: ControlScope::Hook, rule: 'complexity.ccn'),
         ];
 
         self::assertNull(self::coalition($groups)->maskedBy($groups, 1, null));

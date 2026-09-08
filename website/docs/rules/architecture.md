@@ -265,7 +265,7 @@ architecture:
 
   # Optional. What to do with edges whose source or target is not in any layer.
   # See "Coverage modes" below.
-  coverage: ignore
+  coverage-gap: ignore
 ```
 
 Patterns support both prefix matching (no wildcards, e.g. `App\Controller`) and glob matching (`*`, `**`, `?`, `[…]`). Same-layer dependencies are always allowed (sub-module isolation is intentionally out of scope for the MVP).
@@ -284,9 +284,9 @@ architecture:
     catchall: []
 ```
 
-The catch-all replaces the older `coverage: warn` recipe for "show me everything I haven't classified yet". The `architecture.coverage` mechanism still works (see "Coverage modes" below), but with a catch-all layer it is usually unnecessary.
+The catch-all replaces the older `coverage-gap: warn` recipe for "show me everything I haven't classified yet". The `architecture.coverage-gap` mechanism still works (see "Coverage modes" below), but with a catch-all layer it is usually unnecessary.
 
-**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map continues to merge by source layer, and the scalar `architecture.coverage` is overridden by the later source.
+**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map continues to merge by source layer, and the scalar `architecture.coverage-gap` is overridden by the later source.
 
 #### Configuration example with vendor and shared layers
 
@@ -550,13 +550,13 @@ When multiple allow targets within one source resolve to the same target layer (
 
 ### Coverage modes
 
-`architecture.coverage` controls what happens when an analysed logical class
+`architecture.coverage-gap` controls what happens when an analysed logical class
 does not belong to any declared layer, or when a dependency edge has an
 unclassified source or target. Isolated analysed classes are covered even when
 they have no dependency edges.
 
 !!! warning "Configuration diagnostic, not code debt"
-    `architecture.coverage` is one of five architecture diagnostics that flag a
+    `architecture.coverage-gap` is one of five architecture diagnostics that flag a
     mistake in the architecture *configuration* rather than debt in the
     analysed code — the others are `architecture.unreachable-layer`,
     `architecture.pending-layer-matched`, `architecture.potential-shadow`, and
@@ -565,34 +565,34 @@ they have no dependency edges.
     consulted, not even `fail_on: none`, and none of the five can be accepted
     into a baseline or silenced with `@qmx-ignore`. A severity option on any of
     them would look like a behaviour switch while changing nothing, so none
-    exposes one. What remains to decline them: `coverage: ignore` for this
+    exposes one. What remains to decline them: `coverage-gap: ignore` for this
     diagnostic specifically, and the `exclude:` block inside a layer.
     `architecture.layer-violation` itself is unaffected by any of this — it
     reports real code debt and stays suppressible and baselineable as usual.
 
-| Mode               | Behaviour                                                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignore` (default) | Out-of-layer classes and edge endpoints are silently skipped. Adopt the rule incrementally without noise.                                                     |
-| `warn`             | One summary `architecture.coverage` violation per analysis with `Warning` severity, listing example unclassified classes. Fails the run whenever it fires.    |
-| `error`            | Same diagnostic but with `Error` severity. Fails the run whenever it fires, same as `warn` — pick it to signal fail-closed CI ownership in the config itself. |
+| Mode               | Behaviour                                                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ignore` (default) | Out-of-layer classes and edge endpoints are silently skipped. Adopt the rule incrementally without noise.                                                      |
+| `warn`             | One summary `architecture.coverage-gap` violation per analysis with `Warning` severity, listing example unclassified classes. Fails the run whenever it fires. |
+| `error`            | Same diagnostic but with `Error` severity. Fails the run whenever it fires, same as `warn` — pick it to signal fail-closed CI ownership in the config itself.  |
 
 <!-- llms:skip-begin -->
 The diagnostic message looks like:
 
 ```
-Architecture coverage: 12 edge(s) with unmatched source layer, 5 edge(s) with unmatched target layer,
+Architecture coverage-gap: 12 edge(s) with unmatched source layer, 5 edge(s) with unmatched target layer,
 3 class(es) outside all declared layers.
 Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz. ...
 ```
 
-To suppress the diagnostic for a known set of unclassified classes, declare a catch-all layer covering them (or accept the gap by leaving `coverage: ignore`).
+To suppress the diagnostic for a known set of unclassified classes, declare a catch-all layer covering them (or accept the gap by leaving `coverage-gap: ignore`).
 <!-- llms:skip-end -->
 
 ### Unassigned classes { #unassigned-class }
 
 **Rule ID:** `architecture.unassigned-class`
 
-This rule answers the one question `architecture.coverage`
+This rule answers the one question `architecture.coverage-gap`
 cannot: *is every declaration I analysed assigned to a layer?* Coverage also
 counts the ends of dependency edges, and those include classes outside `paths:`
 — `Symfony\...`, `PHPUnit\...` — which no layer can classify, so the number it
@@ -767,7 +767,7 @@ rules:
     severity: error
 ```
 
-The five architecture configuration diagnostics — `architecture.coverage`,
+The five architecture configuration diagnostics — `architecture.coverage-gap`,
 `architecture.unreachable-layer`, `architecture.pending-layer-matched`,
 `architecture.potential-shadow`, and
 `architecture.empty-template` — have no severity options of their own; they
@@ -860,7 +860,7 @@ final class LegacyAdminController
 }
 ```
 
-To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes seven channels, but the other six carry rule names of their own (`architecture.coverage`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is a rule of its own reporting ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `mode: ignore` or accepted in the baseline.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes seven channels, but the other six carry rule names of their own (`architecture.coverage-gap`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is a rule of its own reporting ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `mode: ignore` or accepted in the baseline.
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 
@@ -899,7 +899,7 @@ This works because the framework (`RuleOptionsFactory`) extracts `suppress_names
 - **Vendor namespaces are first-class layers.** Declare a `doctrine` or `symfony` layer with `Doctrine\**` / `Symfony\**` patterns to write policy against vendor edges (e.g., "only repositories may use Doctrine"). Vendor layers behave identically to project layers.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
 - **Reporting granularity is per use-site.** Each forbidden dependency edge from `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
-- **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage` mode.
+- **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage-gap` mode.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
 - **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this: `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). Both are configuration diagnostics — they fail the run unconditionally and have no severity option (see the note under [Coverage modes](#coverage-modes)). See the dedicated sections above.
 

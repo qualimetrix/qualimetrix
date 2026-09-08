@@ -256,7 +256,7 @@ def execute(cmd: list[str], tool: str, valid_codes: set[int], artifact: Optional
 
 def run_qmx(project_path: Path) -> dict:
     cmd = ["php", "-d", "memory_limit=2G", str(PROJECT_ROOT / "bin/qmx"), "check", str(project_path),
-           "--format=metrics", "--workers=1", "--disable-rule=duplication.code-duplication",
+           "--format=metrics", "--workers=1", "--disable-rule=duplication.clone",
            "--disable-rule=architecture.circular-dependency"]
     result = execute(cmd, "Qualimetrix", {0, 1, 2, 4})
     document, data = parse_qmx_artifact(result.stdout)

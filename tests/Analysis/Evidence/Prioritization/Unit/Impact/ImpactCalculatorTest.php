@@ -43,13 +43,13 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function computeTopIssuesWithCorrectFormula(): void
     {
-        // Error finding with classRank=0.05, rule 'complexity.cyclomatic' (base=30min, no scaling)
+        // Error finding with classRank=0.05, rule 'complexity.ccn' (base=30min, no scaling)
         $errorFinding = $this->createFinding(
             'src/a.php',
             10,
             Severity::Error,
             SymbolPath::forClass('App\Service', 'ErrorClass'),
-            'complexity.cyclomatic',
+            'complexity.ccn',
         );
 
         // Warning finding with classRank=0.02, rule 'code-smell.debug-code' (base=5min, no scaling)
@@ -79,7 +79,7 @@ final class ImpactCalculatorTest extends TestCase
 
         // Error: 0.05 * 3 * 30 = 4.5
         self::assertEqualsWithDelta(4.5, $issues[0]->impactScore, 0.0001);
-        self::assertSame('complexity.cyclomatic', $issues[0]->finding->ruleName);
+        self::assertSame('complexity.ccn', $issues[0]->finding->ruleName);
 
         // Warning: 0.02 * 1 * 5 = 0.1
         self::assertEqualsWithDelta(0.1, $issues[1]->impactScore, 0.0001);

@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Configuration\Contract;
 interface KnownRuleNamesProviderInterface
 {
     /**
-     * Returns all registered rule names (e.g. "complexity.cyclomatic").
+     * Returns all registered rule names (e.g. "complexity.ccn").
      *
      * @return list<string>
      */

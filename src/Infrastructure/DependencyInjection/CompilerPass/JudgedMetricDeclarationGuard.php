@@ -48,7 +48,7 @@ final class JudgedMetricDeclarationGuard
      *    member count from the dependency graph.
      * 2. `architecture.unassigned-class` — magnitude, publishes a count of
      *    unassigned declarations.
-     * 3. `duplication.code-duplication` — magnitude, publishes a duplicated
+     * 3. `duplication.clone` — magnitude, publishes a duplicated
      *    block's line count from the duplication engine.
      * 4. `design.god-class` — magnitude, publishes how many of its criteria
      *    matched, which is a number about the rule and not about the code.

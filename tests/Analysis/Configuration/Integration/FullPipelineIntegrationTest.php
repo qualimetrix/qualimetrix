@@ -53,7 +53,7 @@ final class FullPipelineIntegrationTest extends TestCase
             'paths' => ['lib'],
             'format' => 'text',
             'disabledRules' => ['complexity.npath'],
-            'rules' => ['complexity.cyclomatic' => ['callable' => ['warning' => 12]]],
+            'rules' => ['complexity.ccn' => ['callable' => ['warning' => 12]]],
         ], 6));
 
         $document = $this->resolve(['paths' => ['app'], 'format' => 'json'], ['strict']);
@@ -67,7 +67,7 @@ final class FullPipelineIntegrationTest extends TestCase
         ));
         self::assertSame('json', (new OutputFormatResolver())->resolve($document)->value);
         self::assertContains('complexity.npath', $finding->selection->disabled);
-        self::assertSame(12, $finding->ruleOptions->rules['complexity.cyclomatic']['callable']['warning']);
+        self::assertSame(12, $finding->ruleOptions->rules['complexity.ccn']['callable']['warning']);
         self::assertSame(
             ['defaults', 'composer.json', 'preset:strict', 'qmx.yaml', 'cli'],
             $document->appliedSources(),

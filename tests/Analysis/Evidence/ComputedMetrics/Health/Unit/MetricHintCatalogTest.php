@@ -159,8 +159,8 @@ final class MetricHintCatalogTest extends TestCase
     public function itGetExplanationTypeCoveragePercentage(): void
     {
         // typeCoverage.pct good = "above 80%", value 90 is good
-        self::assertSame('well-typed code', $this->provider->getExplanation('design.type-coverage.pct', 90.0));
-        self::assertSame('missing type declarations', $this->provider->getExplanation('design.type-coverage.pct', 50.0));
+        self::assertSame('well-typed code', $this->provider->getExplanation('design.type-coverage.all', 90.0));
+        self::assertSame('missing type declarations', $this->provider->getExplanation('design.type-coverage.all', 50.0));
     }
 
     // --- getGoodValue ---

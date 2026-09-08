@@ -32,7 +32,7 @@ final class HealthHintProjectorTest extends TestCase
     public function itExportForHtmlMetricHintsContainsAllRangedMetrics(): void
     {
         $hints = $this->projector->project()['metricHints'];
-        $expectedKeys = ['complexity.ccn', 'complexity.cognitive', 'complexity.npath', 'cohesion.lcom', 'cohesion.tcc', 'cohesion.lcc', 'complexity.wmc', 'coupling.cbo', 'coupling.instability', 'coupling.abstractness', 'coupling.distance', 'coupling.class-rank', 'design.dit', 'design.noc', 'coupling.rfc', 'size.method-count', 'size.property-count', 'size.class-count.sum', 'maintainability.mi', 'design.type-coverage.pct', 'design.type-coverage.param', 'design.type-coverage.return', 'design.type-coverage.property'];
+        $expectedKeys = ['complexity.ccn', 'complexity.cognitive', 'complexity.npath', 'cohesion.lcom', 'cohesion.tcc', 'cohesion.lcc', 'complexity.wmc', 'coupling.cbo', 'coupling.instability', 'coupling.abstractness', 'coupling.distance', 'coupling.class-rank', 'design.dit', 'design.noc', 'coupling.rfc', 'size.method-count', 'size.property-count', 'size.class-count.sum', 'maintainability.mi', 'design.type-coverage.all', 'design.type-coverage.param', 'design.type-coverage.return', 'design.type-coverage.property'];
         foreach ($expectedKeys as $key) {
             self::assertArrayHasKey($key, $hints, "Missing metric hint for: {$key}");
             self::assertArrayHasKey('label', $hints[$key]);

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 /**
- * Parses and validates the {@code architecture.coverage} scalar.
+ * Parses and validates the {@code architecture.coverage-gap} scalar.
  *
  * Accepts {@code null} (defaults to {@see CoverageMode::Ignore}) or a
  * case-insensitive string of {@code 'ignore'}, {@code 'warn'}, {@code 'error'}.
@@ -27,7 +27,7 @@ final class CoverageValidator
             throw new ArchitectureConfigurationException(
                 self::CONFIG_PATH,
                 \sprintf(
-                    "architecture.coverage: must be one of 'ignore', 'warn', 'error' (got %s).",
+                    "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got %s).",
                     get_debug_type($coverageRaw),
                 ),
             );
@@ -39,7 +39,7 @@ final class CoverageValidator
             throw new ArchitectureConfigurationException(
                 self::CONFIG_PATH,
                 \sprintf(
-                    "architecture.coverage: must be one of 'ignore', 'warn', 'error' (got '%s').",
+                    "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got '%s').",
                     $coverageRaw,
                 ),
                 $e,

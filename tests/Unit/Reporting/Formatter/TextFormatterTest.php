@@ -104,8 +104,8 @@ final class TextFormatterTest extends TestCase
             ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -540,8 +540,8 @@ final class TextFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ))
@@ -559,7 +559,7 @@ final class TextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $detailContext);
 
         // Should group by rule, not file
-        self::assertStringContainsString('complexity.cyclomatic (1)', $output);
+        self::assertStringContainsString('complexity.ccn (1)', $output);
         self::assertStringNotContainsString('src/Foo.php (1', $output);
     }
 
@@ -576,8 +576,8 @@ final class TextFormatterTest extends TestCase
             $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString("src/Foo{$i}.php"), 10),
                 symbolPath: SymbolPath::forClass('App', "Foo{$i}"),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Complex',
                 severity: Severity::Error,
             ));
@@ -600,7 +600,7 @@ final class TextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('Technical debt by rule:', $output);
-        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('... and 2 more', $output);
     }

@@ -109,7 +109,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         $symbol,
-                        new FindingChannel('duplication.code-duplication'),
+                        new FindingChannel('duplication.clone'),
                     ),
                     [12.0],
                     1,
@@ -151,7 +151,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new FindingChannel('complexity.cyclomatic'),
+                        new FindingChannel('complexity.ccn'),
                     ),
                     [25],
                     1,

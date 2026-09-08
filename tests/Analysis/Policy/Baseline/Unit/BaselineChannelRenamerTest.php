@@ -243,12 +243,12 @@ final class BaselineChannelRenamerTest extends TestCase
     {
         $path = $this->rawFixture([
             'class:App\Foo' => [
-                ['magnitudes' => [3.0, 1.0, 2.0], 'channel' => 'complexity.cyclomatic'],
+                ['magnitudes' => [3.0, 1.0, 2.0], 'channel' => 'complexity.ccn'],
                 ['count' => 2, 'channel' => 'code-smell.goto', 'occurrence' => 'occ1'],
             ],
         ]);
 
-        $this->renamer->carry($path, $this->map("complexity.cyclomatic\tmaintainability.index.class"));
+        $this->renamer->carry($path, $this->map("complexity.ccn\tmaintainability.index.class"));
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));

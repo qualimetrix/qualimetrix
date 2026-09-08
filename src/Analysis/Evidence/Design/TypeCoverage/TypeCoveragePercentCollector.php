@@ -39,7 +39,7 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
      */
     public function provides(): array
     {
-        return [MetricName::DESIGN_TYPE_COVERAGE_PCT];
+        return [MetricName::DESIGN_TYPE_COVERAGE_ALL];
     }
 
     public function calculate(MetricBag $sourceBag): MetricBag
@@ -56,12 +56,12 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
         $totalAll = $paramTotal + $returnTotal + $propertyTotal;
 
         if ($totalAll === 0) {
-            return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_PCT, 100.0);
+            return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_ALL, 100.0);
         }
 
         $pct = round($totalTyped / $totalAll * 100, 2);
 
-        return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_PCT, $pct);
+        return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_ALL, $pct);
     }
 
     /**
@@ -71,7 +71,7 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
     {
         return [
             new MetricDefinition(
-                name: MetricName::DESIGN_TYPE_COVERAGE_PCT,
+                name: MetricName::DESIGN_TYPE_COVERAGE_ALL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),

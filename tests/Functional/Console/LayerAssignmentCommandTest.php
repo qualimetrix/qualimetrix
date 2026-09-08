@@ -390,7 +390,7 @@ final class LayerAssignmentCommandTest extends TestCase
             . "      patterns: ['App\\{module}\\**']\n"
             . "  allow:\n"
             . "    'mod-{module}': []\n"
-            . "  coverage: ignore\n",
+            . "  coverage-gap: ignore\n",
         );
 
         // 1. Regular class — its module should have been discovered and the
@@ -744,7 +744,7 @@ final class LayerAssignmentCommandTest extends TestCase
      *
      * Uses the post-Step-0 schema: `architecture.layers` is an ordered list
      * of `{name, patterns}` entries (declaration order matters), with a
-     * matching `allow: { name: [] }` map and `coverage: ignore`.
+     * matching `allow: { name: [] }` map and `coverage-gap: ignore`.
      *
      * @param list<array{0: string, 1: list<string>}> $layers Ordered list of
      *                                                        `[layerName, [patterns…]]` tuples.
@@ -766,7 +766,7 @@ final class LayerAssignmentCommandTest extends TestCase
         if (!is_dir($emptyPath)) {
             mkdir($emptyPath, 0o755, true);
         }
-        $yaml = "paths: ['{$emptyPath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage: ignore\n";
+        $yaml = "paths: ['{$emptyPath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage-gap: ignore\n";
 
         $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);

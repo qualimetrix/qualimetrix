@@ -21,8 +21,8 @@ final class CliOptionsParserTest extends TestCase
     {
         // Arrange: parser with aliases including non-hardcoded ones
         $ruleOptionsParser = new RuleOptionsParser([
-            'cyclomatic-warning' => ['rule' => 'complexity.cyclomatic', 'option' => 'warning'],
-            'mi-warning' => ['rule' => 'maintainability.index', 'option' => 'warning'],
+            'cyclomatic-warning' => ['rule' => 'complexity.ccn', 'option' => 'warning'],
+            'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
             'cbo-error' => ['rule' => 'coupling.cbo', 'option' => 'error'],
         ]);
 
@@ -44,8 +44,8 @@ final class CliOptionsParserTest extends TestCase
         $result = $cliParser->parseRuleOptions($input);
 
         // Assert: non-hardcoded aliases should be processed
-        self::assertArrayHasKey('maintainability.index', $result);
-        self::assertSame(30, $result['maintainability.index']['warning']);
+        self::assertArrayHasKey('maintainability.mi', $result);
+        self::assertSame(30, $result['maintainability.mi']['warning']);
 
         self::assertArrayHasKey('coupling.cbo', $result);
         self::assertSame(15, $result['coupling.cbo']['error']);
@@ -56,7 +56,7 @@ final class CliOptionsParserTest extends TestCase
     {
         // Arrange: --rule-opt and alias both set same rule option
         $ruleOptionsParser = new RuleOptionsParser([
-            'mi-warning' => ['rule' => 'maintainability.index', 'option' => 'warning'],
+            'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
         ]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
@@ -67,7 +67,7 @@ final class CliOptionsParserTest extends TestCase
         ]);
 
         $input = new ArrayInput([
-            '--rule-opt' => ['maintainability.index:warning=50'],
+            '--rule-opt' => ['maintainability.mi:warning=50'],
             '--mi-warning' => '30',
         ], $definition);
 
@@ -75,7 +75,7 @@ final class CliOptionsParserTest extends TestCase
         $result = $cliParser->parseRuleOptions($input);
 
         // Assert: --rule-opt should take priority
-        self::assertSame(50, $result['maintainability.index']['warning']);
+        self::assertSame(50, $result['maintainability.mi']['warning']);
     }
 
     #[Test]
@@ -134,7 +134,7 @@ final class CliOptionsParserTest extends TestCase
     public function parseRuleOptions_normalizesIntValues(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
-            'ccn-warning' => ['rule' => 'complexity.cyclomatic', 'option' => 'warning'],
+            'ccn-warning' => ['rule' => 'complexity.ccn', 'option' => 'warning'],
         ]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
@@ -150,8 +150,8 @@ final class CliOptionsParserTest extends TestCase
 
         $result = $cliParser->parseRuleOptions($input);
 
-        self::assertArrayHasKey('complexity.cyclomatic', $result);
-        self::assertSame(10, $result['complexity.cyclomatic']['warning']);
+        self::assertArrayHasKey('complexity.ccn', $result);
+        self::assertSame(10, $result['complexity.ccn']['warning']);
     }
 
     #[Test]
@@ -255,8 +255,8 @@ final class CliOptionsParserTest extends TestCase
     {
         // Arrange: alias registered but not passed via CLI
         $ruleOptionsParser = new RuleOptionsParser([
-            'mi-warning' => ['rule' => 'maintainability.index', 'option' => 'warning'],
-            'mi-error' => ['rule' => 'maintainability.index', 'option' => 'error'],
+            'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
+            'mi-error' => ['rule' => 'maintainability.mi', 'option' => 'error'],
         ]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
@@ -276,9 +276,9 @@ final class CliOptionsParserTest extends TestCase
         $result = $cliParser->parseRuleOptions($input);
 
         // Assert: only mi-warning should be in result
-        self::assertArrayHasKey('maintainability.index', $result);
-        self::assertSame(30, $result['maintainability.index']['warning']);
-        self::assertArrayNotHasKey('error', $result['maintainability.index']);
+        self::assertArrayHasKey('maintainability.mi', $result);
+        self::assertSame(30, $result['maintainability.mi']['warning']);
+        self::assertArrayNotHasKey('error', $result['maintainability.mi']);
     }
 
 }

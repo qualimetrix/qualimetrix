@@ -294,8 +294,8 @@ final class FindingSummaryRendererTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'CCN is 30',
             severity: Severity::Error,
             metricValue: 30,
@@ -400,8 +400,8 @@ final class FindingSummaryRendererTest extends TestCase
         return self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Test violation',
             severity: $severity,
         );

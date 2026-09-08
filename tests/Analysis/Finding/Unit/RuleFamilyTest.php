@@ -26,7 +26,7 @@ final class RuleFamilyTest extends TestCase
      */
     public static function provideNames(): iterable
     {
-        yield 'two segments' => ['complexity.cyclomatic', 'complexity'];
+        yield 'two segments' => ['complexity.ccn', 'complexity'];
         yield 'hyphenated family' => ['code-smell.boolean-argument', 'code-smell'];
         yield 'three segments' => ['size.method-count.class', 'size'];
         yield 'dotless name is its own family' => ['computed', 'computed'];

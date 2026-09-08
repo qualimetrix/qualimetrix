@@ -19,7 +19,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 /**
  * The old version of this test asserted the collector's `match` table
  * against finding codes the product never emitted (the code carried the level
- * then, so `complexity.cyclomatic` named nothing), so it validated the table
+ * then, so `complexity.ccn` named nothing), so it validated the table
  * against itself. This version drives the collector against codes the real
  * container's {@see ChannelPresentationInterface} actually resolves — see
  * `docs/internal/plans/sarif-channel-descriptions.md`, package P4, for the
@@ -52,8 +52,8 @@ final class SarifRuleCollectorTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -63,8 +63,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertCount(1, $rules);
         $rule = $rules[0];
 
-        self::assertSame('complexity.cyclomatic', $rule['id']);
-        self::assertSame('Complexity Cyclomatic', $rule['name']);
+        self::assertSame('complexity.ccn', $rule['id']);
+        self::assertSame('Complexity Ccn', $rule['name']);
         self::assertArrayHasKey('text', $rule['shortDescription']);
         self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
         self::assertArrayHasKey('text', $rule['fullDescription']);
@@ -78,8 +78,8 @@ final class SarifRuleCollectorTest extends TestCase
         $v1 = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -87,8 +87,8 @@ final class SarifRuleCollectorTest extends TestCase
         $v2 = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Also too complex',
             severity: Severity::Warning,
         );
@@ -104,8 +104,8 @@ final class SarifRuleCollectorTest extends TestCase
         $v1 = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -123,7 +123,7 @@ final class SarifRuleCollectorTest extends TestCase
 
         self::assertCount(2, $rules);
         $ids = array_column($rules, 'id');
-        self::assertContains('complexity.cyclomatic', $ids);
+        self::assertContains('complexity.ccn', $ids);
         self::assertContains('size.class-count', $ids);
     }
 
@@ -133,8 +133,8 @@ final class SarifRuleCollectorTest extends TestCase
         $warning = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -142,8 +142,8 @@ final class SarifRuleCollectorTest extends TestCase
         $error = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Very complex',
             severity: Severity::Error,
         );
@@ -175,8 +175,8 @@ final class SarifRuleCollectorTest extends TestCase
         $coverage = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forProject(),
-            ruleName: 'architecture.coverage',
-            code: 'architecture.coverage',
+            ruleName: 'architecture.coverage-gap',
+            code: 'architecture.coverage-gap',
             message: 'Uncovered classes',
             severity: Severity::Warning,
         );
@@ -186,7 +186,7 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertCount(2, $rules);
         $ids = array_column($rules, 'id');
         self::assertContains('architecture.layer-violation', $ids);
-        self::assertContains('architecture.coverage', $ids);
+        self::assertContains('architecture.coverage-gap', $ids);
     }
 
     /**
@@ -226,7 +226,7 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itFormatsRuleNameConvertingDotSeparated(): void
     {
-        self::assertSame('Complexity Cyclomatic', $this->collector->formatRuleName('complexity.cyclomatic'));
+        self::assertSame('Complexity Ccn', $this->collector->formatRuleName('complexity.ccn'));
     }
 
     #[Test]
@@ -248,7 +248,7 @@ final class SarifRuleCollectorTest extends TestCase
     {
         self::assertSame(
             'Checks cyclomatic complexity at method and class levels',
-            $this->collector->getRuleDescription('complexity.cyclomatic'),
+            $this->collector->getRuleDescription('complexity.ccn'),
         );
         self::assertSame(
             'Detects circular dependencies between classes',
@@ -256,7 +256,7 @@ final class SarifRuleCollectorTest extends TestCase
         );
         self::assertSame(
             'Detects duplicated code blocks',
-            $this->collector->getRuleDescription('duplication.code-duplication'),
+            $this->collector->getRuleDescription('duplication.clone'),
         );
         self::assertSame(
             'Checks number of constructor parameters (dependencies)',
@@ -295,14 +295,14 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itReturnsHelpUriForKnownChannelsFromTheRealPresentation(): void
     {
-        self::assertSame('https://qualimetrix.dev/rules/complexity/', $this->collector->getHelpUri('complexity.cyclomatic'));
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $this->collector->getHelpUri('complexity.ccn'));
         self::assertSame('https://qualimetrix.dev/rules/coupling/', $this->collector->getHelpUri('coupling.cbo'));
         self::assertSame('https://qualimetrix.dev/rules/cohesion/', $this->collector->getHelpUri('cohesion.lcom'));
         self::assertSame('https://qualimetrix.dev/rules/code-smell/', $this->collector->getHelpUri('code-smell.empty-catch'));
         self::assertSame('https://qualimetrix.dev/rules/security/', $this->collector->getHelpUri('security.sql-injection'));
         // The historical defect this plan removes: `duplication.*` no longer
         // resolves to the `architecture/` page.
-        self::assertSame('https://qualimetrix.dev/rules/duplication/', $this->collector->getHelpUri('duplication.code-duplication'));
+        self::assertSame('https://qualimetrix.dev/rules/duplication/', $this->collector->getHelpUri('duplication.clone'));
     }
 
     #[Test]

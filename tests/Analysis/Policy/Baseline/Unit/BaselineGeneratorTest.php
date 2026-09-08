@@ -133,8 +133,8 @@ final class BaselineGeneratorTest extends TestCase
         $file = SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php'));
 
         $baseline = $this->capture([
-            FindingFactory::magnitude($file, 100, 'duplication.code-duplication', 'duplication.code-duplication'),
-            FindingFactory::magnitude($file, 40, 'duplication.code-duplication', 'duplication.code-duplication'),
+            FindingFactory::magnitude($file, 100, 'duplication.clone', 'duplication.clone'),
+            FindingFactory::magnitude($file, 40, 'duplication.clone', 'duplication.clone'),
         ], ['src']);
 
         self::assertSame(1, $baseline->count());
@@ -142,8 +142,8 @@ final class BaselineGeneratorTest extends TestCase
             BaselineIdentity::forFinding(FindingFactory::magnitude(
                 $file,
                 100,
-                'duplication.code-duplication',
-                'duplication.code-duplication',
+                'duplication.clone',
+                'duplication.clone',
             ))->key(),
             $baseline->entries[0]->identity->key(),
         );
@@ -280,7 +280,7 @@ final class BaselineGeneratorTest extends TestCase
         );
         self::assertSame([2, 1], array_map(static fn($group): int => $group->memberCount, $capture->uncaptured));
         self::assertSame(
-            ['complexity.cyclomatic', 'this.channel'],
+            ['complexity.ccn', 'this.channel'],
             $capture->uncapturedChannels(),
         );
     }
@@ -339,8 +339,8 @@ final class BaselineGeneratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -352,8 +352,8 @@ final class BaselineGeneratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'magnitude reported',
             severity: Severity::Warning,
             metricValue: $magnitude,
