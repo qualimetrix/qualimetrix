@@ -110,12 +110,11 @@ namespace QmxFindingGate;
  * rewrite, and both are enforced here rather than promised in prose.
  *
  * A row translates a whole name, never a prefix of a longer one. The vocabulary
- * is full of prefix siblings — `complexity.cyclomatic` is a proper prefix of
- * `complexity.cyclomatic.callable`, and the level segments are exactly what the
- * plan's later steps rename — so a substring rewrite would let a step rename
- * three codes, declare one, and stay green. Boundaries are therefore literal:
- * everything a name can be built from (letters, digits, `_`, `-`, `.`, `/`, `\`)
- * continues a name, and only a character outside that set ends one.
+ * is full of prefix siblings — `architecture.coverage-gap` is a proper prefix of
+ * `architecture.coverage-gap.source` — so a substring rewrite would let a step
+ * rename both under one declared row and stay green. Boundaries are therefore
+ * literal: everything a name can be built from (letters, digits, `_`, `-`, `.`,
+ * `/`, `\`) continues a name, and only a character outside that set ends one.
  *
  * And substitution happens in one pass over the original text. Applied
  * sequentially, a row whose target contains a name another row renames would

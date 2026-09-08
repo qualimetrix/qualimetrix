@@ -34,8 +34,10 @@ finding-gate/
 │   └── report-values.tsv # old -> new value of an enumerable report field;
 │                          # forward only, format:suppressed only, quoted only
 ├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
-├── declared-delta/        # with one exact unified diff each. Both appear only
-│                          # when a step declares one
+│                          # tracked like declared-field-moves.tsv below, so it
+│                          # may hold only its header row between declarations
+├── declared-delta/        # one exact unified diff per row above; appears only
+│                          # while declared-delta.tsv has at least one row
 ├── declared-field-moves.tsv # one exact (surface, field, from, to) pair each,
 │                          # licensing a compared field to move inside a
 │                          # declared diff. Typed, not derived
@@ -300,6 +302,24 @@ own name alone (the Ш5b collapse): before substituting, twelve GitLab
 surfaces differed by 376 lines of nothing but hashes — a declaration made of hex,
 which is the blob `delta-too-large` exists to refuse; after substituting, every
 surface of every case agreed under the declared channel rows alone.
+
+## What publication order is compared by
+
+`format:json` and the baseline file publish their records in identity order —
+an order whose first component is the channel code. A rename therefore moves
+records, not just names: translating the reference's artifact in place leaves
+its fields in the new vocabulary but its records in the old order, which is not
+"the reference in the candidate's dictionary", it is a translation done half
+way. `PublishedOrder` re-establishes the reference's order
+after translation, on exactly those two surfaces — every other surface either
+groups by file, sorts by severity or impact, or publishes the rule engine's own
+execution order, none of which a channel rename touches.
+
+The mechanism is asserted, not assumed: each side is checked to already be in
+the order of its own producer's key on the **raw** artifact before anything is
+translated. A side that is not is `published-order-drift` — the run does not
+sort it into shape, because a producer that stopped publishing in its own
+sort's order has to redden the gate, not disappear into a pre-sort.
 
 ## What normalization may exclude
 

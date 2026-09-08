@@ -21,9 +21,12 @@ use RuntimeException;
 /**
  * X10 (`01-freeze-kind.md`) froze `OccurrenceKey`'s discriminator away from
  * the channel code in six families: each carries a private `OCCURRENCE_KIND`
- * constant, equal to today's channel spelling **on purpose** and **not**
+ * constant, pinned to the channel spelling **at freeze time** and **not**
  * reading `NAME`/`code`, so that a future rename of the channel does not move
- * `occurrence` for every already-accepted baseline entry on it.
+ * `occurrence` for every already-accepted baseline entry on it. `NAME` moving
+ * out from under a pinned `OCCURRENCE_KIND` — as the X12 rename already did
+ * for `duplication.code-duplication` — is the freeze working as designed, not
+ * a drift to correct.
  *
  * Nothing that runs on every `composer test` re-proves the freeze holds after
  * today. The per-family pin tests (`itKeysOccurrenceToTheFrozenChannelSpelling*`)

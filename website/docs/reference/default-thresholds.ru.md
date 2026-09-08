@@ -249,13 +249,13 @@ vendor/bin/qmx check src/ --disable-rule=complexity.npath
 ### Подавление отдельных нарушений
 
 Добавьте `@qmx-ignore` в docblock, чтобы подавить конкретное нарушение. `@qmx-ignore`
-адресует канал, а у `complexity.ccn` два канала (`complexity.cyclomatic.callable` и
-`complexity.cyclomatic.class`), поэтому голое имя правила не является допустимым аргументом —
-назови канал:
+адресует канал, а `complexity.ccn` — один канал, публикующийся на двух уровнях (`callable`
+и `class`). Голое имя канала подавляет оба уровня; сузь его до одного через `:callable`
+или `:class`:
 
 ```php
 /**
- * @qmx-ignore complexity.cyclomatic.callable
+ * @qmx-ignore complexity.ccn:callable
  */
 function complexButNecessary(): void
 {

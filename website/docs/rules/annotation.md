@@ -61,7 +61,7 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 ```php
 /**
- * @qmx-threshold coupling.cbo.class warning=20
+ * @qmx-threshold coupling.cbo:class warning=20
  */
 final class OrderAggregate
 {
@@ -69,17 +69,18 @@ final class OrderAggregate
 }
 ```
 
-`@qmx-threshold` always addresses a *rule*, never a channel —
-`coupling.cbo.class` is a channel of the rule `coupling.cbo`. This also
-reports `annotation.unresolved-directive`:
+`@qmx-threshold` always addresses a *rule*, never a channel narrowed to a
+level — `coupling.cbo:class` names the rule `coupling.cbo` at its `class`
+level, and a threshold does not distinguish levels. This also reports
+`annotation.unresolved-directive`:
 
 ```
-@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of rule "coupling.cbo" — a threshold addresses the rule.
+@qmx-threshold "coupling.cbo:class" addresses a rule at a level, and a threshold addresses the producing rule by its own name: it does not distinguish levels (ADR 0024). Retune the whole rule "coupling.cbo", or set the level alone with --rule-opt coupling.cbo:class.<option>=<value>.
 ```
 
 ```php
 /**
- * @qmx-ignore complexity.cyclomatic.callable reason="stable for now"
+ * @qmx-ignore complexity.ccn:callable reason="stable for now"
  */
 public function calculateShipping(Order $order): float
 {
@@ -88,9 +89,9 @@ public function calculateShipping(Order $order): float
 ```
 
 The annotation is well-formed and once suppressed a real finding, but
-`calculateShipping()` no longer trips `complexity.cyclomatic.callable`. This
-reports `annotation.unused-directive` at `Info` severity — a prompt to delete
-the now-pointless annotation, not a configuration mistake.
+`calculateShipping()` no longer trips `complexity.ccn` at its `callable`
+level. This reports `annotation.unused-directive` at `Info` severity — a
+prompt to delete the now-pointless annotation, not a configuration mistake.
 
 ```php
 /**
@@ -117,7 +118,7 @@ Write `--` before the prose to say "the reason starts here":
 
 `--` is required only for this ambiguous case. On `@qmx-ignore` and
 `@qmx-ignore-next-line` the channel argument is mandatory and always comes
-first, so `@qmx-ignore complexity.cyclomatic.callable Legacy state machine`
+first, so `@qmx-ignore complexity.ccn:callable Legacy state machine`
 is unambiguous without a separator — though writing `--` there too keeps the
 three tags reading the same way.
 

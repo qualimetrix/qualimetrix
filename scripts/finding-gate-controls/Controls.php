@@ -409,9 +409,9 @@ final class Controls
             ),
             '--derive-declared-delta',
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
-            // This repository tracks no declared-delta.tsv at all, so its own
-            // file cannot state "a correct run restores the header alone" — see
-            // Control::rewriting()'s $restoredContent.
+            // This repository's declared-delta.tsv holds no declared rows, so
+            // its own file cannot state "a correct run restores the header
+            // alone" — see Control::rewriting()'s $restoredContent.
             ['finding-gate/' . DeclaredDelta::INDEX => self::declaredDeltaIndexOrHeader()],
         );
     }
@@ -1599,12 +1599,14 @@ final class Controls
 
     /**
      * The declared-delta index's current bytes, or just its header if the
-     * repository holds none.
+     * tracked file is missing.
      *
-     * README states the invariant plainly: the index and its directory "appear
-     * only when a step declares one". This tree is exactly that case — Х9's own
-     * setup step retired the last row the index held — so a control cannot
-     * assume the file is there to read from.
+     * README states the invariant: the index is tracked like
+     * `declared-field-moves.tsv` and may hold only its header row, while the
+     * `declared-delta/` directory appears only while the index holds at least
+     * one declared row. A control cannot assume the index carries any rows —
+     * this tree's own is header-only — so the fallback covers the
+     * hypothetical case where the tracked file is absent entirely.
      */
     private static function declaredDeltaIndexOrHeader(): string
     {

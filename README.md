@@ -48,7 +48,7 @@ Create `qmx.yaml` ([full format](https://qualimetrix.dev/getting-started/configu
 ```yaml
 rules:
   complexity.ccn:
-    method:
+    callable:
       warning: 15
       error: 25
 ```

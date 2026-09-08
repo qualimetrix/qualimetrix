@@ -70,7 +70,7 @@ rather than a second source of truth, and they — not this document — carry t
 counts: see `docs/internal/generated/modular-architecture/`, whose
 `manifest-enforcement-summary.tsv` reports the current declaration, owner,
 binding, and allow-edge totals.
-`external` excludes `Qualimetrix\**`; `coverage: error` makes
+`external` excludes `Qualimetrix\**`; `coverage-gap: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
 Every test, support file, and fixture directory is governed by the same

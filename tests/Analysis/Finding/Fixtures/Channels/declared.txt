@@ -96,8 +96,8 @@ code-smell.superglobals - callable
 code-smell.unreachable-code higher callable judges:code-smell.unreachable-code
 code-smell.unused-private higher class judges:code-smell.unused-private.total
 cohesion.lcom higher class judges:cohesion.lcom
-complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
 complexity.ccn higher callable,class judges:complexity.ccn,complexity.ccn.max
+complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
 complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max
 complexity.wmc higher class judges:complexity.wmc
 coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app
@@ -105,8 +105,8 @@ coupling.class-rank - class
 coupling.distance higher namespace judges:coupling.distance
 coupling.instability higher class,namespace judges:coupling.instability
 design.data-class lower class judges:design.woc
-design.god-class higher class
 design.dit higher class judges:design.dit
+design.god-class higher class
 design.noc higher class judges:design.noc
 design.type-coverage.param lower class judges:design.type-coverage.param
 design.type-coverage.property lower class judges:design.type-coverage.property

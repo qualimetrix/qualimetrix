@@ -357,7 +357,7 @@ nothing is inferred from the number of dot-separated segments.
 
 **Forms:**
 - `X` — equality. `architecture.coverage-gap` addresses that name and nothing else;
-  it does **not** swallow `architecture.coverage.source`
+  it does **not** swallow `architecture.coverage-gap.source`
 - `X.*` — strict descendants of `X`; `X` itself is not included. A directive
   meaning both is written twice
 

@@ -511,7 +511,7 @@ describe('getMetricHint', () => {
   });
 
   // Type coverage
-  it('hints for typeCoverage.pct', () => {
+  it('hints for design.type-coverage.all', () => {
     expect(getMetricHint('design.type-coverage.all', 30)).toBe('Low type coverage');
     expect(getMetricHint('design.type-coverage.all', 60)).toBe('Moderate type coverage');
     expect(getMetricHint('design.type-coverage.all', 95)).toBe('Good type coverage');

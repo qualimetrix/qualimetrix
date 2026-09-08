@@ -99,7 +99,7 @@ bin/qmx baseline:rename-channels baseline.json channels.tsv --format=json
 
 ```text
 old	new	reason
-complexity.ccn	complexity.ccn	переименован в vX.Y
+complexity.cyclomatic	complexity.ccn	переименован в vX.Y
 ```
 
 По самому файлу команда отказывает ровно в тех случаях, в которых отказала бы
@@ -153,7 +153,7 @@ JSON-массивом — они переносятся без изменени�
 
 ```bash
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.ccn#complexity.cyclomatic.callable'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=complexity.ccn
 ```
 
 `baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ.
@@ -185,12 +185,12 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Используй inline-подавление для намеренного исключения, а не молча принимай его в baseline. Теги работают в PHPDoc, строчных и блочных комментариях; помещай их на отдельной строке перед целью.
 
-| Тег                                           | Область             | Пример                                                               |
-| --------------------------------------------- | ------------------- | -------------------------------------------------------------------- |
-| `@qmx-ignore <channel> [-- reason]`           | Символ              | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
-| `@qmx-ignore * [-- reason]`                   | Все правила символа | `@qmx-ignore * -- Generated mapper`                                  |
-| `@qmx-ignore-next-line <channel> [-- reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
-| `@qmx-ignore-file [channel] [-- reason]`      | Весь файл           | `@qmx-ignore-file` или `@qmx-ignore-file -- Generated code`          |
+| Тег                                           | Область             | Пример                                                        |
+| --------------------------------------------- | ------------------- | ------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Символ              | `@qmx-ignore complexity.ccn:callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | Все правила символа | `@qmx-ignore * -- Generated mapper`                           |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`    |
+| `@qmx-ignore-file [channel] [-- reason]`      | Весь файл           | `@qmx-ignore-file` или `@qmx-ignore-file -- Generated code`   |
 
 ### Разделитель причины
 
@@ -214,7 +214,7 @@ Suppression "Generated" addresses no channel. No declared name is close to it. P
 
 `@qmx-ignore`, `@qmx-ignore-next-line` и `@qmx-ignore-file` адресуют **канал** — точный `violationCode`, под которым сообщается нарушение, — а не производящее правило. Селектор канала — это либо:
 
-- **точное** имя канала (`complexity.wmc`, `code-smell.eval`), либо
+- **точное** имя канала (`complexity.wmc`, `code-smell.eval`), опционально суженное через `:<уровень>` (`complexity.ccn:callable`), когда канал сообщает на нескольких уровнях, либо
 - `X.*` строго для **потомков** `X` — сам `X` в это не входит, поэтому для обоих смыслов нужны две директивы.
 
 Голый префикс без звёздочки (`@qmx-ignore complexity`) — это ошибка, а не догадка о намерении; `X.*`, не совпавший ни с чем, тоже ошибка:
@@ -223,17 +223,17 @@ Suppression "Generated" addresses no channel. No declared name is close to it. P
 Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
 ```
 
-У большинства правил имя правила и его единственный канал совпадают, поэтому различие незаметно. Оно становится заметным для правил ниже, которые сообщают через несколько каналов — голое имя правила для них **не** является допустимым аргументом `@qmx-ignore`:
+Теперь каждое правило сообщает ровно через один канал, но сам канал может сообщать на нескольких уровнях символьного дерева — например, на уровне класса и неймспейса для coupling, или на уровне метода и класса для complexity. Голое имя канала адресует **все** уровни сразу; ниже — правила, для которых это важно, потому что их два уровня расходятся достаточно часто, чтобы подавление только одного было обычным случаем:
 
-| Правило                | Каналы                                                          |
-| ---------------------- | --------------------------------------------------------------- |
-| `complexity.ccn`       | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
-| `complexity.cognitive` | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
-| `complexity.npath`     | `complexity.npath.callable`, `complexity.npath.class`           |
-| `coupling.cbo`         | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
-| `coupling.instability` | `coupling.instability.class`, `coupling.instability.namespace`  |
+| Канал                  | Уровни               |
+| ---------------------- | -------------------- |
+| `complexity.ccn`       | `callable`, `class`  |
+| `complexity.cognitive` | `callable`, `class`  |
+| `complexity.npath`     | `callable`, `class`  |
+| `coupling.cbo`         | `class`, `namespace` |
+| `coupling.instability` | `class`, `namespace` |
 
-Подавляй один канал по точному имени или все каналы правила через wildcard, например `@qmx-ignore complexity.cyclomatic.*`.
+Подавляй все уровни голым именем канала или один уровень через `:уровень`, например `@qmx-ignore complexity.ccn:callable`.
 
 Каналом может быть и вычисляемая метрика, например `@qmx-ignore health.cohesion` — это допустимо, пока `computed_metrics:` всё ещё определяет эту метрику. Удаление метрики превращает аннотацию в ошибку: висячая ссылка — та же ошибка, что и опечатка.
 
@@ -282,11 +282,12 @@ final class ComplexStateMachine
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
 
-`@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда wildcard. Порог принадлежит единственному объекту опций правила, а не отдельному каналу, поэтому `@qmx-threshold complexity.cyclomatic.callable` — ошибка, даже несмотря на то, что у `complexity.ccn` два канала; используй имя правила `complexity.ccn`:
+`@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда уровень. Порог принадлежит единственному объекту опций правила, а не отдельному уровню, поэтому `@qmx-threshold complexity.ccn:callable` — ошибка, даже несмотря на то, что `complexity.ccn` сообщает на двух уровнях; используй имя правила `complexity.ccn`, а для настройки только одного уровня — `--rule-opt`:
 
 ```text
-@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of
-rule "coupling.cbo" — a threshold addresses the rule.
+@qmx-threshold "complexity.ccn:callable" addresses a rule at a level, and a threshold addresses the
+producing rule by its own name: it does not distinguish levels (ADR 0024). Retune the whole rule
+"complexity.ccn", or set the level alone with --rule-opt complexity.ccn:callable.<option>=<value>.
 ```
 
 Это зеркальное отражение `@qmx-ignore`, который всегда адресует канал — асимметрия намеренная. `@qmx-threshold` на отключённом правиле допустим и работает молча: включённость — это фильтр исполнения, а не факт существования имени правила.

@@ -324,7 +324,7 @@ final class YamlKeyReachabilityTest extends TestCase
     {
         // rules.<rule-name> — name preserved verbatim (identifier section).
         yield 'rules: dotted rule name preserved' => [
-            'rules.complexity.cyclomatic',
+            'rules.complexity.ccn',
             "rules:\n  complexity.ccn:\n    enabled: true\n",
             ['rules', 'complexity.ccn', 'enabled'],
             true,
@@ -347,14 +347,14 @@ final class YamlKeyReachabilityTest extends TestCase
         // Rule option keys: snake_case normalized to camelCase under the
         // (preserved) rule identifier.
         yield 'rules: option warning_threshold → warningThreshold' => [
-            'rules.complexity.cyclomatic.warning_threshold',
+            'rules.complexity.ccn.warning_threshold',
             "rules:\n  complexity.ccn:\n    warning_threshold: 10\n",
             ['rules', 'complexity.ccn', 'warningThreshold'],
             10,
         ];
 
         yield 'rules: option error_threshold → errorThreshold' => [
-            'rules.complexity.cyclomatic.error_threshold',
+            'rules.complexity.ccn.error_threshold',
             "rules:\n  complexity.ccn:\n    error_threshold: 20\n",
             ['rules', 'complexity.ccn', 'errorThreshold'],
             20,

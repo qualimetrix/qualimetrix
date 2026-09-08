@@ -19,7 +19,7 @@ namespace QmxFindingGate;
  * Why the claim needs it at all: the observed set used to be keyed by the channel
  * alone, so a channel firing at two levels inside one case was one observed
  * entry, and the claim it was compared against carried one line for it too. After
- * the level segment leaves the channel name, `complexity.cyclomatic` fires at
+ * the level segment leaves the channel name, `complexity.ccn` fires at
  * `callable` and at `class` in the same case, the fixture of one of those levels
  * can disappear, and every name-level check still passes: the channel fires, the
  * claim lists it once, the coverage union is unchanged. The corpus lives in the

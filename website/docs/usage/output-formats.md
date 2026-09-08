@@ -359,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="er
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic"/>
+           source="qmx.complexity.ccn"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"

@@ -56,11 +56,15 @@ final class PublishedOrder
      * through {@see \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection::sort()},
      * and the baseline file is laid out by
      * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryOrder}. Under the
-     * six renames of Х12П4 no other surface of the corpus moved a record —
-     * the remaining formats group by file or by impact, which no rename touches.
-     * A surface that starts ordering by channel later is not silently handled
-     * here: it stands as an undeclared difference and the run goes red, which is
-     * the direction this has to fail in.
+     * six renames of Х12П4 no other surface of the corpus moved a record — none
+     * of their keys is the channel code. Checkstyle and the verbose text report
+     * group by file; the default text report and the summary's top issues sort
+     * by severity/impact; SARIF, GitLab Code Quality and the GitHub Actions
+     * annotations format publish `$report->findings` in the rule engine's
+     * execution order, which a rename does not reorder. A surface that starts
+     * ordering by channel later is not silently handled here: it stands as an
+     * undeclared difference and the run goes red, which is the direction this
+     * has to fail in.
      *
      * @var list<string>
      */
