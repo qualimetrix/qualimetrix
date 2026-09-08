@@ -104,6 +104,7 @@ package	path
 П3.1	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php
 П3.1	tests/Analysis/Policy/Architecture/Unit/UnassignedClassOptionsTest.php
 П3.1	src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php
+П3.1	src/Analysis/Finding/Contract/Rule/ThresholdParser.php
 П3.1	src/Analysis/Finding/README.md
 П3.1	docs/internal/modular-architecture-manifest.json
 П3.1	docs/internal/generated/modular-architecture/

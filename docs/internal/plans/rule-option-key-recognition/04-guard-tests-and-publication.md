@@ -64,16 +64,23 @@ invariant is Finding's — it is the factory's contract that is being kept
 honest — and the reader has exactly two consumers, the guard and the script
 that regenerates the measurement.
 
-**The reader carried one order-dependence, and it is fixed in this revision
+**The reader carried one cross-class leak, and it is fixed in this revision
 rather than inherited.** `FromArrayReader::read()` reset `reading`, `methods`,
 `visited` and `guarded` but not `$locals`, so a literal bound to a local
-variable in one class could leak into the next class read by the same instance —
-which would make a standing guard depend on the order its subjects are visited.
-`$this->locals = []` was added to the reset block and all four measurement
-tables were regenerated: **byte-identical**, so the defect was real and this
-population never triggered it. The guard inherits a reader without it, and П4.1
-carries a control asserting that reading the same class first and last in a run
-gives the same answer.
+variable in one class could leak into the *next* class read by the same
+instance — a class whose own unresolvable `$config[$var]` read would silently
+report the previous class's literal instead of a blind spot. `$this->locals = []`
+was added to the reset block and all four measurement tables were regenerated:
+**byte-identical**, so the defect was real and this population never triggered
+it (every read in the tree resolves without needing another class's leftover
+local). The guard inherits a reader without it, and П4.1 carries a control
+built from two classes, not one: the first binds a local variable to a
+literal, the second reads `$config[$var]` for its own non-literal `$var`, and
+the control asserts the second class's blind spot does not carry the first
+class's key. Reading the *same* class twice cannot exercise this defect — a
+repeated read starts from the same locals every time — so the control must
+read two distinct classes in one reader instance, in that order, for the
+assertion to be capable of failing.
 
 **The guard's blind spots, stated as its limit rather than discovered later.**
 `measurement/option-enumeration-blind-spots.tsv` names 16 sites the reader
@@ -94,10 +101,42 @@ own failure message:
   see (which is what #24–#26 are), and a *second* assertion — declared keys
   that neither the reader saw nor a test exercises — is deliberately not made,
   because it would fail on exactly the honest case.
+- **the reader resolves a class to a file, then takes the first `Class_` node
+  in that file, not the node named by the class it was asked for.**
+  `classNode()` locates the file through `ReflectionClass::getFileName()` and
+  then does `findFirstInstanceOf($ast, Class_::class)` — the requested class
+  name plays no part in node selection. On this population it is silent: the
+  script's own `files-holding-more-than-one-class` count is zero, so every one
+  of the 45 classes is alone in its file. It stops being silent the moment two
+  options classes (or an options class and an anonymous test fixture) share a
+  file, at which point the reader would attribute the second class's reads to
+  the first's declaration, with no blind spot raised. **The guard itself must
+  assert this precondition rather than assume it**: П4.1 moves the
+  `files-holding-more-than-one-class` count out of the script and into the
+  guard test as `assertSame(0, ...)`, so a future file that violates it fails
+  the guard instead of silently mis-attributing reads.
 
 A companion assertion keeps the interfaces П3.1 deleted dead:
 `ShorthandOptionKeysInterface` and `AdditionalOptionKeysInterface` must not
 exist, so a reintroduction is a red test rather than a review catch.
+
+**The invariant is false on the tree stage 02 leaves behind, and stays false
+until П3.2 closes.** `declared ⊇ read_unguarded` is the property this guard
+checks, but it is not the property stage 02's own tree has: by
+`measurement/option-declared-vs-read.tsv` rows 12, 13, 14 and 19,
+`warningThreshold`/`errorThreshold` on the three complexity wrappers and
+`projectNamespaces` on `DistanceOptions` sit in `read_unguarded` and are
+**not** declared — stage 02 resolves those seven keys as *remove-then-refuse*
+(`02-declarations-per-capability.md`, *Test plan*), which means "not declared
+here, made unreadable in П3.2," not "declared here." The invariant becomes
+true for all 45 classes only at the close of П3.2, when `ThresholdParser::parse()`
+and `DistanceOptions::fromArray()` stop reading those seven keys unguarded.
+This does not produce a red run: no test in this plan asserts the guard
+before stage 04, and П4.1 — the package that writes the guard — lands after
+П3.2. An implementer who runs the guard's assertion against a checkout frozen
+between stages 02 and 03, or who tries to write the declaration test early,
+should read a red result here as this documented gap, not as a defect in
+their own package.
 
 ## Regression cases: one per position where a key can go unrecognised
 
@@ -130,18 +169,19 @@ absence of a refusal.
 
 ## Documentation, and what its scope grew to
 
-- **`website/docs/rules/`, EN and RU together** — `complexity.md` loses
-  `warning_threshold`/`error_threshold` from anywhere they appear and gains a
+- **`website/docs/rules/`, EN and RU together** — `complexity.md` gains a
   statement that top-level `warning`/`error` are not options of a hierarchical
-  rule; `coupling.md` gains the four keys pairs #17/#18/#20/#21 make public.
-  That last item is a cost of the decision, not an afterthought: those keys are
-  documented nowhere today because `CboOptions`' docblock declares them
-  deliberately unadvertised, and the docblock is rewritten in П2.2 rather than
-  left contradicting the declaration.
-- **`website/docs/reference/`** — the configuration page states the three
-  equivalent spellings (row 61), that an empty level block is the same as an
-  omitted one (row E60), and that an unknown option key is a configuration
-  error at any depth.
+  rule; a sweep of `website/` found zero occurrences of `warning_threshold` /
+  `error_threshold` there today, so there is nothing to remove, only the
+  statement to add. `coupling.md` gains the four keys pairs #17/#18/#20/#21
+  make public. That last item is a cost of the decision, not an afterthought:
+  those keys are documented nowhere today because `CboOptions`' docblock
+  declares them deliberately unadvertised, and the docblock is rewritten in
+  П2.2 rather than left contradicting the declaration.
+- **`website/docs/getting-started/configuration.md`, EN and RU** — the
+  configuration page states the three equivalent spellings (row 61), that an
+  empty level block is the same as an omitted one (row E60), and that an
+  unknown option key is a configuration error at any depth.
 - **`qmx.yaml.example`** — the commented examples at lines 57, 252–258 and 333
   are uncommented one at a time and run, because a commented example is invisible
   to both checkers used in the overview's reddening measurement.
@@ -177,8 +217,9 @@ of the three parallel ones was taken machine-wise and is empty.
 `tests/Analysis/Finding/RuleConfiguration/Support/FromArrayKeyReader.php`, the
 guard itself in
 `tests/Analysis/Finding/RuleConfiguration/Unit/DeclaredOptionKeysCoverReadKeysTest.php`
-(including the dead-interface assertion and the reader's order-independence
-control), and `scripts/enumerate-rule-option-keys.php`, which now requires the
+(including the dead-interface assertion, the two-class cross-contamination
+control for `$locals`, and the `files-holding-more-than-one-class == 0`
+assertion), and `scripts/enumerate-rule-option-keys.php`, which now requires the
 moved reader through composer's `autoload-dev`. The script's `declaredKeys()`
 was already rewritten onto `acceptedOptionKeys()` in П3.1; this package moves
 the reader and nothing else about it.

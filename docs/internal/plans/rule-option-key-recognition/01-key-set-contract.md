@@ -147,10 +147,12 @@ from, not the total:
 | `tests/…/Architecture/Unit/UnassignedClassOptionsTest.php` | 1     |
 | `scripts/enumerate-rule-option-keys.php`                   | 1     |
 
-Two further docblock mentions carry no import (`ThresholdParser.php:27`,
-`LongParameterListOptions.php:32`) and are updated with the deletion. Twenty-two
-of the 26 belong to П3.1 and four to П3.2; both lists are rows of
-`measurement/packages.tsv`, and stage 03 states why the split falls there.
+One further file, `ThresholdParser.php`, carries no import — its docblock
+describes `RuleOptionsFactory`'s key-normalization behaviour in prose — and is
+updated alongside the deletion; it is the 27th file, outside the grep above
+because it names neither interface literally. Twenty-three of the 27 belong
+to П3.1 and four to П3.2; both lists are rows of `measurement/packages.tsv`,
+and stage 03 states why the split falls there.
 
 Those 20 classes implement *both* the old interfaces and the new method through
 stages 02 and 03, and shed the old ones in stage 03.
@@ -219,8 +221,9 @@ so **the tree does not compile between П1.1 and the end of stage 02.** The test
 implementations are not an afterthought of the production sweep: they are
 enumerated by the same php-parser walk (overview, *The population*), they are
 named individually in `measurement/packages.tsv`, and each is owned by the
-П2.x package that owns its subject — П2.3 and П2.4 take the five that sit under
-a capability's own tests, П2.6 takes the ten that do not.
+П2.x package that owns its subject — П2.3 and П2.4 together take the six that
+sit under a capability's own tests (five in П2.3, one in П2.4), П2.6 takes the
+ten that do not.
 
 This is deliberate and it is the one place in the plan where a package's own
 Definition of Done cannot be "the aggregate is green". The alternatives were

@@ -205,11 +205,14 @@ whole answered-by-the-class half.
 ### П2.6 — the test implementations that belong to no capability
 
 Ten files: the four `tests/Analysis/Configuration/Fixtures/TestRuleOptions*`
-classes, five under `tests/Analysis/Finding/` (one integration, four unit, two
-of them anonymous) and `tests/Infrastructure/Unit/RulesCommandTest.php`. They
-are a package rather than a footnote because they are the half of the
-implementer population a production-only sweep does not see, and because six of
-the sixteen are anonymous classes that no grep for a class name would find.
+classes, five under `tests/Analysis/Finding/` (one integration, four unit, all
+five named) and `tests/Infrastructure/Unit/RulesCommandTest.php`. They are a
+package rather than a footnote because they are the half of the implementer
+population a production-only sweep does not see, and because they do not sit
+under any capability's own tests — all six of the sixteen tree-wide anonymous
+classes live in П2.3 and П2.4 instead (five in П2.3, one in П2.4; see those
+sections above), so a grep for a class name would still miss those six even
+though it would find every file listed here.
 
 ## What this stage leaves broken
 
@@ -229,7 +232,14 @@ the sixteen are anonymous classes that no grep for a class name would find.
   column, not `read_unguarded ∪ read_branch_guarded`. Stage 04 states why the
   invariant is narrowed to that column and what it therefore cannot see. The
   oracle is the AST reader of `scripts/enumerate-rule-option-keys.php`, not a
-  hand-typed list — stage 04 turns this into the standing guard.
+  hand-typed list — stage 04 turns this into the standing guard. **This
+  invariant is not written as a test here and is not true of the tree this
+  stage leaves behind:** by `measurement/option-declared-vs-read.tsv` rows 12,
+  13, 14 and 19, seven keys across four classes are resolved
+  *remove-then-refuse* — read unguarded and left undeclared, on purpose, until
+  П3.2 removes the reads. The declaration test that checks this invariant is
+  written in П4.1, which lands after П3.2; see `04-guard-tests-and-publication.md`
+  for the full account of this gap.
 - One declaration test over the ten level classes, with the same invariant and
   `measurement/level-declared-vs-read.tsv` as its subject; `threshold` is the
   key it exists to catch.

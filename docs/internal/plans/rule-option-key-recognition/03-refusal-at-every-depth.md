@@ -286,7 +286,7 @@ their interface cleanup along with the alias removal.**
 
 **П3.1 — the walk, the refusal, and the death of the two interfaces.**
 
-Twenty-six paths, in five groups:
+Twenty-seven paths, in six groups:
 
 - `src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php`;
 - `src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php` (new — the
@@ -299,7 +299,9 @@ Twenty-six paths, in five groups:
   `tests/Analysis/Policy/Architecture/Unit/UnassignedClassOptionsTest.php`;
 - `scripts/enumerate-rule-option-keys.php`, and the manifest pair
   (`docs/internal/modular-architecture-manifest.json` plus
-  `docs/internal/generated/modular-architecture/`).
+  `docs/internal/generated/modular-architecture/`);
+- `src/Analysis/Finding/Contract/Rule/ThresholdParser.php` — prose-only, no
+  import to remove, added to this row group so the boundary stays checkable.
 
 The script is in this package and not in stage 04, and it is not a cosmetic
 inclusion: its `declaredKeys()` imports both deleted interfaces and calls their
@@ -315,8 +317,9 @@ the generated directory is regenerated **after П3.2**, at the unit's close, by
 this package's owner — until then four files still import declarations this
 package deleted, and a generator run would measure that intermediate tree.
 
-`ThresholdParser.php:27` and `LongParameterListOptions.php:32` mention the
-interfaces in prose without importing them and are updated here too.
+`LongParameterListOptions.php` is one of the sixteen production Options
+classes above; `ThresholdParser.php` is the one prose-only file, listed on its
+own above.
 
 Depends on: all of stage 02.
 

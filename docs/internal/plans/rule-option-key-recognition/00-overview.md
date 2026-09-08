@@ -224,7 +224,7 @@ its own file, under *What this stage leaves broken*.
 
 Every package's file set is a row group in `measurement/packages.tsv`
 (`package`, `path`), not a prose description, so that the isolation claim is
-checkable rather than asserted. The intersection of every parallel group was
+checkable rather than asserted. The intersection of every stage's group was
 taken machine-wise and is empty:
 
 ```
@@ -233,8 +233,11 @@ awk -F'\t' -v g="П2.1 П2.2 П2.3 П2.4 П2.5 П2.6" \
   measurement/packages.tsv | sort | uniq -d
 ```
 
-run for each of the three parallel groups — `{П2.1…П2.6}`, `{П3.1, П3.2}`,
-`{П4.1, П4.2, П4.3}` — printing nothing in all three.
+run for each of the three groups whose file sets do not overlap —
+`{П2.1…П2.6}` (parallel), `{П3.1, П3.2}` (**sequential**: П3.2 lands after
+П3.1, see `03-refusal-at-every-depth.md`), `{П4.1, П4.2, П4.3}` (parallel) —
+printing nothing in all three. Disjoint file sets and "may run in parallel"
+are different claims; only the first two groups make the second one.
 
 **The ownership manifest is a shared file, and exactly one package per landing
 unit writes it.** `docs/internal/modular-architecture-manifest.json` declares
@@ -252,9 +255,10 @@ this plan has two landing units. **П1.1 writes the manifest rows for
 `RuleOptionKeySet` and all its consumers; П3.1 writes the deletion of the two
 retired interface declarations and the addition of `RuleOptionRefusalWording`.**
 No other package touches either path — П2.1–П2.6 and П3.2 do not, which is what
-keeps them parallel. Because only the union of a landing unit is offered for
-validation, П1.1 may declare consumer rows whose imports arrive later in the
-same unit.
+keeps П2.1–П2.6 parallel and keeps П3.2 free to be merely sequential rather
+than manifest-blocked as well. Because only the union of a landing unit is
+offered for validation, П1.1 may declare consumer rows whose imports arrive
+later in the same unit.
 
 **Writing the JSON and regenerating the artefacts are two steps at two
 different times, and the plan separates them because one of them cannot run

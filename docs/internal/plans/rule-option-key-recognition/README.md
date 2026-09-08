@@ -58,7 +58,7 @@ and are named separately so that nobody reads them as evidence of the same kind:
 | file                         | rows | what it is                                                                                      |
 | ---------------------------- | ---- | ----------------------------------------------------------------------------------------------- |
 | `level-declared-vs-read.tsv` | 10   | the declared-versus-read question asked of the ten level classes, from the same script          |
-| `packages.tsv`               | 128  | package → path, the plan's work-package file sets, so that "disjoint" is checkable not asserted |
+| `packages.tsv`               | 129  | package → path, the plan's work-package file sets, so that "disjoint" is checkable not asserted |
 
 `level-declared-vs-read.tsv` was added while revising the plan: the original
 table covered the 35 options classes, and the plan applies its rules to the ten
