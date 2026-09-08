@@ -31,7 +31,7 @@ final class DependencyVisitorTest extends TestCase
     }
 
     #[Test]
-    public function itRecordsAnExtendsDependency(): void
+    public function itRecordsAnExtendsDependencyForAClass(): void
     {
         $code = <<<'PHP'
 <?php

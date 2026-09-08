@@ -173,7 +173,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itPreservesSpecialCharactersInTheHint(): void
+    public function itReturnsAHintForASourceWithQuotesAndBackslashes(): void
     {
         $source = "<?php\n\$x = 'hello \"world\"';\n\$y = \"it's \\\\done\";\n";
 

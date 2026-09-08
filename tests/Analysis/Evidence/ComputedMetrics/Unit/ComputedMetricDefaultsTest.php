@@ -23,7 +23,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllKeysAreHealthPrefixed(): void
+    public function itPrefixesEveryDefaultKeyWithHealth(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -33,7 +33,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllDefaultsAreInverted(): void
+    public function itInvertsEveryDefault(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -43,7 +43,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllDefaultsHaveClassNamespaceProjectLevels(): void
+    public function itDefinesEveryDefaultAtClassNamespaceAndProjectLevel(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -64,7 +64,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllDefaultsHaveClassAndNamespaceFormulas(): void
+    public function itGivesEveryDefaultAClassAndNamespaceFormula(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -134,7 +134,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllDefaultsAreComputedMetricDefinitionInstances(): void
+    public function itReturnsEveryDefaultAsAComputedMetricDefinition(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -144,7 +144,7 @@ final class ComputedMetricDefaultsTest extends TestCase
     }
 
     #[Test]
-    public function itAllDefaultsHaveThresholds(): void
+    public function itGivesEveryDefaultAWarningAndErrorThreshold(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 

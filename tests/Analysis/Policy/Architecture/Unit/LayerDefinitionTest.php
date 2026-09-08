@@ -574,7 +574,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsANonStringPatternEntry(): void
+    public function itRejectsANonStringPatternEntryAtIndexZero(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[0\] must be a string, int given/');

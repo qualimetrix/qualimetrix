@@ -570,7 +570,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itNoDiagnosticsForValidAnnotations(): void
+    public function itEmitsNoDiagnosticForAValidThresholdAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -589,7 +589,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itNoDiagnosticsForNoDocComment(): void
+    public function itEmitsNoDiagnosticForANodeWithoutADocComment(): void
     {
         $node = new Class_('Foo');
 
@@ -600,7 +600,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itNoDiagnosticsForDocCommentWithoutAnnotation(): void
+    public function itEmitsNoDiagnosticForADocCommentWithoutAnAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'

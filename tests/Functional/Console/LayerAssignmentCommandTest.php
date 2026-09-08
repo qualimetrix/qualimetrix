@@ -535,7 +535,7 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap(): void
     {
-        // Same overlap as classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers:
+        // Same overlap as itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers:
         // any-foo declared first shadows service for App\Service\Foo.
         $configPath = $this->writeConfig([
             ['any-foo', ['App\\**\\Foo']],
@@ -596,7 +596,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $decoded = json_decode($jsonTester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
 
         // Facts the text report prints (pinned by
-        // classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers).
+        // itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers).
         self::assertStringContainsString('Assigned to: any-foo', $textOutput);
         self::assertStringContainsString('pattern "App\\**\\Foo"', $textOutput);
         self::assertStringContainsString('service', $textOutput);

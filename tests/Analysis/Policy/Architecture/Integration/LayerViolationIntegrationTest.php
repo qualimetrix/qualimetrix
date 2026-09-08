@@ -143,7 +143,7 @@ final class LayerViolationIntegrationTest extends TestCase
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
             $payload = [
-                '_comment' => 'Golden fixture for LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput. Normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.',
+                '_comment' => 'Golden fixture: normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.',
                 'violations' => $actual,
             ];
             file_put_contents($goldenPath, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n");

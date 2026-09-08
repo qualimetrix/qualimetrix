@@ -56,7 +56,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itNoFindings(): void
+    public function itProducesNoFindingsWhenTheMetricBagHasNoIdenticalOperandEntries(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 

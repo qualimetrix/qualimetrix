@@ -94,7 +94,7 @@ final class UnreachableCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function itNoUnreachableCode(): void
+    public function itProducesNoFindingWhenTheUnreachableCodeMetricIsZero(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 

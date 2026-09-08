@@ -64,7 +64,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itLetsTheNarrowerLayerWinWhenDeclaredBeforeTheBroaderOne(): void
+    public function itResolvesToTheFirstDeclaredLayerWhenTheNarrowerLayerComesFirst(): void
     {
         // The narrower layer is declared first → it wins for classes inside its scope.
         $registry = new LayerRegistry([
@@ -79,7 +79,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itLetsTheBroaderLayerWinWhenDeclaredBeforeTheNarrowerOne(): void
+    public function itResolvesToTheFirstDeclaredLayerWhenTheBroaderLayerComesFirst(): void
     {
         // Reversed order: the broad layer wins, shadowing the narrower one.
         $registry = new LayerRegistry([

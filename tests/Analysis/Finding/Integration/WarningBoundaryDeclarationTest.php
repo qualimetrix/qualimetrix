@@ -92,7 +92,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
             if (\in_array($options::class, self::DECIDES_INSIDE_THE_RULE, true)) {
                 // getSeverity() is a stub here and would answer about a
                 // comparison the rule does not make. Their witness is
-                // anOverriddenCopyReportsTheOverriddenNumber().
+                // itReportsTheOverriddenNumberFromAnOverriddenCopy().
                 continue;
             }
 

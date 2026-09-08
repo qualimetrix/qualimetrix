@@ -55,7 +55,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
     private const string DOCS_BASE_URI = 'https://qualimetrix.dev/';
 
     #[Test]
-    public function itEveryChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri(): void
+    public function itGivesEveryChannelOfTheRealUniverseItsProducersOwnDescriptorAndAWorkingHelpUri(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -88,7 +88,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
      * against an empty config document) and re-sweeps.
      */
     #[Test]
-    public function itEveryConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri(): void
+    public function itAlsoGivesEveryConfiguredComputedMetricChannelItsProducersOwnDescriptorAndAWorkingHelpUri(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -207,7 +207,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itAnUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl(): void
+    public function itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode(): void
     {
         $container = (new ContainerFactory())->create();
         $presentationView = $container->get(ChannelPresentationInterface::class);

@@ -559,13 +559,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itMultipleFindings
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsDefaultEnabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsFromArrayDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsFromArrayEnabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsSeverityPositiveValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsSeverityZeroValue
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itProducesNoFindingsWhenTheMetricBagHasNoIdenticalOperandEntries
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithDuplicateCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithDuplicateMatchArm
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithIdenticalOperands
@@ -822,9 +822,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itNoUnreachableCode
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itOptionsDefaultValues
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itOptionsFromEmptyArrayDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itProducesNoFindingWhenTheUnreachableCodeMetricIsZero
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itWithUnreachableCode
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itWithUnreachableCodeFallsBackToMethodLine
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itClearsStateOnReset
@@ -1526,15 +1526,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itTreatsAnEmptyHealthExclusionListAsNoAdditionalEntries
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itTreatsAnExplicitEmptyComputedMapAsReplacement
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itUnionsHealthExclusionsInStableSourceOrder
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllDefaultsAreComputedMetricDefinitionInstances
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllDefaultsAreInverted
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllDefaultsHaveClassAndNamespaceFormulas
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllDefaultsHaveClassNamespaceProjectLevels
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllDefaultsHaveThresholds
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itAllKeysAreHealthPrefixed
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itExpectedKeys
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itExplicitProjectFormulas
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itGivesEveryDefaultAClassAndNamespaceFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itGivesEveryDefaultAWarningAndErrorThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itInvertsEveryDefault
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itPrefixesEveryDefaultKeyWithHealth
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itProjectFormulaInheritance
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itReturnsEveryDefaultAsAComputedMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itReturnsSixDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itDefaultThresholdValues
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itGetFormulaForLevelClass
@@ -1854,8 +1854,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDeduplicatesExactSourcesWhileRetainingExternalLogicalTargets
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDoesNotRegisterASymbolForAnExternalDependencyClass
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itDoesNotRegisterASymbolForAnExternalDependencyNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itExcludesFrameworkDependenciesFromCboApp
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itExcludesFrameworkDependenciesFromCboAppEvenWithABidirectionalAppDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itExcludesFrameworkDependenciesFromCboAppWithAnIncomingAppDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itExcludesFrameworkDependenciesFromCboAppWithNoIncomingAppDependency
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itExcludesIntraPackageDependenciesFromCePackages
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itIsNamedCoupling
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itKeepsDegreeZeroClassAndNamespaceCouplingMetricsExplicit
@@ -2126,7 +2126,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsATypeHintDependencyForAParameter
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsATypeHintDependencyForAReturnType
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnAttributeDependency
- - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnExtendsDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnExtendsDependencyForAClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnExtendsDependencyForAnInterface
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnImplementsDependencyForAnEnum
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnInstanceofDependency
@@ -2401,7 +2401,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itExtractsAHintFromAnArrayConstantBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itExtractsTheFirstMeaningfulLinesOfTheBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itLeavesAShortHintUntruncated
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itPreservesSpecialCharactersInTheHint
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsAHintForASourceWithQuotesAndBackslashes
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForABlockContainingOnlyBraces
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForABlockWithNoMeaningfulContent
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForAnInvalidStartLine
@@ -3502,18 +3502,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itRespectsCustomThresholds
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itSetsCorrectSymbolPathOnFinding
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheCircularDependencyMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheClassCountMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheClassRankOccurrenceDespiteNumberChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheCodeDuplicationMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheCommandInjectionOccurrenceChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheConstructorOverinjectionMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheCyclomaticComplexityMethodMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheGotoOccurrenceChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheInlineDirectiveChannelsAreDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheMaintainabilityIndexMagnitudeChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itTheUnusedDirectiveChannelIsDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheCircularDependencyMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheClassCountMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheClassRankOccurrenceDespiteNumberChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheCodeDuplicationMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheCommandInjectionOccurrenceChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheConstructorOverinjectionMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheCyclomaticComplexityMethodMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheGotoOccurrenceChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheInlineDirectiveChannels
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheMaintainabilityIndexMagnitudeChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheTypeCoverageParamMagnitudeChannelWhereLowerIsWorse
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheUnusedDirectiveChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::itDeclaresConfigurationErrorForExactlyTheLayerPolicyAndDirectiveDiagnostics
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::itFindsNoExcludedFixtureLineNamingAChannelTheRegistryDeclares
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::itKeepsEveryFixtureLineDeclaredInCode
@@ -3527,10 +3527,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::itFindsNoDeclaredChannelCodeThatCarriesALevel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::itFindsNoProductionSourceThatSpellsALevelSuffixAsALiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::itRecognisesARetiredLevelBearingChannelName
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itEveryChannelDeclaresExactlyTheLevelsItReportsAt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itCoversEveryStaticallyDeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itRecognisesEveryFindingSubjectFormTheCorpusReaches
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itTheCorpusStillReportsEveryChannelAtTheLevelItWasMeasuredAt
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itTheOracleCoversEveryStaticallyDeclaredChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itRequiresEveryChannelToDeclareExactlyTheLevelsItReportsAt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::itStillReportsEveryChannelAtTheLevelItWasMeasuredAt
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelRefusalTopologyTest::itCatchesASilentDeciderThatReadsDeclaredLevelsHoweverItSpellsTheRead
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelRefusalTopologyTest::itCatchesASilentDeciderThatWordsItsOwnLevelRefusal
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelRefusalTopologyTest::itIgnoresProseAboutLevelsThatNeverTouchesThePairGrammar
@@ -3561,7 +3561,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itRefusesAProductionSiteThatHandsTheFlagToTheConstructorInstead
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itRefusesAnyOtherProductionFileThatEvenNamesTheWither
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itStampsTheAssemblyWithExactlyWhatAValidatorDeclares
- - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itEveryDiagnosticIsReportedWhenNothingSilencesIt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itAppliesPathExclusionToTheDirectiveDiagnosticsButNotTheLayerOnes
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itDoesNotLetNamespaceExclusionReachAnyOfTheEight
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyOneDiagnosticWhenSelectingItOn"annotation.invalid-threshold"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyOneDiagnosticWhenSelectingItOn"annotation.unresolved-directive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyOneDiagnosticWhenSelectingItOn"annotation.unsupported-threshold"
@@ -3572,8 +3573,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyOneDiagnosticWhenSelectingItOn"architecture.unreachable-layer"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyTheDiagnosticsAProducerOwnsWhenSelectingTheProducerOn"annotation.directive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itLeavesExactlyTheDiagnosticsAProducerOwnsWhenSelectingTheProducerOn"architecture.layer-violation"
- - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itNamespaceExclusionReachesNoneOfTheEight
- - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itPathExclusionReachesTheDirectiveDiagnosticsAndNotTheLayerOnes
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itReportsEveryDiagnosticWhenNothingSilencesIt
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itResolvesEveryDiagnosticToTheProducerThatOwnsIt"annotation.directive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itResolvesEveryDiagnosticToTheProducerThatOwnsIt"architecture.layer-violation"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itSilencesEachDiagnosticBySelectingItsOwnNameOff"annotation.invalid-threshold"
@@ -3588,7 +3588,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itSilencesEveryDiagnosticAProducerOwnsBySelectingTheProducerOff"architecture.layer-violation"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itSilencesEveryDiagnosticAProducerOwnsWhenDisablingTheProducerByOption"annotation.directive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itSilencesEveryDiagnosticAProducerOwnsWhenDisablingTheProducerByOption"architecture.layer-violation"
- - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itTheEnumeratedEightAreExactlyTheConfigurationErrorChannels
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::itVerifiesTheEnumeratedEightAreExactlyTheConfigurationErrorChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.ccn"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.cognitive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.npath"
@@ -4279,7 +4279,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"group selector selects strict descendants and not the parent"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"lone wildcard is not a selector"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"selector deeper than any channel selects nothing"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itAllCasesHaveDisplayName
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"error display name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"info display name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"warning display name"
@@ -4287,6 +4286,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"error exit code is 2"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"info exit code is 0"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"warning exit code is 1"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGivesEveryCaseANonEmptyDisplayName
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itInfoFromStringValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itInfoIsExitCodeZeroAllOthersNonZero
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityOrderingByExitCode
@@ -4354,10 +4354,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\FailClosedModularTopologyIntegrationTest::itFailsCoverageForAnUncoveredDependencyEndpoint
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\FailClosedModularTopologyIntegrationTest::itKeepsAContractAndItsInternalSiblingInOneCoarseOwnerLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\FailClosedModularTopologyIntegrationTest::itLeavesAClassDirectlyUnderTheAnalysisTaxonomyUncovered
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itFindingMessageNamesMatchedCriterionWhenNotPattern
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itMatchAllAcceptsClassSatisfyingEveryDeclaredCriterion
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itMatchAllRequiresEveryDeclaredCriterion
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itMembershipCriteriaClassifyEachFixtureClassUnderTheRightLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itAcceptsAClassSatisfyingEveryDeclaredCriterionUnderMatchAll
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itClassifiesEachFixtureClassUnderTheRightLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itNamesTheMatchedCriterionInTheFindingMessageWhenItIsNotAPattern
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itRequiresEveryDeclaredCriterionUnderMatchAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itAppliesTheSameExclusionsAfterYamlConfigLoaderNormalization
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itDropsATemplateModuleWhoseEveryCandidateIsExcludedDuringObservation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itFiltersAnExcludedStaticLayerSubtreeOutOfMembership
@@ -4451,60 +4451,60 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itReplacesTheLayersListWholesaleWithAnOverlay
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itReturnsAResultWithConfigurationAndNoWarningsForValidInput
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itSurfacesAWildcardSelfAllowWarningFromTheFactory
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAllowAsScalarIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAllowAsSequentialListIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAllowCrossInstanceFlagDoesNotRelaxCaptureCrossValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAllowTargetsAsScalarIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itBareStringAllowTargetLeavesRelationsNull
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedSourceSelectorIsRecognised
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedTargetSelectorIsRecognised
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedTargetWithExactSourceIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedTargetWithGlobSourceIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedTargetWithSubsetOfSourceVariablesIsAccepted
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itCapturedTargetWithUndeclaredVariableIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itConfigPathIsArchitectureForAllErrors
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDuplicateExactTargetsAreDeduplicated
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itEmptyAllowProducesEmptyEntryList
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itEmptyTargetStringIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itExactSourceStillRejectsUnknownLayer
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itExactTargetReferencingUnknownLayerIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itExactTargetSkipsCrossValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itGlobSourceSelectorIsRecognised
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itGlobSourceSkipsRegistryCrossValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itGlobTargetSelectorSkipsRegistryCrossValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itGlobTargetSkipsCrossValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itInvalidCaptureNameIsRejected
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsACamelCaseAllowCrossInstanceFlagInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsACapturedTargetWithASubsetOfSourceVariables
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsBothRelationsAndAllowCrossInstanceInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsMatchingMultiSegmentShapes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesAMixOfRelationsAliasAndDirectValuesInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesDuplicateExactTargets
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDefaultsAllowCrossInstanceToFalseInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDoesNotRelaxCaptureCrossValidationWithAllowCrossInstance
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itExpandsARelationsAliasToItsConstituentsInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itExpandsDirectValuesInALongFormAllowEntryWithRelations
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLeavesRelationsNullForABareStringAllowTarget
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLetsBareAndLongFormSiblingsBothReachPolicyUnderUnionSemantics
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryAcceptsAllowCrossInstanceFlag
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryAcceptsBothRelationsAndAllowCrossInstance
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryAcceptsCamelCaseAllowCrossInstanceFlag
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryDefaultsAllowCrossInstanceToFalse
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryRejectsBothSpellingsOnSameEntry
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryRejectsNonBooleanAllowCrossInstance
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryRejectsNonBooleanCamelCaseAllowCrossInstance
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntrySnakeAndCamelCaseFlagsProduceIdenticalResult
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithEmptyRelationsListIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithEmptyTargetIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithLegacyTypesKeyIsRejectedAsUnknown
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithNonListRelationsIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithRelationsAliasAndDirectMixDeduplicates
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithRelationsAliasExpandsToConstituents
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithRelationsExpandsDirectValues
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithUnknownKeyIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithUnknownRelationTokenIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithoutTargetKeyIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itLongFormAllowEntryWithoutTypesIsAcceptedSilently
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itMatchingMultiSegmentShapesAreAccepted
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itMultiSegmentSourceWithSingleSegmentTargetIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itNullAllowProducesEmptyEntryList
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itNullTargetsProducesEmptyTargetList
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itParsesASingleSourceAndTargetAsExactExact
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itPreservesSelfReferenceForExactCycleValidation
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSingleSegmentSourceWithMultiSegmentTargetIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSingleSourceAndTargetIsParsedAsExactExact
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUnbalancedBraceOnSourceKeyIsRejected
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUnbalancedCloseBraceIsRejectedWithPathContext
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUnbalancedOpenBraceIsRejectedWithPathContext
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUnknownCaptureQuantifierIsRejected
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itProducesAnEmptyEntryListForANullAllow
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itProducesAnEmptyEntryListForAnEmptyAllow
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itProducesAnEmptyTargetListForNullTargets
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itProducesTheSameResultForSnakeAndCamelCaseFlagsInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesACapturedSourceSelector
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesACapturedTargetSelector
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRecognisesAGlobSourceSelector
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACaptureVariableWhoseSourceDeclaresMultiSegmentButTargetDoesNot
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACaptureVariableWhoseTargetDeclaresMultiSegmentButSourceDoesNot
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAGlobSource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAnExactSource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsACapturedTargetWithAnUndeclaredVariable
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithALegacyTypesKeyAsUnknown
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithAnEmptyRelationsList
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithAnEmptyTarget
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithAnUnknownKey
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithAnUnknownRelationToken
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithNonListRelations
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsALongFormAllowEntryWithoutATargetKey
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsANonBooleanAllowCrossInstanceInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsANonBooleanCamelCaseAllowCrossInstanceInALongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAllowAsAScalar
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAllowAsASequentialList
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAllowTargetsAsAScalar
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnEmptyTargetString
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnExactTargetReferencingAnUnknownLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnInvalidCaptureName
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnUnbalancedBraceOnTheSourceKey
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnUnbalancedCloseBraceWithPathContext
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnUnbalancedOpenBraceWithPathContext
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsAnUnknownCaptureQuantifier
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itRejectsBothSpellingsOnTheSameLongFormAllowEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSilentlyAcceptsALongFormAllowEntryWithoutTypes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsCrossValidationForAGlobTarget
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsCrossValidationForAnExactTarget
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobSource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobTargetSelector
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itStillRejectsAnUnknownLayerForAnExactSource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUsesArchitectureAsTheConfigPathForAllErrors
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itDefaultsToIgnoreWhenValueIsNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesCoverageValuesCaseInsensitively
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesError
@@ -4798,8 +4798,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRecordsEveryMatchingCriterionInAnyMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRecordsOnlyTheFirstMatchingPatternDescriptor
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAClassMissingOneCriterionInAllMode
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANonStringPatternEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANonStringPatternEntryAtANonZeroIndex
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANonStringPatternEntryAtIndexZero
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsANullPatternEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsASpecWhereEveryCriterionListIsEmpty
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnArrayPatternEntry
@@ -4865,14 +4865,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itDropsTheResolveAllCacheOnBindGraphSoStaleMatchesCannotLeakBetweenRuns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itHandlesUnicodeNamespacesAndTypesGracefully
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itLetsAFinalCatchAllLayerCaptureTheResidual
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itLetsTheBroaderLayerWinWhenDeclaredBeforeTheNarrowerOne
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itLetsTheNarrowerLayerWinWhenDeclaredBeforeTheBroaderOne
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itMatchesByBareTypeWhenTheNamespaceIsEmpty
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPopulatesTheSharedMatchCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPreservesDeclarationOrderInLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsEmptyForAnEmptyLayerList
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsNotEmptyWhenLayersArePresent
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itResolvesANamespaceOnlyPath
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itResolvesToTheFirstDeclaredLayerWhenTheBroaderLayerComesFirst
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itResolvesToTheFirstDeclaredLayerWhenTheNarrowerLayerComesFirst
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsAnEmptyListWhenNoLayerMatches
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsEmptyLayerNamesForAnEmptyRegistry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsEveryMatchingLayerInDeclarationOrder
@@ -5887,6 +5887,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForInvalidSyntax
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForWarningGreaterThanError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForWarningGreaterThanErrorWithFloats
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itEmitsNoDiagnosticForADocCommentWithoutAnAnnotation
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itEmitsNoDiagnosticForANodeWithoutADocComment
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itEmitsNoDiagnosticForAValidThresholdAnnotation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsABarePrefixButAddressesNoRuleWithIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsExplicitSyntaxBothValues
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsExplicitSyntaxErrorOnly
@@ -5901,9 +5904,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itMixedRealAndBacktickEscapedThresholds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itMixedValidAndInvalidAnnotations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itMultipleDiagnosticsCollected
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itNoDiagnosticsForDocCommentWithoutAnnotation
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itNoDiagnosticsForNoDocComment
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itNoDiagnosticsForValidAnnotations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsDottedOptionKeysAsWholeAnnotation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsMalformedValuePortionsAsWholeAnnotations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsNegativeValuesAsWholeAnnotation
@@ -5936,11 +5936,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itJudgesASuppressionByTheFindingsRulesProducedRatherThanThosePublished
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itStillReportsASuppressionThatCoveredNothingProduced
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itAggregatesGlobalCollectorMetricsToNamespaceLevel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel
- - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itCircularDependencyRuleProducesFindingsForActualCycles
- - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itDependencyGraphIsPassedToAnalysisContext
- - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itGlobalCollectorMetricsAreAggregatedToNamespaceLevel
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPassesTheDependencyGraphToAnalysisContext
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesCircularDependencyFindingsForActualCycles
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesIdenticalDependenciesSequentiallyAndThroughARealAmpWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itKeepsThePathExclusionInertOnTheLateChannelWhileItStillReachesTheEarlySibling
@@ -6779,9 +6779,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itHasExactlySevenValues
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itKeepsTheLedgerHalvesDistinctFromEveryStageMechanism
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itMapsEveryStageToADistinctMechanism
- - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itAnUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl
- - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itEveryChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri
- - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itEveryConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itAlsoGivesEveryConfiguredComputedMetricChannelItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itGivesEveryChannelOfTheRealUniverseItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping

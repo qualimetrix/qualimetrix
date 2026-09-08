@@ -95,7 +95,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 final class ChannelCoverageTest extends TestCase
 {
     #[Test]
-    public function itTheGotoOccurrenceChannelIsDeclared(): void
+    public function itDeclaresTheGotoOccurrenceChannel(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -118,7 +118,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheMaintainabilityIndexMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheMaintainabilityIndexMagnitudeChannel(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -136,7 +136,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheCyclomaticComplexityMethodMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheCyclomaticComplexityMethodMagnitudeChannel(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -154,7 +154,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheConstructorOverinjectionMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheConstructorOverinjectionMagnitudeChannel(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -172,7 +172,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheCircularDependencyMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheCircularDependencyMagnitudeChannel(): void
     {
         $cycles = [
             new Cycle(
@@ -195,7 +195,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheClassRankOccurrenceDespiteNumberChannelIsDeclared(): void
+    public function itDeclaresTheClassRankOccurrenceDespiteNumberChannel(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -216,7 +216,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse(): void
+    public function itDeclaresTheTypeCoverageParamMagnitudeChannelWhereLowerIsWorse(): void
     {
         $rule = new ParamTypeCoverageRule(new TypeCoverageOptions(warning: 80.0, error: 50.0));
 
@@ -239,7 +239,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheCodeDuplicationMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheCodeDuplicationMagnitudeChannel(): void
     {
         $resultProvider = new DuplicationResultProvider();
         $resultProvider->replace([
@@ -265,7 +265,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheCommandInjectionOccurrenceChannelIsDeclared(): void
+    public function itDeclaresTheCommandInjectionOccurrenceChannel(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -289,7 +289,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheClassCountMagnitudeChannelIsDeclared(): void
+    public function itDeclaresTheClassCountMagnitudeChannel(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
@@ -316,7 +316,7 @@ final class ChannelCoverageTest extends TestCase
      * other case here proves: a real emission resolves to a real declaration.
      */
     #[Test]
-    public function itTheInlineDirectiveChannelsAreDeclared(): void
+    public function itDeclaresTheInlineDirectiveChannels(): void
     {
         $file = 'src/Foo.php';
         $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString($file)));
@@ -375,7 +375,7 @@ final class ChannelCoverageTest extends TestCase
     }
 
     #[Test]
-    public function itTheUnusedDirectiveChannelIsDeclared(): void
+    public function itDeclaresTheUnusedDirectiveChannel(): void
     {
         $file = 'src/Foo.php';
 

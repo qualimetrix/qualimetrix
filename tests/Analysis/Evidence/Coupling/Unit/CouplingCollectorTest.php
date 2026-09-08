@@ -688,7 +688,7 @@ final class CouplingCollectorTest extends TestCase
     // Framework CBO tests
 
     #[Test]
-    public function itExcludesFrameworkDependenciesFromCboApp(): void
+    public function itExcludesFrameworkDependenciesFromCboAppWithNoIncomingAppDependency(): void
     {
         // Configure framework namespaces
         $collector = new CouplingCollector($this->configuredAnalysis(['Symfony', 'PhpParser', 'Psr']));
@@ -829,7 +829,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itExcludesFrameworkDependenciesFromCboAppEvenWithABidirectionalAppDependency(): void
+    public function itExcludesFrameworkDependenciesFromCboAppWithAnIncomingAppDependency(): void
     {
         // A→FrameworkClass — Ce_framework=1, but framework is not scanned
         // so Ca from framework doesn't exist. CBO_APP should exclude framework.

@@ -97,7 +97,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     private static array $recognisedForms = [];
 
     #[Test]
-    public function itTheCorpusStillReportsEveryChannelAtTheLevelItWasMeasuredAt(): void
+    public function itStillReportsEveryChannelAtTheLevelItWasMeasuredAt(): void
     {
         $oracle = self::readOracle();
         $observed = self::observe();
@@ -135,7 +135,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     #[Test]
-    public function itTheOracleCoversEveryStaticallyDeclaredChannel(): void
+    public function itCoversEveryStaticallyDeclaredChannel(): void
     {
         $oracle = array_keys(self::readOracle());
         $declared = self::readDeclaredChannels();
@@ -159,7 +159,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     #[Test]
-    public function itEveryChannelDeclaresExactlyTheLevelsItReportsAt(): void
+    public function itRequiresEveryChannelToDeclareExactlyTheLevelsItReportsAt(): void
     {
         $observed = self::observe();
         $declared = self::declared();

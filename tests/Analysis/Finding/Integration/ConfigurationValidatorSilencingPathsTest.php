@@ -165,7 +165,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * otherwise be silently untested.
      */
     #[Test]
-    public function itTheEnumeratedEightAreExactlyTheConfigurationErrorChannels(): void
+    public function itVerifiesTheEnumeratedEightAreExactlyTheConfigurationErrorChannels(): void
     {
         $registry = (new ContainerFactory())->create()->get(ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $registry);
@@ -209,7 +209,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     }
 
     #[Test]
-    public function itEveryDiagnosticIsReportedWhenNothingSilencesIt(): void
+    public function itReportsEveryDiagnosticWhenNothingSilencesIt(): void
     {
         self::assertSame(self::allDiagnostics(), $this->diagnosticsFrom([]));
     }
@@ -300,7 +300,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * `Location::none()`.
      */
     #[Test]
-    public function itPathExclusionReachesTheDirectiveDiagnosticsAndNotTheLayerOnes(): void
+    public function itAppliesPathExclusionToTheDirectiveDiagnosticsButNotTheLayerOnes(): void
     {
         self::assertSame(
             self::LAYER_DIAGNOSTICS,
@@ -322,7 +322,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * namespace for the filter to compare.
      */
     #[Test]
-    public function itNamespaceExclusionReachesNoneOfTheEight(): void
+    public function itDoesNotLetNamespaceExclusionReachAnyOfTheEight(): void
     {
         self::assertSame(
             self::allDiagnostics(),
