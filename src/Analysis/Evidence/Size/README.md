@@ -375,12 +375,10 @@ their accepted option keys through
 `RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`, `threshold`,
 `warning` for the first two; `PropertyCountOptions` adds
 `exclude-promoted-only` and `exclude-readonly`. Each declaration transcribes
-the class's own constructor parameters plus the `ShorthandOptionKeysInterface`
-shorthand key `threshold` — no key added or dropped by this stage. The
-declarations are inert until `RuleOptionsFactory` is taught to read them
-(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
-today's behaviour — warnings from constructor-parameter reflection, at depth 1
-only — is unchanged.
+the class's own constructor parameters plus the `threshold` shorthand. Those
+declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
+key none of them knows is refused with exit 3, at the rule's own level and
+inside a level slot alike.
 
 ## Locality
 

@@ -134,6 +134,13 @@ bin/qmx check src/ --rule-opt="complexity.ccn:class.max_warning=40"
 bin/qmx check src/ --rule-opt="complexity.ccn:class.enabled=false"
 ```
 
+!!! warning "`warning:` / `error:` are level options, not rule options"
+    Written directly under `complexity.ccn:` -- outside `callable:` and
+    `class:` -- they configure nothing, and the run now stops with exit 3.
+    Nest them under the level they apply to. The `class:` level spells its
+    bounds `max_warning` / `max_error`, so the two levels do not take the
+    same keys; the refusal lists what the position you wrote actually takes.
+
 ---
 
 ## Cognitive Complexity
@@ -242,6 +249,13 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.cognitive:callable.warning=20"
 bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ```
+
+!!! warning "`warning:` / `error:` are level options, not rule options"
+    Written directly under `complexity.cognitive:` -- outside `callable:` and
+    `class:` -- they configure nothing, and the run now stops with exit 3.
+    Nest them under the level they apply to. The `class:` level spells its
+    bounds `max_warning` / `max_error`, so the two levels do not take the
+    same keys; the refusal lists what the position you wrote actually takes.
 
 ---
 
@@ -377,6 +391,13 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.npath:callable.warning=300"
 bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
+
+!!! warning "`warning:` / `error:` are level options, not rule options"
+    Written directly under `complexity.npath:` -- outside `callable:` and
+    `class:` -- they configure nothing, and the run now stops with exit 3.
+    Nest them under the level they apply to. The `class:` level spells its
+    bounds `max_warning` / `max_error`, so the two levels do not take the
+    same keys; the refusal lists what the position you wrote actually takes.
 
 ---
 

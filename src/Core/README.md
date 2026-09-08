@@ -311,6 +311,7 @@ Base options interface for all rules.
 
 **Methods:**
 - `fromArray(array $config): self` — create options from configuration array (static)
+- `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this class answers for (static)
 - `isEnabled(): bool` — whether the rule is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for a metric value (null if acceptable)
 
@@ -322,6 +323,7 @@ Extends `RuleOptionsInterface` with level-specific capabilities.
 - `forLevel(SymbolLevel $level): LevelOptionsInterface` — options for a specific level
 - `isLevelEnabled(SymbolLevel $level): bool` — whether a specific level is enabled
 - `getSupportedLevels(): list<SymbolLevel>` — all supported levels
+- `levelOptionsClasses(): array<string, class-string<LevelOptionsInterface>>` — the level options class behind each slot, keyed by the slot name the user writes (static). Declared rather than derived: nothing makes a constructor parameter's name and its type agree
 
 ### LevelOptionsInterface
 
@@ -329,6 +331,7 @@ Options for a specific level of a hierarchical rule.
 
 **Methods:**
 - `fromArray(array $config): self` — create from configuration array (static)
+- `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this slot answers for (static)
 - `isEnabled(): bool` — whether this level is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for the given metric value
 
@@ -341,14 +344,28 @@ Note that whether a rule *supports* an override is no longer read off this inter
 **Methods:**
 - `withOverride(int|float|null $warning, int|float|null $error): static` — returns a copy with overridden thresholds (null keeps original)
 
-### AdditionalOptionKeysInterface
+### RuleOptionKeySet
 
-Declares top-level configuration keys that an Options class consumes in `fromArray()` but
-which are neither constructor parameters nor threshold shorthands. `RuleOptionsFactory`
-validates keys before creating the Options instance, so such classes return their canonical
-kebab-case keys from `getAdditionalOptionKeys(): list<string>` to keep valid configuration
-from producing an unknown-option warning. For bare threshold-style keys, use
-`ShorthandOptionKeysInterface` instead; an Options class may implement both contracts.
+The value `acceptedOptionKeys()` returns: the option keys one options class — or one level
+slot of one — answers for. It replaces the old derivation from constructor parameters plus
+`ShorthandOptionKeysInterface` / `AdditionalOptionKeysInterface`, both of which are gone.
+Reflection cannot see into a method body, and `fromArray()` is a method body, so the class
+states its keys instead of the reader guessing them (ADR 0038's pattern, applied in ADR 0049).
+
+A key is in exactly one of three states, disjoint and exhaustive:
+
+- **accepted** — read here, and printed in the "options here" sentence of a refusal
+- **answered by the class** — recognised only so that `fromArray()` may refuse it in its own
+  words, or accept a spelling meaning "leave things as they are"; a reader must neither warn
+  nor refuse on these (`UnassignedClassOptions::assertNoContradictoryEnabled()` is the case
+  that forces the state to exist)
+- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a `ConfigLoadException`
+  at whichever depth it was written (exit 3 under `check`; the exception inherits each
+  command's own routing)
+
+Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
+through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay
+the same key — and a refusal therefore quotes the key in its folded spelling.
 
 ### NameSelector
 

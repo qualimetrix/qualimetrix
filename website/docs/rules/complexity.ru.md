@@ -134,6 +134,14 @@ bin/qmx check src/ --rule-opt="complexity.ccn:class.max_warning=40"
 bin/qmx check src/ --rule-opt="complexity.ccn:class.enabled=false"
 ```
 
+!!! warning "`warning:` / `error:` — опции уровня, а не правила"
+    Написанные прямо под `complexity.ccn:` — вне `callable:` и `class:` —
+    они ничего не настраивают, и прогон теперь останавливается с кодом 3.
+    Вкладывайте их в тот уровень, к которому они относятся. У уровня
+    `class:` границы называются `max_warning` / `max_error`, то есть два
+    уровня принимают разные ключи; отказ перечисляет допустимое именно в
+    той позиции, где вы написали ключ.
+
 ---
 
 ## Когнитивная сложность
@@ -242,6 +250,14 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.cognitive:callable.warning=20"
 bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ```
+
+!!! warning "`warning:` / `error:` — опции уровня, а не правила"
+    Написанные прямо под `complexity.cognitive:` — вне `callable:` и `class:` —
+    они ничего не настраивают, и прогон теперь останавливается с кодом 3.
+    Вкладывайте их в тот уровень, к которому они относятся. У уровня
+    `class:` границы называются `max_warning` / `max_error`, то есть два
+    уровня принимают разные ключи; отказ перечисляет допустимое именно в
+    той позиции, где вы написали ключ.
 
 ---
 
@@ -375,6 +391,14 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.npath:callable.warning=300"
 bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
+
+!!! warning "`warning:` / `error:` — опции уровня, а не правила"
+    Написанные прямо под `complexity.npath:` — вне `callable:` и `class:` —
+    они ничего не настраивают, и прогон теперь останавливается с кодом 3.
+    Вкладывайте их в тот уровень, к которому они относятся. У уровня
+    `class:` границы называются `max_warning` / `max_error`, то есть два
+    уровня принимают разные ключи; отказ перечисляет допустимое именно в
+    той позиции, где вы написали ключ.
 
 ---
 

@@ -195,10 +195,6 @@ final class ContainerFactoryTest extends TestCase
         self::assertSame($pipelineLogger, $evaluatorLogger);
         $ruleOptionsFactory = $container->get(RuleOptionsFactory::class);
         self::assertInstanceOf(RuleOptionsFactory::class, $ruleOptionsFactory);
-        self::assertSame(
-            $evaluatorLogger,
-            (new ReflectionProperty(RuleOptionsFactory::class, 'logger'))->getValue($ruleOptionsFactory),
-        );
 
         $annotationSuppression = $container->get(AnnotationSuppressionInterface::class);
         $gitScopeQuery = $container->get(GitScopeQueryInterface::class);

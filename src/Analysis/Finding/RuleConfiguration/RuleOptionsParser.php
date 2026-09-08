@@ -71,9 +71,9 @@ final readonly class RuleOptionsParser
      * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}. Without this, a
      * rule author who wrote a kebab-case/snake_case second argument (matching
      * the option's `ThresholdParser` key rather than its camelCase property
-     * name) would produce a key that `RuleOptionsFactory::warnAboutUnknownKeys()`
-     * cannot recognize as known, triggering a false "Unknown option" warning
-     * even though the threshold was applied correctly.
+     * name) would produce a key that `RuleOptionsFactory::refuseUnknownKeys()`
+     * does not know, and the run would be refused over a flag the product
+     * itself declared.
      *
      * @return array{rule: string, option: string, value: mixed}|null
      */

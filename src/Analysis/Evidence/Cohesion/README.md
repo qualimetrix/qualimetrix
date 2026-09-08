@@ -103,12 +103,10 @@ eligibility, thresholds, controls and output identity.
 `LcomOptions` declares its accepted option keys through
 `RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`,
 `exclude-methods`, `exclude-readonly`, `min-methods`, `threshold`, `warning` —
-its constructor parameters plus the `ShorthandOptionKeysInterface` shorthand
-key `threshold`, no key added or dropped by this stage. The declaration is
-inert until `RuleOptionsFactory` is taught to read it
-(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
-today's behaviour — warnings from constructor-parameter reflection, at depth 1
-only — is unchanged.
+its constructor parameters plus the `threshold` shorthand. That declaration is
+what `RuleOptionKeyRecognition` compares an incoming key against: a key it does not
+know is refused with exit 3, at the rule's own level and inside a level slot
+alike.
 
 ## Locality
 

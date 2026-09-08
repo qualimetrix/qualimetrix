@@ -265,11 +265,10 @@ their level classes. The two slots do not share one key set: `callable`
 accepts `enabled`, `error`, `threshold`, `warning`; `class` accepts `enabled`,
 `max-error`, `max-warning`, `threshold` — each level class declares its own set
 through the same method. `WmcOptions` (flat, not hierarchical) accepts
-`enabled`, `error`, `exclude-data-classes`, `threshold`, `warning`. These
-declarations are inert until `RuleOptionsFactory` is taught to read them
-(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
-today's behaviour — warnings from constructor-parameter reflection, at depth 1
-only — is unchanged.
+`enabled`, `error`, `exclude-data-classes`, `threshold`, `warning`.
+`RuleOptionKeyRecognition` reads these declarations and refuses an unrecognised key
+by name at both depths — the rule's own top level and inside a `callable`/
+`class` level slot, each compared against its own declared set.
 
 ## Test ownership and Definition of Done
 

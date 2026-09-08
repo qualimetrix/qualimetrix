@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidato
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -37,7 +36,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * > actually arriving through those two channels. Both spellings are kept
  * > working via `ThresholdParser::parse()`'s `legacyKeys` argument below.
  */
-final readonly class LongParameterListOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class LongParameterListOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -76,14 +75,6 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
             voWarning: (int) $voThresholds['warning'],
             voError: (int) $voThresholds['error'],
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold', 'vo-threshold'];
     }
 
     public function isEnabled(): bool

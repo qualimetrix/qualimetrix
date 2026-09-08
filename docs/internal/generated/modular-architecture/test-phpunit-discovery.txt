@@ -1068,15 +1068,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itBreakdownWithSingleIncrementAndClosureLabel
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itClassOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsForLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsFromFlatThresholdShorthand
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsFromHierarchicalArray
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsFromLegacyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsIsLevelEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetSupportedLevels
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itLegacyDefaultErrorThresholdMatchesMethodDefault
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itLegacyPartialConfigUsesCorrectDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itMethodFindingIncludesBreakdownWhenEntriesPresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itMethodFindingNoBreakdownWhenNoEntries
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itMethodOptionsFromArray
@@ -1145,7 +1143,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itDisablesEveryLevelWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itKeepsDefaultsWhenEnabledIsOmitted
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenHierarchicalLevelKeysArePresent
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenLegacyThresholdKeysArePresent
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenTheFlatThresholdShorthandIsPresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeCallsBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeLevelClassGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeLevelClassGeneratesWarning
@@ -1159,8 +1157,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeLevelMethodReturnsEmptyWhenNoMethods
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itClassOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsForLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsFromFlatThresholdShorthand
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsFromHierarchicalArray
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsFromLegacyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsIsLevelEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetName
@@ -1290,8 +1288,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetSupportedLevels
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itLargeNpathDisplayFormat
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itLegacyDefaultErrorThresholdMatchesMethodDefault
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itLegacyPartialConfigUsesCorrectDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itMethodFindingCategoryLabel"at 1 → moderate"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itMethodFindingCategoryLabel"at 100 → moderate"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itMethodFindingCategoryLabel"at 1000 boundary → moderate"
@@ -1314,8 +1310,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itMethodThresholdBoundaries"at warning threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itMethodThresholdBoundaries"below warning threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itNpathComplexityOptionsForLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itNpathComplexityOptionsFromFlatThresholdShorthand
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itNpathComplexityOptionsFromHierarchicalArray
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itNpathComplexityOptionsFromLegacyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itNpathComplexityOptionsIsLevelEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itProjectsDuplicateLogicalCallableScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
@@ -1717,7 +1713,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itAllowsClassLevelScopeToOverrideTopLevel
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itAnalyzesBothLevels
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutAnUnknownOptionWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutRefusingTheKey
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itChecksWhetherLevelIsEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsClassCboScopeToAll
@@ -3612,13 +3608,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::itRefusesAHandSpelledCodeInAFixtureOrDocPageThatNamesANonexistentRuleOrChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::itRefusesAProductionFileOutsideARuleOrChannelsOwningCapabilityThatHoldsItsLiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::itRequiresEveryNamedFileToStillEarnItsEntry
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlagWithoutFalseWarning
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlag
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaRuleOptToOneDimensionOnly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaDedicatedCliFlagWithoutFalseWarning
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaDedicatedCliFlag
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itStillWarnsAboutAGenuinelyUnknownOption
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itRefusesAGenuinelyUnknownOption
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryAddressableProducerToHaveAnInjectedRemediationEstimate
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryRegisteredRuleToDeclareItsOwnRemediationMinutes
@@ -3652,6 +3648,116 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::itLimitsUndetectableBoundaryDecisionsToThePinnedClasses
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::itReportsTheOverriddenNumberFromAnOverriddenCopy
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::itRequiresASecondSeverityDecisionWhereverMoreThanOneBoundaryIsClaimed
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itCoversEveryOptionsClassTheRuleRegistryUses
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\ClassCognitiveComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\ClassNpathComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\MethodCognitiveComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\MethodNpathComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Complexity\WmcOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\CboOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\ClassInstabilityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Size\ClassCountOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Size\MethodCountOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDoesNotCarryOneClassesLocalsIntoTheNext
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itKeepsTheReplacedDeclarationInterfacesDead
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itReadsOnlyFilesHoldingASingleClass
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itAcceptsTheThresholdKeyInEveryLevelSlot
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itCoversEveryLevelSlotOfEveryHierarchicalRule
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itCoversEveryRegisteredRulesOptionsClass
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itDeclaresEveryKeyInTheCanonicalKebabSpelling
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itFindsEveryImplementationAnsweringForItsOwnKeySet
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itNamesTheSameSlotsItSupportsLevels
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itPrintsOnlySpellingsThatFoldBackIntoTheSameSet
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itSeesTheAnonymousImplementationsAsWellAsTheNamedOnes
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\RuleOptionKeyDeclarationCoverageTest::itSweepsEveryFileThatCouldHoldAnImplementation
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsAFrameworkKeyAtTheTopLevelOfARule
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsATopLevelWarningWhereItWorksAloneAndRefusesItWhereItDoesNot
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsAnEmptyLevelSlotInSilence
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"camel"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"kebab"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"snake"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsTheFlatCouplingKeysThatWorkAlone"#17 cbo warning"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsTheFlatCouplingKeysThatWorkAlone"#18 cbo error"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsTheFlatCouplingKeysThatWorkAlone"#20 instability max-warning"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAcceptsTheFlatCouplingKeysThatWorkAlone"#21 instability max-error"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAnswersEachLevelSlotAgainstItsOwnVocabulary
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#27 cognitive callable"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#28 cognitive class"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#29 ccn callable"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#30 ccn class"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#31 npath callable"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#32 npath class"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#33 cbo class"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#34 cbo namespace"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#35 instability class"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#36 instability namespace"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itKeepsTheRetiredKeyRefusalAtDepthOneAndTheGenericOneInsideASlot
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLeavesACorrectlyWrittenConfigurationUntouchedAtBothDepths
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#24 unreachable-layer-severity"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#25 potential-shadow-severity"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#26 empty-template-severity"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLeavesTheUniversalOffSwitchWorkingForEveryRegisteredRule
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itLetsTheUnassignedClassRuleAnswerForEnabledInBothDirections
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAFrameworkKeyWrittenInsideALevelSlot
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesALevelSlotHoldingSomethingOtherThanAMap
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesALevelSlotWrittenFalseAndNamesTheOffSwitchToWriteInstead
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E48 a retired suppression key inside a slot"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E53 a typo in a key the slot does take"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E55 a truncation of one"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E56 upper case, which the fold does not repair"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E57 the sibling slot vocabulary in callable"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E58 the callable vocabulary in the class slot"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#12 npath warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#13 npath error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#2 ccn warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#22 distance project-namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#3 ccn error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#7 cognitive warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#8 cognitive error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTheFirstUnrecognisedKeyInDocumentOrder
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#10 cognitive error"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#14 npath warning"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#15 npath error"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#4 ccn warning"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#5 ccn error"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#9 cognitive warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleSubjectControlTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesOnlyACountOnAnOccurrenceChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesTheAcceptedMagnitudesOfAMagnitudeChannel
@@ -3961,24 +4067,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyDeclaredInAnythingButKebab
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyThatWouldSitInTwoStatesAtOnce
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesTheSameKeySpelledTwoWaysInOneHalf
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsANullLevelSlotAsAnOmittedOne
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsFloatStringForThresholdFields
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsNumericStringForThresholdFields
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheDocumentedThresholdShorthandOnASupportingRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnCboAndAppliesItToBothLevels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnTypeCoverage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheVoThresholdShorthandOnLongParameterList
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesFlatThresholdShorthandThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesNestedThresholdShorthandThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itClearsTheExclusionProviderOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCliOptionsOverrideConfigFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCoercesAScalarSuppressNamespacesValueIntoAnArray
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itComparesEachSlotAgainstItsOwnLevelClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesNestedStructureFromDotNotationDuringMerge
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesWithCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesWithConfigFileOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesWithDefaults
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDeepMergesNestedArrays
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotLeakCliOptionsIntoTheNextRunAfterReset
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheDocumentedThresholdShorthandOnASupportingRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnCboAndAppliesItToBothLevels
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheVoThresholdShorthandOnLongParameterList
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExpandsDeepDotNotationInCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExpandsDotNotationInCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExtractsCodeScopedNamespaceExclusions
@@ -4013,7 +4122,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFileWarningAndError
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictPresetSuppliedWarningAndError
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictTheLegacyWarningThresholdAlias
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsAKeyTheClassAnswersForReachThatClassUnchallenged
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliPrefixedGraduatedKeysEvictAConfigFileThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliWarningAndErrorEvictAConfigFileThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itMergesConfigWithTypeBasedDefaults
@@ -4031,6 +4140,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itOverwritesCliOptionWhenAddedTwice
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPreservesCamelCaseKeysFromConfigFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPreservesZeroValues
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPrintsTheKeyAsTheFactoryReceivedItRatherThanGuessingAnAuthoredSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFalseLevelSlotWithTheSpellingThatSwitchesOneLevelOff
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAGenuinelyUnknownKeyAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesANonMapLevelSlotWithoutInventingAdvice
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAnUnknownKeyInsideALevelSlotAndNamesThatSlotsOwnSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludeNamespacesSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludePathsSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredExcludeNamespaceChannelsSpelling
@@ -4052,7 +4167,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillAppliesConstructorDefaultsWhenRuleIsEntirelyUnconfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndPrefixedGraduatedKeysComeFromTheSameLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillWarnsAboutAGenuinelyUnknownKeyOnARuleThatSupportsShorthand
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStripsSuppressNamespacesFromOptionsBeforeBuildingThem
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itThrowsForNonExistentClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itThrowsForNonRuleOptionsClass
@@ -4155,27 +4269,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"cohesion.lcom::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"cohesion.lcom::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"cohesion.lcom::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::(top)#0[error]=errorThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::(top)#0[warning]=warningThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::callable#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::callable#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::callable#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::class#0[error]=max_error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::class#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.ccn::class#0[warning]=max_warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::(top)#0[error]=errorThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::(top)#0[warning]=warningThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::callable#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::callable#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::callable#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::class#0[error]=max_error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::class#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.cognitive::class#0[warning]=max_warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::(top)#0[error]=errorThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::(top)#0[warning]=warningThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::callable#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::callable#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"complexity.npath::callable#0[warning]=warning"
@@ -6501,6 +6609,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"file max-warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"file maxWarning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"file max_warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"flag max-warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"flag maxWarning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"flag max_warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedLevelKeyIdenticallyThroughBothDoors
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedTopLevelKeyIdenticallyThroughBothDoors
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersTheSameTypoTheSameWayWhicheverDoorItArrivesThrough
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itFramesTheGenericRefusalAsAConfigurationErrorAndTheRetiredOneWithoutAPrefix
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itLeavesStdoutEmptyUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"configuration file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"rule-opt flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"configuration file"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"rule-opt flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itStillRefusesUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itStillRefusesWithMultipleWorkers
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itAppliesOwnerConfigurationsOnlyAfterEveryValueResolves
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressForAnOutputWithoutAnErrorStream
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressWhenNoProgressIsRequested

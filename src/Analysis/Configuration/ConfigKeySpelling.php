@@ -17,6 +17,8 @@ namespace Qualimetrix\Analysis\Configuration;
  * Configuration owns it because configuration is where a key's spelling is a
  * subject at all; the rule layer reads it across the one import edge that
  * already exists in that direction.
+ *
+ * @qmx-threshold coupling.class-rank warning=0.023 error=0.023 -- Agreement on one spelling, not change impact: this class has no project dependency of its own, and four fifths of its rank arrives through the single edge from RuleOptionKeySet, which every options class asks about its own keys. Every door that stopped writing the fold out again is one of those paths, which is the point of the class. Measured rank 0.0074 against the 0.0066 the 0.02 default scales to at 914 classes; 0.023 is that measurement written back in unscaled units with the slim headroom the Measurement contract hubs take, so a further rise still reports.
  */
 final class ConfigKeySpelling
 {

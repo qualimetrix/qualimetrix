@@ -103,6 +103,9 @@ final class TypeCoverageOptionsTest extends TestCase
     #[Test]
     public function itAdvertisesOnlyTheBareShorthand(): void
     {
-        self::assertSame(['threshold'], TypeCoverageOptions::getShorthandOptionKeys());
+        self::assertSame(
+            ['enabled', 'error', 'threshold', 'warning'],
+            TypeCoverageOptions::acceptedOptionKeys()->acceptedForDisplay(),
+        );
     }
 }

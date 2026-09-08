@@ -35,6 +35,7 @@
             <directory>tests/Analysis/Policy/Baseline/Unit</directory>
             <directory>tests/Analysis/Policy/Inline/Unit</directory>
             <directory>tests/Analysis/Finding/Unit</directory>
+            <directory>tests/Analysis/Finding/RuleConfiguration/Unit</directory>
             <directory>tests/Analysis/Evidence/CircularDependency/Unit</directory>
             <directory>tests/Analysis/Evidence/CodeSmell/Unit</directory>
             <directory>tests/Analysis/Evidence/Cohesion/Unit</directory>

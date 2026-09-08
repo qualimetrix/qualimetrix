@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -24,14 +20,15 @@ use RuntimeException;
  *
  * Priority: defaults → config file → CLI options
  *
- * Reads option values from RuleOptionsRegistry (storage concern)
- * and performs merging, normalization, and validation (creation concern).
+ * Reads option values from RuleOptionsRegistry (storage concern) and performs
+ * merging, normalization and numeric validation (creation concern). Deciding
+ * which keys a rule answers for, and refusing the rest, is
+ * {@see RuleOptionKeyRecognition}.
  */
 final class RuleOptionsFactory
 {
     public function __construct(
         private readonly RuleOptionsRegistry $registry,
-        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
@@ -123,8 +120,8 @@ final class RuleOptionsFactory
         // ability to tell "explicitly set" from "defaulted".
         $merged = $userConfig === [] ? $defaults : $userConfig;
 
-        // 5. Warn about unknown option keys
-        $this->warnAboutUnknownKeys($merged, $defaults, $ruleName, $optionsClass);
+        // 5. Refuse every option key nothing at its depth answers for
+        RuleOptionKeyRecognition::refuseUnknownKeys($userConfig, $ruleName, $optionsClass);
 
         // 6. Validate numeric fields before instantiation
         $this->validateNumericFields($merged, $ruleName);
@@ -323,135 +320,6 @@ final class RuleOptionsFactory
         }
 
         return $result;
-    }
-
-    /**
-     * Warns about unknown option keys in rule configuration.
-     *
-     * Compares merged config keys against known constructor parameters, plus
-     * any extra keys the Options class declares via
-     * {@see ShorthandOptionKeysInterface} or
-     * {@see AdditionalOptionKeysInterface}. Framework-level keys
-     * (suppressNamespaces, suppressPaths) are excluded since they are
-     * extracted before fromArray().
-     *
-     * > **Note:** reflection only sees constructor parameter names. Any
-     * > {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser} shorthand key that
-     * > isn't also a constructor parameter — e.g. the bare `threshold` key,
-     * > or rule-specific ones like `vo-threshold` on
-     * > `code-smell.long-parameter-list` — is invisible
-     * > to reflection. `ShorthandOptionKeysInterface` closes that gap: an
-     * > Options class implements it to declare the extra keys its
-     * > `fromArray()` actually accepts, and this method merges them into the
-     * > known-keys set. Options classes that don't implement it (e.g. most
-     * > `CodeSmellOptions`-based rules, which have no threshold concept at
-     * > all beyond `enabled`) keep the old constructor-only behavior, so a
-     * > `threshold` key on one of them correctly still warns. This also
-     * > covers hierarchical rules: `CboOptions`/`InstabilityOptions` DO
-     * > implement it, because their own top-level `fromArray()` also parses
-     * > a bare `threshold` (applied uniformly to every nested level) — only
-     * > a hierarchical wrapper whose top level routes nothing at all would
-     * > stay unimplementing.
-     *
-     * @param array<string, mixed> $merged
-     * @param array<string, mixed> $defaults
-     * @param class-string<RuleOptionsInterface> $optionsClass
-     */
-    private function warnAboutUnknownKeys(array $merged, array $defaults, string $ruleName, string $optionsClass): void
-    {
-        // Framework-level keys that are valid but not in the options constructor
-        static $frameworkKeys = [
-            'suppressNamespaces',
-            'suppress_namespaces',
-            'suppressNamespaceChannels',
-            'suppress_namespace_channels',
-            'suppressPaths',
-            'suppress_paths',
-        ];
-
-        $acceptedExtraKeys = $this->acceptedExtraOptionKeysFor($optionsClass);
-
-        // Build known keys in both snake_case and camelCase forms
-        $knownKeys = [...$frameworkKeys];
-        foreach (array_keys($defaults) as $key) {
-            $knownKeys[] = $key;
-            // Also accept camelCase version of snake_case keys
-            $camelKey = ConfigKeySpelling::normalize($key);
-            if ($camelKey !== $key) {
-                $knownKeys[] = $camelKey;
-            }
-        }
-
-        foreach ($acceptedExtraKeys as $acceptedExtraKey) {
-            // Declared keys are canonical kebab-case; $merged keys are always
-            // camelCase by the time they reach here (normalizeKeys()/
-            // ConfigKeySpelling::normalize() already ran), so both
-            // spellings must be accepted.
-            $knownKeys[] = $acceptedExtraKey;
-            $camelAcceptedExtraKey = ConfigKeySpelling::normalize($acceptedExtraKey);
-            if ($camelAcceptedExtraKey !== $acceptedExtraKey) {
-                $knownKeys[] = $camelAcceptedExtraKey;
-            }
-        }
-
-        foreach (array_keys($merged) as $key) {
-            if (\in_array($key, $knownKeys, true)) {
-                continue;
-            }
-
-            $availableOptions = [
-                ...array_map($this->toCanonicalDisplayName(...), array_keys($defaults)),
-                ...$acceptedExtraKeys,
-            ];
-
-            $this->logger->warning(\sprintf(
-                'Unknown option "%s" for rule "%s". Available options: %s',
-                $this->toCanonicalDisplayName((string) $key),
-                $ruleName,
-                implode(', ', $availableOptions),
-            ));
-        }
-    }
-
-    /**
-     * Returns every top-level key accepted beyond constructor parameters.
-     *
-     * Threshold shorthand and non-threshold options remain separate contracts,
-     * while the factory consumes their declarations through one cohesive seam.
-     *
-     * @param class-string<RuleOptionsInterface> $optionsClass
-     *
-     * @return list<string>
-     */
-    private function acceptedExtraOptionKeysFor(string $optionsClass): array
-    {
-        $keys = [];
-
-        if (is_a($optionsClass, ShorthandOptionKeysInterface::class, true)) {
-            $keys = $optionsClass::getShorthandOptionKeys();
-        }
-
-        if (is_a($optionsClass, AdditionalOptionKeysInterface::class, true)) {
-            $keys = [...$keys, ...$optionsClass::getAdditionalOptionKeys()];
-        }
-
-        return $keys;
-    }
-
-    /**
-     * Converts a constructor parameter name (always camelCase in PHP) to the
-     * kebab-case spelling users actually type in `qmx.yaml`, presets, and
-     * `--rule-opt` — the canonical, user-facing spelling for composite
-     * (multi-word) option names (see CLAUDE.md rule-option naming policy).
-     *
-     * Both camelCase and kebab/snake_case input are always accepted (see
-     * {@see normalizeKeys()} and `ConfigKeySpelling::normalize()`),
-     * but the "Available options" hint must show a single, typeable spelling
-     * rather than the internal PHP property name.
-     */
-    private function toCanonicalDisplayName(string $camelCaseKey): string
-    {
-        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '-$0', $camelCaseKey));
     }
 
     /**

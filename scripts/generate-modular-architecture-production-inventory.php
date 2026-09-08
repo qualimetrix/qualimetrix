@@ -2452,6 +2452,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0037-suppressed-format-and-produced-findings.md' => ['Reporting', 'P6-D'],
         'docs/adr/0047-suppression-is-not-exclusion.md' => ['Reporting', 'P6-D'],
         'docs/adr/0048-the-final-published-name-vocabulary.md' => ['Analysis.Finding', 'P6-A'],
+        'docs/adr/0049-rule-option-key-recognition.md' => ['Analysis.Finding', 'P6-A'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],

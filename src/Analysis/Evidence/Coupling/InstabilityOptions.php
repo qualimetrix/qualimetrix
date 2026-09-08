@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -19,7 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Supports class and namespace levels for instability thresholds.
  */
-final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
+final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterface
 {
     public function __construct(
         public ClassInstabilityOptions $class = new ClassInstabilityOptions(),
@@ -44,9 +43,8 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
         // and namespace dimensions, instead of the nested `class:`/
         // `namespace:` sub-configs below. Mirrors CboOptions's own top-level
         // branch — see its docblock for why both levels stay enabled with
-        // the same threshold rather than one being disabled. Intentionally
-        // NOT declared via getShorthandOptionKeys() beyond `threshold`
-        // itself, matching CboOptions.
+        // the same threshold rather than one being disabled, and
+        // acceptedOptionKeys() below for why the flat keys are declared.
         $hasFlatMaxWarning = \array_key_exists('max_warning', $config) || \array_key_exists('maxWarning', $config);
         $hasFlatMaxError = \array_key_exists('max_error', $config) || \array_key_exists('maxError', $config);
 
@@ -85,14 +83,6 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
             class: ClassInstabilityOptions::fromArray($classConfig),
             namespace: NamespaceInstabilityOptions::fromArray($namespaceConfig),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     /**

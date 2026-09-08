@@ -8,7 +8,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidato
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -23,7 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * Industry standard: LCOM4 >= 5 indicates serious cohesion problems.
  */
-final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -70,14 +69,6 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
             excludeMethods: $excludeMethods,
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool

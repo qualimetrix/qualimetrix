@@ -111,11 +111,9 @@ run unconditionally) rather than through the generic "unknown option"
 warning. `UnassignedClassOptions` accepts only `mode`, and declares `enabled`
 as answered-by-the-class: `fromArray()` accepts `enabled: false` when it
 agrees with `mode: ignore` and refuses it otherwise, naming `mode` as the
-replacement. These declarations are inert until `RuleOptionsFactory` is taught
-to read them
-(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
-today's behaviour — the generic warning printed above each class's own bespoke
-refusal — is unchanged.
+replacement. `RuleOptionsFactory` reads these declarations and refuses an
+unrecognised key by name — an answered-by-the-class key reaches the class's own
+bespoke refusal unchallenged; anything else is rejected before construction.
 
 ## Definition of Done
 

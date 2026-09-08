@@ -37,7 +37,7 @@ final class InstabilityOptionsTest extends TestCase
     #[Test]
     public function itAdvertisesTheThresholdShorthandKey(): void
     {
-        self::assertSame(['threshold'], InstabilityOptions::getShorthandOptionKeys());
+        self::assertTrue(InstabilityOptions::acceptedOptionKeys()->accepts('threshold'));
     }
 
     #[Test]

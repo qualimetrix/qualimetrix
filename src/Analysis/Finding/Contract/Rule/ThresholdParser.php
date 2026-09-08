@@ -22,10 +22,15 @@ final class ThresholdParser
      *
      * `$legacyKeys` lists additional fallback keys per primary key, e.g. the
      * camelCase form of a composite `$warningKey`/`$errorKey`/`$thresholdKey`
-     * (`'maxWarning'`, `'voThreshold'`, ...) — needed because
-     * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory} and
-     * `RuleOptionsParser` normalize config-file/CLI keys to camelCase before
-     * `fromArray()` runs.
+     * (`'maxWarning'`, `'voThreshold'`, ...) — needed because every door folds
+     * separators away before `fromArray()` runs, so a key written
+     * `max_warning` arrives as `maxWarning`.
+     *
+     * A key read here and nowhere else is invisible to reflection, which is
+     * why the class that reads it declares it: see
+     * `RuleOptionsInterface::acceptedOptionKeys()`. The bare `$thresholdKey`
+     * default is the case that forces the point — no constructor names it, it
+     * works, and it is documented on the website.
      *
      * @param array<string, mixed> $config Raw configuration array
      * @param string $warningKey Config key for warning threshold (e.g. 'warning', 'max_distance_warning')

@@ -8,7 +8,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidato
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -22,7 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - 15-25 classes: warning, namespace may be doing too much
  * - > 25 classes: error, namespace should be split into subnamespaces
  */
-final readonly class ClassCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class ClassCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -48,14 +47,6 @@ final readonly class ClassCountOptions implements RuleOptionsInterface, Threshol
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool

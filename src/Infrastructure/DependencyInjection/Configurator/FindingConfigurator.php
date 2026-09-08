@@ -20,7 +20,6 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
     {
         $ruleOptionsRegistry = 'Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsRegistry';
         $ruleExecution = 'Qualimetrix\\Analysis\\Finding\\RuleExecution';
-        $delegatingLogger = 'Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger';
 
         $container->register($ruleOptionsRegistry);
         $container->setAlias(RuleConfigurationInterface::class, $ruleOptionsRegistry)
@@ -29,7 +28,6 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
         $container->register(RuleOptionsFactory::class)
             ->setArguments([
                 new Reference($ruleOptionsRegistry),
-                new Reference($delegatingLogger),
             ])
             ->setPublic(true);
 

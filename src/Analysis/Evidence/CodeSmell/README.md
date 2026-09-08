@@ -96,15 +96,12 @@ The only internal dogfood control is `CredentialLiterals` `@qmx-ignore health.co
 `LongParameterListOptions`, `UnreachableCodeOptions` and `UnusedPrivateOptions`
 declare their accepted option keys through
 `RuleOptionsInterface::acceptedOptionKeys()`. Each declaration transcribes the
-class's own constructor parameters plus, where it implements
-`ShorthandOptionKeysInterface`, that interface's shorthand keys —
+class's own constructor parameters plus its shorthand keys —
 `threshold`/`vo-threshold` for `LongParameterListOptions`, `threshold` for
-`ConstructorOverinjectionOptions` and `UnreachableCodeOptions` — no key is
-added or dropped by this stage. These declarations are inert until
-`RuleOptionsFactory` is taught to read them
-(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
-today's behaviour — warnings from constructor-parameter reflection, at depth 1
-only — is unchanged.
+`ConstructorOverinjectionOptions` and `UnreachableCodeOptions`. Those
+declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
+key none of them knows is refused with exit 3, at the rule's own level and
+inside a level slot alike.
 
 ## Locality
 

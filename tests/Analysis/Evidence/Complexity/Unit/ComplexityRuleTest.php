@@ -434,19 +434,18 @@ final class ComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itComplexityOptionsFromLegacyArray(): void
+    public function itComplexityOptionsFromFlatThresholdShorthand(): void
     {
         $options = ComplexityOptions::fromArray([
             'enabled' => true,
-            'warningThreshold' => 12,
-            'errorThreshold' => 25,
+            'threshold' => 12,
         ]);
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
         self::assertSame(12, $options->callable->warning);
-        self::assertSame(25, $options->callable->error);
-        // Legacy format disables class level
+        self::assertSame(12, $options->callable->error);
+        // Flat shorthand disables class level
         self::assertFalse($options->class->isEnabled());
     }
 

@@ -30,7 +30,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]
@@ -968,11 +967,10 @@ final class CboRuleTest extends TestCase
     // Scope tests
 
     #[Test]
-    public function itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutAnUnknownOptionWarning(): void
+    public function itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutRefusingTheKey(): void
     {
         $registry = new RuleOptionsRegistry();
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($registry, $logger);
+        $factory = new RuleOptionsFactory($registry);
         $registry->setConfigFileOptions([
             'coupling.cbo' => [
                 'scope' => 'application',
@@ -998,7 +996,6 @@ final class CboRuleTest extends TestCase
 
         $findings = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertSame([], $logger->records);
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame(7.0, $findings[0]->metricValue);

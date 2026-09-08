@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
@@ -63,14 +62,14 @@ final class UnassignedClassOptionsTest extends TestCase
             ['mode'],
             array_map(static fn($parameter): string => $parameter->getName(), $constructor->getParameters()),
         );
-        // The factory reports the accepted set from the constructor parameters
-        // plus any declared shorthand keys, so a second switch could only get
-        // in through the second of those. There is none to declare.
-        self::assertNotContains(
-            ShorthandOptionKeysInterface::class,
-            class_implements(UnassignedClassOptions::class),
-            'no shorthand key may smuggle a second switch past the constructor parameter list',
-        );
+        // The declaration is now the whole of what the factory compares
+        // against, so a second switch could only get in by being written into
+        // it. `mode` is the only key anyone may write here; `enabled` is in
+        // the answered-by-the-class half, which is where the refusal below
+        // lives and is deliberately not a list anyone may write from.
+        self::assertSame(['mode'], UnassignedClassOptions::acceptedOptionKeys()->acceptedForDisplay());
+        self::assertTrue(UnassignedClassOptions::acceptedOptionKeys()->knows('enabled'));
+        self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->accepts('enabled'));
     }
 
     /**

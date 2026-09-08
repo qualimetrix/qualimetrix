@@ -328,19 +328,18 @@ final class CognitiveComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCognitiveComplexityOptionsFromLegacyArray(): void
+    public function itCognitiveComplexityOptionsFromFlatThresholdShorthand(): void
     {
         $options = CognitiveComplexityOptions::fromArray([
             'enabled' => true,
-            'warningThreshold' => 18,
-            'errorThreshold' => 35,
+            'threshold' => 18,
         ]);
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
         self::assertSame(18, $options->callable->warning);
-        self::assertSame(35, $options->callable->error);
-        // Legacy format disables class level
+        self::assertSame(18, $options->callable->error);
+        // Flat shorthand disables class level
         self::assertFalse($options->class->isEnabled());
     }
 
@@ -418,28 +417,6 @@ final class CognitiveComplexityRuleTest extends TestCase
         yield 'above warning, below error' => [20, 15, 30, Severity::Warning];
         yield 'at error threshold' => [30, 15, 30, Severity::Error];
         yield 'above error threshold' => [40, 15, 30, Severity::Error];
-    }
-
-    #[Test]
-    public function itLegacyDefaultErrorThresholdMatchesMethodDefault(): void
-    {
-        // Legacy format without explicit errorThreshold should use 30 (same as MethodCognitiveComplexityOptions)
-        $options = CognitiveComplexityOptions::fromArray([
-            'warningThreshold' => 15,
-        ]);
-
-        self::assertSame(30, $options->callable->error);
-    }
-
-    #[Test]
-    public function itLegacyPartialConfigUsesCorrectDefaults(): void
-    {
-        $options = CognitiveComplexityOptions::fromArray([
-            'errorThreshold' => 40,
-        ]);
-
-        self::assertSame(15, $options->callable->warning);
-        self::assertSame(40, $options->callable->error);
     }
 
     #[Test]

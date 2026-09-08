@@ -8,7 +8,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidato
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -24,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * @see https://pdepend.org/documentation/software-metrics/weighted-method-count.html
  */
-final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -52,14 +51,6 @@ final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareO
             error: (int) $thresholds['error'],
             excludeDataClasses: (bool) ($config['exclude_data_classes'] ?? $config['excludeDataClasses'] ?? false),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool

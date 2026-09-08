@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -20,7 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Supports class and namespace levels for CBO thresholds.
  */
-final readonly class CboOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface, AdditionalOptionKeysInterface
+final readonly class CboOptions implements HierarchicalRuleOptionsInterface
 {
     public function __construct(
         public ClassCboOptions $class = new ClassCboOptions(),
@@ -55,10 +53,10 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
         // own legacy-flat branch: it lets ThresholdParser detect a genuine
         // same-layer "threshold mixed with warning/error" conflict, and lets
         // a higher-priority layer switch mode against a lower layer's flat
-        // form at this same nesting level. It is intentionally NOT declared
-        // via getShorthandOptionKeys() (only `threshold` is advertised),
-        // matching how ComplexityOptions leaves its own legacy aliases
-        // unadvertised.
+        // form at this same nesting level. Because the condition — not only
+        // the body — reads them, a bare `warning`/`error` works alone here,
+        // which is why acceptedOptionKeys() declares them rather than
+        // leaving them unadvertised the way ComplexityOptions leaves its own.
         if (
             \array_key_exists(RuleOptionKey::THRESHOLD, $config)
             || \array_key_exists(RuleOptionKey::WARNING, $config)
@@ -101,22 +99,6 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
             class: ClassCboOptions::fromArray($classConfig),
             namespace: NamespaceCboOptions::fromArray($namespaceConfig),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getAdditionalOptionKeys(): array
-    {
-        return ['scope'];
     }
 
     /**

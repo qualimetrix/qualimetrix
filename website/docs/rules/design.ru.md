@@ -577,6 +577,5 @@ rules:
     tcc_threshold: 0.33
     class_loc_threshold: 300
     min_criteria: 3
-    min_members: 3
     exclude_readonly: true
 ```

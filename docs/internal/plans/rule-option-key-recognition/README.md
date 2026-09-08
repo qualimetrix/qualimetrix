@@ -68,5 +68,31 @@ here, before and after that change.
 
 ## Status
 
-Enumeration complete; treatment planned in this directory. The naming question is not part
-of this subject — level names are settled by ADR 0024 and are not reopened.
+Enumeration complete; two of the thirteen mechanisms are treated and shipped,
+recorded in [ADR 0049](../../../adr/0049-rule-option-key-recognition.md).
+
+**Closed: M1 and M2.** M1 was the depth-1-only validator — `warnAboutUnknownKeys`
+iterated the top of a rule's option map and never looked inside a level slot, so
+a typo written under `callable:` was silently dropped. M2 was the declared set
+disagreeing with the set `fromArray()` actually reads — the validator warned
+about keys that worked and stayed silent about keys that did nothing. ADR 0049
+closes both together: `RuleOptionsInterface`/`LevelOptionsInterface` declare
+`acceptedOptionKeys()`, `HierarchicalRuleOptionsInterface` declares
+`levelOptionsClasses()` naming the level class behind each slot, and an
+unrecognised key at either depth now refuses with `ConfigLoadException` (exit
+3) instead of warning or staying silent.
+
+**Measured, not treated: M3–M13.** The remaining eleven mechanisms in
+[`measurement/merged-enumeration.md`](measurement/merged-enumeration.md#группировка-по-механизму)
+stay open — spelling-normalisation asymmetry, sub-key checks that cover only
+`ENTRIES`-listed sections, `computed_metrics` reading fixed names without
+iterating record keys, exception routing under four different codes and two
+streams, value filters with no "matched nothing" check, `--rule-opt` losing
+input two ways, inline-directive barrier and observer inversions, the baseline
+record parser reading by name, keys that silently do more or less than named,
+closed config-filename discovery, and messages addressing a different surface
+than the one the user wrote. Each still needs its own treatment plan; none is
+scheduled by this document.
+
+The naming question is not part of this subject — level names are settled by
+ADR 0024 and are not reopened.

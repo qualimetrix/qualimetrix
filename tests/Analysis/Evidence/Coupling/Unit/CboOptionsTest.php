@@ -46,7 +46,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itAdvertisesTheThresholdShorthandKey(): void
     {
-        self::assertSame(['threshold'], CboOptions::getShorthandOptionKeys());
+        self::assertTrue(CboOptions::acceptedOptionKeys()->accepts('threshold'));
     }
 
     #[Test]

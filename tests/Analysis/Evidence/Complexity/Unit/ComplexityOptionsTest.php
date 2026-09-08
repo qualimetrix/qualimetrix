@@ -31,13 +31,12 @@ final class ComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function itStaysDisabledWhenLegacyThresholdKeysArePresent(): void
+    public function itStaysDisabledWhenTheFlatThresholdShorthandIsPresent(): void
     {
-        // enabled: false takes priority over legacy keys
+        // enabled: false takes priority over the flat `threshold` shorthand
         $options = ComplexityOptions::fromArray([
             'enabled' => false,
-            'warningThreshold' => 5,
-            'errorThreshold' => 10,
+            'threshold' => 5,
         ]);
 
         self::assertFalse($options->isEnabled());

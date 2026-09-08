@@ -6,521 +6,38 @@ declare(strict_types=1);
  * The two option-key populations behind the rule-option recognition subject, as TSV.
  *
  * Table A — per rule Options class: which level slots it accepts and which keys
- * are allowed *inside* each slot. That inner set is what
- * `RuleOptionsFactory::warnAboutUnknownKeys()` never compares anything against.
+ * are allowed *inside* each slot. That inner set is what each slot's level
+ * options class declares for itself and `RuleOptionsFactory` compares against.
  *
  * Table B — per rule Options class: the key set DECLARED to the product
- * (constructor parameters plus `ShorthandOptionKeysInterface` plus
- * `AdditionalOptionKeysInterface`), the key set actually READ by `fromArray()`,
- * and the two differences between them.
+ * (`acceptedOptionKeys()`, the class's own single statement), the key set
+ * actually READ by `fromArray()`, and the two differences between them.
  *
  * Table C — what this script could not reduce to a literal key, per class. It is
  * printed rather than reasoned about afterwards: a blind spot counted by hand is
  * a blind spot.
  *
- * The declared side comes from the real container's rule registry plus
- * reflection, never a hand-typed list. The read side cannot come from
+ * The declared side comes from the real container's rule registry plus each
+ * class's own declaration, never a hand-typed list. The read side cannot come from
  * reflection at all — it lives inside a method body — so it comes from the AST.
+ *
+ * The read side is produced by {@see FromArrayKeyReader}, which lives with the
+ * guard that shares it — `tests/Analysis/Finding/RuleConfiguration/Support/` —
+ * and reaches this script through composer's `autoload-dev`.
  *
  * Usage: php scripts/enumerate-rule-option-keys.php [--out-dir=DIR]
  */
 
-use PhpParser\Node;
-use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayDimFetch;
-use PhpParser\Node\Expr\Assign;
-use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Expr\PropertyFetch;
-use PhpParser\Node\Expr\StaticCall;
-use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Identifier;
-use PhpParser\Node\Name;
-use PhpParser\Node\Scalar\String_;
-use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Foreach_;
-use PhpParser\Node\Stmt\If_;
-use PhpParser\NodeFinder;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
-use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Support\FromArrayKeyReader;
 
 require __DIR__ . '/../vendor/autoload.php';
-
-/**
- * One `fromArray()` body, read.
- */
-final class OptionKeyReading
-{
-    /** @var array<string, bool> canonical key => reached without any enclosing branch */
-    public array $keys = [];
-
-    /** @var array<string, int> blind-spot kind => how many sites of it */
-    public array $unresolved = [
-        'dynamic-key' => 0,
-        'opaque-sink' => 0,
-        'spread' => 0,
-        'iteration' => 0,
-        'nested-delegation' => 0,
-    ];
-
-    /** @var list<string> */
-    public array $unresolvedDetail = [];
-
-    public function record(string $canonical, bool $guarded): void
-    {
-        $this->keys[$canonical] = ($this->keys[$canonical] ?? false) || !$guarded;
-    }
-
-    public function blind(string $kind, string $detail): void
-    {
-        $this->unresolved[$kind] = ($this->unresolved[$kind] ?? 0) + 1;
-        $this->unresolvedDetail[] = $kind . '@' . $detail;
-    }
-}
-
-/**
- * Reads the literal configuration keys one Options class consumes.
- *
- * Resolution covers: `$config['key']`, `$config[Some::CONST]`,
- * `$config[Enum::Case->value]`, `$config[$localVariable]` for a
- * single-assignment local, `array_key_exists(k, $config)`, the key arguments of
- * `ThresholdParser::parse()` (positional and named, `legacyKeys` included), and
- * same-class helper methods handed the config array.
- */
-final class FromArrayReader
-{
-    private const string CONFIG_METHOD = 'fromArray';
-
-    /** @var array<string, ClassMethod> */
-    private array $methods = [];
-
-    /** @var array<int, true> object id of every node that only runs when a branch was taken */
-    private array $guarded = [];
-
-    /** @var array<string, string> local variable name => resolved literal */
-    private array $locals = [];
-
-    private OptionKeyReading $reading;
-
-    /** @var list<string> */
-    private array $visited = [];
-
-    public function __construct(private readonly NodeFinder $finder = new NodeFinder()) {}
-
-    /**
-     * @param class-string $optionsClass
-     */
-    public function read(string $optionsClass): OptionKeyReading
-    {
-        $this->reading = new OptionKeyReading();
-        $this->methods = [];
-        $this->visited = [];
-        $this->guarded = [];
-        $this->locals = [];
-
-        $classNode = $this->classNode($optionsClass);
-        if ($classNode === null) {
-            $this->reading->blind('opaque-sink', 'class-source-unavailable');
-
-            return $this->reading;
-        }
-
-        foreach ($classNode->getMethods() as $method) {
-            $this->methods[$method->name->toString()] = $method;
-        }
-
-        $this->markGuarded($classNode);
-
-        $entry = $this->methods[self::CONFIG_METHOD] ?? null;
-        if ($entry === null) {
-            $this->reading->blind('opaque-sink', 'no-fromArray');
-
-            return $this->reading;
-        }
-
-        $configVariable = ($entry->params[0] ?? null)?->var;
-        if (!$configVariable instanceof Variable || !is_string($configVariable->name)) {
-            $this->reading->blind('opaque-sink', 'fromArray-parameter-not-a-plain-variable');
-
-            return $this->reading;
-        }
-
-        $this->walkMethod($entry, $configVariable->name, false);
-
-        return $this->reading;
-    }
-
-    /**
-     * @param class-string $optionsClass
-     */
-    private function classNode(string $optionsClass): ?Class_
-    {
-        $file = (new \ReflectionClass($optionsClass))->getFileName();
-        if ($file === false) {
-            return null;
-        }
-
-        $code = file_get_contents($file);
-        if ($code === false) {
-            return null;
-        }
-
-        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($code);
-        if ($ast === null) {
-            return null;
-        }
-
-        $traverser = new NodeTraverser(new NameResolver());
-        $ast = $traverser->traverse($ast);
-
-        $node = $this->finder->findFirstInstanceOf($ast, Class_::class);
-
-        return $node instanceof Class_ ? $node : null;
-    }
-
-    /**
-     * Marks every node that only runs when some branch was taken.
-     *
-     * An `if` *condition* is always evaluated, so a key probed there is read
-     * unconditionally; only the bodies are guarded. That distinction is the
-     * whole difference between a key that warns and works and a key that warns
-     * and does nothing.
-     */
-    private function markGuarded(Class_ $classNode): void
-    {
-        foreach ($this->finder->findInstanceOf([$classNode], If_::class) as $branch) {
-            assert($branch instanceof If_);
-
-            $conditional = [...$branch->stmts, ...$branch->elseifs];
-            if ($branch->else !== null) {
-                $conditional[] = $branch->else;
-            }
-
-            foreach ($this->finder->find($conditional, static fn(Node $node): bool => true) as $inner) {
-                $this->guarded[spl_object_id($inner)] = true;
-            }
-        }
-    }
-
-    private function walkMethod(ClassMethod $method, string $configVariable, bool $callSiteGuarded): void
-    {
-        $signature = $method->name->toString() . '/' . $configVariable;
-        if (in_array($signature, $this->visited, true)) {
-            return;
-        }
-        $this->visited[] = $signature;
-
-        $this->collectLocals($method);
-
-        $body = $method->stmts ?? [];
-
-        foreach ($this->finder->find($body, static fn(Node $node): bool => true) as $node) {
-            $guarded = $callSiteGuarded || isset($this->guarded[spl_object_id($node)]);
-            $this->inspect($node, $configVariable, $guarded);
-        }
-    }
-
-    /**
-     * Remembers locals assigned exactly once from something reducible to a
-     * literal — enough for `$key = SymbolLevel::Class_->value;`, and nothing
-     * beyond it.
-     */
-    private function collectLocals(ClassMethod $method): void
-    {
-        $seen = [];
-
-        foreach ($this->finder->findInstanceOf($method->stmts ?? [], Assign::class) as $assign) {
-            assert($assign instanceof Assign);
-
-            if (!$assign->var instanceof Variable || !is_string($assign->var->name)) {
-                continue;
-            }
-
-            $name = $assign->var->name;
-            $seen[$name] = ($seen[$name] ?? 0) + 1;
-
-            $literal = $this->literal($assign->expr);
-            if ($literal !== null) {
-                $this->locals[$name] = $literal;
-            }
-        }
-
-        foreach ($seen as $name => $count) {
-            if ($count > 1) {
-                unset($this->locals[$name]);
-            }
-        }
-    }
-
-    private function inspect(Node $node, string $configVariable, bool $guarded): void
-    {
-        if ($node instanceof ArrayDimFetch && $this->isConfig($node->var, $configVariable)) {
-            $key = $node->dim === null ? null : $this->literal($node->dim);
-            if ($key === null) {
-                $this->reading->blind('dynamic-key', 'line ' . $node->getStartLine());
-            } else {
-                $this->reading->record(ConfigKeySpelling::normalize($key), $guarded);
-            }
-
-            return;
-        }
-
-        if ($node instanceof Foreach_ && $this->isConfig($node->expr, $configVariable)) {
-            $this->reading->blind('iteration', 'line ' . $node->getStartLine());
-
-            return;
-        }
-
-        if ($node instanceof FuncCall) {
-            $this->inspectFuncCall($node, $configVariable, $guarded);
-
-            return;
-        }
-
-        if ($node instanceof StaticCall) {
-            $this->inspectStaticCall($node, $configVariable, $guarded);
-        }
-    }
-
-    private function inspectFuncCall(FuncCall $node, string $configVariable, bool $guarded): void
-    {
-        $name = $node->name instanceof Name ? $node->name->toLowerString() : null;
-
-        if ($name === 'array_key_exists' && count($node->args) === 2) {
-            $first = $node->args[0];
-            $second = $node->args[1];
-
-            if ($first instanceof Arg && $second instanceof Arg && $this->isConfig($second->value, $configVariable)) {
-                $key = $this->literal($first->value);
-                if ($key === null) {
-                    $this->reading->blind('dynamic-key', 'line ' . $node->getStartLine());
-                } else {
-                    $this->reading->record(ConfigKeySpelling::normalize($key), $guarded);
-                }
-
-                return;
-            }
-        }
-
-        $this->noteConfigHandoff($node->args, $configVariable, $name ?? 'closure', $node->getStartLine());
-    }
-
-    private function inspectStaticCall(StaticCall $node, string $configVariable, bool $guarded): void
-    {
-        $class = $node->class instanceof Name ? $node->class->toString() : '?';
-        $method = $node->name instanceof Identifier ? $node->name->toString() : '?';
-
-        if ($class === ThresholdParser::class && $method === 'parse') {
-            $this->inspectThresholdParse($node, $configVariable, $guarded);
-
-            return;
-        }
-
-        // A slice of the config handed to another class's own fromArray(): the
-        // keys read there belong to that class, and Table A is where they are
-        // enumerated. Counted, so the boundary of Table B is a number rather
-        // than an assumption.
-        if ($method === 'fromArray' && $class !== 'self' && $class !== 'static') {
-            $this->reading->blind('nested-delegation', $class . ' line ' . $node->getStartLine());
-
-            return;
-        }
-
-        $position = $this->configArgumentPosition($node->args, $configVariable);
-        if ($position === null) {
-            $this->noteConfigHandoff($node->args, $configVariable, $class . '::' . $method, $node->getStartLine());
-
-            return;
-        }
-
-        $helper = ($class === 'self' || $class === 'static') ? ($this->methods[$method] ?? null) : null;
-        if ($helper === null) {
-            $this->reading->blind('opaque-sink', $class . '::' . $method . ' line ' . $node->getStartLine());
-
-            return;
-        }
-
-        $parameter = ($helper->params[$position] ?? null)?->var;
-        if (!$parameter instanceof Variable || !is_string($parameter->name)) {
-            $this->reading->blind('opaque-sink', 'self::' . $method . ' line ' . $node->getStartLine());
-
-            return;
-        }
-
-        $this->walkMethod($helper, $parameter->name, $guarded);
-    }
-
-    /**
-     * `parse()` names its key arguments; every call site in the tree passes
-     * `legacyKeys:` by name and skips `thresholdKey`, so position alone lies.
-     */
-    private function inspectThresholdParse(StaticCall $node, string $configVariable, bool $guarded): void
-    {
-        if ($this->configArgumentPosition($node->args, $configVariable) === null) {
-            return;
-        }
-
-        $order = ['config', 'warningKey', 'errorKey', 'defaultWarning', 'defaultError', 'thresholdKey', 'legacyKeys'];
-        $bound = [];
-
-        $position = 0;
-        foreach ($node->args as $argument) {
-            if (!$argument instanceof Arg) {
-                $this->reading->blind('spread', 'ThresholdParser::parse line ' . $node->getStartLine());
-
-                continue;
-            }
-
-            if ($argument->name instanceof Identifier) {
-                $bound[$argument->name->toString()] = $argument->value;
-
-                continue;
-            }
-
-            $bound[$order[$position] ?? 'extra'] = $argument->value;
-            ++$position;
-        }
-
-        foreach (['warningKey', 'errorKey'] as $slot) {
-            $expression = $bound[$slot] ?? null;
-            $key = $expression === null ? null : $this->literal($expression);
-            if ($key === null) {
-                $this->reading->blind('dynamic-key', 'ThresholdParser::parse line ' . $node->getStartLine());
-
-                continue;
-            }
-            $this->reading->record(ConfigKeySpelling::normalize($key), $guarded);
-        }
-
-        $thresholdKey = isset($bound['thresholdKey']) ? $this->literal($bound['thresholdKey']) : \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey::THRESHOLD;
-        if ($thresholdKey === null) {
-            $this->reading->blind('dynamic-key', 'ThresholdParser::parse line ' . $node->getStartLine());
-        } else {
-            $this->reading->record(ConfigKeySpelling::normalize($thresholdKey), $guarded);
-        }
-
-        $legacy = $bound['legacyKeys'] ?? null;
-        if ($legacy === null) {
-            return;
-        }
-
-        // Only the VALUES are config keys. The map's own keys are the three
-        // threshold slots ('warning'/'error'/'threshold'), and collecting them
-        // would invent a `warning` key for every rule whose primary key is
-        // named something else.
-        if (!$legacy instanceof Array_) {
-            $this->reading->blind('dynamic-key', 'legacyKeys line ' . $node->getStartLine());
-
-            return;
-        }
-
-        foreach ($legacy->items as $slot) {
-            foreach ($this->finder->findInstanceOf([$slot->value], String_::class) as $string) {
-                assert($string instanceof String_);
-                $this->reading->record(ConfigKeySpelling::normalize($string->value), $guarded);
-            }
-        }
-    }
-
-    /**
-     * @param array<int, Arg|Node\VariadicPlaceholder> $args
-     */
-    private function noteConfigHandoff(array $args, string $configVariable, string $callee, int $line): void
-    {
-        foreach ($args as $argument) {
-            if (!$argument instanceof Arg) {
-                continue;
-            }
-
-            if (!$this->isConfig($argument->value, $configVariable)) {
-                continue;
-            }
-
-            if ($argument->unpack) {
-                $this->reading->blind('spread', $callee . ' line ' . $line);
-
-                continue;
-            }
-
-            $this->reading->blind('opaque-sink', $callee . ' line ' . $line);
-        }
-    }
-
-    /**
-     * @param array<int, Arg|Node\VariadicPlaceholder> $args
-     */
-    private function configArgumentPosition(array $args, string $configVariable): ?int
-    {
-        $position = 0;
-
-        foreach ($args as $argument) {
-            if (!$argument instanceof Arg || $argument->name instanceof Identifier) {
-                continue;
-            }
-
-            if ($this->isConfig($argument->value, $configVariable) && !$argument->unpack) {
-                return $position;
-            }
-
-            ++$position;
-        }
-
-        return null;
-    }
-
-    private function isConfig(Node $node, string $configVariable): bool
-    {
-        return $node instanceof Variable && $node->name === $configVariable;
-    }
-
-    private function literal(Node $node): ?string
-    {
-        if ($node instanceof String_) {
-            return $node->value;
-        }
-
-        if ($node instanceof Variable && is_string($node->name)) {
-            return $this->locals[$node->name] ?? null;
-        }
-
-        if ($node instanceof PropertyFetch) {
-            if (!$node->name instanceof Identifier || $node->name->toString() !== 'value') {
-                return null;
-            }
-
-            $case = $this->classConstant($node->var);
-
-            return $case instanceof \BackedEnum && is_string($case->value) ? $case->value : null;
-        }
-
-        $value = $this->classConstant($node);
-
-        return is_string($value) ? $value : null;
-    }
-
-    private function classConstant(Node $node): mixed
-    {
-        if (!$node instanceof ClassConstFetch || !$node->class instanceof Name || !$node->name instanceof Identifier) {
-            return null;
-        }
-
-        $reference = $node->class->toString() . '::' . $node->name->toString();
-
-        return defined($reference) ? constant($reference) : null;
-    }
-}
 
 /**
  * Prints Table A, Table B and the blind-spot table.
@@ -546,7 +63,7 @@ final class RuleOptionKeyEnumeration
         $optionsClasses = $enumeration->optionsClassesFromContainer();
         $independent = $enumeration->optionsClassesFromSource();
 
-        $reader = new FromArrayReader();
+        $reader = new FromArrayKeyReader();
 
         $tableA = [implode("\t", [
             'options_class', 'rules', 'hierarchical', 'level_slot_keys',
@@ -572,17 +89,16 @@ final class RuleOptionKeyEnumeration
             }
 
             $reading = $reader->read($optionsClass);
-            $declared = $enumeration->declaredKeys($optionsClass);
-
             $read = array_keys($reading->keys);
             sort($read);
+            $declared = $enumeration->declaredKeys($optionsClass, $read);
             $unguarded = array_keys(array_filter($reading->keys));
             sort($unguarded);
             $guardedOnly = array_values(array_diff($read, $unguarded));
             if ($guardedOnly !== []) {
                 ++$classesWithGuardedOnlyKeys;
             }
-            if ($enumeration->classesInFileOf($optionsClass) > 1) {
+            if ($reader->classDeclarationsInFileOf($optionsClass) > 1) {
                 ++$filesWithSeveralClasses;
             }
 
@@ -661,7 +177,7 @@ final class RuleOptionKeyEnumeration
      *
      * @return list<string>
      */
-    private function rowsD(string $optionsClass, FromArrayReader $reader): array
+    private function rowsD(string $optionsClass, FromArrayKeyReader $reader): array
     {
         $options = $optionsClass::fromArray([]);
         if (!$options instanceof HierarchicalRuleOptionsInterface) {
@@ -672,10 +188,9 @@ final class RuleOptionKeyEnumeration
         foreach ($options->getSupportedLevels() as $level) {
             $levelClass = $options->forLevel($level)::class;
             $reading = $reader->read($levelClass);
-            $declared = $this->declaredKeys($levelClass);
-
             $read = array_keys($reading->keys);
             sort($read);
+            $declared = $this->declaredKeys($levelClass, $read);
             $unguarded = array_keys(array_filter($reading->keys));
             sort($unguarded);
             $guardedOnly = array_values(array_diff($read, $unguarded));
@@ -710,7 +225,7 @@ final class RuleOptionKeyEnumeration
      * @param class-string<RuleOptionsInterface> $optionsClass
      * @param list<string> $rules
      */
-    private function rowA(string $optionsClass, array $rules, FromArrayReader $reader): string
+    private function rowA(string $optionsClass, array $rules, FromArrayKeyReader $reader): string
     {
         $options = $optionsClass::fromArray([]);
 
@@ -747,30 +262,35 @@ final class RuleOptionKeyEnumeration
     }
 
     /**
-     * Declared = what the factory compares a user key against.
+     * Declared = what the factory compares a user key against, asked of the
+     * class instead of reconstructed from its constructor.
      *
-     * @param class-string $optionsClass
+     * Two of the key set's three states are declarations, and only one of them
+     * can be listed: `acceptedForDisplay()` enumerates the accepted half, while
+     * the answered-by-the-class half is deliberately not a list anyone may
+     * write from — so it is recovered here by asking `knows()` about the keys
+     * the AST saw being read. A key the class answers for and no longer reads
+     * is therefore invisible to this table; that is the contract's shape, not
+     * an omission of the walk.
      *
-     * @return array<string, string> canonical key => which contract declares it
+     * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
+     * @param list<string> $read keys the AST saw `fromArray()` read
+     *
+     * @return array<string, string> canonical key => which half declares it
      */
-    private function declaredKeys(string $optionsClass): array
+    private function declaredKeys(string $optionsClass, array $read): array
     {
+        $keySet = $optionsClass::acceptedOptionKeys();
+
         $declared = [];
-
-        $constructor = (new \ReflectionClass($optionsClass))->getConstructor();
-        foreach ($constructor?->getParameters() ?? [] as $parameter) {
-            $declared[ConfigKeySpelling::normalize($parameter->getName())] = 'constructor';
+        foreach ($keySet->acceptedForDisplay() as $key) {
+            $declared[ConfigKeySpelling::normalize($key)] = 'accepted';
         }
 
-        if (is_a($optionsClass, ShorthandOptionKeysInterface::class, true)) {
-            foreach ($optionsClass::getShorthandOptionKeys() as $key) {
-                $declared[ConfigKeySpelling::normalize($key)] = 'shorthand';
-            }
-        }
-
-        if (is_a($optionsClass, AdditionalOptionKeysInterface::class, true)) {
-            foreach ($optionsClass::getAdditionalOptionKeys() as $key) {
-                $declared[ConfigKeySpelling::normalize($key)] = 'additional';
+        foreach ($read as $key) {
+            $normalized = ConfigKeySpelling::normalize($key);
+            if (!isset($declared[$normalized]) && $keySet->knows($normalized)) {
+                $declared[$normalized] = 'answered';
             }
         }
 
@@ -844,31 +364,6 @@ final class RuleOptionKeyEnumeration
         }
 
         return array_values(array_unique($found));
-    }
-
-    /**
-     * How many class declarations sit in the file this class lives in.
-     *
-     * The reader takes the first one; anything past it is unread.
-     *
-     * @param class-string $class
-     */
-    public function classesInFileOf(string $class): int
-    {
-        $file = (new \ReflectionClass($class))->getFileName();
-        if ($file === false) {
-            return 1;
-        }
-
-        $contents = file_get_contents($file);
-
-        if ($contents === false) {
-            return 1;
-        }
-
-        $declarations = preg_match_all('/^(?:final\s+|readonly\s+|abstract\s+)*class\s+\w+/m', $contents);
-
-        return $declarations === false ? 1 : $declarations;
     }
 
     /**

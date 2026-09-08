@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -19,7 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Supports callable and class levels with separate thresholds.
  */
-final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
+final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptionsInterface
 {
     public function __construct(
         public MethodCognitiveComplexityOptions $callable = new MethodCognitiveComplexityOptions(),
@@ -39,10 +38,10 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             );
         }
 
-        // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
-        // Also supports threshold shorthand at top level
-        if (\array_key_exists('warningThreshold', $config) || \array_key_exists('errorThreshold', $config) || \array_key_exists('threshold', $config)) {
-            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']]);
+        // Flat shorthand at the top level: one `threshold` applied to the
+        // callable dimension, which also switches the class level off.
+        if (\array_key_exists('threshold', $config)) {
+            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30);
 
             return new self(
                 callable: new MethodCognitiveComplexityOptions(
@@ -68,14 +67,6 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             callable: MethodCognitiveComplexityOptions::fromArray($callableConfig),
             class: ClassCognitiveComplexityOptions::fromArray($classConfig),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
