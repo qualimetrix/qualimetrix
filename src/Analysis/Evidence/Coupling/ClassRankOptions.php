@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - Warning: 0.02 (class has notably high importance in the graph)
  * - Error: 0.05 (class is a critical hub, high change impact)
  */
-final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -50,12 +50,9 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
         );
     }
 
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
+    public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return ['threshold'];
+        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
     }
 
     public function isEnabled(): bool

@@ -153,7 +153,7 @@ final class RuleSelectorTest extends TestCase
      * a producer filtered out never emits the level that was asked for.
      */
     #[Test]
-    public function aLevelPairInOnlySelectorsStillReachesItsProducer(): void
+    public function itKeepsAProducerRunningWhenALevelPairInOnlySelectorsTargetsItsChannel(): void
     {
         $pair = 'health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
 

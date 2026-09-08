@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class EmptyCatchRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresCodeSmellOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, EmptyCatchRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itSkipsMetricLookupAndReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoEmptyCatchIsRecorded(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAnErrorFindingAtTheRecordedLineWhenAnEmptyCatchIsDetected(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 

@@ -98,6 +98,16 @@ eligibility, thresholds, controls and output identity.
 - LCOM and TCC/LCC continue to ignore anonymous classes.
 
 
+## Rule option key declarations
+
+`LcomOptions` declares its accepted option keys through
+`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`,
+`exclude-methods`, `exclude-readonly`, `min-methods`, `threshold`, `warning` —
+its constructor parameters plus the `threshold` shorthand. That declaration is
+what `RuleOptionKeyRecognition` compares an incoming key against: a key it does not
+know is refused with exit 3, at the rule's own level and inside a level slot
+alike.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

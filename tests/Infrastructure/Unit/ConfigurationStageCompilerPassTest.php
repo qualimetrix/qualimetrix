@@ -18,7 +18,7 @@ final class ConfigurationStageCompilerPassTest extends TestCase
     private const string PIPELINE_SERVICE_ID = 'qmx.configuration.pipeline';
 
     #[Test]
-    public function addsTaggedStagesToPipeline(): void
+    public function itAddsTaggedStagesToThePipeline(): void
     {
         $container = new ContainerBuilder();
 
@@ -38,7 +38,7 @@ final class ConfigurationStageCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenPipelineNotRegistered(): void
+    public function itDoesNothingWhenThePipelineIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
 
@@ -53,7 +53,7 @@ final class ConfigurationStageCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function addsMultipleStages(): void
+    public function itAddsEveryTaggedStageToThePipeline(): void
     {
         $container = new ContainerBuilder();
 

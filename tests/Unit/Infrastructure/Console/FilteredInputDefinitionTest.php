@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
 final class FilteredInputDefinitionTest extends TestCase
 {
     #[Test]
-    public function hiddenOptionsAreExcludedFromGetOptions(): void
+    public function itExcludesHiddenOptionsFromGetOptions(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('visible', null, InputOption::VALUE_REQUIRED, 'Visible option'));
@@ -29,7 +29,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function hiddenOptionsStillAccessibleViaHasOption(): void
+    public function itKeepsHiddenOptionsAccessibleViaHasOption(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('hidden', null, InputOption::VALUE_REQUIRED, 'Hidden option'));
@@ -39,7 +39,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function hiddenOptionsStillAccessibleViaGetOption(): void
+    public function itKeepsHiddenOptionsAccessibleViaGetOption(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('hidden', null, InputOption::VALUE_REQUIRED, 'Hidden option'));
@@ -50,7 +50,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function hiddenOptionsStillAccessibleViaShortcut(): void
+    public function itKeepsHiddenOptionsAccessibleViaTheirShortcut(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('hidden', 'x', InputOption::VALUE_REQUIRED, 'Hidden option'));
@@ -61,7 +61,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function getOptionDefaultsIncludesHiddenOptions(): void
+    public function itIncludesHiddenOptionsInGetOptionDefaults(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('visible', null, InputOption::VALUE_REQUIRED, 'Visible', 'v'));
@@ -74,7 +74,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function synopsisExcludesHiddenOptions(): void
+    public function itExcludesHiddenOptionsFromTheSynopsis(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('visible', null, InputOption::VALUE_NONE, 'Visible'));
@@ -88,7 +88,7 @@ final class FilteredInputDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function noHiddenOptionsReturnsAllOptions(): void
+    public function itReturnsEveryOptionWhenNoneAreHidden(): void
     {
         $definition = new FilteredInputDefinition();
         $definition->addOption(new InputOption('one', null, InputOption::VALUE_NONE, 'One'));

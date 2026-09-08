@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 final class TemplateLayerDefinitionTest extends TestCase
 {
     #[Test]
-    public function construct_singleVariable_collectsVariablesFromNameAndPatterns(): void
+    public function itCollectsTheSingleVariableFromNameAndPatterns(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -31,7 +31,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_multipleVariables_returnsSortedDistinctList(): void
+    public function itReturnsMultipleVariablesAsASortedDistinctList(): void
     {
         $template = new TemplateLayerDefinition(
             'cluster-{tenant}-{module}',
@@ -43,7 +43,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_emptyName_rejected(): void
+    public function itRejectsAnEmptyNameTemplate(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('name template must not be empty');
@@ -55,7 +55,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_nameWithoutVariables_rejected(): void
+    public function itRejectsANameTemplateWithoutVariables(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('references no capture variables');
@@ -67,7 +67,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_nameVariableNotBoundByPattern_rejected(): void
+    public function itRejectsANameVariableNotBoundByAnyPattern(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('variable(s) "module" referenced in name template');
@@ -80,7 +80,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_nameVariableBoundByOneOfMultiplePatterns_accepted(): void
+    public function itAcceptsANameVariableBoundByOneOfMultiplePatterns(): void
     {
         // First pattern is non-capturing filter; second is the binding source.
         $template = new TemplateLayerDefinition(
@@ -95,7 +95,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_invalidCaptureGrammarInName_rejected(): void
+    public function itRejectsInvalidCaptureGrammarInTheName(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('name template');
@@ -107,7 +107,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_invalidCaptureGrammarInPattern_rejected(): void
+    public function itRejectsInvalidCaptureGrammarInAPattern(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('pattern');
@@ -119,7 +119,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function containsCaptureVariable_recognisesCaptures(): void
+    public function itRecognisesCaptureVariablesInAString(): void
     {
         self::assertTrue(TemplateLayerDefinition::containsCaptureVariable('domain-{module}'));
         self::assertTrue(TemplateLayerDefinition::containsCaptureVariable('App\\{tenant}\\**'));
@@ -132,7 +132,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function construct_excludePatternsWithDeclaredVariable_accepted(): void
+    public function itAcceptsExcludePatternsUsingADeclaredVariable(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -147,7 +147,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_excludePatternsWithoutCaptures_accepted(): void
+    public function itAcceptsExcludePatternsWithoutAnyCaptures(): void
     {
         // exclude.patterns without any capture variable is fine — they act as
         // a plain glob filter on the template's expanded membership.
@@ -164,7 +164,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_excludePatternsWithUndeclaredVariable_rejected(): void
+    public function itRejectsExcludePatternsReferencingAnUndeclaredVariable(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('exclude clause references undeclared variable(s) "tenant"');
@@ -180,7 +180,7 @@ final class TemplateLayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_excludePatternsWithInvalidGrammar_rejected(): void
+    public function itRejectsExcludePatternsWithInvalidCaptureGrammar(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('exclude pattern');

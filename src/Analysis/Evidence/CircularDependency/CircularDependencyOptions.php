@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -65,5 +66,10 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
         // Small transitive cycles (3-5) are still actionable warnings
         // Medium and large cycles are always warnings
         return Severity::Warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('direct-as-error', 'enabled', 'max-cycle-size');
     }
 }

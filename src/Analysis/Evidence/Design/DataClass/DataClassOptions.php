@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\DataClass;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -105,5 +106,18 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
     public function warningBoundary(): int
     {
         return $this->wocThreshold;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'enabled',
+            'exclude-exceptions',
+            'exclude-promoted-only',
+            'exclude-readonly',
+            'min-members',
+            'wmc-threshold',
+            'woc-threshold',
+        );
     }
 }

@@ -31,7 +31,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getClassDependencies_returnsOutgoingDependencies(): void
+    public function itReturnsOutgoingDependenciesForAClass(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -50,7 +50,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getClassDependents_returnsIncomingDependencies(): void
+    public function itReturnsIncomingDependenciesForAClass(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -69,7 +69,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getClassCe_countsUniqueTargets(): void
+    public function itCountsUniqueTargetsAsClassCe(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -83,7 +83,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getClassCa_countsUniqueSources(): void
+    public function itCountsUniqueSourcesAsClassCa(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -97,7 +97,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getNamespaceCe_countsExternalDependencies(): void
+    public function itCountsCrossNamespaceDependenciesAsNamespaceCe(): void
     {
         $deps = [
             // App -> Vendor (cross-namespace)
@@ -115,7 +115,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getNamespaceCa_countsExternalDependents(): void
+    public function itCountsCrossNamespaceDependentsAsNamespaceCa(): void
     {
         $deps = [
             // App -> Vendor (Vendor gets Ca)
@@ -134,7 +134,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getAllClasses_returnsAllUniqueClasses(): void
+    public function itReturnsAllUniqueClassesInTheGraph(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -151,7 +151,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getAllNamespaces_returnsAllUniqueNamespaces(): void
+    public function itReturnsAllUniqueNamespacesIncludingParents(): void
     {
         $deps = [
             $this->dep('App\\Service\\Foo', 'Vendor\\Package\\Bar'),
@@ -172,7 +172,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function getAllDependencies_returnsAllDependencies(): void
+    public function itReturnsEveryDependencyInTheGraph(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -185,7 +185,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function emptyGraph_returnsEmptyResults(): void
+    public function itReturnsEmptyResultsForAnEmptyGraph(): void
     {
         $graph = $this->build([]);
 
@@ -211,7 +211,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function handlesGlobalNamespace(): void
+    public function itTreatsAGlobalNamespaceClassAsAValidMember(): void
     {
         $deps = [
             $this->dep('GlobalClass', 'App\\Foo'),
@@ -229,7 +229,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_excludesNonStructuralBuiltinDependencies(): void
+    public function itExcludesNonStructuralBuiltinDependencies(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'App\\Bar'),
@@ -255,7 +255,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_preservesExtendsDependencyToBuiltinClass(): void
+    public function itPreservesAnExtendsDependencyToABuiltinClass(): void
     {
         $deps = [
             $this->dep('App\\MyException', 'RuntimeException', DependencyType::Extends),
@@ -274,7 +274,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_excludesNamespacedPhpBuiltins(): void
+    public function itExcludesNamespacedPhpBuiltinsButKeepsExtends(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'App\\Bar'),
@@ -291,7 +291,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_keepsUserClassesInGlobalNamespace(): void
+    public function itKeepsAUserClassEvenInTheGlobalNamespace(): void
     {
         // A class name that isn't a PHP built-in, even though it's in global namespace
         $deps = [
@@ -305,7 +305,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_keepsNamespacedClassesEvenIfNameMatchesBuiltin(): void
+    public function itKeepsANamespacedClassWhoseNameMatchesABuiltin(): void
     {
         // App\Exception is a user class, not PHP's built-in \Exception
         $deps = [
@@ -320,7 +320,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_excludesBuiltinFromCeCount(): void
+    public function itExcludesBuiltinsFromTheCeCount(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'App\\Bar'),
@@ -335,7 +335,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_excludesBuiltinFromNamespaceCe(): void
+    public function itExcludesBuiltinsFromTheNamespaceCeCount(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -350,7 +350,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_keepsImplementsForUserDefinedInterface(): void
+    public function itKeepsImplementsDependenciesForUserDefinedInterfaces(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'App\\BarInterface', DependencyType::Implements),
@@ -364,7 +364,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function build_excludesBuiltinInterfaces(): void
+    public function itExcludesBuiltinInterfacesFromDependencies(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'App\\Bar'),
@@ -384,7 +384,7 @@ final class DependencyGraphTest extends TestCase
     // ---------------------------------------------------------------
 
     #[Test]
-    public function parent_namespace_ce_deps_between_children_are_internal(): void
+    public function itTreatsDependenciesBetweenSiblingChildrenAsInternalToTheParent(): void
     {
         $deps = [
             $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
@@ -397,7 +397,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function parent_namespace_ce_external_deps_cross_boundary(): void
+    public function itCountsAChildNamespaceDependencyOutsideTheParentAsCe(): void
     {
         $deps = [
             $this->dep('A\\X\\Foo', 'B\\Bar'),
@@ -410,7 +410,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function parent_namespace_ca_external_deps_cross_boundary(): void
+    public function itCountsAChildNamespaceDependentOutsideTheParentAsCa(): void
     {
         $deps = [
             $this->dep('B\\Bar', 'A\\X\\Foo'),
@@ -423,7 +423,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function parent_namespace_mixed_internal_and_external_deps(): void
+    public function itCountsOnlyTheExternalDepsAmongAMixOfInternalAndExternal(): void
     {
         $deps = [
             // Internal to A — should NOT count
@@ -445,7 +445,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function parent_namespace_deep_nesting_propagates_ce(): void
+    public function itPropagatesCeUpEveryAncestorNamespace(): void
     {
         $deps = [
             $this->dep('A\\B\\C\\Foo', 'D\\E\\Bar'),
@@ -461,7 +461,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function leaf_namespace_ce_ca_not_affected_by_parent_ns_addition(): void
+    public function itKeepsLeafNamespaceCeAndCaUnaffectedByParentNamespaces(): void
     {
         $deps = [
             // Cross-namespace leaf dep: A\X -> B\Y
@@ -482,7 +482,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
-    public function parent_namespace_with_all_internal_deps_has_zero_coupling(): void
+    public function itReportsZeroCouplingWhenAllDepsAreInternalToTheParent(): void
     {
         $deps = [
             $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),

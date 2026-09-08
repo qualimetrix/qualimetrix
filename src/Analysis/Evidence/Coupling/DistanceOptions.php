@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -26,7 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - Use `suppress_namespaces` (universal per-rule option) to exclude specific namespaces
  * - External dependencies (not matching project namespaces) are always excluded
  */
-final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -51,11 +51,8 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
     public static function fromArray(array $config): self
     {
         $includeNamespaces = null;
-        // Support both old (projectNamespaces) and new (includeNamespaces) config keys
         $includeKey = $config['include_namespaces']
             ?? $config['includeNamespaces']
-            ?? $config['project_namespaces']
-            ?? $config['projectNamespaces']
             ?? null;
 
         if (\is_string($includeKey)) {
@@ -75,12 +72,16 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
         );
     }
 
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
+    public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return ['threshold'];
+        return RuleOptionKeySet::of(
+            'enabled',
+            'include-namespaces',
+            'max-distance-error',
+            'max-distance-warning',
+            'min-class-count',
+            'threshold',
+        );
     }
 
     public function isEnabled(): bool

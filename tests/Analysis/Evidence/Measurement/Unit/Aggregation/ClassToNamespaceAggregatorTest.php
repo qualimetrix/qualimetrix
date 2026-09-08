@@ -432,7 +432,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function applyAggregationsAutoStoresCountAlongsideAverage(): void
+    public function itAutoStoresCountAlongsideAnAverageAggregation(): void
     {
         $definition = new MetricDefinition(
             name: 'maintainability.mi',
@@ -455,7 +455,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function applyAggregationsDoesNotDuplicateExplicitCount(): void
+    public function itDoesNotDuplicateAnExplicitlyRequestedCount(): void
     {
         $definition = new MetricDefinition(
             name: 'test',

@@ -126,7 +126,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * Only a literal actually keyed here is exempt; a new literal appearing
      * in one of these files, allowed or not, is judged like any other file's
      * literal and must earn its own pair before it stops failing
-     * {@see noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral()}.
+     * {@see itRefusesAProductionFileOutsideARuleOrChannelsOwningCapabilityThatHoldsItsLiteral()}.
      *
      * **An argument is not enough on its own: the entry must still be
      * earned.** This list once held a file-wide waiver for `RuleCategory.php`,
@@ -135,11 +135,11 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * was retired and the group became derived ({@see RuleFamily}); a waiver
      * for a file that no longer exists would have sat here arguing against a
      * decision already taken, and nothing would have failed. So
-     * {@see everyNamedFileStillEarnsItsEntry()} re-runs the check each pair
+     * {@see itRequiresEveryNamedFileToStillEarnItsEntry()} re-runs the check each pair
      * suppresses and fails when it finds nothing left to suppress.
      *
      * Removing one pair here reddens the primary guard for exactly that
-     * literal, never {@see everyNamedFileStillEarnsItsEntry()}: the meta-guard
+     * literal, never {@see itRequiresEveryNamedFileToStillEarnItsEntry()}: the meta-guard
      * only walks the pairs still present in this list, so a removed pair is
      * invisible to it by construction — the same asymmetry the file-wide
      * waiver had, now scoped to one literal instead of one file.
@@ -222,7 +222,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * checks existence rather than ownership for exactly the files P6 swept.
      *
      * An entry here has to keep carrying such a code:
-     * {@see everyNamedFileStillEarnsItsEntry()} fails on a file the regexes
+     * {@see itRequiresEveryNamedFileToStillEarnItsEntry()} fails on a file the regexes
      * read nothing out of, which otherwise passes this check by having
      * nothing to check.
      *
@@ -235,7 +235,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     ];
 
     #[Test]
-    public function noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral(): void
+    public function itRefusesAProductionFileOutsideARuleOrChannelsOwningCapabilityThatHoldsItsLiteral(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -298,7 +298,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * subject and leaves the guard asserting about it.
      */
     #[Test]
-    public function everyNamedFileStillEarnsItsEntry(): void
+    public function itRequiresEveryNamedFileToStillEarnItsEntry(): void
     {
         $container = (new ContainerFactory())->create();
         $ownerByLiteral = self::ownerByLiteral($container);
@@ -462,7 +462,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     }
 
     #[Test]
-    public function noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel(): void
+    public function itRefusesAHandSpelledCodeInAFixtureOrDocPageThatNamesANonexistentRuleOrChannel(): void
     {
         $container = (new ContainerFactory())->create();
 

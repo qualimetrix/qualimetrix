@@ -30,7 +30,7 @@ final class ContainerConfigurationStagesTest extends TestCase
     }
 
     #[Test]
-    public function presetStageIsRegisteredInPipeline(): void
+    public function itRegistersThePresetStageInThePipeline(): void
     {
         $stages = $this->pipeline->stages();
 
@@ -48,7 +48,7 @@ final class ContainerConfigurationStagesTest extends TestCase
     }
 
     #[Test]
-    public function allStagesAreRegisteredWithCorrectPriorities(): void
+    public function itRegistersAllStagesWithTheCorrectPriorities(): void
     {
         $stages = $this->pipeline->stages();
 

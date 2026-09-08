@@ -36,7 +36,7 @@ use stdClass;
 final class LayerDefinitionTest extends TestCase
 {
     #[Test]
-    public function name_returnsConfiguredName(): void
+    public function itReturnsTheConfiguredName(): void
     {
         $definition = self::patternLayer('controller', ['App\\Controller']);
 
@@ -44,7 +44,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function patterns_returnsOriginalPatterns(): void
+    public function itReturnsTheOriginalPatternsUnchanged(): void
     {
         $definition = self::patternLayer('controller', ['App\\Controller', 'App\\Web\\**']);
 
@@ -52,7 +52,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membership_returnsSpec(): void
+    public function itReturnsTheMembershipSpec(): void
     {
         $spec = new MembershipSpec(patterns: ['App\\Foo']);
         $definition = new LayerDefinition('foo', $spec);
@@ -66,7 +66,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_returnsNoMatchForEmptyFqn(): void
+    public function itReturnsNoMatchForAnEmptyFqn(): void
     {
         $definition = self::patternLayer('any', ['App\\Foo']);
 
@@ -77,7 +77,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_pureLiteralMatchesExactNamespace(): void
+    public function itMatchesAPureLiteralAgainstTheExactNamespace(): void
     {
         $definition = self::patternLayer('service', ['App\\Service']);
 
@@ -85,7 +85,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_pureLiteralMatchesChildNamespace(): void
+    public function itMatchesAPureLiteralAgainstAChildNamespace(): void
     {
         $definition = self::patternLayer('service', ['App\\Service']);
 
@@ -93,7 +93,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_pureLiteralMatchesDeeplyNestedNamespace(): void
+    public function itMatchesAPureLiteralAgainstADeeplyNestedNamespace(): void
     {
         $definition = self::patternLayer('service', ['App\\Service']);
 
@@ -101,7 +101,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_pureLiteralRespectsBoundary(): void
+    public function itRespectsTheNamespaceBoundaryOfAPureLiteralPattern(): void
     {
         $definition = self::patternLayer('service', ['App\\Service']);
 
@@ -112,7 +112,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_globWithDoubleStar(): void
+    public function itMatchesAGlobWithADoubleStarSegment(): void
     {
         $definition = self::patternLayer('repository', ['App\\**\\Repository']);
 
@@ -120,7 +120,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_globWithTrailingDoubleStar(): void
+    public function itMatchesAGlobWithATrailingDoubleStar(): void
     {
         $definition = self::patternLayer('service', ['App\\Service\\**']);
 
@@ -128,7 +128,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_anyOfMultiplePatternsSatisfies(): void
+    public function itMatchesWhenAnyOfMultiplePatternsIsSatisfied(): void
     {
         $definition = self::patternLayer('mixed', ['App\\**', 'App\\Service\\Special']);
 
@@ -137,7 +137,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_returnsNoMatchWhenNoPatternMatches(): void
+    public function itReturnsNoMatchWhenNoPatternMatches(): void
     {
         $definition = self::patternLayer('controller', ['App\\Controller', 'App\\Http\\**']);
 
@@ -148,7 +148,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_questionMarkWildcard(): void
+    public function itMatchesAQuestionMarkWildcard(): void
     {
         $definition = self::patternLayer('q', ['App\\?oo']);
 
@@ -156,7 +156,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_charClassWildcard(): void
+    public function itMatchesACharacterClassWildcard(): void
     {
         $definition = self::patternLayer('c', ['App\\[ABC]oo']);
 
@@ -164,7 +164,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_normalizesTrailingBackslashInPattern(): void
+    public function itNormalizesATrailingBackslashInThePattern(): void
     {
         $definition = self::patternLayer('svc', ['App\\Service\\']);
 
@@ -173,7 +173,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_recordsFirstMatchingPatternDescriptor(): void
+    public function itRecordsOnlyTheFirstMatchingPatternDescriptor(): void
     {
         $definition = self::patternLayer('mixed', ['App\\Other', 'App\\**', 'App\\Service\\Special']);
 
@@ -188,7 +188,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_returnsOriginalPatternStringEvenWithTrailingBackslash(): void
+    public function itEchoesTheOriginalPatternStringIncludingATrailingBackslash(): void
     {
         $definition = self::patternLayer('svc', ['App\\Service\\']);
 
@@ -206,7 +206,7 @@ final class LayerDefinitionTest extends TestCase
      * {@see LayerDefinition} expects, this test surfaces the mismatch.
      */
     #[Test]
-    public function matches_agreesWithNamespaceMatcherForGlobAndPrefixCases(): void
+    public function itAgreesWithNamespaceMatcherAcrossGlobAndPrefixCases(): void
     {
         $cases = [
             // [patterns, fqn, expected]
@@ -239,7 +239,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_suffix_matchesShortNameSuffix(): void
+    public function itMatchesASuffixAgainstTheShortNameEnding(): void
     {
         $definition = new LayerDefinition('repository', new MembershipSpec(suffix: ['Repository']));
 
@@ -252,7 +252,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_suffix_matchesExactShortName(): void
+    public function itMatchesASuffixThatEqualsTheWholeShortName(): void
     {
         // 'Service' as suffix also matches a class named exactly 'Service'.
         $definition = new LayerDefinition('svc', new MembershipSpec(suffix: ['Service']));
@@ -261,7 +261,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_suffix_doesNotMatchWhenSuffixIsInTheMiddle(): void
+    public function itDoesNotMatchASuffixThatAppearsInTheMiddleOfTheShortName(): void
     {
         $definition = new LayerDefinition('repository', new MembershipSpec(suffix: ['Repository']));
 
@@ -272,7 +272,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_suffix_multipleEntriesAreOred(): void
+    public function itOrsMultipleSuffixEntriesTogether(): void
     {
         $definition = new LayerDefinition(
             'persistence',
@@ -288,7 +288,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_attributes_matchesByFqn(): void
+    public function itMatchesAnAttributeByItsFqn(): void
     {
         $definition = new LayerDefinition(
             'entity',
@@ -309,7 +309,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_attributes_noMatchWhenClassHasNoAttributes(): void
+    public function itReturnsNoMatchWhenTheClassHasNoAttributes(): void
     {
         $definition = new LayerDefinition(
             'entity',
@@ -326,7 +326,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_implements_byTransitiveInterface(): void
+    public function itMatchesATransitivelyImplementedInterface(): void
     {
         $definition = new LayerDefinition(
             'repository',
@@ -347,7 +347,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_extends_byTransitiveParent(): void
+    public function itMatchesATransitiveParentClass(): void
     {
         $definition = new LayerDefinition(
             'aggregate',
@@ -372,7 +372,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_any_combinesCriteriaWithOr(): void
+    public function itCombinesCriteriaWithOrInAnyMode(): void
     {
         $definition = new LayerDefinition(
             'repository',
@@ -391,7 +391,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_any_recordsEveryMatchingCriterion(): void
+    public function itRecordsEveryMatchingCriterionInAnyMode(): void
     {
         $definition = new LayerDefinition(
             'repository',
@@ -411,7 +411,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_all_rejectsClassMissingOneCriterion(): void
+    public function itRejectsAClassMissingOneCriterionInAllMode(): void
     {
         $definition = new LayerDefinition(
             'strict-repository',
@@ -429,7 +429,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_all_acceptsClassMatchingEveryDeclaredCriterion(): void
+    public function itAcceptsAClassMatchingEveryDeclaredCriterionInAllMode(): void
     {
         $definition = new LayerDefinition(
             'strict-repository',
@@ -447,7 +447,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_all_emptyCriteriaAreTriviallySatisfied(): void
+    public function itTreatsUndeclaredCriteriaAsTriviallySatisfiedInAllMode(): void
     {
         // Only patterns declared; suffix/attributes/implements/extends are empty —
         // they should not affect MatchMode::All semantics.
@@ -464,7 +464,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function construct_throwsOnEmptyName(): void
+    public function itRejectsAnEmptyName(): void
     {
         $this->expectException(InvalidLayerDefinitionException::class);
         new LayerDefinition('', new MembershipSpec(patterns: ['App\\Foo']));
@@ -472,7 +472,7 @@ final class LayerDefinitionTest extends TestCase
 
     #[DataProvider('invalidNameProvider')]
     #[Test]
-    public function construct_throwsOnInvalidName(string $invalidName): void
+    public function itRejectsAnInvalidName(string $invalidName): void
     {
         $this->expectException(InvalidLayerDefinitionException::class);
         new LayerDefinition($invalidName, new MembershipSpec(patterns: ['App\\Foo']));
@@ -494,7 +494,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function construct_acceptsValidNameWithDigitsUnderscoreHyphen(): void
+    public function itAcceptsAValidNameWithDigitsUnderscoreAndHyphen(): void
     {
         $definition = self::patternLayer('a1_b-c', ['App\\Foo']);
 
@@ -506,7 +506,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expanded_acceptsPascalCaseName(): void
+    public function itAcceptsAPascalCaseNameInExpandedMode(): void
     {
         $definition = LayerDefinition::expanded(
             'domain-Order',
@@ -517,7 +517,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function expanded_acceptsLowercaseName(): void
+    public function itAcceptsALowercaseNameInExpandedMode(): void
     {
         $definition = LayerDefinition::expanded(
             'domain-order',
@@ -528,7 +528,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function expanded_rejectsNameStartingWithDigit(): void
+    public function itRejectsAnExpandedNameStartingWithADigit(): void
     {
         $this->expectException(InvalidLayerDefinitionException::class);
 
@@ -536,7 +536,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function expanded_rejectsNameWithBackslash(): void
+    public function itRejectsAnExpandedNameContainingABackslash(): void
     {
         $this->expectException(InvalidLayerDefinitionException::class);
 
@@ -544,7 +544,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function strictConstructor_keepsPhase1Restriction_uppercaseRejected(): void
+    public function itKeepsThePhase1RestrictionRejectingUppercaseInTheStrictConstructor(): void
     {
         $this->expectException(InvalidLayerDefinitionException::class);
 
@@ -556,7 +556,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function membershipSpec_throwsWhenAllCriterionListsAreEmpty(): void
+    public function itRejectsASpecWhereEveryCriterionListIsEmpty(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/at least one non-empty criterion list/');
@@ -565,7 +565,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnEmptyStringEntry(): void
+    public function itRejectsAnEmptyStringPatternEntry(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[1\] must not be empty/');
@@ -574,7 +574,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnNonStringPattern(): void
+    public function itRejectsANonStringPatternEntryAtIndexZero(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[0\] must be a string, int given/');
@@ -584,7 +584,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnNonStringPatternAtNonZeroIndex(): void
+    public function itRejectsANonStringPatternEntryAtANonZeroIndex(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[1\] must be a string, int given/');
@@ -594,7 +594,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnNullPattern(): void
+    public function itRejectsANullPatternEntry(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[0\] must be a string, null given/');
@@ -604,7 +604,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnArrayPattern(): void
+    public function itRejectsAnArrayPatternEntry(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[0\] must be a string, array given/');
@@ -614,7 +614,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_throwsOnObjectPattern(): void
+    public function itRejectsAnObjectPatternEntry(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/patterns\[0\] must be a string, stdClass given/');
@@ -624,7 +624,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_defaultsToAnyMatchMode(): void
+    public function itDefaultsToAnyMatchMode(): void
     {
         $spec = new MembershipSpec(patterns: ['App\\Foo']);
 
@@ -632,7 +632,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_acceptsExplicitAllMode(): void
+    public function itAcceptsAnExplicitAllMatchMode(): void
     {
         $spec = new MembershipSpec(patterns: ['App\\Foo'], mode: MatchMode::All);
 
@@ -640,7 +640,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_acceptsSuffixOnly(): void
+    public function itAcceptsASuffixOnlySpec(): void
     {
         $spec = new MembershipSpec(suffix: ['Repository']);
 
@@ -649,7 +649,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_acceptsAttributesOnly(): void
+    public function itAcceptsAnAttributesOnlySpec(): void
     {
         $spec = new MembershipSpec(attributes: ['App\\Attr\\Entity']);
 
@@ -657,7 +657,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_acceptsImplementsOnly(): void
+    public function itAcceptsAnImplementsOnlySpec(): void
     {
         $spec = new MembershipSpec(implements: ['App\\Contracts\\Repository']);
 
@@ -665,7 +665,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpec_acceptsExtendsOnly(): void
+    public function itAcceptsAnExtendsOnlySpec(): void
     {
         $spec = new MembershipSpec(extends: ['App\\AbstractBase']);
 
@@ -673,7 +673,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipResult_matchFactoryCarriesCriterionList(): void
+    public function itCarriesTheCriterionListOnAMatchResult(): void
     {
         $criterion = new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\Service\\**');
         $result = MembershipResult::match([$criterion]);
@@ -683,7 +683,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipResult_matchFactoryRejectsEmptyCriteriaList(): void
+    public function itRejectsAnEmptyCriteriaListOnTheMatchFactory(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/at least one matched criterion/');
@@ -692,7 +692,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function membershipResult_noMatchFactoryHasEmptyCriteriaList(): void
+    public function itLeavesTheCriteriaListEmptyOnANoMatchResult(): void
     {
         $result = MembershipResult::noMatch();
 
@@ -701,7 +701,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matchedCriterion_describeRendersKindAndValue(): void
+    public function itDescribesItselfWithItsKindAndValue(): void
     {
         self::assertSame('pattern "App\\Service"', (new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\Service'))->describe());
         self::assertSame('suffix "Repository"', (new MatchedCriterion(MatchedCriterionKind::Suffix, 'Repository'))->describe());
@@ -709,14 +709,14 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matchedCriterion_rejectsEmptyValue(): void
+    public function itRejectsAnEmptyCriterionValue(): void
     {
         $this->expectException(InvalidArgumentException::class);
         new MatchedCriterion(MatchedCriterionKind::Pattern, '');
     }
 
     #[Test]
-    public function classContext_exposesFullMetadata(): void
+    public function itExposesTheFullMetadataItWasGiven(): void
     {
         $context = new ClassContext(
             'App\\Service\\UserService',
@@ -734,7 +734,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function classContext_emptyMetadataDefaults(): void
+    public function itDefaultsToEmptyMetadataLists(): void
     {
         $context = new ClassContext('App\\Foo', 'Foo');
 
@@ -744,7 +744,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function classContext_emptyFqnAndShortNameArePermitted(): void
+    public function itPermitsAnEmptyFqnAndShortName(): void
     {
         $context = new ClassContext('', '');
 
@@ -753,7 +753,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matchMode_hasOnlyAnyAndAllCases(): void
+    public function itHasOnlyAnyAndAllCases(): void
     {
         self::assertSame(
             ['any', 'all'],
@@ -766,7 +766,7 @@ final class LayerDefinitionTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function matches_excludePatternsFiltersSubtreeMatchedByPositive(): void
+    public function itExcludesASubtreeMatchedByAPositivePattern(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -781,7 +781,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeReturnsNoMatchedCriteriaWhenExclusionFires(): void
+    public function itReturnsNoMatchedCriteriaWhenAnExclusionFires(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -798,7 +798,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeSuffixFiltersByShortName(): void
+    public function itExcludesByAShortNameSuffix(): void
     {
         $definition = new LayerDefinition(
             'repository',
@@ -813,7 +813,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeAttributesFiltersByAttribute(): void
+    public function itExcludesByAnAttribute(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -835,7 +835,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeImplementsFiltersByInterface(): void
+    public function itExcludesByAnImplementedInterface(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -857,7 +857,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeExtendsFiltersByParentClass(): void
+    public function itExcludesByAParentClass(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -879,7 +879,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeModeAnyFiresOnFirstMatchingCriterion(): void
+    public function itFiresTheExclusionOnTheFirstMatchingCriterionInAnyMode(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -902,7 +902,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeModeAllRequiresEveryDeclaredCriterionToFire(): void
+    public function itRequiresEveryDeclaredExclusionCriterionToFireInAllMode(): void
     {
         $definition = new LayerDefinition(
             'service',
@@ -925,7 +925,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeOverridesPositiveAllMode(): void
+    public function itAppliesTheExclusionAsAHardFilterRegardlessOfThePositiveMode(): void
     {
         // Positive criteria require BOTH patterns and suffix to match; exclude
         // is then evaluated as a hard filter regardless of the positive mode.
@@ -944,7 +944,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_positiveModeAllPairedWithExcludeModeAll(): void
+    public function itEvaluatesPositiveAllModeAndExcludeAllModeTogether(): void
     {
         // Both sides use MatchMode::All — exercises declaredKindCount on
         // both the positive and exclude branches in a single matches() call.
@@ -974,7 +974,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_excludeIgnoredWhenPositiveDidNotMatch(): void
+    public function itSkipsExclusionEvaluationWhenThePositiveCriteriaDidNotMatch(): void
     {
         // Class outside the positive patterns is non-matching regardless of
         // whether the exclude clause would also fire. NoMatch on positive
@@ -993,7 +993,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function matches_membershipWithoutExcludeHasUnchangedSemantics(): void
+    public function itKeepsUnchangedSemanticsWhenNoExcludeIsDeclared(): void
     {
         // Regression pin: omitting exclude must keep the descriptor list and
         // match outcome byte-for-byte identical to the pre-Step-F shape.

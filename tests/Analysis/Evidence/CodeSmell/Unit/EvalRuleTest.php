@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class EvalRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class EvalRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresItsOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, EvalRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itSkipsAnalysisWhenDisabled(): void
     {
         $rule = new EvalRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class EvalRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoSmellWasCollected(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class EvalRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAnErrorForEachEvalUsage(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 

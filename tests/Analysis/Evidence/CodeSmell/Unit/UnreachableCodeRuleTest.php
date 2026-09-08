@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -77,6 +78,11 @@ final class UnreachableCodeRuleTest extends TestCase
             {
                 return null;
             }
+
+            public static function acceptedOptionKeys(): RuleOptionKeySet
+            {
+                return RuleOptionKeySet::of();
+            }
         });
     }
 
@@ -94,7 +100,7 @@ final class UnreachableCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function itNoUnreachableCode(): void
+    public function itProducesNoFindingWhenTheUnreachableCodeMetricIsZero(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 

@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 final class CodeSmellVisitorTest extends TestCase
 {
     #[Test]
-    public function globalsIsDetectedAsSuperglobal(): void
+    public function itDetectsGlobalsAsASuperglobalAccess(): void
     {
         $code = <<<'PHP'
 <?php
@@ -34,7 +34,7 @@ PHP;
     }
 
     #[Test]
-    public function allSuperglobalsAreDetected(): void
+    public function itDetectsAllSuperglobalVariables(): void
     {
         $code = <<<'PHP'
 <?php
@@ -61,7 +61,7 @@ PHP;
     }
 
     #[Test]
-    public function countInClosureInsideLoopConditionIsNotFalsePositive(): void
+    public function itDoesNotFlagCountInsideAClosureUsedInALoopCondition(): void
     {
         // count() inside a closure that is in a loop condition should NOT be flagged
         $code = <<<'PHP'
@@ -82,7 +82,7 @@ PHP;
     }
 
     #[Test]
-    public function countInArrowFunctionInsideLoopConditionIsNotFalsePositive(): void
+    public function itDoesNotFlagCountInsideAnArrowFunctionUsedInALoopCondition(): void
     {
         // count() inside an arrow function used in a loop condition should NOT be flagged
         $code = <<<'PHP'
@@ -102,7 +102,7 @@ PHP;
     }
 
     #[Test]
-    public function countDirectlyInLoopConditionIsStillDetected(): void
+    public function itFlagsCountUsedDirectlyInALoopCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -121,7 +121,7 @@ PHP;
     }
 
     #[Test]
-    public function sizeofInLoopConditionIsDetected(): void
+    public function itFlagsSizeofUsedInALoopCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -140,7 +140,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchWithOnlyCommentIsDetected(): void
+    public function itFlagsACatchBlockContainingOnlyAComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -159,7 +159,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchWithNoStatementsIsDetected(): void
+    public function itFlagsACatchBlockWithNoStatements(): void
     {
         $code = <<<'PHP'
 <?php
@@ -177,7 +177,7 @@ PHP;
     }
 
     #[Test]
-    public function catchWithRealStatementIsNotFlagged(): void
+    public function itDoesNotFlagACatchBlockThatHandlesTheException(): void
     {
         $code = <<<'PHP'
 <?php
@@ -197,7 +197,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchInForeachWithReturnIsChainOfResponsibilityPattern(): void
+    public function itDoesNotFlagAnEmptyCatchInAForeachThatReturnsAsAChainOfResponsibilityPattern(): void
     {
         // foreach + try { return ... } catch { } is a legitimate chain-of-responsibility pattern
         $code = <<<'PHP'
@@ -221,7 +221,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchInForeachWithReturnAndCommentIsChainOfResponsibilityPattern(): void
+    public function itDoesNotFlagAnEmptyCatchWithACommentInAForeachThatReturnsAsAChainOfResponsibilityPattern(): void
     {
         // Same pattern with a comment in the catch block (Nop node)
         $code = <<<'PHP'
@@ -246,7 +246,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchInForeachWithoutReturnIsStillFlagged(): void
+    public function itFlagsAnEmptyCatchInAForeachThatDoesNotReturn(): void
     {
         // foreach + try { ... } catch { } without return is NOT the chain pattern
         $code = <<<'PHP'
@@ -269,7 +269,7 @@ PHP;
     }
 
     #[Test]
-    public function emptyCatchOutsideForeachIsStillFlagged(): void
+    public function itFlagsAnEmptyCatchOutsideAForeachEvenWhenTheTryReturns(): void
     {
         // try { return ... } catch { } outside foreach is still flagged
         $code = <<<'PHP'
@@ -291,7 +291,7 @@ PHP;
     }
 
     #[Test]
-    public function varExportWithReturnModeIsNotFlagged(): void
+    public function itDoesNotFlagVarExportCalledWithReturnTrue(): void
     {
         $code = <<<'PHP'
 <?php
@@ -307,7 +307,7 @@ PHP;
     }
 
     #[Test]
-    public function printRWithReturnModeIsNotFlagged(): void
+    public function itDoesNotFlagPrintRCalledWithReturnTrue(): void
     {
         $code = <<<'PHP'
 <?php
@@ -323,7 +323,7 @@ PHP;
     }
 
     #[Test]
-    public function varExportWithNamedReturnArgumentIsNotFlagged(): void
+    public function itDoesNotFlagVarExportCalledWithANamedReturnArgument(): void
     {
         $code = <<<'PHP'
 <?php
@@ -339,7 +339,7 @@ PHP;
     }
 
     #[Test]
-    public function printRWithoutReturnModeIsFlagged(): void
+    public function itFlagsPrintRCalledWithoutReturnTrue(): void
     {
         $code = <<<'PHP'
 <?php
@@ -354,7 +354,7 @@ PHP;
     }
 
     #[Test]
-    public function varExportWithoutReturnModeIsFlagged(): void
+    public function itFlagsVarExportCalledWithoutReturnTrue(): void
     {
         $code = <<<'PHP'
 <?php
@@ -370,7 +370,7 @@ PHP;
     }
 
     #[Test]
-    public function varExportWithFalseSecondArgIsFlagged(): void
+    public function itFlagsVarExportCalledWithAnExplicitFalseReturnArgument(): void
     {
         $code = <<<'PHP'
 <?php
@@ -385,7 +385,7 @@ PHP;
     }
 
     #[Test]
-    public function debugFunctionInsideDebugApiMethodIsNotFlagged(): void
+    public function itDoesNotFlagDebugFunctionsInsideADebugApiMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -406,7 +406,7 @@ PHP;
     }
 
     #[Test]
-    public function debugFunctionOutsideDebugApiMethodIsFlagged(): void
+    public function itFlagsDebugFunctionsOutsideADebugApiMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -423,7 +423,7 @@ PHP;
     }
 
     #[Test]
-    public function debugBacktraceIsNotFlagged(): void
+    public function itDoesNotFlagDebugBacktrace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -439,7 +439,7 @@ PHP;
     }
 
     #[Test]
-    public function debugPrintBacktraceIsStillFlagged(): void
+    public function itFlagsDebugPrintBacktrace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -455,7 +455,7 @@ PHP;
     }
 
     #[Test]
-    public function debugInfoMethodIsNotFlagged(): void
+    public function itDoesNotFlagVarExportInsideDebugInfo(): void
     {
         $code = <<<'PHP'
 <?php

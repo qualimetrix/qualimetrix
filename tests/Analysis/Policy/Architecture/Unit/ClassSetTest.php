@@ -15,7 +15,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ClassSetTest extends TestCase
 {
     #[Test]
-    public function isEmpty_reflectsClassListContents(): void
+    public function itReflectsWhetherTheClassListIsEmpty(): void
     {
         self::assertTrue((new ClassSet([], new ClassContextFactory()))->isEmpty());
 
@@ -28,7 +28,7 @@ final class ClassSetTest extends TestCase
     }
 
     #[Test]
-    public function classes_returnsSuppliedListUnchanged(): void
+    public function itReturnsTheSuppliedClassListUnchanged(): void
     {
         $first = SymbolPath::forClass('App\\Service', 'UserService');
         $second = SymbolPath::forClass('App\\Service', 'OrderService');
@@ -39,7 +39,7 @@ final class ClassSetTest extends TestCase
     }
 
     #[Test]
-    public function contextFor_delegatesToFactory_inNoGraphModeReturnsMinimalContext(): void
+    public function itDelegatesToTheFactoryAndReturnsAMinimalContextWithoutAGraph(): void
     {
         $factory = new ClassContextFactory();
         $set = new ClassSet(

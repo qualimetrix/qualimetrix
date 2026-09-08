@@ -15,7 +15,7 @@ use ReflectionClass;
 final class DebugCodeDocumentationConsistencyTest extends TestCase
 {
     #[Test]
-    public function documentedSeverityMatchesEffectiveSeverity(): void
+    public function itKeepsTheDocumentedSeverityInSyncWithTheRuleConstant(): void
     {
         $doc = file_get_contents(\dirname(__DIR__, 5) . '/website/docs/rules/code-smell.md');
         self::assertIsString($doc);

@@ -382,19 +382,18 @@ final class NpathComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itNpathComplexityOptionsFromLegacyArray(): void
+    public function itNpathComplexityOptionsFromFlatThresholdShorthand(): void
     {
         $options = NpathComplexityOptions::fromArray([
             'enabled' => true,
-            'warningThreshold' => 180,
-            'errorThreshold' => 450,
+            'threshold' => 180,
         ]);
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
         self::assertSame(180, $options->callable->warning);
-        self::assertSame(450, $options->callable->error);
-        // Legacy format disables class level
+        self::assertSame(180, $options->callable->error);
+        // Flat shorthand disables class level
         self::assertFalse($options->class->isEnabled());
     }
 
@@ -472,28 +471,6 @@ final class NpathComplexityRuleTest extends TestCase
         yield 'above warning, below error' => [350, 200, 500, Severity::Warning];
         yield 'at error threshold' => [500, 200, 500, Severity::Error];
         yield 'above error threshold' => [750, 200, 500, Severity::Error];
-    }
-
-    #[Test]
-    public function itLegacyDefaultErrorThresholdMatchesMethodDefault(): void
-    {
-        // Legacy format without explicit errorThreshold should use 1000 (same as MethodNpathComplexityOptions)
-        $options = NpathComplexityOptions::fromArray([
-            'warningThreshold' => 200,
-        ]);
-
-        self::assertSame(1000, $options->callable->error);
-    }
-
-    #[Test]
-    public function itLegacyPartialConfigUsesCorrectDefaults(): void
-    {
-        $options = NpathComplexityOptions::fromArray([
-            'errorThreshold' => 800,
-        ]);
-
-        self::assertSame(200, $options->callable->warning);
-        self::assertSame(800, $options->callable->error);
     }
 
     #[Test]

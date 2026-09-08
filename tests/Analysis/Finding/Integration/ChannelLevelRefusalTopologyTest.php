@@ -140,7 +140,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php';
 
     #[Test]
-    public function everyProductionFileReadingDeclaredLevelsIsPinnedWithAReason(): void
+    public function itPinsEveryProductionFileThatReadsDeclaredLevelsWithAReason(): void
     {
         $found = self::scan(self::readsDeclaredLevels());
 
@@ -165,7 +165,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
     }
 
     #[Test]
-    public function everyProductionFileWordingALevelRefusalIsPinnedWithAReason(): void
+    public function itPinsEveryProductionFileThatWordsALevelRefusalWithAReason(): void
     {
         $found = self::scan(self::wordsALevel());
 
@@ -195,7 +195,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * whichever of the three text forms it uses.
      */
     #[Test]
-    public function detectorOneFlagsASilentDeciderReadingDeclaredLevels(): void
+    public function itCatchesASilentDeciderThatReadsDeclaredLevelsHoweverItSpellsTheRead(): void
     {
         foreach (self::silentDecidersReadingLevels() as $shape => $source) {
             self::assertTrue(
@@ -210,7 +210,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * anything, is caught by the other detector.
      */
     #[Test]
-    public function detectorTwoFlagsASilentDeciderWordingItsOwnLevelRefusal(): void
+    public function itCatchesASilentDeciderThatWordsItsOwnLevelRefusal(): void
     {
         self::assertTrue(
             (self::wordsALevel())(self::silentDeciderWordingALevel()),
@@ -224,7 +224,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * have to be pinned, and every such row weakens the two lists.
      */
     #[Test]
-    public function detectorTwoIgnoresProseAboutLevelsOutsideThePairGrammar(): void
+    public function itIgnoresProseAboutLevelsThatNeverTouchesThePairGrammar(): void
     {
         $source = <<<'PHP'
             <?php

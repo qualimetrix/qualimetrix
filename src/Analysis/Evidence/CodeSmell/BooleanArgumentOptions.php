@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -111,5 +112,10 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
     public function isExtraAllowed(string $extra): bool
     {
         return $this->isAllowedPrefix($extra);
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('allowed-prefixes', 'enabled', 'flag-promoted-properties');
     }
 }

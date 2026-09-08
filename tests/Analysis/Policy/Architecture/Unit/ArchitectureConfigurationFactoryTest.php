@@ -43,7 +43,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function emptyInputProducesEmptyConfiguration(): void
+    public function itProducesAnEmptyConfigurationForEmptyInput(): void
     {
         $result = $this->factory->fromArray([]);
 
@@ -54,7 +54,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayReturnsArchitectureFactoryResultWithConfigurationAndEmptyWarnings(): void
+    public function itReturnsAResultWithConfigurationAndNoWarningsForValidInput(): void
     {
         $result = $this->factory->fromArray([
             'layers' => [
@@ -68,7 +68,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function fullConfigurationIsAssembledFromAllValidators(): void
+    public function itAssemblesLayersAllowAndCoverageIntoOneConfiguration(): void
     {
         // Exercises layers + allow + coverage in one shot.
         $result = $this->factory->fromArray([
@@ -98,7 +98,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureLayersListIsReplacedWholesaleByOverlay(): void
+    public function itReplacesTheLayersListWholesaleWithAnOverlay(): void
     {
         $result = $this->factory->fromContributions([
             ['layers' => [
@@ -114,7 +114,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureLayersListIsPreservedWhenOverlayDoesNotDefineIt(): void
+    public function itKeepsTheLayersListWhenAnOverlayOmitsIt(): void
     {
         $result = $this->factory->fromContributions([
             ['layers' => [
@@ -128,7 +128,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureAllowMapsAreMergedBySource(): void
+    public function itMergesAllowMapsFromMultipleContributionsBySource(): void
     {
         $result = $this->factory->fromContributions([
             [
@@ -143,7 +143,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureCoverageScalarIsOverridden(): void
+    public function itOverridesTheCoverageScalarWithTheLastContribution(): void
     {
         $result = $this->factory->fromContributions([
             ['coverage-gap' => 'warn'],
@@ -154,7 +154,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureAllowListEntriesAreReplacedNotMerged(): void
+    public function itReplacesAnAllowListEntryInsteadOfMergingItsTargets(): void
     {
         $result = $this->factory->fromContributions([
             [
@@ -170,7 +170,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function architectureKeepsPresetLayersAcrossPresetAndProjectContributions(): void
+    public function itKeepsPresetLayersWhileMergingAllowAndCoverageAcrossContributions(): void
     {
         $result = $this->factory->fromContributions([
             ['layers' => $this->mergeRegressionLayers(), 'coverage-gap' => 'ignore'],
@@ -263,7 +263,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function wildcardSelfAllowWarningSurfacedByFactory(): void
+    public function itSurfacesAWildcardSelfAllowWarningFromTheFactory(): void
     {
         // End-to-end check that WildcardSelfAllowDetector is wired into the
         // factory pipeline after AllowValidator and before result assembly.
@@ -281,7 +281,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allowIsCrossValidatedAgainstLayerNamesProducedByLayersValidator(): void
+    public function itRejectsAnAllowEntryNamingALayerTheLayersValidatorDidNotProduce(): void
     {
         // Demonstrates the orchestration handoff: the registry's layerNames()
         // is what AllowValidator consults.
@@ -301,7 +301,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function sequentialTopLevelStructureIsRejected(): void
+    public function itRejectsASequentialTopLevelStructure(): void
     {
         try {
             $this->factory->fromArray(['foo', 'bar']);
@@ -313,7 +313,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function unknownTopLevelKeyTypoIsRejectedWithKeyMentioned(): void
+    public function itNamesTheUnknownKeyWhenATopLevelKeyIsMisspelled(): void
     {
         try {
             $this->factory->fromArray([
@@ -329,7 +329,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function unknownTopLevelKeyImportsIsRejected(): void
+    public function itRejectsTheUnknownTopLevelKeyImports(): void
     {
         try {
             $this->factory->fromArray([
@@ -344,7 +344,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function multipleUnknownTopLevelKeysAreListed(): void
+    public function itListsEveryUnknownTopLevelKeyInTheException(): void
     {
         try {
             $this->factory->fromArray([
@@ -365,7 +365,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function thrownExceptionFromLayersValidatorCarriesArchitectureConfigPath(): void
+    public function itCarriesTheArchitectureConfigPathWhenTheLayersValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
@@ -378,7 +378,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function thrownExceptionFromAllowValidatorCarriesArchitectureConfigPath(): void
+    public function itCarriesTheArchitectureConfigPathWhenTheAllowValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
@@ -392,7 +392,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function thrownExceptionFromCoverageValidatorCarriesArchitectureConfigPath(): void
+    public function itCarriesTheArchitectureConfigPathWhenTheCoverageValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
@@ -410,7 +410,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function globAllowTargetReachesPolicyAndMatchesConcreteLayers(): void
+    public function itMatchesAGlobAllowTargetAgainstConcreteLayers(): void
     {
         $result = $this->factory->fromArray([
             'layers' => [
@@ -432,7 +432,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function globAllowSourceReachesPolicyAndMatchesMultipleConcreteLayers(): void
+    public function itMatchesAGlobAllowSourceAgainstMultipleConcreteLayers(): void
     {
         $result = $this->factory->fromArray([
             'layers' => [
@@ -453,7 +453,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function globAllowSelectorThatMatchesNoConcreteRegistryLayerIsAccepted(): void
+    public function itAcceptsAGlobAllowSelectorThatMatchesNoCurrentRegistryLayer(): void
     {
         // Glob / captured selectors are not cross-validated against registry
         // layer names — Step D template-expansion will produce more layers
@@ -478,7 +478,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function unbalancedBraceInAllowSelectorIsRejectedAtConfigLoad(): void
+    public function itRejectsAnUnbalancedBraceInAnAllowSelectorAtConfigLoad(): void
     {
         try {
             $this->factory->fromArray([
@@ -498,7 +498,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function capturedSelectorWithSubstitutionParsesEndToEnd(): void
+    public function itMatchesACapturedSelectorOnlyWhenTheSubstitutionBindingAgrees(): void
     {
         // Step E binding-aware semantics: captured source binding flows into
         // captured target before matching, so same-{m} edges pass and

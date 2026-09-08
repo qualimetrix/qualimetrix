@@ -17,7 +17,7 @@ use Qualimetrix\Infrastructure\Cache\FileCache;
 final class CacheFactoryTest extends TestCase
 {
     #[Test]
-    public function createReturnsFileCacheConfiguredFromProvider(): void
+    public function itReturnsAFileCacheConfiguredFromTheProvider(): void
     {
         $factory = $this->makeFactoryWithCacheDir('/tmp/qmx-test-cache');
 
@@ -27,7 +27,7 @@ final class CacheFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createMemoizesCacheInstanceAcrossCalls(): void
+    public function itMemoizesTheCacheInstanceAcrossCalls(): void
     {
         $factory = $this->makeFactoryWithCacheDir('/tmp/qmx-test-cache');
 
@@ -38,7 +38,7 @@ final class CacheFactoryTest extends TestCase
     }
 
     #[Test]
-    public function resetClearsMemoizedInstanceAndRebuildsOnNextCreate(): void
+    public function itRebuildsTheCacheOnTheNextCreateAfterReset(): void
     {
         $factory = $this->makeFactoryWithCacheDir('/tmp/qmx-test-cache');
 
@@ -54,7 +54,7 @@ final class CacheFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createUsesCacheDirFromCurrentConfigurationAtFirstCall(): void
+    public function itUsesTheCacheDirFromTheConfigurationAtFirstCall(): void
     {
         $store = new CacheConfigurationStore();
         $store->replace(new CacheConfiguration(AbsolutePath::fromString('/tmp/qmx-initial-cache')));

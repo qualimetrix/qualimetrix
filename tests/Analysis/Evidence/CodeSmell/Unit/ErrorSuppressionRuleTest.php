@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ErrorSuppressionRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -32,13 +32,13 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresItsOptionsClass(): void
     {
         self::assertSame(ErrorSuppressionOptions::class, ErrorSuppressionRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itSkipsAnalysisWhenDisabled(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoSmellWasCollected(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -72,7 +72,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAWarningForEachCollectedSuppression(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -142,7 +142,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function messageIncludesFunctionName(): void
+    public function itIncludesTheSuppressedFunctionNameInTheMessage(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -166,7 +166,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function allowedFunctionIsFiltered(): void
+    public function itFiltersOutAllowedFunctionsFromFindings(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions(
             allowedFunctions: ['fopen', 'unlink'],
@@ -196,7 +196,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function emptyExtraFallsBackToBaseTemplate(): void
+    public function itFallsBackToTheBaseMessageWhenNoFunctionNameIsKnown(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -223,7 +223,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function methodCallNotFilteredByAllowedFunctions(): void
+    public function itNeverFiltersASuppressionWithoutAKnownFunctionName(): void
     {
         // @$obj->method() has no function name (extra is null) — always reported
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions(

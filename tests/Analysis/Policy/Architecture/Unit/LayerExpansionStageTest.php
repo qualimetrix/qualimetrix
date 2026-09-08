@@ -39,7 +39,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_singleVariableTemplate_producesOneLayerPerObservedModule(): void
+    public function itProducesOneLayerPerObservedModuleForASingleVariableTemplate(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -68,7 +68,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_singleVariableTemplate_deduplicatesObservedTuples(): void
+    public function itDeduplicatesObservedTuplesForASingleVariableTemplate(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -92,7 +92,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_multiVariableTemplate_doesNotProduceCartesianProduct(): void
+    public function itDoesNotProduceACartesianProductForAMultiVariableTemplate(): void
     {
         $template = new TemplateLayerDefinition(
             'cluster-{tenant}-{module}',
@@ -126,7 +126,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_interleavesStaticAndTemplateEntriesInDeclarationOrder(): void
+    public function itInterleavesStaticAndTemplateEntriesInDeclarationOrder(): void
     {
         $staticBefore = new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Infra\\**']));
         $template = new TemplateLayerDefinition(
@@ -151,7 +151,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_emptyTemplateMatchesNoClass_addsToEmptyList(): void
+    public function itAddsATemplateThatMatchesNoClassToTheEmptyList(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -173,7 +173,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_cartesianBlowupCeiling_failsWithActionableMessage(): void
+    public function itFailsWithAnActionableMessageOnCartesianBlowupPastTheCeiling(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -193,7 +193,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_cumulativeCeilingAcrossMultipleTemplates_reportsBothCounts(): void
+    public function itReportsBothTheContributionAndTheCumulativeCountOnCeilingOverflow(): void
     {
         // First template produces 2 layers; second produces 2 more. Cumulative
         // 4 > ceiling 3 → fail. Message must name the second template's
@@ -227,7 +227,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_invalidMaxExpansion_rejected(): void
+    public function itRejectsAnInvalidMaxExpansionCeiling(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -245,7 +245,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_staticAndTemplateProduceSameName_rejected(): void
+    public function itRejectsAStaticAndATemplateLayerProducingTheSameName(): void
     {
         $static = new LayerDefinition(
             'domain-order',
@@ -268,7 +268,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_twoTemplatesProduceSameName_rejected(): void
+    public function itRejectsTwoTemplatesProducingTheSameName(): void
     {
         $first = new TemplateLayerDefinition(
             'domain-{module}',
@@ -295,7 +295,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_substitutedNameStartingWithNonLetter_producesActionableError(): void
+    public function itProducesAnActionableErrorWhenTheSubstitutedNameStartsWithANonLetter(): void
     {
         // Variable is the leading segment of the name template; a binding
         // starting with a digit produces a concrete name that fails the
@@ -325,7 +325,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_matchAny_nonCaptureSuffixDoesNotNarrowTupleSet(): void
+    public function itDoesNotNarrowTheTupleSetByANonCaptureSuffixUnderMatchAny(): void
     {
         // Path B (Phase 5.2 / M2): under `match: any`, non-pattern criteria
         // (suffix here) widen membership alongside the capture pattern rather
@@ -354,7 +354,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_matchAll_nonPatternSuffixFiltersTupleSet(): void
+    public function itFiltersTheTupleSetByANonPatternSuffixUnderMatchAll(): void
     {
         // Regression pin: under `match: all`, every declared non-pattern
         // criterion must match (the pre-M2 behavior). Only the class ending
@@ -380,7 +380,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_matchAny_liberalNonPatternCriteriaTriggerCeilingOverflow(): void
+    public function itTriggersCeilingOverflowFromLiberalNonPatternCriteriaUnderMatchAny(): void
     {
         // Ceiling guard for M2 Path B: under `match: any`, a liberal config
         // (capture pattern with no narrowing non-pattern filter) can produce
@@ -410,7 +410,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_d7CarveOut_nonCapturePatternIsAndFilter(): void
+    public function itAppliesANonCapturePatternAsAnAndFilter(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -433,7 +433,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_d7CarveOut_nonGlobNonCaptureFilterUsesPhase1PrefixSemantics(): void
+    public function itAppliesAPhase1PrefixSemanticToANonGlobNonCaptureFilter(): void
     {
         // Filter pattern 'App\Domain' (no glob, no capture) must behave like
         // a Phase-1 namespace prefix — match the namespace itself AND any
@@ -466,7 +466,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_matchAnyWithDisjointBindingPatterns_failsWithActionableMessage(): void
+    public function itFailsWithAnActionableMessageOnDisjointBindingPatternsUnderMatchAny(): void
     {
         // Template references both {tenant} and {module}. Each pattern binds
         // only one of them. Under match: any the first matching pattern wins,
@@ -499,7 +499,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_matchAll_requiresAllCaptureProducingPatternsToAgree(): void
+    public function itRequiresAllCaptureProducingPatternsToAgreeUnderMatchAll(): void
     {
         $template = new TemplateLayerDefinition(
             'mod-{module}',
@@ -530,7 +530,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_noTemplates_returnsStaticLayersUnchanged(): void
+    public function itReturnsStaticLayersUnchangedWhenThereAreNoTemplates(): void
     {
         $layers = [
             new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Infra\\**'])),
@@ -544,7 +544,7 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     #[Test]
-    public function expand_duplicateStaticName_rejected(): void
+    public function itRejectsADuplicateStaticLayerName(): void
     {
         $first = new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Infra\\**']));
         $second = new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Other\\**']));
@@ -560,7 +560,7 @@ final class LayerExpansionStageTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function emptyResult_factoryProducesEmptyState(): void
+    public function itProducesAnEmptyStateFromTheEmptyResultFactory(): void
     {
         $result = LayerExpansionResult::empty();
 

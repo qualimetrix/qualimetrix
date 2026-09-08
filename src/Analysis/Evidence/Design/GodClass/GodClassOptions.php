@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\GodClass;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -111,5 +112,19 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
     public function warningBoundary(): int
     {
         return $this->minCriteria;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'class-loc-threshold',
+            'enabled',
+            'exclude-readonly',
+            'lcom-threshold',
+            'min-criteria',
+            'min-methods',
+            'tcc-threshold',
+            'wmc-threshold',
+        );
     }
 }

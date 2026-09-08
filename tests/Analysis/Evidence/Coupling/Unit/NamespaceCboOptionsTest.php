@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions;
 final class NamespaceCboOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEmptyReturnsEnabled(): void
+    public function itDefaultsToEnabledWhenConstructedFromAnEmptyArray(): void
     {
         $options = NamespaceCboOptions::fromArray([]);
 

@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Evidence\Design\TypeCoverage;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -29,7 +29,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - warning: below 80% coverage
  * - error: below 50% coverage
  */
-final readonly class TypeCoverageOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class TypeCoverageOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -53,14 +53,6 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
             warning: (float) $thresholds['warning'],
             error: (float) $thresholds['error'],
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
@@ -98,5 +90,10 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
     public function warningBoundary(): float
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
     }
 }

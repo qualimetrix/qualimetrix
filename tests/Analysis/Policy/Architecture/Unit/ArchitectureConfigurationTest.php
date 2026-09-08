@@ -19,7 +19,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 final class ArchitectureConfigurationTest extends TestCase
 {
     #[Test]
-    public function gettersReturnConstructorArguments(): void
+    public function itExposesTheConstructorArgumentsThroughItsGetters(): void
     {
         $registry = new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]);
         $policy = AllowListBuilder::policyFromExactMap(['core' => []]);
@@ -33,7 +33,7 @@ final class ArchitectureConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function isEmptyReturnsTrueForEmptyRegistry(): void
+    public function itIsEmptyWhenNoLayerIsDeclared(): void
     {
         $config = new ArchitectureConfiguration(
             new LayerRegistry([]),
@@ -45,7 +45,7 @@ final class ArchitectureConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function isEmptyReturnsFalseWhenAtLeastOneLayerIsDeclared(): void
+    public function itIsNotEmptyWhenAtLeastOneLayerIsDeclared(): void
     {
         $config = new ArchitectureConfiguration(
             new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),

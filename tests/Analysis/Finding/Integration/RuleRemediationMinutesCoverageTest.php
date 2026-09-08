@@ -38,7 +38,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
     private const int REGISTERED_RULE_COUNT = 45;
 
     #[Test]
-    public function everyRegisteredRuleDeclaresItsOwnRemediationMinutes(): void
+    public function itRequiresEveryRegisteredRuleToDeclareItsOwnRemediationMinutes(): void
     {
         $ruleClasses = self::ruleClasses();
         self::assertCount(self::REGISTERED_RULE_COUNT, $ruleClasses);
@@ -77,7 +77,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * the English page could have drifted in the first place.
      */
     #[Test]
-    public function everyRulesRemediationMinutesMatchTheReferencePage(): void
+    public function itRequiresEveryRulesRemediationMinutesToMatchTheReferencePage(): void
     {
         foreach (['reference/remediation-time.md', 'reference/remediation-time.ru.md'] as $relativePage) {
             $this->assertReferencePageMatchesDeclaredMinutes($relativePage);
@@ -118,7 +118,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * which is exactly the drift this file exists to prevent for rule classes.
      */
     #[Test]
-    public function everyProducerOfTheComputedFamilyIsOnTheReferencePage(): void
+    public function itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage(): void
     {
         foreach (['reference/remediation-time.md', 'reference/remediation-time.ru.md'] as $relativePage) {
             $page = self::readFile(self::docsRoot() . '/' . $relativePage);
@@ -147,7 +147,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * metrics enabled.
      */
     #[Test]
-    public function everyAddressableProducerHasAnInjectedRemediationEstimate(): void
+    public function itRequiresEveryAddressableProducerToHaveAnInjectedRemediationEstimate(): void
     {
         $container = (new ContainerFactory())->create();
 

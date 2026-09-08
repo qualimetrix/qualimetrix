@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -95,6 +96,24 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             severity: self::resolveSeverity($config['severity'] ?? null, 'severity', Severity::Warning),
         );
+    }
+
+    /**
+     * The three removed severity keys are declared as answered-by-the-class,
+     * not accepted: {@see assertNoRemovedSeverityKeys()} recognises them only
+     * to refuse them in its own words, naming what replaced them. Declaring
+     * them accepted would silence that message; leaving them unknown would
+     * print the generic "Unknown option" sentence one line above the bespoke
+     * one, which is the defect this declaration exists to remove.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'severity')
+            ->alsoAnsweredByTheClass(
+                'empty-template-severity',
+                'potential-shadow-severity',
+                'unreachable-layer-severity',
+            );
     }
 
     /**

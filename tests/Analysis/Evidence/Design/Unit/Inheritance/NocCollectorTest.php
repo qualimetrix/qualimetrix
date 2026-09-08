@@ -46,25 +46,25 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsNoc(): void
+    public function itReturnsNocAsItsName(): void
     {
         self::assertSame('noc', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsEmpty(): void
+    public function itRequiresNoOtherMetrics(): void
     {
         self::assertSame([], $this->collector->requires());
     }
 
     #[Test]
-    public function provides_returnsNoc(): void
+    public function itProvidesTheDesignNocMetric(): void
     {
         self::assertSame(['design.noc'], $this->collector->provides());
     }
 
     #[Test]
-    public function calculate_classWithoutChildren_hasNocZero(): void
+    public function itAssignsNocZeroToAClassWithoutChildren(): void
     {
         // Leaf class with no children
         $repository = new InMemoryMetricRepository();
@@ -81,7 +81,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_classWithOneChild_hasNocOne(): void
+    public function itAssignsNocOneToAClassWithOneChild(): void
     {
         // Parent class with one child
         $repository = new InMemoryMetricRepository();
@@ -108,7 +108,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_classWithTwoChildren_hasNocTwo(): void
+    public function itAssignsNocTwoToAClassWithTwoChildren(): void
     {
         // Parent class with two direct children
         $repository = new InMemoryMetricRepository();
@@ -138,7 +138,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_indirectChildren_notCounted(): void
+    public function itDoesNotCountIndirectDescendantsTowardNoc(): void
     {
         // A extends B extends C
         // NOC(C) = 1 (only B), not 2 (B and A)
@@ -178,7 +178,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_crossFileInheritance_works(): void
+    public function itCountsChildrenDeclaredInOtherFiles(): void
     {
         // Parent in one namespace, children in another
         $repository = new InMemoryMetricRepository();
@@ -207,7 +207,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_globalNamespaceClass_works(): void
+    public function itCountsAChildExtendingAGlobalNamespaceParent(): void
     {
         // Parent in global namespace
         $repository = new InMemoryMetricRepository();
@@ -232,7 +232,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_childExtendingGlobalParent_skipsVendorParent(): void
+    public function itDoesNotAssignNocToAParentOutsideTheRepository(): void
     {
         // Child in namespace extending parent not in repository (e.g. built-in Exception).
         // The parent should NOT get NOC metrics — only project classes get metrics.
@@ -258,7 +258,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_allClasses_haveNocMetric(): void
+    public function itAssignsTheNocMetricToEveryClass(): void
     {
         // Ensure all classes get NOC metric, even if 0
         $repository = new InMemoryMetricRepository();
@@ -281,7 +281,7 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_preservesExistingMetrics(): void
+    public function itPreservesExistingMetricsWhenAddingNoc(): void
     {
         // NOC calculation should not overwrite existing metrics
         $repository = new InMemoryMetricRepository();

@@ -32,7 +32,7 @@ final class TypeCoverageScaleTest extends TestCase
     }
 
     #[Test]
-    public function fullyTypedClassProducesPercentage100NotRatio1(): void
+    public function itReportsPercentage100NotRatio1ForAFullyTypedClass(): void
     {
         // Documents that TypeCoverage uses percentages (0-100), not ratios (0-1).
         // If the metric were a ratio, we would expect 1.0 for full coverage.
@@ -88,7 +88,7 @@ PHP;
     }
 
     #[Test]
-    public function halfTypedClassProducesPercentage50NotRatio05(): void
+    public function itReportsPercentage50NotRatio05ForAHalfTypedClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -136,7 +136,7 @@ PHP;
     }
 
     #[Test]
-    public function unTypedClassProducesPercentage0NotRatio0(): void
+    public function itReportsZeroForAnUntypedClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -164,7 +164,7 @@ PHP;
     }
 
     #[Test]
-    public function partialCoverageProducesCorrectPercentage(): void
+    public function itReportsThePercentageOnA0To100ScaleForPartialCoverage(): void
     {
         $code = <<<'PHP'
 <?php

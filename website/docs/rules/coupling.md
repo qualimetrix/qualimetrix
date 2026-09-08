@@ -176,6 +176,19 @@ bin/qmx check src/ --rule-opt="coupling.cbo:threshold=15"
     merged with it. Configure one form or the other for a given rule, not
     both.
 
+**Top-level `warning:` / `error:` are options of this rule too.** Unlike the
+complexity rules, `coupling.cbo` reads them at its own top level, where they
+open the same flat form as `threshold` and set both dimensions at once. They
+have always worked here; they are documented now because an option key that is
+not declared is refused, and refusing a key that works would be wrong.
+
+```yaml
+rules:
+  coupling.cbo:
+    warning: 12     # class AND namespace
+    error: 18
+```
+
 ### Framework CBO distinction
 
 By default, CBO counts **all** dependencies equally: importing 50 `PhpParser\Node\*` types counts the same as depending on 50 application services. But framework coupling is structural (can't be eliminated without changing framework), while application coupling is architectural (should be minimized).
@@ -368,6 +381,18 @@ bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
     nested `class:`/`namespace:` section both end up configured at once, the
     flat `threshold` takes full precedence over the nested section rather
     than being merged with it.
+
+**Top-level `max_warning:` / `max_error:` are options of this rule too.** Like
+`coupling.cbo`'s `warning`/`error`, they open the flat form at the rule's own
+top level and set both dimensions at once. They have always worked here and are
+documented now for the same reason.
+
+```yaml
+rules:
+  coupling.instability:
+    max_warning: 0.85   # class AND namespace
+    max_error: 0.95
+```
 
 ---
 

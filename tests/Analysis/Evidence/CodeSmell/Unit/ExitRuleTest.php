@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ExitRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesTheCorrectNameAndDescription(): void
     {
         $rule = new ExitRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itReportsTheCorrectOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, ExitRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new ExitRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoSmellIsRecorded(): void
     {
         $rule = new ExitRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itProducesAFindingForEachDetectedSmell(): void
     {
         $rule = new ExitRule(new CodeSmellOptions());
 

@@ -34,7 +34,7 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
-    public function workingDirChangesDirectory(): void
+    public function itChangesTheWorkingDirectoryWhenWorkingDirIsGiven(): void
     {
         $tempDir = sys_get_temp_dir();
         $resolved = realpath($tempDir);
@@ -57,7 +57,7 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
-    public function invalidWorkingDirThrowsException(): void
+    public function itThrowsForAnInvalidWorkingDirectory(): void
     {
         $app = new Application(new ErrorStream());
         $app->setAutoExit(false);
@@ -72,7 +72,7 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
-    public function noWorkingDirDoesNotChangeDirectory(): void
+    public function itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted(): void
     {
         $before = getcwd();
 

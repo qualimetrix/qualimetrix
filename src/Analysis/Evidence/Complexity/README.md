@@ -255,6 +255,21 @@ with data-class and method-count evidence; it does not collect or aggregate
 WMC itself. Its `complexity.wmc` channel retains the existing warning/error
 thresholds and `excludeDataClasses` option.
 
+## Rule option key declarations
+
+`ComplexityOptions`, `CognitiveComplexityOptions`, `NpathComplexityOptions` and
+`WmcOptions` declare their accepted option keys through
+`RuleOptionsInterface::acceptedOptionKeys()`; the three hierarchical wrappers
+also declare `levelOptionsClasses()`, mapping the `callable`/`class` slots to
+their level classes. The two slots do not share one key set: `callable`
+accepts `enabled`, `error`, `threshold`, `warning`; `class` accepts `enabled`,
+`max-error`, `max-warning`, `threshold` — each level class declares its own set
+through the same method. `WmcOptions` (flat, not hierarchical) accepts
+`enabled`, `error`, `exclude-data-classes`, `threshold`, `warning`.
+`RuleOptionKeyRecognition` reads these declarations and refuses an unrecognised key
+by name at both depths — the rule's own top level and inside a `callable`/
+`class` level slot, each compared against its own declared set.
+
 ## Test ownership and Definition of Done
 
 Owned tests live under `tests/Analysis/Evidence/Complexity/`: thirteen unit

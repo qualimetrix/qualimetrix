@@ -48,7 +48,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function ignoreModeProducesNoDiagnosticEvenWithManyUnmatchedEdges(): void
+    public function itProducesNoCoverageDiagnosticInIgnoreModeEvenWithManyUnmatchedEdges(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -77,7 +77,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function warnModeEmitsSingleDiagnosticWithWarningSeverity(): void
+    public function itEmitsASingleWarningSeverityDiagnosticInWarnMode(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -113,7 +113,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function errorModeEmitsDiagnosticWithErrorSeverity(): void
+    public function itEmitsAnErrorSeverityDiagnosticInErrorMode(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -135,7 +135,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function noDiagnosticEmittedWhenAllEdgesAreFullyClassified(): void
+    public function itEmitsNoDiagnosticWhenAllEdgesAreFullyClassified(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -158,7 +158,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function diagnosticRecommendationListsUpToTenSampleClassesAlphabetically(): void
+    public function itListsUpToTenSampleClassesAlphabeticallyInTheRecommendation(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -198,7 +198,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function diagnosticAccompaniesRealFindingsWhenForbiddenEdgesAreMixedIn(): void
+    public function itEmitsTheCoverageDiagnosticAlongsideRealFindingsWhenForbiddenEdgesAreMixedIn(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 

@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
@@ -19,12 +20,12 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType;
-use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use RuntimeException;
 use stdClass;
 
@@ -816,7 +817,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliOptionsDoNotLeakBetweenRunsAfterReset(): void
+    public function itDoesNotLeakCliOptionsIntoTheNextRunAfterReset(): void
     {
         // Simulate first run
         $this->registry->setCliOptions('test-rule', ['warningThreshold' => 50]);
@@ -977,7 +978,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // --- suppress_namespaces extraction tests ---
 
     #[Test]
-    public function createExtractsExcludeNamespacesSnakeCase(): void
+    public function itExtractsSuppressNamespacesWrittenInSnakeCase(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -993,7 +994,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createExtractsExcludeNamespacesCamelCase(): void
+    public function itExtractsSuppressNamespacesWrittenInCamelCase(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1007,7 +1008,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createExtractsExcludeNamespacesStringCoercedToArray(): void
+    public function itCoercesAScalarSuppressNamespacesValueIntoAnArray(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1137,7 +1138,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createRemovesExcludeNamespacesFromOptionsBeforeFromArray(): void
+    public function itStripsSuppressNamespacesFromOptionsBeforeBuildingThem(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1154,7 +1155,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function resetClearsExclusionProvider(): void
+    public function itClearsTheExclusionProviderOnReset(): void
     {
         $provider = new RuleNamespaceExclusionProvider();
         $registry = new RuleOptionsRegistry($provider);
@@ -1425,135 +1426,298 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(30, $options->error);
     }
 
-    // --- warnAboutUnknownKeys() honors ShorthandOptionKeysInterface ---------
+    // --- the declared key set is what a written key is compared against -----
     //
-    // Regression coverage for a bug where warnAboutUnknownKeys() only knew
-    // about constructor parameter names (via reflection), so a documented
-    // ThresholdParser shorthand key — the bare `threshold`, or a rule-specific
-    // one like `vo-threshold` / `param_threshold` — was reported as "Unknown
-    // option" even though it applied correctly. ShorthandOptionKeysInterface
-    // lets an Options class declare which shorthand keys its fromArray()
-    // actually accepts; only classes implementing it are exempted, so rules
-    // whose fromArray() genuinely has no such branch (CboOptions,
-    // InstabilityOptions — the top-level `class`/`namespace` wrapper never
-    // routes a bare `threshold` anywhere) keep warning as before.
+    // Each of these was, before the declaration existed, a false "Unknown
+    // option" warning: the factory read constructor parameters and could not
+    // see into `fromArray()`, so a documented ThresholdParser shorthand — the
+    // bare `threshold`, or a rule-specific one like `vo-threshold` — was
+    // reported as unknown while applying correctly. The class now states its
+    // own set, and each of these keys is in it. They assert the value too: a
+    // declaration that accepted a key and dropped it would pass a test that
+    // only asserted "not refused".
 
     #[Test]
-    public function itDoesNotWarnAboutTheDocumentedThresholdShorthandOnASupportingRule(): void
+    public function itAcceptsTheDocumentedThresholdShorthandOnASupportingRule(): void
     {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
-
         $this->registry->setConfigFileOptions([
             'size.method-count' => ['threshold' => 25],
         ]);
 
         /** @var MethodCountOptions $options */
-        $options = $factory->create('size.method-count', MethodCountOptions::class);
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
 
         self::assertSame(25, $options->warning);
         self::assertSame(25, $options->error);
-        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheVoThresholdShorthandOnLongParameterList(): void
+    public function itAcceptsTheVoThresholdShorthandOnLongParameterList(): void
     {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
-
         $this->registry->setConfigFileOptions([
             'code-smell.long-parameter-list' => ['vo-threshold' => 9],
         ]);
 
         /** @var LongParameterListOptions $options */
-        $options = $factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
 
         self::assertSame(9, $options->voWarning);
         self::assertSame(9, $options->voError);
-        self::assertSame([], $logger->records, 'The documented `vo-threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage(): void
+    public function itAcceptsTheThresholdShorthandOnTypeCoverage(): void
     {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
-
         $this->registry->setConfigFileOptions([
             'design.type-coverage.param' => ['threshold' => 70.0],
         ]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $factory->create('design.type-coverage.param', TypeCoverageOptions::class);
+        $options = $this->factory->create('design.type-coverage.param', TypeCoverageOptions::class);
 
         self::assertSame(70.0, $options->warning);
         self::assertSame(70.0, $options->error);
-        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheThresholdShorthandOnCboAndAppliesItToBothLevels(): void
+    public function itAcceptsTheThresholdShorthandOnCboAndAppliesItToBothLevels(): void
     {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
-
         $this->registry->setConfigFileOptions([
             'coupling.cbo' => ['threshold' => 30],
         ]);
 
         /** @var CboOptions $options */
-        $options = $factory->create('coupling.cbo', CboOptions::class);
+        $options = $this->factory->create('coupling.cbo', CboOptions::class);
 
-        // CboOptions::fromArray() now has a top-level `threshold`
-        // flat-shorthand branch that applies uniformly to BOTH the class and
-        // namespace dimensions (their defaults already match: 14/20).
+        // CboOptions::fromArray() has a top-level `threshold` flat-shorthand
+        // branch that applies uniformly to BOTH the class and namespace
+        // dimensions (their defaults already match: 14/20).
         self::assertSame(30, $options->class->warning);
         self::assertSame(30, $options->class->error);
         self::assertSame(30, $options->namespace->warning);
         self::assertSame(30, $options->namespace->error);
-        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels(): void
+    public function itAcceptsTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels(): void
     {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
-
         $this->registry->setConfigFileOptions([
             'coupling.instability' => ['threshold' => 0.9],
         ]);
 
         /** @var InstabilityOptions $options */
-        $options = $factory->create('coupling.instability', InstabilityOptions::class);
+        $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
 
         self::assertSame(0.9, $options->class->maxWarning);
         self::assertSame(0.9, $options->class->maxError);
         self::assertSame(0.9, $options->namespace->maxWarning);
         self::assertSame(0.9, $options->namespace->maxError);
-        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
-    #[Test]
-    public function itStillWarnsAboutAGenuinelyUnknownKeyOnARuleThatSupportsShorthand(): void
-    {
-        $logger = new RecordingLogger();
-        $factory = new RuleOptionsFactory($this->registry, $logger);
+    // --- an unrecognised key is refused, at both depths ---------------------
+    //
+    // It used to be a warning, at depth 1 only: a key written inside a level
+    // slot was compared against nothing at all, and a run continued at the
+    // defaults the author believed they had replaced. The exception class is
+    // `ConfigLoadException` because this is an error in the configuration
+    // document; `CheckCommand` prefixes it with "Configuration error: " and
+    // exits 3.
 
+    #[Test]
+    public function itRefusesAGenuinelyUnknownKeyAtTheRulesOwnDepth(): void
+    {
         $this->registry->setConfigFileOptions([
             'size.method-count' => ['nonsense' => 1],
         ]);
 
-        $factory->create('size.method-count', MethodCountOptions::class);
-
-        self::assertCount(1, $logger->records);
-        self::assertStringContainsString('Unknown option "nonsense" for rule "size.method-count"', $logger->records[0]['message']);
-        self::assertStringContainsString(
-            'Available options: enabled, warning, error, threshold',
-            $logger->records[0]['message'],
-            'The declared shorthand key must be listed alongside the constructor-derived options',
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage(
+            'Option "nonsense" is not an option of rule "size.method-count". Options here: enabled, error,'
+            . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
         );
+
+        $this->factory->create('size.method-count', MethodCountOptions::class);
+    }
+
+    /**
+     * The framework keys are legal here and declared by no options class, so
+     * the printed set has to carry them: a refusal for a mistyped
+     * `suppress_path` that listed only the rule's own options would name the
+     * fix nowhere.
+     */
+    #[Test]
+    public function itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['suppress_path' => ['src/']],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage(
+            'Option "suppressPath" is not an option of rule "size.method-count". Options here: enabled, error,'
+            . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
+        );
+
+        $this->factory->create('size.method-count', MethodCountOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownKeyInsideALevelSlotAndNamesThatSlotsOwnSet(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['class' => ['maxWarning' => 1]],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage(
+            'Option "maxWarning" is not an option of rule "coupling.cbo" at level "class". Options at that level:'
+            . ' enabled, error, scope, threshold, warning. Other levels of this rule take different options.',
+        );
+
+        $this->factory->create('coupling.cbo', CboOptions::class);
+    }
+
+    /**
+     * Two slots of one rule take disjoint threshold keys, so there is no
+     * single "keys allowed at a level" list: `coupling.instability` reads
+     * `max-warning` where `coupling.cbo` reads `warning`, at the same slot
+     * name. Both halves are asserted here, on the same slot, so a walk that
+     * ever grew one shared set would redden.
+     */
+    #[Test]
+    public function itComparesEachSlotAgainstItsOwnLevelClass(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => ['class' => ['max_warning' => 0.6, 'max_error' => 0.8]],
+        ]);
+
+        /** @var InstabilityOptions $options */
+        $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
+
+        self::assertSame(0.6, $options->class->maxWarning);
+        self::assertSame(0.8, $options->class->maxError);
+
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => ['class' => ['warning' => 0.6]],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('at level "class"');
+
+        $this->factory->create('coupling.instability', InstabilityOptions::class);
+    }
+
+    /**
+     * `threshold` inside a slot is documented on the website and works, and no
+     * constructor names it — the default `$thresholdKey` of
+     * `ThresholdParser::parse()` is where it lives. A comparison rebuilt from
+     * constructor parameters would refuse it in ten places.
+     */
+    #[Test]
+    public function itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['class' => ['threshold' => 7]],
+        ]);
+
+        /** @var CboOptions $options */
+        $options = $this->factory->create('coupling.cbo', CboOptions::class);
+
+        self::assertSame(7, $options->class->warning);
+        self::assertSame(7, $options->class->error);
+    }
+
+    /**
+     * An empty level block means what an omitted one means; refusing it would
+     * refuse a harmless YAML idiom. Carried as a case so that a later
+     * tightening has to delete a green test rather than merely not notice.
+     */
+    #[Test]
+    public function itAcceptsANullLevelSlotAsAnOmittedOne(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['class' => null],
+        ]);
+
+        $options = $this->factory->create('coupling.cbo', CboOptions::class);
+
+        self::assertInstanceOf(CboOptions::class, $options);
+    }
+
+    /**
+     * A rule has a universal off-switch and a level has none, so
+     * `class: false` is a plausible thing to write that did nothing at all.
+     */
+    #[Test]
+    public function itRefusesAFalseLevelSlotWithTheSpellingThatSwitchesOneLevelOff(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['class' => false],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage(
+            'Level "class" of rule "coupling.cbo" takes a map of options, got bool.'
+            . ' To switch one level off write "class: {enabled: false}".',
+        );
+
+        $this->factory->create('coupling.cbo', CboOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesANonMapLevelSlotWithoutInventingAdvice(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['class' => 10],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('Level "class" of rule "coupling.cbo" takes a map of options, got int.');
+
+        $this->factory->create('coupling.cbo', CboOptions::class);
+    }
+
+    /**
+     * The refusal answers in the spelling the factory received and applies no
+     * inverse transformation to it. Through every real door that spelling is
+     * the folded one — the YAML loader and the `--rule-opt` parser both fold
+     * separators before the factory exists — so a mistyped `max_warnign`
+     * arrives, and is answered, as `maxWarnign`. That is ADR 0044's limit at
+     * this seam; the letters, which is what a typo gets wrong, survive it.
+     *
+     * The registry is written to directly here, which is the one door that
+     * folds nothing, so the folded spelling is written out rather than
+     * produced — and the assertion is on the printing, not on the folding.
+     */
+    #[Test]
+    public function itPrintsTheKeyAsTheFactoryReceivedItRatherThanGuessingAnAuthoredSpelling(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => ['class' => ['maxWarnign' => 1]],
+        ]);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('Option "maxWarnign" is not an option');
+
+        $this->factory->create('coupling.instability', InstabilityOptions::class);
+    }
+
+    /**
+     * The three states are not two: a class that answers for a key in its own
+     * words must be let through, or the generic sentence prints one line above
+     * the specific one — the defect this walk removes.
+     */
+    #[Test]
+    public function itLetsAKeyTheClassAnswersForReachThatClassUnchallenged(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'architecture.unassigned-class' => ['enabled' => true],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('architecture.unassigned-class');
+
+        $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
     }
 
     // --- `threshold` vs `warning`/`error` mode conflicts across the
@@ -1570,7 +1734,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // preset/config-file `warning`/`error` pair.
 
     #[Test]
-    public function cliThresholdOverridesConfigFileWarningAndError(): void
+    public function itLetsACliThresholdEvictConfigFileWarningAndError(): void
     {
         // Reproduces: qmx.yaml sets `warning`/`error`,
         // `--rule-opt=size.method-count:threshold=25` on top.
@@ -1588,7 +1752,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesPresetSuppliedWarningAndError(): void
+    public function itLetsACliThresholdEvictPresetSuppliedWarningAndError(): void
     {
         // Reproduces: --preset=strict sets `warning`/`error` for this rule
         // (arrives here as "config file options", since presets are merged
@@ -1607,7 +1771,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliWarningAndErrorOverrideConfigFileThreshold(): void
+    public function itLetsCliWarningAndErrorEvictAConfigFileThreshold(): void
     {
         $this->registry->setConfigFileOptions([
             'size.method-count' => ['threshold' => 25],
@@ -1622,7 +1786,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesConfigFileWarningAndErrorAtNestedLevel(): void
+    public function itScopesTheCliThresholdEvictionToItsOwnNestedLevel(): void
     {
         // Hierarchical rule (complexity.ccn): eviction must be
         // scoped to the `callable:` nesting level, not the rule's top level.
@@ -1645,7 +1809,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function sameLayerCliThresholdAndWarningStillThrows(): void
+    public function itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer(): void
     {
         // Both keys set by the SAME source (CLI) must still be reported as
         // a genuine configuration error — only the *other* side of a merge
@@ -1659,7 +1823,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function unrelatedVoGroupIsNotEvictedByAnUnrelatedCliThresholdOverride(): void
+    public function itLeavesAnUnrelatedVoGroupUntouchedByACliThresholdOverride(): void
     {
         // code-smell.long-parameter-list has two independent dimensions:
         // bare warning/error/threshold, and the vo-prefixed variant.
@@ -1692,7 +1856,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // `warning`/`error` spelling.
 
     #[Test]
-    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeys(): void
+    public function itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys(): void
     {
         $this->registry->setConfigFileOptions([
             'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
@@ -1707,7 +1871,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliPrefixedGraduatedKeysOverrideConfigFileThreshold(): void
+    public function itLetsCliPrefixedGraduatedKeysEvictAConfigFileThreshold(): void
     {
         // Symmetric direction: config file sets the bare `threshold`
         // shorthand, CLI switches to the prefixed graduated pair.
@@ -1727,7 +1891,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function sameLayerCliThresholdAndPrefixedGraduatedKeysStillThrows(): void
+    public function itStillThrowsWhenThresholdAndPrefixedGraduatedKeysComeFromTheSameLayer(): void
     {
         // Both keys set by the SAME source (CLI) for a prefixed group must
         // still be a genuine configuration error.
@@ -1743,7 +1907,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeysAtNestedLevel(): void
+    public function itScopesThePrefixedGraduatedKeyEvictionToItsOwnNestedLevel(): void
     {
         // Hierarchical rule with a prefix-mismatched nested level:
         // coupling.instability's `class:` dimension uses max_warning/
@@ -1765,25 +1929,5 @@ final class RuleOptionsFactoryTest extends TestCase
         // Untouched sibling level keeps its own config-file values.
         self::assertSame(0.7, $options->namespace->maxWarning);
         self::assertSame(0.9, $options->namespace->maxError);
-    }
-
-    #[Test]
-    public function cliThresholdOverridesLegacyWarningThresholdAliasAtTopLevel(): void
-    {
-        // complexity.ccn's top-level legacy-flat shorthand accepts
-        // `warningThreshold`/`errorThreshold` as legacy aliases for
-        // warning/error — a naive suffix heuristic would misclassify those
-        // as threshold markers (they end in "Threshold"). The registry
-        // entry corrects this: a CLI `threshold` must still evict them.
-        $this->registry->setConfigFileOptions([
-            'complexity.ccn' => ['warningThreshold' => 10, 'errorThreshold' => 20],
-        ]);
-        $this->registry->setCliOptions('complexity.ccn', ['threshold' => 15]);
-
-        /** @var ComplexityOptions $options */
-        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
-
-        self::assertSame(15, $options->callable->warning);
-        self::assertSame(15, $options->callable->error);
     }
 }

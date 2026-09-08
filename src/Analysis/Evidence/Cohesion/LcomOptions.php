@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * Industry standard: LCOM4 >= 5 indicates serious cohesion problems.
  */
-final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -71,14 +71,6 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         );
     }
 
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
-    }
-
     public function isEnabled(): bool
     {
         return $this->enabled;
@@ -117,5 +109,18 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     public function warningBoundary(): int
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'enabled',
+            'error',
+            'exclude-methods',
+            'exclude-readonly',
+            'min-methods',
+            'threshold',
+            'warning',
+        );
     }
 }

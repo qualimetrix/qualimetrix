@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -25,7 +25,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - Warning: 10 (many direct children, changes affect many classes)
  * - Error: 15 (too many children, consider using interfaces or composition)
  */
-final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -51,14 +51,6 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
@@ -96,5 +88,10 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
     public function warningBoundary(): int
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
     }
 }

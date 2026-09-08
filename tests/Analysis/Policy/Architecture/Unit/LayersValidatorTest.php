@@ -100,7 +100,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function emptyInputProducesEmptyRegistry(): void
+    public function itProducesAnEmptyRegistryForAnEmptyInput(): void
     {
         $entries = $this->validator->validate([]);
 
@@ -109,7 +109,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nullInputProducesEmptyRegistry(): void
+    public function itProducesAnEmptyRegistryForNullInput(): void
     {
         $entries = $this->validator->validate(null);
 
@@ -117,7 +117,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function singleLayerWithListPatternRegistersAllPatterns(): void
+    public function itRegistersEveryPatternFromASingleLayersPatternList(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service', 'App\\Domain\\Service']],
@@ -131,7 +131,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layersListPreservesDeclarationOrder(): void
+    public function itPreservesDeclarationOrderAcrossLayers(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'zebra', 'patterns' => ['App\\Zebra']],
@@ -148,7 +148,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function legacyMapShapeForLayersIsRejected(): void
+    public function itRejectsTheLegacyMapShapeForLayers(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/ordered list of layer entries/');
@@ -158,7 +158,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function singleKeyMapShorthandForLayerEntryIsRejected(): void
+    public function itRejectsTheSingleKeyMapShorthandForALayerEntry(): void
     {
         // ADR 0006 explicitly rejects the `- controller: 'App\Controller\**'`
         // shorthand. Only the long form (`- name: ... patterns: [...]`) is accepted.
@@ -171,7 +171,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layersAsScalarIsRejected(): void
+    public function itRejectsAScalarLayersValue(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('architecture.layers');
@@ -184,7 +184,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function layerEntryWithoutNameIsRejected(): void
+    public function itRejectsALayerEntryWithoutAName(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/missing or empty "name"/');
@@ -195,7 +195,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithEmptyNameIsRejected(): void
+    public function itRejectsALayerEntryWithAnEmptyName(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/missing or empty "name"/');
@@ -206,7 +206,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryNameAsNonStringIsRejected(): void
+    public function itRejectsALayerEntryWithANonStringName(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/missing or empty "name"/');
@@ -217,7 +217,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryAsScalarIsRejected(): void
+    public function itRejectsAScalarLayerEntry(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/each entry must be a map/');
@@ -226,7 +226,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryAsListIsRejected(): void
+    public function itRejectsAListShapedLayerEntry(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/each entry must be a map/');
@@ -237,7 +237,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unknownKeyOnLayerEntryIsRejected(): void
+    public function itRejectsAnUnknownKeyOnALayerEntry(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/unknown key/');
@@ -248,7 +248,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function omittedMatchKeyDefaultsToAny(): void
+    public function itDefaultsTheOmittedMatchKeyToAny(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service']],
@@ -260,7 +260,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function explicitMatchAnyParsesToAny(): void
+    public function itParsesAnExplicitMatchAnyToTheAnyMode(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'any'],
@@ -270,7 +270,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function explicitMatchAllParsesToAll(): void
+    public function itParsesAnExplicitMatchAllToTheAllMode(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'all'],
@@ -295,7 +295,7 @@ final class LayersValidatorTest extends TestCase
 
     #[Test]
     #[DataProvider('caseInsensitiveMatchModeProvider')]
-    public function matchModeIsCaseInsensitive(string $rawValue, MatchMode $expected): void
+    public function itParsesTheMatchKeyCaseInsensitively(string $rawValue, MatchMode $expected): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => $rawValue],
@@ -305,7 +305,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unknownMatchValueIsRejected(): void
+    public function itRejectsAnUnknownMatchValueNamingBothAcceptedModes(): void
     {
         try {
             $this->validator->validate([
@@ -322,7 +322,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nonStringMatchValueIsRejected(): void
+    public function itRejectsANonStringMatchValue(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/"match".+int/');
@@ -333,7 +333,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithoutAnyCriterionIsRejected(): void
+    public function itRejectsALayerEntryDeclaringNoMembershipCriterion(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends"/');
@@ -344,7 +344,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithEmptyPatternsListIsRejected(): void
+    public function itRejectsALayerEntryWithAnEmptyPatternsList(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/"patterns" must contain at least one entry/');
@@ -355,7 +355,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithPatternsAsScalarIsAcceptedAsSingletonShorthand(): void
+    public function itAcceptsAScalarPatternsValueAsSingletonShorthand(): void
     {
         // YAML scalar shorthand: `patterns: 'App\Foo'` is equivalent to
         // `patterns: ['App\Foo']`. The shorthand is consistent across all
@@ -371,7 +371,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithPatternsAsMapIsRejected(): void
+    public function itRejectsAMapShapedPatternsValue(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/"patterns" must be a string or a non-empty list of strings/');
@@ -382,7 +382,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function emptyPatternStringInsideListIsRejected(): void
+    public function itRejectsAnEmptyPatternStringInsideTheList(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/non-empty string/');
@@ -393,7 +393,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nonStringPatternInsideListIsRejected(): void
+    public function itRejectsANonStringPatternInsideTheList(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/non-empty string/');
@@ -404,7 +404,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function invalidLayerNameIsRejected(): void
+    public function itRejectsALayerNameThatIsNotLowercaseKebabCase(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/UpperCaseName/');
@@ -433,7 +433,7 @@ final class LayersValidatorTest extends TestCase
 
     #[Test]
     #[\PHPUnit\Framework\Attributes\DataProvider('selectorMetacharsInLayerNameProvider')]
-    public function layerNameContainingSelectorMetacharIsRejected(string $invalidName): void
+    public function itRejectsALayerNameContainingASelectorMetacharacter(string $invalidName): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
 
@@ -447,7 +447,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function suffixCriterionAcceptsShortName(): void
+    public function itAcceptsAShortClassNameForTheSuffixCriterion(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'repository', 'suffix' => 'Repository'],
@@ -457,7 +457,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function suffixCriterionAcceptsListOfShortNames(): void
+    public function itAcceptsAListOfShortClassNamesForTheSuffixCriterion(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'persistence', 'suffix' => ['Repository', 'Dao']],
@@ -467,7 +467,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function suffixCriterionRejectsBackslashEntry(): void
+    public function itRejectsAFqnShapedSuffixEntry(): void
     {
         try {
             $this->validator->validate([
@@ -494,7 +494,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('fqnCriterionProvider')]
     #[Test]
-    public function fqnCriterionAcceptsFqnString(string $kind): void
+    public function itAcceptsAFqnStringForAFullyQualifiedCriterion(string $kind): void
     {
         $entries = $this->validator->validate([
             ['name' => 'r', $kind => 'App\\Some\\Fqn'],
@@ -505,7 +505,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('fqnCriterionProvider')]
     #[Test]
-    public function fqnCriterionAcceptsListOfFqns(string $kind): void
+    public function itAcceptsAListOfFqnsForAFullyQualifiedCriterion(string $kind): void
     {
         $entries = $this->validator->validate([
             ['name' => 'r', $kind => ['App\\A', 'App\\B']],
@@ -531,7 +531,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('fqnCriterionProvider')]
     #[Test]
-    public function fqnCriterionRejectsShortNameEntry(string $kind): void
+    public function itRejectsAShortNameEntryForAFullyQualifiedCriterion(string $kind): void
     {
         try {
             $this->validator->validate([
@@ -560,7 +560,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('allCriterionKindsProvider')]
     #[Test]
-    public function criterionEmptyListIsRejected(string $kind): void
+    public function itRejectsAnEmptyListForAnyCriterionKind(string $kind): void
     {
         try {
             $this->validator->validate([
@@ -575,7 +575,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('allCriterionKindsProvider')]
     #[Test]
-    public function criterionEmptyStringEntryIsRejected(string $kind): void
+    public function itRejectsAnEmptyStringEntryForAnyCriterionKind(string $kind): void
     {
         // Empty-string entry must be rejected BEFORE any kind-specific
         // semantic validation runs, so the index-0 spot is fine for every
@@ -594,7 +594,7 @@ final class LayersValidatorTest extends TestCase
 
     #[DataProvider('allCriterionKindsProvider')]
     #[Test]
-    public function criterionMapShapeIsRejected(string $kind): void
+    public function itRejectsAMapShapedValueForAnyCriterionKind(string $kind): void
     {
         try {
             $this->validator->validate([
@@ -608,7 +608,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function membershipSpecCarriesEveryDeclaredCriterion(): void
+    public function itCarriesEveryDeclaredCriterionIntoTheMembershipSpec(): void
     {
         // End-to-end: a single layer entry with all five criteria flows through
         // the validator and produces a MembershipSpec with the expected fields.
@@ -638,7 +638,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function duplicateLayerNameAcrossListEntriesIsRejected(): void
+    public function itRejectsADuplicateLayerNameAcrossListEntries(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/duplicate layer name "service"/');
@@ -650,7 +650,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternAcrossLayersIsRejected(): void
+    public function itRejectsADuplicatePatternAcrossLayersAsUnreachable(): void
     {
         try {
             $this->validator->validate([
@@ -668,7 +668,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicateWildcardPatternAcrossLayersIsRejected(): void
+    public function itRejectsADuplicateWildcardPatternAcrossLayers(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/App\\\\\\*\\*/');
@@ -680,7 +680,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternWithTrailingBackslashIsTreatedAsDuplicate(): void
+    public function itTreatsATrailingBackslashPatternAsTheSameDuplicate(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/unreachable/');
@@ -693,7 +693,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function samePatternWithinOneLayerIsNotADuplicate(): void
+    public function itAllowsTheSamePatternRepeatedWithinOneLayer(): void
     {
         // Cross-layer duplicates are rejected; within-layer repetition is allowed.
         $entries = $this->validator->validate([
@@ -708,7 +708,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function duplicatePatternIsRejectedWhenBothEntriesAreMatchAny(): void
+    public function itRejectsADuplicatePatternWhenBothEntriesMatchAny(): void
     {
         // Pin OLD behavior: `match: any` (default) on both sides keeps the
         // duplicate-pattern check active because pattern alone is sufficient
@@ -723,7 +723,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternIsAllowedWhenBothEntriesAreMatchAllWithNonPatternCriteria(): void
+    public function itAllowsADuplicatePatternWhenBothEntriesNarrowWithMatchAll(): void
     {
         // H1 fix: when BOTH duplicates declare `match: all` together with a
         // non-empty non-pattern criterion, each one narrows its pattern
@@ -738,7 +738,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternIsAllowedWhenOnlyEarlierEntryIsMatchAllWithNonPatternCriteria(): void
+    public function itAllowsADuplicatePatternWhenOnlyTheEarlierEntryNarrowsWithMatchAll(): void
     {
         // H1 fix: the earlier entry narrows its claim with `suffix`, so the
         // later entry can legitimately catch the residue of `App\Shared`
@@ -752,7 +752,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternIsAllowedWhenOnlyLaterEntryIsMatchAllWithNonPatternCriteria(): void
+    public function itAllowsADuplicatePatternWhenOnlyTheLaterEntryNarrowsWithMatchAll(): void
     {
         // H1 fix (order-symmetric "one or both" predicate): the later entry's
         // narrowing condition is recognized even though, in isolation, this
@@ -783,7 +783,7 @@ final class LayersValidatorTest extends TestCase
      */
     #[DataProvider('nonPatternCriterionProvider')]
     #[Test]
-    public function duplicatePatternIsAllowedForEveryNonPatternCriterionUnderMatchAll(string $kind, string|array $value): void
+    public function itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll(string $kind, string|array $value): void
     {
         // H1 fix: any of suffix / attributes / implements / extends qualifies
         // as a narrowing non-pattern criterion under `match: all`.
@@ -796,7 +796,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternIsRejectedWhenMatchAllHasNoNonPatternCriteria(): void
+    public function itRejectsADuplicatePatternWhenMatchAllNarrowsWithNoCriteria(): void
     {
         // Pin OLD behavior: `match: all` without any non-pattern criterion
         // collapses to the same semantics as `match: any` (patterns alone
@@ -811,7 +811,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternIsRejectedWhenEarlierIsMatchAnyAndLaterIsMatchAllWithoutNonPatternCriteria(): void
+    public function itRejectsADuplicatePatternWhenNeitherEntryNarrowsItsMatch(): void
     {
         // Pin OLD behavior: neither side narrows — the earlier blanket
         // `match: any` entry claims every match of the pattern and the
@@ -826,7 +826,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternModeAwareSkipExtendsAcrossMoreThanTwoEntries(): void
+    public function itAppliesTheModeAwareDuplicateSkipAcrossMoreThanTwoEntries(): void
     {
         // Mode-aware skip is pair-wise. When several entries share a pattern
         // and at least one of any colliding pair narrows, all are accepted.
@@ -840,7 +840,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicatePatternModeAwareSkipAppliesToTemplateLayerEntries(): void
+    public function itAppliesTheModeAwareDuplicateSkipToTemplateLayerEntries(): void
     {
         // The skip walks LayerDefinition and TemplateLayerDefinition
         // uniformly through `membership()`, so template-vs-template and
@@ -859,7 +859,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicateWildcardPatternIsAllowedUnderMatchAllNarrowing(): void
+    public function itAllowsADuplicateWildcardPatternNarrowedByMatchAll(): void
     {
         // The normalized-pattern key is the same for both entries; the
         // mode-aware skip still applies and the wildcard duplicate passes.
@@ -872,7 +872,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function configPathIsArchitectureForAllErrors(): void
+    public function itReportsTheArchitectureConfigPathForEveryError(): void
     {
         try {
             $this->validator->validate('bad');
@@ -887,7 +887,7 @@ final class LayersValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function excludeBlockProducesExcludeSpec(): void
+    public function itParsesAnExcludeBlockIntoAnExcludeSpec(): void
     {
         $entries = $this->validator->validate([
             [
@@ -906,7 +906,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockAcceptsStringShorthandForCriterionLists(): void
+    public function itAcceptsStringShorthandForExcludeCriterionLists(): void
     {
         $entries = $this->validator->validate([
             [
@@ -927,7 +927,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeMatchKeyParsesIntoExcludeSpecMode(): void
+    public function itParsesTheExcludeMatchKeyIntoTheExcludeSpecMode(): void
     {
         $entries = $this->validator->validate([
             [
@@ -948,7 +948,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeMatchKeyDefaultsToAny(): void
+    public function itDefaultsTheOmittedExcludeMatchKeyToAny(): void
     {
         $entries = $this->validator->validate([
             [
@@ -965,7 +965,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function omittedExcludeKeyLeavesMembershipExcludeNull(): void
+    public function itLeavesMembershipExcludeNullWhenTheExcludeKeyIsOmitted(): void
     {
         $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service\\**']],
@@ -977,7 +977,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockWithoutAnyCriterionIsRejected(): void
+    public function itRejectsAnExcludeBlockDeclaringNoCriterion(): void
     {
         try {
             $this->validator->validate([
@@ -995,7 +995,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockAsSequentialListIsRejected(): void
+    public function itRejectsASequentialListShapedExcludeBlock(): void
     {
         try {
             $this->validator->validate([
@@ -1013,7 +1013,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockAsEmptyArrayIsRejected(): void
+    public function itRejectsAnEmptyArrayExcludeBlock(): void
     {
         try {
             $this->validator->validate([
@@ -1031,7 +1031,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockAsScalarIsRejected(): void
+    public function itRejectsAScalarExcludeBlock(): void
     {
         try {
             $this->validator->validate([
@@ -1049,7 +1049,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockWithUnknownKeyIsRejected(): void
+    public function itRejectsAnUnknownKeyInsideTheExcludeBlock(): void
     {
         try {
             $this->validator->validate([
@@ -1069,7 +1069,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nestedExcludeInsideExcludeIsRejectedWithHint(): void
+    public function itRejectsANestedExcludeInsideExcludeWithAHint(): void
     {
         try {
             $this->validator->validate([
@@ -1090,7 +1090,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariableInStaticLayerExcludePatternsIsRejected(): void
+    public function itRejectsACaptureVariableInAStaticLayersExcludePatterns(): void
     {
         try {
             $this->validator->validate([
@@ -1108,7 +1108,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariableInStaticLayerExcludeSuffixIsRejected(): void
+    public function itRejectsACaptureVariableInAStaticLayersExcludeSuffix(): void
     {
         try {
             $this->validator->validate([
@@ -1125,7 +1125,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariableInTemplateExcludeSuffixIsRejected(): void
+    public function itRejectsACaptureVariableInATemplateLayersExcludeSuffix(): void
     {
         // Even for template layers, captures are accepted in exclude.patterns
         // only — suffix/attributes/implements/extends remain fixed strings.
@@ -1145,7 +1145,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariableInTemplateExcludePatternsIsAcceptedWhenDeclared(): void
+    public function itAcceptsADeclaredCaptureVariableInATemplateLayersExcludePatterns(): void
     {
         $entries = $this->validator->validate([
             [
@@ -1162,7 +1162,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariableInTemplateExcludeNotDeclaredByTemplateIsRejected(): void
+    public function itRejectsAnUndeclaredCaptureVariableInATemplateLayersExclude(): void
     {
         // `{n}` does not appear in the template name or capture-producing
         // patterns — exclude can't introduce new variables.
@@ -1182,7 +1182,7 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function excludeRetainsLayerNameInErrorPathForCriterionValidation(): void
+    public function itQualifiesTheErrorPathWithTheLayerNameForExcludeCriterionValidation(): void
     {
         // The exclude-path layer name is "<layer>.exclude" so the user can
         // tell which clause the per-criterion validation message refers to.

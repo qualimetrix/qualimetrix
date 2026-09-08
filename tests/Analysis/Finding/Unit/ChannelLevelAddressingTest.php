@@ -53,7 +53,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * the configured rule emits.
      */
     #[Test]
-    public function aPairIsRefusedInsideASetWhoseOnlyMemberDoesNotReportAtTheLevel(): void
+    public function itRefusesAPairInsideASetWhoseOnlyMemberDoesNotReportAtTheLevel(): void
     {
         $addressing = $this->addressing();
 
@@ -72,7 +72,7 @@ final class ChannelLevelAddressingTest extends TestCase
 
     /** One channel satisfying all three conditions at once is the whole requirement. */
     #[Test]
-    public function aPairIsAcceptedInsideASetWhenOneMemberReportsAtTheLevel(): void
+    public function itAcceptsAPairInsideASetWhenOneMemberReportsAtTheLevel(): void
     {
         $problem = $this->addressing()->problemWithAmong(
             'coupling.*:namespace',
@@ -84,7 +84,7 @@ final class ChannelLevelAddressingTest extends TestCase
     }
 
     #[Test]
-    public function aPairAddressingNothingInTheSetSaysSoRatherThanNamingLevels(): void
+    public function itSaysAPairAddressesNothingInTheSetRatherThanNamingLevels(): void
     {
         $problem = $this->addressing()->problemWithAmong(
             'duplication.*:project',
@@ -98,7 +98,7 @@ final class ChannelLevelAddressingTest extends TestCase
 
     /** Membership is the subject of the question, so level-free text is judged too. */
     #[Test]
-    public function levelFreeTextIsJudgedAgainstTheSetAsWell(): void
+    public function itJudgesLevelFreeTextAgainstTheSetAsWell(): void
     {
         $addressing = $this->addressing();
         $candidates = [new FindingChannel('coupling.cbo')];
@@ -115,7 +115,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * nothing anywhere.
      */
     #[Test]
-    public function theSetQuestionStaysSilentOnTextThatAddressesNothingAnywhere(): void
+    public function itStaysSilentOnTextThatAddressesNothingAnywhere(): void
     {
         $addressing = $this->addressing();
         $candidates = [new FindingChannel('coupling.cbo')];
@@ -130,7 +130,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * covers every declared level.
      */
     #[Test]
-    public function aLevelQualifiedSelectorCoversASingleLevelChannel(): void
+    public function itTreatsALevelQualifiedSelectorAsCoveringASingleLevelChannel(): void
     {
         $addressing = $this->addressing();
 
@@ -145,7 +145,7 @@ final class ChannelLevelAddressingTest extends TestCase
     }
 
     #[Test]
-    public function oneLevelOfATwoLevelChannelIsNotCoverageButTheUnionOfBothIs(): void
+    public function itTreatsOnlyTheUnionOfBothLevelsOfATwoLevelChannelAsCoverage(): void
     {
         $addressing = $this->addressing();
 
@@ -158,7 +158,7 @@ final class ChannelLevelAddressingTest extends TestCase
 
     /** Every channel of the producer, not merely one of them. */
     #[Test]
-    public function coverageIsQuantifiedOverEveryChannelOfTheProducer(): void
+    public function itQuantifiesCoverageOverEveryChannelOfTheProducer(): void
     {
         $addressing = $this->addressing();
 
@@ -178,7 +178,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * configuration; an empty set of channels would do the same.
      */
     #[Test]
-    public function nothingDeclaredIsNotCoverage(): void
+    public function itTreatsNothingDeclaredAsNotCoverage(): void
     {
         $addressing = $this->addressing();
 
@@ -194,7 +194,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * the CLI accepts and silently ignores.
      */
     #[Test]
-    public function aRulePairIsRefusedByLevelThenByRuleAndOnlyThenAdvises(): void
+    public function itRefusesARulePairByLevelThenByRuleAndOnlyThenAdvises(): void
     {
         $addressing = $this->addressing();
 
@@ -220,7 +220,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * and exits zero.
      */
     #[Test]
-    public function aRulePairOnARuleThatCannotBeRetunedIsRefusedWithoutAdvisingANoOp(): void
+    public function itRefusesARulePairOnANonRetunableRuleWithoutAdvisingANoOp(): void
     {
         $problem = $this->addressing()->problemWithRulePair(
             'computed.debt:class',
@@ -243,7 +243,7 @@ final class ChannelLevelAddressingTest extends TestCase
 
     /** Two separators are a level mistake, not an invitation to advise on half a name. */
     #[Test]
-    public function aRulePairCarryingTwoSeparatorsIsRefusedAsALevel(): void
+    public function itRefusesARulePairCarryingTwoSeparatorsAsALevelMistake(): void
     {
         $problem = $this->addressing()->problemWithRulePair('coupling.cbo:a:b', '@qmx-threshold "coupling.cbo:a:b"');
 
@@ -253,7 +253,7 @@ final class ChannelLevelAddressingTest extends TestCase
     }
 
     #[Test]
-    public function aPlainRuleNameIsNotTheRulePairQuestion(): void
+    public function itTreatsAPlainRuleNameAsNotTheRulePairQuestion(): void
     {
         self::assertNull($this->addressing()->problemWithRulePair('coupling.cbo', '@qmx-threshold "coupling.cbo"'));
     }
@@ -263,7 +263,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * up with two of them ("Suppression Channel selector "…" addresses …").
      */
     #[Test]
-    public function theCallersSubjectIsTheOnlySubjectOfTheSentence(): void
+    public function itUsesOnlyTheCallersSubjectInTheSentence(): void
     {
         $problem = $this->addressing()->problemWith('coupling.class-rank:project', 'Suppression "x"');
 
@@ -277,7 +277,7 @@ final class ChannelLevelAddressingTest extends TestCase
      * asserted in full because those seams are not this package's to change.
      */
     #[Test]
-    public function theSubjectLessWordingOfEveryRefusalIsUnchanged(): void
+    public function itKeepsTheSubjectLessWordingOfEveryRefusalUnchanged(): void
     {
         $addressing = $this->addressing();
 
@@ -303,7 +303,7 @@ final class ChannelLevelAddressingTest extends TestCase
     }
 
     #[Test]
-    public function textWithoutASeparatorIsNotTheGlobalQuestion(): void
+    public function itTreatsTextWithoutASeparatorAsNotTheGlobalQuestion(): void
     {
         self::assertNull($this->addressing()->problemWith('coupling.cbo'));
         self::assertNull($this->addressing()->problemWith('not a selector!'));

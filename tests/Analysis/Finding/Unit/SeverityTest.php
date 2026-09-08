@@ -62,7 +62,7 @@ final class SeverityTest extends TestCase
     }
 
     #[Test]
-    public function itAllCasesHaveDisplayName(): void
+    public function itGivesEveryCaseANonEmptyDisplayName(): void
     {
         foreach (Severity::cases() as $severity) {
             $displayName = $severity->displayName();

@@ -40,7 +40,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolvesBuiltInStrictPreset(): void
+    public function itResolvesTheBuiltInStrictPresetToItsYamlFile(): void
     {
         $path = $this->resolver->resolve('strict', '/tmp');
 
@@ -49,7 +49,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolvesBuiltInLegacyPreset(): void
+    public function itResolvesTheBuiltInLegacyPresetToItsYamlFile(): void
     {
         $path = $this->resolver->resolve('legacy', '/tmp');
 
@@ -57,7 +57,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolvesBuiltInCiPreset(): void
+    public function itResolvesTheBuiltInCiPresetToItsYamlFile(): void
     {
         $path = $this->resolver->resolve('ci', '/tmp');
 
@@ -65,7 +65,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function throwsOnUnknownBuiltInName(): void
+    public function itRefusesAnUnknownPresetNameListingAvailablePresets(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/Unknown preset.*foo/');
@@ -75,7 +75,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function detectsFilePathBySlash(): void
+    public function itTreatsAPathContainingASlashAsAFilePath(): void
     {
         $file = $this->createTempFile('custom.yaml');
 
@@ -85,7 +85,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function detectsFilePathByYamlExtension(): void
+    public function itTreatsAYamlExtensionAsAFilePath(): void
     {
         $file = $this->createTempFile('custom.yaml');
 
@@ -95,7 +95,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function detectsFilePathByYmlExtension(): void
+    public function itTreatsAYmlExtensionAsAFilePath(): void
     {
         $file = $this->createTempFile('custom.yml');
 
@@ -105,7 +105,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolvesAbsoluteFilePath(): void
+    public function itResolvesAnAbsoluteFilePathUnchanged(): void
     {
         $file = $this->createTempFile('absolute.yaml');
 
@@ -115,7 +115,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function throwsOnNonExistentFilePath(): void
+    public function itRefusesAFilePathThatDoesNotExist(): void
     {
         self::expectException(ConfigLoadException::class);
 
@@ -123,7 +123,7 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function isBuiltInReturnsTrueForKnownNames(): void
+    public function itRecognizesKnownPresetNamesAsBuiltIn(): void
     {
         self::assertTrue($this->resolver->isBuiltIn('ci'));
         self::assertTrue($this->resolver->isBuiltIn('legacy'));
@@ -131,14 +131,14 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function isBuiltInReturnsFalseForUnknownName(): void
+    public function itDoesNotRecognizeUnknownNamesAsBuiltIn(): void
     {
         self::assertFalse($this->resolver->isBuiltIn('foo'));
         self::assertFalse($this->resolver->isBuiltIn('./path.yaml'));
     }
 
     #[Test]
-    public function getAvailableNamesReturnsAlphabeticList(): void
+    public function itListsAvailablePresetNamesAlphabetically(): void
     {
         self::assertSame(['ci', 'legacy', 'strict'], PresetResolver::getAvailableNames());
     }

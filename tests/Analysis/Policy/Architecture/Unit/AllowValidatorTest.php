@@ -36,7 +36,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function emptyAllowProducesEmptyEntryList(): void
+    public function itProducesAnEmptyEntryListForAnEmptyAllow(): void
     {
         $warnings = [];
         $entries = $this->validator->validate([], ['controller'], $warnings);
@@ -46,7 +46,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nullAllowProducesEmptyEntryList(): void
+    public function itProducesAnEmptyEntryListForANullAllow(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(null, ['controller'], $warnings);
@@ -55,7 +55,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function singleSourceAndTargetIsParsedAsExactExact(): void
+    public function itParsesASingleSourceAndTargetAsExactExact(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -70,7 +70,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nullTargetsProducesEmptyTargetList(): void
+    public function itProducesAnEmptyTargetListForNullTargets(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -104,7 +104,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function duplicateExactTargetsAreDeduplicated(): void
+    public function itDeduplicatesDuplicateExactTargets(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -122,7 +122,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function longFormAllowEntryWithoutTypesIsAcceptedSilently(): void
+    public function itSilentlyAcceptsALongFormAllowEntryWithoutTypes(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -141,7 +141,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithLegacyTypesKeyIsRejectedAsUnknown(): void
+    public function itRejectsALongFormAllowEntryWithALegacyTypesKeyAsUnknown(): void
     {
         // The Step C/D forward-compat placeholder `types:` was renamed to
         // `relations:` when Step G wired the filter. A stale `types:` key in
@@ -164,7 +164,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithoutTargetKeyIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithoutATargetKey(): void
     {
         $warnings = [];
 
@@ -183,7 +183,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithEmptyTargetIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithAnEmptyTarget(): void
     {
         $warnings = [];
 
@@ -202,7 +202,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithRelationsExpandsDirectValues(): void
+    public function itExpandsDirectValuesInALongFormAllowEntryWithRelations(): void
     {
         // Step G: `relations:` is fully wired. Each direct token round-trips
         // through DependencyType::tryFrom() reflectively — adding a new enum
@@ -229,7 +229,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithRelationsAliasExpandsToConstituents(): void
+    public function itExpandsARelationsAliasToItsConstituentsInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -251,7 +251,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithRelationsAliasAndDirectMixDeduplicates(): void
+    public function itDeduplicatesAMixOfRelationsAliasAndDirectValuesInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -279,7 +279,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithEmptyRelationsListIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithAnEmptyRelationsList(): void
     {
         // An empty list is meaningless: the bare-string short form already
         // expresses "any relation allowed". Reject so the user can choose
@@ -301,7 +301,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithNonListRelationsIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithNonListRelations(): void
     {
         $warnings = [];
 
@@ -320,7 +320,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithUnknownRelationTokenIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithAnUnknownRelationToken(): void
     {
         $warnings = [];
 
@@ -339,7 +339,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function bareStringAllowTargetLeavesRelationsNull(): void
+    public function itLeavesRelationsNullForABareStringAllowTarget(): void
     {
         $warnings = [];
 
@@ -353,7 +353,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function bareAndLongFormSiblings_bothReachPolicy_underUnionSemantics(): void
+    public function itLetsBareAndLongFormSiblingsBothReachPolicyUnderUnionSemantics(): void
     {
         // Step G dedup boundary: a bare 'service' AND a long-form
         // `[target: service, relations: [extends]]` are semantically distinct
@@ -380,7 +380,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryAcceptsBothRelationsAndAllowCrossInstance(): void
+    public function itAcceptsBothRelationsAndAllowCrossInstanceInALongFormAllowEntry(): void
     {
         // M2 coverage: `relations:` and `allow_cross_instance:` are
         // independent long-form fields; both reach AllowTarget unchanged.
@@ -410,7 +410,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryAcceptsAllowCrossInstanceFlag(): void
+    public function itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -431,7 +431,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryDefaultsAllowCrossInstanceToFalse(): void
+    public function itDefaultsAllowCrossInstanceToFalseInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -450,7 +450,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryRejectsNonBooleanAllowCrossInstance(): void
+    public function itRejectsANonBooleanAllowCrossInstanceInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -469,7 +469,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryAcceptsCamelCaseAllowCrossInstanceFlag(): void
+    public function itAcceptsACamelCaseAllowCrossInstanceFlagInALongFormAllowEntry(): void
     {
         // M12: Phase 3.5 made the architecture subtree preserve user-supplied
         // key spellings, so both `allow_cross_instance` (canonical) and
@@ -493,7 +493,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntrySnakeAndCamelCaseFlagsProduceIdenticalResult(): void
+    public function itProducesTheSameResultForSnakeAndCamelCaseFlagsInALongFormAllowEntry(): void
     {
         // Same fixture parsed twice, once per spelling — the resulting
         // AllowTarget state must be bit-for-bit identical.
@@ -534,7 +534,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryRejectsBothSpellingsOnSameEntry(): void
+    public function itRejectsBothSpellingsOnTheSameLongFormAllowEntry(): void
     {
         // Ambiguity — silently picking one over the other based on key order
         // would surprise the user. Reject explicitly.
@@ -559,7 +559,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryRejectsNonBooleanCamelCaseAllowCrossInstance(): void
+    public function itRejectsANonBooleanCamelCaseAllowCrossInstanceInALongFormAllowEntry(): void
     {
         $warnings = [];
 
@@ -578,7 +578,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithUnknownKeyIsRejected(): void
+    public function itRejectsALongFormAllowEntryWithAnUnknownKey(): void
     {
         // A typo in a long-form key (e.g. `tipes:` instead of `types:`) would
         // otherwise be silently dropped on the floor. Surface as an explicit
@@ -604,7 +604,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function globSourceSelectorIsRecognised(): void
+    public function itRecognisesAGlobSourceSelector(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -621,7 +621,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function globSourceSkipsRegistryCrossValidation(): void
+    public function itSkipsRegistryCrossValidationForAGlobSource(): void
     {
         // No concrete layer named `unknown-*` exists; glob sources are not
         // cross-validated because Step D template-expansion may produce them.
@@ -637,7 +637,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function exactSourceStillRejectsUnknownLayer(): void
+    public function itStillRejectsAnUnknownLayerForAnExactSource(): void
     {
         $warnings = [];
 
@@ -652,7 +652,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function exactTargetReferencingUnknownLayerIsRejected(): void
+    public function itRejectsAnExactTargetReferencingAnUnknownLayer(): void
     {
         $warnings = [];
 
@@ -667,7 +667,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function globTargetSelectorSkipsRegistryCrossValidation(): void
+    public function itSkipsRegistryCrossValidationForAGlobTargetSelector(): void
     {
         // `unknown-*` matches no concrete layer today; glob targets are not
         // cross-validated for the same reason as glob sources.
@@ -684,7 +684,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function capturedSourceSelectorIsRecognised(): void
+    public function itRecognisesACapturedSourceSelector(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -699,7 +699,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetSelectorIsRecognised(): void
+    public function itRecognisesACapturedTargetSelector(): void
     {
         // Captured target is accepted only when its capture variables are a
         // subset of the source-side captures — otherwise the runtime binding
@@ -722,7 +722,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function unbalancedOpenBraceIsRejectedWithPathContext(): void
+    public function itRejectsAnUnbalancedOpenBraceWithPathContext(): void
     {
         $warnings = [];
 
@@ -737,7 +737,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unbalancedCloseBraceIsRejectedWithPathContext(): void
+    public function itRejectsAnUnbalancedCloseBraceWithPathContext(): void
     {
         $warnings = [];
 
@@ -752,7 +752,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unbalancedBraceOnSourceKeyIsRejected(): void
+    public function itRejectsAnUnbalancedBraceOnTheSourceKey(): void
     {
         $warnings = [];
 
@@ -767,7 +767,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unknownCaptureQuantifierIsRejected(): void
+    public function itRejectsAnUnknownCaptureQuantifier(): void
     {
         $warnings = [];
 
@@ -782,7 +782,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function invalidCaptureNameIsRejected(): void
+    public function itRejectsAnInvalidCaptureName(): void
     {
         $warnings = [];
 
@@ -801,7 +801,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function allowAsSequentialListIsRejected(): void
+    public function itRejectsAllowAsASequentialList(): void
     {
         $warnings = [];
 
@@ -812,7 +812,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function allowAsScalarIsRejected(): void
+    public function itRejectsAllowAsAScalar(): void
     {
         $warnings = [];
 
@@ -823,7 +823,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function allowTargetsAsScalarIsRejected(): void
+    public function itRejectsAllowTargetsAsAScalar(): void
     {
         $warnings = [];
 
@@ -838,7 +838,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function emptyTargetStringIsRejected(): void
+    public function itRejectsAnEmptyTargetString(): void
     {
         $warnings = [];
 
@@ -853,7 +853,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function configPathIsArchitectureForAllErrors(): void
+    public function itUsesArchitectureAsTheConfigPathForAllErrors(): void
     {
         $warnings = [];
 
@@ -870,7 +870,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function capturedTargetWithUndeclaredVariableIsRejected(): void
+    public function itRejectsACapturedTargetWithAnUndeclaredVariable(): void
     {
         // 'app-{x}': ['domain-{y}'] — target {y} is not bound by source {x}.
         $warnings = [];
@@ -886,7 +886,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithGlobSourceIsRejected(): void
+    public function itRejectsACapturedTargetWithAGlobSource(): void
     {
         // 'shared-*': ['domain-{m}'] — source produces no binding for {m}.
         $warnings = [];
@@ -902,7 +902,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithExactSourceIsRejected(): void
+    public function itRejectsACapturedTargetWithAnExactSource(): void
     {
         // 'controller': ['domain-{m}'] — exact source has no captures.
         $warnings = [];
@@ -918,7 +918,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithSubsetOfSourceVariablesIsAccepted(): void
+    public function itAcceptsACapturedTargetWithASubsetOfSourceVariables(): void
     {
         // '{a}-{b}': ['domain-{a}'] — target uses {a} only, which IS declared
         // by the source. Subset references are legal.
@@ -935,7 +935,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function exactTargetSkipsCrossValidation(): void
+    public function itSkipsCrossValidationForAnExactTarget(): void
     {
         // 'domain-{m}': ['vendor'] — exact target ignores binding entirely;
         // any captured-source-to-exact-target pairing is legal.
@@ -952,7 +952,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function globTargetSkipsCrossValidation(): void
+    public function itSkipsCrossValidationForAGlobTarget(): void
     {
         // 'domain-{m}': ['shared-*'] — glob target ignores binding entirely.
         $warnings = [];
@@ -968,7 +968,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function singleSegmentSourceWithMultiSegmentTargetIsRejected(): void
+    public function itRejectsACaptureVariableWhoseTargetDeclaresMultiSegmentButSourceDoesNot(): void
     {
         // 'app-{m}': ['domain-{m:**}'] — runtime substitutes the single-segment
         // value, target's :** annotation would be silently ignored.
@@ -985,7 +985,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function multiSegmentSourceWithSingleSegmentTargetIsRejected(): void
+    public function itRejectsACaptureVariableWhoseSourceDeclaresMultiSegmentButTargetDoesNot(): void
     {
         // Reverse direction: source binds multi-segment, target declares single.
         $warnings = [];
@@ -1001,7 +1001,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function matchingMultiSegmentShapesAreAccepted(): void
+    public function itAcceptsMatchingMultiSegmentShapes(): void
     {
         // 'app-{m:**}': ['domain-{m:**}'] — shapes match on both sides.
         $warnings = [];
@@ -1016,7 +1016,7 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function allowCrossInstanceFlagDoesNotRelaxCaptureCrossValidation(): void
+    public function itDoesNotRelaxCaptureCrossValidationWithAllowCrossInstance(): void
     {
         // The flag affects runtime binding identity, NOT the grammar — a
         // captured target with an undeclared variable is rejected at config

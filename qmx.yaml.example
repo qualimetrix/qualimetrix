@@ -96,6 +96,12 @@
 #   suppress_namespaces — suppress violations in specific namespaces (prefix or glob matching)
 #   suppress_paths — suppress violations in specific files (prefix or glob matching)
 #
+# An option key the rule does not have is a configuration error: the run stops
+# with exit 3 and the message lists the options allowed at that exact position.
+# The allowed set is per level slot, not per rule — `complexity.ccn` takes
+# `warning`/`error` under `callable:` and `max_warning`/`max_error` under
+# `class:`. Snake, camel and kebab spellings of one key are equivalent.
+#
 # Example:
 #   coupling.cbo:
 #     suppress_namespaces:
@@ -307,12 +313,12 @@
 
 # Disable rules by name or group prefix.
 # disabled_rules:
-#   - code-smell                 # disable all code-smell.* rules
+#   - code-smell.*               # disable all code-smell.* rules
 #   - architecture.circular-dependency
 
 # Run only specific rules (prefix matching).
 # only_rules:
-#   - complexity                 # only run complexity.* rules
+#   - complexity.*               # only run complexity.* rules
 
 
 # -----------------------------------------------------------------------------
@@ -334,7 +340,7 @@
 #
 #   # Define a custom metric using Symfony Expression Language
 #   computed.risk-score:
-#     formula: "ccn__avg * (1 - (tcc__avg ?? 0))"
+#     formula: 'm["complexity.ccn.avg"] * (1 - (m["cohesion.tcc.avg"] ?? 0))'
 #     levels: [namespace]
 #     warning: 30
 #     error: 60

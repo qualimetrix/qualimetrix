@@ -20,7 +20,7 @@ final class AllowAliasExpanderTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_singleDirectValue_returnsOneEnumCase(): void
+    public function itExpandsASingleDirectTokenToItsOwnEnumCase(): void
     {
         $result = AllowAliasExpander::expand(['extends'], 'architecture.allow.app[0]');
 
@@ -28,7 +28,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_multipleDirectValues_preservesOrder(): void
+    public function itPreservesInputOrderForMultipleDirectTokens(): void
     {
         $result = AllowAliasExpander::expand(
             ['static_call', 'extends', 'attribute'],
@@ -60,7 +60,7 @@ final class AllowAliasExpanderTest extends TestCase
 
     #[Test]
     #[DataProvider('everyDependencyTypeCase')]
-    public function expand_acceptsEveryDependencyTypeCaseReflectively(DependencyType $case): void
+    public function itAcceptsEveryDependencyTypeCaseAsADirectToken(DependencyType $case): void
     {
         $result = AllowAliasExpander::expand([$case->value], 'architecture.allow.app[0]');
 
@@ -72,7 +72,7 @@ final class AllowAliasExpanderTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_inheritanceAlias_expandsToExtendsImplementsTraitUse(): void
+    public function itExpandsTheInheritanceAliasToExtendsImplementsAndTraitUse(): void
     {
         $result = AllowAliasExpander::expand(['inheritance'], 'architecture.allow.app[0]');
 
@@ -83,7 +83,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_staticAccessAlias_expandsToStaticCallStaticPropertyClassConst(): void
+    public function itExpandsTheStaticAccessAliasToStaticCallStaticPropertyAndClassConst(): void
     {
         $result = AllowAliasExpander::expand(['static_access'], 'architecture.allow.app[0]');
 
@@ -98,7 +98,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_typeReferenceAlias_expandsToFourTypeKinds(): void
+    public function itExpandsTheTypeReferenceAliasToFourTypeKinds(): void
     {
         $result = AllowAliasExpander::expand(['type_reference'], 'architecture.allow.app[0]');
 
@@ -114,7 +114,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_runtimeCheckAlias_expandsToCatchInstanceof(): void
+    public function itExpandsTheRuntimeCheckAliasToCatchAndInstanceof(): void
     {
         $result = AllowAliasExpander::expand(['runtime_check'], 'architecture.allow.app[0]');
 
@@ -125,7 +125,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_attributeIsStandaloneNotAlias(): void
+    public function itTreatsAttributeAsAStandaloneTokenNotAnAlias(): void
     {
         // `attribute` is intentionally NOT grouped under any alias — ADR 0007
         // marks it as a distinct metadata category. Confirm the token round-trips
@@ -140,7 +140,7 @@ final class AllowAliasExpanderTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_aliasFollowedByDirectMember_dedupesTrailing(): void
+    public function itDedupesADirectTokenThatRepeatsAPrecedingAliasMember(): void
     {
         $result = AllowAliasExpander::expand(
             ['inheritance', 'extends'],
@@ -156,7 +156,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_aliasPlusUnrelatedDirect_appendsAfterAliasMembers(): void
+    public function itAppendsAnUnrelatedDirectTokenAfterAliasMembers(): void
     {
         $result = AllowAliasExpander::expand(
             ['inheritance', 'static_call'],
@@ -175,7 +175,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_duplicateDirectTokens_dedupes(): void
+    public function itDedupesRepeatedDirectTokens(): void
     {
         $result = AllowAliasExpander::expand(
             ['extends', 'extends', 'attribute', 'extends'],
@@ -189,7 +189,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_overlappingAliases_dedupesAcrossAliasMembers(): void
+    public function itDedupesAcrossOverlappingAliasMembers(): void
     {
         // Aliases never overlap as of Phase 2 ADR 0007, but the expander must
         // remain correct if a future alias accidentally shares a member.
@@ -209,7 +209,7 @@ final class AllowAliasExpanderTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_unknownToken_throwsArchitectureConfigurationExceptionWithKnownLists(): void
+    public function itRejectsAnUnknownTokenWithBothKnownListsInTheMessage(): void
     {
         try {
             AllowAliasExpander::expand(['tipes'], 'architecture.allow.app[0]');
@@ -231,7 +231,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_emptyStringToken_throwsArchitectureConfigurationException(): void
+    public function itRejectsAnEmptyStringToken(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('must be a non-empty string');
@@ -240,7 +240,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_nonStringToken_throwsArchitectureConfigurationException(): void
+    public function itRejectsANonStringToken(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('must be a non-empty string');
@@ -250,7 +250,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function expand_emptyTokenList_returnsEmptyArray(): void
+    public function itReturnsAnEmptyListForAnEmptyTokenList(): void
     {
         // The caller is expected to reject `relations: []` at validator-level
         // (with a hint to use the bare-string short form). The expander itself
@@ -264,7 +264,7 @@ final class AllowAliasExpanderTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function parseList_nullReturnsNull(): void
+    public function itReturnsNullWhenTheRelationsKeyIsAbsent(): void
     {
         // null (key absent) flows through to AllowTarget::$relations = null
         // (= "any relation allowed"). Defensive null-guard so callers can
@@ -273,7 +273,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function parseList_emptyListRejectedWithBareStringHint(): void
+    public function itRejectsAnEmptyRelationsListWithABareStringHint(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('must list at least one relation kind');
@@ -282,7 +282,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function parseList_associativeArrayRejected(): void
+    public function itRejectsAnAssociativeArrayForRelations(): void
     {
         // YAML `relations: {foo: bar}` would arrive here as an associative
         // array; rejecting it explicitly avoids a confusing downstream error
@@ -294,7 +294,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function parseList_scalarRejectedWithListHint(): void
+    public function itRejectsAScalarRelationsValueWithAListHint(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('must be a list of relation kinds or aliases');
@@ -303,7 +303,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function parseList_validListDelegatesToExpand(): void
+    public function itDelegatesAValidRelationsListToExpand(): void
     {
         $result = AllowAliasExpander::parseList(['inheritance'], 'architecture.allow.app[0]');
 

@@ -61,7 +61,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function classMatchingSingleLayer_reportsUniqueAssignment(): void
+    public function itReportsAUniqueAssignmentForAClassMatchingOneLayer(): void
     {
         $configPath = $this->writeConfig([
             ['controller', ['App\\Controller\\**']],
@@ -85,7 +85,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers(): void
+    public function itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers(): void
     {
         // any-foo declared first → it captures App\Service\Foo before service has a chance.
         $configPath = $this->writeConfig([
@@ -113,7 +113,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function classMatchingNoLayer_reportsUnclassifiedAndSuggestsCatchAll(): void
+    public function itReportsAClassMatchingNoLayerAsUnclassifiedAndSuggestsACatchAllPattern(): void
     {
         $configPath = $this->writeConfig([
             ['controller', ['App\\Controller\\**']],
@@ -135,7 +135,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function leadingBackslash_isNormalised(): void
+    public function itNormalisesALeadingBackslashInTheFqnArgument(): void
     {
         $configPath = $this->writeConfig([
             ['service', ['App\\Service\\**']],
@@ -156,7 +156,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function emptyFqn_exitsInvalid(): void
+    public function itExitsInvalidForAnEmptyFqn(): void
     {
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => '']);
@@ -166,7 +166,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function whitespaceOnlyFqn_exitsInvalid(): void
+    public function itExitsInvalidForAWhitespaceOnlyFqn(): void
     {
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => "   \t  "]);
@@ -176,7 +176,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function fqnWithEmbeddedSpace_exitsInvalid(): void
+    public function itExitsInvalidForAnFqnWithAnEmbeddedSpace(): void
     {
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => 'App\\Service Foo']);
@@ -186,7 +186,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function fqnWithInvalidIdentifierCharacter_exitsInvalid(): void
+    public function itExitsInvalidForAnFqnWithAnInvalidIdentifierCharacter(): void
     {
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => 'App\\Service-Foo']);
@@ -196,7 +196,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function nonExistentConfigPath_exitsFailure(): void
+    public function itExitsFailureForANonExistentConfigPath(): void
     {
         $missing = $this->tempDir . '/does-not-exist.yaml';
         $tester = $this->newTester();
@@ -211,7 +211,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function globalNamespaceClass_isHandled(): void
+    public function itHandlesAClassInTheGlobalNamespace(): void
     {
         $configPath = $this->writeConfig([
             ['service', ['App\\Service\\**']],
@@ -230,7 +230,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function noLayersDeclared_reportsAbsenceWithoutCatchAllSuggestion(): void
+    public function itReportsNoLayerWithoutACatchAllSuggestionWhenNoLayersAreDeclared(): void
     {
         // Config file exists but has no architecture section. Use an empty
         // source path so the command's full Discovery + Collection phases
@@ -255,7 +255,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function commandIsDiscoverableInApplication(): void
+    public function itIsRegisteredAndDiscoverableOnAConsoleApplication(): void
     {
         // Smoke test: the command can be registered on an Application by name
         // and surfaces under `list` output. This guards against accidental
@@ -293,7 +293,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * they cannot disagree without a regression in `LayerRegistry` itself.
      */
     #[Test]
-    public function commandAgreesWithRuntimeOnOverlap(): void
+    public function itAgreesWithTheRuntimeLayerRegistryOnAnOverlappingAssignment(): void
     {
         // Two overlapping layers — order matters. Runtime assignment is `any-foo`.
         $layers = [
@@ -351,7 +351,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * NOT contribute to that set.
      */
     #[Test]
-    public function discoveryHonorsExcludesAndGeneratedFilter(): void
+    public function itExcludesConfiguredAndGeneratedFilesFromDiscoveryBeforeAssignment(): void
     {
         $sourceRoot = $this->tempDir . '/src';
         mkdir($sourceRoot . '/Service', 0o755, true);
@@ -464,7 +464,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * regression guard.
      */
     #[Test]
-    public function appliesMemoryLimitFromConfigBeforeCollection(): void
+    public function itAppliesTheConfiguredMemoryLimitBeforeCollectionRuns(): void
     {
         // Pick an obvious sentinel that ini_get() will return verbatim and
         // that is well below any realistic PHP test runner default (so the
@@ -502,7 +502,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     #[Test]
-    public function validatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment(): void
+    public function itValidatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment(): void
     {
         foreach (['computed', 'health.complexity', 'health.*'] as $selector) {
             $configPath = $this->writeConfigWithComputedSelector($selector);
@@ -535,7 +535,7 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap(): void
     {
-        // Same overlap as classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers:
+        // Same overlap as itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers:
         // any-foo declared first shadows service for App\Service\Foo.
         $configPath = $this->writeConfig([
             ['any-foo', ['App\\**\\Foo']],
@@ -596,7 +596,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $decoded = json_decode($jsonTester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
 
         // Facts the text report prints (pinned by
-        // classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers).
+        // itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers).
         self::assertStringContainsString('Assigned to: any-foo', $textOutput);
         self::assertStringContainsString('pattern "App\\**\\Foo"', $textOutput);
         self::assertStringContainsString('service', $textOutput);

@@ -1033,6 +1033,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Prioritization/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Configuration/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Finding/RuleConfiguration/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Finding/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],

@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 final class CboOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEnabledFalseDisablesAllLevels(): void
+    public function itDisablesBothLevelsWhenEnabledIsFalse(): void
     {
         $options = CboOptions::fromArray(['enabled' => false]);
 
@@ -24,7 +24,7 @@ final class CboOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayWithoutEnabledFalseUsesSubDefaults(): void
+    public function itFallsBackToSubDefaultsWhenEnabledIsNotSetToFalse(): void
     {
         $options = CboOptions::fromArray([]);
 
@@ -46,7 +46,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itAdvertisesTheThresholdShorthandKey(): void
     {
-        self::assertSame(['threshold'], CboOptions::getShorthandOptionKeys());
+        self::assertTrue(CboOptions::acceptedOptionKeys()->accepts('threshold'));
     }
 
     #[Test]

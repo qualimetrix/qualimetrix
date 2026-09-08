@@ -49,6 +49,16 @@
       "consumers": [
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
           "closes_in": null
         },
@@ -268,6 +278,11 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
@@ -7794,20 +7809,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AdditionalOptionKeysInterface": {
-      "path": "src/Analysis/Finding/Contract/Rule/AdditionalOptionKeysInterface.php",
-      "kind": "interface",
-      "owner": "Analysis.Finding",
-      "visibility": "contract",
-      "closure_package": "P6-A",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions",
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AnalysisContext": {
       "path": "src/Analysis/Finding/Contract/Rule/AnalysisContext.php",
       "kind": "class",
@@ -9047,6 +9048,248 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ErrorSuppressionOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassCognitiveComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassNpathComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodCognitiveComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodNpathComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRuleOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassInstabilityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\NamespaceCboOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\NamespaceInstabilityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Maintainability",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Security",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\HardcodedCredentialsOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Security",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Security",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionRefusalWording": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionsInterface": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php",
       "kind": "interface",
@@ -9342,115 +9585,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ShorthandOptionKeysInterface": {
-      "path": "src/Analysis/Finding/Contract/Rule/ShorthandOptionKeysInterface.php",
-      "kind": "interface",
-      "owner": "Analysis.Finding",
-      "visibility": "contract",
-      "closure_package": "P6-A",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountOptions",
           "closes_in": null
         }
       ]
@@ -10373,6 +10507,14 @@
     },
     "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger": {
       "path": "src/Analysis/Finding/FindingExclusionLedger.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition": {
+      "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",

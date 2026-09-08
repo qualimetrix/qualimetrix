@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Evidence\Maintainability;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -23,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * Note: Lower MI is worse, so thresholds work in reverse.
  */
-final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -51,14 +51,6 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
             minStatements: (int) ($config['min_statements'] ?? $config['minStatements'] ?? 10),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
@@ -106,5 +98,10 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
     public function warningBoundary(): float
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'exclude-tests', 'min-statements', 'threshold', 'warning');
     }
 }

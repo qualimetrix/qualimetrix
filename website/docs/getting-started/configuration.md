@@ -203,6 +203,16 @@ rules:
     threshold: 80
 ```
 
+**Option key spellings are interchangeable, option keys themselves are not.**
+`max_warning`, `maxWarning` and `max-warning` are the same key and all three
+apply, at both depths. A key the rule does not have at that position is not
+guessed at: the run stops (see [Unknown rule option keys](#unknown-rule-option-keys)).
+
+**An empty level block means the same as an omitted one.** `callable:` with no
+body leaves that level at its defaults. To switch a level off, write
+`callable: {enabled: false}` — `callable: false` is refused, because a level has
+no off-switch of its own and the value looks like the rule's.
+
 **Suppress namespaces for a rule:**
 
 Any rule can exclude specific namespaces using prefix matching. Violations from matching namespaces are suppressed:
@@ -710,6 +720,31 @@ Misspelled rule names in the `rules:` section are rejected:
 ```
 Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
 ```
+
+### Unknown rule option keys
+
+An option key a rule does not have is a configuration error at **every** depth
+it can be written at — the run stops with exit code 3 and nothing is analyzed:
+
+```
+Configuration error: Option "warningThreshold" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
+```
+
+Inside a level slot the message names the slot, because the allowed set is per
+level and not per rule:
+
+```
+Configuration error: Option "warning" is not an option of rule "complexity.ccn" at level "class". Options at that level: enabled, max-error, max-warning, threshold. Other levels of this rule take different options.
+```
+
+The same applies to `--rule-opt` on the command line, with the same code and the
+same message.
+
+!!! note "The key is quoted in its folded spelling"
+    Separators are folded before the key reaches the rule, so a mistyped
+    `max_warnign` is answered as `"maxWarnign"`. The letters — which is what a
+    typo gets wrong — are unchanged. The allowed keys are always listed in the
+    canonical kebab spelling.
 
 !!! tip
     Set a value to `~` (YAML null) or leave it empty to explicitly use the default — this is always valid.

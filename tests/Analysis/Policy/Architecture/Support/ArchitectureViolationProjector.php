@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
  * cosmetic message tweaks don't churn the golden snapshots.
  *
  * Shared by integration tests that compare against pinned JSON files
- * (e.g. {@code LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput},
- * {@code Phase1ConfigCompatibilityTest::phase1ShapeYamlLoadsAndProducesPinnedFindingSet}).
+ * (e.g. {@code LayerViolationIntegrationTest::itMatchesTheGoldenFileForTheFullPolicysOutput},
+ * {@code Phase1ConfigCompatibilityTest::itProducesThePinnedFindingSetForAPhase1ShapeConfig}).
  * The projection deliberately strips line numbers and free-text messages —
  * those are exercised by message-shape tests separately.
  *

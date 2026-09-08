@@ -89,6 +89,20 @@ The complete repeated-expression stack is collector → visitor → `RepeatedExp
 The only internal dogfood control is `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` It is a structural explanation, not a metric behavior change or baseline debt. `HardcodedCredentialsVisitor` carried a matching `design.data-class` control until that rule was corrected to gate on a low share of functional public methods; a delegating traversal adapter is no longer read as a data surface.
 
 
+## Rule option key declarations
+
+`BooleanArgumentOptions`, `CodeSmellOptions`, `ConstructorOverinjectionOptions`,
+`ErrorSuppressionOptions`, `IdenticalSubExpressionOptions`,
+`LongParameterListOptions`, `UnreachableCodeOptions` and `UnusedPrivateOptions`
+declare their accepted option keys through
+`RuleOptionsInterface::acceptedOptionKeys()`. Each declaration transcribes the
+class's own constructor parameters plus its shorthand keys —
+`threshold`/`vo-threshold` for `LongParameterListOptions`, `threshold` for
+`ConstructorOverinjectionOptions` and `UnreachableCodeOptions`. Those
+declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
+key none of them knows is refused with exit 3, at the rule's own level and
+inside a level slot alike.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

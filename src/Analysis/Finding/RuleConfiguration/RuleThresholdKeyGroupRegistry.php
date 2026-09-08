@@ -17,7 +17,10 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * `$warningKey`/`$errorKey`/`$thresholdKey`/`$legacyKeys` arguments already
  * passed to `ThresholdParser::parse()` at that rule's `Options::fromArray()`
  * call site — it does not invent new information, it just makes explicit,
- * in one place, a pairing that already exists at each call site.
+ * in one place, a pairing that already exists at each call site. The one
+ * exception is a key a call site names but the option-key refusal rejects at
+ * depth 1 before any merge happens: eviction can never see it, so the entry
+ * omits it — see {@see LONE_THRESHOLD}.
  *
  * ## Why this isn't derived directly from the Options class
  *
@@ -47,7 +50,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * add) its entry in {@see GROUPS}, matching the corresponding
  * `ThresholdParser::parse()` call's arguments. Reuse one of the shared
  * key-group constants below ({@see BARE_PAIR}, {@see MAX_PREFIXED_PAIR},
- * {@see LEGACY_FLAT_ALIAS_PAIR}) when a rule's spelling matches one exactly
+ * {@see LONE_THRESHOLD}) when a rule's spelling matches one exactly
  * — most rules do, since bare `warning`/`error` and `max_`-prefixed
  * `warning`/`error` are by far the two most common spellings across the
  * codebase. Only write out a fresh literal group when the spelling is
@@ -63,11 +66,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * case/separator-insensitive (`max_distance_warning` and
  * `maxDistanceWarning` both match), so camelCase/snake_case/kebab-case
  * variants of the *same word* don't need separate entries. A DIFFERENT word
- * that aliases the same concept (e.g. `warningThreshold` as a legacy name
- * for `warning`, on `complexity.ccn`'s top-level legacy-flat mode)
- * DOES need its own entry in the corresponding list, precisely because a
- * plain suffix heuristic would otherwise misclassify it as a `threshold`
- * marker (it ends in "Threshold") instead of a `warning` alias.
+ * that aliases the same concept would need its own entry in the corresponding
+ * list, precisely because a plain suffix heuristic would misclassify a name
+ * like `warningThreshold` as a `threshold` marker (it ends in "Threshold")
+ * instead of a `warning` alias. No rule declares such an alias any more: an
+ * undeclared option key is refused at the option-key seam rather than
+ * mirrored here.
  *
  * @phpstan-type ThresholdKeyGroupShape array{warning: list<string>, error: list<string>, threshold: list<string>}
  */
@@ -101,17 +105,14 @@ final class RuleThresholdKeyGroupRegistry
     private const array MAX_PREFIXED_PAIR = ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']];
 
     /**
-     * `warningThreshold`/`errorThreshold`/`threshold` — legacy top-level
-     * ALIASES for warning/error on `complexity.ccn`/`cognitive`/
-     * `npath`'s callable dimension, not a `max_`-style rename. Kept as its own
-     * constant (rather than folded into {@see BARE_PAIR}) precisely because
-     * a plain suffix heuristic would otherwise misclassify `warningThreshold`
-     * as a `threshold` marker (it ends in "Threshold") instead of a
-     * `warning` alias — see this class's own docblock.
+     * A `threshold` shorthand with no graduated pair beside it — the shape of
+     * a top level that takes the shorthand and nothing else. The empty
+     * `warning`/`error` lists are load-bearing: eviction has nothing to strip
+     * for a spelling that is refused at depth 1 before any merge happens.
      *
      * @var ThresholdKeyGroupShape
      */
-    private const array LEGACY_FLAT_ALIAS_PAIR = ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['threshold']];
+    private const array LONE_THRESHOLD = ['warning' => [], 'error' => [], 'threshold' => ['threshold']];
 
     /**
      * @var array<string, array<string, list<ThresholdKeyGroupShape>>>
@@ -132,25 +133,23 @@ final class RuleThresholdKeyGroupRegistry
 
         // complexity.ccn / complexity.cognitive / complexity.npath
         // (hierarchical callable/class options with an identical shape):
-        // top-level legacy-flat shorthand applies only to the callable
-        // dimension — the bare `warning`/`error` keys are NOT part of that
-        // top-level group: the legacy-flat branch's own trigger condition
-        // (`ComplexityOptions::fromArray()` et al.) only checks for
-        // `warningThreshold`/`errorThreshold`/`threshold` — bare
-        // `warning`/`error` at the rule's top level are never inspected by
-        // it at all and fall through as unknown options.
+        // the top-level shorthand applies only to the callable dimension, and
+        // `threshold` is the only key that opens it — the branch's trigger
+        // condition (`ComplexityOptions::fromArray()` et al.) checks for
+        // nothing else. Bare `warning`/`error` at the rule's top level are
+        // never inspected by it at all and are refused as unknown options.
         'complexity.ccn' => [
-            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            '' => [self::LONE_THRESHOLD],
             SymbolLevel::Callable->value => [self::BARE_PAIR],
             SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.cognitive' => [
-            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            '' => [self::LONE_THRESHOLD],
             SymbolLevel::Callable->value => [self::BARE_PAIR],
             SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.npath' => [
-            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            '' => [self::LONE_THRESHOLD],
             SymbolLevel::Callable->value => [self::BARE_PAIR],
             SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],

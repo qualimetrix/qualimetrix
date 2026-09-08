@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Size;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Options for the property count rule.
  */
-final readonly class PropertyCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class PropertyCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -45,14 +45,6 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
@@ -90,5 +82,17 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
     public function warningBoundary(): int
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'enabled',
+            'error',
+            'exclude-promoted-only',
+            'exclude-readonly',
+            'threshold',
+            'warning',
+        );
     }
 }

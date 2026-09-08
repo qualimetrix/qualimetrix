@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+**An unrecognised rule option key now stops the run with exit 3, at every depth
+it can be written at.** It used to warn at the top level of a rule's options and
+to be dropped in silence inside a level slot — so `callable: {warnign: 1,
+error: 2}` applied the `error` half, lost the `warning` half, and said nothing.
+The refusal names the key and lists the options allowed at that exact position;
+inside a slot it adds that other levels of the same rule take different options.
+The set it compares against is now declared by the class that reads the keys, so
+a key that works is never called unknown and a key that does nothing is never
+called valid. See
+[ADR 0049](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0049-rule-option-key-recognition.md)
+for the full migration table.
+
+**Seven legacy option aliases are removed.** Each had a declared spelling doing
+the same thing; written now, they are unknown keys and exit 3.
+
+| removed                                        | write instead                                    |
+| ---------------------------------------------- | ------------------------------------------------ |
+| `complexity.ccn: {warning_threshold: N}`       | `complexity.ccn: {callable: {warning: N}}`       |
+| `complexity.ccn: {error_threshold: N}`         | `complexity.ccn: {callable: {error: N}}`         |
+| `complexity.cognitive: {warning_threshold: N}` | `complexity.cognitive: {callable: {warning: N}}` |
+| `complexity.cognitive: {error_threshold: N}`   | `complexity.cognitive: {callable: {error: N}}`   |
+| `complexity.npath: {warning_threshold: N}`     | `complexity.npath: {callable: {warning: N}}`     |
+| `complexity.npath: {error_threshold: N}`       | `complexity.npath: {callable: {error: N}}`       |
+| `coupling.distance: {project_namespaces: […]}` | `coupling.distance: {include_namespaces: […]}`   |
+
+On the three complexity rules the retired aliases opened the flat format, which
+also switches the class level off; `callable:` leaves it at its defaults, so add
+`class: {enabled: false}` if you were relying on that. `include_namespaces` is an
+exact replacement.
+
+**Top-level `warning:` / `error:` on `complexity.ccn`, `complexity.cognitive`
+and `complexity.npath` are refused instead of warned.** They never applied a
+threshold there — write them inside `callable:`. The same two keys keep working
+at the top level of `coupling.cbo`, where they always did; they are now
+documented rather than undeclared, as are `max_warning` / `max_error` on
+`coupling.instability`.
+
+**A level slot written as `false` is refused instead of silently ignored.**
+`callable: false` looked like the universal rule off-switch and was not one;
+write `callable: {enabled: false}`. An empty or omitted slot is unchanged and
+still means "leave this level at its defaults".
+
+### Fixed
+
+- `qmx.yaml.example` no longer ships three examples that fail: the rule
+  selectors under `disabled_rules:` / `only_rules:` needed the `X.*` wildcard
+  form, and the custom computed-metric example still used the retired
+  `ccn__avg` variable encoding.
+
 ## [0.26.0] - 2026-09-08
 
 ### Breaking

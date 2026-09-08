@@ -47,7 +47,7 @@ use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresenta
 final class JsonShapePreservationTest extends TestCase
 {
     #[Test]
-    public function gitlabFormatterEmitsPathAsString(): void
+    public function itEmitsThePathAsAStringInTheGitlabFormatter(): void
     {
         $formatter = new GitLabCodeQualityFormatter();
 
@@ -73,7 +73,7 @@ final class JsonShapePreservationTest extends TestCase
     }
 
     #[Test]
-    public function sarifFormatterEmitsArtifactLocationUri(): void
+    public function itEmitsTheArtifactLocationUriInTheSarifFormatter(): void
     {
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
@@ -92,7 +92,7 @@ final class JsonShapePreservationTest extends TestCase
     }
 
     #[Test]
-    public function sarifFormatterOmitsLocationsForProjectFindings(): void
+    public function itOmitsLocationsForProjectLevelFindingsInTheSarifFormatter(): void
     {
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
@@ -108,7 +108,7 @@ final class JsonShapePreservationTest extends TestCase
     }
 
     #[Test]
-    public function metricsJsonFormatterEmitsFileAsStringField(): void
+    public function itEmitsTheFileAsAStringFieldInTheMetricsJsonFormatter(): void
     {
         // MetricsJsonFormatter consumes SymbolInfo->file directly (a RelativePath since Phase 1c);
         // shape contract: every symbol entry has `file` as a string (empty when null).

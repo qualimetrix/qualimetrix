@@ -27,25 +27,25 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsDistance(): void
+    public function itNamesItselfDistance(): void
     {
         self::assertSame('distance', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsRequiredMetrics(): void
+    public function itRequiresInstabilityAndAbstractness(): void
     {
         self::assertSame(['coupling.instability', 'coupling.abstractness'], $this->collector->requires());
     }
 
     #[Test]
-    public function provides_returnsDistance(): void
+    public function itProvidesTheDistanceMetric(): void
     {
         self::assertSame(['coupling.distance'], $this->collector->provides());
     }
 
     #[Test]
-    public function getMetricDefinitions_returnsOneDefinition(): void
+    public function itDeclaresOneMetricDefinitionAveragedAtProjectLevel(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -60,7 +60,7 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_onMainSequence(): void
+    public function itScoresZeroDistanceOnTheMainSequence(): void
     {
         // A + I = 1 → distance = 0 (ideal)
         // Abstractness = 0.5, Instability = 0.5
@@ -82,7 +82,7 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_concreteStable_zoneOfPain(): void
+    public function itScoresMaximumDistanceForAConcreteStableZoneOfPain(): void
     {
         // A = 0, I = 0 → distance = 1 (zone of pain - hard to change)
         $repository = new InMemoryMetricRepository();
@@ -103,7 +103,7 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_abstractUnstable_zoneOfUselessness(): void
+    public function itScoresMaximumDistanceForAnAbstractUnstableZoneOfUselessness(): void
     {
         // A = 1, I = 1 → distance = 1 (zone of uselessness - too abstract)
         $repository = new InMemoryMetricRepository();
@@ -124,7 +124,7 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_typicalCase(): void
+    public function itScoresTheAbsoluteDeviationFromTheMainSequence(): void
     {
         // A = 0.3, I = 0.4 → distance = |0.3 + 0.4 - 1| = 0.3
         $repository = new InMemoryMetricRepository();
@@ -145,7 +145,7 @@ final class DistanceCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_missingMetrics_usesDefaults(): void
+    public function itDefaultsMissingAbstractnessAndInstabilityToZero(): void
     {
         // Missing both abstractness and instability → defaults to 0
         // distance = |0 + 0 - 1| = 1

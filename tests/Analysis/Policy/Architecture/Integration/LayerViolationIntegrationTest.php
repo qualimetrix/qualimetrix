@@ -42,7 +42,7 @@ final class LayerViolationIntegrationTest extends TestCase
     private const string FIXTURE_PATH = __DIR__ . '/../Fixtures/Sample';
 
     #[Test]
-    public function emptyArchitecturePolicyProducesZeroLayerViolations(): void
+    public function itShortCircuitsToZeroLayerViolationsWhenNoLayersAreDeclared(): void
     {
         $pipeline = $this->createPipelineWithArchitecture(null);
 
@@ -57,7 +57,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function fullPolicyDetectsControllerToRepositoryFinding(): void
+    public function itDetectsAControllerToRepositoryLayerViolation(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
 
@@ -99,7 +99,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function controllerOnlyPolicyTriggersCoverageDiagnosticInWarnMode(): void
+    public function itReportsACoverageDiagnosticInWarnModeWhenOnlyOneLayerIsDeclared(): void
     {
         // Only declare 'controller'; service/repository/domain become out-of-layer
         $registry = new LayerRegistry([
@@ -132,7 +132,7 @@ final class LayerViolationIntegrationTest extends TestCase
      * set itself.
      */
     #[Test]
-    public function goldenFileMatchesFullPolicyOutput(): void
+    public function itMatchesTheGoldenFileForTheFullPolicysOutput(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
@@ -143,7 +143,7 @@ final class LayerViolationIntegrationTest extends TestCase
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
             $payload = [
-                '_comment' => 'Golden fixture for LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput. Normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.',
+                '_comment' => 'Golden fixture: normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.',
                 'violations' => $actual,
             ];
             file_put_contents($goldenPath, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n");
@@ -166,7 +166,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function ignoreCoverageModeSuppressesDiagnosticEvenWithUnmatchedEnds(): void
+    public function itSuppressesTheCoverageDiagnosticInIgnoreModeEvenWithUnmatchedEnds(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['Fixtures\\Sample\\Controller'])),

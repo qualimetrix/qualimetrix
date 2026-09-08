@@ -70,7 +70,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function methodToClassAggregatorSkipsGlobalFunctions(): void
+    public function itSkipsGlobalFunctionsDuringMethodToClassAggregation(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -94,7 +94,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function globalFunctionDoesNotInterfereWithClassAggregation(): void
+    public function itExcludesGlobalFunctionsFromClassLevelAggregation(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -120,7 +120,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function globalFunctionWithoutNamespaceIsHandledCorrectly(): void
+    public function itAggregatesAGlobalFunctionWithoutANamespaceWithoutError(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -143,7 +143,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function functionCcnAggregatesToNamespaceLevel(): void
+    public function itRollsUpAGlobalFunctionsCcnToItsNamespace(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -167,7 +167,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function functionCcnAggregatesToProjectLevel(): void
+    public function itRollsUpAGlobalFunctionsCcnAllTheWayToTheProject(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -192,7 +192,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function functionCountedInSymbolMethodCount(): void
+    public function itCountsAGlobalFunctionInTheNamespaceSymbolMethodCount(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -215,7 +215,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     }
 
     #[Test]
-    public function mixedClassAndFunctionNamespaceAggregation(): void
+    public function itSumsClassAndGlobalFunctionCcnAtTheNamespaceLevel(): void
     {
         $repository = new InMemoryMetricRepository();
 

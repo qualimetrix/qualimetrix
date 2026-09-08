@@ -17,7 +17,7 @@ use Symfony\Component\Console\Input\InputOption;
 final class CliOptionsParserTest extends TestCase
 {
     #[Test]
-    public function parseRuleOptions_processesAllRegisteredAliases(): void
+    public function itProcessesEveryRegisteredAliasNotJustTheHardcodedOnes(): void
     {
         // Arrange: parser with aliases including non-hardcoded ones
         $ruleOptionsParser = new RuleOptionsParser([
@@ -52,7 +52,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_ruleOptTakesPriorityOverAliases(): void
+    public function itPrefersRuleOptOverAConflictingAlias(): void
     {
         // Arrange: --rule-opt and alias both set same rule option
         $ruleOptionsParser = new RuleOptionsParser([
@@ -79,7 +79,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_normalizesFloatValues(): void
+    public function itNormalizesAnAliasValueToFloat(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'param-type-coverage-warning' => ['rule' => 'design.type-coverage.param', 'option' => 'warning'],
@@ -103,7 +103,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_normalizesBooleanValues(): void
+    public function itNormalizesAliasValuesToBooleans(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'rule-enabled' => ['rule' => 'test.rule', 'option' => 'enabled'],
@@ -131,7 +131,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_normalizesIntValues(): void
+    public function itNormalizesAnAliasValueToInt(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'ccn-warning' => ['rule' => 'complexity.ccn', 'option' => 'warning'],
@@ -155,7 +155,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_booleanAliasPresentIsTreatedAsTrue(): void
+    public function itTreatsAPresentValueNoneAliasAsTrue(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
@@ -180,7 +180,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_booleanAliasNotPresentIsSkipped(): void
+    public function itSkipsAnAbsentValueNoneAlias(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
@@ -202,7 +202,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_normalizesScientificNotation(): void
+    public function itNormalizesScientificNotationToFloat(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
@@ -227,7 +227,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_normalizesScientificNotationWithDot(): void
+    public function itNormalizesScientificNotationWithADecimalPointToFloat(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
@@ -251,7 +251,7 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function parseRuleOptions_skipsNullAliases(): void
+    public function itSkipsAnAliasThatWasNotPassedOnTheCommandLine(): void
     {
         // Arrange: alias registered but not passed via CLI
         $ruleOptionsParser = new RuleOptionsParser([

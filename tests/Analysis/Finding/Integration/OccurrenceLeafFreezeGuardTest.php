@@ -60,7 +60,7 @@ use RuntimeException;
  *
  * Source text is not execution, though, so the pins it finds are additionally
  * held to being tests PHPUnit runs — see
- * {@see everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared()}. Nothing here
+ * {@see itRequiresEveryPinTestToBeRegisteredWithPhpunitNotJustDeclared()}. Nothing here
  * compares a frozen constant to a rule's `NAME`, by design.
  */
 final class OccurrenceLeafFreezeGuardTest extends TestCase
@@ -102,7 +102,7 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
     ];
 
     #[Test]
-    public function everyLeafOccurrenceConstantIsStillAPlainLiteralMatchingItsPin(): void
+    public function itKeepsEveryLeafOccurrenceConstantAsAPlainLiteralMatchingItsPin(): void
     {
         $root = self::projectRoot();
         $declarations = self::findLeafDeclarations($root);
@@ -205,7 +205,7 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
      * comparing the pin's own asserted literal to this map.
      */
     #[Test]
-    public function everyFrozenLeafIsAssertedByExactlyOnePinTest(): void
+    public function itAssertsEveryFrozenLeafWithExactlyOnePinTest(): void
     {
         $asserted = array_count_values(array_column(self::findPinTests(self::projectRoot()), 'leaf'));
         $expected = array_count_values(array_values(self::FROZEN_LEAF));
@@ -252,7 +252,7 @@ final class OccurrenceLeafFreezeGuardTest extends TestCase
      * differently on purpose.
      */
     #[Test]
-    public function everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared(): void
+    public function itRequiresEveryPinTestToBeRegisteredWithPhpunitNotJustDeclared(): void
     {
         $root = self::projectRoot();
         $pins = self::findPinTests($root);

@@ -39,7 +39,7 @@ final class TraversalCompletenessTest extends TestCase
      * contract, and the scan has files to read at all.
      */
     #[Test]
-    public function theForbiddenNamesAreTheVisitorContractsOwnAndTheScanReadsFiles(): void
+    public function itUsesForbiddenNamesTakenFromTheVisitorContractAndFindsSourceFilesToScan(): void
     {
         $declared = array_keys((new ReflectionClass(NodeVisitor::class))->getConstants());
 

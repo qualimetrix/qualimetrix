@@ -43,13 +43,13 @@ final class Phase1ConfigCompatibilityTest extends TestCase
     private const string GOLDEN_WARN_PATH = __DIR__ . '/../Fixtures/Sample/phase1-compat-violations-warn.json';
 
     #[Test]
-    public function phase1ShapeYamlLoadsAndProducesPinnedFindingSet(): void
+    public function itProducesThePinnedFindingSetForAPhase1ShapeConfig(): void
     {
         $this->runPhase1Scenario(self::phase1ConfigArray('ignore'), self::GOLDEN_IGNORE_PATH);
     }
 
     #[Test]
-    public function phase1ShapeWithCoverageWarnEmitsExpectedDiagnostic(): void
+    public function itKeepsTheFindingSetAndOmitsTheCoverageDiagnosticWhenFullyCovered(): void
     {
         // Coverage:warn keeps the same allow-list findings and adds the
         // coverage diagnostic if any classes fall outside layers. The fixture

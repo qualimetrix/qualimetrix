@@ -41,7 +41,7 @@ final class ArchitectureConfigurationWarningIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function wildcardSelfAllowWarningIsOwnedByArchitectureConfiguration(): void
+    public function itWarnsOnAWildcardLayerAllowedToDependOnItself(): void
     {
         file_put_contents($this->tempDir . '/qmx.yaml', <<<'YAML'
 architecture:
@@ -68,7 +68,7 @@ YAML);
     }
 
     #[Test]
-    public function cleanConfigurationProducesNoArchitectureWarnings(): void
+    public function itProducesNoWarningsForACleanLayerConfiguration(): void
     {
         file_put_contents($this->tempDir . '/qmx.yaml', <<<'YAML'
 architecture:

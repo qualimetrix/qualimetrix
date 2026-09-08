@@ -45,11 +45,12 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * group by matching a `threshold`/`warning`/`error` suffix and grouping by
  * the prefix before it. That heuristic is unreliable in at least two known
  * ways and exists only as a safety net for a rule not yet in the registry:
- * - it cannot tell a genuine `threshold`-shorthand key from a legacy alias
+ * - it cannot tell a genuine `threshold`-shorthand key from some other key
  *   that merely *ends* in the substring "Threshold" while representing a
- *   `warning`/`error` value (e.g. `warningThreshold` — see the registry's
- *   `complexity.ccn`/`cognitive`/`npath` top-level entries, which
- *   exist specifically to correct this);
+ *   `warning`/`error` value; no rule declares such a key today (a legacy
+ *   `warningThreshold` alias used to be exactly this case, but an
+ *   unrecognised option key is now refused at the option-key seam before
+ *   this resolver ever runs, so the ambiguity is latent, not exercised);
  * - it requires the threshold key's prefix to match the graduated keys'
  *   prefix exactly, which several real Options classes don't follow (a
  *   bare `threshold` paired with a prefixed `max_warning`/`max_error`) —
@@ -227,7 +228,7 @@ final class RuleOptionThresholdModeResolver
     /**
      * Classifies a config key as a threshold-mode marker, if it is one
      * (heuristic fallback only — see class docblock for why this guesses
-     * wrong for legacy `*Threshold`-suffixed warning/error aliases).
+     * wrong for a hypothetical `*Threshold`-suffixed warning/error alias).
      *
      * @return array{0: string, 1: string}|null [marker, groupPrefix]
      */

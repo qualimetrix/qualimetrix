@@ -45,7 +45,7 @@ use Symfony\Component\DependencyInjection\Definition;
 final class ThresholdValidatorWiringTest extends TestCase
 {
     #[Test]
-    public function factoryProducesValidatorForEveryThresholdAwareRuleInRegistry(): void
+    public function itProducesAValidatorForEveryThresholdAwareRuleInTheRegistry(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -92,7 +92,7 @@ final class ThresholdValidatorWiringTest extends TestCase
     }
 
     #[Test]
-    public function compilerPassWritesValidatorMapOntoExtractorArgument(): void
+    public function itWritesTheValidatorMapOntoTheExtractorArgument(): void
     {
         $container = new ContainerBuilder();
 
@@ -119,7 +119,7 @@ final class ThresholdValidatorWiringTest extends TestCase
     }
 
     #[Test]
-    public function compilerPassNoOpsWhenExtractorIsAbsent(): void
+    public function itDoesNothingWhenTheExtractorIsAbsent(): void
     {
         $container = new ContainerBuilder();
 

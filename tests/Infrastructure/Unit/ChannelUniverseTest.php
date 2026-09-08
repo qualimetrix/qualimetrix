@@ -340,7 +340,7 @@ final class ChannelUniverseTest extends TestCase
      * lookup that every finding makes.
      */
     #[Test]
-    public function aRepeatedLevelCannotReachTheChannelDeclaration(): void
+    public function itLetsNoRepeatedLevelReachTheChannelDeclaration(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('declares the same level more than once');

@@ -26,7 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class UnusedPrivateRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -35,13 +35,13 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresUnusedPrivateOptionsAsItsOptionsClass(): void
     {
         self::assertSame(UnusedPrivateOptions::class, UnusedPrivateRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itSkipsDeclarationLookupAndReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions(enabled: false));
 
@@ -54,7 +54,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function noUnusedMembersProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoPrivateMemberIsUnused(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -75,7 +75,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function unusedMethodProducesFinding(): void
+    public function itReportsAWarningFindingForAnUnusedPrivateMethod(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -103,7 +103,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function unusedPropertyProducesFinding(): void
+    public function itReportsAWarningFindingForAnUnusedPrivateProperty(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -127,7 +127,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function unusedConstantProducesFinding(): void
+    public function itReportsAWarningFindingForAnUnusedPrivateConstant(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -152,7 +152,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function multipleUnusedMembersProduceMultipleFindings(): void
+    public function itReportsOneFindingPerUnusedMemberInDeclarationOrder(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -261,7 +261,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsFromArray(): void
+    public function itReadsTheEnabledFlagFromTheOptionsArray(): void
     {
         $options = UnusedPrivateOptions::fromArray(['enabled' => false]);
         self::assertFalse($options->isEnabled());
@@ -271,7 +271,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsSeverity(): void
+    public function itReportsWarningSeverityForAnyPositiveCountAndNoneForZero(): void
     {
         $options = new UnusedPrivateOptions();
 

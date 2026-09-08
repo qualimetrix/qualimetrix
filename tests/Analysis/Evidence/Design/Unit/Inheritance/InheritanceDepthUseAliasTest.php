@@ -24,7 +24,7 @@ use SplFileInfo;
 final class InheritanceDepthUseAliasTest extends TestCase
 {
     #[Test]
-    public function aliasedParentFromDifferentNamespaceIsResolvedCorrectly(): void
+    public function itResolvesDitForAnAliasedParentFromADifferentNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -47,7 +47,7 @@ PHP;
     }
 
     #[Test]
-    public function visitorResolvesAliasViaUseImport(): void
+    public function itResolvesTheParentFqnFromAUseImportAlias(): void
     {
         $code = <<<'PHP'
 <?php
@@ -80,7 +80,7 @@ PHP;
     }
 
     #[Test]
-    public function aliasedParentInSameFileIsLinkedCorrectly(): void
+    public function itLinksAnAliasedParentDeclaredInTheSameFile(): void
     {
         // Parent class is in the same file, the alias correctly links the chain
         $code = <<<'PHP'
@@ -128,7 +128,7 @@ PHP;
     }
 
     #[Test]
-    public function fullyQualifiedExtendsWorksCorrectly(): void
+    public function itResolvesDitForAFullyQualifiedParent(): void
     {
         // Contrast: fully qualified name works perfectly
         $code = <<<'PHP'
@@ -145,7 +145,7 @@ PHP;
     }
 
     #[Test]
-    public function simpleUseImportWithoutAlias(): void
+    public function itResolvesTheParentFqnFromAPlainUseImport(): void
     {
         $code = <<<'PHP'
 <?php
@@ -176,7 +176,7 @@ PHP;
     }
 
     #[Test]
-    public function useImportWithSameFileParent(): void
+    public function itAccumulatesDitAcrossAUseImportedChainInTheSameFile(): void
     {
         // Inheritance chain across namespaces in the same file
         $code = <<<'PHP'

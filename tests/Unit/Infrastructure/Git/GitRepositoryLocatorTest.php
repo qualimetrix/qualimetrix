@@ -36,7 +36,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function findsGitDirInCurrentRepository(): void
+    public function itFindsTheGitDirInTheCurrentRepository(): void
     {
         $result = $this->locator->findGitDir();
 
@@ -44,7 +44,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function returnsAbsolutePath(): void
+    public function itReturnsAnAbsolutePath(): void
     {
         $result = $this->locator->findGitDir();
 
@@ -53,7 +53,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function pathContainsGitReference(): void
+    public function itReturnsAPathContainingAGitReference(): void
     {
         $result = $this->locator->findGitDir();
 
@@ -63,7 +63,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function acceptsExplicitWorkingDirectory(): void
+    public function itAcceptsAnExplicitWorkingDirectory(): void
     {
         // Use the project root as explicit working directory
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4));
@@ -74,7 +74,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function returnsNullForNonGitDirectory(): void
+    public function itReturnsNullForANonGitDirectory(): void
     {
         // Use a path that is guaranteed not to be inside a git repository
         $result = $this->locator->findGitDir(AbsolutePath::fromString('/'));
@@ -83,7 +83,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function returnsNullForNonExistentDirectory(): void
+    public function itReturnsNullForANonExistentDirectory(): void
     {
         $result = $this->locator->findGitDir(AbsolutePath::fromString('/nonexistent/path/that/does/not/exist'));
 
@@ -91,7 +91,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function brokenWorktreeLinkDoesNotFallBackToAncestorRepository(): void
+    public function itDoesNotFallBackToTheAncestorRepositoryOnABrokenWorktreeLink(): void
     {
         // Regression: a `.git` file is a hard repository/worktree boundary.
         // If its `gitdir:` target is broken, the resolver must return null —
@@ -113,7 +113,7 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function resolvesWorktreeLinkWithRelativeGitDirPath(): void
+    public function itResolvesAWorktreeLinkWithARelativeGitDirPath(): void
     {
         // Submodule-style: `.git` is a file containing `gitdir: ../.git/modules/foo`.
         // The locator must resolve the relative target against the file's parent dir.

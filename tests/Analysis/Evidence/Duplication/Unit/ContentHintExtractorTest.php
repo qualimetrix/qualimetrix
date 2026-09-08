@@ -20,7 +20,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function extractsFirstMeaningfulLines(): void
+    public function itExtractsTheFirstMeaningfulLinesOfTheBlock(): void
     {
         $source = <<<'PHP'
         <?php
@@ -40,7 +40,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function skipsBlankLines(): void
+    public function itSkipsBlankLinesWhenLookingForMeaningfulContent(): void
     {
         $source = "\n\n\nfunction foo() {\n    return 1;\n}\n";
 
@@ -51,7 +51,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function skipsBraceOnlyLines(): void
+    public function itSkipsLinesThatContainOnlyBraces(): void
     {
         $source = "{\n{\n    \$x = 1;\n    \$y = 2;\n}\n}\n";
 
@@ -62,7 +62,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function truncatesLongHintWithEllipsis(): void
+    public function itTruncatesALongHintWithAnEllipsis(): void
     {
         $source = "<?php\nfunction veryLongFunctionNameThatExceedsTheMaximumAllowedHintLength(\$parameterOne, \$parameterTwo, \$parameterThree, \$parameterFour) {\n    return true;\n}\n";
 
@@ -74,7 +74,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function shortHintNotTruncated(): void
+    public function itLeavesAShortHintUntruncated(): void
     {
         $source = "<?php\n\$x = 1;\n\$y = 2;\n";
 
@@ -86,7 +86,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function returnsNullForEmptyBlock(): void
+    public function itReturnsNullForABlockWithNoMeaningfulContent(): void
     {
         $source = "\n\n\n\n\n";
 
@@ -96,7 +96,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function returnsNullForBraceOnlyBlock(): void
+    public function itReturnsNullForABlockContainingOnlyBraces(): void
     {
         $source = "{\n}\n{\n}\n";
 
@@ -106,7 +106,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function returnsNullForInvalidStartLine(): void
+    public function itReturnsNullForAnInvalidStartLine(): void
     {
         $source = "<?php\n\$x = 1;\n";
 
@@ -115,7 +115,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collapsesMultipleWhitespace(): void
+    public function itCollapsesRunsOfWhitespaceIntoASingleSpace(): void
     {
         $source = "<?php\n\$x   =   1;\n  \$y    =    2;\n";
 
@@ -127,7 +127,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function handlesArrayConstantBlock(): void
+    public function itExtractsAHintFromAnArrayConstantBlock(): void
     {
         $source = <<<'PHP'
         <?php
@@ -145,7 +145,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function extractsMaxThreeMeaningfulLines(): void
+    public function itCapsTheHintAtThreeMeaningfulLines(): void
     {
         $source = "<?php\nline1_code();\nline2_code();\nline3_code();\nline4_code();\nline5_code();\n";
 
@@ -160,7 +160,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function handlesSingleLongLine(): void
+    public function itTruncatesASingleLineThatExceedsTheHintLength(): void
     {
         $longLine = '$result = array_map(fn($item) => $item->transform()->validate()->serialize()->compress()->encrypt(), $items);';
         $source = "<?php\n{$longLine}\n";
@@ -173,7 +173,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function handlesSpecialCharacters(): void
+    public function itReturnsAHintForASourceWithQuotesAndBackslashes(): void
     {
         $source = "<?php\n\$x = 'hello \"world\"';\n\$y = \"it's \\\\done\";\n";
 
@@ -185,7 +185,7 @@ final class ContentHintExtractorTest extends TestCase
     }
 
     #[Test]
-    public function endLineClampedToFileLength(): void
+    public function itClampsAnEndLineBeyondTheFileLength(): void
     {
         $source = "<?php\n\$x = 1;\n";
 

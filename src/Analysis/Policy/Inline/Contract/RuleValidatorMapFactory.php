@@ -30,7 +30,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
  * `SUPPORTS_THRESHOLD_OVERRIDE` constant
  * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::supportsThresholdOverride()}).
  * The two are pinned against each other by
- * `ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour()`,
+ * `ChannelUniverseCoverageTest::itRequiresEveryRulesDeclaredThresholdSupportToMatchWhatItsOptionsCanHonour()`,
  * because a rule that declares support its options cannot honour promises a
  * retune the runtime never performs, and one that stays silent while its
  * options are threshold-aware silently loses a feature. They must not drift

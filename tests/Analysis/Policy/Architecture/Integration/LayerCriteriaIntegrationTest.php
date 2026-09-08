@@ -43,7 +43,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
     private const string FIXTURE_NAMESPACE = 'Fixtures\\CriteriaSample';
 
     #[Test]
-    public function membershipCriteriaClassifyEachFixtureClassUnderTheRightLayer(): void
+    public function itClassifiesEachFixtureClassUnderTheRightLayer(): void
     {
         // Layers ordered so that the unique criterion-driving class for each
         // kind falls into its dedicated layer. The dependency graph is what
@@ -121,7 +121,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function matchAllRequiresEveryDeclaredCriterion(): void
+    public function itRequiresEveryDeclaredCriterionUnderMatchAll(): void
     {
         // strict-repository = ends in `Repository` AND implements
         // RepositoryInterface. Only QueryBackend implements but its short
@@ -167,7 +167,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function matchAllAcceptsClassSatisfyingEveryDeclaredCriterion(): void
+    public function itAcceptsAClassSatisfyingEveryDeclaredCriterionUnderMatchAll(): void
     {
         // strict-repository = ends in `Repository` AND implements
         // RepositoryInterface. CustomerRepository satisfies BOTH criteria, so
@@ -234,7 +234,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function findingMessageNamesMatchedCriterionWhenNotPattern(): void
+    public function itNamesTheMatchedCriterionInTheFindingMessageWhenItIsNotAPattern(): void
     {
         // Build a registry where every test class is caught by a different
         // non-pattern criterion (suffix, attribute, implements, extends). The

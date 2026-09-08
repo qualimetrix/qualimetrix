@@ -13,7 +13,7 @@ Finding/
 │   └── Threshold/        # threshold override value
 ├── Exclusion/            # Private namespace and path exclusion stores
 ├── Rule/                 # Internal producer and channel implementations
-├── RuleConfiguration/    # Option parsing, normalization, and per-run state
+├── RuleConfiguration/    # Option parsing, key recognition, normalization, and per-run state
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page
 ```
@@ -52,6 +52,36 @@ express that by not implementing the interface. `baseline:explain` reads it
 instead of guessing property names; `getSeverity()` witnesses the declaration
 only for rules that delegate to it. See
 `docs/adr/0038-an-options-class-names-its-own-warning-boundary.md`.
+
+`RuleOptionKeySet` is how an options class states which option keys it answers
+for, at the rule's own depth and inside each level slot, instead of the reader
+reconstructing that set from constructor reflection plus opt-in interfaces. It
+holds three disjoint states — accepted, answered by the class itself (so that a
+class such as `UnassignedClassOptions` keeps refusing `enabled` in its own
+words), and unknown — declared in the canonical kebab spelling users type, and
+compared after `ConfigKeySpelling::normalize()` on both sides so snake, camel
+and kebab stay one key. `RuleOptionsInterface::acceptedOptionKeys()` and
+`LevelOptionsInterface::acceptedOptionKeys()` publish it; a hierarchical
+options class also names the level options class behind each slot through
+`HierarchicalRuleOptionsInterface::levelOptionsClasses()`, because slots of one
+rule accept different key sets and the map cannot be derived from parameter
+types.
+
+`RuleOptionKeyRecognition` compares what the user wrote against those
+declarations at both depths and refuses — `ConfigLoadException`, which `check`
+prints as `Configuration error: …` and exits 3 on — the first key in document
+order that nothing at its depth answers for. `RuleOptionsFactory` calls it on
+the user-written config, after the framework keys are taken out and before
+`fromArray()`. A key the class declared as answered by itself passes through
+untouched, so `fromArray()` may refuse it in its own words; the three framework
+keys (`suppress-paths`, `suppress-namespaces`, `suppress-namespace-channels`)
+are legal at the rule's own depth only, are declared by no options class, and
+are listed beside the walk so that a refusal for a mistyped one names the
+spelling that works.
+`RuleOptionRefusalWording` holds the sentences, beside `ChannelLevelRefusalWording`
+and for the same reason. Every sentence prints the key exactly as the walk
+received it: each door folds separators before the factory exists, so there is
+no authored spelling left to quote and none is guessed at.
 
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies

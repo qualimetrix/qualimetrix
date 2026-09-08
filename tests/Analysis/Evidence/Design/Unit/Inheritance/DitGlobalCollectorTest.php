@@ -42,25 +42,25 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsDitGlobal(): void
+    public function itIsNamedDitGlobal(): void
     {
         self::assertSame('dit-global', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsEmpty(): void
+    public function itRequiresNoUpstreamMetrics(): void
     {
         self::assertSame([], $this->collector->requires());
     }
 
     #[Test]
-    public function provides_returnsDit(): void
+    public function itProvidesTheDitMetric(): void
     {
         self::assertSame(['design.dit'], $this->collector->provides());
     }
 
     #[Test]
-    public function classWithNoParent_ditZero(): void
+    public function itScoresDitZeroForAClassWithNoParent(): void
     {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([]);
@@ -74,7 +74,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function classExtendsStandardPhpClass_ditOne(): void
+    public function itScoresDitOneForAClassExtendingAStandardPhpClass(): void
     {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([
@@ -90,7 +90,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function twoLevelInheritance_crossFile_ditTwo(): void
+    public function itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain(): void
     {
         // A extends B extends C (C is root, each in different "file")
         $repository = new InMemoryMetricRepository();
@@ -117,7 +117,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function threeLevelInheritance_crossFile_ditThree(): void
+    public function itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain(): void
     {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([
@@ -147,7 +147,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function inheritanceChainWithStandardClassAtRoot(): void
+    public function itComputesDitForAChainRootedInAStandardPhpClass(): void
     {
         // D extends C extends B extends Exception (standard)
         $repository = new InMemoryMetricRepository();
@@ -174,7 +174,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function preservesExistingMetrics(): void
+    public function itPreservesOtherMetricsWhileUpdatingDit(): void
     {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([
@@ -197,7 +197,7 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function crossNamespaceInheritance(): void
+    public function itComputesDitAcrossANamespaceCrossingInheritanceChain(): void
     {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([

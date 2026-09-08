@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * - warning: 1 (any unreachable code triggers a warning)
  * - error: 2 (2+ unreachable statements trigger an error)
  */
-final readonly class UnreachableCodeOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
+final readonly class UnreachableCodeOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -45,14 +45,6 @@ final readonly class UnreachableCodeOptions implements RuleOptionsInterface, Thr
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getShorthandOptionKeys(): array
-    {
-        return ['threshold'];
     }
 
     public function isEnabled(): bool
@@ -85,5 +77,10 @@ final readonly class UnreachableCodeOptions implements RuleOptionsInterface, Thr
     public function warningBoundary(): int
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
     }
 }

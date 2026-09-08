@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions;
 final class NpathComplexityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEnabledFalseDisablesAllLevels(): void
+    public function itDisablesEveryLevelWhenEnabledIsFalse(): void
     {
         $options = NpathComplexityOptions::fromArray(['enabled' => false]);
 
@@ -23,7 +23,7 @@ final class NpathComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayWithoutEnabledFalseKeepsDefaults(): void
+    public function itKeepsDefaultsWhenEnabledIsOmitted(): void
     {
         $options = NpathComplexityOptions::fromArray([]);
 

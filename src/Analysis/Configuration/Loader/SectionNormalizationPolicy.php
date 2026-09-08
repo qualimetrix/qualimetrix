@@ -42,8 +42,8 @@ enum SectionNormalizationPolicy
      * identifiers (rule names, computed-metric names) but whose nested
      * option keys belong to a typed schema. Used by {@code rules} and
      * {@code computed_metrics}: the rule slug stays
-     * {@code complexity.ccn}; the option {@code warning_threshold}
-     * inside it becomes {@code warningThreshold}.
+     * {@code design.god-class}; the option {@code wmc_threshold}
+     * inside it becomes {@code wmcThreshold}.
      *
      * This is the exact semantic of the previous (now-removed)
      * {@code ConfigSchema::identifierKeySections()} list, made explicit.

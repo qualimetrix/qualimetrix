@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -53,6 +54,16 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
             error: (int) $thresholds['error'],
             scope: $scope,
         );
+    }
+
+    /**
+     * `threshold` is read unguarded through `ThresholdParser::parse()`'s
+     * default `$thresholdKey`, named by no constructor parameter; it is
+     * documented and working (plan pair #33).
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'scope', 'threshold', 'warning');
     }
 
     public function isEnabled(): bool

@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class GotoRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresCodeSmellOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, GotoRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = new GotoRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itProducesNoFindingsWhenNoGotoSmellWasCollected(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itProducesAnErrorFindingForADetectedGotoStatement(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 

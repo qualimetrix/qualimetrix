@@ -48,7 +48,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     private const string FIXTURE_NAMESPACE = 'Fixtures\\ExcludeSample';
 
     #[Test]
-    public function staticLayerExcludeFiltersSubtreeOutOfMembership(): void
+    public function itFiltersAnExcludedStaticLayerSubtreeOutOfMembership(): void
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
@@ -74,7 +74,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateLayerExcludeFiltersPerInstance(): void
+    public function itFiltersAnExcludedTemplateLayerSubtreePerInstance(): void
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
@@ -106,7 +106,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExcludeAppliedDuringObservation_dropsModuleWhoseCandidatesAreAllExcluded(): void
+    public function itDropsATemplateModuleWhoseEveryCandidateIsExcludedDuringObservation(): void
     {
         // M1 (Phase 5.1) regression pin: a module whose entire candidate set
         // falls under the template's exclude clause must NOT produce a
@@ -146,7 +146,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function excludeBlockSurvivesYamlConfigLoaderNormalization(): void
+    public function itAppliesTheSameExclusionsAfterYamlConfigLoaderNormalization(): void
     {
         // Step E regression-style guard: an end-to-end test through YAML must
         // accompany every YAML-surfaced feature so the loader's key

@@ -31,7 +31,7 @@ use ReflectionNamedType;
 final class ThresholdValidatorAssignmentTest extends TestCase
 {
     #[Test]
-    public function everyThresholdAwareOptionsReturnsAValidator(): void
+    public function itReturnsAValidatorForEveryThresholdAwareOptionsClass(): void
     {
         $checked = 0;
 
@@ -50,7 +50,7 @@ final class ThresholdValidatorAssignmentTest extends TestCase
     }
 
     #[Test]
-    public function invertedDefaultsRequireNonStandardValidator(): void
+    public function itRequiresANonStandardValidatorWhenDefaultsAreInverted(): void
     {
         $standard = StandardOverrideValidator::instance();
 

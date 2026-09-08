@@ -27,7 +27,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ClassRankRuleTest extends TestCase
 {
     #[Test]
-    public function getName_returnsCorrectName(): void
+    public function itReturnsTheCouplingClassRankRuleName(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -35,7 +35,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function getDescription_returnsNonEmptyString(): void
+    public function itReturnsANonEmptyDescription(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -43,13 +43,13 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function getOptionsClass_returnsClassRankOptions(): void
+    public function itDeclaresClassRankOptionsAsItsOptionsClass(): void
     {
         self::assertSame(ClassRankOptions::class, ClassRankRule::getOptionsClass());
     }
 
     #[Test]
-    public function throwsExceptionForWrongOptionsType(): void
+    public function itRejectsOptionsOfTheWrongType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::class);
 
@@ -60,7 +60,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_returnsEmptyWhenDisabled(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions(enabled: false));
 
@@ -73,7 +73,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_returnsEmptyWhenNoClasses(): void
+    public function itProducesNoFindingsWhenThereAreNoClasses(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -87,7 +87,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_skipsClassesWithoutClassRankMetric(): void
+    public function itSkipsClassesThatHaveNoClassRankMetric(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -134,7 +134,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_noFindingBelowThreshold(): void
+    public function itProducesNoFindingWhenClassRankIsBelowTheWarningThreshold(): void
     {
         // With 100 classes, scale factor = 1.0, so thresholds are unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
@@ -158,7 +158,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_generatesWarning(): void
+    public function itReportsAWarningWhenClassRankExceedsTheWarningThreshold(): void
     {
         // With 100 classes, scale factor = 1.0, thresholds unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
@@ -194,7 +194,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_generatesError(): void
+    public function itReportsAnErrorWhenClassRankExceedsTheErrorThreshold(): void
     {
         // With 100 classes, scale factor = 1.0, thresholds unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
@@ -286,33 +286,33 @@ final class ClassRankRuleTest extends TestCase
     // --- Threshold scaling tests ---
 
     #[Test]
-    public function computeScaleFactor_at100Classes_returnsOne(): void
+    public function itReturnsAScaleFactorOfOneAt100Classes(): void
     {
         self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(100), 0.001);
     }
 
     #[Test]
-    public function computeScaleFactor_at1600Classes_returnsFour(): void
+    public function itReturnsAScaleFactorOfFourAt1600Classes(): void
     {
         // sqrt(1600/100) = sqrt(16) = 4
         self::assertEqualsWithDelta(4.0, ClassRankRule::computeScaleFactor(1600), 0.001);
     }
 
     #[Test]
-    public function computeScaleFactor_at25Classes_returnsHalf(): void
+    public function itReturnsAScaleFactorOfHalfAt25Classes(): void
     {
         // sqrt(25/100) = sqrt(0.25) = 0.5
         self::assertEqualsWithDelta(0.5, ClassRankRule::computeScaleFactor(25), 0.001);
     }
 
     #[Test]
-    public function computeScaleFactor_atZeroClasses_returnsOne(): void
+    public function itReturnsAScaleFactorOfOneAtZeroClasses(): void
     {
         self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(0), 0.001);
     }
 
     #[Test]
-    public function analyze_largeProject_lowersThresholds(): void
+    public function itLowersEffectiveThresholdsForALargeProject(): void
     {
         // With 400 classes: scale factor = sqrt(400/100) = 2.0
         // Effective warning = 0.02 / 2 = 0.01, effective error = 0.05 / 2 = 0.025
@@ -348,7 +348,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_smallProject_raisesThresholds(): void
+    public function itRaisesEffectiveThresholdsForASmallProject(): void
     {
         // With 25 classes: scale factor = sqrt(25/100) = 0.5
         // Effective warning = 0.02 / 0.5 = 0.04, effective error = 0.05 / 0.5 = 0.10
@@ -384,7 +384,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_largeProject_errorAtLowerRank(): void
+    public function itReportsAnErrorAtALowerRankOnALargeProject(): void
     {
         // With 1600 classes: scale factor = 4.0
         // Effective error = 0.05 / 4 = 0.0125
@@ -420,7 +420,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_messageIncludesClassCount(): void
+    public function itIncludesTheClassCountInTheFindingMessage(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
@@ -455,7 +455,7 @@ final class ClassRankRuleTest extends TestCase
     // --- Options tests ---
 
     #[Test]
-    public function options_defaults(): void
+    public function itDefaultsToTheStandardThresholdsAndIsEnabled(): void
     {
         $options = new ClassRankOptions();
 
@@ -465,7 +465,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_fromEmptyArray_disablesRule(): void
+    public function itDisablesTheRuleWhenConstructedFromAnEmptyArray(): void
     {
         $options = ClassRankOptions::fromArray([]);
 
@@ -473,7 +473,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_fromArray_customValues(): void
+    public function itUsesCustomThresholdsFromArray(): void
     {
         $options = ClassRankOptions::fromArray([
             'enabled' => true,
@@ -487,7 +487,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_fromArray_disabledExplicitly(): void
+    public function itStaysDisabledWhenExplicitlyDisabledInArray(): void
     {
         $options = ClassRankOptions::fromArray([
             'enabled' => false,
@@ -497,7 +497,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_getSeverity_returnsNullBelowThreshold(): void
+    public function itReturnsNoSeverityBelowTheWarningThreshold(): void
     {
         $options = new ClassRankOptions();
 
@@ -505,7 +505,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_getSeverity_returnsWarning(): void
+    public function itReturnsWarningSeverityAboveTheWarningThreshold(): void
     {
         $options = new ClassRankOptions();
 
@@ -513,7 +513,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function options_getSeverity_returnsError(): void
+    public function itReturnsErrorSeverityAboveTheErrorThreshold(): void
     {
         $options = new ClassRankOptions();
 
@@ -521,7 +521,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function cliAliasAttributes_areDeclared(): void
+    public function itDeclaresCliAliasesForItsThresholds(): void
     {
         $aliases = CliAliasReader::read(ClassRankRule::class);
 

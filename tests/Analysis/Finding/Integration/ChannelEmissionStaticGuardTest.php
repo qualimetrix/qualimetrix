@@ -116,7 +116,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static array $astCache = [];
 
     #[Test]
-    public function everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded(): void
+    public function itRequiresEveryStaticallyResolvableEmittedChannelToBeDeclaredOrExcluded(): void
     {
         $registry = self::registry();
         $excludedKeys = self::readExcludedFixtureKeys();
@@ -171,7 +171,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     /**
      * The floor the guard above lacks.
      *
-     * `everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded()` reports
+     * `itRequiresEveryStaticallyResolvableEmittedChannelToBeDeclaredOrExcluded()` reports
      * only on sites it found: with a detector that matches nothing it asserts
      * twice on empty arrays and reports PASS. Measured, that is not a
      * hypothetical — `src/` holds dozens of constructions, and a detector
@@ -195,7 +195,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * inspected — not merely one.
      */
     #[Test]
-    public function everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated(): void
+    public function itRequiresEveryFindingConstructionInSourceToBeInspectedOrDeclaredDelegated(): void
     {
         $byTokens = self::constructionCountsByToken();
         $byParser = self::constructionCountsByParser();
@@ -274,7 +274,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * literal is wrong when they do.
      */
     #[Test]
-    public function theResolvedArgumentNamesAreTheFindingConstructorsOwn(): void
+    public function itResolvesOnlyArgumentNamesThatMatchTheFindingConstructorsParameters(): void
     {
         $constructor = (new ReflectionClass(Finding::class))->getConstructor();
         self::assertNotNull($constructor);
@@ -617,7 +617,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * sites, and both assertions of the main test compare empty arrays. The
      * short name now comes from the class itself, so a rename cannot leave this
      * detector behind, and
-     * {@see self::everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated}
+     * {@see self::itRequiresEveryFindingConstructionInSourceToBeInspectedOrDeclaredDelegated()}
      * measures the detector against an independent count so a detector that
      * matches nothing is loud rather than green.
      */

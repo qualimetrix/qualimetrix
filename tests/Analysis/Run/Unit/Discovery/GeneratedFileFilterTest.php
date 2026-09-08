@@ -214,7 +214,7 @@ final class GeneratedFileFilterTest extends TestCase
     }
 
     #[Test]
-    public function isGeneratedReturnsTrueForGeneratedFile(): void
+    public function itDeclaresAGeneratedFileAsGenerated(): void
     {
         $file = $this->createFile('Gen.php', "<?php\n/** @generated */\nclass Gen {}");
 
@@ -223,7 +223,7 @@ final class GeneratedFileFilterTest extends TestCase
     }
 
     #[Test]
-    public function isGeneratedReturnsFalseForNormalFile(): void
+    public function itDeclaresANormalFileAsNotGenerated(): void
     {
         $file = $this->createFile('Normal.php', "<?php\nclass Normal {}");
 
