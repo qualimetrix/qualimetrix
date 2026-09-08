@@ -36,7 +36,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
 
     private const string PROJECT_SCOPED_CHANNEL = 'architecture.unassigned-class';
 
-    private const string FILE_SCOPED_CHANNEL = 'complexity.cyclomatic';
+    private const string FILE_SCOPED_CHANNEL = 'complexity.ccn';
 
     private string $tempDir;
 
@@ -56,7 +56,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
         // which is a configuration error and would gate on its own.
         file_put_contents($tempDir . '/qmx.yaml', <<<'YAML'
             architecture:
-              coverage: ignore
+              coverage-gap: ignore
               layers:
                 - name: covered
                   patterns: ['Demo\A']
@@ -170,7 +170,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
             '--detail' => true,
             '--rule-opt' => [
                 'architecture.unassigned-class:mode=error',
-                'complexity.cyclomatic:threshold=1',
+                'complexity.ccn:threshold=1',
             ],
             ...$options,
         ], ['capture_stderr_separately' => true]);

@@ -178,7 +178,7 @@ here would remove a finding that the run's own account of removals never
 mentions. What the ban removes is only the ability to hide the finding with the
 mechanism it exists to audit.
 
-**The second banned channel is `duplication.code-duplication`, for a different
+**The second banned channel is `duplication.clone`, for a different
 reason** — no directive form binds to its project-wide finding in a way an
 author controls; see the `DirectiveChannelBan` docblock for the mechanism.
 Every form is refused at the line it is written on, with the same

@@ -403,10 +403,10 @@ owns.
   "scope": ["src"],
   "entries": {
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php": [
-      {"channel":"complexity.cyclomatic","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
+      {"channel":"complexity.ccn","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
     ],
     "file:src/Legacy/dup.php": [
-      {"channel":"duplication.code-duplication","magnitudes":[40,100]}
+      {"channel":"duplication.clone","magnitudes":[40,100]}
     ],
     "class:App\\Web\\Controller": [
       {"channel":"architecture.layer-violation","edge":{"target":"class:App\\Db\\Connection","type":"new"},"count":1}

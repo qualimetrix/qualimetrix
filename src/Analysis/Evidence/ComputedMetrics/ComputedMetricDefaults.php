@@ -82,7 +82,7 @@ final class ComputedMetricDefaults
             HealthDimension::Typing->value => new ComputedMetricDefinition(
                 name: HealthDimension::Typing->value,
                 formulas: [
-                    SymbolLevel::Class_->value => 'clamp(m["design.type-coverage.pct"] ?? 0, 0, 100)',
+                    SymbolLevel::Class_->value => 'clamp(m["design.type-coverage.all"] ?? 0, 0, 100)',
                     // Vacuous truth: a namespace with no typeable declarations (e.g. marker
                     // interfaces) is fully typed by definition. Mirrors class-level behavior
                     // where TypeCoveragePercentCollector returns 100 when totalAll == 0,

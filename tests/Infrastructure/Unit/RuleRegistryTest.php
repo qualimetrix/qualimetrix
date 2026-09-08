@@ -54,7 +54,7 @@ final class RuleRegistryTest extends TestCase
         // ComplexityRule defines: cyclomatic-warning, cyclomatic-error (for callable level)
         self::assertArrayHasKey('cyclomatic-warning', $aliases);
         self::assertArrayHasKey('cyclomatic-error', $aliases);
-        self::assertSame('complexity.cyclomatic', $aliases['cyclomatic-warning']['rule']);
+        self::assertSame('complexity.ccn', $aliases['cyclomatic-warning']['rule']);
         self::assertSame('callable.warning', $aliases['cyclomatic-warning']['option']);
 
         // ClassCountRule defines: class-count-warning, class-count-error
@@ -74,7 +74,7 @@ final class RuleRegistryTest extends TestCase
         ]);
 
         self::expectException(ConflictingCliAliasException::class);
-        self::expectExceptionMessage('CLI alias "cyclomatic-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
+        self::expectExceptionMessage('CLI alias "cyclomatic-warning" is defined by both "complexity.ccn" and "complexity.ccn" rules');
 
         $registry->getAllCliAliases();
     }

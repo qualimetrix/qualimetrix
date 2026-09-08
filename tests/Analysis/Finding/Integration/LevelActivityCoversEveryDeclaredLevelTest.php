@@ -23,7 +23,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * disablement into no answer at all.
  *
  * This is not hypothetical: writing the snapshot, five channels were missing
- * on the first attempt — `architecture.coverage`,
+ * on the first attempt — `architecture.coverage-gap`,
  * `architecture.unreachable-layer`, `architecture.potential-shadow`,
  * `architecture.empty-template` and `architecture.pending-layer-matched`, all
  * at project level. They belong to `architecture.layer-violation` but are

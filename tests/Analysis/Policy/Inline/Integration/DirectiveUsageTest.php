@@ -263,7 +263,7 @@ final class DirectiveUsageTest extends TestCase
         $directives = [self::FILE => [
             new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File),
             new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File),
-            new Suppression('complexity.cyclomatic', 'reason', 5, SuppressionType::File),
+            new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File),
         ]];
         $usage = self::usage();
 
@@ -274,7 +274,7 @@ final class DirectiveUsageTest extends TestCase
         $stale = $usage->stale($directives, [self::finding()], Severity::Warning, LevelActivity::empty());
 
         self::assertCount(1, $inert);
-        self::assertSame('complexity.cyclomatic', $inert[0]->site->target);
+        self::assertSame('complexity.ccn', $inert[0]->site->target);
         self::assertCount(1, $stale);
         self::assertSame($inert[0]->site->line, $stale[0]->location->line);
     }

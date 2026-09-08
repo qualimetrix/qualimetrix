@@ -47,7 +47,7 @@ use RuntimeException;
  * {@see MAGNITUDE_TOLERANCE} rather than for identity.
  *
  * **What that buys, measured, and what it does not.** The rounding class is
- * genuinely exercised: `maintainability.index` publishes 49.5 where the
+ * genuinely exercised: `maintainability.mi` publishes 49.5 where the
  * catalog holds 49.4541…, so a strict equality here would be red. The
  * aggregate class is not: on every subject `size.class-count` fires on in
  * this corpus, the base key and `size.class-count.sum` hold the same number,
@@ -81,7 +81,7 @@ use RuntimeException;
  *    cycle's member count).
  * 2. `architecture.unassigned-class` — magnitude of its own making (a count
  *    of unassigned declarations).
- * 3. `duplication.code-duplication` — magnitude of its own making (a
+ * 3. `duplication.clone` — magnitude of its own making (a
  *    duplicated block's line count).
  * 4. `design.god-class` — magnitude of its own making (how many of its
  *    criteria matched).

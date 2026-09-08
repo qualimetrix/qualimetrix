@@ -1590,7 +1590,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
-                    // `duplication.code-duplication` is the second banned
+                    // `duplication.clone` is the second banned
                     // channel this same loop refuses (X9 D2): one `foreach`,
                     // no branch per channel, so emptying it accepts both
                     // equally and both belong to this one probe rather than a
@@ -1614,7 +1614,7 @@ final class Probes
                 'the ban creeps onto the three neighbouring channels, which are accepted and judged inert',
                 self::BAN,
                 // Re-pointed for X9 D2: `covers()` grew a second branch
-                // (`duplication.code-duplication`, unrelated to this claim),
+                // (`duplication.clone`, unrelated to this claim),
                 // so the exact-match line this mutation used to target no
                 // longer stands on its own. Only the `annotation.*` branch is
                 // widened; the duplication branch is untouched, and still
@@ -1685,7 +1685,7 @@ final class Probes
                     // the line below it as readily as the bare form does.
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                     // Measured directly (patched the branch out, reran): a
-                    // file-form directive addressing `duplication.code-duplication`
+                    // file-form directive addressing `duplication.clone`
                     // matches this finding's `Location` — the primary
                     // occurrence's own file — as readily as it matches any
                     // ordinary file-subject finding, so without this branch it

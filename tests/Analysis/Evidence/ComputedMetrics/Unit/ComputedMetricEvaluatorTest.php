@@ -224,7 +224,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'cohesion.lcom' => 2.0,
             'coupling.cbo' => 8.0,
             'coupling.ce' => 6.0,
-            'design.type-coverage.pct' => 80.0,
+            'design.type-coverage.all' => 80.0,
             'design.dit' => 2.0,
             'maintainability.mi.avg' => 65.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
@@ -269,7 +269,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'size.method-count' => 5,
             'cohesion.pure-method-count' => 4,
             'coupling.ce' => 3.0,
-            'design.type-coverage.pct' => 100.0,
+            'design.type-coverage.all' => 100.0,
         ]), RelativePath::fromString('src/DistanceRule.php'), 10);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());

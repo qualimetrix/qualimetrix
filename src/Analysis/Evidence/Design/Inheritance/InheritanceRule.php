@@ -32,7 +32,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CliAlias('dit-error', 'error')]
 final class InheritanceRule extends AbstractRule
 {
-    public const string NAME = 'design.inheritance';
+    public const string NAME = 'design.dit';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 30;
@@ -126,7 +126,7 @@ final class InheritanceRule extends AbstractRule
     }
 
     /**
-     * `design.inheritance` reports DIT (`$ditValue` — see the emission
+     * `design.dit` reports DIT (`$ditValue` — see the emission
      * above) as `metricValue`, judged worse the higher it goes:
      * {@see InheritanceOptions::getSeverity()}'s `$value >= $this->error`
      * (line 73) / `$value >= $this->warning` (line 77).

@@ -51,7 +51,7 @@ final class DirectiveAuditPipelineTest extends TestCase
         self::assertSame(
             [
                 'code-smell.long-parameter-list' => DirectiveEffect::Effective,
-                'complexity.cyclomatic' => DirectiveEffect::Inert,
+                'complexity.ccn' => DirectiveEffect::Inert,
             ],
             $thresholds,
         );

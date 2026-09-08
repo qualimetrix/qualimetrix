@@ -118,9 +118,9 @@ final class FindingChannelTest extends TestCase
     public function itRefusesTheRetiredChannelPairSpelling(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Write "architecture.coverage"');
+        $this->expectExceptionMessage('Write "architecture.coverage-gap"');
 
-        new FindingChannel('architecture.layer-violation#architecture.coverage');
+        new FindingChannel('architecture.layer-violation#architecture.coverage-gap');
     }
 
     #[Test]
@@ -136,7 +136,7 @@ final class FindingChannelTest extends TestCase
     {
         self::assertStringContainsString(
             'Write "complexity.cyclomatic.callable"',
-            FindingChannel::retiredPairAdvice('complexity.cyclomatic#complexity.cyclomatic.callable'),
+            FindingChannel::retiredPairAdvice('complexity.ccn#complexity.cyclomatic.callable'),
         );
     }
 }

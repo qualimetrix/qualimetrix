@@ -46,7 +46,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  *
  * `$minutesByRule` additionally inherits an entry for every declared channel
  * name, not only for the producers' — the architecture and annotation
- * diagnostics are emitted under their own identity (`architecture.coverage`,
+ * diagnostics are emitted under their own identity (`architecture.coverage-gap`,
  * `annotation.unused-directive`, …), which is published as the finding's `rule`
  * and is distinct from the rule class's own `NAME`, and there is no separate
  * class for {@see RuleRemediationMinutesReader} to read a constant off. Mirrors
@@ -491,7 +491,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
             // A finding's published `rule` does not always equal its producer's
             // NAME: the architecture and annotation diagnostics are emitted under
-            // their own identity (e.g. "architecture.coverage") by a producer
+            // their own identity (e.g. "architecture.coverage-gap") by a producer
             // whose own name is different ("architecture.layer-violation"), and
             // that identity is the channel's name. Every name a Finding can carry
             // as its `rule` must resolve to a remediation estimate, so the

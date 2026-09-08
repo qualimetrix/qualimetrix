@@ -13,9 +13,9 @@ use Stringable;
  * There are exactly two forms, and nothing is inferred from the number of
  * dot-separated segments:
  *
- * - `X` — **equality**. `architecture.coverage` selects the channel called
- *   `architecture.coverage` and nothing else. In particular it no longer
- *   swallows dotted descendants such as `architecture.coverage.source`: that
+ * - `X` — **equality**. `architecture.coverage-gap` selects the channel called
+ *   `architecture.coverage-gap` and nothing else. In particular it no longer
+ *   swallows dotted descendants such as `architecture.coverage-gap.source`: that
  *   silent capture is the defect this type exists to remove.
  * - `X.*` — **strict descendants** of `X`. `X` itself is *not* included; a
  *   directive that means both is written twice. Admitting the parent would

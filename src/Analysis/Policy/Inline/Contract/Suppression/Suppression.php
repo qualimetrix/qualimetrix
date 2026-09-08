@@ -12,7 +12,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 /**
  * Represents a suppression tag from docblock.
  *
- * Example: `@qmx-ignore complexity.cyclomatic -- Reason why it's ignored`
+ * Example: `@qmx-ignore complexity.ccn -- Reason why it's ignored`
  *
  * `$rule` keeps the authored text; what it actually filters on is
  * {@see SuppressionTarget}, derived from it once here.

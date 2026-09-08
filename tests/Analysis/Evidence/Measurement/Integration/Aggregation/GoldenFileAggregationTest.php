@@ -475,16 +475,16 @@ final class GoldenFileAggregationTest extends TestCase
     public function itKeepsClassDerivedTypingMetricsOnExactClassDeclarations(): void
     {
         $class = self::$repository->get(SymbolPath::forClass('GoldenMetrics\\App\\Repository', 'UserRepository'));
-        self::assertSame(100.0, $class->get('design.type-coverage.pct'));
+        self::assertSame(100.0, $class->get('design.type-coverage.all'));
         self::assertSame(100.0, $class->get('health.typing'));
 
         $method = self::$repository->get(
             SymbolPath::forMethod('GoldenMetrics\\App\\Repository', 'UserRepository', 'findById'),
         );
-        self::assertNull($method->get('design.type-coverage.pct'));
+        self::assertNull($method->get('design.type-coverage.all'));
 
         $emptyClass = self::$repository->get(SymbolPath::forClass('GoldenMetrics\\App\\ValueObject', 'EmptyMarker'));
-        self::assertSame(100.0, $emptyClass->get('design.type-coverage.pct'), 'empty class surface is fully typed');
+        self::assertSame(100.0, $emptyClass->get('design.type-coverage.all'), 'empty class surface is fully typed');
     }
 
     // ──────────────────────────────────────────────────────────────────

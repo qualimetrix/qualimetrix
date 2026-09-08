@@ -217,7 +217,7 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 | `maintainability.mi.avg`                  | class, namespace, project |
 | `maintainability.mi.min`                  | class, namespace, project |
 | `maintainability.mi.p5`                   | namespace, project        |
-| `design.type-coverage.pct`                | class                     |
+| `design.type-coverage.all`                | class                     |
 | `design.type-coverage.param.total.sum`    | namespace, project        |
 | `design.type-coverage.param.typed.sum`    | namespace, project        |
 | `design.type-coverage.return.total.sum`   | namespace, project        |

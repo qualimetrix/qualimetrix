@@ -89,7 +89,7 @@ final class DirectivesCommandTest extends TestCase
     public function itExitsTwoOnAnInertDirective(): void
     {
         $this->writeSource('Dead.php', self::sevenParameterMethod(
-            '@qmx-threshold complexity.cyclomatic warning=50 error=80 — dead',
+            '@qmx-threshold complexity.ccn warning=50 error=80 — dead',
         ));
 
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
@@ -188,7 +188,7 @@ final class DirectivesCommandTest extends TestCase
 
         $observable = new DirectiveAuditReport(
             [new DirectiveVerdict(
-                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'complexity.cyclomatic'),
+                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'complexity.ccn'),
                 effect: DirectiveEffect::Inert,
             )],
             new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
@@ -270,7 +270,7 @@ final class DirectivesCommandTest extends TestCase
         ];
         yield 'an unparsable payload' => [
             'annotation.invalid-threshold',
-            '@qmx-threshold complexity.cyclomatic warning=abc — an unparsable payload',
+            '@qmx-threshold complexity.ccn warning=abc — an unparsable payload',
         ];
     }
 
@@ -399,7 +399,7 @@ final class DirectivesCommandTest extends TestCase
 
             final class NoFilter
             {
-                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                /** @qmx-ignore complexity.ccn -- stale: a straight line reaches no boundary */
                 public function trivial(): int
                 {
                     return 1;
@@ -466,7 +466,7 @@ final class DirectivesCommandTest extends TestCase
 
             final class Both
             {
-                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                /** @qmx-ignore complexity.ccn -- stale: a straight line reaches no boundary */
                 public function trivial(): int
                 {
                     return 1;
@@ -539,7 +539,7 @@ final class DirectivesCommandTest extends TestCase
 
             final class Debt
             {
-                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                /** @qmx-ignore complexity.ccn -- stale: a straight line reaches no boundary */
                 public function trivial(): int
                 {
                     return 1;
@@ -614,7 +614,7 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * `duplication.code-duplication` reports one project-wide finding per
+     * `duplication.clone` reports one project-wide finding per
      * duplicate block ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
      * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
      * nothing else), and no directive form binds to a project aggregate: a
@@ -637,7 +637,7 @@ final class DirectivesCommandTest extends TestCase
      * a form one command refused and the other still judged would be caught
      * here.
      *
-     * The underlying `duplication.code-duplication` finding is never
+     * The underlying `duplication.clone` finding is never
      * suppressible by any directive ({@see DirectiveChannelBan::covers()}
      * short-circuits {@see SuppressionFilter::applies()} for it), so it stays
      * in the report beside the refusal — two violations, not one.
@@ -667,10 +667,10 @@ final class DirectivesCommandTest extends TestCase
         }
 
         self::assertArrayHasKey('annotation.unresolved-directive', $byChannel);
-        self::assertArrayHasKey('duplication.code-duplication', $byChannel);
+        self::assertArrayHasKey('duplication.clone', $byChannel);
         self::assertSame($line, $byChannel['annotation.unresolved-directive']['line']);
         self::assertStringContainsString(
-            'duplication.code-duplication',
+            'duplication.clone',
             $byChannel['annotation.unresolved-directive']['message'],
         );
         self::assertStringContainsString(
@@ -696,8 +696,8 @@ final class DirectivesCommandTest extends TestCase
     {
         foreach (['file', 'next-line', 'symbol'] as $tag) {
             foreach ([
-                'the exact name' => 'duplication.code-duplication',
-                'the exact name at project level' => 'duplication.code-duplication:project',
+                'the exact name' => 'duplication.clone',
+                'the exact name at project level' => 'duplication.clone:project',
                 'a group that covers it' => 'duplication.*',
             ] as $shape => $target) {
                 yield $tag . ', ' . $shape => [$tag, $target];
@@ -723,7 +723,7 @@ final class DirectivesCommandTest extends TestCase
         $this->writeSource('DupA.php', $bodyA);
         $this->writeSource(
             'DupB.php',
-            "<?php\n// @qmx-ignore-file duplication.code-duplication -- was silently inert on this copy pre-ban\n\n"
+            "<?php\n// @qmx-ignore-file duplication.clone -- was silently inert on this copy pre-ban\n\n"
                 . self::stripPhpTag($bodyB),
         );
         $config = $this->writeConfig(self::WITHOUT_COUPLING_HEALTH_AND_MAINTAINABILITY);
@@ -871,7 +871,7 @@ final class DirectivesCommandTest extends TestCase
     public function itExitsFourWhenTheRunCouldNotParsePartOfTheTree(): void
     {
         $this->writeSource('Dead.php', self::sevenParameterMethod(
-            '@qmx-threshold complexity.cyclomatic warning=50 error=80 — dead',
+            '@qmx-threshold complexity.ccn warning=50 error=80 — dead',
         ));
         file_put_contents($this->tempDir . '/src/Broken.php', "<?php\n\nclass {{{ Broken\n");
 
@@ -1017,7 +1017,7 @@ final class DirectivesCommandTest extends TestCase
             '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
         ));
         $this->writeSource('Dead.php', self::sevenParameterMethod(
-            '@qmx-threshold complexity.cyclomatic warning=50 error=80 — dead',
+            '@qmx-threshold complexity.ccn warning=50 error=80 — dead',
         ));
 
         $text = $this->audit(['paths' => [$this->tempDir . '/src']])->getDisplay();
@@ -1053,7 +1053,7 @@ final class DirectivesCommandTest extends TestCase
         mkdir($this->tempDir . '/src/generated', 0o755, true);
         file_put_contents(
             $this->tempDir . '/src/generated/Skipped.php',
-            self::sevenParameterMethod('@qmx-threshold complexity.cyclomatic warning=50 error=80 — dead', 'Skipped'),
+            self::sevenParameterMethod('@qmx-threshold complexity.ccn warning=50 error=80 — dead', 'Skipped'),
         );
         $config = $this->writeConfig("exclude: ['generated']\n");
 
@@ -1090,7 +1090,7 @@ final class DirectivesCommandTest extends TestCase
 
             final class Ignored
             {
-                /** @qmx-ignore complexity.cyclomatic — nothing to silence */
+                /** @qmx-ignore complexity.ccn — nothing to silence */
                 public function trivial(): int
                 {
                     return 1;
@@ -1193,7 +1193,7 @@ final class DirectivesCommandTest extends TestCase
     public function itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff(string $rules): void
     {
         $this->writeSource('Branchy.php', self::branchyMethod(
-            '@qmx-threshold complexity.cyclomatic warning=1 error=2 — measured against a switched-off rule',
+            '@qmx-threshold complexity.ccn warning=1 error=2 — measured against a switched-off rule',
         ));
 
         $tester = $this->audit([
@@ -1213,14 +1213,14 @@ final class DirectivesCommandTest extends TestCase
      */
     public static function provideDisablingConfigurations(): iterable
     {
-        yield 'the whole rule' => ["  complexity.cyclomatic:\n    enabled: false\n"];
+        yield 'the whole rule' => ["  complexity.ccn:\n    enabled: false\n"];
 
         yield 'every level of it' => [
-            "  complexity.cyclomatic:\n    callable:\n      enabled: false\n    class:\n      enabled: false\n",
+            "  complexity.ccn:\n    callable:\n      enabled: false\n    class:\n      enabled: false\n",
         ];
 
         yield 'the level the directive sits on' => [
-            "  complexity.cyclomatic:\n    callable:\n      enabled: false\n    class:\n      enabled: true\n",
+            "  complexity.ccn:\n    callable:\n      enabled: false\n    class:\n      enabled: true\n",
         ];
     }
 

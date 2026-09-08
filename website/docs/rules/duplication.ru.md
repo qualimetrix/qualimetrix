@@ -6,7 +6,7 @@
 
 ## Дублирование кода (Code Duplication)
 
-**Идентификатор правила:** `duplication.code-duplication`
+**Идентификатор правила:** `duplication.clone`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -131,7 +131,7 @@ Qualimetrix использует алгоритм **скользящего хе�
     запись baseline или fingerprint форматтера.
 
 !!! warning "Инлайновый `@qmx-ignore` не подавляет этот канал"
-    `duplication.code-duplication` публикуется только на уровне проекта,
+    `duplication.clone` публикуется только на уровне проекта,
     поэтому ни одна инлайновая директива не может надёжно к нему привязаться:
     `@qmx-ignore` привязывается к объявлению, на котором написан, а проект
     никогда им не является; `@qmx-ignore-file` и `@qmx-ignore-next-line`
@@ -139,8 +139,8 @@ Qualimetrix использует алгоритм **скользящего хе�
     сканер дублей посетил первой, а это деталь реализации, а не то, чем можно
     управлять. Все три формы отклоняются
     (`annotation.unresolved-directive`) там, где написаны. Вместо этого
-    отключите правило — `disabled_rules: [duplication.code-duplication]` в
-    конфигурации или `--disable-rule=duplication.code-duplication` — либо
+    отключите правило — `disabled_rules: [duplication.clone]` в
+    конфигурации или `--disable-rule=duplication.clone` — либо
     примите конкретное вхождение в baseline.
 
 !!! info "Константные массивы и массивы-свойства исключены всегда"
@@ -167,7 +167,7 @@ src/Service/OrderService.php:10-25: Duplicated block (16 lines, 120 tokens)
 ```yaml
 # qmx.yaml
 rules:
-  duplication.code-duplication:
+  duplication.clone:
     enabled: true
     min_lines: 5
     min_tokens: 70
@@ -175,17 +175,17 @@ rules:
 
 ```bash
 # Увеличить минимальный порог токенов для снижения шума
-bin/qmx check src/ --rule-opt="duplication.code-duplication:min_tokens=100"
+bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
 
 # Увеличить минимальное количество строк
-bin/qmx check src/ --rule-opt="duplication.code-duplication:min_lines=10"
+bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
 ```
 
 Также можно полностью отключить правило:
 
 ```bash
-bin/qmx check src/ --disable-rule=duplication.code-duplication
+bin/qmx check src/ --disable-rule=duplication.clone
 ```
 
 !!! note "Потребление памяти"
-    Обнаружение дубликатов использует алгоритм скользящего хеша Рабина-Карпа, который требует хранения нормализованных токенов всех файлов с совпавшими хешами в памяти одновременно. На больших кодовых базах (500+ файлов) это может потреблять значительный объём памяти. Отключение правила через `--disable-rule=duplication.code-duplication` полностью пропускает фазу обнаружения и освобождает память.
+    Обнаружение дубликатов использует алгоритм скользящего хеша Рабина-Карпа, который требует хранения нормализованных токенов всех файлов с совпавшими хешами в памяти одновременно. На больших кодовых базах (500+ файлов) это может потреблять значительный объём памяти. Отключение правила через `--disable-rule=duplication.clone` полностью пропускает фазу обнаружения и освобождает память.

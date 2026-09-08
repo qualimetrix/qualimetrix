@@ -224,7 +224,7 @@ final class DocumentationConsistencyTest extends TestCase
 
         $body = $matches[1];
 
-        // Slugs appear inside inline-code spans, e.g. `complexity.cyclomatic`.
+        // Slugs appear inside inline-code spans, e.g. `complexity.ccn`.
         preg_match_all('/`([a-z][a-z-]*(?:\.[a-z][a-z-]*)+)`/', $body, $slugMatches);
         $declared = array_values(array_unique($slugMatches[1]));
         sort($declared);

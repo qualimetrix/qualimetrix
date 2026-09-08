@@ -2310,7 +2310,7 @@ function renderQmxRegion(array $projection): string
         }
     }
     $lines[] = '';
-    $lines[] = '  coverage: error';
+    $lines[] = '  coverage-gap: error';
     $lines[] = '# END GENERATED MODULAR ARCHITECTURE';
 
     return implode("\n", $lines) . "\n";
@@ -2669,6 +2669,9 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/X12-final-rename/02-sweep.md',
         'docs/internal/plans/rule-vocabulary/X12-final-rename/03-gate-and-hand-surfaces.md',
         'docs/internal/plans/rule-vocabulary/X12-final-rename/04-release.md',
+        'docs/internal/plans/rule-vocabulary/X12-final-rename/followups/k0m-measurements.md',
+        'docs/internal/plans/rule-vocabulary/X12-final-rename/followups/corpus-directives.md',
+        'docs/migration/v0.26-rename-map.md',
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/00-overview.md',
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/01-decision-table.md',
         'docs/internal/plans/rule-vocabulary/X11-final-vocabulary/02-adr.md',

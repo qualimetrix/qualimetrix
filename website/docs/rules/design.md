@@ -98,7 +98,7 @@ bin/qmx check src/ --rule-opt="design.noc:error=20"
 
 ## Inheritance Depth
 
-**Rule ID:** `design.inheritance`
+**Rule ID:** `design.dit`
 
 **Judged metric:** `design.dit`
 
@@ -194,14 +194,14 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 ```yaml
 # qmx.yaml
 rules:
-  design.inheritance:
+  design.dit:
     warning: 5
     error: 7
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.inheritance:warning=5"
-bin/qmx check src/ --rule-opt="design.inheritance:error=7"
+bin/qmx check src/ --rule-opt="design.dit:warning=5"
+bin/qmx check src/ --rule-opt="design.dit:error=7"
 ```
 
 ---

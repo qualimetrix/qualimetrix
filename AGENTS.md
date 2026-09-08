@@ -290,7 +290,7 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 - **Discovery** — finding PHP files for analysis
 - **Collection** — the only parallelizable phase (85-95% of total time)
 - **Aggregation/RuleExecution/Reporting** — sequential, fast
-- **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.code-duplication` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
+- **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.clone` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
 
 ### 4. SymbolPath for Identification
 

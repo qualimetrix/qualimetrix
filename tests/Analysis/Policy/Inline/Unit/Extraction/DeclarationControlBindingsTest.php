@@ -106,7 +106,7 @@ final class DeclarationControlBindingsTest extends TestCase
     #[Test]
     public function itFallsBackToTheNearestNamedClassOrFileForUnboundProperties(): void
     {
-        $ast = $this->parse('<?php class Named { /** @qmx-threshold complexity.cyclomatic broken */ public int $value; }');
+        $ast = $this->parse('<?php class Named { /** @qmx-threshold complexity.ccn broken */ public int $value; }');
         $nodes = new NodeFinder();
         $class = $nodes->findFirstInstanceOf($ast, Node\Stmt\Class_::class);
         $property = $nodes->findFirstInstanceOf($ast, Node\Stmt\Property::class);

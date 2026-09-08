@@ -30,7 +30,7 @@ Each baseline entry identifies a canonical typed subject, a channel, an optional
 
 The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
-Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
+Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
 
 ## Lifecycle commands
 
@@ -99,7 +99,7 @@ rename; blank lines and `#` comments are skipped:
 
 ```text
 old	new	reason
-complexity.cyclomatic	complexity.ccn	renamed in vX.Y
+complexity.ccn	complexity.ccn	renamed in vX.Y
 ```
 
 Of the file itself it refuses exactly what loading it would refuse, and nothing
@@ -152,7 +152,7 @@ a command rewrites the file.
 
 ```bash
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.callable'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.ccn#complexity.cyclomatic.callable'
 ```
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
@@ -224,20 +224,20 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 For most rules the rule name and its one channel are the same string, so the distinction never surfaces. It surfaces for the rules below, which report through more than one channel — their bare rule name is **not** a valid `@qmx-ignore` argument:
 
-| Rule                    | Channels                                                        |
-| ----------------------- | --------------------------------------------------------------- |
-| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
-| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
-| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`           |
-| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
-| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`  |
+| Rule                   | Channels                                                        |
+| ---------------------- | --------------------------------------------------------------- |
+| `complexity.ccn`       | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
+| `complexity.cognitive` | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
+| `complexity.npath`     | `complexity.npath.callable`, `complexity.npath.class`           |
+| `coupling.cbo`         | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
+| `coupling.instability` | `coupling.instability.class`, `coupling.instability.namespace`  |
 
 Suppress one channel with its exact name, or every channel of the rule with the wildcard, e.g. `@qmx-ignore complexity.cyclomatic.*`.
 
 A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — valid as long as `computed_metrics:` still defines that metric. Removing the metric turns the annotation into an error: a dangling reference is the same mistake as a typo.
 
 !!! warning "Five channels can never be suppressed here"
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
+    `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage-gap: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
 
 ### When a directive is wrong
 
@@ -269,7 +269,7 @@ Use `@qmx-threshold` when a symbol needs a different limit but should still be c
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40 -- Legacy state machine
+ * @qmx-threshold complexity.ccn warning=20 error=40 -- Legacy state machine
  */
 final class ComplexStateMachine
 {
@@ -281,7 +281,7 @@ final class ComplexStateMachine
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
 
-`@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a wildcard. A threshold belongs to the rule's one options object, not to an individual channel, so `@qmx-threshold complexity.cyclomatic.callable` is an error even though `complexity.cyclomatic` has two channels; use the rule name `complexity.cyclomatic` instead:
+`@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a wildcard. A threshold belongs to the rule's one options object, not to an individual channel, so `@qmx-threshold complexity.cyclomatic.callable` is an error even though `complexity.ccn` has two channels; use the rule name `complexity.ccn` instead:
 
 ```text
 @qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of

@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * arrangement is not debt an author may accept in place: the directive is
  * refused where it is written.
  *
- * `duplication.code-duplication` reports one finding per duplicate block,
+ * `duplication.clone` reports one finding per duplicate block,
  * aggregated at project level ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
  * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and nothing
  * else). No directive form binds to that aggregate in a way an author
@@ -53,9 +53,9 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * `annotation.unused-directive` and still do not: `suppress_namespaces`
  * matches a namespace, and this finding's subject is the file; the producer's
  * own `exclude_*` keys run inside rule execution, and the channel is
- * assembled after it. The working path for `duplication.code-duplication` is
- * channel-level: `disabled_rules: [duplication.code-duplication]` /
- * `--disable-rule=duplication.code-duplication`, or accepting individual
+ * assembled after it. The working path for `duplication.clone` is
+ * channel-level: `disabled_rules: [duplication.clone]` /
+ * `--disable-rule=duplication.clone`, or accepting individual
  * occurrences in the baseline.
  */
 final readonly class DirectiveChannelBan
@@ -69,7 +69,7 @@ final readonly class DirectiveChannelBan
      * capability through the container and fails if a rename on the rule's
      * side leaves this file's copy unowned.
      */
-    private const string PROJECT_ONLY_DUPLICATION_NAME = 'duplication.code-duplication';
+    private const string PROJECT_ONLY_DUPLICATION_NAME = 'duplication.clone';
 
     public function __construct(
         private ChannelIdentityInterface $identity,

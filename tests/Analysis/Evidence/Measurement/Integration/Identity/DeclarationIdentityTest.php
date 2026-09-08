@@ -17,9 +17,9 @@ use PHPUnit\Framework\TestCase;
 final class DeclarationIdentityTest extends TestCase
 {
     private const string CONFIG = <<<'YAML'
-        onlyRules: ['complexity.cyclomatic']
+        onlyRules: ['complexity.ccn']
         rules:
-          complexity.cyclomatic:
+          complexity.ccn:
             callable:
               warning: 1
               error: 1
@@ -273,7 +273,7 @@ final class DeclarationIdentityTest extends TestCase
     private function ratchet(): int
     {
         $command = \sprintf(
-            'cd %s && %s %s check src --only-rule=complexity.cyclomatic --baseline=qmx-baseline.json'
+            'cd %s && %s %s check src --only-rule=complexity.ccn --baseline=qmx-baseline.json'
                 . ' --fail-on=warning --no-progress --workers=0 > /dev/null 2>&1; echo $?',
             escapeshellarg($this->root),
             escapeshellarg(\PHP_BINARY),

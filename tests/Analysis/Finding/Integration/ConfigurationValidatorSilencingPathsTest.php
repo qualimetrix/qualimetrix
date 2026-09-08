@@ -72,7 +72,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         mkdir($this->tempDir . '/src/Repository', 0777, true);
         mkdir($this->tempDir . '/src/Orphan', 0777, true);
 
-        // A class outside every layer feeds `architecture.coverage`.
+        // A class outside every layer feeds `architecture.coverage-gap`.
         file_put_contents($this->tempDir . '/src/Orphan/Loner.php', <<<'PHP'
             <?php
 
@@ -121,7 +121,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
                 }
 
                 /**
-                 * @qmx-threshold complexity.cyclomatic warning=notanumber -- unparseable value
+                 * @qmx-threshold complexity.ccn warning=notanumber -- unparseable value
                  */
                 public function invalid(): void
                 {
@@ -149,7 +149,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
                 controller: []
                 controller-exact: []
                 repository: []
-              coverage: error
+              coverage-gap: error
             YAML);
     }
 
@@ -258,7 +258,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * the very map the validator's channels are newly written into. An
      * implementation that registered them under some identity of the
      * validator's own would keep every negative-selection assertion in this
-     * file green and still break `only_rules: [architecture.coverage]`.
+     * file green and still break `only_rules: [architecture.coverage-gap]`.
      *
      * The remaining set is asserted exactly, not by presence: a selection that
      * left a sibling standing is the failure this closes.

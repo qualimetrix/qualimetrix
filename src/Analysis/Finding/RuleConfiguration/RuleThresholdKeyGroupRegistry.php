@@ -64,7 +64,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * `maxDistanceWarning` both match), so camelCase/snake_case/kebab-case
  * variants of the *same word* don't need separate entries. A DIFFERENT word
  * that aliases the same concept (e.g. `warningThreshold` as a legacy name
- * for `warning`, on `complexity.cyclomatic`'s top-level legacy-flat mode)
+ * for `warning`, on `complexity.ccn`'s top-level legacy-flat mode)
  * DOES need its own entry in the corresponding list, precisely because a
  * plain suffix heuristic would otherwise misclassify it as a `threshold`
  * marker (it ends in "Threshold") instead of a `warning` alias.
@@ -102,7 +102,7 @@ final class RuleThresholdKeyGroupRegistry
 
     /**
      * `warningThreshold`/`errorThreshold`/`threshold` — legacy top-level
-     * ALIASES for warning/error on `complexity.cyclomatic`/`cognitive`/
+     * ALIASES for warning/error on `complexity.ccn`/`cognitive`/
      * `npath`'s callable dimension, not a `max_`-style rename. Kept as its own
      * constant (rather than folded into {@see BARE_PAIR}) precisely because
      * a plain suffix heuristic would otherwise misclassify `warningThreshold`
@@ -130,7 +130,7 @@ final class RuleThresholdKeyGroupRegistry
             '' => [self::BARE_PAIR],
         ],
 
-        // complexity.cyclomatic / complexity.cognitive / complexity.npath
+        // complexity.ccn / complexity.cognitive / complexity.npath
         // (hierarchical callable/class options with an identical shape):
         // top-level legacy-flat shorthand applies only to the callable
         // dimension — the bare `warning`/`error` keys are NOT part of that
@@ -139,7 +139,7 @@ final class RuleThresholdKeyGroupRegistry
         // `warningThreshold`/`errorThreshold`/`threshold` — bare
         // `warning`/`error` at the rule's top level are never inspected by
         // it at all and fall through as unknown options.
-        'complexity.cyclomatic' => [
+        'complexity.ccn' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
             SymbolLevel::Callable->value => [self::BARE_PAIR],
             SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
@@ -160,7 +160,7 @@ final class RuleThresholdKeyGroupRegistry
         // a bare threshold/warning/error applied uniformly to BOTH the class
         // and namespace dimensions instead of the nested sub-configs (see
         // CboOptions::fromArray()'s docblock for why, unlike
-        // complexity.cyclomatic/cognitive/npath's top-level legacy-flat
+        // complexity.ccn/cognitive/npath's top-level legacy-flat
         // branch, this one does NOT disable a level).
         'coupling.cbo' => [
             '' => [self::BARE_PAIR],
@@ -213,8 +213,8 @@ final class RuleThresholdKeyGroupRegistry
             '' => [self::BARE_PAIR],
         ],
 
-        // maintainability.index (MaintainabilityOptions) — flat, bare.
-        'maintainability.index' => [
+        // maintainability.mi (MaintainabilityOptions) — flat, bare.
+        'maintainability.mi' => [
             '' => [self::BARE_PAIR],
         ],
 
@@ -229,8 +229,8 @@ final class RuleThresholdKeyGroupRegistry
             '' => [self::BARE_PAIR],
         ],
 
-        // design.inheritance / design.noc / cohesion.lcom / complexity.wmc — flat, bare.
-        'design.inheritance' => [
+        // design.dit / design.noc / cohesion.lcom / complexity.wmc — flat, bare.
+        'design.dit' => [
             '' => [self::BARE_PAIR],
         ],
         'design.noc' => [
@@ -243,8 +243,8 @@ final class RuleThresholdKeyGroupRegistry
             '' => [self::BARE_PAIR],
         ],
 
-        // duplication.code-duplication (CodeDuplicationOptions) — flat, bare.
-        'duplication.code-duplication' => [
+        // duplication.clone (CodeDuplicationOptions) — flat, bare.
+        'duplication.clone' => [
             '' => [self::BARE_PAIR],
         ],
     ];

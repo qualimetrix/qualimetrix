@@ -83,8 +83,8 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'test',
             severity: Severity::Error,
         );
@@ -101,7 +101,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        // complexity.cyclomatic = 30 min per finding, 2 findings = 60
+        // complexity.ccn = 30 min per finding, 2 findings = 60
         self::assertSame(60, $result->techDebtMinutes);
     }
 
@@ -135,8 +135,8 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'test',
             severity: Severity::Error,
         );
@@ -383,8 +383,8 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'test',
             severity: Severity::Error,
         );

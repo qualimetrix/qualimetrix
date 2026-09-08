@@ -75,13 +75,13 @@ Also available as a CLI option: `--suppress-path` (merged with YAML config).
     What is left for suppressing such a finding depends on the channel.
     `architecture.layer-violation` is real code debt, so `@qmx-ignore
     architecture.layer-violation` and a baseline entry both still apply. The five layer-policy
-    diagnostics beside it — `architecture.coverage`, `architecture.unreachable-layer`,
+    diagnostics beside it — `architecture.coverage-gap`, `architecture.unreachable-layer`,
     `architecture.potential-shadow`, `architecture.empty-template` and
     `architecture.pending-layer-matched` — report a mistake in the
     *configuration*, so neither applies to them; see
     [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
     block inside the architecture layer configuration itself and, for coverage specifically,
-    `coverage: ignore`.
+    `coverage-gap: ignore`.
 
     As with `suppress_namespaces`, this exemption is **global-only** — the per-rule
     `suppress_paths` described below still works for architecture rules.
@@ -109,11 +109,11 @@ Also available as a CLI option: `--suppress-namespace` (merged with YAML config)
 
     `@qmx-ignore architecture.layer-violation` and a baseline entry still apply to
     `architecture.layer-violation`. They do **not** apply to the five layer-policy diagnostics —
-    `architecture.coverage`, `architecture.unreachable-layer`,
+    `architecture.coverage-gap`, `architecture.unreachable-layer`,
     `architecture.pending-layer-matched`, `architecture.potential-shadow`
     and `architecture.empty-template` — which report a configuration mistake rather than code
     debt; for those, use the `exclude:` block inside the architecture layer configuration
-    itself, or `coverage: ignore` for the coverage diagnostic.
+    itself, or `coverage-gap: ignore` for the coverage diagnostic.
 
     This exemption is **global-only**. The per-rule `suppress_namespaces` / `suppress_paths`
     described below (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`) still
@@ -141,7 +141,7 @@ Each rule defines severity levels. When a metric exceeds a threshold, a violatio
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 15
       error: 25
@@ -155,7 +155,7 @@ If you want a single pass/fail threshold (all violations become errors), use the
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       threshold: 15    # warning=15, error=15 → all violations are errors
 
@@ -180,9 +180,9 @@ rules:
 bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 ```
 
-The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.cyclomatic`'s `callable:`/`class:`).
+The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.ccn`'s `callable:`/`class:`).
 
-`coupling.cbo` and `coupling.instability` accept the same bare `threshold` shorthand at their own top level too, but with a different effect than `complexity.cyclomatic`'s: since their `class`/`namespace` defaults already match, a top-level `threshold` applies uniformly to BOTH levels at once, instead of only the more granular one:
+`coupling.cbo` and `coupling.instability` accept the same bare `threshold` shorthand at their own top level too, but with a different effect than `complexity.ccn`'s: since their `class`/`namespace` defaults already match, a top-level `threshold` applies uniformly to BOTH levels at once, instead of only the more granular one:
 
 ```yaml
 rules:
@@ -209,7 +209,7 @@ Any rule can exclude specific namespaces using prefix matching. Violations from 
 
 ```yaml
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
       - App\Legacy
@@ -279,7 +279,7 @@ writing when the key should say out loud which half of a two-level channel it is
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
     (`cohesion.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
-    and then does nothing. The layer-policy diagnostics — `architecture.coverage`,
+    and then does nothing. The layer-policy diagnostics — `architecture.coverage-gap`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise
     outside its reach; use the `exclude:` block inside the architecture layer configuration
@@ -326,7 +326,7 @@ In addition to project-wide thresholds in YAML, you can override thresholds for 
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40
+ * @qmx-threshold complexity.ccn warning=20 error=40
  */
 class ComplexStateMachine
 {
@@ -345,11 +345,11 @@ Every place that names a rule or a finding channel — `disabled_rules`, `only_r
 equivalents, `suppress_namespace_channels`, and the `@qmx-ignore` family in source code — reads
 the name the same way:
 
-| Form                     | Meaning                                                                                                                                                                                                |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `complexity.cyclomatic`  | **exactly** that name, and nothing else                                                                                                                                                                |
-| `complexity.*`           | **strictly the descendants** of `complexity` — `complexity.cyclomatic`, `complexity.wmc` and so on. `complexity` itself is not included; if a name is both a rule and a channel, address it separately |
-| `coupling.cbo:namespace` | the channel narrowed to one level of the aggregation tree. The level is one of `callable`, `class`, `file`, `namespace`, `project`, and the channel must report at it                                  |
+| Form                     | Meaning                                                                                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `complexity.ccn`         | **exactly** that name, and nothing else                                                                                                                                                         |
+| `complexity.*`           | **strictly the descendants** of `complexity` — `complexity.ccn`, `complexity.wmc` and so on. `complexity` itself is not included; if a name is both a rule and a channel, address it separately |
+| `coupling.cbo:namespace` | the channel narrowed to one level of the aggregation tree. The level is one of `callable`, `class`, `file`, `namespace`, `project`, and the channel must report at it                           |
 
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
@@ -389,10 +389,10 @@ Disable specific rules, channels, or whole groups:
 ```yaml
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication.code-duplication
+  - duplication.clone
 ```
 
-Equivalent CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication.code-duplication`
+Equivalent CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication.clone`
 
 To disable a whole group, use the wildcard:
 
@@ -407,11 +407,11 @@ Run only specified rules (everything else is disabled):
 
 ```yaml
 only_rules:
-  - complexity.cyclomatic
+  - complexity.ccn
   - complexity.cognitive
 ```
 
-Equivalent CLI: `--only-rule=complexity.cyclomatic --only-rule=complexity.cognitive`
+Equivalent CLI: `--only-rule=complexity.ccn --only-rule=complexity.cognitive`
 
 ### Fail On
 
@@ -441,7 +441,7 @@ The default is `error`: warnings and Info-level diagnostics are shown in the out
 
 !!! warning "`fail_on` does not govern configuration errors"
     Some channels report a mistake in the configuration rather than debt in the code — the five
-    layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`,
+    layer-policy diagnostics (`architecture.coverage-gap`, `architecture.unreachable-layer`,
     `architecture.pending-layer-matched`, `architecture.potential-shadow`,
     `architecture.empty-template`) and the three inline-directive
     diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
@@ -557,7 +557,7 @@ architecture:
       - target: 'domain-{m}'
         relations: [implements, extends]              # whitelist of dependency kinds
 
-  coverage: ignore                                    # ignore | warn | error
+  coverage-gap: ignore                                # ignore | warn | error
   max_expanded_layers: 500                            # cumulative cap on template expansion
 ```
 
@@ -646,10 +646,10 @@ exclude_health:
 
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication.code-duplication
+  - duplication.clone
 
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_namespaces:
       - App\Tests
     suppress_paths:
@@ -708,7 +708,7 @@ Invalid value for "cache.enabled": expected boolean, got string
 Misspelled rule names in the `rules:` section are rejected:
 
 ```
-Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.cyclomatic"?
+Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.ccn"?
 ```
 
 !!! tip

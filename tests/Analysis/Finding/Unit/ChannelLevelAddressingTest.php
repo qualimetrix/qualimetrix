@@ -28,7 +28,7 @@ final class ChannelLevelAddressingTest extends TestCase
     private const array UNIVERSE = [
         'coupling.cbo' => [SymbolLevel::Class_, SymbolLevel::Namespace_],
         'coupling.class-rank' => [SymbolLevel::Class_],
-        'duplication.code-duplication' => [SymbolLevel::Project],
+        'duplication.clone' => [SymbolLevel::Project],
         'computed.debt' => [],
     ];
 
@@ -41,7 +41,7 @@ final class ChannelLevelAddressingTest extends TestCase
     private const array RETUNABLE = [
         'coupling.cbo' => true,
         'coupling.class-rank' => true,
-        'duplication.code-duplication' => true,
+        'duplication.clone' => true,
         'computed.debt' => false,
     ];
 
@@ -135,12 +135,12 @@ final class ChannelLevelAddressingTest extends TestCase
         $addressing = $this->addressing();
 
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(
-            ['duplication.code-duplication:project'],
-            ['duplication.code-duplication'],
+            ['duplication.clone:project'],
+            ['duplication.clone'],
         ));
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(
-            ['duplication.code-duplication'],
-            ['duplication.code-duplication'],
+            ['duplication.clone'],
+            ['duplication.clone'],
         ));
     }
 

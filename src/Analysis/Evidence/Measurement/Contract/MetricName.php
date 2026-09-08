@@ -75,7 +75,7 @@ final class MetricName
     public const string DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL = 'design.type-coverage.property.total';
     public const string DESIGN_TYPE_COVERAGE_PROPERTY_TYPED = 'design.type-coverage.property.typed';
     public const string DESIGN_TYPE_COVERAGE_PROPERTY = 'design.type-coverage.property';
-    public const string DESIGN_TYPE_COVERAGE_PCT = 'design.type-coverage.pct';
+    public const string DESIGN_TYPE_COVERAGE_ALL = 'design.type-coverage.all';
     public const string DESIGN_DIT = 'design.dit';
     public const string DESIGN_IS_READONLY = 'design.is-readonly';
     public const string DESIGN_IS_PROMOTED_PROPERTIES_ONLY = 'design.is-promoted-properties-only';

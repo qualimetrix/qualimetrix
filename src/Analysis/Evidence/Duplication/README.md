@@ -4,7 +4,7 @@
 
 - **Subject:** token- and block-based code duplication evidence.
 - **Promise:** inspect one discovered PHP file set, retain the complete result
-  for one analysis run, and emit `duplication.code-duplication` findings from
+  for one analysis run, and emit `duplication.clone` findings from
   that result.
 - **Semantic owner:** `Analysis.Evidence.Duplication`.
 - **Owned paths:** `src/Analysis/Evidence/Duplication/`,
@@ -103,14 +103,14 @@ vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication/Unit
 `CodeDuplicationRule` is a `qmx.rule` implementation. Registration is delegated
 to the infrastructure `DuplicationConfigurator`; compiler passes inject its
 options, add it to rule/channel registries, and reject duplicate rule/channel
-identities. The rule's deterministic id is `duplication.code-duplication`.
+identities. The rule's deterministic id is `duplication.clone`.
 
 ## Run integration
 
 The former `MetricEnricher -> DuplicationInspectionInterface` temporary import
 and the capability-owned interface are deleted in P3. The final route is Run's
 FileSet participant port implemented by `DuplicationDetector`. Disabling
-`duplication.code-duplication` prevents both inspection and allocation; a second
+`duplication.clone` prevents both inspection and allocation; a second
 analysis run begins with an empty provider.
 
 

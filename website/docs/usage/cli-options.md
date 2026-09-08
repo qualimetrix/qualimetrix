@@ -250,7 +250,7 @@ bin/qmx check src/ --namespace='App\*\Order'
 
 Filters violations and worst offenders to the selected namespaces. Shows subtree health scores. Auto-enables `--detail`.
 
-Project-wide findings (`architecture.coverage` and the other diagnostics that judge the run as a whole) are never selected by a namespace pattern, not even `*`: they belong to no namespace.
+Project-wide findings (`architecture.coverage-gap` and the other diagnostics that judge the run as a whole) are never selected by a namespace pattern, not even `*`: they belong to no namespace.
 
 The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
@@ -576,7 +576,7 @@ bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Memory optimization"
-    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.code-duplication:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
+    Disabling the `duplication.clone` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.clone` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.clone:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
 
 ### `--only-rule`
 
@@ -591,7 +591,7 @@ never emit the level that was asked for. Can be repeated:
 bin/qmx check src/ --only-rule=complexity.*
 
 # Run two specific rules
-bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+bin/qmx check src/ --only-rule=complexity.ccn --only-rule=size.method-count
 
 # Select one channel of a built-in health dimension: producer and channel
 # share the name, since each of the six dimensions is its own producer
@@ -632,8 +632,8 @@ wildcard. This is the same constraint that governs the owner before `:` in
 `--only-rule`/`--disable-rule` and the `rules:` YAML section keys. Can be repeated:
 
 ```bash
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
+bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
+bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
 ```
 
 `suppress_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
@@ -650,22 +650,22 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Complexity"
 
-| Flag                           | Rule                  | Option            |
-| ------------------------------ | --------------------- | ----------------- |
-| `--cyclomatic-warning=N`       | complexity.cyclomatic | callable.warning  |
-| `--cyclomatic-error=N`         | complexity.cyclomatic | callable.error    |
-| `--cyclomatic-class-warning=N` | complexity.cyclomatic | class.max_warning |
-| `--cyclomatic-class-error=N`   | complexity.cyclomatic | class.max_error   |
-| `--cognitive-warning=N`        | complexity.cognitive  | callable.warning  |
-| `--cognitive-error=N`          | complexity.cognitive  | callable.error    |
-| `--cognitive-class-warning=N`  | complexity.cognitive  | class.max_warning |
-| `--cognitive-class-error=N`    | complexity.cognitive  | class.max_error   |
-| `--npath-warning=N`            | complexity.npath      | callable.warning  |
-| `--npath-error=N`              | complexity.npath      | callable.error    |
-| `--npath-class-warning=N`      | complexity.npath      | class.max_warning |
-| `--npath-class-error=N`        | complexity.npath      | class.max_error   |
-| `--wmc-warning=N`              | complexity.wmc        | warning           |
-| `--wmc-error=N`                | complexity.wmc        | error             |
+| Flag                           | Rule                 | Option            |
+| ------------------------------ | -------------------- | ----------------- |
+| `--cyclomatic-warning=N`       | complexity.ccn       | callable.warning  |
+| `--cyclomatic-error=N`         | complexity.ccn       | callable.error    |
+| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_warning |
+| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_error   |
+| `--cognitive-warning=N`        | complexity.cognitive | callable.warning  |
+| `--cognitive-error=N`          | complexity.cognitive | callable.error    |
+| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_warning |
+| `--cognitive-class-error=N`    | complexity.cognitive | class.max_error   |
+| `--npath-warning=N`            | complexity.npath     | callable.warning  |
+| `--npath-error=N`              | complexity.npath     | callable.error    |
+| `--npath-class-warning=N`      | complexity.npath     | class.max_warning |
+| `--npath-class-error=N`        | complexity.npath     | class.max_error   |
+| `--wmc-warning=N`              | complexity.wmc       | warning           |
+| `--wmc-error=N`                | complexity.wmc       | error             |
 
 === "Coupling"
 
@@ -695,8 +695,8 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 | Flag                                 | Rule                          | Option              |
 | ------------------------------------ | ----------------------------- | ------------------- |
-| `--dit-warning=N`                    | design.inheritance            | warning             |
-| `--dit-error=N`                      | design.inheritance            | error               |
+| `--dit-warning=N`                    | design.dit                    | warning             |
+| `--dit-error=N`                      | design.dit                    | error               |
 | `--lcom-warning=N`                   | cohesion.lcom                 | warning             |
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
@@ -714,12 +714,12 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Maintainability"
 
-| Flag                    | Rule                  | Option        |
-| ----------------------- | --------------------- | ------------- |
-| `--mi-warning=N`        | maintainability.index | warning       |
-| `--mi-error=N`          | maintainability.index | error         |
-| `--mi-min-statements=N` | maintainability.index | minStatements |
-| `--mi-exclude-tests`    | maintainability.index | excludeTests  |
+| Flag                    | Rule               | Option        |
+| ----------------------- | ------------------ | ------------- |
+| `--mi-warning=N`        | maintainability.mi | warning       |
+| `--mi-error=N`          | maintainability.mi | error         |
+| `--mi-min-statements=N` | maintainability.mi | minStatements |
+| `--mi-exclude-tests`    | maintainability.mi | excludeTests  |
 
 === "Code Smell"
 
@@ -953,11 +953,11 @@ Complexity
     --cognitive-error (--rule-opt=complexity.cognitive:callable.error=...)
     --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
     --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
-  complexity.cyclomatic                    Checks cyclomatic complexity at method and class levels
-    --cyclomatic-warning (--rule-opt=complexity.cyclomatic:callable.warning=...)
-    --cyclomatic-error (--rule-opt=complexity.cyclomatic:callable.error=...)
-    --cyclomatic-class-warning (--rule-opt=complexity.cyclomatic:class.max_warning=...)
-    --cyclomatic-class-error (--rule-opt=complexity.cyclomatic:class.max_error=...)
+  complexity.ccn                    Checks cyclomatic complexity at method and class levels
+    --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
+    --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
+    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
+    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
   ...
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>

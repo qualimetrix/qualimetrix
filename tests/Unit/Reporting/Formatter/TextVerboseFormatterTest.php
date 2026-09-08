@@ -62,8 +62,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 15',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -164,8 +164,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 25, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -189,8 +189,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 25, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -213,8 +213,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'doWork'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 25',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -222,8 +222,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity is 15',
                 severity: Severity::Warning,
                 metricValue: 15,
@@ -245,7 +245,7 @@ final class TextVerboseFormatterTest extends TestCase
         $output = $this->formatter->format($report, $this->plainContext);
 
         self::assertStringContainsString('Technical debt by rule:', $output);
-        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('complexity.ccn', $output);
         self::assertStringContainsString('2 violations', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('1 violation', $output);

@@ -19,12 +19,12 @@ final class DebtSummaryTest extends TestCase
         $summary = new DebtSummary(
             totalMinutes: 120,
             perFile: ['src/Foo.php' => 60, 'src/Bar.php' => 60],
-            perRule: ['complexity.cyclomatic' => 120],
+            perRule: ['complexity.ccn' => 120],
         );
 
         self::assertSame(120, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 60, 'src/Bar.php' => 60], $summary->perFile);
-        self::assertSame(['complexity.cyclomatic' => 120], $summary->perRule);
+        self::assertSame(['complexity.ccn' => 120], $summary->perRule);
     }
 
     /**

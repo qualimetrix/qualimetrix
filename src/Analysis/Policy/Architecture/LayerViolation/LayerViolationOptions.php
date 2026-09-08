@@ -40,8 +40,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * that look behavioural and are not; {@see fromArray()} rejects them by name
  * instead of ignoring them, because silently accepting `info` for a channel
  * that gates unconditionally is exactly the lie the removal exists to end.
- * `architecture.coverage` never had such a key: it is governed by the
- * architecture section's own `coverage: ignore|warn|error`, and `ignore`
+ * `architecture.coverage-gap` never had such a key: it is governed by the
+ * architecture section's own `coverage-gap: ignore|warn|error`, and `ignore`
  * remains the supported way to decline the diagnostic outright.
  *
  * Layer definitions and the allow-list live in {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration}
@@ -125,7 +125,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
                 'Option "%s" for rule "%s" no longer exists. The channel it configured reports a configuration'
                 . ' error, which always fails the run regardless of "fail_on" and can never be accepted by a'
                 . ' baseline, so its severity was not a behaviour setting. Remove the key; to decline the'
-                . ' coverage diagnostic itself, set "coverage: ignore" in the architecture section.',
+                . ' coverage diagnostic itself, set "coverage-gap: ignore" in the architecture section.',
                 $snakeCase,
                 self::RULE_NAME,
             ));

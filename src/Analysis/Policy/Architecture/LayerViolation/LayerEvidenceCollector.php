@@ -266,7 +266,7 @@ final class LayerEvidenceCollector
 
     /**
      * Walks the dependency graph and records the edges the allow-list rejects,
-     * the coverage-state struct used by `architecture.coverage` (counts of
+     * the coverage-state struct used by `architecture.coverage-gap` (counts of
      * unmatched ends + the set of unclassified class FQNs), a per-layer
      * assignment count, and a per-layer set of the distinct symbols matched at
      * either end of an edge.

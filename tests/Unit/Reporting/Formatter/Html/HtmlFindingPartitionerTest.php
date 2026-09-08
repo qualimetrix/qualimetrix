@@ -50,8 +50,8 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -131,8 +131,8 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -153,8 +153,8 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -171,8 +171,8 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -249,8 +249,8 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Too complex',
             severity: Severity::Warning,
             metricValue: 15,
@@ -268,8 +268,8 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         self::assertCount(1, $node->findings);
         $v = $node->findings[0];
-        self::assertSame('complexity.cyclomatic', $v['ruleName']);
-        self::assertSame('complexity.cyclomatic', $v['violationCode']);
+        self::assertSame('complexity.ccn', $v['ruleName']);
+        self::assertSame('complexity.ccn', $v['violationCode']);
         self::assertSame('Too complex', $v['message']);
         self::assertSame('Split the method', $v['recommendation']);
         self::assertSame('warning', $v['severity']);

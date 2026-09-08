@@ -351,7 +351,7 @@ final class FileProcessorTest extends TestCase
             'endFilePos' => 180,
         ]);
         $method->setDocComment(new Doc(
-            '/** @qmx-threshold complexity.cyclomatic warning=40 error=50 */',
+            '/** @qmx-threshold complexity.ccn warning=40 error=50 */',
             startLine: 9,
             endLine: 9,
         ));
@@ -363,7 +363,7 @@ final class FileProcessorTest extends TestCase
             'endFilePos' => 200,
         ]);
         $class->setDocComment(new Doc(
-            '/** @qmx-threshold complexity.cyclomatic warning=20 error=30 */',
+            '/** @qmx-threshold complexity.ccn warning=20 error=30 */',
             startLine: 4,
             endLine: 4,
         ));
@@ -399,7 +399,7 @@ final class FileProcessorTest extends TestCase
         self::assertCount(3, $result->thresholdOverrides());
 
         $classOverride = $result->thresholdOverrides()[0];
-        self::assertSame('complexity.cyclomatic', $classOverride->rulePattern);
+        self::assertSame('complexity.ccn', $classOverride->rulePattern);
         self::assertSame(20, $classOverride->warning);
         self::assertSame(30, $classOverride->error);
         self::assertSame(4, $classOverride->line);
@@ -411,7 +411,7 @@ final class FileProcessorTest extends TestCase
         self::assertSame(ControlScope::Class_, $inheritedClassOverride->controlScope);
 
         $methodOverride = $result->thresholdOverrides()[2];
-        self::assertSame('complexity.cyclomatic', $methodOverride->rulePattern);
+        self::assertSame('complexity.ccn', $methodOverride->rulePattern);
         self::assertSame(40, $methodOverride->warning);
         self::assertSame(50, $methodOverride->error);
         self::assertSame(9, $methodOverride->line);
@@ -428,10 +428,10 @@ final class FileProcessorTest extends TestCase
 
             class Record
             {
-                /** @qmx-threshold complexity.cyclomatic 12 */
+                /** @qmx-threshold complexity.ccn 12 */
                 public int $withoutHooks;
 
-                /** @qmx-threshold complexity.cyclomatic broken */
+                /** @qmx-threshold complexity.ccn broken */
                 public int $invalidWithoutHooks;
             }
             PHP);
@@ -454,7 +454,7 @@ final class FileProcessorTest extends TestCase
             [new Node\PropertyItem('unreachable')],
             ['startLine' => 2, 'endLine' => 2, 'startFilePos' => 10, 'endFilePos' => 30],
         );
-        $property->setDocComment(new Doc('/** @qmx-threshold complexity.cyclomatic broken */', 1, 1));
+        $property->setDocComment(new Doc('/** @qmx-threshold complexity.ccn broken */', 1, 1));
 
         $result = $this->processLiteralAst([$property]);
 
@@ -471,13 +471,13 @@ final class FileProcessorTest extends TestCase
             <?php
             namespace App;
 
-            /** @qmx-ignore complexity.cyclomatic class fallback */
+            /** @qmx-ignore complexity.ccn class fallback */
             class Record
             {
                 public function __construct(
-                    /** @qmx-ignore complexity.cyclomatic promoted parameter */
+                    /** @qmx-ignore complexity.ccn promoted parameter */
                     public int $promoted,
-                    /** @qmx-ignore complexity.cyclomatic ordinary parameter */
+                    /** @qmx-ignore complexity.ccn ordinary parameter */
                     int $ordinary,
                 ) {}
             }
@@ -526,7 +526,7 @@ final class FileProcessorTest extends TestCase
             <?php
             namespace App;
 
-            /** @qmx-ignore complexity.cyclomatic class fallback */
+            /** @qmx-ignore complexity.ccn class fallback */
             class Record
             {
                 public function run(): void
@@ -543,8 +543,8 @@ final class FileProcessorTest extends TestCase
         // php-parser attaches comments before an assignment to Expression rather than
         // the nested callable. Attach the supported callable doc-comment position
         // explicitly so this fixture exercises FileProcessor's innermost binding.
-        $closure->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic closure control */', 9, 9));
-        $arrow->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic arrow control */', 11, 11));
+        $closure->setDocComment(new Doc('/** @qmx-ignore complexity.ccn closure control */', 9, 9));
+        $arrow->setDocComment(new Doc('/** @qmx-ignore complexity.ccn arrow control */', 11, 11));
         $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Record', 'run'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $closureDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
@@ -580,7 +580,7 @@ final class FileProcessorTest extends TestCase
             <?php
             namespace App;
 
-            /** @qmx-threshold complexity.cyclomatic 10 */
+            /** @qmx-threshold complexity.ccn 10 */
             class Outer
             {
                 public function run(): void
@@ -634,10 +634,10 @@ final class FileProcessorTest extends TestCase
                 {
                     class Inner
                     {
-                        /** @qmx-threshold complexity.cyclomatic broken */
+                        /** @qmx-threshold complexity.ccn broken */
                         public int $value;
 
-                        /** @qmx-ignore complexity.cyclomatic inner constant */
+                        /** @qmx-ignore complexity.ccn inner constant */
                         public const FLAG = 1;
                     }
                 }

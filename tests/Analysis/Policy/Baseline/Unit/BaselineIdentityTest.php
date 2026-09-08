@@ -35,7 +35,7 @@ final class BaselineIdentityTest extends TestCase
         );
 
         self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php', $identity->subjectKey);
-        self::assertSame('complexity.cyclomatic', $identity->channel->code);
+        self::assertSame('complexity.ccn', $identity->channel->code);
         self::assertNull($identity->edge);
     }
 
@@ -179,8 +179,8 @@ final class BaselineIdentityTest extends TestCase
             location: new Location(RelativePath::fromString('src/a/Duplicated.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'from the first declaration',
             severity: Severity::Warning,
             metricValue: 12,
@@ -189,8 +189,8 @@ final class BaselineIdentityTest extends TestCase
             location: new Location(RelativePath::fromString('src/b/Duplicated.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'from the second declaration',
             severity: Severity::Warning,
             metricValue: 30,

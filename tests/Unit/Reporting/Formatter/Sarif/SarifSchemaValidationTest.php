@@ -61,8 +61,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -79,8 +79,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Controller/HomeController.php'), 15),
                 symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class is not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -105,8 +105,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
-                ruleName: 'duplication.code-duplication',
-                code: 'duplication.code-duplication',
+                ruleName: 'duplication.clone',
+                code: 'duplication.clone',
                 message: 'Duplicated code block (20 lines, 3 occurrences)',
                 severity: Severity::Warning,
                 metricValue: 20,
@@ -145,8 +145,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,

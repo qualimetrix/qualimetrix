@@ -42,7 +42,7 @@ enum SectionNormalizationPolicy
      * identifiers (rule names, computed-metric names) but whose nested
      * option keys belong to a typed schema. Used by {@code rules} and
      * {@code computed_metrics}: the rule slug stays
-     * {@code complexity.cyclomatic}; the option {@code warning_threshold}
+     * {@code complexity.ccn}; the option {@code warning_threshold}
      * inside it becomes {@code warningThreshold}.
      *
      * This is the exact semantic of the previous (now-removed)

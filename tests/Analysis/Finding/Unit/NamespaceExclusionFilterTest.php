@@ -33,7 +33,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $finding = $this->createFinding('App\\Entity', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Entity', 'complexity.ccn');
 
         self::assertFalse($filter->shouldInclude($finding), 'Violation matching excluded namespace should be suppressed');
     }
@@ -43,7 +43,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $finding = $this->createFinding('App\\Service', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Service', 'complexity.ccn');
 
         self::assertTrue($filter->shouldInclude($finding), 'Violation not matching excluded namespace should pass through');
     }
@@ -73,7 +73,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        // architecture.coverage and friends are project-level (empty namespace) diagnostics,
+        // architecture.coverage-gap and friends are project-level (empty namespace) diagnostics,
         // but the exemption is driven purely by the rule-name prefix — verify it still applies.
         $finding = $this->createFinding('App\\Entity', LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
@@ -98,7 +98,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher([]), self::declaredFileScope());
 
-        $finding = $this->createFinding('App\\Entity', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Entity', 'complexity.ccn');
 
         self::assertTrue($filter->shouldInclude($finding), 'Empty NamespaceMatcher should not filter any violations');
     }
@@ -135,8 +135,8 @@ final class NamespaceExclusionFilterTest extends TestCase
             location: new Location($file, 10),
             symbolPath: SymbolPath::forFile($file),
             subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Test',
             severity: Severity::Warning,
         );

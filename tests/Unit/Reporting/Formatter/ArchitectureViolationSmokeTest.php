@@ -465,15 +465,15 @@ final class ArchitectureViolationSmokeTest extends TestCase
                 recommendation: 'Break the cycle by extracting a common abstraction or moving shared state.',
             ),
 
-            // architecture.coverage — project-level diagnostic
+            // architecture.coverage-gap — project-level diagnostic
             self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
                 code: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
-                message: 'Architecture coverage: 0 edge(s) with unmatched source layer, 0 edge(s) with unmatched target layer, 7 class(es) outside all declared layers.',
+                message: 'Architecture coverage-gap: 0 edge(s) with unmatched source layer, 0 edge(s) with unmatched target layer, 7 class(es) outside all declared layers.',
                 severity: Severity::Error,
-                recommendation: 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".',
+                recommendation: 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".',
             ),
 
             // architecture.empty-template — project-level diagnostic

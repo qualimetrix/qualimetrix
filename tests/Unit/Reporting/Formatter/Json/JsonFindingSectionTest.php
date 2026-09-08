@@ -54,8 +54,8 @@ final class JsonFindingSectionTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 15, threshold is 10',
             severity: Severity::Warning,
             metricValue: 15,
@@ -74,8 +74,8 @@ final class JsonFindingSectionTest extends TestCase
         self::assertStringContainsString('UserService', $item['symbol']);
         self::assertStringContainsString('process', $item['symbol']);
         self::assertSame('App\\Service', $item['namespace']);
-        self::assertSame('complexity.cyclomatic', $item['rule']);
-        self::assertSame('complexity.cyclomatic', $item['code']);
+        self::assertSame('complexity.ccn', $item['rule']);
+        self::assertSame('complexity.ccn', $item['code']);
         self::assertSame('warning', $item['severity']);
         self::assertSame('Cyclomatic complexity is 15, threshold is 10', $item['message']);
         self::assertSame('Consider splitting the method', $item['recommendation']);
@@ -138,8 +138,8 @@ final class JsonFindingSectionTest extends TestCase
         $finding = (self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,
@@ -219,8 +219,8 @@ final class JsonFindingSectionTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Bad.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Bad'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Bad value',
             severity: Severity::Warning,
             metricValue: \NAN,
@@ -269,8 +269,8 @@ final class JsonFindingSectionTest extends TestCase
         $low = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'low exceedance',
             severity: Severity::Warning,
             metricValue: 12,
@@ -280,8 +280,8 @@ final class JsonFindingSectionTest extends TestCase
         $high = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'high exceedance',
             severity: Severity::Warning,
             metricValue: 50,
@@ -438,15 +438,15 @@ final class JsonFindingSectionTest extends TestCase
 
         $findings = [
             $makeFinding('size.loc'),
-            $makeFinding('complexity.cyclomatic'),
+            $makeFinding('complexity.ccn'),
             $makeFinding('size.loc'),
             $makeFinding('size.loc'),
-            $makeFinding('complexity.cyclomatic'),
+            $makeFinding('complexity.ccn'),
         ];
 
         $counts = $this->section->countByRule($findings);
 
-        self::assertSame(['size.loc' => 3, 'complexity.cyclomatic' => 2], $counts);
+        self::assertSame(['size.loc' => 3, 'complexity.ccn' => 2], $counts);
     }
 
     /**

@@ -59,7 +59,7 @@ final class BaselineUpdaterTest extends TestCase
             2,
         );
 
-        $current = FindingFactory::magnitude($symbol, 100, 'duplication.code-duplication', 'duplication.code-duplication');
+        $current = FindingFactory::magnitude($symbol, 100, 'duplication.clone', 'duplication.clone');
 
         $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
@@ -84,7 +84,7 @@ final class BaselineUpdaterTest extends TestCase
             BaselineIdentity::forFinding(FindingFactory::magnitude(
                 $symbol,
                 40,
-                'maintainability.index',
+                'maintainability.mi',
                 'maintainability.index.class',
             )),
             [40],
@@ -92,8 +92,8 @@ final class BaselineUpdaterTest extends TestCase
         );
 
         $current = [
-            FindingFactory::magnitude($symbol, 55, 'maintainability.index', 'maintainability.index.class'),
-            FindingFactory::magnitude($symbol, 70, 'maintainability.index', 'maintainability.index.class'),
+            FindingFactory::magnitude($symbol, 55, 'maintainability.mi', 'maintainability.index.class'),
+            FindingFactory::magnitude($symbol, 70, 'maintainability.mi', 'maintainability.index.class'),
         ];
 
         $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
@@ -298,8 +298,8 @@ final class BaselineUpdaterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -376,7 +376,7 @@ final class BaselineUpdaterTest extends TestCase
 
     private static function duplicationChannel(): FindingChannel
     {
-        return new FindingChannel('duplication.code-duplication');
+        return new FindingChannel('duplication.clone');
     }
 
     private static function gotoChannel(): FindingChannel

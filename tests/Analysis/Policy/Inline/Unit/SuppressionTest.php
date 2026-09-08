@@ -22,7 +22,7 @@ final class SuppressionTest extends TestCase
     public function itMatchesExactRule(): void
     {
         $suppression = new Suppression(
-            rule: 'complexity.cyclomatic',
+            rule: 'complexity.ccn',
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
@@ -30,7 +30,7 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($suppression->matches('complexity.cyclomatic', SymbolLevel::Class_));
+        self::assertTrue($suppression->matches('complexity.ccn', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('complexity.cognitive', SymbolLevel::Class_));
     }
 
@@ -49,7 +49,7 @@ final class SuppressionTest extends TestCase
         // `complexity` addresses the channel called `complexity` — there is
         // none — and nothing else. A group is written `complexity.*`.
         self::assertTrue($suppression->matches('complexity', SymbolLevel::Class_));
-        self::assertFalse($suppression->matches('complexity.cyclomatic', SymbolLevel::Class_));
+        self::assertFalse($suppression->matches('complexity.ccn', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('complexity.cyclomatic.callable', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('coupling', SymbolLevel::Class_));
     }
@@ -70,7 +70,7 @@ final class SuppressionTest extends TestCase
         self::assertTrue($suppression->matches('complexity.cyclomatic.class', SymbolLevel::Class_));
         // The parent is not one of its own descendants: a directive meaning
         // both is written twice.
-        self::assertFalse($suppression->matches('complexity.cyclomatic', SymbolLevel::Class_));
+        self::assertFalse($suppression->matches('complexity.ccn', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('complexity.cognitive.callable', SymbolLevel::Class_));
     }
 
@@ -81,7 +81,7 @@ final class SuppressionTest extends TestCase
         // dotted descendant of an existing one used to fall under every
         // selector of its parent.
         $suppression = new Suppression(
-            rule: 'architecture.coverage',
+            rule: 'architecture.coverage-gap',
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
@@ -89,7 +89,7 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($suppression->matches('architecture.coverage', SymbolLevel::Class_));
+        self::assertTrue($suppression->matches('architecture.coverage-gap', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('architecture.coverage.source', SymbolLevel::Class_));
     }
 
@@ -103,7 +103,7 @@ final class SuppressionTest extends TestCase
             type: SuppressionType::File,
         );
 
-        self::assertTrue($suppression->matches('complexity.cyclomatic', SymbolLevel::Class_));
+        self::assertTrue($suppression->matches('complexity.ccn', SymbolLevel::Class_));
         self::assertTrue($suppression->matches('coupling.distance', SymbolLevel::Class_));
         self::assertTrue($suppression->matches('size.method-count', SymbolLevel::Class_));
     }
@@ -112,13 +112,13 @@ final class SuppressionTest extends TestCase
     public function itConstructorProperties(): void
     {
         $suppression = new Suppression(
-            rule: 'complexity.cyclomatic',
+            rule: 'complexity.ccn',
             reason: 'Complex business logic',
             line: 42,
             type: SuppressionType::NextLine,
         );
 
-        self::assertSame('complexity.cyclomatic', $suppression->rule);
+        self::assertSame('complexity.ccn', $suppression->rule);
         self::assertSame('Complex business logic', $suppression->reason);
         self::assertSame(42, $suppression->line);
         self::assertSame(SuppressionType::NextLine, $suppression->type);
@@ -152,7 +152,7 @@ final class SuppressionTest extends TestCase
         );
 
         // More specific pattern does NOT match less specific subject
-        self::assertFalse($suppression->matches('complexity.cyclomatic', SymbolLevel::Class_));
+        self::assertFalse($suppression->matches('complexity.ccn', SymbolLevel::Class_));
         self::assertFalse($suppression->matches('complexity', SymbolLevel::Class_));
     }
 

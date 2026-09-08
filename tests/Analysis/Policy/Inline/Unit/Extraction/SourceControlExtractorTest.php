@@ -39,13 +39,13 @@ final class SourceControlExtractorTest extends TestCase
             /** @qmx-ignore-file size.loc file reason */
             class Named
             {
-                /** @qmx-ignore complexity.cyclomatic class reason */
+                /** @qmx-ignore complexity.ccn class reason */
                 public function run(
                     /** @qmx-ignore-next-line size.method-count next reason */
                     int $value,
                 ): void {}
 
-                /** @qmx-threshold complexity.cyclomatic broken */
+                /** @qmx-threshold complexity.ccn broken */
                 public function invalid(): void {}
             }
             PHP);
@@ -100,8 +100,8 @@ final class SourceControlExtractorTest extends TestCase
             1,
             new MetricBag(),
         )->subject;
-        $classControl = new Suppression('complexity.cyclomatic', 'reason', 4, SuppressionType::Symbol, 12, $subject, ControlScope::Class_);
-        $callableControl = new Suppression('complexity.cyclomatic', 'reason', 4, SuppressionType::Symbol, 12, $subject, ControlScope::Callable);
+        $classControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, 12, $subject, ControlScope::Class_);
+        $callableControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, 12, $subject, ControlScope::Callable);
         $method = new ReflectionMethod(SourceControlExtractor::class, 'deduplicate');
 
         /** @var list<Suppression> $deduplicated */
@@ -129,7 +129,7 @@ final class SourceControlExtractorTest extends TestCase
     #[Test]
     public function itRejectsSourceControlBindingWhenTwoOrdinalsClaimOnePhysicalPosition(): void
     {
-        $ast = $this->parse("<?php\n/** @qmx-ignore complexity.cyclomatic collision */\nfunction run(int \$value): void {}\n");
+        $ast = $this->parse("<?php\n/** @qmx-ignore complexity.ccn collision */\nfunction run(int \$value): void {}\n");
         $function = (new NodeFinder())->findFirstInstanceOf($ast, Node\Stmt\Function_::class);
         self::assertInstanceOf(Node\Stmt\Function_::class, $function);
 

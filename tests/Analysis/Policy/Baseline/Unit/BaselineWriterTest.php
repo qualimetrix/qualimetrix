@@ -78,7 +78,7 @@ final class BaselineWriterTest extends TestCase
 
         self::assertArrayHasKey('callable:App\Foo::bar', $data['entries']);
         self::assertSame(
-            'complexity.cyclomatic',
+            'complexity.ccn',
             $data['entries']['callable:App\Foo::bar'][0]['channel'],
         );
     }
@@ -122,7 +122,7 @@ final class BaselineWriterTest extends TestCase
 
         $duplication = $reloaded->findByIdentity(new BaselineIdentity(
             'file:src/Legacy/dup.php',
-            new FindingChannel('duplication.code-duplication'),
+            new FindingChannel('duplication.clone'),
         ));
         self::assertNotNull($duplication);
         self::assertSame([40.0, 100.0], $duplication->magnitudes);
@@ -413,7 +413,7 @@ final class BaselineWriterTest extends TestCase
     public function itWritesAsManyEntriesUnderASymbolAsItRead(): void
     {
         $undeclared = ['channel' => 'this.channel', 'count' => 1];
-        $duplicated = 'complexity.cyclomatic';
+        $duplicated = 'complexity.ccn';
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
@@ -695,7 +695,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic'),
+                    new FindingChannel('complexity.ccn'),
                 ),
                 [25],
                 1,
@@ -703,7 +703,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'file:src/Legacy/dup.php',
-                    new FindingChannel('duplication.code-duplication'),
+                    new FindingChannel('duplication.clone'),
                 ),
                 [100, 40],
                 2,
@@ -735,7 +735,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic'),
+                    new FindingChannel('complexity.ccn'),
                 ),
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,

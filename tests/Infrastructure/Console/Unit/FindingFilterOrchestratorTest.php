@@ -87,7 +87,7 @@ final class FindingFilterOrchestratorTest extends TestCase
     public function itPrintsNamespaceExclusionCountWhenVerbose(): void
     {
         $stats = new RuleExclusionStats(
-            namespaceExclusionsByRule: ['complexity.cyclomatic' => 2],
+            namespaceExclusionsByRule: ['complexity.ccn' => 2],
         );
         $orchestrator = $this->createOrchestrator();
 
@@ -105,7 +105,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             '2 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels',
             $display,
         );
-        self::assertStringContainsString('complexity.cyclomatic: 2', $display);
+        self::assertStringContainsString('complexity.ccn: 2', $display);
     }
 
     #[Test]
@@ -157,14 +157,14 @@ final class FindingFilterOrchestratorTest extends TestCase
             location: new Location($path, 42),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
 
         $stats = new RuleExclusionStats(
-            namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
+            namespaceExclusionsByRule: ['complexity.ccn' => 1],
             excludedFindings: [$finding],
         );
         $orchestrator = $this->createOrchestrator();
@@ -185,7 +185,7 @@ final class FindingFilterOrchestratorTest extends TestCase
         );
         self::assertStringContainsString('src/Service/UserService.php', $display);
         self::assertStringContainsString('CCN too high', $display);
-        self::assertStringContainsString('[complexity.cyclomatic]', $display);
+        self::assertStringContainsString('[complexity.ccn]', $display);
     }
 
     #[Test]
@@ -197,14 +197,14 @@ final class FindingFilterOrchestratorTest extends TestCase
             location: new Location($path, 42),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
 
         $stats = new RuleExclusionStats(
-            namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
+            namespaceExclusionsByRule: ['complexity.ccn' => 1],
             excludedFindings: [$finding],
         );
         $orchestrator = $this->createOrchestrator();
@@ -329,8 +329,8 @@ final class FindingFilterOrchestratorTest extends TestCase
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(1))),
             symbolPath: $symbol,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'CCN too high',
             severity: Severity::Error,
             metricValue: 25,

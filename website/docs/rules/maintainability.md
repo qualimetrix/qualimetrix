@@ -10,7 +10,7 @@ aligned.
 
 ## Maintainability Index
 
-**Rule ID:** `maintainability.index`
+**Rule ID:** `maintainability.mi`
 
 **Judged metric:** `maintainability.mi`
 
@@ -187,7 +187,7 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 ```yaml
 # qmx.yaml
 rules:
-  maintainability.index:
+  maintainability.mi:
     warning: 40
     error: 20
     exclude_tests: true
@@ -195,6 +195,6 @@ rules:
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="maintainability.index:warning=35"
-bin/qmx check src/ --rule-opt="maintainability.index:min_statements=15"
+bin/qmx check src/ --rule-opt="maintainability.mi:warning=35"
+bin/qmx check src/ --rule-opt="maintainability.mi:min_statements=15"
 ```

@@ -311,8 +311,8 @@ final class FindingFilterTest extends TestCase
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
-            ruleName: 'architecture.coverage',
-            code: 'architecture.coverage',
+            ruleName: 'architecture.coverage-gap',
+            code: 'architecture.coverage-gap',
             message: 'project-wide finding',
             severity: Severity::Error,
         );

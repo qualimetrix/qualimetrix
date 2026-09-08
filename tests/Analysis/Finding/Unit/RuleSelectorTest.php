@@ -31,7 +31,7 @@ final class RuleSelectorTest extends TestCase
                     ],
                     'architecture.layer-violation' => [
                         new FindingChannel('architecture.layer-violation'),
-                        new FindingChannel('architecture.coverage'),
+                        new FindingChannel('architecture.coverage-gap'),
                     ],
                     default => [],
                 };
@@ -79,14 +79,14 @@ final class RuleSelectorTest extends TestCase
     {
         self::assertTrue($this->selector->isProducerEnabled(
             'architecture.layer-violation',
-            ['architecture.coverage'],
+            ['architecture.coverage-gap'],
             [],
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'architecture.layer-violation',
-            new FindingChannel('architecture.coverage'),
+            new FindingChannel('architecture.coverage-gap'),
             SymbolLevel::Class_,
-            ['architecture.coverage'],
+            ['architecture.coverage-gap'],
             [],
         ));
     }
@@ -184,14 +184,14 @@ final class RuleSelectorTest extends TestCase
     public function itStopsAProducerWhoseEveryDeclaredLevelIsDisabled(): void
     {
         $selector = self::selectorWithLevels(
-            ['duplication.code-duplication' => ['duplication.code-duplication']],
-            ['duplication.code-duplication' => [SymbolLevel::Project]],
+            ['duplication.clone' => ['duplication.clone']],
+            ['duplication.clone' => [SymbolLevel::Project]],
         );
 
         self::assertFalse($selector->isProducerEnabled(
-            'duplication.code-duplication',
+            'duplication.clone',
             [],
-            ['duplication.code-duplication' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Project->value],
+            ['duplication.clone' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Project->value],
         ));
     }
 
@@ -293,7 +293,7 @@ final class RuleSelectorTest extends TestCase
         $producers = ['computed.health', 'architecture.layer-violation'];
 
         self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
-        self::assertTrue($this->selector->matchesKnown('architecture.coverage', $producers));
+        self::assertTrue($this->selector->matchesKnown('architecture.coverage-gap', $producers));
         self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
         self::assertFalse($this->selector->matchesKnownProducer('health.complexity', $producers));
     }

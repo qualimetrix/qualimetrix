@@ -29,7 +29,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * that pair against the fresh capture's v10 entries. The fixture below is
  * built so every migration-report group defined by ADR 0017 is exercised by one run:
  *
- * - `method:App\Foo::bar` / `complexity.cyclomatic` — the two legacy v5
+ * - `method:App\Foo::bar` / `complexity.ccn` — the two legacy v5
  *   records do not match the fresh capture's `callable:App\Foo::bar` entries,
  *   so both are **dropped** and both v10 entries are **fresh**.
  * - `class:App\Foo` / `design.god-class` — one v5 record, one v10 entry —
@@ -81,7 +81,7 @@ final class BaselineMigratorTest extends TestCase
 
         self::assertSame(
             [
-                ['method:App\Foo::bar', 'complexity.cyclomatic'],
+                ['method:App\Foo::bar', 'complexity.ccn'],
                 ['method:App\Foo::baz', 'coupling.cbo'],
             ],
             array_map(
@@ -158,8 +158,8 @@ final class BaselineMigratorTest extends TestCase
     private function v5Fixture(): V5Baseline
     {
         return new V5Baseline([
-            new V5Entry('method:App\Foo::bar', 'complexity.cyclomatic', '0000000000000001'),
-            new V5Entry('method:App\Foo::bar', 'complexity.cyclomatic', '0000000000000002'),
+            new V5Entry('method:App\Foo::bar', 'complexity.ccn', '0000000000000001'),
+            new V5Entry('method:App\Foo::bar', 'complexity.ccn', '0000000000000002'),
             new V5Entry('method:App\Foo::baz', 'coupling.cbo', '0000000000000003'),
             new V5Entry('class:App\Foo', 'design.god-class', '0000000000000004'),
         ]);

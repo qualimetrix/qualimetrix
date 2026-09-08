@@ -260,8 +260,8 @@ final class CaptureFromMeasuredSetTest extends TestCase
         string $file,
         string $namespace,
         string $class,
-        string $ruleName = 'complexity.cyclomatic',
-        string $code = 'complexity.cyclomatic',
+        string $ruleName = 'complexity.ccn',
+        string $code = 'complexity.ccn',
     ): Finding {
         return new Finding(
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),

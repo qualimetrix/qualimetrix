@@ -32,7 +32,7 @@ use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 #[CoversClass(ExitCodeResolver::class)]
 final class ExitCodeResolverConfigurationErrorTest extends TestCase
 {
-    private const string CHANNEL = 'architecture.coverage';
+    private const string CHANNEL = 'architecture.coverage-gap';
 
     #[Test]
     public function itFailsTheRunOnAConfigurationErrorWhateverFailOnSays(): void

@@ -172,7 +172,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 'annotation.invalid-threshold',
                 'annotation.unresolved-directive',
                 'annotation.unsupported-threshold',
-                'architecture.coverage',
+                'architecture.coverage-gap',
                 'architecture.empty-template',
                 'architecture.pending-layer-matched',
                 'architecture.potential-shadow',

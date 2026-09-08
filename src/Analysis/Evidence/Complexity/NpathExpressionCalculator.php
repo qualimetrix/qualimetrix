@@ -49,7 +49,7 @@ final class NpathExpressionCalculator
      *
      * @return array{ordinary: int, nullsafe: int}
      *
-     * @qmx-threshold complexity.cyclomatic warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
+     * @qmx-threshold complexity.ccn warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
      */
     public function calculateContributions(Expr $expr): array
     {

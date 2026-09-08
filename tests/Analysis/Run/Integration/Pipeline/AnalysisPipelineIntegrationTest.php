@@ -295,7 +295,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                     ['name' => 'repository', 'patterns' => ['P4Reset\\First\\Repository\\**']],
                 ],
                 'allow' => ['controller' => [], 'repository' => []],
-                'coverage' => 'ignore',
+                'coverage-gap' => 'ignore',
             ]],
         ]], AbsolutePath::fromString($fixtureRoot));
 
@@ -608,8 +608,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 namespace InlineWorkerFixture;
 
 /**
- * @qmx-ignore complexity.cyclomatic Worker transport parity.
- * @qmx-threshold complexity.cyclomatic warning=15 error=25
+ * @qmx-ignore complexity.ccn Worker transport parity.
+ * @qmx-threshold complexity.ccn warning=15 error=25
  * @qmx-threshold unknown.rule invalid
  */
 final class Controlled

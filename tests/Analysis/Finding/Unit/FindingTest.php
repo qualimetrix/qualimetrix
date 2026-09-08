@@ -210,14 +210,14 @@ final class FindingTest extends TestCase
             subject: self::subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'architecture.layer-violation',
-            code: 'architecture.coverage',
+            code: 'architecture.coverage-gap',
             message: 'Uncovered dependency',
             severity: Severity::Info,
         );
 
         self::assertTrue(
             $finding->channel()->equals(
-                new FindingChannel('architecture.coverage'),
+                new FindingChannel('architecture.coverage-gap'),
             ),
         );
     }
@@ -372,8 +372,8 @@ final class FindingTest extends TestCase
             location: new Location(RelativePath::fromString('src/test.php'), 10),
             subject: self::subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,

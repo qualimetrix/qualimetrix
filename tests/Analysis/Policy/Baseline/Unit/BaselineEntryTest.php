@@ -30,7 +30,7 @@ final class BaselineEntryTest extends TestCase
     #[Test]
     public function itLeavesValuesAlreadyRoundedByTheirOwnRuleUntouched(): void
     {
-        // maintainability.index and computed metrics store round($v, 1);
+        // maintainability.mi and computed metrics store round($v, 1);
         // one decimal place passes through six unchanged.
         $entry = new BaselineEntry(self::identity(), [64.3], 1);
 

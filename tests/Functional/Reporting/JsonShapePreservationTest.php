@@ -160,8 +160,8 @@ final class JsonShapePreservationTest extends TestCase
         return self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 17, true),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Cyclomatic complexity: 12 (threshold: 10)',
             severity: Severity::Warning,
         );

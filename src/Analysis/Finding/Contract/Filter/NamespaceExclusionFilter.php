@@ -23,7 +23,7 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * shadow, empty template, pending layer matched — are declared configuration errors: they
  * can be accepted by neither, and the only remaining answers are the
  * architecture configuration's own `exclude:` block and, for coverage
- * specifically, the `coverage: ignore` mode.
+ * specifically, the `coverage-gap: ignore` mode.
  *
  * Occurrence-style rules (code-smell and security) attach a *file* symbol path to
  * their findings, whose namespace is `null` by construction. The declaring

@@ -46,7 +46,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 {
     use CeilingStageFixtures;
 
-    private const string DUPLICATION = 'duplication.code-duplication';
+    private const string DUPLICATION = 'duplication.clone';
 
     // ---------------------------------------------------------------- shapes
 
@@ -71,7 +71,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * `maintainability.index` — a smaller number is the worse one, so a
+     * `maintainability.mi` — a smaller number is the worse one, so a
      * group that rose is an improvement and stays accepted.
      */
     #[Test]
@@ -98,7 +98,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
     /**
      * The second `lower` family ADR 0017 names, kept as its own case because a
-     * reader generalising from `maintainability.index` alone would be
+     * reader generalising from `maintainability.mi` alone would be
      * generalising from one channel.
      */
     #[Test]
@@ -429,7 +429,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
      * "at least as bad as `t`" reading `<= t`.
      *
      * No `lower` channel emits more than one finding per identity today —
-     * `maintainability.index` and the three `design.*-type-coverage` rules are
+     * `maintainability.mi` and the three `design.*-type-coverage` rules are
      * one per class
      * — so these groups are constructed, not observed. That is deliberate:
      * the rule is written over a direction, not over a channel, and nothing
@@ -529,7 +529,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     // ------------------------------------------------------------ helpers
 
     /**
-     * A ceiling holding one `duplication.code-duplication` entry over a
+     * A ceiling holding one `duplication.clone` entry over a
      * file, captured at the given block lengths.
      *
      * @param list<int|float> $storedMagnitudes
@@ -563,7 +563,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * A ceiling holding one `maintainability.index` entry over a class,
+     * A ceiling holding one `maintainability.mi` entry over a class,
      * captured at the given index values — the `lower` counterpart of
      * {@see duplicationStage()}.
      *
@@ -595,7 +595,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     private static function maintainability(int|float $magnitude, int $line = 1): Finding
     {
         return self::findingOn(
-            'maintainability.index',
+            'maintainability.mi',
             'maintainability.index.class',
             self::someClass(),
             $magnitude,

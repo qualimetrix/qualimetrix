@@ -26,7 +26,7 @@ only_rules:
   - size.*
 
 rules:
-  complexity.cyclomatic:
+  complexity.ccn:
     callable:
       warning: 10
       error: 20

@@ -34,9 +34,9 @@ final class ChannelPresentationViewTest extends TestCase
     public function itJoinsTheProducersDescriptionAndDeclaredDocsPage(): void
     {
         $view = $this->view(
-            producerByCode: ['complexity.cyclomatic.function' => 'complexity.cyclomatic'],
-            rules: [$this->rule('complexity.cyclomatic', 'Flags overly complex callables.')],
-            docsPageByRule: ['complexity.cyclomatic' => 'rules/complexity.md'],
+            producerByCode: ['complexity.cyclomatic.function' => 'complexity.ccn'],
+            rules: [$this->rule('complexity.ccn', 'Flags overly complex callables.')],
+            docsPageByRule: ['complexity.ccn' => 'rules/complexity.md'],
         );
 
         $presentation = $view->presentationFor('complexity.cyclomatic.function');
@@ -83,8 +83,8 @@ final class ChannelPresentationViewTest extends TestCase
     public function itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage(): void
     {
         $view = $this->view(
-            producerByCode: ['complexity.cyclomatic.function' => 'complexity.cyclomatic'],
-            rules: [$this->rule('complexity.cyclomatic', 'Flags overly complex callables.')],
+            producerByCode: ['complexity.cyclomatic.function' => 'complexity.ccn'],
+            rules: [$this->rule('complexity.ccn', 'Flags overly complex callables.')],
             docsPageByRule: [],
         );
 

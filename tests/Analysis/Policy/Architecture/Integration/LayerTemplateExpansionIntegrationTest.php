@@ -218,7 +218,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
                 'domain-*' => ['shared'],
                 'shared' => [],
             ],
-            'coverage' => 'ignore',
+            'coverage-gap' => 'ignore',
         ];
     }
 

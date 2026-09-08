@@ -94,12 +94,12 @@ Dynamic options generated from rule classes via the repeatable class-level attri
 **Examples:**
 
 ```
---cyclomatic-warning          # complexity.cyclomatic, method level (default)
---cyclomatic-class-warning    # complexity.cyclomatic, class level
+--cyclomatic-warning          # complexity.ccn, method level (default)
+--cyclomatic-class-warning    # complexity.ccn, class level
 --cbo-warning                 # coupling.cbo, class level (default)
 --cbo-ns-warning              # coupling.cbo, namespace level
 --lcom-min-methods            # cohesion.lcom, non-threshold option
---mi-exclude-tests            # maintainability.index, boolean option
+--mi-exclude-tests            # maintainability.mi, boolean option
 ```
 
 **Naming the `rule-short-name`:**
@@ -119,7 +119,7 @@ Options that apply to any rule, not tied to a specific one:
 ```
 
 The selection options are channel-aware. A bare selector may use the producer
-rule's full `NAME` (`complexity.cyclomatic`), a group prefix (`complexity`), a
+rule's full `NAME` (`complexity.ccn`), a group prefix (`complexity`), a
 channel `ruleName`, or a `violationCode`; `ruleName#violationCode` is the
 explicit full-channel form. `--rule-opt` still accepts producer rule names
 only, because options configure the producer rather than an emitted channel.

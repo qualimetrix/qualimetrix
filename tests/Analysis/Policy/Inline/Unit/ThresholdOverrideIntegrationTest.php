@@ -192,7 +192,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    self::override('complexity.cyclomatic', 20, 30, $subject, ControlScope::Class_, 10, 50),
+                    self::override('complexity.ccn', 20, 30, $subject, ControlScope::Class_, 10, 50),
                 ],
             ],
         );
@@ -238,7 +238,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             thresholdOverrides: [
                 'src/Service/Service.php' => [
                     self::override(
-                        'complexity.cyclomatic',
+                        'complexity.ccn',
                         20,
                         30,
                         $method1Subject,
@@ -646,8 +646,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    self::override('complexity.cyclomatic', 30, 50, $subject, ControlScope::Class_, 10, 100),
-                    self::override('complexity.cyclomatic', 22, 50, $subject, ControlScope::Callable, 15, 40),
+                    self::override('complexity.ccn', 30, 50, $subject, ControlScope::Class_, 10, 100),
+                    self::override('complexity.ccn', 22, 50, $subject, ControlScope::Callable, 15, 40),
                 ],
             ],
         );
@@ -736,14 +736,14 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             'src/Service/BigService.php',
             100,
         );
-        $override = self::override('complexity.cyclomatic', 20, 30, $subject, ControlScope::Class_, 1, null);
-        self::assertTrue($override->matches('complexity.cyclomatic'));
+        $override = self::override('complexity.ccn', 20, 30, $subject, ControlScope::Class_, 1, null);
+        self::assertTrue($override->matches('complexity.ccn'));
         self::assertFalse($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
 
         // The former group spelling reaches nothing at all.
         $group = self::override('complexity', 20, 30, $subject, ControlScope::Class_, 1, null);
-        self::assertFalse($group->matches('complexity.cyclomatic'));
+        self::assertFalse($group->matches('complexity.ccn'));
         self::assertFalse($group->matches('complexity.cognitive'));
     }
     private static function declarationSubject(SymbolPath $logical, string $file, int $startFilePos): MetricSubject

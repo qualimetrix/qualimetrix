@@ -28,7 +28,7 @@ final class InheritanceRuleTest extends TestCase
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
-        self::assertSame('design.inheritance', $rule->getName());
+        self::assertSame('design.dit', $rule->getName());
     }
 
     #[Test]
@@ -115,7 +115,7 @@ final class InheritanceRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 4', $findings[0]->message);
         self::assertStringContainsString('Prefer composition over deep inheritance', $findings[0]->message);
         self::assertSame(5, $findings[0]->metricValue);
-        self::assertSame('design.inheritance', $findings[0]->ruleName);
+        self::assertSame('design.dit', $findings[0]->ruleName);
     }
 
     #[Test]

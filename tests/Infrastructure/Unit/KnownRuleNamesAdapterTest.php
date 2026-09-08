@@ -21,13 +21,13 @@ final class KnownRuleNamesAdapterTest extends TestCase
     public function itHandsBackTheInjectedNamesUnchanged(): void
     {
         $adapter = new KnownRuleNamesAdapter([
-            'complexity.cyclomatic',
+            'complexity.ccn',
             'size.class-count',
             'health.cohesion',
         ]);
 
         self::assertSame(
-            ['complexity.cyclomatic', 'size.class-count', 'health.cohesion'],
+            ['complexity.ccn', 'size.class-count', 'health.cohesion'],
             $adapter->getKnownRuleNames(),
         );
     }

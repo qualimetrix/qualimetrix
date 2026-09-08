@@ -35,7 +35,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
 {
     use CeilingStageFixtures;
 
-    private const string DUPLICATION = 'duplication.code-duplication';
+    private const string DUPLICATION = 'duplication.clone';
 
     #[Test]
     public function itIdentifiesItselfAsTheBaselineStage(): void

@@ -49,8 +49,8 @@ final class HintRendererTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Test',
             severity: Severity::Error,
         );
@@ -80,8 +80,8 @@ final class HintRendererTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Test',
             severity: Severity::Error,
         );

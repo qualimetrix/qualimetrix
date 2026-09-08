@@ -1,6 +1,6 @@
-onlyRules: ['duplication.code-duplication']
+onlyRules: ['duplication.clone']
 rules:
-  duplication.code-duplication:
+  duplication.clone:
     min_lines: 5
     min_tokens: 20
     warning: 5

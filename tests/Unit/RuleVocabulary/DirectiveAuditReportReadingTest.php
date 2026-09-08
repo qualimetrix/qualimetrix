@@ -382,7 +382,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
             self::verdict('src/D.php', 7, 'symbol', '*', 'unmeasured', 'addresses-every-channel'),
             self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'unmeasured', 'already-refused'),
             self::verdict('src/D.php', 21, 'threshold', 'complexity.cognitive', 'unmeasured', 'producer-disabled'),
-            self::verdict('src/E.php', 4, 'symbol', 'complexity.cyclomatic', 'inert'),
+            self::verdict('src/E.php', 4, 'symbol', 'complexity.ccn', 'inert'),
         ], 2));
 
         self::assertSame(
@@ -396,7 +396,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
     {
         return VerdictReport::fromJson(self::reportJson([
             self::verdict('src/A.php', 10, 'threshold', 'code-smell.long-parameter-list', 'effective'),
-            self::verdict('src/A.php', 12, 'threshold', 'complexity.cyclomatic', 'inert'),
+            self::verdict('src/A.php', 12, 'threshold', 'complexity.ccn', 'inert'),
             self::verdict('src/B.php', 10, 'threshold', 'code-smell.long-parameter-list', 'overrun'),
             self::verdict('src/C.php', 8, 'threshold', 'code-smell.long-parameter-list', 'unmeasured', 'masked'),
             self::verdict('src/D.php', 7, 'symbol', '*', 'unmeasured', 'addresses-every-channel'),

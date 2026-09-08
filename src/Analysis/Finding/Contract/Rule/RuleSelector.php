@@ -29,7 +29,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * narrowing at all, and the producer is stopped rather than run and filtered.
  * Forty-seven of the fifty-two static channels declare exactly one level, so
  * `X:<that level>` is identically `X` — including both of the expensive
- * producers, `duplication.code-duplication` and
+ * producers, `duplication.clone` and
  * `architecture.circular-dependency`, whose documented memory-intensive phases
  * hang on {@see isProducerEnabled()} and were being run in full so their whole
  * output could be filtered away. The condition is asked of

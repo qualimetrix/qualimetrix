@@ -545,11 +545,11 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesWithGroupDisable(): void
     {
-        $v1 = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic');
+        $v1 = $this->createFinding('complexity.ccn', code: 'complexity.ccn');
         $v2 = $this->createFinding('complexity.cognitive', code: 'complexity.cognitive');
         $v3 = $this->createFinding('size.method-count', code: 'size.method-count');
 
-        $rule1 = $this->createRule('complexity.cyclomatic', [$v1]);
+        $rule1 = $this->createRule('complexity.ccn', [$v1]);
         $rule2 = $this->createRule('complexity.cognitive', [$v2]);
         $rule3 = $this->createRule('size.method-count', [$v3]);
 
@@ -568,11 +568,11 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itFiltersFindingsByCodeDuringExecute(): void
     {
-        $methodFinding = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic.callable');
-        $classFinding = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic.class');
+        $methodFinding = $this->createFinding('complexity.ccn', code: 'complexity.cyclomatic.callable');
+        $classFinding = $this->createFinding('complexity.ccn', code: 'complexity.cyclomatic.class');
 
         $rule = $this->createHierarchicalRule(
-            'complexity.cyclomatic',
+            'complexity.ccn',
             [SymbolLevel::Callable, SymbolLevel::Class_],
             [
                 SymbolLevel::Callable->value => [$methodFinding],
@@ -595,7 +595,7 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itGetActiveRulesWithAGroupOnlySelector(): void
     {
-        $rule1 = $this->createRule('complexity.cyclomatic', []);
+        $rule1 = $this->createRule('complexity.ccn', []);
         $rule2 = $this->createRule('complexity.cognitive', []);
         $rule3 = $this->createRule('size.method-count', []);
 
@@ -611,7 +611,7 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itDoesNotTreatABarePrefixAsAGroup(): void
     {
-        $rule1 = $this->createRule('complexity.cyclomatic', []);
+        $rule1 = $this->createRule('complexity.ccn', []);
         $rule2 = $this->createRule('complexity.cognitive', []);
 
         $provider = $this->createConfiguredProvider(new RuleSelection(only: ['complexity']));

@@ -345,7 +345,7 @@ final class ChannelCoverageTest extends TestCase
                     new ThresholdDiagnostic(
                         line: 30,
                         subject: $subject,
-                        message: '@qmx-threshold complexity.cyclomatic: warning (20) must not exceed error (10)',
+                        message: '@qmx-threshold complexity.ccn: warning (20) must not exceed error (10)',
                         code: 'warning_exceeds_error',
                     ),
                 ],

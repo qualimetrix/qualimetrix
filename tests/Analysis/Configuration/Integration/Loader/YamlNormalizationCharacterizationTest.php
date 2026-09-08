@@ -137,8 +137,8 @@ final class YamlNormalizationCharacterizationTest extends TestCase
 
         yield 'disabled_rules → disabledRules' => [
             'snake_case root list key normalized to camelCase, items preserved',
-            "disabled_rules:\n  - complexity.cyclomatic\n",
-            ['disabledRules' => ['complexity.cyclomatic']],
+            "disabled_rules:\n  - complexity.ccn\n",
+            ['disabledRules' => ['complexity.ccn']],
         ];
 
         yield 'only_rules → onlyRules' => [
@@ -220,10 +220,10 @@ final class YamlNormalizationCharacterizationTest extends TestCase
 
         yield 'rules: identifier preserved, option keys normalized' => [
             'rules section — level 1 keys are rule slugs (preserve); level 2+ are options (normalize)',
-            "rules:\n  complexity.cyclomatic:\n    enabled: true\n    warning_threshold: 10\n  namespace_size:\n    enabled: false\n",
+            "rules:\n  complexity.ccn:\n    enabled: true\n    warning_threshold: 10\n  namespace_size:\n    enabled: false\n",
             [
                 'rules' => [
-                    'complexity.cyclomatic' => [
+                    'complexity.ccn' => [
                         'enabled' => true,
                         'warningThreshold' => 10,
                     ],
@@ -303,10 +303,10 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ],
         ];
 
-        yield 'architecture.coverage (scalar, single-word key)' => [
-            'architecture.coverage scalar value flows through; key already lowercase',
-            "architecture:\n  coverage: ignore\n",
-            ['architecture' => ['coverage' => 'ignore']],
+        yield 'architecture.coverage-gap (scalar, single-word key)' => [
+            'architecture.coverage-gap scalar value flows through; key already lowercase',
+            "architecture:\n  coverage-gap: ignore\n",
+            ['architecture' => ['coverage-gap' => 'ignore']],
         ];
 
         // Migrated to PRESERVE_SUBTREE in ADR 0009 / Phase 3.5: closes the

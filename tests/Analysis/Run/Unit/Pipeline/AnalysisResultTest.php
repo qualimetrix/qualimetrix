@@ -282,7 +282,7 @@ final class AnalysisResultTest extends TestCase
     public function itMergesThresholdOverridesForOverlappingFiles(): void
     {
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'calculate'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0)));
-        $override1 = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, $subject, ControlScope::Callable);
+        $override1 = new ThresholdOverride('complexity.ccn', 15, 25, 10, $subject, ControlScope::Callable);
         $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20, $subject, ControlScope::Callable);
         $override3 = new ThresholdOverride('size.method-count', 5, 10, 30, $subject, ControlScope::Callable);
 
@@ -369,11 +369,11 @@ final class AnalysisResultTest extends TestCase
     public function itKeepsALevelThatRanOnEitherSideOfTheMerge(): void
     {
         $left = LevelActivity::fromMap([
-            'complexity.cyclomatic' => ['callable' => true, 'class' => false],
+            'complexity.ccn' => ['callable' => true, 'class' => false],
             'coupling.cbo' => ['class' => false],
         ]);
         $right = LevelActivity::fromMap([
-            'complexity.cyclomatic' => ['callable' => false, 'class' => false],
+            'complexity.ccn' => ['callable' => false, 'class' => false],
             'coupling.cbo' => ['class' => true],
             'design.god-class' => ['class' => true],
         ]);
@@ -382,9 +382,9 @@ final class AnalysisResultTest extends TestCase
             ->merge(new RuleExecutionResult([], [], new RuleExclusionStats(), $right))
             ->levelActivity;
 
-        self::assertTrue($merged->ran('complexity.cyclomatic', SymbolLevel::Callable), 'true on the left survives');
+        self::assertTrue($merged->ran('complexity.ccn', SymbolLevel::Callable), 'true on the left survives');
         self::assertTrue($merged->ran('coupling.cbo', SymbolLevel::Class_), 'true on the right survives');
-        self::assertFalse($merged->ran('complexity.cyclomatic', SymbolLevel::Class_), 'false on both stays false');
+        self::assertFalse($merged->ran('complexity.ccn', SymbolLevel::Class_), 'false on both stays false');
         self::assertTrue($merged->declares('design.god-class', SymbolLevel::Class_), 'a producer only one side knew is kept');
     }
 

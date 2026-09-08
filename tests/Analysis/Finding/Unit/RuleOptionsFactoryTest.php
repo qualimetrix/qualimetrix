@@ -963,15 +963,15 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itIncludesRuleNameInNumericValidationError(): void
     {
         $this->registry->setConfigFileOptions([
-            'complexity.cyclomatic' => [
+            'complexity.ccn' => [
                 'error_threshold' => 'not_a_number',
             ],
         ]);
 
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('rule "complexity.cyclomatic"');
+        self::expectExceptionMessage('rule "complexity.ccn"');
 
-        $this->factory->create('complexity.cyclomatic', TestRuleOptions::class);
+        $this->factory->create('complexity.ccn', TestRuleOptions::class);
     }
 
     // --- suppress_namespaces extraction tests ---
@@ -1380,13 +1380,13 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itAppliesNestedThresholdShorthandThroughTheFactory(): void
     {
         $this->registry->setConfigFileOptions([
-            'complexity.cyclomatic' => [
+            'complexity.ccn' => [
                 'callable' => ['threshold' => 15],
             ],
         ]);
 
         /** @var ComplexityOptions $options */
-        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertSame(15, $options->callable->warning);
         self::assertSame(15, $options->callable->error);
@@ -1624,18 +1624,18 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function cliThresholdOverridesConfigFileWarningAndErrorAtNestedLevel(): void
     {
-        // Hierarchical rule (complexity.cyclomatic): eviction must be
+        // Hierarchical rule (complexity.ccn): eviction must be
         // scoped to the `callable:` nesting level, not the rule's top level.
         $this->registry->setConfigFileOptions([
-            'complexity.cyclomatic' => [
+            'complexity.ccn' => [
                 'callable' => ['warning' => 10, 'error' => 20],
                 'class' => ['max_warning' => 30, 'max_error' => 50],
             ],
         ]);
-        $this->registry->addCliOption('complexity.cyclomatic', 'callable.threshold', 15);
+        $this->registry->addCliOption('complexity.ccn', 'callable.threshold', 15);
 
         /** @var ComplexityOptions $options */
-        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertSame(15, $options->callable->warning);
         self::assertSame(15, $options->callable->error);
@@ -1770,18 +1770,18 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function cliThresholdOverridesLegacyWarningThresholdAliasAtTopLevel(): void
     {
-        // complexity.cyclomatic's top-level legacy-flat shorthand accepts
+        // complexity.ccn's top-level legacy-flat shorthand accepts
         // `warningThreshold`/`errorThreshold` as legacy aliases for
         // warning/error — a naive suffix heuristic would misclassify those
         // as threshold markers (they end in "Threshold"). The registry
         // entry corrects this: a CLI `threshold` must still evict them.
         $this->registry->setConfigFileOptions([
-            'complexity.cyclomatic' => ['warningThreshold' => 10, 'errorThreshold' => 20],
+            'complexity.ccn' => ['warningThreshold' => 10, 'errorThreshold' => 20],
         ]);
-        $this->registry->setCliOptions('complexity.cyclomatic', ['threshold' => 15]);
+        $this->registry->setCliOptions('complexity.ccn', ['threshold' => 15]);
 
         /** @var ComplexityOptions $options */
-        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertSame(15, $options->callable->warning);
         self::assertSame(15, $options->callable->error);

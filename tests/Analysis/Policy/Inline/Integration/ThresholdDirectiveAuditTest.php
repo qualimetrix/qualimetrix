@@ -576,7 +576,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
     public function itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing(): void
     {
         $ruleA = 'coupling.cbo';
-        $ruleB = 'complexity.cyclomatic';
+        $ruleB = 'complexity.ccn';
         $subjectA = self::subject('Widget', 'render');
         $subjectB = self::subject('Gadget', 'compute');
         $file = RelativePath::fromString(self::FILE);
@@ -624,7 +624,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
     public function itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules(): void
     {
         $ruleA = 'coupling.cbo';
-        $ruleB = 'complexity.cyclomatic';
+        $ruleB = 'complexity.ccn';
         $ruleC = 'complexity.cognitive';
         $subjectA = self::subject('Widget', 'render');
         $subjectB = self::subject('Gadget', 'compute');

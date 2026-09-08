@@ -166,7 +166,7 @@ Cyclomatic Complexity counts the number of decision points...
 
 <!-- llms-only
 Compact list for agents. See [Default Thresholds](../reference/default-thresholds.md) for values.
-- `complexity.cyclomatic`, `complexity.cognitive`, ...
+- `complexity.ccn`, `complexity.cognitive`, ...
 -->
 ```
 
@@ -190,7 +190,7 @@ Per the single-source-of-truth principle:
 
 ### What to keep in rule pages
 
-- Rule ID (e.g., `**Rule ID:** complexity.cyclomatic`)
+- Rule ID (e.g., `**Rule ID:** complexity.ccn`)
 - Judged metric, where the rule declares one (e.g., `**Judged metric:** complexity.ccn`) — the rule ID and the metric key are separate names in separate vocabularies, and this line is the only place the pair is written down for a reader. Take the keys from `bin/qmx rules`, never from the spelling of the rule ID. RU pages use `**Судимая метрика:**` / `**Судимые метрики:**`
 - `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`
 

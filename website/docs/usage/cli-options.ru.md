@@ -247,7 +247,7 @@ bin/qmx check src/ --namespace='App\*\Order'
 
 Фильтрует нарушения и худших нарушителей по выбранным пространствам имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
 
-Находки уровня проекта (`architecture.coverage` и прочие диагностики, судящие о прогоне целиком) не выбираются паттерном пространства имён никогда, включая `*`: они не принадлежат ни одному пространству имён.
+Находки уровня проекта (`architecture.coverage-gap` и прочие диагностики, судящие о прогоне целиком) не выбираются паттерном пространства имён никогда, включая `*`: они не принадлежат ни одному пространству имён.
 
 То же правило сопоставления действует для drill-down по здоровью и списков худших нарушителей, которые включает эта опция, и для опции `include_namespaces` правила `coupling.distance`.
 
@@ -575,7 +575,7 @@ bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Оптимизация памяти"
-    Отключение правила `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication.code-duplication`, если возникают ошибки нехватки памяти. Написание с уровнем — `--disable-rule=duplication.code-duplication:project` — пропускает её так же: канал сообщает ровно на этом уровне, поэтому погасить уровень значит погасить правило. Производитель останавливается, как только селекторы отключения вместе накрывают каждый уровень каждого его канала; один уровень двухуровневого канала оставляет его работать, потому что второму уровню ещё есть о чём сообщить.
+    Отключение правила `duplication.clone` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication.clone`, если возникают ошибки нехватки памяти. Написание с уровнем — `--disable-rule=duplication.clone:project` — пропускает её так же: канал сообщает ровно на этом уровне, поэтому погасить уровень значит погасить правило. Производитель останавливается, как только селекторы отключения вместе накрывают каждый уровень каждого его канала; один уровень двухуровневого канала оставляет его работать, потому что второму уровню ещё есть о чём сообщить.
 
 ### `--only-rule`
 
@@ -590,7 +590,7 @@ bin/qmx check src/ --disable-rule=health.complexity
 bin/qmx check src/ --only-rule=complexity.*
 
 # Запустить два конкретных правила
-bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+bin/qmx check src/ --only-rule=complexity.ccn --only-rule=size.method-count
 
 # Выбрать один канал встроенного измерения здоровья: производитель и канал
 # называются одинаково, потому что каждое из шести измерений — сам себе производитель
@@ -631,8 +631,8 @@ wildcard. Это то же ограничение, что действует д�
 `--only-rule`/`--disable-rule` и для ключей секции `rules:` в YAML. Можно указывать несколько раз:
 
 ```bash
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
+bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
+bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
 ```
 
 `suppress_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
@@ -649,22 +649,22 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Сложность"
 
-| Флаг                           | Правило               | Опция             |
-| ------------------------------ | --------------------- | ----------------- |
-| `--cyclomatic-warning=N`       | complexity.cyclomatic | callable.warning  |
-| `--cyclomatic-error=N`         | complexity.cyclomatic | callable.error    |
-| `--cyclomatic-class-warning=N` | complexity.cyclomatic | class.max_warning |
-| `--cyclomatic-class-error=N`   | complexity.cyclomatic | class.max_error   |
-| `--cognitive-warning=N`        | complexity.cognitive  | callable.warning  |
-| `--cognitive-error=N`          | complexity.cognitive  | callable.error    |
-| `--cognitive-class-warning=N`  | complexity.cognitive  | class.max_warning |
-| `--cognitive-class-error=N`    | complexity.cognitive  | class.max_error   |
-| `--npath-warning=N`            | complexity.npath      | callable.warning  |
-| `--npath-error=N`              | complexity.npath      | callable.error    |
-| `--npath-class-warning=N`      | complexity.npath      | class.max_warning |
-| `--npath-class-error=N`        | complexity.npath      | class.max_error   |
-| `--wmc-warning=N`              | complexity.wmc        | warning           |
-| `--wmc-error=N`                | complexity.wmc        | error             |
+| Флаг                           | Правило              | Опция             |
+| ------------------------------ | -------------------- | ----------------- |
+| `--cyclomatic-warning=N`       | complexity.ccn       | callable.warning  |
+| `--cyclomatic-error=N`         | complexity.ccn       | callable.error    |
+| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_warning |
+| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_error   |
+| `--cognitive-warning=N`        | complexity.cognitive | callable.warning  |
+| `--cognitive-error=N`          | complexity.cognitive | callable.error    |
+| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_warning |
+| `--cognitive-class-error=N`    | complexity.cognitive | class.max_error   |
+| `--npath-warning=N`            | complexity.npath     | callable.warning  |
+| `--npath-error=N`              | complexity.npath     | callable.error    |
+| `--npath-class-warning=N`      | complexity.npath     | class.max_warning |
+| `--npath-class-error=N`        | complexity.npath     | class.max_error   |
+| `--wmc-warning=N`              | complexity.wmc       | warning           |
+| `--wmc-error=N`                | complexity.wmc       | error             |
 
 === "Связанность"
 
@@ -694,8 +694,8 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 | Флаг                                 | Правило                       | Опция               |
 | ------------------------------------ | ----------------------------- | ------------------- |
-| `--dit-warning=N`                    | design.inheritance            | warning             |
-| `--dit-error=N`                      | design.inheritance            | error               |
+| `--dit-warning=N`                    | design.dit                    | warning             |
+| `--dit-error=N`                      | design.dit                    | error               |
 | `--lcom-warning=N`                   | cohesion.lcom                 | warning             |
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
@@ -713,12 +713,12 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Сопровождаемость"
 
-| Флаг                    | Правило               | Опция         |
-| ----------------------- | --------------------- | ------------- |
-| `--mi-warning=N`        | maintainability.index | warning       |
-| `--mi-error=N`          | maintainability.index | error         |
-| `--mi-min-statements=N` | maintainability.index | minStatements |
-| `--mi-exclude-tests`    | maintainability.index | excludeTests  |
+| Флаг                    | Правило            | Опция         |
+| ----------------------- | ------------------ | ------------- |
+| `--mi-warning=N`        | maintainability.mi | warning       |
+| `--mi-error=N`          | maintainability.mi | error         |
+| `--mi-min-statements=N` | maintainability.mi | minStatements |
+| `--mi-exclude-tests`    | maintainability.mi | excludeTests  |
 
 === "Запахи кода"
 
@@ -952,11 +952,11 @@ Complexity
     --cognitive-error (--rule-opt=complexity.cognitive:callable.error=...)
     --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
     --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
-  complexity.cyclomatic                    Checks cyclomatic complexity at method and class levels
-    --cyclomatic-warning (--rule-opt=complexity.cyclomatic:callable.warning=...)
-    --cyclomatic-error (--rule-opt=complexity.cyclomatic:callable.error=...)
-    --cyclomatic-class-warning (--rule-opt=complexity.cyclomatic:class.max_warning=...)
-    --cyclomatic-class-error (--rule-opt=complexity.cyclomatic:class.max_error=...)
+  complexity.ccn                    Checks cyclomatic complexity at method and class levels
+    --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
+    --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
+    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
+    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
   ...
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>

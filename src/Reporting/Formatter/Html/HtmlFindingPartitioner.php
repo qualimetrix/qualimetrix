@@ -71,7 +71,7 @@ final readonly class HtmlFindingPartitioner
      * @param array<string, HtmlTreeNode> $nodesByPath
      * @param array<string, list<Finding>> $findingsByNode
      *
-     * @qmx-threshold complexity.cyclomatic warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
+     * @qmx-threshold complexity.ccn warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
      */
     public function attach(
         array $nodesByPath,

@@ -40,7 +40,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = $this->createRule();
 
-        self::assertSame('duplication.code-duplication', $rule->getName());
+        self::assertSame('duplication.clone', $rule->getName());
         self::assertSame('Detects duplicated code blocks', $rule->getDescription());
     }
 
@@ -108,7 +108,7 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertCount(1, $findings);
 
         $v = $findings[0];
-        self::assertSame('duplication.code-duplication', $v->ruleName);
+        self::assertSame('duplication.clone', $v->ruleName);
         self::assertSame('src/A.php', $v->location->pathString());
         self::assertSame(10, $v->location->line);
         self::assertSame(Severity::Warning, $v->severity);

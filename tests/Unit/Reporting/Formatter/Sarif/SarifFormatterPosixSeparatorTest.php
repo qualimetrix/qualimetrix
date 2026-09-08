@@ -34,8 +34,8 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Sub/Dir/Foo.php'), 42, true),
             symbolPath: SymbolPath::forClass('App\\Sub\\Dir', 'Foo'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'too complex',
             severity: Severity::Warning,
         );

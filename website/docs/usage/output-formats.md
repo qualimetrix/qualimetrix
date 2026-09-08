@@ -84,7 +84,7 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.ccn]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
 src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
 
@@ -183,12 +183,12 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "line": 42,
             "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
-            "channel": "complexity.cyclomatic",
+            "channel": "complexity.ccn",
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
-            "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic",
+            "rule": "complexity.ccn",
+            "code": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -202,7 +202,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "limit": null,
         "truncated": false,
         "byRule": {
-            "complexity.cyclomatic": 2,
+            "complexity.ccn": 2,
             "coupling.cbo": 1
         }
     },
@@ -403,7 +403,7 @@ SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `level` (error/wa
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic",
+                    "ruleId": "complexity.ccn",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -459,7 +459,7 @@ Array of objects with `description`, `check_name`, `fingerprint`, `severity` (cr
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic",
+        "check_name": "complexity.ccn",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -502,7 +502,7 @@ Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **CI usage (GitHub Actions):**

@@ -62,20 +62,32 @@ final class DirectiveAddressabilityTest extends TestCase
 
     /**
      * A threshold naming the metric key a report prints beside the channel.
-     * The two spellings are eight edits apart, so the near-spelling search
-     * cannot reach the answer: without the declared relation the author is
-     * told nothing is close to what they typed.
+     *
+     * Before the X12 rule-vocabulary rename this fixture used
+     * `complexity.ccn`: back then the channel was named `complexity.cyclomatic`
+     * while the metric it judged was already `complexity.ccn`, so the metric
+     * key was not itself a rule name. ADR 0048 renamed the channel to
+     * `complexity.ccn` too, which made the metric key **and** the rule name
+     * identical — the premise this test exists to check disappeared, and
+     * `problemWithThreshold()` started returning `null` because the name now
+     * resolves as a rule. `code-smell.parameter-count` keeps the premise
+     * true: it is the metric {@see \Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule}
+     * and {@see \Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule}
+     * both judge, and it is nine edits from the one channel this fixture
+     * declares for it, so the near-spelling search cannot reach the answer:
+     * without the declared relation the author is told nothing is close to
+     * what they typed.
      */
     #[Test]
     public function itAnswersAThresholdNamingAJudgedMetricWithTheChannelThatJudgesIt(): void
     {
-        $rejection = self::addressability()->problemWithThreshold(self::threshold('complexity.ccn'));
+        $rejection = self::addressability()->problemWithThreshold(self::threshold('code-smell.parameter-count'));
 
         self::assertNotNull($rejection);
         self::assertFalse($rejection->ruleExistsButCannotBeRetuned);
-        self::assertStringContainsString('"complexity.ccn" is a metric, not a rule', $rejection->message);
+        self::assertStringContainsString('"code-smell.parameter-count" is a metric, not a rule', $rejection->message);
         self::assertStringContainsString(
-            'channel "complexity.cyclomatic" of rule "complexity.cyclomatic"',
+            'channel "code-smell.long-parameter-list" of rule "code-smell.long-parameter-list"',
             $rejection->message,
         );
     }
@@ -117,10 +129,10 @@ final class DirectiveAddressabilityTest extends TestCase
     #[Test]
     public function itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid(): void
     {
-        $rejection = self::addressability()->problemWithThreshold(self::threshold('complexity.cyclomatic:class'));
+        $rejection = self::addressability()->problemWithThreshold(self::threshold('complexity.ccn:class'));
 
         self::assertNotNull($rejection);
-        self::assertStringContainsString('--rule-opt complexity.cyclomatic:class.<option>=<value>', $rejection->message);
+        self::assertStringContainsString('--rule-opt complexity.ccn:class.<option>=<value>', $rejection->message);
     }
 
     #[Test]
@@ -157,7 +169,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     /**
      * The corpus directive fixed by codex-01/claude-11 stays GREEN only because
-     * of this ordering: `duplication.code-duplication:class` names an
+     * of this ordering: `duplication.clone:class` names an
      * impossible pair (the channel reports at project level only) AND reaches
      * the ban, and {@see DirectiveAddressability::problemWithSuppression()}
      * asks the pair grammar first. Reordering the two checks would silently
@@ -169,7 +181,7 @@ final class DirectiveAddressabilityTest extends TestCase
     public function itJudgesAnImpossiblePairBeforeTheBanOnAChannelBothReject(): void
     {
         $message = self::addressability()->problemWithSuppression(
-            self::suppression('duplication.code-duplication:class'),
+            self::suppression('duplication.clone:class'),
         );
 
         self::assertNotNull($message);
@@ -182,26 +194,33 @@ final class DirectiveAddressabilityTest extends TestCase
     {
         return new DirectiveAddressability(new ChannelUniverse(
             [
-                'complexity.cyclomatic' => ChannelDeclaration::judging(
+                'complexity.ccn' => ChannelDeclaration::judging(
                     WorseDirection::Higher,
                     JudgedMetrics::of('complexity.ccn', 'complexity.ccn.max'),
                     SymbolLevel::Class_,
                 ),
                 'coupling.cbo' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
-                'duplication.code-duplication' => ChannelDeclaration::magnitude(
+                'duplication.clone' => ChannelDeclaration::magnitude(
                     WorseDirection::Higher,
                     SymbolLevel::Project,
                 ),
+                'code-smell.long-parameter-list' => ChannelDeclaration::judging(
+                    WorseDirection::Higher,
+                    JudgedMetrics::of('code-smell.parameter-count'),
+                    SymbolLevel::Callable,
+                ),
             ],
             [
-                'complexity.cyclomatic' => ['complexity.cyclomatic'],
+                'complexity.ccn' => ['complexity.ccn'],
                 'coupling.cbo' => ['coupling.cbo'],
-                'duplication.code-duplication' => ['duplication.code-duplication'],
+                'duplication.clone' => ['duplication.clone'],
+                'code-smell.long-parameter-list' => ['code-smell.long-parameter-list'],
             ],
             [
-                'complexity.cyclomatic' => true,
+                'complexity.ccn' => true,
                 'coupling.cbo' => true,
-                'duplication.code-duplication' => true,
+                'duplication.clone' => true,
+                'code-smell.long-parameter-list' => true,
             ],
             new ResolvedComputedMetricDefinitions([]),
         ));

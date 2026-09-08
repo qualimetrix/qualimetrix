@@ -26,10 +26,10 @@ final class HealthDimensionCatalog
             ['key' => 'coupling.distance.avg', 'altKey' => MetricName::COUPLING_DISTANCE, 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
         ],
         'health.typing' => [
-            ['key' => 'design.type-coverage.pct', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
+            ['key' => 'design.type-coverage.all', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
         ],
         'health.maintainability' => [
-            ['key' => 'maintainability.mi.avg', 'altKey' => 'maintainability.mi', 'label' => 'MI avg', 'ideal' => '82+', 'direction' => 'higher'],
+            ['key' => 'maintainability.mi.avg', 'altKey' => MetricName::MAINTAINABILITY_MI, 'label' => 'MI avg', 'ideal' => '82+', 'direction' => 'higher'],
             ['key' => 'maintainability.mi.p5', 'altKey' => null, 'label' => 'MI p5', 'ideal' => '≥65', 'direction' => 'higher'],
             ['key' => 'maintainability.mi.min', 'altKey' => null, 'label' => 'MI min', 'ideal' => '≥40', 'direction' => 'higher'],
         ],

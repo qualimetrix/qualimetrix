@@ -165,7 +165,7 @@ final class RelationsFilterIntegrationTest extends TestCase
                 domain:
                   - target: vendor
                     relations: [inheritance]
-              coverage: ignore
+              coverage-gap: ignore
             YAML);
 
         try {
@@ -234,7 +234,7 @@ final class RelationsFilterIntegrationTest extends TestCase
                     'patterns' => ['Fixtures\\RelationsSample\\Vendor\\**'],
                 ],
             ],
-            'coverage' => 'ignore',
+            'coverage-gap' => 'ignore',
         ];
     }
 

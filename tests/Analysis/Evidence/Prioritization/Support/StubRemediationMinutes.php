@@ -30,7 +30,7 @@ final class StubRemediationMinutes
     {
         return [
             // Complexity
-            'complexity.cyclomatic' => 30,
+            'complexity.ccn' => 30,
             'complexity.cognitive' => 30,
             'complexity.npath' => 30,
             'complexity.wmc' => 30,
@@ -42,7 +42,7 @@ final class StubRemediationMinutes
             'coupling.distance' => 30,
 
             // Design
-            'design.inheritance' => 30,
+            'design.dit' => 30,
             'design.noc' => 20,
             'design.type-coverage.param' => 15,
             'design.type-coverage.return' => 15,
@@ -57,7 +57,7 @@ final class StubRemediationMinutes
             'size.property-count' => 15,
 
             // Maintainability
-            'maintainability.index' => 60,
+            'maintainability.mi' => 60,
 
             // Code smell
             'code-smell.constructor-overinjection' => 60,
@@ -86,7 +86,7 @@ final class StubRemediationMinutes
             'architecture.circular-dependency' => 120,
             'architecture.layer-violation' => 15,
             'annotation.directive' => 15,
-            'duplication.code-duplication' => 15,
+            'duplication.clone' => 15,
             'computed' => 15,
 
             'architecture.unassigned-class' => 15,
@@ -96,7 +96,7 @@ final class StubRemediationMinutes
             // ruleName, distinct from the producing class's own NAME — see
             // ChannelDeclarationCompilerPass, which inherits the producer's
             // minutes for these at container-build time.
-            'architecture.coverage' => 15,
+            'architecture.coverage-gap' => 15,
             'architecture.unreachable-layer' => 15,
             'architecture.potential-shadow' => 15,
             'architecture.empty-template' => 15,

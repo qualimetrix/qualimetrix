@@ -63,7 +63,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $definition->getArgument('$staticDeclarations');
 
         self::assertSame(
-            ['code-smell.goto', 'maintainability.index'],
+            ['code-smell.goto', 'maintainability.mi'],
             array_keys($declarations),
         );
         self::assertEquals(
@@ -76,12 +76,12 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
                 JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
                 SymbolLevel::Callable,
             ),
-            $declarations['maintainability.index'],
+            $declarations['maintainability.mi'],
         );
         self::assertSame(
             [
                 'code-smell.goto' => ['code-smell.goto'],
-                'maintainability.index' => ['maintainability.index'],
+                'maintainability.mi' => ['maintainability.mi'],
             ],
             $container->getDefinition(ChannelUniverse::class)
                 ->getArgument('$staticChannelKeysByProducer'),
@@ -102,7 +102,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticDeclarations');
 
-        self::assertArrayHasKey('complexity.cyclomatic', $declarations);
+        self::assertArrayHasKey('complexity.ccn', $declarations);
     }
 
     #[Test]
@@ -123,13 +123,13 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$staticChannelKeysByProducer');
 
         self::assertContains(
-            'architecture.coverage',
+            'architecture.coverage-gap',
             $channelsByProducer[LayerViolationRule::NAME],
         );
     }
 
     /**
-     * `architecture.coverage` is emitted by {@see LayerDeclarationValidator}
+     * `architecture.coverage-gap` is emitted by {@see LayerDeclarationValidator}
      * under its own identity, distinct from the producer rule's `NAME`
      * (`architecture.layer-violation`) — it inherits that rule's declared
      * `REMEDIATION_MINUTES` rather than needing a constant of its own on a
@@ -156,7 +156,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$minutesByRule');
 
         self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule[LayerViolationRule::NAME]);
-        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage']);
+        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage-gap']);
     }
 
     #[Test]

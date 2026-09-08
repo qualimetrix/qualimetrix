@@ -19,7 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Among the project's own declared channels there is not one pair where one
  * channel's code is a dotted descendant of another channel's code. A test
- * written against real names (`architecture.coverage` and friends) would
+ * written against real names (`architecture.coverage-gap` and friends) would
  * therefore stay green with the group semantics completely broken: there is
  * nothing for a parent selector to wrongly swallow. The fixture below supplies
  * exactly that missing pair, so every case here can actually fail.

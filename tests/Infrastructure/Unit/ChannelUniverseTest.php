@@ -58,7 +58,7 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itExposesExactlyTheStaticDeclarationsItWasGiven(): void
     {
-        $channel = new FindingChannel('maintainability.index');
+        $channel = new FindingChannel('maintainability.mi');
         $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_);
 
         $universe = $this->universe(declarations: [$channel->code => $declaration]);
@@ -115,12 +115,12 @@ final class ChannelUniverseTest extends TestCase
         $universe = $this->universe(channelsByProducer: [
             'architecture.layer-violation' => [
                 'architecture.layer-violation',
-                'architecture.coverage',
+                'architecture.coverage-gap',
             ],
         ]);
 
         self::assertSame(
-            ['architecture.layer-violation', 'architecture.coverage'],
+            ['architecture.layer-violation', 'architecture.coverage-gap'],
             array_map(
                 static fn(FindingChannel $channel): string => $channel->code,
                 $universe->channelsProducedBy('architecture.layer-violation'),
@@ -163,14 +163,14 @@ final class ChannelUniverseTest extends TestCase
     public function itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName(): void
     {
         $universe = $this->universe(channelsByProducer: [
-            'architecture.layer-violation' => ['architecture.coverage'],
+            'architecture.layer-violation' => ['architecture.coverage-gap'],
             'coupling.cbo' => ['coupling.cbo.class'],
         ]);
 
         self::assertSame('coupling.cbo', $universe->producerOf('coupling.cbo.class'));
         self::assertSame(
             'architecture.layer-violation',
-            $universe->producerOf('architecture.coverage'),
+            $universe->producerOf('architecture.coverage-gap'),
             'Stripping a dotted suffix would answer "architecture" — the producer is not derivable from the name.',
         );
         self::assertNull($universe->producerOf('coupling.cbo'));

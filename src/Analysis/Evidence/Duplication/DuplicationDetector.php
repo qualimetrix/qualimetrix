@@ -78,7 +78,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
 
     public static function producerRuleName(): string
     {
-        return 'duplication.code-duplication';
+        return 'duplication.clone';
     }
 
     public function resetForRun(): void
@@ -117,7 +117,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
     private function loadOptions(): void
     {
         $ruleOptions = $this->ruleConfiguration->all();
-        $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
+        $dupOptions = $ruleOptions['duplication.clone'] ?? [];
         $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
         $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
     }

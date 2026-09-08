@@ -155,8 +155,8 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     {
         $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
-            'complexity.cyclomatic',
-            'complexity.cyclomatic',
+            'complexity.ccn',
+            'complexity.ccn',
             SymbolPath::forMethod('App', 'Foo', 'bar'),
             null,
         );
@@ -201,8 +201,8 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     {
         $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
-            'complexity.cyclomatic',
-            'complexity.cyclomatic',
+            'complexity.ccn',
+            'complexity.ccn',
             SymbolPath::forMethod('App', 'Foo', 'bar'),
             $metricValue,
         );
@@ -223,7 +223,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
                 BaselineIdentity::forFinding($finding),
                 $reason,
                 'the file said something this build does not read',
-                ['channel' => 'complexity.cyclomatic'],
+                ['channel' => 'complexity.ccn'],
             ),
         ]));
 
@@ -291,8 +291,8 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     private static function duplicationFinding(int|float|null $magnitude, int $line): Finding
     {
         return self::findingOn(
-            'duplication.code-duplication',
-            'duplication.code-duplication',
+            'duplication.clone',
+            'duplication.clone',
             SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php')),
             $magnitude,
             $line,

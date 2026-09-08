@@ -23,7 +23,7 @@
 # Twenty-two of the fifty-two channels here carry a judges: token. The thirty
 # that do not split into twenty-six occurrence channels, four magnitudes that
 # publish a number of their own making (architecture.circular-dependency,
-# architecture.unassigned-class, duplication.code-duplication,
+# architecture.unassigned-class, duplication.clone,
 # design.god-class), and -- inside the twenty-six -- coupling.class-rank,
 # which does read a catalog metric and stays occurrence anyway by ADR 0017
 # point 5.
@@ -51,8 +51,8 @@
 # fixture line could enumerate it.
 #
 # P1a of the ADR 0017's P1 declared three static channels end
-# to end to prove the mechanism (code-smell.goto, complexity.cyclomatic,
-# maintainability.index). P1b fills in every other static emission point in
+# to end to prove the mechanism (code-smell.goto, complexity.ccn,
+# maintainability.mi). P1b fills in every other static emission point in
 # violation-magnitude-inventory.md, per the shape mapping and the four named
 # families of ADR 0017. One emission point remains deliberately outside this
 # file: annotation.unsupported-threshold / annotation.invalid-threshold(.*),
@@ -74,7 +74,7 @@ annotation.unresolved-directive - file config-error
 annotation.unsupported-threshold - file config-error
 annotation.unused-directive - file
 architecture.circular-dependency higher project
-architecture.coverage - project config-error
+architecture.coverage-gap - project config-error
 architecture.empty-template - project config-error
 architecture.layer-violation - class
 architecture.pending-layer-matched - project config-error
@@ -97,7 +97,7 @@ code-smell.unreachable-code higher callable judges:code-smell.unreachable-code
 code-smell.unused-private higher class judges:code-smell.unused-private.total
 cohesion.lcom higher class judges:cohesion.lcom
 complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
-complexity.cyclomatic higher callable,class judges:complexity.ccn,complexity.ccn.max
+complexity.ccn higher callable,class judges:complexity.ccn,complexity.ccn.max
 complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max
 complexity.wmc higher class judges:complexity.wmc
 coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app
@@ -106,13 +106,13 @@ coupling.distance higher namespace judges:coupling.distance
 coupling.instability higher class,namespace judges:coupling.instability
 design.data-class lower class judges:design.woc
 design.god-class higher class
-design.inheritance higher class judges:design.dit
+design.dit higher class judges:design.dit
 design.noc higher class judges:design.noc
 design.type-coverage.param lower class judges:design.type-coverage.param
 design.type-coverage.property lower class judges:design.type-coverage.property
 design.type-coverage.return lower class judges:design.type-coverage.return
-duplication.code-duplication higher project
-maintainability.index lower callable judges:maintainability.mi
+duplication.clone higher project
+maintainability.mi lower callable judges:maintainability.mi
 security.command-injection - callable
 security.hardcoded-credentials - class
 security.sensitive-parameter - callable

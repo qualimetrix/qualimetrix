@@ -298,8 +298,8 @@ final class CheckstyleFormatterTest extends TestCase
             ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic',
+                ruleName: 'complexity.ccn',
+                code: 'complexity.ccn',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -356,8 +356,8 @@ final class CheckstyleFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class is not assigned to any architectural layer',
                 severity: Severity::Info,
             ))

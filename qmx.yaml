@@ -1308,7 +1308,7 @@ architecture:
       - external
     external: []
 
-  coverage: error
+  coverage-gap: error
 # END GENERATED MODULAR ARCHITECTURE
 
 rules:
@@ -1564,7 +1564,7 @@ rules:
   # The MetricHintProvider entry was removed once the rule stopped reporting duplicates
   # that lie entirely inside constant data tables — its 22 hits were all inside
   # `const array METRICS`/`RANGES`, so the exclusion is now a no-op (verified: zero delta).
-  duplication.code-duplication:
+  duplication.clone:
     min_tokens: 100
     suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Options.php
@@ -1591,7 +1591,7 @@ rules:
       # An InstabilityRule entry beside it was measured as inert and removed.
       - src/Analysis/Evidence/Coupling/CboRule.php
 
-  complexity.cyclomatic:
+  complexity.ccn:
     suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
@@ -1701,7 +1701,7 @@ rules:
     warning: 5
     error: 5
 
-  design.inheritance:
+  design.dit:
     warning: 4
     error: 4
 
@@ -1710,7 +1710,7 @@ rules:
       - src/Reporting/Formatter/Health
 
   # --- Maintainability ---
-  maintainability.index:
+  maintainability.mi:
     warning: 35
     error: 35
 

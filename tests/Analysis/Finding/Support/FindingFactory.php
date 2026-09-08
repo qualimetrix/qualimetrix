@@ -27,8 +27,8 @@ final class FindingFactory
     public static function magnitude(
         SymbolPath $symbolPath,
         int|float $metricValue,
-        string $ruleName = 'complexity.cyclomatic',
-        string $code = 'complexity.cyclomatic',
+        string $ruleName = 'complexity.ccn',
+        string $code = 'complexity.ccn',
         ?MetricSubject $subject = null,
     ): Finding {
         return new Finding(

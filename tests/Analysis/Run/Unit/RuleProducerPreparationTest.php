@@ -169,7 +169,7 @@ final class RuleProducerPreparationTest extends TestCase
             public function channelsProducedBy(string $producerRuleName): array
             {
                 return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new FindingChannel('architecture.coverage')]
+                    ? [new FindingChannel('architecture.coverage-gap')]
                     : [];
             }
         };
@@ -177,7 +177,7 @@ final class RuleProducerPreparationTest extends TestCase
         $this->preparation(
             architecture: $architecture,
             selector: new RuleSelector($channels),
-            selection: new RuleSelection(only: ['architecture.coverage']),
+            selection: new RuleSelection(only: ['architecture.coverage-gap']),
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],

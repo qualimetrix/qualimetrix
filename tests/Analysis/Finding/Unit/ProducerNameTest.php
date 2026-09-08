@@ -39,7 +39,7 @@ final class ProducerNameTest extends TestCase
     public static function wellFormedNames(): iterable
     {
         yield 'one segment' => ['computed'];
-        yield 'two segments' => ['complexity.cyclomatic'];
+        yield 'two segments' => ['complexity.ccn'];
         yield 'kebab inside a segment' => ['code-smell.long-parameter-list'];
         yield 'three segments' => ['design.type-coverage.param'];
         yield 'digits after the first letter' => ['security.md5'];
@@ -67,7 +67,7 @@ final class ProducerNameTest extends TestCase
         yield 'doubled separator' => ['complexity..cyclomatic', 'the middle segment is empty'];
         yield 'upper case' => ['Complexity.Foo', '--group=complexity would not find it, the filter being case-sensitive'];
         yield 'underscore' => ['computed.branch_load', 'snake was the encoding vocabulary Ш5e3 removed'];
-        yield 'space inside a segment' => ['complexity.cyclomatic complexity', 'a space is not part of any name'];
+        yield 'space inside a segment' => ['complexity.ccn complexity', 'a space is not part of any name'];
         yield 'leading digit' => ['complexity.2ndpass', 'a segment starts with a letter'];
         yield 'doubled hyphen' => ['code--smell.eval', 'kebab separates with one hyphen'];
         yield 'trailing hyphen' => ['code-smell.eval-', 'the trailing kebab word is empty'];

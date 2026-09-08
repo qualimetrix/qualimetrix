@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  *
  * Every answer is a reverse query against the universe rather than string
  * surgery on what was typed. There is no suffix to strip since a channel name
- * carries no level: stripping anything off `architecture.coverage` gives a
+ * carries no level: stripping anything off `architecture.coverage-gap` gives a
  * name that is not a rule, and two rules of the forty-one do not derive their
  * channel codes from their name at all.
  */
@@ -108,9 +108,10 @@ final readonly class DirectiveNameHints
      * near spellings.
      *
      * The metric branch sits ahead of the near-spelling search because that
-     * search cannot reach it: `complexity.ccn` is eight edits from
-     * `complexity.cyclomatic`, so an author who typed the metric key they read
-     * in a report used to be told that no declared name was close to it.
+     * search cannot reach it: `code-smell.parameter-count` is well past
+     * {@see self::SUGGESTION_DISTANCE} edits from `code-smell.long-parameter-list`,
+     * so an author who typed the metric key they read in a report used to be
+     * told that no declared name was close to it.
      */
     public function forRuleName(string $name): string
     {
@@ -141,11 +142,13 @@ final readonly class DirectiveNameHints
      * questions it answers.
      *
      * Answered from the declarations rather than from the spelling of the
-     * name, which is the whole point: `complexity.ccn` and
-     * `complexity.cyclomatic` are one letter short of unrelated as strings,
-     * and a channel whose code happens to equal a metric key says nothing
-     * about whether it reads that metric. A metric two channels judge yields
-     * two pairs, because both are things the author could have meant.
+     * name, which is the whole point: `code-smell.parameter-count` and
+     * `code-smell.long-parameter-list` are unrelated as strings, and a
+     * channel whose code happens to equal a metric key says nothing about
+     * whether it reads that metric. A metric two channels judge yields two
+     * pairs, because both are things the author could have meant — as with
+     * `code-smell.parameter-count`, judged by both `code-smell.long-parameter-list`
+     * and `code-smell.constructor-overinjection`.
      *
      * The run-time computed-metric family is out of scope by construction: a
      * `computed.*` channel's number is its own formula's result, never a

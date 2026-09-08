@@ -37,7 +37,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * permissive.
  *
  * The `lower`-direction channel carries most of these cases on purpose:
- * `maintainability.index` is worse the *smaller* it gets, so a rule written
+ * `maintainability.mi` is worse the *smaller* it gets, so a rule written
  * as "the number may only go down" — the shape 10.1 was written to fix —
  * would look right on every `higher` channel and quietly widen this one.
  */
@@ -45,7 +45,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class BaselineUpdateCommandTest extends TestCase
 {
     private const string LOWER_CHANNEL = 'maintainability.index.class';
-    private const string HIGHER_CHANNEL = 'duplication.code-duplication';
+    private const string HIGHER_CHANNEL = 'duplication.clone';
 
     private string $tempDir;
     private string $baselinePath;

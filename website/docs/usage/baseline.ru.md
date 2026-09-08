@@ -30,7 +30,7 @@ Lifecycle-команды baseline измеряют нарушения после
 
 Baseline не заставляет несрабатывающее правило сработать. Исчезнувшее нарушение становится stale, но этим ещё не доказано, что оно исправлено.
 
-Каналы конфигурационных ошибок никогда не попадают в baseline ни на каком пути: пять диагностик layer-policy (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) и три диагностики inline-директив (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) вместо этого безусловно завершают прогон — см. [Подавление в исходниках](#подавление-в-исходниках) ниже.
+Каналы конфигурационных ошибок никогда не попадают в baseline ни на каком пути: пять диагностик layer-policy (`architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) и три диагностики inline-директив (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) вместо этого безусловно завершают прогон — см. [Подавление в исходниках](#подавление-в-исходниках) ниже.
 
 ## Lifecycle-команды
 
@@ -99,7 +99,7 @@ bin/qmx baseline:rename-channels baseline.json channels.tsv --format=json
 
 ```text
 old	new	reason
-complexity.cyclomatic	complexity.ccn	переименован в vX.Y
+complexity.ccn	complexity.ccn	переименован в vX.Y
 ```
 
 По самому файлу команда отказывает ровно в тех случаях, в которых отказала бы
@@ -153,7 +153,7 @@ JSON-массивом — они переносятся без изменени�
 
 ```bash
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.callable'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.ccn#complexity.cyclomatic.callable'
 ```
 
 `baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ.
@@ -225,20 +225,20 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 У большинства правил имя правила и его единственный канал совпадают, поэтому различие незаметно. Оно становится заметным для правил ниже, которые сообщают через несколько каналов — голое имя правила для них **не** является допустимым аргументом `@qmx-ignore`:
 
-| Правило                 | Каналы                                                          |
-| ----------------------- | --------------------------------------------------------------- |
-| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
-| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
-| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`           |
-| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
-| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`  |
+| Правило                | Каналы                                                          |
+| ---------------------- | --------------------------------------------------------------- |
+| `complexity.ccn`       | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
+| `complexity.cognitive` | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
+| `complexity.npath`     | `complexity.npath.callable`, `complexity.npath.class`           |
+| `coupling.cbo`         | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
+| `coupling.instability` | `coupling.instability.class`, `coupling.instability.namespace`  |
 
 Подавляй один канал по точному имени или все каналы правила через wildcard, например `@qmx-ignore complexity.cyclomatic.*`.
 
 Каналом может быть и вычисляемая метрика, например `@qmx-ignore health.cohesion` — это допустимо, пока `computed_metrics:` всё ещё определяет эту метрику. Удаление метрики превращает аннотацию в ошибку: висячая ссылка — та же ошибка, что и опечатка.
 
 !!! warning "Пять каналов здесь никогда нельзя подавить"
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow` и `architecture.empty-template` — это конфигурационные ошибки, а не долг: `@qmx-ignore` не может их подавить, а baseline никогда не может их принять. Используй блок `exclude:` в конфигурации архитектуры или `coverage: ignore` специально для диагностики покрытия. `architecture.layer-violation` это не касается — `@qmx-ignore architecture.layer-violation` и записи baseline для него по-прежнему работают.
+    `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow` и `architecture.empty-template` — это конфигурационные ошибки, а не долг: `@qmx-ignore` не может их подавить, а baseline никогда не может их принять. Используй блок `exclude:` в конфигурации архитектуры или `coverage-gap: ignore` специально для диагностики покрытия. `architecture.layer-violation` это не касается — `@qmx-ignore architecture.layer-violation` и записи baseline для него по-прежнему работают.
 
 ### Когда директива неверна
 
@@ -270,7 +270,7 @@ bin/qmx check src/ --no-suppression-annotations
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40 -- Legacy state machine
+ * @qmx-threshold complexity.ccn warning=20 error=40 -- Legacy state machine
  */
 final class ComplexStateMachine
 {
@@ -282,7 +282,7 @@ final class ComplexStateMachine
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
 
-`@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда wildcard. Порог принадлежит единственному объекту опций правила, а не отдельному каналу, поэтому `@qmx-threshold complexity.cyclomatic.callable` — ошибка, даже несмотря на то, что у `complexity.cyclomatic` два канала; используй имя правила `complexity.cyclomatic`:
+`@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда wildcard. Порог принадлежит единственному объекту опций правила, а не отдельному каналу, поэтому `@qmx-threshold complexity.cyclomatic.callable` — ошибка, даже несмотря на то, что у `complexity.ccn` два канала; используй имя правила `complexity.ccn`:
 
 ```text
 @qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of

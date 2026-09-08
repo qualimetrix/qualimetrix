@@ -21,7 +21,7 @@ enum UncapturedReason: string
      * would freeze a disagreement between the configuration and the code as
      * an accepted steady state. Resolvable only by fixing the configuration
      * — or, where the configuration offers one, by declining the diagnostic
-     * there (`coverage: ignore`).
+     * there (`coverage-gap: ignore`).
      */
     case ConfigurationErrorChannel = 'configuration-error-channel';
 

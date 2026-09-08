@@ -251,9 +251,9 @@ final class CollectionOrchestratorTest extends TestCase
         );
 
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['design.type-coverage.pct']);
+        $derivedCollector->method('provides')->willReturn(['design.type-coverage.all']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('design.type-coverage.pct', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.all', SymbolLevel::Class_),
         ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
@@ -262,8 +262,8 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: $file,
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray([
-                        'design.type-coverage.pct:' . $firstSubject->toCanonical() => 100.0,
-                        'design.type-coverage.pct:' . $secondSubject->toCanonical() => 50.0,
+                        'design.type-coverage.all:' . $firstSubject->toCanonical() => 100.0,
+                        'design.type-coverage.all:' . $secondSubject->toCanonical() => 50.0,
                     ]),
                     classMetrics: [
                         $firstSubject->toCanonical() => [
@@ -296,8 +296,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
-        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('design.type-coverage.pct'));
-        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('design.type-coverage.pct'));
+        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('design.type-coverage.all'));
+        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('design.type-coverage.all'));
     }
 
     #[Test]
@@ -464,7 +464,7 @@ final class CollectionOrchestratorTest extends TestCase
         );
         $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
         $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
-        $override = new ThresholdOverride('complexity.cyclomatic', 12, 20, 8, $subject, ControlScope::Class_);
+        $override = new ThresholdOverride('complexity.ccn', 12, 20, 8, $subject, ControlScope::Class_);
         $secondOverride = new ThresholdOverride('design.type-coverage.param', 95, 80, 18, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
         $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');

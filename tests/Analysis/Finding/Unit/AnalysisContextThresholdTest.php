@@ -25,13 +25,13 @@ final class AnalysisContextThresholdTest extends TestCase
             metrics: self::createStub(MetricRepositoryInterface::class),
         );
 
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
     public function itGetThresholdOverrideReturnsNullForUnknownFile(): void
     {
-        $override = self::override('complexity.cyclomatic', 15, 25, 10, 50);
+        $override = self::override('complexity.ccn', 15, 25, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -41,13 +41,13 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
     public function itGetThresholdOverrideMatchesExact(): void
     {
-        $override = self::override('complexity.cyclomatic', 15, 25, 10, 50);
+        $override = self::override('complexity.ccn', 15, 25, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -55,7 +55,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
 
         self::assertSame($override, $result);
     }
@@ -71,13 +71,13 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
     public function itGetThresholdOverrideRespectsLineScope(): void
     {
-        $override = self::override('complexity.cyclomatic', 15, 25, 10, 50);
+        $override = self::override('complexity.ccn', 15, 25, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -86,19 +86,19 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Inside scope
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
 
         // Outside scope
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
     public function itGetThresholdOverrideReturnsNullForNonMatchingRule(): void
     {
-        $override = self::override('complexity.cyclomatic', 15, 25, 10, 50);
+        $override = self::override('complexity.ccn', 15, 25, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -112,7 +112,7 @@ final class AnalysisContextThresholdTest extends TestCase
     #[Test]
     public function itGetThresholdOverrideWithNullEndLine(): void
     {
-        $override = self::override('complexity.cyclomatic', 15, 25, 10, null);
+        $override = self::override('complexity.ccn', 15, 25, 10, null);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -121,16 +121,16 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // With null endLine, any line >= startLine matches
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
     public function itGetThresholdOverrideReturnsSameSpanFirstMatch(): void
     {
-        $override1 = self::override('complexity.cyclomatic', 15, 25, 10, 50);
-        $override2 = self::override('complexity.cyclomatic', 20, 30, 10, 50);
+        $override1 = self::override('complexity.ccn', 15, 25, 10, 50);
+        $override2 = self::override('complexity.ccn', 20, 30, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
@@ -139,7 +139,7 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Same span — first matching override wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($override1, $result);
     }
 
@@ -147,9 +147,9 @@ final class AnalysisContextThresholdTest extends TestCase
     public function itMethodLevelOverrideTakesPriorityOverClassLevel(): void
     {
         // Class-level override: line 10-100 (span 90)
-        $classOverride = self::override('complexity.cyclomatic', 15, 25, 10, 100, ControlScope::Class_);
+        $classOverride = self::override('complexity.ccn', 15, 25, 10, 100, ControlScope::Class_);
         // Method-level override: line 20-40 (span 20) — narrower scope
-        $methodOverride = self::override('complexity.cyclomatic', 30, 50, 20, 40);
+        $methodOverride = self::override('complexity.ccn', 30, 50, 20, 40);
 
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -159,11 +159,11 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Line 30 is within both scopes — callable-level (narrower) wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($methodOverride, $result);
 
         // Resolution is declaration-bound, so the callable control remains the winner.
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($methodOverride, $result);
     }
 
@@ -171,9 +171,9 @@ final class AnalysisContextThresholdTest extends TestCase
     public function itBoundedOverrideWinsOverUnbounded(): void
     {
         // Unbounded override (null endLine)
-        $unbounded = self::override('complexity.cyclomatic', 10, 20, 1, null);
+        $unbounded = self::override('complexity.ccn', 10, 20, 1, null);
         // Bounded override (narrower scope)
-        $bounded = self::override('complexity.cyclomatic', 30, 50, 10, 50);
+        $bounded = self::override('complexity.ccn', 30, 50, 10, 50);
 
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -183,11 +183,11 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Line 20 is within both — bounded (smaller span) wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($bounded, $result);
 
         // Source lines are presentation metadata and do not change subject matching.
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
+        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($bounded, $result);
     }
 
@@ -204,7 +204,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
         self::assertNull($context->getThresholdOverride('coupling.cbo', self::subject()));
     }
     private static function subject(): MetricSubject

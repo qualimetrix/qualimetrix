@@ -161,8 +161,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'architecture.coverage',
-                code: 'architecture.coverage',
+                ruleName: 'architecture.coverage-gap',
+                code: 'architecture.coverage-gap',
                 message: 'Class is not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -219,8 +219,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'Same message must not participate in the fingerprint',
             severity: Severity::Warning,
         );
@@ -235,8 +235,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $unrelated = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
-            ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic',
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
             message: 'An unrelated finding',
             severity: Severity::Warning,
         );

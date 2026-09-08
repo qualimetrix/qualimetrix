@@ -117,7 +117,7 @@ final class LayerViolationIntegrationTest extends TestCase
 
         $diagnostic = $diagnostics[0];
         self::assertSame(Severity::Warning, $diagnostic->severity);
-        self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
+        self::assertStringContainsString('Architecture coverage-gap:', $diagnostic->message);
     }
 
     /**

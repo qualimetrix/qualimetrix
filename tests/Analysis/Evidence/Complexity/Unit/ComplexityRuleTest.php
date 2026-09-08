@@ -32,7 +32,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        self::assertSame('complexity.cyclomatic', $rule->getName());
+        self::assertSame('complexity.ccn', $rule->getName());
     }
 
     #[Test]
@@ -140,7 +140,7 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $findings[0]->message);
         self::assertSame(15, $findings[0]->metricValue);
-        self::assertSame('complexity.cyclomatic', $findings[0]->ruleName);
+        self::assertSame('complexity.ccn', $findings[0]->ruleName);
         // Both CCN and cognitive are high — standard recommendation
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $findings[0]->recommendation);
     }

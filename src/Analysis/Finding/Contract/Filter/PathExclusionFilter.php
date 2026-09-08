@@ -24,7 +24,7 @@ use Qualimetrix\Core\Util\PathMatcher;
  * `@qmx-ignore` and a baseline entry still apply to
  * `architecture.layer-violation`, but not to the layer-policy diagnostics
  * beside it, which are declared configuration errors and answer only to the
- * architecture configuration's `exclude:` block (and `coverage: ignore` for the
+ * architecture configuration's `exclude:` block (and `coverage-gap: ignore` for the
  * coverage diagnostic).
  */
 final readonly class PathExclusionFilter implements FindingFilterInterface
