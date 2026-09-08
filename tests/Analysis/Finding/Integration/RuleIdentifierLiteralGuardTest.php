@@ -235,7 +235,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     ];
 
     #[Test]
-    public function noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral(): void
+    public function itRefusesAProductionFileOutsideARuleOrChannelsOwningCapabilityThatHoldsItsLiteral(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -298,7 +298,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * subject and leaves the guard asserting about it.
      */
     #[Test]
-    public function everyNamedFileStillEarnsItsEntry(): void
+    public function itRequiresEveryNamedFileToStillEarnItsEntry(): void
     {
         $container = (new ContainerFactory())->create();
         $ownerByLiteral = self::ownerByLiteral($container);
@@ -462,7 +462,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     }
 
     #[Test]
-    public function noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel(): void
+    public function itRefusesAHandSpelledCodeInAFixtureOrDocPageThatNamesANonexistentRuleOrChannel(): void
     {
         $container = (new ContainerFactory())->create();
 

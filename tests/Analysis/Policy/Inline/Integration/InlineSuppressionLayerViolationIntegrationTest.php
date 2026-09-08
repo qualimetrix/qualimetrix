@@ -50,7 +50,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     private const string FIXTURE_NAMESPACE = 'Fixtures\\IgnoreSample';
 
     #[Test]
-    public function qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation(): void
+    public function itDoesNotDropATargetAttributedLayerViolationWhenTheSourceCarriesQmxIgnore(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Controller'])),

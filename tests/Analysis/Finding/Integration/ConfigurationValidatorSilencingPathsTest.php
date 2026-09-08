@@ -165,7 +165,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * otherwise be silently untested.
      */
     #[Test]
-    public function theEnumeratedEightAreExactlyTheConfigurationErrorChannels(): void
+    public function itTheEnumeratedEightAreExactlyTheConfigurationErrorChannels(): void
     {
         $registry = (new ContainerFactory())->create()->get(ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $registry);
@@ -198,7 +198,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideProducers')]
-    public function everyDiagnosticResolvesToTheProducerThatOwnsIt(string $producer, array $owned): void
+    public function itResolvesEveryDiagnosticToTheProducerThatOwnsIt(string $producer, array $owned): void
     {
         $universe = (new ContainerFactory())->create()->get(ChannelIdentityInterface::class);
         self::assertInstanceOf(ChannelIdentityInterface::class, $universe);
@@ -209,7 +209,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     }
 
     #[Test]
-    public function everyDiagnosticIsReportedWhenNothingSilencesIt(): void
+    public function itEveryDiagnosticIsReportedWhenNothingSilencesIt(): void
     {
         self::assertSame(self::allDiagnostics(), $this->diagnosticsFrom([]));
     }
@@ -220,7 +220,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideDiagnostics')]
-    public function eachDiagnosticIsSilencedBySelectingItsOwnNameOff(string $diagnostic): void
+    public function itSilencesEachDiagnosticBySelectingItsOwnNameOff(string $diagnostic): void
     {
         $remaining = $this->diagnosticsFrom(['--disable-rule' => [$diagnostic]]);
 
@@ -241,7 +241,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideProducers')]
-    public function selectingAProducerOffSilencesEveryDiagnosticItOwns(string $producer, array $owned): void
+    public function itSilencesEveryDiagnosticAProducerOwnsBySelectingTheProducerOff(string $producer, array $owned): void
     {
         self::assertSame(
             array_values(array_diff(self::allDiagnostics(), $owned)),
@@ -265,7 +265,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideDiagnostics')]
-    public function selectingOneDiagnosticOnLeavesExactlyThatOne(string $diagnostic): void
+    public function itLeavesExactlyOneDiagnosticWhenSelectingItOn(string $diagnostic): void
     {
         self::assertSame(
             [$diagnostic],
@@ -283,7 +283,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideProducers')]
-    public function selectingAProducerOnLeavesExactlyTheDiagnosticsItOwns(string $producer, array $owned): void
+    public function itLeavesExactlyTheDiagnosticsAProducerOwnsWhenSelectingTheProducerOn(string $producer, array $owned): void
     {
         self::assertSame(
             $owned,
@@ -300,7 +300,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * `Location::none()`.
      */
     #[Test]
-    public function pathExclusionReachesTheDirectiveDiagnosticsAndNotTheLayerOnes(): void
+    public function itPathExclusionReachesTheDirectiveDiagnosticsAndNotTheLayerOnes(): void
     {
         self::assertSame(
             self::LAYER_DIAGNOSTICS,
@@ -322,7 +322,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      * namespace for the filter to compare.
      */
     #[Test]
-    public function namespaceExclusionReachesNoneOfTheEight(): void
+    public function itNamespaceExclusionReachesNoneOfTheEight(): void
     {
         self::assertSame(
             self::allDiagnostics(),
@@ -344,7 +344,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideProducers')]
-    public function disablingAProducerByOptionSilencesEveryDiagnosticItOwns(string $producer, array $owned): void
+    public function itSilencesEveryDiagnosticAProducerOwnsWhenDisablingTheProducerByOption(string $producer, array $owned): void
     {
         self::assertSame(
             array_values(array_diff(self::allDiagnostics(), $owned)),

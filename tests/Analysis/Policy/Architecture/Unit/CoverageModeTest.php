@@ -30,13 +30,13 @@ final class CoverageModeTest extends TestCase
 
     #[Test]
     #[DataProvider('caseProvider')]
-    public function fromString_resolvesKnownValueCaseInsensitively(string $input, CoverageMode $expected): void
+    public function itResolvesAKnownValueCaseInsensitively(string $input, CoverageMode $expected): void
     {
         self::assertSame($expected, CoverageMode::fromString($input));
     }
 
     #[Test]
-    public function fromString_throwsForUnknownValue(): void
+    public function itRejectsAnUnknownValue(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown coverage mode "debug"');
@@ -45,7 +45,7 @@ final class CoverageModeTest extends TestCase
     }
 
     #[Test]
-    public function fromString_throwsForEmptyString(): void
+    public function itRejectsAnEmptyString(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
@@ -53,7 +53,7 @@ final class CoverageModeTest extends TestCase
     }
 
     #[Test]
-    public function casesExposeStableStringValues(): void
+    public function itExposesStableStringValuesForEachCase(): void
     {
         self::assertSame('ignore', CoverageMode::Ignore->value);
         self::assertSame('warn', CoverageMode::Warn->value);

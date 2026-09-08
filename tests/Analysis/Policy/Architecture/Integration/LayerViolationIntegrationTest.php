@@ -42,7 +42,7 @@ final class LayerViolationIntegrationTest extends TestCase
     private const string FIXTURE_PATH = __DIR__ . '/../Fixtures/Sample';
 
     #[Test]
-    public function emptyArchitecturePolicyProducesZeroLayerViolations(): void
+    public function itShortCircuitsToZeroLayerViolationsWhenNoLayersAreDeclared(): void
     {
         $pipeline = $this->createPipelineWithArchitecture(null);
 
@@ -57,7 +57,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function fullPolicyDetectsControllerToRepositoryFinding(): void
+    public function itDetectsAControllerToRepositoryLayerViolation(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
 
@@ -99,7 +99,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function controllerOnlyPolicyTriggersCoverageDiagnosticInWarnMode(): void
+    public function itReportsACoverageDiagnosticInWarnModeWhenOnlyOneLayerIsDeclared(): void
     {
         // Only declare 'controller'; service/repository/domain become out-of-layer
         $registry = new LayerRegistry([
@@ -132,7 +132,7 @@ final class LayerViolationIntegrationTest extends TestCase
      * set itself.
      */
     #[Test]
-    public function goldenFileMatchesFullPolicyOutput(): void
+    public function itMatchesTheGoldenFileForTheFullPolicysOutput(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
@@ -166,7 +166,7 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function ignoreCoverageModeSuppressesDiagnosticEvenWithUnmatchedEnds(): void
+    public function itSuppressesTheCoverageDiagnosticInIgnoreModeEvenWithUnmatchedEnds(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['Fixtures\\Sample\\Controller'])),

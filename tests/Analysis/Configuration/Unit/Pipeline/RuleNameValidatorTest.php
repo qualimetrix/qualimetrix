@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 final class RuleNameValidatorTest extends TestCase
 {
     #[Test]
-    public function exactMatch_noException(): void
+    public function itAcceptsARuleNameThatExactlyMatchesAKnownRule(): void
     {
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.ccn' => ['callable' => ['warning' => 10]]]],
@@ -71,7 +71,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function unknownRuleName_throwsException(): void
+    public function itRejectsAnUnknownRuleName(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/Unknown rule "nonexistent\.rule"/');
@@ -85,7 +85,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function emptyRulesSection_noException(): void
+    public function itAcceptsAnEmptyRulesSection(): void
     {
         RuleNameValidator::validateRuleNames(
             ['rules' => []],
@@ -98,7 +98,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function noRulesSection_noException(): void
+    public function itAcceptsConfigWithoutARulesSection(): void
     {
         RuleNameValidator::validateRuleNames(
             ['format' => 'json'],
@@ -111,7 +111,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function multipleUnknownNames_allListedInException(): void
+    public function itReportsAllUnknownNamesWhenMultipleRulesAreInvalid(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/nonexistent\.one/');
@@ -129,7 +129,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function validateRuleNamesThrowsForUnknownRule(): void
+    public function itNamesTheSourceFileInTheExceptionForAnUnknownRule(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/Unknown rule "bogus\.rule" in qmx\.yaml/');
@@ -143,7 +143,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function validateRuleNamesSuggestsCloseMatch(): void
+    public function itSuggestsACloseMatchForAMisspelledRuleName(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/Unknown rule "complexty".*Did you mean "complexity"\?/');
@@ -157,7 +157,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function validateRuleNamesNoSuggestionForDistantMatch(): void
+    public function itOmitsASuggestionWhenNoKnownRuleIsClose(): void
     {
         try {
             RuleNameValidator::validateRuleNames(
@@ -180,7 +180,7 @@ final class RuleNameValidatorTest extends TestCase
      * `design.noc`; the leaf (`lcom`) match must win instead.
      */
     #[Test]
-    public function validateRuleNamesSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance(): void
+    public function itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance(): void
     {
         self::expectException(ConfigLoadException::class);
         self::expectExceptionMessageMatches('/Unknown rule "design\.lcom".*Did you mean "cohesion\.lcom"\?/');
@@ -194,7 +194,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function validateRuleNamesListsMultipleUnknowns(): void
+    public function itReportsEachUnknownRuleNameSeparately(): void
     {
         try {
             RuleNameValidator::validateRuleNames(

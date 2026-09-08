@@ -21,7 +21,7 @@ final class CollectorCompilerPassTest extends TestCase
     private const string COLLECTOR_SERVICE_ID = 'qmx.measurement.file_collector';
 
     #[Test]
-    public function collectsTaggedServicesIntoCompositeCollector(): void
+    public function itCollectsTaggedServicesIntoTheCompositeCollector(): void
     {
         $container = new ContainerBuilder();
         $container->register(self::COLLECTOR_SERVICE_ID, CompositeCollector::class)
@@ -49,7 +49,7 @@ final class CollectorCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenCompositeCollectorNotRegistered(): void
+    public function itDoesNothingWhenTheCompositeCollectorIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(CyclomaticComplexityCollector::class)
@@ -62,7 +62,7 @@ final class CollectorCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function setsEmptyArraysWhenNoTaggedServices(): void
+    public function itSetsEmptyArraysWhenNoServicesAreTagged(): void
     {
         $container = new ContainerBuilder();
         $container->register(self::COLLECTOR_SERVICE_ID, CompositeCollector::class)

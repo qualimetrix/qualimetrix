@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 final class ThresholdParserTest extends TestCase
 {
     #[Test]
-    public function emptyConfigReturnsDefaults(): void
+    public function itFallsBackToDefaultsForAnEmptyConfig(): void
     {
         $result = ThresholdParser::parse([], 'warning', 'error', 10, 20);
 
@@ -21,7 +21,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdSetsBothValues(): void
+    public function itUsesTheThresholdKeyForBothWarningAndError(): void
     {
         $result = ThresholdParser::parse(['threshold' => 15], 'warning', 'error', 10, 20);
 
@@ -30,7 +30,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdZeroSetsBothToZero(): void
+    public function itKeepsAZeroThresholdInsteadOfFallingBackToDefaults(): void
     {
         $result = ThresholdParser::parse(['threshold' => 0], 'warning', 'error', 10, 20);
 
@@ -39,7 +39,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdNullFallsBackToDefaults(): void
+    public function itFallsBackToDefaultsWhenThresholdIsNull(): void
     {
         $result = ThresholdParser::parse(['threshold' => null], 'warning', 'error', 10, 20);
 
@@ -48,7 +48,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function warningAndErrorParsedExplicitly(): void
+    public function itUsesExplicitWarningAndErrorValues(): void
     {
         $result = ThresholdParser::parse(['warning' => 5, 'error' => 15], 'warning', 'error', 10, 20);
 
@@ -57,7 +57,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function onlyWarningParsedWithDefaultError(): void
+    public function itUsesTheDefaultErrorWhenOnlyWarningIsConfigured(): void
     {
         $result = ThresholdParser::parse(['warning' => 5], 'warning', 'error', 10, 20);
 
@@ -66,7 +66,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdWithWarningThrowsException(): void
+    public function itRejectsThresholdMixedWithWarning(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
@@ -75,7 +75,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdWithErrorThrowsException(): void
+    public function itRejectsThresholdMixedWithError(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -83,7 +83,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdWithLegacyWarningKeyThrowsException(): void
+    public function itRejectsThresholdMixedWithALegacyWarningKey(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -98,7 +98,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function thresholdWithLegacyErrorKeyThrowsException(): void
+    public function itRejectsThresholdMixedWithALegacyErrorKey(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -113,7 +113,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function legacyKeysUsedAsFallback(): void
+    public function itFallsBackToLegacyKeysWhenPrimaryKeysAreAbsent(): void
     {
         $result = ThresholdParser::parse(
             ['warningThreshold' => 5, 'errorThreshold' => 15],
@@ -129,7 +129,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function primaryKeysTakePrecedenceOverLegacy(): void
+    public function itPrefersPrimaryKeysOverLegacyKeys(): void
     {
         $result = ThresholdParser::parse(
             ['warning' => 7, 'error' => 17, 'warningThreshold' => 5, 'errorThreshold' => 15],
@@ -145,7 +145,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function customThresholdKey(): void
+    public function itParsesACustomThresholdKeyIntoBothWarningAndError(): void
     {
         $result = ThresholdParser::parse(
             ['param_threshold' => 70],
@@ -161,7 +161,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function customKeysWithLegacyFallback(): void
+    public function itFallsBackToALegacyKeyForACustomPrimaryKey(): void
     {
         $result = ThresholdParser::parse(
             ['maxWarning' => 25],
@@ -177,7 +177,7 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function floatThresholds(): void
+    public function itParsesAFloatThresholdIntoBothWarningAndError(): void
     {
         $result = ThresholdParser::parse(['threshold' => 0.5], 'warning', 'error', 0.3, 0.7);
 

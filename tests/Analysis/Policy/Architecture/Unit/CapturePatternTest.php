@@ -19,13 +19,13 @@ final class CapturePatternTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function extractVariables_returnsEmptyListForNonCapturePattern(): void
+    public function itExtractsNoVariablesFromAPatternWithoutCaptures(): void
     {
         self::assertSame([], CapturePattern::extractVariables('App\\Service\\**'));
     }
 
     #[Test]
-    public function extractVariables_collectsAllNames(): void
+    public function itExtractsEveryCaptureVariableName(): void
     {
         self::assertSame(
             ['tenant', 'module'],
@@ -34,7 +34,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function extractVariables_returnsListAcceptingMultiSegmentCapture(): void
+    public function itExtractsTheVariableNameOfAMultiSegmentCapture(): void
     {
         self::assertSame(
             ['module'],
@@ -43,7 +43,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function isCaptureProducing_distinguishesPlainGlobsFromCaptures(): void
+    public function itDistinguishesAPlainGlobFromACapturingPattern(): void
     {
         self::assertFalse(CapturePattern::isCaptureProducing('App\\Service\\**'));
         self::assertTrue(CapturePattern::isCaptureProducing('App\\Module\\{module}\\Service'));
@@ -54,7 +54,7 @@ final class CapturePatternTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function compile_singleSegmentCapture_matchesAndExtractsBinding(): void
+    public function itMatchesASingleSegmentCaptureAndExtractsItsBinding(): void
     {
         $pattern = CapturePattern::compile('App\\Module\\{module}\\Domain');
 
@@ -63,7 +63,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_singleSegmentCapture_doesNotMatchAcrossSeparator(): void
+    public function itRefusesASingleSegmentCaptureThatWouldCrossASeparator(): void
     {
         $pattern = CapturePattern::compile('App\\Module\\{module}\\Domain');
 
@@ -71,7 +71,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_multiSegmentCapture_matchesAcrossSeparators(): void
+    public function itMatchesAMultiSegmentCaptureAcrossSeparators(): void
     {
         $pattern = CapturePattern::compile('App\\Module\\{module:**}\\Domain');
 
@@ -83,7 +83,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_doubleStarGlob_matchesAcrossSeparators(): void
+    public function itMatchesADoubleStarGlobAcrossSeparators(): void
     {
         $pattern = CapturePattern::compile('App\\Module\\{module}\\Domain\\**');
 
@@ -98,7 +98,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_singleStarGlob_doesNotMatchAcrossSeparator(): void
+    public function itRefusesASingleStarGlobThatWouldCrossASeparator(): void
     {
         $pattern = CapturePattern::compile('App\\Service\\*');
 
@@ -107,7 +107,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_questionMark_matchesSingleNonSeparatorChar(): void
+    public function itMatchesAQuestionMarkToExactlyOneNonSeparatorCharacter(): void
     {
         $pattern = CapturePattern::compile('App\\?');
 
@@ -117,7 +117,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_nonCapturePattern_returnsEmptyArrayOnMatch(): void
+    public function itMatchesANonCapturePatternWithAnEmptyBindingArray(): void
     {
         $pattern = CapturePattern::compile('App\\Service\\**');
 
@@ -126,7 +126,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_multiVariableCapture_extractsAllBindings(): void
+    public function itExtractsAllBindingsFromAMultiVariableCapture(): void
     {
         $pattern = CapturePattern::compile('App\\{tenant}\\Module\\{module}\\Domain\\**');
 
@@ -137,7 +137,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function compile_backslashIsAlwaysLiteralSeparator(): void
+    public function itTreatsEveryBackslashAsALiteralSeparator(): void
     {
         // `App\Module\{m}` — `\` between `App` and `Module` is literal, and
         // `\` between `Module` and `{m}` is also literal (no escape semantics
@@ -152,7 +152,7 @@ final class CapturePatternTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function compile_emptyPattern_rejected(): void
+    public function itRejectsAnEmptyPattern(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('source pattern must not be empty');
@@ -162,7 +162,7 @@ final class CapturePatternTest extends TestCase
 
     #[DataProvider('invalidGrammarProvider')]
     #[Test]
-    public function compile_invalidGrammar_rejected(string $pattern, string $expectedMessage): void
+    public function itRejectsPatternsWithInvalidCaptureGrammar(string $pattern, string $expectedMessage): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage($expectedMessage);
@@ -191,7 +191,7 @@ final class CapturePatternTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function substitute_replacesVariablesPreservingGlobs(): void
+    public function itSubstitutesVariablesWhilePreservingGlobs(): void
     {
         $pattern = CapturePattern::compile('App\\{tenant}\\Module\\{module}\\Domain\\**');
 
@@ -202,7 +202,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function substitute_passesUnknownVariablesThrough(): void
+    public function itLeavesAnUnknownVariablePlaceholderUnsubstituted(): void
     {
         $pattern = CapturePattern::compile('App\\{tenant}\\{module}');
 
@@ -213,7 +213,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function applySubstitution_supportsMultiSegmentCaptureSyntax(): void
+    public function itAppliesASubstitutionToAMultiSegmentCapture(): void
     {
         self::assertSame(
             'App\\Module\\Foo\\Bar\\Domain',
@@ -222,7 +222,7 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
-    public function applySubstitution_preservesGlobs(): void
+    public function itAppliesASubstitutionWhilePreservingGlobs(): void
     {
         self::assertSame(
             'App\\Module\\Foo\\Sub\\**',

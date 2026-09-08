@@ -41,7 +41,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     private const string FIXTURE_PATH = __DIR__ . '/../Fixtures/TemplateSample';
 
     #[Test]
-    public function templateExpansion_producesOneConcreteLayerPerObservedModule(): void
+    public function itProducesOneConcreteLayerPerObservedModule(): void
     {
         $config = self::baseTemplateConfig();
 
@@ -58,7 +58,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExpansion_emptyTemplateFiresConfigurationError(): void
+    public function itFiresAConfigurationErrorForAnEmptyTemplate(): void
     {
         $config = self::baseTemplateConfig();
         $config['layers'][] = [
@@ -76,7 +76,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExpansion_ceilingBelowObservedCountFailsFast(): void
+    public function itFailsFastWhenTheCeilingIsBelowTheObservedCount(): void
     {
         $config = self::baseTemplateConfig();
         // Fixture has 3 modules — ceiling = 1 must blow up.
@@ -89,7 +89,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExpansion_ceilingCountsOnlyPopulatedTemplatesAcrossMixedConfig(): void
+    public function itCountsOnlyPopulatedTemplatesTowardTheCeilingInAMixedConfig(): void
     {
         // Mix three signal sources: a static layer ("shared"), a populated
         // template (`domain-{module}` → 3 layers), an empty template
@@ -147,7 +147,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExpansion_disallowedEdgeUsesExpandedLayerNameInMessage(): void
+    public function itNamesTheExpandedLayerInADisallowedEdgeMessage(): void
     {
         $config = self::baseTemplateConfig();
         // Disallow `shared` from `domain-Order` by removing it from allow.

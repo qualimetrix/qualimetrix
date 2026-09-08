@@ -116,7 +116,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static array $astCache = [];
 
     #[Test]
-    public function everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded(): void
+    public function itRequiresEveryStaticallyResolvableEmittedChannelToBeDeclaredOrExcluded(): void
     {
         $registry = self::registry();
         $excludedKeys = self::readExcludedFixtureKeys();
@@ -195,7 +195,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * inspected — not merely one.
      */
     #[Test]
-    public function everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated(): void
+    public function itRequiresEveryFindingConstructionInSourceToBeInspectedOrDeclaredDelegated(): void
     {
         $byTokens = self::constructionCountsByToken();
         $byParser = self::constructionCountsByParser();
@@ -274,7 +274,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * literal is wrong when they do.
      */
     #[Test]
-    public function theResolvedArgumentNamesAreTheFindingConstructorsOwn(): void
+    public function itResolvesOnlyArgumentNamesThatMatchTheFindingConstructorsParameters(): void
     {
         $constructor = (new ReflectionClass(Finding::class))->getConstructor();
         self::assertNotNull($constructor);

@@ -26,7 +26,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function emptyEntryListEmitsNoWarning(): void
+    public function itEmitsNoWarningForAnEmptyEntryList(): void
     {
         $warnings = [];
         $this->detector->detect([], $warnings);
@@ -35,7 +35,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function globSelfReferenceEmitsWarning(): void
+    public function itWarnsOnAGlobTargetThatReferencesItsOwnSourceGlob(): void
     {
         $warnings = [];
 
@@ -54,7 +54,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function allowCrossInstanceFlagSilencesWarning(): void
+    public function itSilencesTheWarningWhenAllowCrossInstanceIsSet(): void
     {
         $warnings = [];
 
@@ -77,7 +77,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function exactToExactEntryEmitsNoWarning(): void
+    public function itEmitsNoWarningForAnExactToExactEntry(): void
     {
         $warnings = [];
 
@@ -95,7 +95,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function globToExactEntryEmitsNoWarning(): void
+    public function itEmitsNoWarningForAGlobToExactEntry(): void
     {
         $warnings = [];
 
@@ -113,7 +113,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function exactToGlobEntryEmitsNoWarning(): void
+    public function itEmitsNoWarningForAnExactToGlobEntry(): void
     {
         $warnings = [];
 
@@ -131,7 +131,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function divergentGlobPatternsEmitNoWarning(): void
+    public function itEmitsNoWarningForDivergentGlobPatterns(): void
     {
         // Strict-superset relationship — intentional directional structure, not
         // a self-reference. Diverging glob shapes are NOT flagged.
@@ -151,7 +151,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedSelfReferenceEmitsNoWarning(): void
+    public function itEmitsNoWarningForACapturedSelfReferenceBoundAtRuntime(): void
     {
         // Captured-on-both-sides enforces binding identity at runtime, so
         // self-reference is not a footgun — no warning needed.
@@ -171,7 +171,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function multipleSelfGlobEntriesAccumulateInSingleWarning(): void
+    public function itAccumulatesMultipleSelfGlobEntriesIntoASingleWarning(): void
     {
         $warnings = [];
 
@@ -195,7 +195,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function mixedTargetsOnlyFlagSelfGlobOnes(): void
+    public function itFlagsOnlyTheSelfGlobTargetAmongMixedTargets(): void
     {
         // First target is self-glob → flag. Second target is glob-to-exact →
         // ignore. Result: one warning, one pattern listed.
@@ -219,7 +219,7 @@ final class WildcardSelfAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function silencedAndFlaggedTargetsOnSameEntryStillEmitWhenFlaggedRemains(): void
+    public function itStillWarnsWhenOneOfTwoSelfGlobTargetsIsSilenced(): void
     {
         // Entry has two glob targets matching the source pattern; one has
         // allow_cross_instance: true (silenced), the other does not (flagged).

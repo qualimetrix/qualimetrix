@@ -224,7 +224,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
      * at all. Each gate must reach exactly its own channels.
      */
     #[Test]
-    public function eachGateReachesOnlyItsOwnChannels(): void
+    public function itReportsOnlyItsOwnChannelWhenEitherGateIsToggledIndependently(): void
     {
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
         $classes = ['App\\Controller\\UserController', 'App\\Unowned\\Lonely'];

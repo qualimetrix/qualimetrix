@@ -24,7 +24,7 @@ use ReflectionClass;
 final class DebugCodeRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesTheCorrectNameAndDescription(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
@@ -33,13 +33,13 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itReportsTheCorrectOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, DebugCodeRule::getOptionsClass());
     }
 
     #[Test]
-    public function severityIsError(): void
+    public function itDeclaresErrorSeverity(): void
     {
         $reflection = new ReflectionClass(DebugCodeRule::class);
 
@@ -47,7 +47,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itReturnsNoFindingsWhenNoSmellIsRecorded(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itProducesAFindingForEachDetectedSmell(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 

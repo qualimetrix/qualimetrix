@@ -29,7 +29,7 @@ use ReflectionProperty;
 final class LayerRegistryTest extends TestCase
 {
     #[Test]
-    public function resolveLayer_singleLayerSingleMatch_returnsName(): void
+    public function itReturnsTheLayerNameForASingleMatchingLayer(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
@@ -42,7 +42,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_singleLayerNoMatch_returnsNull(): void
+    public function itReturnsNullWhenTheSingleLayerDoesNotMatch(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
@@ -54,7 +54,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_emptyRegistry_returnsNull(): void
+    public function itReturnsNullForAnEmptyRegistry(): void
     {
         $registry = new LayerRegistry([]);
 
@@ -64,7 +64,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_declarationOrderFirstMatchWins_narrowBeforeBroad(): void
+    public function itLetsTheNarrowerLayerWinWhenDeclaredBeforeTheBroaderOne(): void
     {
         // The narrower layer is declared first → it wins for classes inside its scope.
         $registry = new LayerRegistry([
@@ -79,7 +79,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_declarationOrderFirstMatchWins_broadBeforeNarrow(): void
+    public function itLetsTheBroaderLayerWinWhenDeclaredBeforeTheNarrowerOne(): void
     {
         // Reversed order: the broad layer wins, shadowing the narrower one.
         $registry = new LayerRegistry([
@@ -94,7 +94,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_catchAllAsFinalLayerCapturesResidual(): void
+    public function itLetsAFinalCatchAllLayerCaptureTheResidual(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
@@ -108,7 +108,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_isCachedAcrossInvocations(): void
+    public function itCachesTheResultAcrossRepeatedInvocations(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -127,7 +127,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_populatesSharedMatchCache(): void
+    public function itPopulatesTheSharedMatchCache(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -153,7 +153,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_cacheReturnsSameNegativeResult(): void
+    public function itReturnsTheSameNegativeResultFromTheCache(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -167,7 +167,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_emptyNamespaceAndEmptyTypeReturnsNull(): void
+    public function itReturnsNullForAnEmptyNamespaceAndEmptyType(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('global', new MembershipSpec(['Foo'])),
@@ -180,7 +180,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_emptyNamespaceWithType_matchesByBareType(): void
+    public function itMatchesByBareTypeWhenTheNamespaceIsEmpty(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('global', new MembershipSpec(['GlobalClass'])),
@@ -192,7 +192,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_unicodeNamespaceAndType_handledGracefully(): void
+    public function itHandlesUnicodeNamespacesAndTypesGracefully(): void
     {
         // PHP permits non-ASCII characters in namespace and class identifiers
         // (see https://www.php.net/manual/en/language.namespaces.basics.php —
@@ -239,7 +239,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_namespaceOnlyPath_isResolvable(): void
+    public function itResolvesANamespaceOnlyPath(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -252,7 +252,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_namespaceAndItsClass_routeToTheSameLayer(): void
+    public function itRoutesANamespaceAndItsClassToTheSameLayer(): void
     {
         // Pins the by-design contract: a prefix-mode pattern matches both the
         // namespace symbol AND classes under it. Today only class-level lookups
@@ -275,7 +275,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveAll_returnsEveryMatchingLayerInDeclarationOrder(): void
+    public function itReturnsEveryMatchingLayerInDeclarationOrder(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('any', new MembershipSpec(['App\\**'])),
@@ -295,7 +295,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveAll_returnsEmptyListWhenNoLayerMatches(): void
+    public function itReturnsAnEmptyListWhenNoLayerMatches(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -305,7 +305,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveAll_isCached(): void
+    public function itCachesTheResolveAllResult(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('any', new MembershipSpec(['App\\**'])),
@@ -321,7 +321,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveAll_andResolveLayer_shareTheSameCache(): void
+    public function itSharesTheSameCacheBetweenResolveAllAndResolveLayer(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('any', new MembershipSpec(['App\\**'])),
@@ -358,12 +358,12 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function bindGraph_dropsResolveAllCacheSoStaleMatchesCannotLeakBetweenRuns(): void
+    public function itDropsTheResolveAllCacheOnBindGraphSoStaleMatchesCannotLeakBetweenRuns(): void
     {
-        // Companion test to `bindGraph_dropsCacheSoStaleAssignmentsCannotLeakBetweenRuns`,
+        // Companion test to `itDropsTheCacheOnBindGraphSoStaleAssignmentsCannotLeakBetweenRuns`,
         // which exercises the same invalidation invariant through resolveLayer().
         // Since resolveAll() and resolveLayer() share the same `$matchCache`
-        // (see `resolveAll_andResolveLayer_shareTheSameCache`), bindGraph() must
+        // (see `itSharesTheSameCacheBetweenResolveAllAndResolveLayer`), bindGraph() must
         // drop entries that resolveAll() observed too — otherwise a class
         // could surface in the previous run's match list after the graph
         // changed underneath it.
@@ -399,7 +399,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function bindGraph_dropsCacheSoStaleAssignmentsCannotLeakBetweenRuns(): void
+    public function itDropsTheCacheOnBindGraphSoStaleAssignmentsCannotLeakBetweenRuns(): void
     {
         // Layer matches by `extends: App\Domain\Base`. Class is in App\Domain.
         $registry = new LayerRegistry([
@@ -427,7 +427,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function bindGraph_null_returnsRegistryToNoGraphMode(): void
+    public function itReturnsTheRegistryToNoGraphModeWhenBoundToNull(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition(
@@ -448,7 +448,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function clearCache_dropsCachedMatchesWithoutTouchingTheFactoryBinding(): void
+    public function itDropsCachedMatchesOnClearCacheWithoutTouchingTheFactoryBinding(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition(
@@ -470,7 +470,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function contextFactory_returnsTheInjectedInstance(): void
+    public function itReturnsTheInjectedContextFactoryInstance(): void
     {
         $factory = new ClassContextFactory();
         $registry = new LayerRegistry([
@@ -481,7 +481,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function construct_throwsOnDuplicateLayerNames(): void
+    public function itThrowsOnConstructionWithDuplicateLayerNames(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/Duplicate layer name "service"/');
@@ -493,13 +493,13 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function isEmpty_trueForEmptyList(): void
+    public function itReportsEmptyForAnEmptyLayerList(): void
     {
         self::assertTrue((new LayerRegistry([]))->isEmpty());
     }
 
     #[Test]
-    public function isEmpty_falseWhenLayersPresent(): void
+    public function itReportsNotEmptyWhenLayersArePresent(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
@@ -509,7 +509,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function layerNames_preservesDeclarationOrder(): void
+    public function itPreservesDeclarationOrderInLayerNames(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('zebra', new MembershipSpec(['App\\Zebra'])),
@@ -522,13 +522,13 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function layerNames_emptyForEmptyRegistry(): void
+    public function itReturnsEmptyLayerNamesForAnEmptyRegistry(): void
     {
         self::assertSame([], (new LayerRegistry([]))->layerNames());
     }
 
     #[Test]
-    public function definitions_returnsConfiguredListInOrder(): void
+    public function itReturnsTheConfiguredDefinitionsListInOrder(): void
     {
         $definitions = [
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),

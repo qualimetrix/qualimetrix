@@ -36,7 +36,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_singleVariableTemplate_dedupesAndLexSorts(): void
+    public function itDedupesAndLexicallySortsTuplesForASingleVariableTemplate(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -80,7 +80,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_multiVariable_observedTuplesNotCartesian(): void
+    public function itObservesOnlyTheActualCombinationsForAMultiVariableTemplate(): void
     {
         $template = new TemplateLayerDefinition(
             'cluster-{tenant}-{module}',
@@ -107,7 +107,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_noClassMatches_returnsEmptyList(): void
+    public function itReturnsAnEmptyListWhenNoClassMatches(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -120,7 +120,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_emptyClassSet_returnsEmptyList(): void
+    public function itReturnsAnEmptyListForAnEmptyClassSet(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -133,7 +133,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_appliesNonCapturePatternsAsAndFilter(): void
+    public function itAppliesNonCapturePatternsAsAnAndFilter(): void
     {
         // Combine a capture-producing pattern with a non-capture pattern.
         // The non-capture pattern restricts the set; the capture pattern
@@ -157,7 +157,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_matchAll_suffixCriterionNarrowsTupleSet(): void
+    public function itNarrowsTheTupleSetBySuffixUnderMatchAll(): void
     {
         // Pre-M2 (Phase 5.2 Path B), suffix acted as AND regardless of mode.
         // Post-M2, suffix is mode-aware: under `match: all` it still narrows
@@ -183,7 +183,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_matchAny_suffixCriterionDoesNotNarrowTupleSet(): void
+    public function itDoesNotNarrowTheTupleSetBySuffixUnderMatchAny(): void
     {
         // M2 Path B positive case: under `match: any`, a class that binds via
         // the capture pattern produces a tuple even if it fails every
@@ -216,7 +216,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_matchAll_unionsBindingsAcrossPatterns(): void
+    public function itUnionsBindingsAcrossPatternsUnderMatchAll(): void
     {
         // Both capture-producing patterns must match the same FQN; bindings
         // union, conflicting bindings would reject the tuple.
@@ -243,7 +243,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_matchAll_conflictingBindings_skipsClass(): void
+    public function itSkipsAClassWithConflictingBindingsUnderMatchAll(): void
     {
         $template = new TemplateLayerDefinition(
             'tag-{name}',
@@ -271,7 +271,7 @@ final class TupleExtractorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function collect_excludePatternFiresPerInstance_dropsTuple(): void
+    public function itDropsATupleWhoseOnlyCandidateIsExcluded(): void
     {
         // Template's exclude clause uses the same capture variable {m}.
         // After binding {m}=Order from the capture pattern, exclude resolves
@@ -301,7 +301,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_excludePatternPartialMatch_keepsTupleWhenAtLeastOneClassSurvives(): void
+    public function itKeepsATupleWhenAtLeastOneClassSurvivesExclusion(): void
     {
         // Same template/exclude as above, but the {m}=Order instance has
         // BOTH a Generated/ class (excluded) and a regular class (kept).
@@ -333,7 +333,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_excludeSuffix_filtersTupleObservation(): void
+    public function itFiltersTupleObservationByExcludeSuffix(): void
     {
         // Exclude by short-name suffix (no captures involved). Same shape as
         // runtime membership.
@@ -356,7 +356,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_excludeModeAll_requiresEveryDeclaredKindToMatch(): void
+    public function itRequiresEveryDeclaredExcludeKindToMatchUnderModeAll(): void
     {
         // ExcludeSpec with `mode: all` requires every declared kind to match
         // before exclusion fires. Classes that match only one declared kind
@@ -391,7 +391,7 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_staticExcludePatternWithoutCaptures_filtersTupleObservation(): void
+    public function itFiltersTupleObservationByAStaticExcludePatternWithoutCaptures(): void
     {
         // Exclude pattern with no capture variables — substitution is a no-op
         // and behaves like a plain glob filter.

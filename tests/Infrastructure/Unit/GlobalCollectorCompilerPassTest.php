@@ -20,7 +20,7 @@ final class GlobalCollectorCompilerPassTest extends TestCase
     private const string RUNNER_SERVICE_ID = 'qmx.measurement.aggregation';
 
     #[Test]
-    public function collectsTaggedServicesIntoGlobalCollectorRunner(): void
+    public function itCollectsTaggedServicesIntoTheGlobalCollectorRunner(): void
     {
         $container = new ContainerBuilder();
         $container->register(self::RUNNER_SERVICE_ID, MeasurementAggregationService::class)
@@ -42,7 +42,7 @@ final class GlobalCollectorCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenRunnerNotRegistered(): void
+    public function itDoesNothingWhenTheRunnerIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(CouplingCollector::class)
@@ -55,7 +55,7 @@ final class GlobalCollectorCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function setsEmptyArrayWhenNoTaggedServices(): void
+    public function itSetsAnEmptyArrayWhenThereAreNoTaggedServices(): void
     {
         $container = new ContainerBuilder();
         $container->register(self::RUNNER_SERVICE_ID, MeasurementAggregationService::class)

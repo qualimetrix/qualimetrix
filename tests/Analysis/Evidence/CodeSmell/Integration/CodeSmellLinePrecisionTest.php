@@ -43,7 +43,7 @@ use SplFileInfo;
 final class CodeSmellLinePrecisionTest extends TestCase
 {
     #[Test]
-    public function collectorShouldStorePerOccurrenceLineData(): void
+    public function itStoresPerOccurrenceLineDataInTheCollector(): void
     {
         // Fixture: eval() at two distinct lines
         $code = <<<'PHP'
@@ -99,7 +99,7 @@ PHP;
     }
 
     #[Test]
-    public function visitorCollectsLineDataAndCollectorPropagatesIt(): void
+    public function itPropagatesVisitorLineDataThroughTheCollector(): void
     {
         // This test documents that the visitor has line data
         // and the collector correctly propagates it.
@@ -153,7 +153,7 @@ PHP;
     }
 
     #[Test]
-    public function ruleShouldCreatePerOccurrenceFindingsWithCorrectLines(): void
+    public function itCreatesPerOccurrenceFindingsWithCorrectLines(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -181,7 +181,7 @@ PHP;
     }
 
     #[Test]
-    public function ruleCreatesSingleFindingWithCorrectLineForSingleOccurrence(): void
+    public function itCreatesASingleFindingWithTheCorrectLineForASingleOccurrence(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -205,7 +205,7 @@ PHP;
     }
 
     #[Test]
-    public function collectorRecordsNoEntriesAndRuleEmitsNoFindingsWhenCodeIsClean(): void
+    public function itRecordsNoEntriesAndEmitsNoFindingsForCleanCode(): void
     {
         // Fixture: clean PHP without any eval()/exit()/die() — the collector
         // must not record entries and the rule must not emit a spurious
@@ -266,7 +266,7 @@ PHP;
     }
 
     #[Test]
-    public function ruleEmitsNoFindingsWhenMetricBagHasNoEntriesForSmellType(): void
+    public function itEmitsNoFindingsWhenTheMetricBagHasNoEntriesForTheSmellType(): void
     {
         // Direct rule-level check: with an empty MetricBag (no entries at
         // all for the smell key) the rule must return an empty list — not

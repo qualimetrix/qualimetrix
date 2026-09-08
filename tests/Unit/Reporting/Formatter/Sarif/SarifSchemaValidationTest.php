@@ -41,7 +41,7 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     #[Test]
-    public function emptyReport_conformsToSarif2_1_0Schema(): void
+    public function itConformsToTheSarifSchemaForAnEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(0)
@@ -55,7 +55,7 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     #[Test]
-    public function reportWithMixedSeverityFindings_conformsToSarif2_1_0Schema(): void
+    public function itConformsToTheSarifSchemaForAReportWithMixedSeverityFindings(): void
     {
         $report = ReportBuilder::create()
             ->addFinding(self::finding(
@@ -98,7 +98,7 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     #[Test]
-    public function reportWithRelatedLocations_conformsToSarif2_1_0Schema(): void
+    public function itConformsToTheSarifSchemaForAReportWithRelatedLocations(): void
     {
         // Exercises the relatedLocations branch (duplication detector shape).
         $report = ReportBuilder::create()

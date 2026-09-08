@@ -36,7 +36,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = $this->createRule();
 
@@ -45,13 +45,13 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresCodeDuplicationOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeDuplicationOptions::class, CodeDuplicationRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = $this->createRule(new CodeDuplicationOptions(enabled: false));
 
@@ -72,7 +72,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function noDuplicatesProducesNoFindings(): void
+    public function itProducesNoFindingsWhenNoDuplicateBlockWasCollected(): void
     {
         $rule = $this->createRule();
 
@@ -83,7 +83,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function duplicateBlockProducesFinding(): void
+    public function itProducesAFindingDescribingADuplicateBlockAndItsOtherOccurrence(): void
     {
         $rule = $this->createRule();
 
@@ -159,7 +159,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function duplicateBlockWithHintIncludesHintInMessage(): void
+    public function itIncludesTheHintSnippetInTheFindingMessage(): void
     {
         $rule = $this->createRule();
 
@@ -191,7 +191,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function duplicateBlockWithoutHintOmitsHintFromMessage(): void
+    public function itOmitsTheHintSnippetFromTheMessageWhenNoHintIsGiven(): void
     {
         $rule = $this->createRule();
 
@@ -221,7 +221,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function largeDuplicateIsError(): void
+    public function itClassifiesALargeDuplicateAsAnError(): void
     {
         $rule = $this->createRule();
 
@@ -248,7 +248,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function multipleBlocksProduceMultipleFindings(): void
+    public function itProducesOneFindingPerDuplicateBlock(): void
     {
         $rule = $this->createRule();
 
@@ -277,7 +277,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function multipleLocationsInMessage(): void
+    public function itListsEveryOtherOccurrenceInTheMessage(): void
     {
         $rule = $this->createRule();
 
@@ -351,7 +351,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsFromArray(): void
+    public function itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray(): void
     {
         $options = CodeDuplicationOptions::fromArray([
             'enabled' => false,
@@ -376,7 +376,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsSeverityWithDefaults(): void
+    public function itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds(): void
     {
         $options = new CodeDuplicationOptions();
 
@@ -389,7 +389,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsSeverityWithCustomThresholds(): void
+    public function itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds(): void
     {
         $options = new CodeDuplicationOptions(warning: 10, error: 30);
 

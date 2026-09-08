@@ -141,7 +141,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     ];
 
     #[Test]
-    public function everyCallSiteOnAContextPassesItsOwnRuleNameAsTheFirstArgument(): void
+    public function itPassesItsOwnRuleNameAsTheFirstArgumentOnEveryContextCallSite(): void
     {
         $root = self::projectRoot();
         $fields = self::contextBearingFieldNames($root);
@@ -163,7 +163,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      * The control that keeps the sweep attached to the places it names: the
      * two known callers must be found, in those files, in those methods, and
      * nothing else may call the accessor. A guard finding zero call sites
-     * would pass {@see everyCallSiteOnAContextPassesItsOwnRuleNameAsTheFirstArgument()}
+     * would pass {@see itPassesItsOwnRuleNameAsTheFirstArgumentOnEveryContextCallSite()}
      * by having nothing to check; a guard finding two *different* ones would
      * pass a count.
      */
@@ -223,7 +223,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     /**
      * The correct, canonical call is not itself a violation. Without this, a
      * defect that flags every call site — including the two real ones — would
-     * still turn {@see everyCallSiteOnAContextPassesItsOwnRuleNameAsTheFirstArgument()}
+     * still turn {@see itPassesItsOwnRuleNameAsTheFirstArgumentOnEveryContextCallSite()}
      * red for the wrong reason and could be "fixed" by weakening the guard
      * instead of the call site.
      */

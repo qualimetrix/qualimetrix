@@ -32,7 +32,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class RuleOptionsCompilerPassTest extends TestCase
 {
     #[Test]
-    public function registersOptionsServiceViaFactory(): void
+    public function itRegistersAnOptionsServiceThatDelegatesToTheFactory(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
@@ -61,7 +61,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function injectsOptionsAsArgumentToRule(): void
+    public function itInjectsTheOptionsServiceAsAnArgumentToTheRule(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
@@ -83,7 +83,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenFactoryNotRegistered(): void
+    public function itDoesNothingWhenTheFactoryIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(ComplexityRule::class)
@@ -100,7 +100,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function skipsServicesWithNullClass(): void
+    public function itSkipsTaggedServicesWithoutAClass(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
@@ -118,7 +118,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function handlesMultipleRules(): void
+    public function itInjectsOptionsIntoEveryTaggedRule(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
@@ -141,7 +141,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function keepsSharedOptionsIdentitySeparateForEveryProducer(): void
+    public function itKeepsTheOptionsServiceIdentitySeparateForEveryProducer(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
@@ -185,7 +185,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNotReRegisterExistingOptionsService(): void
+    public function itKeepsAnExistingOptionsServiceDefinitionInsteadOfOverwritingIt(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);

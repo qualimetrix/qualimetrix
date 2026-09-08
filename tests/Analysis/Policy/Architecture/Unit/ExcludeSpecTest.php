@@ -19,7 +19,7 @@ use stdClass;
 final class ExcludeSpecTest extends TestCase
 {
     #[Test]
-    public function defaultsToAnyMatchMode(): void
+    public function itDefaultsToAnyMatchMode(): void
     {
         $spec = new ExcludeSpec(patterns: ['App\\Legacy\\**']);
 
@@ -27,7 +27,7 @@ final class ExcludeSpecTest extends TestCase
     }
 
     #[Test]
-    public function acceptsExplicitAllMatchMode(): void
+    public function itAcceptsAnExplicitAllMatchMode(): void
     {
         $spec = new ExcludeSpec(patterns: ['App\\Legacy\\**'], mode: MatchMode::All);
 
@@ -35,7 +35,7 @@ final class ExcludeSpecTest extends TestCase
     }
 
     #[Test]
-    public function exposesAllCriterionLists(): void
+    public function itExposesEveryCriterionList(): void
     {
         $spec = new ExcludeSpec(
             patterns: ['App\\Legacy\\**'],
@@ -70,7 +70,7 @@ final class ExcludeSpecTest extends TestCase
      */
     #[DataProvider('singleCriterionProvider')]
     #[Test]
-    public function acceptsSingleNonEmptyCriterion(array $criteria): void
+    public function itAcceptsASingleNonEmptyCriterion(array $criteria): void
     {
         $spec = new ExcludeSpec(
             patterns: $criteria['patterns'] ?? [],
@@ -85,7 +85,7 @@ final class ExcludeSpecTest extends TestCase
     }
 
     #[Test]
-    public function throwsWhenEveryCriterionListIsEmpty(): void
+    public function itThrowsWhenEveryCriterionListIsEmpty(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ExcludeSpec must declare at least one non-empty criterion list');
@@ -111,7 +111,7 @@ final class ExcludeSpecTest extends TestCase
      */
     #[DataProvider('nonStringEntryProvider')]
     #[Test]
-    public function throwsOnNonStringEntry(string $kind, array $values): void
+    public function itThrowsOnANonStringEntry(string $kind, array $values): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ExcludeSpec ' . $kind . '[0] must be a string,');
@@ -133,7 +133,7 @@ final class ExcludeSpecTest extends TestCase
 
     #[DataProvider('criterionKindProvider')]
     #[Test]
-    public function throwsOnEmptyStringEntry(string $kind): void
+    public function itThrowsOnAnEmptyStringEntry(string $kind): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ExcludeSpec ' . $kind . '[0] must not be empty.');

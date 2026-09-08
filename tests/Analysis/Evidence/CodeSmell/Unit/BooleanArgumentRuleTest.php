@@ -25,7 +25,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class BooleanArgumentRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itReportsItsNameAndDescription(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -34,13 +34,13 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresBooleanArgumentOptionsAsItsOptionsClass(): void
     {
         self::assertSame(BooleanArgumentOptions::class, BooleanArgumentRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions(enabled: false));
 
@@ -53,7 +53,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itProducesNoFindingsWhenNoSmellsArePresent(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -144,7 +144,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAFindingForEachDetectedBooleanArgument(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -188,7 +188,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellWithParamNameIncludesItInMessage(): void
+    public function itIncludesTheParameterNameInTheMessage(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -214,7 +214,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellWithoutParamNameFallsBackToGenericMessage(): void
+    public function itFallsBackToAGenericMessageWithoutAParameterName(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -238,7 +238,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function allowedPrefixesFilterEntries(): void
+    public function itFiltersOutEntriesMatchingAnAllowedPrefix(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -266,7 +266,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function emptyPrefixListReportsAllEntries(): void
+    public function itReportsEveryEntryWhenTheAllowedPrefixListIsEmpty(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: []));
 
@@ -290,7 +290,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function emptyExtraFallsBackToBaseTemplate(): void
+    public function itFallsBackToTheBaseMessageTemplateWhenExtraIsEmpty(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -317,7 +317,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function entryWithoutExtraIsAlwaysReported(): void
+    public function itReportsAnEntryThatHasNoExtraField(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 

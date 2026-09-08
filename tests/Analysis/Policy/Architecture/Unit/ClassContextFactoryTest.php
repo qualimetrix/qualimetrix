@@ -24,7 +24,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ClassContextFactoryTest extends TestCase
 {
     #[Test]
-    public function build_withoutGraph_returnsMinimalContext(): void
+    public function itBuildsAMinimalContextWithoutABoundGraph(): void
     {
         $factory = new ClassContextFactory();
 
@@ -38,7 +38,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_pureNamespacePath_returnsMinimalContextEvenWhenGraphIsBound(): void
+    public function itBuildsAMinimalContextForANamespacePathEvenWithABoundGraph(): void
     {
         $factory = new ClassContextFactory();
         $factory->bindGraph(self::graphWith([]));
@@ -53,7 +53,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_collectsDirectAttributesInterfacesAndParent(): void
+    public function itCollectsDirectAttributesInterfacesAndParentFromTheGraph(): void
     {
         $userService = SymbolPath::forClass('App\\Service', 'UserService');
         $abstractService = SymbolPath::forClass('App\\Service', 'AbstractService');
@@ -75,7 +75,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_walksTransitiveParentChain(): void
+    public function itWalksTheTransitiveParentChain(): void
     {
         $derived = SymbolPath::forClass('App\\Domain', 'User');
         $base = SymbolPath::forClass('App\\Domain', 'AbstractUser');
@@ -96,7 +96,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_includesInterfacesInheritedFromParentClass(): void
+    public function itIncludesInterfacesInheritedFromAParentClass(): void
     {
         $derived = SymbolPath::forClass('App\\Domain', 'User');
         $base = SymbolPath::forClass('App\\Domain', 'AbstractUser');
@@ -114,7 +114,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_walksTransitiveInterfaceExtension(): void
+    public function itWalksTransitiveInterfaceExtension(): void
     {
         // Test scenario from plan: class implements Sub; Sub extends Base.
         $klass = SymbolPath::forClass('App\\Repo', 'UserRepository');
@@ -134,7 +134,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_deduplicatesAttributeAndRelationLists(): void
+    public function itDeduplicatesRepeatedAttributeAndRelationEdges(): void
     {
         // Same target referenced through multiple edges (e.g. two #[Attr]
         // occurrences at different lines) collapses into a single entry.
@@ -151,7 +151,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function bindGraph_resetsInternalCachesAndContexts(): void
+    public function itResetsCachedContextsWhenTheGraphIsRebound(): void
     {
         $klass = SymbolPath::forClass('App\\Domain', 'User');
         $parentA = SymbolPath::forClass('App\\Domain', 'BaseA');
@@ -167,7 +167,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function bindGraph_withNull_switchesBackToMinimalContext(): void
+    public function itSwitchesBackToAMinimalContextWhenTheGraphIsUnbound(): void
     {
         $klass = SymbolPath::forClass('App\\Domain', 'User');
         $parent = SymbolPath::forClass('App\\Domain', 'Base');
@@ -181,7 +181,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_resultsAreMemoizedAcrossCalls(): void
+    public function itMemoizesTheBuiltContextAcrossRepeatedCalls(): void
     {
         $klass = SymbolPath::forClass('App\\Domain', 'User');
         $parent = SymbolPath::forClass('App\\Domain', 'Base');
@@ -196,7 +196,7 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function build_ignoresUnrelatedDependencyTypes(): void
+    public function itIgnoresDependencyTypesOtherThanExtendsImplementsAndAttribute(): void
     {
         // Only Extends/Implements/Attribute should feed ClassContext. Other
         // dependency kinds (TypeHint, New_, etc.) must be ignored.

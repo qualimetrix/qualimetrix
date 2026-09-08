@@ -17,7 +17,7 @@ use Symfony\Component\Console\Command\Command;
 final class CheckCommandDefinitionTest extends TestCase
 {
     #[Test]
-    public function booleanAliasUsesValueNone(): void
+    public function itRegistersABooleanAliasAsValueNone(): void
     {
         $command = new Command('test');
         $registry = new RuleRegistry([
@@ -37,7 +37,7 @@ final class CheckCommandDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function numericAliasUsesValueRequired(): void
+    public function itRegistersANumericAliasAsValueRequired(): void
     {
         $command = new Command('test');
         $registry = new RuleRegistry([
@@ -57,7 +57,7 @@ final class CheckCommandDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function addOptionsReturnsRuleSpecificOptionNames(): void
+    public function itReturnsOnlyTheRuleSpecificOptionNames(): void
     {
         $command = new Command('test');
         $registry = new RuleRegistry([
@@ -77,7 +77,7 @@ final class CheckCommandDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function allOptionIsRegisteredAsValueNone(): void
+    public function itRegistersTheAllOptionAsValueNone(): void
     {
         $command = new Command('test');
         $registry = new RuleRegistry([]);

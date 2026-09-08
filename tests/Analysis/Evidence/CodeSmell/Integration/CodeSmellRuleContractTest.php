@@ -26,7 +26,7 @@ use ReflectionClass;
 final class CodeSmellRuleContractTest extends TestCase
 {
     #[Test]
-    public function everySubclassDeclaresMandatoryConstants(): void
+    public function itRequiresEverySubclassToDeclareMandatoryConstants(): void
     {
         $issues = [];
 
@@ -62,7 +62,7 @@ final class CodeSmellRuleContractTest extends TestCase
      * from a path — and a disagreement names the rules only one side knows.
      */
     #[Test]
-    public function theScanFindsExactlyTheRegisteredCodeSmellRules(): void
+    public function itMakesTheDirectoryScanAgreeWithTheRuleRegistry(): void
     {
         $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
         \assert($registry instanceof RuleRegistryInterface);

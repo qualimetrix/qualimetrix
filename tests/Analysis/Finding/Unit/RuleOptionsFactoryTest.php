@@ -816,7 +816,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliOptionsDoNotLeakBetweenRunsAfterReset(): void
+    public function itDoesNotLeakCliOptionsIntoTheNextRunAfterReset(): void
     {
         // Simulate first run
         $this->registry->setCliOptions('test-rule', ['warningThreshold' => 50]);
@@ -977,7 +977,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // --- suppress_namespaces extraction tests ---
 
     #[Test]
-    public function createExtractsExcludeNamespacesSnakeCase(): void
+    public function itExtractsSuppressNamespacesWrittenInSnakeCase(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -993,7 +993,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createExtractsExcludeNamespacesCamelCase(): void
+    public function itExtractsSuppressNamespacesWrittenInCamelCase(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1007,7 +1007,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createExtractsExcludeNamespacesStringCoercedToArray(): void
+    public function itCoercesAScalarSuppressNamespacesValueIntoAnArray(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1137,7 +1137,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function createRemovesExcludeNamespacesFromOptionsBeforeFromArray(): void
+    public function itStripsSuppressNamespacesFromOptionsBeforeBuildingThem(): void
     {
         $this->registry->setConfigFileOptions([
             'test.rule' => [
@@ -1154,7 +1154,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function resetClearsExclusionProvider(): void
+    public function itClearsTheExclusionProviderOnReset(): void
     {
         $provider = new RuleNamespaceExclusionProvider();
         $registry = new RuleOptionsRegistry($provider);
@@ -1570,7 +1570,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // preset/config-file `warning`/`error` pair.
 
     #[Test]
-    public function cliThresholdOverridesConfigFileWarningAndError(): void
+    public function itLetsACliThresholdEvictConfigFileWarningAndError(): void
     {
         // Reproduces: qmx.yaml sets `warning`/`error`,
         // `--rule-opt=size.method-count:threshold=25` on top.
@@ -1588,7 +1588,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesPresetSuppliedWarningAndError(): void
+    public function itLetsACliThresholdEvictPresetSuppliedWarningAndError(): void
     {
         // Reproduces: --preset=strict sets `warning`/`error` for this rule
         // (arrives here as "config file options", since presets are merged
@@ -1607,7 +1607,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliWarningAndErrorOverrideConfigFileThreshold(): void
+    public function itLetsCliWarningAndErrorEvictAConfigFileThreshold(): void
     {
         $this->registry->setConfigFileOptions([
             'size.method-count' => ['threshold' => 25],
@@ -1622,7 +1622,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesConfigFileWarningAndErrorAtNestedLevel(): void
+    public function itScopesTheCliThresholdEvictionToItsOwnNestedLevel(): void
     {
         // Hierarchical rule (complexity.ccn): eviction must be
         // scoped to the `callable:` nesting level, not the rule's top level.
@@ -1645,7 +1645,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function sameLayerCliThresholdAndWarningStillThrows(): void
+    public function itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer(): void
     {
         // Both keys set by the SAME source (CLI) must still be reported as
         // a genuine configuration error — only the *other* side of a merge
@@ -1659,7 +1659,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function unrelatedVoGroupIsNotEvictedByAnUnrelatedCliThresholdOverride(): void
+    public function itLeavesAnUnrelatedVoGroupUntouchedByACliThresholdOverride(): void
     {
         // code-smell.long-parameter-list has two independent dimensions:
         // bare warning/error/threshold, and the vo-prefixed variant.
@@ -1692,7 +1692,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // `warning`/`error` spelling.
 
     #[Test]
-    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeys(): void
+    public function itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys(): void
     {
         $this->registry->setConfigFileOptions([
             'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
@@ -1707,7 +1707,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliPrefixedGraduatedKeysOverrideConfigFileThreshold(): void
+    public function itLetsCliPrefixedGraduatedKeysEvictAConfigFileThreshold(): void
     {
         // Symmetric direction: config file sets the bare `threshold`
         // shorthand, CLI switches to the prefixed graduated pair.
@@ -1727,7 +1727,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function sameLayerCliThresholdAndPrefixedGraduatedKeysStillThrows(): void
+    public function itStillThrowsWhenThresholdAndPrefixedGraduatedKeysComeFromTheSameLayer(): void
     {
         // Both keys set by the SAME source (CLI) for a prefixed group must
         // still be a genuine configuration error.
@@ -1743,7 +1743,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeysAtNestedLevel(): void
+    public function itScopesThePrefixedGraduatedKeyEvictionToItsOwnNestedLevel(): void
     {
         // Hierarchical rule with a prefix-mismatched nested level:
         // coupling.instability's `class:` dimension uses max_warning/
@@ -1768,7 +1768,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function cliThresholdOverridesLegacyWarningThresholdAliasAtTopLevel(): void
+    public function itLetsACliThresholdEvictTheLegacyWarningThresholdAlias(): void
     {
         // complexity.ccn's top-level legacy-flat shorthand accepts
         // `warningThreshold`/`errorThreshold` as legacy aliases for

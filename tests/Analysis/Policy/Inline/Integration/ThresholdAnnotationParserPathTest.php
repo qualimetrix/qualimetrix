@@ -51,7 +51,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ThresholdAnnotationParserPathTest extends TestCase
 {
     #[Test]
-    public function standardRuleAcceptsWarningBelowError(): void
+    public function itAcceptsAStandardOverrideWithWarningBelowError(): void
     {
         $result = $this->extract(
             ruleName: MethodCountRule::NAME,
@@ -66,7 +66,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function standardRuleRejectsWarningAboveError(): void
+    public function itRejectsAStandardOverrideWithWarningAboveError(): void
     {
         $result = $this->extract(
             ruleName: MethodCountRule::NAME,
@@ -80,7 +80,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function invertedRuleAcceptsWarningAboveErrorClosingMaintainabilityLatentBug(): void
+    public function itAcceptsAnInvertedMaintainabilityOverrideWithWarningAboveError(): void
     {
         // Regression test for the Maintainability bug latent since v0.x:
         // defaults are warning=40, error=20 (W > E natural for inverted rules),
@@ -100,7 +100,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function invertedRuleRejectsWarningBelowError(): void
+    public function itRejectsAnInvertedOverrideWithWarningBelowError(): void
     {
         $result = $this->extract(
             ruleName: MaintainabilityRule::NAME,
@@ -114,7 +114,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function invertedRuleAcceptsTypeCoverageOverride(): void
+    public function itAcceptsAnInvertedTypeCoverageOverride(): void
     {
         $result = $this->extract(
             ruleName: ParamTypeCoverageRule::NAME,
@@ -130,7 +130,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function independentAxisRuleAcceptsWocHighWmcLow(): void
+    public function itAcceptsAnIndependentAxisOverrideWithAHighWarningAndLowError(): void
     {
         // DataClass: warning -> wocThreshold (high), error -> wmcThreshold (low).
         // Both axes independent; W > E is just as valid as W < E.
@@ -148,7 +148,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function independentAxisRuleAcceptsArbitraryOrdering(): void
+    public function itAcceptsAnIndependentAxisOverrideWithALowWarningAndHighError(): void
     {
         // W < E should also pass — the two values target different metrics.
         $result = $this->extract(
@@ -162,7 +162,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function warningOnlyRuleAcceptsShorthandThatExpandsToEqualWarningAndError(): void
+    public function itExpandsAWarningOnlyShorthandToEqualWarningAndError(): void
     {
         // GodClass: shorthand `@qmx-threshold X N` parses as W=N, E=N with
         // errorWasExplicit=false. WarningOnly must accept this so the
@@ -181,7 +181,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function warningOnlyRuleAcceptsExplicitWarningOnly(): void
+    public function itAcceptsAnExplicitWarningOnlyOverride(): void
     {
         $result = $this->extract(
             ruleName: GodClassRule::NAME,
@@ -196,7 +196,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function warningOnlyRuleRejectsExplicitErrorValue(): void
+    public function itRejectsAWarningOnlyOverrideThatSetsAnErrorValue(): void
     {
         $result = $this->extract(
             ruleName: GodClassRule::NAME,
@@ -210,7 +210,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function hierarchicalRuleValidationDelegatesToLevelOptions(): void
+    public function itDelegatesValidationToTheLevelOptionsOfAHierarchicalRule(): void
     {
         // Regression test for the v0.19 bug class: ComplexityOptions is a
         // HierarchicalRuleOptionsInterface (not directly ThresholdAware), but
@@ -236,7 +236,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function wildcardPatternParsesValidValueSyntax(): void
+    public function itParsesAValidOverrideOnAWildcardRulePattern(): void
     {
         // Wildcards intentionally skip per-rule validator checks. This only
         // covers the valid parser form, not an invalid W > E pair that would

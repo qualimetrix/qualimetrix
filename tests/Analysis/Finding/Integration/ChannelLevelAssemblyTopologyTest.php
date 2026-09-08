@@ -57,7 +57,7 @@ use RuntimeException;
 final class ChannelLevelAssemblyTopologyTest extends TestCase
 {
     #[Test]
-    public function noProductionSourceSpellsALevelSuffixAsALiteral(): void
+    public function itFindsNoProductionSourceThatSpellsALevelSuffixAsALiteral(): void
     {
         $suffixes = array_map(static fn(SymbolLevel $level): string => '.' . $level->value, SymbolLevel::cases());
         $offenders = [];
@@ -93,7 +93,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
      * which refuses such a name before it can become a channel.
      */
     #[Test]
-    public function noDeclaredChannelCodeCarriesALevel(): void
+    public function itFindsNoDeclaredChannelCodeThatCarriesALevel(): void
     {
         $declarations = self::staticDeclarations();
         self::assertNotEmpty($declarations, 'No channel is declared — this guard is measuring nothing.');
@@ -122,7 +122,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
      * set.
      */
     #[Test]
-    public function theLevelDetectorRecognisesARetiredLevelBearingName(): void
+    public function itRecognisesARetiredLevelBearingChannelName(): void
     {
         self::assertSame(SymbolLevel::Class_, self::levelSegmentOf('coupling.cbo.class'));
         self::assertSame(SymbolLevel::Namespace_, self::levelSegmentOf('coupling.cbo.namespace'));

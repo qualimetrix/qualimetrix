@@ -22,38 +22,38 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
-    public function nullDefaultsToIgnore(): void
+    public function itDefaultsToIgnoreWhenValueIsNull(): void
     {
         self::assertSame(CoverageMode::Ignore, $this->validator->validate(null));
     }
 
     #[Test]
-    public function ignoreIsParsed(): void
+    public function itParsesIgnore(): void
     {
         self::assertSame(CoverageMode::Ignore, $this->validator->validate('ignore'));
     }
 
     #[Test]
-    public function warnIsParsed(): void
+    public function itParsesWarn(): void
     {
         self::assertSame(CoverageMode::Warn, $this->validator->validate('warn'));
     }
 
     #[Test]
-    public function errorIsParsed(): void
+    public function itParsesError(): void
     {
         self::assertSame(CoverageMode::Error, $this->validator->validate('error'));
     }
 
     #[Test]
-    public function coverageIsCaseInsensitive(): void
+    public function itParsesCoverageValuesCaseInsensitively(): void
     {
         self::assertSame(CoverageMode::Error, $this->validator->validate('ERROR'));
         self::assertSame(CoverageMode::Warn, $this->validator->validate('Warn'));
     }
 
     #[Test]
-    public function unknownCoverageValueIsRejected(): void
+    public function itRejectsAnUnknownCoverageValue(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('architecture.coverage-gap');
@@ -62,7 +62,7 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
-    public function coverageOfWrongTypeIsRejected(): void
+    public function itRejectsACoverageValueOfTheWrongType(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessage('architecture.coverage-gap');
@@ -71,7 +71,7 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
-    public function coverageOfBoolTypeIsRejected(): void
+    public function itRejectsABooleanCoverageValue(): void
     {
         $this->expectException(ArchitectureConfigurationException::class);
         $this->expectExceptionMessageMatches('/got bool/');
@@ -80,7 +80,7 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
-    public function configPathIsArchitectureForAllErrors(): void
+    public function itReportsArchitectureAsTheConfigPathForEveryError(): void
     {
         try {
             $this->validator->validate('verbose');

@@ -69,7 +69,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
     }
 
     #[Test]
-    public function userProvidedMaxExpandedLayersReachesConfiguration(): void
+    public function itLetsAUserProvidedMaxExpandedLayersReachTheConfiguration(): void
     {
         $this->writeYaml(<<<'YAML'
             architecture:
@@ -91,7 +91,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
     }
 
     #[Test]
-    public function omittedMaxExpandedLayersFallsBackToDefault(): void
+    public function itFallsBackToTheDefaultWhenMaxExpandedLayersIsOmitted(): void
     {
         $this->writeYaml(<<<'YAML'
             architecture:

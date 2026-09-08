@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
 final class CognitiveComplexityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEnabledFalseDisablesAllLevels(): void
+    public function itDisablesAllLevelsWhenTheTopLevelEnabledFlagIsFalse(): void
     {
         $options = CognitiveComplexityOptions::fromArray(['enabled' => false]);
 
@@ -23,7 +23,7 @@ final class CognitiveComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayWithoutEnabledFalseKeepsDefaults(): void
+    public function itKeepsTheDefaultEnabledStateWhenNoEnabledKeyIsGiven(): void
     {
         $options = CognitiveComplexityOptions::fromArray([]);
 

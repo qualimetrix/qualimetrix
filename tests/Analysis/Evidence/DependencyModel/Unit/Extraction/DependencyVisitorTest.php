@@ -31,7 +31,7 @@ final class DependencyVisitorTest extends TestCase
     }
 
     #[Test]
-    public function detects_extends(): void
+    public function itRecordsAnExtendsDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -50,7 +50,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_implements(): void
+    public function itRecordsADependencyForEachImplementedInterface(): void
     {
         $code = <<<'PHP'
 <?php
@@ -69,7 +69,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_trait_use(): void
+    public function itRecordsATraitUseDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -89,7 +89,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_new_instantiation(): void
+    public function itRecordsANewInstantiationDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -111,7 +111,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_static_call(): void
+    public function itRecordsAStaticCallDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -133,7 +133,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_static_property_fetch(): void
+    public function itRecordsAStaticPropertyFetchDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -155,7 +155,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_class_const_fetch(): void
+    public function itRecordsAClassConstFetchDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -177,7 +177,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_type_hint_parameter(): void
+    public function itRecordsATypeHintDependencyForAParameter(): void
     {
         $code = <<<'PHP'
 <?php
@@ -197,7 +197,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_type_hint_return(): void
+    public function itRecordsATypeHintDependencyForAReturnType(): void
     {
         $code = <<<'PHP'
 <?php
@@ -217,7 +217,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_catch(): void
+    public function itRecordsACatchDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -240,7 +240,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_instanceof(): void
+    public function itRecordsAnInstanceofDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -262,7 +262,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_attribute(): void
+    public function itRecordsAnAttributeDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -281,7 +281,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_property_type(): void
+    public function itRecordsAPropertyTypeDependency(): void
     {
         $code = <<<'PHP'
 <?php
@@ -301,7 +301,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_union_type(): void
+    public function itRecordsADependencyForEachUnionTypeMember(): void
     {
         $code = <<<'PHP'
 <?php
@@ -322,7 +322,7 @@ PHP;
     }
 
     #[Test]
-    public function detects_intersection_type(): void
+    public function itRecordsADependencyForEachIntersectionTypeMember(): void
     {
         $code = <<<'PHP'
 <?php
@@ -343,7 +343,7 @@ PHP;
     }
 
     #[Test]
-    public function ignores_self_static_parent(): void
+    public function itIgnoresSelfStaticAndParentReferences(): void
     {
         $code = <<<'PHP'
 <?php
@@ -363,7 +363,7 @@ PHP;
     }
 
     #[Test]
-    public function ignores_builtin_types(): void
+    public function itIgnoresBuiltinScalarAndArrayTypes(): void
     {
         $code = <<<'PHP'
 <?php
@@ -379,7 +379,7 @@ PHP;
     }
 
     #[Test]
-    public function ignores_self_references(): void
+    public function itIgnoresAReturnTypeReferencingTheEnclosingClassItself(): void
     {
         $code = <<<'PHP'
 <?php
@@ -395,7 +395,7 @@ PHP;
     }
 
     #[Test]
-    public function handles_interface_extends(): void
+    public function itRecordsAnExtendsDependencyForAnInterface(): void
     {
         $code = <<<'PHP'
 <?php
@@ -413,7 +413,7 @@ PHP;
     }
 
     #[Test]
-    public function handles_enum_implements(): void
+    public function itRecordsAnImplementsDependencyForAnEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -471,7 +471,7 @@ PHP);
     }
 
     #[Test]
-    public function imports_do_not_leak_between_namespace_blocks(): void
+    public function itKeepsImportsScopedToTheirOwnNamespaceBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -510,7 +510,7 @@ PHP;
     }
 
     #[Test]
-    public function anonymous_class_extends_implements_attributed_to_enclosing_class(): void
+    public function itAttributesAnonymousClassExtendsAndImplementsToTheEnclosingClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -548,7 +548,7 @@ PHP;
     }
 
     #[Test]
-    public function anonymous_class_without_enclosing_class_is_ignored(): void
+    public function itIgnoresAnAnonymousClassWithoutAnEnclosingNamedClass(): void
     {
         $code = <<<'PHP'
 <?php

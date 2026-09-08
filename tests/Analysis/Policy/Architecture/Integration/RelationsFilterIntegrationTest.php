@@ -41,7 +41,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     private const string FIXTURE_PATH = __DIR__ . '/../Fixtures/RelationsSample';
 
     #[Test]
-    public function inheritanceAlias_permitsExtendsAndForbidsStaticCallAndTypeHint(): void
+    public function itLetsTheInheritanceAliasPermitExtendsAndForbidStaticCallAndTypeHint(): void
     {
         $config = self::baseConfig();
         $config['allow'] = [
@@ -58,7 +58,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function staticAccessAlias_permitsStaticCallAndForbidsExtendsAndTypeHint(): void
+    public function itLetsTheStaticAccessAliasPermitStaticCallAndForbidExtendsAndTypeHint(): void
     {
         $config = self::baseConfig();
         $config['allow'] = [
@@ -75,7 +75,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function typeReferenceAlias_permitsTypeHintAndForbidsExtendsAndStaticCall(): void
+    public function itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall(): void
     {
         $config = self::baseConfig();
         $config['allow'] = [
@@ -92,7 +92,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function directValueMix_permitsListedKindsOnly(): void
+    public function itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues(): void
     {
         // `extends` + `static_call` direct values — picks Extends and StaticCall,
         // leaves TypeHint to violate.
@@ -111,7 +111,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function bareTargetWithoutRelations_acceptsEveryEdgeKind(): void
+    public function itAcceptsEveryEdgeKindForABareTargetWithoutRelations(): void
     {
         // Short-form (bare-string) target leaves relations=null on AllowTarget;
         // every dependency type is accepted (Phase-1 BC).
@@ -126,7 +126,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function overlappingTargetsShortFormDominates_unionAcrossSiblings(): void
+    public function itLetsTheBareStringSiblingDominateUnderUnionSemantics(): void
     {
         // UNION semantics inside one source's target list: a bare-string target
         // rescues edge kinds the long-form sibling's relations list rejects.
@@ -148,7 +148,7 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function yamlEndToEnd_relationsKeyAndAliasSurvivesYamlConfigLoader(): void
+    public function itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader(): void
     {
         // Regression test for YamlConfigLoader normalization: the `relations:`
         // list and its `inheritance` alias must reach AllowValidator without

@@ -41,7 +41,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function computeTopIssuesWithCorrectFormula(): void
+    public function itComputesImpactScoreAsClassRankTimesSeverityWeightTimesRemediationMinutes(): void
     {
         // Error finding with classRank=0.05, rule 'complexity.ccn' (base=30min, no scaling)
         $errorFinding = $this->createFinding(
@@ -87,7 +87,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function sortDescendingByImpact(): void
+    public function itSortsIssuesByImpactScoreDescending(): void
     {
         // Three class findings with different classRanks, same rule
         $v1 = $this->createFinding('src/a.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Low'), 'code-smell.debug-code');
@@ -115,7 +115,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function stableSecondarySortByFileAndLine(): void
+    public function itBreaksEqualImpactTiesByFileThenLine(): void
     {
         // Same classRank and rule → same impact → secondary sort by file
         $v1 = $this->createFinding('src/b.php', 10, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
@@ -135,7 +135,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function emptyFindingsReturnsEmpty(): void
+    public function itReturnsNoIssuesWhenGivenNoFindings(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
@@ -146,7 +146,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function classRankNullFallsBackToMedianOrZero(): void
+    public function itFallsBackToZeroImpactWhenClassRankIsNullAndNoMedianExists(): void
     {
         // Function-level finding → classRank resolves to null
         // No classes exist → median is null → fallback 0.0
@@ -171,7 +171,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function classRankNullFallsBackToMedian(): void
+    public function itFallsBackToTheMedianClassRankForAFindingWithoutAClass(): void
     {
         // Two class findings with classRanks 0.01 and 0.03 → median = 0.02
         // One function finding (classRank = null) should use median 0.02
@@ -234,7 +234,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function severityWeightsErrorTripleWarning(): void
+    public function itWeightsAnErrorAsTripleAWarningInImpactScore(): void
     {
         $errorFinding = $this->createFinding(
             'src/a.php',
@@ -266,7 +266,7 @@ final class ImpactCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function zeroDebtMinutesResultsInZeroImpact(): void
+    public function itScoresZeroImpactWhenClassRankIsZero(): void
     {
         // Use a finding with metricValue = threshold so scaling produces base time
         // But we need a rule with 0 base time — no such rule exists in the registry.

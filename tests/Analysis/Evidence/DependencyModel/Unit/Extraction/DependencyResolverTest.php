@@ -27,7 +27,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_fullyQualifiedName_returnsAsIs(): void
+    public function itResolvesAFullyQualifiedNameUnchanged(): void
     {
         $name = new FullyQualified('Foo\\Bar\\Baz');
 
@@ -37,7 +37,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_relativeName_prependsNamespace(): void
+    public function itPrependsTheCurrentNamespaceToARelativeName(): void
     {
         $this->resolver->setNamespace('App\\Service');
         $name = new Relative(['Foo', 'Bar']);
@@ -48,7 +48,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_unqualifiedName_withImport(): void
+    public function itResolvesAnUnqualifiedNameToItsImportedFqcn(): void
     {
         $use = new Use_([
             new UseUse(new Name('Vendor\\Package\\SomeClass')),
@@ -62,7 +62,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_unqualifiedName_withAlias(): void
+    public function itResolvesAnAliasedNameToTheOriginalImportedFqcn(): void
     {
         $use = new Use_([
             new UseUse(
@@ -79,7 +79,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_qualifiedName_withImportedFirstPart(): void
+    public function itResolvesAQualifiedNameWhoseFirstSegmentIsImported(): void
     {
         $use = new Use_([
             new UseUse(new Name('Vendor\\Package')),
@@ -93,7 +93,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_unqualifiedName_noImport_usesNamespace(): void
+    public function itPrependsTheCurrentNamespaceToAnUnimportedUnqualifiedName(): void
     {
         $this->resolver->setNamespace('App\\Domain');
 
@@ -104,7 +104,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolve_unqualifiedName_noImport_noNamespace(): void
+    public function itResolvesAnUnimportedUnqualifiedNameToItselfWhenThereIsNoNamespace(): void
     {
         $name = new Name('GlobalClass');
         $result = $this->resolver->resolve($name);
@@ -113,7 +113,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function addGroupUseStatement_resolvesProperly(): void
+    public function itResolvesNamesImportedThroughAGroupUseStatement(): void
     {
         $groupUse = new GroupUse(
             new Name('Vendor\\Package'),
@@ -132,7 +132,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function reset_clearsImportsAndNamespace(): void
+    public function itClearsImportsAndTheNamespaceOnReset(): void
     {
         $this->resolver->setNamespace('App');
         $use = new Use_([
@@ -147,7 +147,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveString_fullyQualified_stripsLeadingBackslash(): void
+    public function itStripsTheLeadingBackslashWhenResolvingAFullyQualifiedString(): void
     {
         $result = $this->resolver->resolveString('\\Foo\\Bar');
 
@@ -155,7 +155,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveString_withImport(): void
+    public function itResolvesAnImportedNameGivenAsAString(): void
     {
         $use = new Use_([
             new UseUse(new Name('Vendor\\SomeClass')),
@@ -168,7 +168,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveString_qualifiedWithImport(): void
+    public function itResolvesAQualifiedStringWhoseFirstSegmentIsImported(): void
     {
         $use = new Use_([
             new UseUse(new Name('Vendor\\Package')),
@@ -181,7 +181,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveString_noImport_usesNamespace(): void
+    public function itPrependsTheCurrentNamespaceToAnUnimportedStringName(): void
     {
         $this->resolver->setNamespace('App\\Domain');
 
@@ -191,7 +191,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function addUseStatement_ignoresFunctionImports(): void
+    public function itIgnoresFunctionImportsWhenRecordingUseStatements(): void
     {
         $use = new Use_(
             [new UseUse(new Name('strlen'))],
@@ -203,7 +203,7 @@ final class DependencyResolverTest extends TestCase
     }
 
     #[Test]
-    public function addUseStatement_ignoresConstImports(): void
+    public function itIgnoresConstantImportsWhenRecordingUseStatements(): void
     {
         $use = new Use_(
             [new UseUse(new Name('PHP_EOL'))],

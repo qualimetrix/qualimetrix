@@ -85,7 +85,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function aRulesSectionKeyMayNameAnyProducerOfTheFamily(string $producerRuleName): void
+    public function itLetsARulesSectionKeyNameAnyProducerOfTheFamily(string $producerRuleName): void
     {
         $snapshot = self::validator()->validate(
             self::inputWithoutRuleOpt(),
@@ -104,7 +104,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function aRuleOptOwnerMayNameAnyProducerOfTheFamily(string $producerRuleName): void
+    public function itLetsARuleOptOwnerNameAnyProducerOfTheFamily(string $producerRuleName): void
     {
         $snapshot = self::validator()->validate(
             self::inputWithRuleOpt($producerRuleName . ':enabled=false'),
@@ -126,7 +126,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function aFamilyProducerOwnsItsOptionsWhileDeclaringNoThresholdSupport(string $producerRuleName): void
+    public function itLetsAFamilyProducerOwnItsOptionsWhileDeclaringNoThresholdSupport(string $producerRuleName): void
     {
         self::assertFalse(
             self::universe()->supportsThresholdOverride($producerRuleName),
@@ -144,7 +144,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      * still carry — while `nosuch.producer` never named anything.
      */
     #[Test]
-    public function anOwnerThatNamesNoProducerIsStillRefusedAsUnaddressable(): void
+    public function itRefusesAnOwnerThatNamesNoProducerAsUnaddressable(): void
     {
         foreach (['computed.health', 'nosuch.producer'] as $owner) {
             $message = self::refusalFor($owner);
@@ -169,7 +169,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      * refusal on its own, and the option would be unusable for everyone.
      */
     #[Test]
-    public function anExclusionKeyMayNameTheChannelItsOwnerPublishes(): void
+    public function itLetsAnExclusionKeyNameTheChannelItsOwnerPublishes(): void
     {
         $definitions = self::twoNamespaceDimensions();
         $owner = self::producerOf('health.cohesion', $definitions);
@@ -203,7 +203,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
      * accepted there.
      */
     #[Test]
-    public function anExclusionKeyNamingAChannelItsOwnerDoesNotPublishIsRefused(): void
+    public function itRefusesAnExclusionKeyNamingAChannelItsOwnerDoesNotPublish(): void
     {
         $definitions = self::twoNamespaceDimensions();
         $owner = self::producerOf('health.cohesion', $definitions);

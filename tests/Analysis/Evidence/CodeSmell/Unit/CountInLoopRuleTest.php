@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class CountInLoopRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itReportsItsNameAndDescription(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresCodeSmellOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, CountInLoopRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itProducesNoFindingsWhenNoSmellsArePresent(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAFindingForACountCallInALoopCondition(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 

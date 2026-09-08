@@ -18,7 +18,7 @@ use ReflectionNamedType;
 final class ConfigSchemaTest extends TestCase
 {
     #[Test]
-    public function allowedRootKeysContainsAllExpectedKeys(): void
+    public function itListsAllExpectedRootKeys(): void
     {
         $keys = ConfigSchema::allowedRootKeys();
 
@@ -45,7 +45,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function sectionKeysIncludesDottedRoots(): void
+    public function itIncludesDottedRootsAmongSectionKeys(): void
     {
         $sections = ConfigSchema::sectionKeys();
 
@@ -62,7 +62,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function listKeysReturnsOnlyLists(): void
+    public function itReturnsOnlyListTypeKeys(): void
     {
         $lists = ConfigSchema::listKeys();
 
@@ -80,7 +80,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function sectionAndListKeysDoNotOverlap(): void
+    public function itKeepsSectionAndListKeysDisjoint(): void
     {
         $sections = ConfigSchema::sectionKeys();
         $lists = ConfigSchema::listKeys();
@@ -89,7 +89,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function allTypedKeysAreInAllowedRootKeys(): void
+    public function itIncludesEveryTypedKeyInAllowedRootKeys(): void
     {
         $allowed = ConfigSchema::allowedRootKeys();
 
@@ -110,7 +110,7 @@ final class ConfigSchemaTest extends TestCase
      * was rejected with "Unknown configuration keys".
      */
     #[Test]
-    public function allSchemaEntriesPassLoaderValidation(): void
+    public function itAcceptsAConfigCoveringEverySchemaEntry(): void
     {
         // Build a YAML config that exercises every root key from ENTRIES
         $yaml = $this->buildFullConfigYaml();
@@ -194,7 +194,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function allowedSectionSubKeysReturnsCorrectKeysPerSection(): void
+    public function itReturnsTheCorrectSubKeysPerSection(): void
     {
         $subKeys = ConfigSchema::allowedSectionSubKeys();
 
@@ -212,7 +212,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function everyEntryHasMatchingConstant(): void
+    public function itGivesEveryEntryAMatchingConstant(): void
     {
         $reflection = new ReflectionClass(ConfigSchema::class);
         $constantValues = array_values($reflection->getConstants());
@@ -227,12 +227,12 @@ final class ConfigSchemaTest extends TestCase
     }
 
     /**
-     * Reverse of everyEntryHasMatchingConstant: every string constant
+     * Reverse of itGivesEveryEntryAMatchingConstant: every string constant
      * must appear in ENTRIES (to have a YAML path) or be explicitly
      * documented as internal-only.
      */
     #[Test]
-    public function everyConstantHasEntryOrIsInternal(): void
+    public function itGivesEveryConstantAnEntryOrMarksItInternal(): void
     {
         $internalConstants = [...ConfigSchema::INTERNAL_KEYS, ...ConfigSchema::DOCUMENT_ROOTS];
 
@@ -276,7 +276,7 @@ final class ConfigSchemaTest extends TestCase
      * going stale when new consumers are added.
      */
     #[Test]
-    public function noConstantIsDangling(): void
+    public function itLeavesNoConstantUnreferencedByAConsumer(): void
     {
         $sourceDir = \dirname(__DIR__, 4) . '/src';
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($sourceDir));

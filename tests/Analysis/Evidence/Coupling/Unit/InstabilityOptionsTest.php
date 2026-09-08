@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 final class InstabilityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEnabledFalseDisablesAllLevels(): void
+    public function itDisablesAllLevelsWhenTheTopLevelEnabledFlagIsFalse(): void
     {
         $options = InstabilityOptions::fromArray(['enabled' => false]);
 

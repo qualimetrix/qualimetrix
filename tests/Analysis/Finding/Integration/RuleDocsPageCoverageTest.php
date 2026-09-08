@@ -40,7 +40,7 @@ final class RuleDocsPageCoverageTest extends TestCase
     private const int REGISTERED_RULE_COUNT = 45;
 
     #[Test]
-    public function everyRegisteredRuleDeclaresItsOwnDocsPage(): void
+    public function itRequiresEveryRegisteredRuleToDeclareItsOwnDocsPage(): void
     {
         $ruleClasses = self::ruleClasses();
         self::assertCount(self::REGISTERED_RULE_COUNT, $ruleClasses);
@@ -73,7 +73,7 @@ final class RuleDocsPageCoverageTest extends TestCase
      * have failed, had anyone written it.
      */
     #[Test]
-    public function everyDeclaredDocsPageCarriesTheRulesOwnAnchor(): void
+    public function itRequiresEveryDeclaredDocsPageToCarryTheRulesOwnAnchor(): void
     {
         foreach (self::ruleClasses() as $ruleClass) {
             $ruleName = RuleNameReader::read($ruleClass);
@@ -105,7 +105,7 @@ final class RuleDocsPageCoverageTest extends TestCase
      * links to.
      */
     #[Test]
-    public function everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor(): void
+    public function itRequiresEveryClasslessComputedMetricProducerToCarryItsAnchor(): void
     {
         $path = self::docsRoot() . '/' . ComputedMetricChannelFamily::DOCS_PAGE;
         self::assertFileExists($path);
@@ -134,7 +134,7 @@ final class RuleDocsPageCoverageTest extends TestCase
      * docblock.
      */
     #[Test]
-    public function theTwoNonPrefixPagesAreDeclaredExplicitly(): void
+    public function itDeclaresTheTwoNonPrefixDocsPagesExplicitly(): void
     {
         self::assertSame('rules/cohesion.md', RuleDocsPageReader::read(LcomRule::class));
         self::assertSame('reference/health-scores.md', RuleDocsPageReader::read(ComputedMetricRule::class));

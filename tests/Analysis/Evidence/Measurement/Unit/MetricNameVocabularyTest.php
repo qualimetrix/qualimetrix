@@ -29,7 +29,7 @@ final class MetricNameVocabularyTest extends TestCase
      * error — which is exactly what it was before Ш5e3 fixed the cut.
      */
     #[Test]
-    public function noKeyEndsInASegmentThatIsAnAggregationStrategy(): void
+    public function itRejectsAKeyWhoseLastSegmentIsAnAggregationStrategyWord(): void
     {
         $strategies = array_map(
             static fn(AggregationStrategy $strategy): string => $strategy->value,
@@ -54,7 +54,7 @@ final class MetricNameVocabularyTest extends TestCase
      * to two metrics, and nothing downstream could tell which was meant.
      */
     #[Test]
-    public function noKeyIsAnAggregatedSpellingOfAnother(): void
+    public function itRejectsAKeyThatCollidesWithAnAggregatedSpellingOfAnotherKey(): void
     {
         $keys = self::keys();
         $collisions = [];
@@ -75,7 +75,7 @@ final class MetricNameVocabularyTest extends TestCase
      * lower-case kebab.
      */
     #[Test]
-    public function everyKeyNamesItsFamilyInKebab(): void
+    public function itRequiresEveryKeyToFollowTheFamilyDotMetricKebabGrammar(): void
     {
         $malformed = [];
 

@@ -29,7 +29,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class TreeAwareNamespaceAggregatorTest extends TestCase
 {
     #[Test]
-    public function parent_gets_correct_sum_from_descendant_leaves(): void
+    public function itSumsMetricsFromDescendantLeafNamespacesIntoTheParent(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -62,7 +62,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function parent_gets_correct_avg_from_raw_symbols(): void
+    public function itAveragesFromRawCallableValuesRatherThanChildAverages(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -118,7 +118,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function deep_hierarchy_aggregates_from_leaf_descendants(): void
+    public function itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -145,7 +145,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function parent_with_own_symbols_includes_them_in_aggregation(): void
+    public function itIncludesAParentsOwnSymbolsAlongsideItsChildrensInAggregation(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -192,7 +192,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function no_parent_namespaces_does_nothing(): void
+    public function itLeavesTheRepositoryUnchangedWhenNoParentNamespaceExists(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -210,7 +210,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function metric_definition_driven_no_hardcoded_metrics(): void
+    public function itAggregatesAnyMetricDefinitionWithoutAHardcodedMetricList(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -269,7 +269,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function symbol_counts_are_computed_for_parent(): void
+    public function itComputesClassAndMethodSymbolCountsForTheParent(): void
     {
         $repository = new InMemoryMetricRepository();
 

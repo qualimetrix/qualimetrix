@@ -37,7 +37,7 @@ final class ChannelOrderFixtureDriftTest extends TestCase
     private const string FIXTURE = '/Fixtures/Channels/order.txt';
 
     #[Test]
-    public function theContainerYieldsChannelsInTheOrderTheFixtureRecords(): void
+    public function itYieldsChannelsInTheOrderTheFixtureRecords(): void
     {
         $actual = self::realChannelOrder();
         $expected = self::readFixture();

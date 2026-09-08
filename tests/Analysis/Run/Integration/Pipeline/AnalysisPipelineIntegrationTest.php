@@ -127,7 +127,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * that dependencyGraph is not null when dependencies exist.
      */
     #[Test]
-    public function dependencyGraphIsPassedToAnalysisContext(): void
+    public function itDependencyGraphIsPassedToAnalysisContext(): void
     {
         // Arrange: create dependencies between two classes
         $dependencies = [
@@ -180,7 +180,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * with CircularDependencyRule. It should produce findings but currently won't.
      */
     #[Test]
-    public function circularDependencyRuleProducesFindingsForActualCycles(): void
+    public function itCircularDependencyRuleProducesFindingsForActualCycles(): void
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
@@ -378,7 +378,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * This test verifies that global collector metrics are aggregated to namespace level.
      */
     #[Test]
-    public function globalCollectorMetricsAreAggregatedToNamespaceLevel(): void
+    public function itGlobalCollectorMetricsAreAggregatedToNamespaceLevel(): void
     {
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [

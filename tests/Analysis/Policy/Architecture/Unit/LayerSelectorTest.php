@@ -52,7 +52,7 @@ final class LayerSelectorTest extends TestCase
 
     #[Test]
     #[DataProvider('kindDetectionProvider')]
-    public function parserDetectsKindFromContent(string $raw, SelectorKind $expectedKind): void
+    public function itDetectsTheSelectorKindFromItsContent(string $raw, SelectorKind $expectedKind): void
     {
         $selector = LayerSelectorParser::parse($raw);
 
@@ -65,7 +65,7 @@ final class LayerSelectorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function exactSelectorMatchSourceReturnsEmptyBindingOnMatch(): void
+    public function itReturnsAnEmptyBindingWhenAnExactSelectorMatchesTheSource(): void
     {
         $selector = LayerSelector::exact('controller');
 
@@ -76,7 +76,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function exactSelectorMatchSourceReturnsNullOnMiss(): void
+    public function itReturnsNullWhenAnExactSelectorMissesTheSource(): void
     {
         $selector = LayerSelector::exact('controller');
 
@@ -86,7 +86,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function exactSelectorMatchesTargetIgnoresBinding(): void
+    public function itIgnoresTheBindingWhenAnExactSelectorMatchesTheTarget(): void
     {
         $selector = LayerSelector::exact('service');
 
@@ -100,7 +100,7 @@ final class LayerSelectorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function globSelectorMatchesViaFnmatchOnBothSides(): void
+    public function itMatchesViaFnmatchOnBothSidesForAGlobSelector(): void
     {
         $selector = LayerSelector::glob('domain-*');
 
@@ -115,7 +115,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     // Note: glob character classes (`[ab]`) are intentionally rejected at
-    // parse time — see {@see bracketInSelectorIsRejectedWithCaptureHint}
+    // parse time — see {@see itRejectsABracketInTheSelectorWithACaptureHint}
     // below. The D4 grammar does not require character classes and silently
     // dispatching {@code 'domain-[m]'} to glob produced semantic divergence
     // from a confused user's capture-variable intent. The {@code LayerSelector::glob()}
@@ -127,7 +127,7 @@ final class LayerSelectorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function capturedSelectorMatchSourceReturnsBindingWithCapturedValue(): void
+    public function itReturnsABindingWithTheCapturedValueWhenACapturedSelectorMatchesTheSource(): void
     {
         $selector = LayerSelectorParser::parse('app-{m}');
 
@@ -138,7 +138,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedSelectorMatchSourceFailsOnShapeMismatch(): void
+    public function itFailsOnAShapeMismatchWhenACapturedSelectorMatchesTheSource(): void
     {
         $selector = LayerSelectorParser::parse('app-{m}');
 
@@ -150,7 +150,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function multiSegmentCaptureMatchesAcrossSeparators(): void
+    public function itMatchesAMultiSegmentCaptureAcrossSeparators(): void
     {
         $selector = LayerSelectorParser::parse('app-{m:**}');
 
@@ -161,7 +161,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function multipleCapturesInOneSelector(): void
+    public function itCapturesMultipleVariablesInOneSelector(): void
     {
         $selector = LayerSelectorParser::parse('{a}-{b}');
 
@@ -173,7 +173,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetSubstitutesSourceBinding(): void
+    public function itSubstitutesTheSourceBindingIntoACapturedTarget(): void
     {
         // Step E binding-aware semantics: a captured target selector
         // substitutes the bound variable values from the source side before
@@ -190,7 +190,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithEmptyBindingDegradesToShapeMatch(): void
+    public function itDegradesToAShapeMatchWhenTheSourceBindingIsEmpty(): void
     {
         // When the source binding is empty (exact/glob source kinds, or the
         // policy's cross-instance escape hatch), the captured target falls
@@ -207,7 +207,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithMultipleBindingsSubstitutesEach(): void
+    public function itSubstitutesEachVariableForACapturedTargetWithMultipleBindings(): void
     {
         $target = LayerSelectorParser::parse('{a}-{b}');
 
@@ -219,7 +219,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetWithMultiSegmentBindingSubstitutesAcrossSeparators(): void
+    public function itSubstitutesAMultiSegmentBindingAcrossSeparators(): void
     {
         $target = LayerSelectorParser::parse('app-{path:**}');
 
@@ -230,7 +230,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function captureVariablesListsDeclaredNames(): void
+    public function itListsTheDeclaredCaptureVariableNames(): void
     {
         $exact = LayerSelector::exact('controller');
         self::assertSame([], $exact->captureVariables());
@@ -253,7 +253,7 @@ final class LayerSelectorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function emptyStringIsRejected(): void
+    public function itRejectsAnEmptyString(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage('non-empty');
@@ -262,7 +262,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function unbalancedOpenBraceIsRejected(): void
+    public function itRejectsAnUnbalancedOpenBrace(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage("unbalanced '{'");
@@ -271,7 +271,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function unbalancedCloseBraceIsRejected(): void
+    public function itRejectsAnUnbalancedCloseBrace(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage("unbalanced '}'");
@@ -280,7 +280,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function nestedBracesAreRejected(): void
+    public function itRejectsNestedBraces(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage("nested '{'");
@@ -289,7 +289,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function emptyCaptureIsRejected(): void
+    public function itRejectsAnEmptyCapture(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage('empty capture');
@@ -298,7 +298,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function unknownCaptureQuantifierIsRejected(): void
+    public function itRejectsAnUnknownCaptureQuantifier(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage("only ':**' is supported");
@@ -307,7 +307,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function invalidCaptureNameStartingWithDigitIsRejected(): void
+    public function itRejectsACaptureNameStartingWithADigit(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage('invalid capture name');
@@ -316,7 +316,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function invalidCaptureNameContainingHyphenIsRejected(): void
+    public function itRejectsACaptureNameContainingAHyphen(): void
     {
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage('invalid capture name');
@@ -325,7 +325,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function duplicateCaptureNameIsRejectedAtParseTime(): void
+    public function itRejectsADuplicateCaptureNameAtParseTime(): void
     {
         // PCRE rejects {@code (?P<m>…)(?P<m>…)} at compile time with "two named
         // subpatterns have the same name", which previously surfaced as a
@@ -338,7 +338,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function trailingBackslashIsRejected(): void
+    public function itRejectsATrailingBackslash(): void
     {
         // Without this guard a dangling backslash would silently be appended
         // to the literal buffer, producing a regex that requires a `\` in the
@@ -380,7 +380,7 @@ final class LayerSelectorTest extends TestCase
 
     #[Test]
     #[DataProvider('bracketRejectionProvider')]
-    public function bracketInSelectorIsRejectedWithCaptureHint(string $raw): void
+    public function itRejectsABracketInTheSelectorWithACaptureHint(string $raw): void
     {
         // M17: silent semantic divergence between confused capture intent
         // (`'domain-[m]'` meaning "capture variable m") and the parser's
@@ -397,7 +397,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function globAndCapturedPatternsWithoutBracketsStillParseSuccessfully(): void
+    public function itStillParsesGlobAndCapturedPatternsWithoutBrackets(): void
     {
         // Regression pin: the bracket rejection must not interfere with
         // valid selectors that don't use `[`. All three selector kinds keep
@@ -412,7 +412,7 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function variableNamesAreCaseSensitive(): void
+    public function itTreatsCaptureVariableNamesAsCaseSensitive(): void
     {
         $selector = LayerSelectorParser::parse('app-{Module}');
 
@@ -428,7 +428,7 @@ final class LayerSelectorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function kindPredicatesReflectSelectorKind(): void
+    public function itReflectsTheSelectorKindInItsKindPredicates(): void
     {
         $exact = LayerSelector::exact('a');
         self::assertTrue($exact->isExact());

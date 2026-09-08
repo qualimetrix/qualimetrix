@@ -132,7 +132,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideDisableForms')]
-    public function disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes(
+    public function itLetsDisableSelectorsReachTheLateChannelExactlyAsTheGridSays(
         array $selectors,
         array $expected,
     ): void {
@@ -186,7 +186,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideOnlyForms')]
-    public function onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes(
+    public function itLetsOnlySelectorsReachTheLateChannelExactlyAsTheGridSays(
         array $selectors,
         array $expected,
     ): void {
@@ -236,7 +236,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      * oversight.
      */
     #[Test]
-    public function theProducersPathExclusionStillReachesTheEarlySiblingAndNotTheLateChannel(): void
+    public function itKeepsThePathExclusionInertOnTheLateChannelWhileItStillReachesTheEarlySibling(): void
     {
         self::assertSame(
             [self::LATE],
@@ -255,7 +255,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideRefusedForms')]
-    public function refusedFormsStayRefused(string $option, string $selector): void
+    public function itRefusesAProducerLevelPairAndARetiredRuleCodeSpelling(string $option, string $selector): void
     {
         $tester = $this->execute([$option => [$selector]]);
 
@@ -286,7 +286,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideCarriers')]
-    public function everyCarrierOfASelectorReachesTheSameMergedSelection(array $invocation, string $expected): void
+    public function itMergesEveryCarrierOfASelectorIntoTheSameSelection(array $invocation, string $expected): void
     {
         self::assertSame([$expected], $this->channelsFrom($invocation));
     }

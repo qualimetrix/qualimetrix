@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions;
 final class NamespaceInstabilityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEmptyReturnsEnabled(): void
+    public function itDefaultsToEnabledWhenTheOptionsArrayIsEmpty(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([]);
 
@@ -21,7 +21,7 @@ final class NamespaceInstabilityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayWithEnabledTrueIsEnabled(): void
+    public function itIsEnabledWhenTheEnabledFlagIsTrue(): void
     {
         $options = NamespaceInstabilityOptions::fromArray(['enabled' => true]);
 

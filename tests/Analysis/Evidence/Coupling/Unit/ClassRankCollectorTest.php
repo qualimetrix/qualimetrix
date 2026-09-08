@@ -37,25 +37,25 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsClassRank(): void
+    public function itNamesItselfClassRank(): void
     {
         self::assertSame('classRank', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsCaAndCe(): void
+    public function itRequiresCaAndCeMetrics(): void
     {
         self::assertSame(['coupling.ca', 'coupling.ce'], $this->collector->requires());
     }
 
     #[Test]
-    public function provides_returnsClassRank(): void
+    public function itProvidesTheClassRankMetric(): void
     {
         self::assertSame(['coupling.class-rank'], $this->collector->provides());
     }
 
     #[Test]
-    public function getMetricDefinitions_returnsOneDefinition(): void
+    public function itDeclaresOneMetricDefinitionAggregatedAtNamespaceAndProject(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -75,7 +75,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_emptyGraph_writesNoMetrics(): void
+    public function itWritesNoMetricsForAnEmptyGraph(): void
     {
         $graph = $this->graph([]);
         $repository = new InMemoryMetricRepository();
@@ -87,7 +87,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_singleClass_rankIsOne(): void
+    public function itGivesAnIsolatedSingleClassARankOfOne(): void
     {
         // Single class with a dependency on an external (vendor) class
         $deps = [
@@ -149,7 +149,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_simpleGraph_dependedClassHasHigherRank(): void
+    public function itGivesTheMostDependedOnClassTheHighestRank(): void
     {
         // A->B, C->B: B has the most incoming links, so B should have the highest rank
         $deps = [
@@ -179,7 +179,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_linearChain_ranksIncrease(): void
+    public function itIncreasesRankAlongADependencyChain(): void
     {
         // A->B->C: C gets votes from B, B gets votes from A
         // C should have highest rank, then B, then A
@@ -205,7 +205,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_vendorClassesNotInRepo_areSkipped(): void
+    public function itSkipsVendorClassesAbsentFromTheRepository(): void
     {
         // A depends on Vendor\Bar, but Vendor\Bar is not in the repository
         $deps = [
@@ -231,7 +231,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_selfDependencies_areExcluded(): void
+    public function itExcludesSelfDependenciesFromAClasssOwnRank(): void
     {
         // A->A (self-dependency) and A->B
         $deps = [
@@ -255,7 +255,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_isolatedClasses_haveUniformRank(): void
+    public function itGivesIsolatedClassesAUniformRank(): void
     {
         // Two completely isolated classes (no dependencies between them)
         // Each depends only on vendor classes
@@ -282,7 +282,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_ranksConverge_sumToOne(): void
+    public function itConvergesRanksThatSumToApproximatelyOne(): void
     {
         // Create a non-trivial graph
         $deps = [
@@ -309,7 +309,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_doesNotCreateSymbolsForExternalClasses(): void
+    public function itDoesNotCreateSymbolsForExternalClasses(): void
     {
         $deps = [
             $this->dep('App\\A', 'Vendor\\External'),
@@ -331,7 +331,7 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_starTopology_centerHasHighestRank(): void
+    public function itGivesTheHubOfAStarTopologyTheHighestRank(): void
     {
         // Star topology: A, B, C, D all depend on Center
         $deps = [

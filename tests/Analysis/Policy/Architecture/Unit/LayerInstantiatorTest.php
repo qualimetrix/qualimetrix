@@ -31,7 +31,7 @@ final class LayerInstantiatorTest extends TestCase
     }
 
     #[Test]
-    public function instantiate_singleVariable_substitutesNameAndPattern(): void
+    public function itSubstitutesNameAndPatternForASingleVariable(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -45,7 +45,7 @@ final class LayerInstantiatorTest extends TestCase
     }
 
     #[Test]
-    public function instantiate_substitutesInExcludePatterns(): void
+    public function itSubstitutesTheVariableInExcludePatterns(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',
@@ -67,7 +67,7 @@ final class LayerInstantiatorTest extends TestCase
     }
 
     #[Test]
-    public function instantiate_preservesNonPatternCriteriaVerbatim(): void
+    public function itPreservesNonPatternCriteriaVerbatim(): void
     {
         // Suffix / implements / extends do not currently support captures —
         // they must pass through unchanged.
@@ -91,7 +91,7 @@ final class LayerInstantiatorTest extends TestCase
     }
 
     #[Test]
-    public function instantiate_incompleteBindingTuple_throwsActionableError(): void
+    public function itThrowsAnActionableErrorForAnIncompleteBindingTuple(): void
     {
         $template = new TemplateLayerDefinition(
             'cluster-{tenant}-{module}',
@@ -105,7 +105,7 @@ final class LayerInstantiatorTest extends TestCase
     }
 
     #[Test]
-    public function instantiate_invalidNameAfterSubstitution_throwsActionableError(): void
+    public function itThrowsAnActionableErrorForAnInvalidNameAfterSubstitution(): void
     {
         $template = new TemplateLayerDefinition(
             'domain-{module}',

@@ -43,7 +43,7 @@ use RuntimeException;
 final class ChannelDeclarationFixtureDriftTest extends TestCase
 {
     #[Test]
-    public function everyStaticallyDeclaredChannelIsListedInTheFixture(): void
+    public function itListsEveryStaticallyDeclaredChannelInTheFixture(): void
     {
         $actual = self::realStaticDeclarations();
         $expected = self::readFixture();
@@ -67,7 +67,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     }
 
     #[Test]
-    public function everyFixtureLineIsStillDeclaredInCode(): void
+    public function itKeepsEveryFixtureLineDeclaredInCode(): void
     {
         $actual = self::realStaticDeclarations();
 
@@ -107,7 +107,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * being checked.
      */
     #[Test]
-    public function everyDeclaredChannelNameIsAnEmittingNameOrOneSuffixBelowIt(): void
+    public function itNamesEveryDeclaredChannelAfterAnEmittingNameOrOneSuffixBelowIt(): void
     {
         $knownRuleNames = self::allRuleNames();
         $findings = [];
@@ -155,7 +155,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * and a suppression that stopped firing is ordinary cleanup.
      */
     #[Test]
-    public function exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError(): void
+    public function itDeclaresConfigurationErrorForExactlyTheLayerPolicyAndDirectiveDiagnostics(): void
     {
         $configurationErrors = [];
 
@@ -208,7 +208,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * file goes on asserting a reason that no longer applies.
      */
     #[Test]
-    public function noExcludedFixtureLineNamesADeclaredChannel(): void
+    public function itFindsNoExcludedFixtureLineNamingAChannelTheRegistryDeclares(): void
     {
         $declared = self::realStaticDeclarations();
         $stale = [];

@@ -42,7 +42,7 @@ final class CaptureBindingIntegrationTest extends TestCase
     private const string FIXTURE_PATH = __DIR__ . '/../Fixtures/CaptureBindingSample';
 
     #[Test]
-    public function sameModuleEdgesPassWhileCrossModuleEdgesViolate(): void
+    public function itPassesSameModuleEdgesAndViolatesCrossModuleEdges(): void
     {
         $config = self::baseConfig();
 
@@ -69,7 +69,7 @@ final class CaptureBindingIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function allowCrossInstanceFlagPermitsCrossModuleEdges(): void
+    public function itLetsAllowCrossInstancePermitCrossModuleEdges(): void
     {
         $config = self::baseConfig();
         $config['allow'] = [
@@ -85,7 +85,7 @@ final class CaptureBindingIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function allowCrossInstanceSurvivesYamlConfigLoaderNormalization(): void
+    public function itKeepsAllowCrossInstanceIntactThroughYamlConfigLoaderNormalization(): void
     {
         // Regression test for the YamlConfigLoader subtree-preservation
         // contract: snake_case long-form keys under architecture.allow.* must

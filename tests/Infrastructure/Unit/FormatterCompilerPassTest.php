@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class FormatterCompilerPassTest extends TestCase
 {
     #[Test]
-    public function collectsTaggedFormattersIntoRegistry(): void
+    public function itCollectsTaggedFormattersIntoTheRegistrysDefinition(): void
     {
         $container = new ContainerBuilder();
         $container->register(FormatterRegistry::class);
@@ -39,7 +39,7 @@ final class FormatterCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenRegistryNotRegistered(): void
+    public function itDoesNothingWhenTheRegistryServiceIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(TextFormatter::class)
@@ -52,7 +52,7 @@ final class FormatterCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function setsEmptyArrayWhenNoTaggedServices(): void
+    public function itSetsAnEmptyArrayWhenNoServicesAreTagged(): void
     {
         $container = new ContainerBuilder();
         $container->register(FormatterRegistry::class);

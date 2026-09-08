@@ -30,7 +30,7 @@ final class AggregationHelperTest extends TestCase
      */
     #[Test]
     #[DataProvider('percentile95Provider')]
-    public function percentile95ReturnsExpectedValue(array $values, float $expected): void
+    public function itComputesThe95thPercentileOfAValueList(array $values, float $expected): void
     {
         $result = AggregationHelper::applyStrategy(AggregationStrategy::Percentile95, $values);
 
@@ -38,7 +38,7 @@ final class AggregationHelperTest extends TestCase
     }
 
     #[Test]
-    public function percentile95IsIncludedInAggregationStrategyEnum(): void
+    public function itDeclaresPercentile95AsAStrategyValuedP95(): void
     {
         self::assertSame('p95', AggregationStrategy::Percentile95->value);
     }
@@ -60,7 +60,7 @@ final class AggregationHelperTest extends TestCase
      */
     #[Test]
     #[DataProvider('percentile5Provider')]
-    public function percentile5ReturnsExpectedValue(array $values, float $expected): void
+    public function itComputesThe5thPercentileOfAValueList(array $values, float $expected): void
     {
         $result = AggregationHelper::applyStrategy(AggregationStrategy::Percentile5, $values);
 
@@ -68,7 +68,7 @@ final class AggregationHelperTest extends TestCase
     }
 
     #[Test]
-    public function percentile5IsIncludedInAggregationStrategyEnum(): void
+    public function itDeclaresPercentile5AsAStrategyValuedP5(): void
     {
         self::assertSame('p5', AggregationStrategy::Percentile5->value);
     }

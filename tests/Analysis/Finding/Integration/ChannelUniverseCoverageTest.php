@@ -75,7 +75,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 15;
 
     #[Test]
-    public function everyDeclaredChannelHasAProducer(): void
+    public function itRequiresEveryDeclaredChannelToHaveAProducer(): void
     {
         $universe = self::universe();
         $orphans = [];
@@ -101,7 +101,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     #[Test]
-    public function theAssembledUniverseAgreesWithTheRuleClassesReadDirectly(): void
+    public function itAgreesWithTheRuleClassesReadDirectlyAboutTheAssembledUniverse(): void
     {
         $universe = self::universe();
 
@@ -125,7 +125,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     #[Test]
-    public function theEnumerationAgreesWithTheTrackedFixture(): void
+    public function itAgreesWithTheTrackedFixtureAboutTheChannelEnumeration(): void
     {
         $universe = self::universe();
 
@@ -217,7 +217,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * The class half: one addressable name per registered rule class.
      */
     #[Test]
-    public function everyRegisteredRuleClassIsAddressableIncludingOnesThatDeclareNoChannel(): void
+    public function itMakesEveryRegisteredRuleClassAddressableEvenWhenItDeclaresNoChannel(): void
     {
         $universe = self::universe();
 
@@ -238,7 +238,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * included.
      */
     #[Test]
-    public function everyClasslessProducerOfTheComputedFamilyIsAddressable(): void
+    public function itMakesEveryClasslessProducerOfTheComputedFamilyAddressable(): void
     {
         $universe = self::universe();
         $expected = self::computedProducersFromFixture();
@@ -271,7 +271,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * family, would have been a claim no code reads.
      */
     #[Test]
-    public function noProducerOfTheComputedFamilyDeclaresAStaticChannel(): void
+    public function itRefusesAComputedFamilyProducerThatDeclaresAStaticChannel(): void
     {
         $universe = self::universe();
         $family = array_flip(self::computedProducersFromFixture());
@@ -298,7 +298,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * unnoticed.
      */
     #[Test]
-    public function theAddressableNamesAreTheRuleClassesPlusTheClasslessProducers(): void
+    public function itMakesTheAddressableNamesExactlyTheRuleClassesPlusTheClasslessProducers(): void
     {
         $classNames = array_map(RuleNameReader::read(...), self::ruleClasses());
         $classless = array_values(array_diff(self::computedProducersFromFixture(), $classNames));
@@ -312,7 +312,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * rather than mapped from the enum.
      */
     #[Test]
-    public function theFamilysHealthProducersAreExactlyTheDeclaredHealthDimensions(): void
+    public function itMakesTheComputedFamilysHealthProducersExactlyTheDeclaredHealthDimensions(): void
     {
         self::assertSame(
             array_map(static fn(HealthDimension $dimension): string => $dimension->value, HealthDimension::all()),
@@ -347,7 +347,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * forces.
      */
     #[Test]
-    public function everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour(): void
+    public function itRequiresEveryRulesDeclaredThresholdSupportToMatchWhatItsOptionsCanHonour(): void
     {
         $universe = self::universe();
         $mismatches = [];

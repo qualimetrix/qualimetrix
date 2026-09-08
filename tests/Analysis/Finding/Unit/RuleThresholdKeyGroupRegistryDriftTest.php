@@ -53,17 +53,17 @@ use Symfony\Component\Finder\Finder;
  *   pairs) must
  *   have exactly N groups declared, not just "at least one".
  * - **Existence, both directions**: every discovered (rule, path) must have
- *   a registry entry ({@see everyThresholdParserCallSiteHasAMatchingRegistryEntry});
+ *   a registry entry ({@see itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry});
  *   every registry entry (read via {@see ReflectionClassConstant} against
  *   the private `GROUPS` constant — no need to make it public just for
  *   testing) must correspond to a real, still-existing (rule, path)
- *   ({@see everyRegistryEntryCorrespondsToARealThresholdParserCallSite}).
+ *   ({@see itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite}).
  * - **Key-name accuracy**: every individual key string declared in every
  *   group (including legacy aliases) is exercised through the REAL
  *   {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}, config-file
  *   channel, with a differential probe — a baseline run and a run with only
  *   that key set to a sentinel must produce different results
- *   ({@see everyDeclaredKeyStillAffectsTheRealOptionsInstance}). Going
+ *   ({@see itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance}). Going
  *   through the factory (not calling `Options::fromArray()` directly)
  *   matters: a top-level rule config key is snake/kebab-case-normalized to
  *   camelCase by `RuleOptionsFactory::normalizeKeys()` before it reaches
@@ -104,7 +104,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
     #[Test]
     #[DataProvider('provideCodeDerivedRequirements')]
-    public function everyThresholdParserCallSiteHasAMatchingRegistryEntry(string $ruleName, string $path, int $callCount): void
+    public function itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry(string $ruleName, string $path, int $callCount): void
     {
         $groups = RuleThresholdKeyGroupRegistry::groupsFor($ruleName, $path);
 
@@ -154,7 +154,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
     #[Test]
     #[DataProvider('provideRegistryEntries')]
-    public function everyRegistryEntryCorrespondsToARealThresholdParserCallSite(string $ruleName, string $path): void
+    public function itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite(string $ruleName, string $path): void
     {
         $requirements = self::discoverThresholdRequirements();
 
@@ -204,7 +204,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
     #[Test]
     #[DataProvider('provideDeclaredKeys')]
-    public function everyDeclaredKeyStillAffectsTheRealOptionsInstance(string $ruleName, string $path, string $key): void
+    public function itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance(string $ruleName, string $path, string $key): void
     {
         $optionsClass = self::ruleNameToOptionsClass()[$ruleName] ?? null;
         self::assertNotNull($optionsClass, \sprintf('No Options class found for rule "%s" — registry is stale.', $ruleName));

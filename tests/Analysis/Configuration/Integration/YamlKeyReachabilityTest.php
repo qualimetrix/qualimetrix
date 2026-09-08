@@ -96,7 +96,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideTopLevelKeyCases')]
     #[TestDox('top-level key $description survives loader normalization')]
-    public function topLevelKeySurvivesNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsATopLevelKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -112,7 +112,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideSectionSubKeyCases')]
     #[TestDox('section sub-key $description survives loader normalization')]
-    public function sectionSubKeySurvivesNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsASectionSubKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -130,7 +130,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideIdentifierSectionCases')]
     #[TestDox('identifier section $description preserves the identifier and normalizes options')]
-    public function identifierSectionPreservesIdentifierAndNormalizesOptions(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itPreservesTheIdentifierAndNormalizesOptionsInAnIdentifierSection(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -150,7 +150,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideArchitectureSubKeyCases')]
     #[TestDox('architecture sub-key $description follows current loader behavior')]
-    public function architectureSubKeyFollowsCurrentLoaderBehavior(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itFollowsTheCurrentLoaderBehaviorForAnArchitectureSubKey(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -171,7 +171,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideArchitectureLayerEntryCases')]
     #[TestDox('architecture.layers entry key $description survives loader normalization')]
-    public function architectureLayerEntryKeySurvivesNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsAnArchitectureLayerEntryKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -190,7 +190,7 @@ final class YamlKeyReachabilityTest extends TestCase
     #[Test]
     #[DataProvider('provideArchitectureAllowCases')]
     #[TestDox('architecture.allow $description preserves snake_case verbatim')]
-    public function architectureAllowSubtreePreservesSnakeCase(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itPreservesSnakeCaseInTheArchitectureAllowSubtree(string $description, string $yaml, array $path, mixed $expectedValue): void
     {
         $config = $this->loadYaml($yaml);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
@@ -619,7 +619,7 @@ final class YamlKeyReachabilityTest extends TestCase
      * single top-level row).
      */
     #[Test]
-    public function everyDocumentedRootKeyHasAReachabilityCase(): void
+    public function itGivesEveryDocumentedRootKeyAReachabilityCase(): void
     {
         $covered = self::collectCoveredRootKeys();
 

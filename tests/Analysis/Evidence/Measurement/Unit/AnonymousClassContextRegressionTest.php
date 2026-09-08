@@ -56,7 +56,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function cyclomatic_visitor_preserves_class_context_after_anonymous_class(): void
+    public function itKeepsTheCyclomaticVisitorsClassContextAfterAnAnonymousClass(): void
     {
         $visitor = new CyclomaticComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -73,7 +73,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     }
 
     #[Test]
-    public function cyclomatic_visitor_correct_fqn_after_anonymous_class(): void
+    public function itKeepsTheCorrectFqnInCyclomaticComplexitiesAfterAnAnonymousClass(): void
     {
         $visitor = new CyclomaticComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -92,7 +92,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     }
 
     #[Test]
-    public function cyclomatic_visitor_before_method_unaffected(): void
+    public function itLeavesTheMethodBeforeTheAnonymousClassUnaffected(): void
     {
         $visitor = new CyclomaticComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -112,7 +112,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function npath_visitor_preserves_class_context_after_anonymous_class(): void
+    public function itKeepsTheNpathVisitorsClassContextAfterAnAnonymousClass(): void
     {
         $visitor = new NpathComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -129,7 +129,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     }
 
     #[Test]
-    public function npath_visitor_correct_fqn_after_anonymous_class(): void
+    public function itKeepsTheCorrectFqnInNpathAfterAnAnonymousClass(): void
     {
         $visitor = new NpathComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -151,7 +151,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function halstead_visitor_preserves_class_context_after_anonymous_class(): void
+    public function itKeepsTheHalsteadVisitorsClassContextAfterAnAnonymousClass(): void
     {
         $visitor = new HalsteadVisitor();
         $this->parseAndTraverse($visitor);
@@ -168,7 +168,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     }
 
     #[Test]
-    public function halstead_visitor_correct_fqn_after_anonymous_class(): void
+    public function itKeepsTheCorrectFqnInHalsteadMetricsAfterAnAnonymousClass(): void
     {
         $visitor = new HalsteadVisitor();
         $this->parseAndTraverse($visitor);
@@ -187,7 +187,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function cognitive_visitor_preserves_class_context_after_anonymous_class(): void
+    public function itKeepsTheCognitiveVisitorsClassContextAfterAnAnonymousClass(): void
     {
         $visitor = new CognitiveComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -204,7 +204,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     }
 
     #[Test]
-    public function cognitive_visitor_correct_fqn_after_anonymous_class(): void
+    public function itKeepsTheCorrectFqnInCognitiveComplexitiesAfterAnAnonymousClass(): void
     {
         $visitor = new CognitiveComplexityVisitor();
         $this->parseAndTraverse($visitor);
@@ -226,7 +226,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function type_coverage_visitor_preserves_outer_class_after_anonymous_class(): void
+    public function itKeepsTypeCoverageAttributedToTheOuterClassAfterAnAnonymousClass(): void
     {
         $visitor = new TypeCoverageVisitor();
         $this->parseAndTraverse($visitor);
@@ -258,7 +258,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function dependency_visitor_preserves_class_context_after_anonymous_class(): void
+    public function itAttributesDependenciesToTheOuterClassAcrossAnAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php

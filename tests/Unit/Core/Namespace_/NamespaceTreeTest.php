@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 final class NamespaceTreeTest extends TestCase
 {
     #[Test]
-    public function two_siblings_discover_parent(): void
+    public function itDiscoversTheSharedParentOfTwoSiblingNamespaces(): void
     {
         $tree = new NamespaceTree(['App\\Service', 'App\\Domain']);
 
@@ -35,7 +35,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function input_namespace_with_children_becomes_parent(): void
+    public function itTreatsAnInputNamespaceWithAChildAsAParentNotALeaf(): void
     {
         // App is in input but has a child → it's a parent, not a leaf
         $tree = new NamespaceTree(['App', 'App\\Service']);
@@ -48,7 +48,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function deep_nesting_discovers_all_intermediates(): void
+    public function itDiscoversEveryIntermediateNamespaceInADeepNesting(): void
     {
         $tree = new NamespaceTree(['A\\B\\C\\D']);
 
@@ -68,7 +68,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function single_segment_is_leaf_and_root(): void
+    public function itTreatsASingleSegmentNamespaceAsBothLeafAndRoot(): void
     {
         $tree = new NamespaceTree(['App']);
 
@@ -80,7 +80,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function empty_input(): void
+    public function itReturnsSafeEmptyDefaultsForEmptyInput(): void
     {
         $tree = new NamespaceTree([]);
 
@@ -92,7 +92,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function empty_string_is_ignored(): void
+    public function itIgnoresAnEmptyStringInTheInputList(): void
     {
         $tree = new NamespaceTree(['', 'App']);
 
@@ -102,7 +102,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function get_descendant_leaves(): void
+    public function itListsTheLeafDescendantsOfANamespace(): void
     {
         $tree = new NamespaceTree(['App\\Service\\User', 'App\\Service\\Admin', 'App\\Domain\\Entity']);
 
@@ -119,7 +119,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function get_leaves_and_parents(): void
+    public function itListsLeavesAndParentNamespacesSeparately(): void
     {
         $tree = new NamespaceTree(['App\\Service', 'App\\Domain', 'Vendor\\Lib']);
 
@@ -133,7 +133,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function get_descendants_returns_all_nodes_in_subtree(): void
+    public function itListsEveryNodeInANamespacesSubtree(): void
     {
         $tree = new NamespaceTree(['App\\Service\\User', 'App\\Service\\Admin', 'App\\Domain']);
 
@@ -153,7 +153,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function get_all_namespaces(): void
+    public function itListsEveryNamespaceIncludingSynthesizedParents(): void
     {
         $tree = new NamespaceTree(['App\\Service', 'App\\Domain']);
 
@@ -163,7 +163,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function unknown_namespace_returns_safe_defaults(): void
+    public function itReturnsSafeDefaultsForAnUnknownNamespace(): void
     {
         $tree = new NamespaceTree(['App\\Service']);
 
@@ -176,7 +176,7 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function duplicate_input_handled_correctly(): void
+    public function itDedupesRepeatedNamespacesInTheInputList(): void
     {
         $tree = new NamespaceTree(['App\\Service', 'App\\Service', 'App\\Domain']);
 

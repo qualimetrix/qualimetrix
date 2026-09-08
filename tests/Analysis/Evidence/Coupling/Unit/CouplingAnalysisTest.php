@@ -17,7 +17,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 final class CouplingAnalysisTest extends TestCase
 {
     #[Test]
-    public function isEmpty_returnsTrueWhenNoPrefixes(): void
+    public function itIsEmptyWhenNoFrameworkPrefixesAreConfigured(): void
     {
         $fn = $this->configured([]);
 
@@ -25,7 +25,7 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
-    public function isEmpty_returnsFalseWhenPrefixesExist(): void
+    public function itIsNotEmptyWhenFrameworkPrefixesAreConfigured(): void
     {
         $fn = $this->configured(['Symfony']);
 
@@ -34,7 +34,7 @@ final class CouplingAnalysisTest extends TestCase
 
     #[Test]
     #[DataProvider('frameworkMatchingProvider')]
-    public function isFramework_matchesBoundaryAware(
+    public function itMatchesFrameworkPrefixesOnNamespaceBoundaries(
         string $fqcn,
         bool $expected,
     ): void {
@@ -64,7 +64,7 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
-    public function isFramework_exactMatchForSingleSegment(): void
+    public function itMatchesASingleSegmentPrefixExactlyButNotAsASubstring(): void
     {
         $fn = $this->configured(['Psr']);
 
@@ -75,7 +75,7 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
-    public function isFramework_returnsFalseWhenEmpty(): void
+    public function itNeverMatchesWhenNoFrameworkPrefixesAreConfigured(): void
     {
         $fn = $this->configured([]);
 
@@ -83,7 +83,7 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
-    public function isFrameworkNamespace_matchesNamespaceStrings(): void
+    public function itMatchesFrameworkNamespaceStringsAndRejectsNullOrEmpty(): void
     {
         $fn = $this->configured(['Symfony', 'PhpParser']);
 

@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOption
 final class LayerViolationOptionsTest extends TestCase
 {
     #[Test]
-    public function defaultsAreEnabledAndWarning(): void
+    public function itDefaultsToEnabledWithWarningSeverity(): void
     {
         $options = new LayerViolationOptions();
 
@@ -25,7 +25,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayDefaultsMatchConstructorDefaults(): void
+    public function itParsesAnEmptyArrayIntoTheConstructorDefaults(): void
     {
         $options = LayerViolationOptions::fromArray([]);
 
@@ -34,7 +34,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayHonoursEnabledFalse(): void
+    public function itParsesEnabledFalse(): void
     {
         $options = LayerViolationOptions::fromArray(['enabled' => false]);
 
@@ -42,7 +42,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayParsesSeverityError(): void
+    public function itParsesSeverityError(): void
     {
         $options = LayerViolationOptions::fromArray(['severity' => 'error']);
 
@@ -50,7 +50,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayParsesSeverityWarningExplicit(): void
+    public function itParsesAnExplicitSeverityWarning(): void
     {
         $options = LayerViolationOptions::fromArray(['severity' => 'warning']);
 
@@ -58,7 +58,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayIsCaseInsensitiveOnSeverity(): void
+    public function itParsesSeverityCaseInsensitively(): void
     {
         $options = LayerViolationOptions::fromArray(['severity' => 'ERROR']);
 
@@ -66,7 +66,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayRejectsUnknownSeverity(): void
+    public function itRejectsAnUnknownSeverity(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('severity');
@@ -75,7 +75,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayRejectsNonStringSeverity(): void
+    public function itRejectsANonStringSeverity(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('severity');
@@ -110,7 +110,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function getSeverityReturnsConfiguredSeverityForAnyValueWhenEnabled(): void
+    public function itReturnsTheConfiguredSeverityForAnyMetricValueWhenEnabled(): void
     {
         $options = new LayerViolationOptions(severity: Severity::Error);
 
@@ -121,7 +121,7 @@ final class LayerViolationOptionsTest extends TestCase
     }
 
     #[Test]
-    public function getSeverityReturnsNullWhenDisabled(): void
+    public function itReturnsNullSeverityWhenDisabled(): void
     {
         $options = new LayerViolationOptions(enabled: false, severity: Severity::Error);
 

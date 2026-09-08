@@ -25,7 +25,7 @@ use RuntimeException;
 final class ComputedMetricEvaluatorTest extends TestCase
 {
     #[Test]
-    public function emptyDefinitionsIsNoOp(): void
+    public function itLeavesTheRepositoryUntouchedWhenGivenNoDefinitions(): void
     {
         $repo = new InMemoryMetricRepository();
         $this->evaluate($repo, []);
@@ -34,7 +34,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function simpleFormulaEvaluation(): void
+    public function itEvaluatesASimpleClassLevelFormula(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -56,7 +56,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function topologicalOrderingDependentMetrics(): void
+    public function itEvaluatesDependentMetricsInTopologicalOrderRegardlessOfInputOrder(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -87,7 +87,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function missingVariableWithoutFallbackThrowsException(): void
+    public function itRefusesAFormulaReferencingAnUnknownMetricWithoutAFallback(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -107,7 +107,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function missingVariableReportsMultipleUnknownMetrics(): void
+    public function itListsAllUnknownMetricsReferencedByAFormula(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -127,7 +127,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function variableExistingInSomeSymbolsPassesValidation(): void
+    public function itAcceptsAMetricPresentOnlyOnSomeSymbolsAsKnown(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -151,7 +151,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function missingVariableWithNullCoalescingFallback(): void
+    public function itUsesTheNullCoalescingFallbackForAMissingMetric(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -170,7 +170,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function nanResultIsNotStored(): void
+    public function itDoesNotStoreANanFormulaResult(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -191,7 +191,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function infinityResultIsNotStored(): void
+    public function itDoesNotStoreAnInfiniteFormulaResult(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -212,7 +212,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function defaultHealthFormulasAtClassLevel(): void
+    public function itComputesTheDefaultHealthScoresAtClassLevel(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
@@ -259,7 +259,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function defaultHealthCohesionWithPureMethods(): void
+    public function itBoostsCohesionHealthForClassesWithPureMethods(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Rules', 'DistanceRule');
@@ -290,7 +290,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function defaultHealthFormulasAtNamespaceLevel(): void
+    public function itComputesTheDefaultHealthScoresAtNamespaceLevel(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -361,7 +361,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function typingHealthIsVacuousTruthForNamespaceWithNoTypeableDeclarations(): void
+    public function itScoresTypingHealthAsFullForANamespaceWithNoTypeablePositions(): void
     {
         // A namespace containing only marker interfaces (no methods, no properties)
         // has zero typeable positions. The metric must return 100 (vacuous truth)
@@ -392,7 +392,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function typingHealthIsVacuousTruthForNamespaceWithoutAnyTypeCoverageMetrics(): void
+    public function itScoresTypingHealthAsFullForANamespaceMissingAllTypeCoverageMetrics(): void
     {
         // Edge case: namespace bag has NO typeCoverage.* keys at all (rather than explicit 0s).
         // The `?? 0` fallbacks must still resolve the ternary condition to true → 100.
@@ -411,7 +411,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function typingHealthIsVacuousTruthAtProjectLevelWhenNoTypeSurface(): void
+    public function itScoresTypingHealthAsFullAtProjectLevelWhenThereIsNoTypeSurface(): void
     {
         // The project-level formula inherits from namespace via getFormulaForLevel,
         // so an entirely type-surface-free project should also yield 100.
@@ -437,7 +437,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function namespaceCouplingPenalizesEfferentBreadth(): void
+    public function itPenalizesNamespaceCouplingHealthForHighEfferentBreadth(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -470,7 +470,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function namespaceCouplingRewardsStableContractsNamespace(): void
+    public function itRewardsNamespaceCouplingHealthForLowOutgoingCoupling(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -500,7 +500,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function mathFunctionsWork(): void
+    public function itEvaluatesTheBuiltInMathFunctionsInFormulas(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'Svc');
@@ -543,7 +543,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function multipleClassesEachGetOwnMetric(): void
+    public function itComputesAnIndependentMetricValuePerClass(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -567,7 +567,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function projectLevelInheritsNamespaceFormula(): void
+    public function itFallsBackToTheNamespaceFormulaAtProjectLevel(): void
     {
         $repo = new InMemoryMetricRepository();
 
@@ -596,7 +596,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function circularDependencyDoesNotCrash(): void
+    public function itFallsBackToInputOrderWithoutCrashingOnACircularDependency(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App', 'Svc');
@@ -625,7 +625,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function complexityHealthUsesPerMethodAverageAtNamespaceLevel(): void
+    public function itAveragesComplexityHealthPerMethodRatherThanPerClassAtNamespaceLevel(): void
     {
         $repo = new InMemoryMetricRepository();
 

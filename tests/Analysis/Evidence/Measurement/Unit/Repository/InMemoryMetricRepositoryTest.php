@@ -398,7 +398,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
-    public function mergeWithUpdatesLineFromZeroToPositive(): void
+    public function itUpdatesLineFromZeroToPositiveDuringMergeWith(): void
     {
         $repo1 = new InMemoryMetricRepository();
         $repo2 = new InMemoryMetricRepository();

@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class ChannelLevelSelectorTest extends TestCase
 {
     #[Test]
-    public function aSelectorWithoutALevelAddressesEveryLevelOfItsChannels(): void
+    public function itAddressesEveryLevelOfItsChannelsWhenNoLevelIsGiven(): void
     {
         $selector = ChannelLevelSelector::tryParse('coupling.cbo');
 
@@ -35,7 +35,7 @@ final class ChannelLevelSelectorTest extends TestCase
     }
 
     #[Test]
-    public function aSelectorWithALevelAddressesThatLevelAlone(): void
+    public function itAddressesOnlyTheGivenLevel(): void
     {
         $selector = ChannelLevelSelector::tryParse('coupling.cbo:namespace');
 
@@ -48,7 +48,7 @@ final class ChannelLevelSelectorTest extends TestCase
 
     /** The group form and the level compose: `X.*:level` is both narrowings at once. */
     #[Test]
-    public function aGroupSelectorTakesALevelToo(): void
+    public function itComposesAGroupSelectorWithALevel(): void
     {
         $selector = ChannelLevelSelector::tryParse('coupling.*:namespace');
 
@@ -64,7 +64,7 @@ final class ChannelLevelSelectorTest extends TestCase
      * sixth level is covered the day it is added.
      */
     #[Test]
-    public function everyLevelOfTheVocabularyParses(): void
+    public function itParsesEveryLevelOfTheVocabulary(): void
     {
         foreach (SymbolLevel::cases() as $level) {
             $selector = ChannelLevelSelector::tryParse('demo.rule:' . $level->value);

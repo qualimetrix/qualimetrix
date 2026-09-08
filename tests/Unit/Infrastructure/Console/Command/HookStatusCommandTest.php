@@ -19,7 +19,7 @@ use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 final class HookStatusCommandTest extends TestCase
 {
     #[Test]
-    public function configuresSetsNameAndDescription(): void
+    public function itConfiguresItsNameAndDescription(): void
     {
         $command = new HookStatusCommand(new GitRepositoryLocator());
 
@@ -28,7 +28,7 @@ final class HookStatusCommandTest extends TestCase
     }
 
     #[Test]
-    public function hasNoOptions(): void
+    public function itDefinesNoCustomOptions(): void
     {
         $command = new HookStatusCommand(new GitRepositoryLocator());
         $definition = $command->getDefinition();
@@ -38,7 +38,7 @@ final class HookStatusCommandTest extends TestCase
     }
 
     #[Test]
-    public function hasNoArguments(): void
+    public function itDefinesNoArguments(): void
     {
         $command = new HookStatusCommand(new GitRepositoryLocator());
         $definition = $command->getDefinition();

@@ -69,7 +69,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function metadataMatchesContract(): void
+    public function itExposesItsNameCliAliasesChannelsAndDescriptionPerContract(): void
     {
         $options = new LayerViolationOptions();
         $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
@@ -90,7 +90,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions(enabled: false));
 
@@ -117,7 +117,7 @@ final class LayerViolationRuleTest extends TestCase
      * is replaced by a `return null`.
      */
     #[Test]
-    public function anUnpreparedPolicyIsRefusedInsteadOfMemoisedAsAbsentEvidence(): void
+    public function itRefusesAnUnpreparedPolicyRatherThanMemoizingAbsentEvidence(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
 
@@ -157,7 +157,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function emptyArchitectureReturnsNoFindings(): void
+    public function itReturnsNoFindingsForAnEmptyArchitecture(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -175,7 +175,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function nullDependencyGraphProducesOnlyDiagnostics(): void
+    public function itProducesOnlyLayerDiagnosticsWhenTheDependencyGraphIsNull(): void
     {
         // With no graph, layer-violation cannot fire, but the per-class iteration
         // still drives unreachable-layer / potential-shadow.
@@ -194,7 +194,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function allowedEdgeProducesNoFinding(): void
+    public function itProducesNoFindingForAnAllowedEdge(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -221,7 +221,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function forbiddenEdgeProducesFindingWithExpectedFields(): void
+    public function itReportsAForbiddenEdgeWithTheExpectedFindingFields(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
 
@@ -285,7 +285,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function recommendationListsGlobAllowTargetsAsTheirPatternStrings(): void
+    public function itRendersGlobAllowTargetsAsTheirPatternStringsInTheRecommendation(): void
     {
         // Step C regression: when the source's allow row contains only
         // glob / captured selectors, the recommendation must NOT fall back to
@@ -328,7 +328,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function recommendationFallsBackToEmptyAllowListWording(): void
+    public function itFallsBackToEmptyAllowListWordingInTheRecommendation(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -362,7 +362,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function eachUseSiteProducesItsOwnFinding(): void
+    public function itProducesOneFindingPerUseSite(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -742,7 +742,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function unmatchedSourceLayerEdgeIsIgnored(): void
+    public function itIgnoresAnEdgeWhoseSourceMatchesNoLayer(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -764,7 +764,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function sameLayerEdgeIsIgnored(): void
+    public function itIgnoresAnEdgeWithinTheSameLayer(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -791,7 +791,7 @@ final class LayerViolationRuleTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function unreachableLayer_firesWhenPatternMatchesNoClass(): void
+    public function itReportsUnreachableLayerWhenItsPatternMatchesNoClass(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -815,7 +815,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function unreachableLayer_firesForShadowedLayer(): void
+    public function itReportsUnreachableLayerForAFullyShadowedLayer(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -911,7 +911,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function unreachableLayer_doesNotFireForDtoOnlyLayer(): void
+    public function itDoesNotReportUnreachableForALayerWithNoOutgoingDependencies(): void
     {
         // The DTO layer's classes exist but have NO outgoing dependencies.
         // Because hit counting is over metrics->all(Class_) (not the graph),
@@ -938,7 +938,7 @@ final class LayerViolationRuleTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function potentialShadow_firesOnPrefixOverlap(): void
+    public function itReportsPotentialShadowOnAPrefixOverlap(): void
     {
         // Canonical example: 'any-foo' first matches anything ending in Foo;
         // 'service' second matches App\Service\*. App\Service\Foo matches both
@@ -968,7 +968,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_firesOnSuffixTheft(): void
+    public function itReportsPotentialShadowOnASuffixTheft(): void
     {
         // Suffix-theft: '**\*Service' captures any class ending in Service
         // regardless of namespace. The narrower App\Domain\** layer declared
@@ -998,7 +998,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_emptyClassSetEmitsNothing(): void
+    public function itEmitsNoShadowDiagnosticWhenNoClassMatchesEitherLayer(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -1017,7 +1017,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_disjointPatternsEmitNothing(): void
+    public function itEmitsNoShadowDiagnosticForDisjointLayerPatterns(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -1040,7 +1040,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_truncatesSampleListAtFiveAndAppendsRemainderHint(): void
+    public function itTruncatesTheShadowSampleListAtFiveAndAppendsARemainderHint(): void
     {
         // Eight classes match both layers. The diagnostic shows the
         // alphabetically first five FQNs followed by "...and 3 more".
@@ -1079,7 +1079,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_omitsRemainderHintWhenSampleFitsEntirely(): void
+    public function itOmitsTheRemainderHintWhenTheShadowSampleFitsEntirely(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -1105,7 +1105,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function potentialShadow_deterministicOutputAcrossTwoRuns(): void
+    public function itEmitsShadowDiagnosticsInDeterministicOrderAcrossTwoRuns(): void
     {
         // Two runs against the same fixture must emit diagnostics in identical
         // order regardless of metrics->all() iteration order.
@@ -1300,7 +1300,7 @@ final class LayerViolationRuleTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function statelessness_consecutiveAnalyzeCallsDoNotLeakHitCountsOrShadowEvidence(): void
+    public function itLeaksNoHitCountsOrShadowEvidenceBetweenConsecutiveAnalyzeCalls(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 

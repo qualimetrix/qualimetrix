@@ -74,7 +74,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
     ];
 
     #[Test]
-    public function everyDeclaredBoundaryIsWhereSeverityStarts(): void
+    public function itChangesSeverityExactlyAtEveryDeclaredWarningBoundary(): void
     {
         $checked = 0;
 
@@ -138,7 +138,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * members — two of them — and says so.
      */
     #[Test]
-    public function nothingThatDeniesABoundaryIsSittingOnOne(): void
+    public function itFindsNoSeverityChangeInOptionsThatDenyHavingABoundary(): void
     {
         $checked = 0;
 
@@ -180,7 +180,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * heuristic the reader dropped.
      */
     #[Test]
-    public function moreThanOneBoundaryIsClaimedOnlyWithASecondDecision(): void
+    public function itRequiresASecondSeverityDecisionWhereverMoreThanOneBoundaryIsClaimed(): void
     {
         $claimed = 0;
 
@@ -219,7 +219,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * which is exactly what it is for.
      */
     #[Test]
-    public function noHierarchicalParentClaimsToHoldABoundary(): void
+    public function itFindsNoHierarchicalParentClaimingToHoldABoundary(): void
     {
         $parents = 0;
 
@@ -247,7 +247,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * override has touched, and that is a property of the caller.
      */
     #[Test]
-    public function anOverriddenCopyReportsTheOverriddenNumber(): void
+    public function itReportsTheOverriddenNumberFromAnOverriddenCopy(): void
     {
         foreach (self::reachableOptions() as $label => $options) {
             if (!$options instanceof ThresholdAwareOptionsInterface) {
@@ -279,7 +279,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * its exemption, and a class that joins it must be noticed.
      */
     #[Test]
-    public function onlyThePinnedClassesDecideInsideTheirRule(): void
+    public function itLimitsUndetectableBoundaryDecisionsToThePinnedClasses(): void
     {
         $stubs = [];
 

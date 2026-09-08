@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 final class ConfigDataNormalizerTest extends TestCase
 {
     #[Test]
-    public function normalizesPathsDirectly(): void
+    public function itKeepsPathsAsIs(): void
     {
         $result = ConfigDataNormalizer::normalize(['paths' => ['src']]);
 
@@ -21,7 +21,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesExcludeToExcludes(): void
+    public function itRenamesExcludeToExcludes(): void
     {
         $result = ConfigDataNormalizer::normalize(['exclude' => ['vendor']]);
 
@@ -30,7 +30,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesCacheSection(): void
+    public function itFlattensCacheSectionIntoDottedKeys(): void
     {
         $result = ConfigDataNormalizer::normalize([
             'cache' => ['dir' => '/tmp', 'enabled' => false],
@@ -42,7 +42,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesFormatDirectly(): void
+    public function itKeepsFormatAsIs(): void
     {
         $result = ConfigDataNormalizer::normalize(['format' => 'json']);
 
@@ -50,7 +50,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesRulesAsIs(): void
+    public function itKeepsRulesUnchanged(): void
     {
         $rules = ['complexity.ccn' => ['callable' => ['warning' => 7]]];
 
@@ -60,7 +60,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesDisabledRules(): void
+    public function itRenamesDisabledRulesToSnakeCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['disabledRules' => ['complexity']]);
 
@@ -69,7 +69,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesFailOn(): void
+    public function itRenamesFailOnToSnakeCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['failOn' => 'warning']);
 
@@ -78,7 +78,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesExcludeHealthFromCamelCase(): void
+    public function itKeepsExcludeHealthKeyAsCamelCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['excludeHealth' => ['typing']]);
 
@@ -86,7 +86,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesIncludeGeneratedFromCamelCase(): void
+    public function itRenamesIncludeGeneratedToSnakeCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['includeGenerated' => true]);
 
@@ -94,7 +94,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function returnsEmptyArrayForEmptyInput(): void
+    public function itReturnsAnEmptyArrayForEmptyInput(): void
     {
         $result = ConfigDataNormalizer::normalize([]);
 
@@ -102,7 +102,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function ignoresUnknownKeys(): void
+    public function itDropsUnknownKeys(): void
     {
         $result = ConfigDataNormalizer::normalize(['unknownKey' => 'value']);
 
@@ -110,7 +110,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesCouplingFrameworkNamespaces(): void
+    public function itFlattensCouplingFrameworkNamespacesWhileKeepingTheOriginalSection(): void
     {
         $result = ConfigDataNormalizer::normalize([
             'coupling' => [
@@ -126,7 +126,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesMemoryLimitFromCamelCase(): void
+    public function itRenamesMemoryLimitToSnakeCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['memoryLimit' => '1G']);
 
@@ -135,7 +135,7 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesParallelWorkers(): void
+    public function itFlattensParallelWorkersIntoADottedKey(): void
     {
         $result = ConfigDataNormalizer::normalize([
             'parallel' => ['workers' => 4],

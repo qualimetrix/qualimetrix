@@ -59,7 +59,7 @@ final class ChannelSuggestionTieTest extends TestCase
     ];
 
     #[Test]
-    public function noInputCanTieTheChannelThatChangedPositionAgainstAnythingItMovedPast(): void
+    public function itFindsNoInputThatTiesTheMovedChannelAgainstAnythingItMovedPast(): void
     {
         $codes = self::channelCodes();
 
@@ -116,7 +116,7 @@ final class ChannelSuggestionTieTest extends TestCase
      * rather than a hole in what the gate observes.
      */
     #[Test]
-    public function aTieIsReachableBetweenTheThreeTypeCoverageChannels(): void
+    public function itConfirmsATieIsReachableBetweenTheThreeTypeCoverageChannels(): void
     {
         $codes = self::channelCodes();
         $typeCoverage = [
@@ -154,7 +154,7 @@ final class ChannelSuggestionTieTest extends TestCase
      * them, which is the order `DesignConfigurator` names their rules in.
      */
     #[Test]
-    public function theTiedTypeCoverageChannelsAreYieldedInTheDeclaredOrder(): void
+    public function itYieldsTheTiedTypeCoverageChannelsInTheDeclaredOrder(): void
     {
         $positions = array_flip(self::channelCodes());
 

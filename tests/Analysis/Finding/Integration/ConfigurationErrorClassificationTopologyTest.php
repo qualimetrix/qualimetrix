@@ -63,7 +63,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
     private const string WITHER = 'asConfigurationError';
 
     #[Test]
-    public function exactlyOneProductionSiteTurnsADeclarationIntoAConfigurationError(): void
+    public function itAllowsExactlyOneProductionSiteToTurnADeclarationIntoAConfigurationError(): void
     {
         $sites = [];
 
@@ -113,7 +113,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
      * thing to a reader.
      */
     #[Test]
-    public function noOtherProductionFileEvenNamesTheWither(): void
+    public function itRefusesAnyOtherProductionFileThatEvenNamesTheWither(): void
     {
         $allowed = [
             'src/Analysis/Finding/Contract/ChannelDeclaration.php',
@@ -153,7 +153,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
     }
 
     #[Test]
-    public function noProductionSiteCanHandTheFlagToTheConstructorInstead(): void
+    public function itRefusesAProductionSiteThatHandsTheFlagToTheConstructorInstead(): void
     {
         $constructor = (new ReflectionClass(ChannelDeclaration::class))->getConstructor();
 
@@ -177,7 +177,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
      * pass classified differently.
      */
     #[Test]
-    public function theAssemblyStampsExactlyWhatAValidatorDeclares(): void
+    public function itStampsTheAssemblyWithExactlyWhatAValidatorDeclares(): void
     {
         $container = self::containerWith(new StampRule(), new StampValidator());
         (new ChannelDeclarationCompilerPass())->process($container);
@@ -196,7 +196,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
      * from nothing.
      */
     #[Test]
-    public function aValidatorNamingAProducerThatIsNotARuleFailsTheBuild(): void
+    public function itFailsTheBuildWhenAValidatorNamesAProducerThatIsNotARule(): void
     {
         $container = self::containerWith(new StampRule(), new OrphanedValidator());
 
@@ -213,7 +213,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
      * pass happened to read last.
      */
     #[Test]
-    public function aChannelDeclaredByBothAProducerKindsFailsTheBuild(): void
+    public function itFailsTheBuildWhenAChannelIsDeclaredByBothProducerKinds(): void
     {
         $container = self::containerWith(new StampRule(), new PoachingValidator());
 
@@ -231,7 +231,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
      * `fail_on`. The executor refuses.
      */
     #[Test]
-    public function aValidatorEmittingOnAChannelItDoesNotDeclareEndsTheRun(): void
+    public function itEndsTheRunWhenAValidatorEmitsOnAChannelItDoesNotDeclare(): void
     {
         $execution = new RuleExecution(
             [new StampRule()],

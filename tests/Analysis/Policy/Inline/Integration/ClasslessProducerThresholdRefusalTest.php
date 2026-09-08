@@ -66,7 +66,7 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown(string $producerRuleName): void
+    public function itRefusesAThresholdNamingAFamilyProducerAsUnretunableNotAsUnknown(string $producerRuleName): void
     {
         $rejection = self::addressability()->problemWithThreshold(self::threshold($producerRuleName));
 
@@ -101,7 +101,7 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp(string $producerRuleName): void
+    public function itRefusesAPairedThresholdOnAFamilyProducerWithoutAdvisingANoOpRetune(string $producerRuleName): void
     {
         $rejection = self::addressability()->problemWithThreshold(self::threshold($producerRuleName . ':class'));
 
@@ -123,7 +123,7 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
      * one `health.cohesion` itself took before the split.
      */
     #[Test]
-    public function aThresholdNamingNothingIsStillRefusedAsUnknown(): void
+    public function itRefusesAThresholdNamingNoRuleAsUnknown(): void
     {
         $rejection = self::addressability()->problemWithThreshold(self::threshold('health.nosuchdimension'));
 

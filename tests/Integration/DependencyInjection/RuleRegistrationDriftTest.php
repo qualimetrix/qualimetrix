@@ -40,7 +40,7 @@ use SplFileInfo;
 final class RuleRegistrationDriftTest extends TestCase
 {
     #[Test]
-    public function everyConcreteRuleClassOnDiskIsRegistered(): void
+    public function itRegistersExactlyEveryConcreteRuleClassFoundOnDisk(): void
     {
         $onDisk = self::ruleClassesOnDisk();
         $registered = self::registeredRuleClasses();

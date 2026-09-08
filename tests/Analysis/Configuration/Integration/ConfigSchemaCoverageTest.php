@@ -24,7 +24,7 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 final class ConfigSchemaCoverageTest extends TestCase
 {
     #[Test]
-    public function sectionPoliciesCoversEveryAllowedRootKeyExactly(): void
+    public function itDeclaresAPolicyForExactlyEveryAllowedRootKey(): void
     {
         $allowed = ConfigSchema::allowedRootKeys();
         $policyKeys = array_keys(ConfigSchema::sectionPolicies());
@@ -42,7 +42,7 @@ final class ConfigSchemaCoverageTest extends TestCase
     }
 
     #[Test]
-    public function policyForReturnsTheSamePolicyAsSectionPoliciesEntry(): void
+    public function itReturnsTheSamePolicyAsTheSectionPoliciesEntry(): void
     {
         $policies = ConfigSchema::sectionPolicies();
 
@@ -56,7 +56,7 @@ final class ConfigSchemaCoverageTest extends TestCase
     }
 
     #[Test]
-    public function policyForUnregisteredKeyFailsFast(): void
+    public function itFailsFastForAnUnregisteredKey(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/sectionPolicies\(\)/');

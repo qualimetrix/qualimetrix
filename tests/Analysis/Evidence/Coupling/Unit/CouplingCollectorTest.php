@@ -40,25 +40,25 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsCoupling(): void
+    public function itIsNamedCoupling(): void
     {
         self::assertSame('coupling', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsEmptyArray(): void
+    public function itRequiresNoUpstreamMetrics(): void
     {
         self::assertSame([], $this->collector->requires());
     }
 
     #[Test]
-    public function provides_returnsCouplingMetrics(): void
+    public function itProvidesTheCouplingMetricNames(): void
     {
         self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework'], $this->collector->provides());
     }
 
     #[Test]
-    public function getMetricDefinitions_returnsSevenDefinitions(): void
+    public function itDeclaresSevenMetricDefinitionsWithTheirAggregationStrategies(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -161,7 +161,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesClassMetrics(): void
+    public function itComputesEfferentCouplingAndInstabilityForAClass(): void
     {
         // App\Foo depends on Vendor\Bar and Vendor\Baz (Ce = 2)
         // Nothing depends on App\Foo (Ca = 0)
@@ -185,7 +185,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesAfferentCoupling(): void
+    public function itComputesAfferentCouplingForAClassWithMultipleDependents(): void
     {
         // Both App\Foo and App\Baz depend on App\Bar
         // App\Bar has Ca = 2
@@ -211,7 +211,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesInstability(): void
+    public function itComputesInstabilityFromAfferentAndEfferentCoupling(): void
     {
         // App\Service has Ca = 1 (App\Controller depends on it)
         // App\Service has Ce = 2 (depends on Vendor\A and Vendor\B)
@@ -238,7 +238,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesNamespaceMetrics(): void
+    public function itAggregatesEfferentCouplingAtNamespaceLevel(): void
     {
         // App namespace has 2 classes (Foo, Baz) that depend on Vendor
         // Ce for App = 2 unique external classes (Vendor\Bar, Vendor\Qux)
@@ -264,7 +264,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_isolatedClass_hasZeroInstability(): void
+    public function itScoresZeroInstabilityForAClassWithOnlyIncomingDependencies(): void
     {
         // A class with no dependencies and no dependents
         // Still appears in the graph as both source and target
@@ -345,7 +345,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_handlesGlobalNamespaceClasses(): void
+    public function itRegistersAGlobalNamespaceClassUnderAnEmptyNamespace(): void
     {
         $deps = [
             $this->dep('GlobalClass', 'Vendor\\Service'),
@@ -368,7 +368,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCbo(): void
+    public function itComputesCboAsTheUnionOfAfferentAndEfferentDependencies(): void
     {
         // App\Service has Ca = 1 (App\Controller depends on it)
         // App\Service has Ce = 2 (depends on Vendor\A and Vendor\B)
@@ -395,7 +395,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_cboBidirectionalCoupling_countsUnion(): void
+    public function itCountsABidirectionalDependencyOnceInCbo(): void
     {
         // A→B and B→A: bidirectional coupling
         // For A: Ca=1 (B depends on A), Ce=1 (A depends on B)
@@ -429,7 +429,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_cboZeroForIsolatedClass(): void
+    public function itComputesCboFromOnlyIncomingDependenciesWhenThereAreNoOutgoingOnes(): void
     {
         // Class with no dependencies
         $deps = [
@@ -453,7 +453,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_cboHighForHighlyCoupledClass(): void
+    public function itComputesCboAsTheFullUnionForAHighlyCoupledClass(): void
     {
         // App\Service has high coupling
         // Ca = 3 (App\A, App\B, App\C depend on it)
@@ -487,7 +487,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCboForNamespace(): void
+    public function itCountsUniquelyCoupledNamespacesForNamespaceLevelCbo(): void
     {
         // App namespace has Ca = 0, Ce = 2
         // CBO = 2
@@ -514,7 +514,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_namespaceCboBidirectional_countsUnion(): void
+    public function itCountsABidirectionalNamespaceDependencyOnceInNamespaceCbo(): void
     {
         // Namespace A depends on Namespace B (A\Foo -> B\Bar)
         // Namespace B depends on Namespace A (B\Baz -> A\Qux)
@@ -552,7 +552,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_doesNotCreateSymbolsForExternalClasses(): void
+    public function itDoesNotRegisterASymbolForAnExternalDependencyClass(): void
     {
         // App\Foo depends on Vendor\Bar — but only App\Foo is a project class
         $deps = [
@@ -574,7 +574,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_doesNotCreateSymbolsForExternalNamespaces(): void
+    public function itDoesNotRegisterASymbolForAnExternalDependencyNamespace(): void
     {
         $deps = [
             $this->dep('App\\Foo', 'Vendor\\Bar'),
@@ -596,7 +596,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCePackages_multiplePackages(): void
+    public function itCountsEachDistinctTopLevelPackageInCePackages(): void
     {
         // App\Foo depends on PhpParser\Node, PhpParser\Lexer, Symfony\Console, Psr\Log
         // Top-level namespaces: PhpParser, Symfony, Psr → ce_packages = 3
@@ -620,7 +620,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCePackages_samePackage(): void
+    public function itCountsOnlyOnePackageWhenAllDependenciesShareATopLevelNamespace(): void
     {
         // All deps from same top-level namespace (PhpParser) → ce_packages = 1
         $deps = [
@@ -642,7 +642,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCePackages_intraPackageDepsExcluded(): void
+    public function itExcludesIntraPackageDependenciesFromCePackages(): void
     {
         // All deps within same top-level namespace (App) → ce_packages = 0
         $deps = [
@@ -665,7 +665,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_computesCePackages_onlyIncomingDeps(): void
+    public function itScoresZeroCePackagesForAClassWithOnlyIncomingDependencies(): void
     {
         // App\Bar has only afferent deps (no Ce) → ce_packages = 0
         $deps = [
@@ -688,7 +688,7 @@ final class CouplingCollectorTest extends TestCase
     // Framework CBO tests
 
     #[Test]
-    public function calculate_cboAppExcludesFrameworkDeps(): void
+    public function itExcludesFrameworkDependenciesFromCboApp(): void
     {
         // Configure framework namespaces
         $collector = new CouplingCollector($this->configuredAnalysis(['Symfony', 'PhpParser', 'Psr']));
@@ -721,7 +721,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_cboAppEqualsCboWhenNoFrameworkConfig(): void
+    public function itMakesCboAppEqualCboWhenNoFrameworkNamespacesAreConfigured(): void
     {
         // No framework namespaces configured (default)
         $deps = [
@@ -745,7 +745,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_ceFrameworkCountsOnlyEfferentFrameworkDeps(): void
+    public function itCountsOnlyEfferentFrameworkDependenciesInCeFramework(): void
     {
         $collector = new CouplingCollector($this->configuredAnalysis(['Symfony']));
 
@@ -771,7 +771,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_frameworkPrefixBoundaryAware(): void
+    public function itMatchesFrameworkPrefixesOnNamespaceBoundariesWhenClassifyingDependencies(): void
     {
         $collector = new CouplingCollector($this->configuredAnalysis(['Psr']));
 
@@ -797,7 +797,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_cePartitionsCleanly(): void
+    public function itPartitionsCeIntoCeAppAndCeFrameworkWithoutOverlap(): void
     {
         // Verify: Ce = Ce_app + Ce_framework (outgoing dependencies partition cleanly)
         $collector = new CouplingCollector($this->configuredAnalysis(['Symfony', 'PhpParser']));
@@ -829,7 +829,7 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_bidirectionalWithFramework(): void
+    public function itExcludesFrameworkDependenciesFromCboAppEvenWithABidirectionalAppDependency(): void
     {
         // A→FrameworkClass — Ce_framework=1, but framework is not scanned
         // so Ca from framework doesn't exist. CBO_APP should exclude framework.

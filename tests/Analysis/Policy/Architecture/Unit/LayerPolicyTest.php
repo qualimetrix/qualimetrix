@@ -23,7 +23,7 @@ final class LayerPolicyTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function isAllowed_sameLayerAlwaysAllowedEvenWhenNotInEntryList(): void
+    public function itAlwaysAllowsTheSameLayerEvenWithNoEntryAtAll(): void
     {
         $policy = new LayerPolicy([]);
 
@@ -31,7 +31,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_sameLayerAllowedWhenEntryExists(): void
+    public function itAllowsTheSameLayerWhenAnEntryExistsForIt(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service'],
@@ -41,7 +41,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_exactTargetInAllowList_returnsTrue(): void
+    public function itAllowsAnExactTargetListedInTheAllowList(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service', 'domain'],
@@ -52,7 +52,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_targetNotInAllowList_returnsFalse(): void
+    public function itRejectsATargetNotListedInTheAllowList(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service'],
@@ -62,7 +62,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_unknownSourceLayer_returnsFalse(): void
+    public function itRejectsAnUnknownSourceLayer(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service'],
@@ -72,7 +72,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_emptyTargetListForKnownSource_returnsFalseForDifferentLayer(): void
+    public function itRejectsADifferentLayerWhenTheSourcesAllowListIsExplicitlyEmpty(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'core' => [],
@@ -84,7 +84,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_returnsConfiguredExactNames(): void
+    public function itListsTheConfiguredExactTargetNames(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service', 'domain'],
@@ -94,7 +94,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_returnsEmptyListForUnknownSource(): void
+    public function itListsNoTargetsForAnUnknownSource(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service'],
@@ -104,7 +104,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_returnsEmptyListForExplicitlyEmptyAllowList(): void
+    public function itListsNoTargetsForAnExplicitlyEmptyAllowList(): void
     {
         $policy = AllowListBuilder::policyFromExactMap([
             'core' => [],
@@ -118,7 +118,7 @@ final class LayerPolicyTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function isAllowed_globSourceMatchesAnyName(): void
+    public function itMatchesAGlobSourceSelectorAgainstAnyName(): void
     {
         $policy = new LayerPolicy([
             new AllowListEntry(
@@ -133,7 +133,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_globTargetMatchesAnyName(): void
+    public function itMatchesAGlobTargetSelectorAgainstAnyName(): void
     {
         $policy = new LayerPolicy([
             new AllowListEntry(
@@ -148,7 +148,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_capturedSelectorEnforcesSameBindingIdentity(): void
+    public function itRequiresACapturedTargetToShareTheSourcesBindingIdentity(): void
     {
         // Step E binding-aware semantics: 'app-{m}' → 'domain-{m}' allows
         // app-Order to depend on domain-Order (same binding) but not on
@@ -168,7 +168,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_allowCrossInstanceSwapsSourceBindingForEmptyBinding(): void
+    public function itAcceptsAnyBindingForACapturedTargetWhenCrossInstanceIsAllowed(): void
     {
         // With allow_cross_instance: true, the policy passes an empty binding
         // into the captured target's matchesTarget call. The captured target
@@ -192,7 +192,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_capturedSourceWithExactTargetIgnoresBinding(): void
+    public function itIgnoresTheSourceBindingWhenTheTargetIsAnExactSelector(): void
     {
         // Captured source binding flows through but the exact target's
         // matchesTarget ignores binding entirely — every instance of the
@@ -210,7 +210,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_returnsAllSelectorKindsAsOriginalStrings(): void
+    public function itRendersEverySelectorKindAsItsOriginalString(): void
     {
         // Exact, glob, and captured targets all surface as their original
         // selector strings — the recommendation builder renders them verbatim,
@@ -234,7 +234,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_dedupesAcrossMatchingEntriesByOriginalString(): void
+    public function itDeduplicatesTargetsAcrossMultipleMatchingEntries(): void
     {
         // Two entries match the same source name; duplicate target descriptors
         // are emitted only once.
@@ -257,7 +257,7 @@ final class LayerPolicyTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function isAllowed_unknownSourceLayerReturnsFalseRegardlessOfTarget(): void
+    public function itRejectsEveryTargetForAnUnknownSourceLayer(): void
     {
         // Documented contract: callers MUST pre-resolve $from via LayerRegistry.
         // An unknown source layer is intentionally treated as "no targets allowed",
@@ -274,7 +274,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_unknownSourceLayerStillAllowsSameLayer(): void
+    public function itStillAllowsSelfIdentityForAnUnknownSourceLayer(): void
     {
         // Same-layer short-circuit precedes the entry walk. An unknown source
         // name still resolves "self → self" as true. This is fine: in practice,
@@ -293,7 +293,7 @@ final class LayerPolicyTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function isAllowed_relationsFilter_acceptsListedDependencyType(): void
+    public function itAcceptsADependencyTypeListedInTheRelationsFilter(): void
     {
         $policy = new LayerPolicy([
             new AllowListEntry(
@@ -310,7 +310,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_relationsFilter_rejectsUnlistedDependencyType(): void
+    public function itRejectsADependencyTypeNotListedInTheRelationsFilter(): void
     {
         $policy = new LayerPolicy([
             new AllowListEntry(
@@ -327,7 +327,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_relationsNull_acceptsAnyDependencyType(): void
+    public function itAcceptsAnyDependencyTypeWhenNoRelationsFilterIsSet(): void
     {
         // The legacy semantics (and the bare-string short-form) leave
         // relations=null on the AllowTarget — any DependencyType is accepted.
@@ -347,7 +347,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_typeNullBypassesRelationsFilter(): void
+    public function itBypassesTheRelationsFilterWhenNoDependencyTypeIsGiven(): void
     {
         // Callers that don't care about edge granularity (legacy tests, the
         // reachability surface) can omit the type argument; the relations gate
@@ -367,7 +367,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_sameLayerAlwaysAllowedRegardlessOfRelations(): void
+    public function itAlwaysAllowsTheSameLayerRegardlessOfTheRelationsFilter(): void
     {
         // Same-layer short-circuit precedes the entry walk and the relations
         // gate. A class extending another class in the same layer is always
@@ -387,7 +387,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_overlappingAllowEntries_shortFormDominates(): void
+    public function itLetsABareTargetRescueARelationTheLongFormSiblingDoesNotListInEitherDeclarationOrder(): void
     {
         // UNION semantics: when several targets within one source resolve to
         // the same target layer, the broader (bare-string, relations=null)
@@ -427,7 +427,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_overlappingAllowEntries_relationsUnion(): void
+    public function itUnionsTheRelationsOfOverlappingLongFormTargets(): void
     {
         // Without a bare-string rescue, multiple long-form targets covering the
         // same target layer combine into the union of their relations lists.
@@ -453,7 +453,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_surfaceRelationsTrailer_whenTargetHasRelations(): void
+    public function itAppendsARelationsTrailerForATargetRestrictedToSpecificRelations(): void
     {
         // M1 fix: the recommendation surface must tell the user that a
         // long-form target only accepts certain edge kinds — otherwise the
@@ -478,7 +478,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function allowedTargets_dedupesBareAndLongFormDescriptorsSeparately(): void
+    public function itListsABareAndARelationsRestrictedTargetAsSeparateDescriptors(): void
     {
         // A bare 'vendor' and a 'vendor' with relations are semantically
         // distinct (UNION semantics — see overlapping siblings test). The
@@ -505,7 +505,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_allowCrossInstanceCombinedWithRelations_appliesBothGates(): void
+    public function itAppliesBothTheCrossInstanceAndRelationsGatesTogether(): void
     {
         // M2 fix: end-to-end pin that allow_cross_instance and relations
         // combine cleanly — the binding gate is lifted (any module instance
@@ -531,7 +531,7 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_relationsFilter_appliesAcrossEntriesNotJustTargets(): void
+    public function itUnionsRelationsAcrossSeparateAllowListEntriesNotJustWithinOne(): void
     {
         // The UNION property must hold across separate AllowListEntry rows
         // too (not only across targets within one entry). This pins that the

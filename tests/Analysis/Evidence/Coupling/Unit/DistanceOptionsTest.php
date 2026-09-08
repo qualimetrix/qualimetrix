@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 final class DistanceOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayStringIncludeNamespacesCoercedToArray(): void
+    public function itCoercesAStringIncludeNamespacesEntryToAnArray(): void
     {
         $options = DistanceOptions::fromArray(['include_namespaces' => 'App\\Service']);
 
@@ -21,7 +21,7 @@ final class DistanceOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayArrayIncludeNamespacesPreserved(): void
+    public function itPreservesAnArrayIncludeNamespacesEntry(): void
     {
         $options = DistanceOptions::fromArray([
             'include_namespaces' => ['App\\Service', 'App\\Domain'],
@@ -31,7 +31,7 @@ final class DistanceOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayNullIncludeNamespacesRemainsNull(): void
+    public function itLeavesIncludeNamespacesNullWhenAbsent(): void
     {
         $options = DistanceOptions::fromArray([]);
 

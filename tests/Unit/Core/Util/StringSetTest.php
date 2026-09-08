@@ -13,7 +13,7 @@ use Qualimetrix\Core\Util\StringSet;
 final class StringSetTest extends TestCase
 {
     #[Test]
-    public function add_addsUniqueStrings(): void
+    public function itAddsUniqueStrings(): void
     {
         $set = new StringSet();
         $set = $set->add('foo');
@@ -25,7 +25,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function add_deduplicates(): void
+    public function itDedupesARepeatedAdd(): void
     {
         $set = new StringSet();
         $set = $set->add('foo');
@@ -36,7 +36,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function add_returnsNewInstance(): void
+    public function itReturnsANewInstanceFromAdd(): void
     {
         $set1 = new StringSet();
         $set2 = $set1->add('foo');
@@ -47,7 +47,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function add_returnsSameInstanceWhenDuplicate(): void
+    public function itReturnsTheSameInstanceWhenAddingADuplicate(): void
     {
         $set1 = (new StringSet())->add('foo');
         $set2 = $set1->add('foo');
@@ -56,7 +56,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function addAll_addsMultipleStrings(): void
+    public function itAddsEveryStringFromAddAll(): void
     {
         $set = (new StringSet())->addAll(['foo', 'bar', 'baz']);
 
@@ -67,7 +67,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function contains_returnsFalseForMissing(): void
+    public function itReturnsFalseFromContainsForAMissingString(): void
     {
         $set = (new StringSet())->add('foo');
 
@@ -75,7 +75,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function isEmpty_returnsTrueForEmptySet(): void
+    public function itIsEmptyForAnEmptySet(): void
     {
         $set = new StringSet();
 
@@ -83,7 +83,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function isEmpty_returnsFalseForNonEmptySet(): void
+    public function itIsNotEmptyForANonEmptySet(): void
     {
         $set = (new StringSet())->add('foo');
 
@@ -91,7 +91,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function toArray_returnsStringsAsIndexedArray(): void
+    public function itReturnsAnIndexedArrayFromToArray(): void
     {
         $set = (new StringSet())->addAll(['foo', 'bar']);
         $array = $set->toArray();
@@ -102,7 +102,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function filter_appliesPredicate(): void
+    public function itKeepsOnlyElementsMatchingThePredicateInFilter(): void
     {
         $set = (new StringSet())->addAll(['App\\Foo', 'App\\Bar', 'Vendor\\Baz']);
         $filtered = $set->filter(fn(string $s) => str_starts_with($s, 'App\\'));
@@ -114,7 +114,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function union_combinesSets(): void
+    public function itCombinesBothSetsInUnion(): void
     {
         $set1 = (new StringSet())->addAll(['foo', 'bar']);
         $set2 = (new StringSet())->addAll(['bar', 'baz']);
@@ -127,7 +127,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function intersect_returnsCommonElements(): void
+    public function itReturnsOnlyElementsCommonToBothSetsInIntersect(): void
     {
         $set1 = (new StringSet())->addAll(['foo', 'bar', 'baz']);
         $set2 = (new StringSet())->addAll(['bar', 'baz', 'qux']);
@@ -139,7 +139,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function diff_returnsUniqueElements(): void
+    public function itReturnsElementsAbsentFromTheOtherSetInDiff(): void
     {
         $set1 = (new StringSet())->addAll(['foo', 'bar', 'baz']);
         $set2 = (new StringSet())->addAll(['bar', 'baz']);
@@ -150,7 +150,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function getIterator_yieldsAllStrings(): void
+    public function itYieldsEveryStringWhenIterated(): void
     {
         $set = (new StringSet())->addAll(['foo', 'bar']);
         $items = [];
@@ -165,7 +165,7 @@ final class StringSetTest extends TestCase
     }
 
     #[Test]
-    public function fromArray_createsSetFromArray(): void
+    public function itDedupesAnArrayIntoASetInFromArray(): void
     {
         $set = StringSet::fromArray(['foo', 'bar', 'foo']);
 

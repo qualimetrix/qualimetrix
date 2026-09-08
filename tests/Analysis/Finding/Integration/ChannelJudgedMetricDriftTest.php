@@ -148,7 +148,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
     private static ?array $judging = null;
 
     #[Test]
-    public function everyFindingPublishesOneOfTheMetricsItsChannelDeclares(): void
+    public function itRequiresEveryFindingToPublishOneOfTheMetricsItsChannelDeclares(): void
     {
         $judging = self::judgingChannels();
 
@@ -197,7 +197,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      * turns this red rather than joining a silently unchecked remainder.
      */
     #[Test]
-    public function theCorpusReachesEveryChannelThatDeclaresAJudgedMetric(): void
+    public function itRequiresTheCorpusToReachEveryChannelThatDeclaresAJudgedMetric(): void
     {
         $reached = [];
 

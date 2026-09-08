@@ -30,7 +30,7 @@ final class TypeDependencyHelperTest extends TestCase
     }
 
     #[Test]
-    public function selfTypeHintDoesNotProduceDependency(): void
+    public function itDoesNotProduceADependencyForTheSelfTypeHint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -49,7 +49,7 @@ PHP;
     }
 
     #[Test]
-    public function staticTypeHintDoesNotProduceDependency(): void
+    public function itDoesNotProduceADependencyForTheStaticTypeHint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -67,7 +67,7 @@ PHP;
     }
 
     #[Test]
-    public function parentTypeHintDoesNotProduceDependency(): void
+    public function itDoesNotProduceAParentTypeHintDependencyBeyondTheExtendsEdge(): void
     {
         $code = <<<'PHP'
 <?php
@@ -91,7 +91,7 @@ PHP;
     }
 
     #[Test]
-    public function selfInParameterTypeHintDoesNotProduceDependency(): void
+    public function itDoesNotProduceADependencyForSelfInAParameterTypeHint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -109,7 +109,7 @@ PHP;
     }
 
     #[Test]
-    public function selfInPropertyTypeHintDoesNotProduceDependency(): void
+    public function itDoesNotProduceADependencyForSelfInAPropertyTypeHint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -125,7 +125,7 @@ PHP;
     }
 
     #[Test]
-    public function selfInUnionTypeDoesNotProduceDependency(): void
+    public function itDoesNotProduceADependencyForSelfInAUnionType(): void
     {
         $code = <<<'PHP'
 <?php

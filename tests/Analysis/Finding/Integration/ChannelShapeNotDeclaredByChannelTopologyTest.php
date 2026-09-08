@@ -63,7 +63,7 @@ use RuntimeException;
 final class ChannelShapeNotDeclaredByChannelTopologyTest extends TestCase
 {
     #[Test]
-    public function noMethodThatBuildsAChannelDeclarationAlsoReferencesChannelShape(): void
+    public function itRefusesAMethodThatBuildsAChannelDeclarationWhileAlsoReferencingChannelShape(): void
     {
         $offenders = [];
         $channelBuildingCallCount = 0;

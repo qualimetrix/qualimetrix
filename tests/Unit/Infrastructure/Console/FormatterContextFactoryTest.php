@@ -33,7 +33,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allFlagSetsViolationsOptionToAll(): void
+    public function itSetsTheViolationsOptionToAllWhenAllFlagIsPassed(): void
     {
         $input = $this->createInput(['--all' => true]);
 
@@ -43,7 +43,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allFlagSetsDetailLimitToUnlimited(): void
+    public function itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed(): void
     {
         $input = $this->createInput(['--all' => true]);
 
@@ -53,7 +53,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allFlagWithFormatOptViolationsAllDoesNotConflict(): void
+    public function itAcceptsAllFlagTogetherWithAnEquivalentFormatOptViolationsAll(): void
     {
         $input = $this->createInput([
             '--all' => true,
@@ -67,7 +67,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allFlagWithNumericViolationsThrowsException(): void
+    public function itThrowsWhenAllFlagConflictsWithANumericViolationsFormatOpt(): void
     {
         $input = $this->createInput([
             '--all' => true,
@@ -81,7 +81,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allFlagOverridesExplicitDetailLimit(): void
+    public function itLetsAllFlagOverrideAnExplicitDetailLimit(): void
     {
         $input = $this->createInput([
             '--all' => true,
@@ -95,7 +95,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function withoutAllFlagBehaviorIsUnchanged(): void
+    public function itLeavesDefaultsUnchangedWhenAllFlagIsAbsent(): void
     {
         $input = $this->createInput([]);
 
@@ -108,7 +108,7 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
-    public function formatOptViolationsAllWithoutAllFlagStillWorks(): void
+    public function itAcceptsFormatOptViolationsAllWithoutTheAllFlag(): void
     {
         $input = $this->createInput([
             '--format-opt' => ['violations=all'],

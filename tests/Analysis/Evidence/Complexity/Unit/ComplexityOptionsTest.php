@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 final class ComplexityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEnabledFalseDisablesAllLevels(): void
+    public function itDisablesEveryLevelWhenEnabledIsFalse(): void
     {
         $options = ComplexityOptions::fromArray(['enabled' => false]);
 
@@ -23,7 +23,7 @@ final class ComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayWithoutEnabledFalseKeepsDefaults(): void
+    public function itKeepsDefaultsWhenEnabledIsOmitted(): void
     {
         $options = ComplexityOptions::fromArray([]);
 
@@ -31,7 +31,7 @@ final class ComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayEnabledFalseWithLegacyKeysStillDisables(): void
+    public function itStaysDisabledWhenLegacyThresholdKeysArePresent(): void
     {
         // enabled: false takes priority over legacy keys
         $options = ComplexityOptions::fromArray([
@@ -44,7 +44,7 @@ final class ComplexityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayEnabledFalseWithHierarchicalKeysStillDisables(): void
+    public function itStaysDisabledWhenHierarchicalLevelKeysArePresent(): void
     {
         $options = ComplexityOptions::fromArray([
             'enabled' => false,

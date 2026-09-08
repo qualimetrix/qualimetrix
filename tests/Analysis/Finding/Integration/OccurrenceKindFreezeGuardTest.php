@@ -80,7 +80,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
     ];
 
     #[Test]
-    public function everyFrozenOccurrenceKindIsStillAPlainLiteralMatchingItsPin(): void
+    public function itKeepsEveryFrozenOccurrenceKindAsAPlainLiteralMatchingItsPin(): void
     {
         $root = self::projectRoot();
         $declarations = self::findFrozenDeclarations($root);

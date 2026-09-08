@@ -32,7 +32,7 @@ final class ChannelPresentationCoverageTest extends TestCase
     private const int DECLARED_CHANNEL_COUNT = 52;
 
     #[Test]
-    public function everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage(): void
+    public function itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -76,7 +76,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * The static sweep above builds its container without a resolved run
      * configuration, so the computed-metric catalog is empty and every
      * `computed.*` / `health.*` channel is invisible to it — see this class's
-     * own `everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage()`
+     * own `itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel()`
      * and {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest},
      * whose docblocks both say so. That leaves P2's own DoD — "the view
      * answers for all 52 static channels and for a configured `computed.*` /
@@ -87,7 +87,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * channel set.
      */
     #[Test]
-    public function everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage(): void
+    public function itResolvesARealDescriptionAndAnExistingDocsPageForEveryConfiguredComputedMetricChannel(): void
     {
         $container = (new ContainerFactory())->create();
 

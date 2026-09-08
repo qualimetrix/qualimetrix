@@ -78,7 +78,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
     #[Test]
     #[DataProvider('provideRootKeyCases')]
     #[TestDox('root key $description is normalized exactly as today')]
-    public function rootKeyNormalizationMatchesSnapshot(string $description, string $yaml, array $expected): void
+    public function itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot(string $description, string $yaml, array $expected): void
     {
         self::assertSame($expected, $this->loadYaml($yaml), $description);
     }
@@ -91,7 +91,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
      * behavior for it).
      */
     #[Test]
-    public function everyAllowedRootKeyHasACharacterizationCase(): void
+    public function itCoversEveryAllowedRootKeyWithACharacterizationCase(): void
     {
         $covered = [];
         foreach (self::provideRootKeyCases() as [, , $expected]) {

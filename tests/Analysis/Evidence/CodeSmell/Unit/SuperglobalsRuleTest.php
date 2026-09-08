@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class SuperglobalsRuleTest extends TestCase
 {
     #[Test]
-    public function nameAndDescriptionAreCorrect(): void
+    public function itReportsItsNameAndDescription(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
@@ -32,13 +32,13 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function optionsClassIsCorrect(): void
+    public function itDeclaresCodeSmellOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeSmellOptions::class, SuperglobalsRule::getOptionsClass());
     }
 
     #[Test]
-    public function disabledRuleReturnsNoFindings(): void
+    public function itProducesNoFindingsWhenDisabled(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions(enabled: false));
 
@@ -51,7 +51,7 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoFindings(): void
+    public function itProducesNoFindingsWhenNoSmellsArePresent(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
@@ -72,7 +72,7 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesFinding(): void
+    public function itReportsAFindingForEachDirectSuperglobalAccess(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 

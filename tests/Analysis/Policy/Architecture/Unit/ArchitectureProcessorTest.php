@@ -50,7 +50,7 @@ final class ArchitectureProcessorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function classify_beforeBind_throwsLogicException(): void
+    public function itThrowsWhenClassifyIsCalledBeforeBind(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/classify.*bind/');
@@ -59,7 +59,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function classify_afterBindWithoutPrepare_throwsLogicException(): void
+    public function itThrowsWhenClassifyIsCalledAfterBindWithoutPrepare(): void
     {
         $this->processor->bind(self::emptyConfiguration());
 
@@ -70,7 +70,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function prepare_beforeBind_throwsLogicException(): void
+    public function itThrowsWhenPrepareIsCalledBeforeBind(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/prepare.*bind/');
@@ -79,7 +79,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function reset_isIdempotent(): void
+    public function itIsIdempotentWhenResetIsCalledRepeatedly(): void
     {
         $this->processor->reset();
         $this->processor->reset();
@@ -88,7 +88,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function happyPath_resetBindPrepareClassify_returnsMatches(): void
+    public function itReturnsMatchesAfterResetBindPrepareClassify(): void
     {
         $config = self::configurationWithOneStaticLayer();
         $this->processor->reset();
@@ -104,7 +104,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function reset_afterFullHappyPath_clearsState_subsequentClassifyThrows(): void
+    public function itClearsStateOnResetAfterAFullRunSoAFurtherClassifyThrows(): void
     {
         $this->processor->bind(self::configurationWithOneStaticLayer());
         $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
@@ -123,7 +123,7 @@ final class ArchitectureProcessorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function bind_afterPrepare_clearsPreparedState_subsequentClassifyThrows(): void
+    public function itClearsThePreparedStateOnRebindSoAFurtherClassifyThrows(): void
     {
         // First analysis run reaches the prepared state.
         $this->processor->bind(self::configurationWithOneStaticLayer());
@@ -142,7 +142,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function bind_repeated_invalidatesAndRebindsCorrectly(): void
+    public function itRebindsCorrectlyWhenBindIsCalledTwice(): void
     {
         $first = self::configurationWithOneStaticLayer();
         $second = self::emptyConfiguration();
@@ -165,13 +165,13 @@ final class ArchitectureProcessorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function getPreparedConfiguration_isNullPreBind(): void
+    public function itReturnsNoPreparedConfigurationBeforeBind(): void
     {
         self::assertNull($this->processor->getPreparedConfiguration());
     }
 
     #[Test]
-    public function getPreparedConfiguration_isNullAfterBindBeforePrepare(): void
+    public function itReturnsNoPreparedConfigurationAfterBindBeforePrepare(): void
     {
         $this->processor->bind(self::emptyConfiguration());
 
@@ -179,7 +179,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function getPreparedConfiguration_returnsConfigAfterPrepare(): void
+    public function itReturnsThePreparedConfigurationAfterPrepare(): void
     {
         $config = self::configurationWithOneStaticLayer();
         $this->processor->bind($config);
@@ -193,7 +193,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function prepare_withTemplates_runsExpansionAndReturnsWithExpansionInstance(): void
+    public function itRunsTemplateExpansionAndReturnsAnExpandedConfigurationInstance(): void
     {
         // Template that observes one tuple in the class set.
         $template = new TemplateLayerDefinition(
@@ -249,7 +249,7 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function implementsTheLayerPolicyPreparationContract(): void
+    public function itImplementsTheLayerPolicyPreparationContract(): void
     {
         // Pin the interface contract: the concrete processor MUST implement
         // LayerPolicyPreparationInterface for the DI alias to be sound.

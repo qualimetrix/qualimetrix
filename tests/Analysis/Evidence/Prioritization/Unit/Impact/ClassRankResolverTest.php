@@ -34,7 +34,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForMethodFinding(): void
+    public function itResolvesAMethodFindingToItsOwningClassRank(): void
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05);
 
@@ -58,7 +58,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForClassFinding(): void
+    public function itResolvesAClassFindingToItsOwnClassRank(): void
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.12);
 
@@ -82,7 +82,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForNamespaceFindingReturnsMaxClassRank(): void
+    public function itResolvesANamespaceFindingToTheMaxClassRankInIt(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -112,7 +112,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForNamespaceIncludesSubNamespaces(): void
+    public function itIncludesSubNamespacesWhenResolvingANamespaceFinding(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -140,7 +140,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForFileFindingReturnsMaxClassRankInFile(): void
+    public function itResolvesAFileFindingToTheMaxClassRankInTheFile(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -170,7 +170,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveSkipsClassesWithNullFileWhenBuildingFileIndex(): void
+    public function itSkipsClassesWithoutAFileWhenBuildingTheFileIndex(): void
     {
         // ADR 0015 Phase 1c regression pin: pre-migration, CouplingCollector added
         // class symbols with file='', which produced spurious $fileIndex[''] entries
@@ -217,7 +217,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveReturnsNullWhenNoClassRankMetric(): void
+    public function itReturnsNullWhenTheSubjectHasNoClassRankMetric(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(new MetricBag());
@@ -231,7 +231,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveReturnsNullForProjectFinding(): void
+    public function itReturnsNullForAProjectLevelFinding(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -242,7 +242,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveReturnsNullForFunctionFinding(): void
+    public function itReturnsNullForAFunctionFinding(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -255,7 +255,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveFiltersNanAndInfinite(): void
+    public function itFiltersOutNanAndInfiniteClassRankValues(): void
     {
         $nanMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \NAN);
         $infMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \INF);

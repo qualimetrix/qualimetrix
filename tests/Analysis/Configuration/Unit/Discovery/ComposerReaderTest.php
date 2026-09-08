@@ -28,7 +28,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function extractsPathsFromPsr4Autoload(): void
+    public function itExtractsPathsFromPsr4Autoload(): void
     {
         $composerJson = [
             'autoload' => [
@@ -46,7 +46,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function returnsEmptyArrayWhenFileNotExists(): void
+    public function itReturnsAnEmptyArrayWhenTheComposerFileDoesNotExist(): void
     {
         $paths = $this->reader->extractAutoloadPaths('/nonexistent/composer.json');
 
@@ -54,7 +54,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function returnsEmptyArrayWhenNoAutoload(): void
+    public function itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection(): void
     {
         $this->writeComposerJson(['name' => 'test/package']);
 
@@ -64,7 +64,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function handlesMultiPathArrayMapping(): void
+    public function itExtractsAllPathsFromAMultiPathPsr4Mapping(): void
     {
         $composerJson = [
             'autoload' => [
@@ -81,7 +81,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function includesAutoloadDevPaths(): void
+    public function itIncludesAutoloadDevPaths(): void
     {
         $composerJson = [
             'autoload-dev' => [
@@ -98,7 +98,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function mergesAutoloadAndAutoloadDevPaths(): void
+    public function itMergesAutoloadAndAutoloadDevPaths(): void
     {
         $composerJson = [
             'autoload' => [
@@ -121,7 +121,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function deduplicatesAcrossAutoloadAndAutoloadDev(): void
+    public function itDeduplicatesPathsSharedAcrossAutoloadAndAutoloadDev(): void
     {
         $composerJson = [
             'autoload' => [
@@ -143,7 +143,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function deduplicatesPaths(): void
+    public function itDeduplicatesRepeatedPathsWithinAutoload(): void
     {
         $composerJson = [
             'autoload' => [
@@ -161,7 +161,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function handlesRootPsr4Mapping(): void
+    public function itMapsAnEmptyPsr4PathToTheProjectRoot(): void
     {
         $composerJson = [
             'autoload' => [
@@ -178,7 +178,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function handlesRootPsr4MappingInArray(): void
+    public function itMapsAnEmptyPathInAMultiPathMappingToTheProjectRoot(): void
     {
         $composerJson = [
             'autoload' => [
@@ -195,7 +195,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function normalizesTrailingSlashes(): void
+    public function itStripsTrailingSlashesFromExtractedPaths(): void
     {
         $composerJson = [
             'autoload' => [
