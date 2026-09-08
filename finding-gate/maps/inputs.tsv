@@ -1,6 +1,1 @@
 old	new	reason
-complexity.cyclomatic	complexity.ccn	Х12П4 renames this producer
-design.inheritance	design.dit	Х12П4 renames this producer
-duplication.code-duplication	duplication.clone	Х12П4 renames this producer
-maintainability.index	maintainability.mi	Х12П4 renames this producer
-coverage:	coverage-gap:	Х12П4 renames this configuration key

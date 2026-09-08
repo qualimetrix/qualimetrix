@@ -62,12 +62,12 @@ php bin/qmx check finding-gate/cases/applied-threshold/src \
 In one commit, after the finding-equivalence gate is GREEN and the vocabulary
 comparator has been unfrozen for `Х12П4`:
 
-1. Revert `finding-gate/cases/annotations/src/Directives.php:22` to
-   `@qmx-threshold complexity.cyclomatic warning=notanumber`.
-2. Revert `finding-gate/cases/annotations/src/Directives.php:67` to
-   `@qmx-ignore duplication.code-duplication:class`.
-3. Revert `finding-gate/cases/applied-threshold/src/Retuned.php:15` to
-   `@qmx-threshold complexity.cyclomatic warning=2`.
+1. Move `finding-gate/cases/annotations/src/Directives.php:22` to
+   `@qmx-threshold complexity.ccn warning=notanumber`.
+2. Move `finding-gate/cases/annotations/src/Directives.php:67` to
+   `@qmx-ignore duplication.clone:class`.
+3. Move `finding-gate/cases/applied-threshold/src/Retuned.php:15` to
+   `@qmx-threshold complexity.ccn warning=2`.
 4. Restore `"complexity.ccn@callable"` to
    `finding-gate/cases/applied-threshold/case.json`'s `channels` array (its
    spelling stays `complexity.ccn`, not `complexity.cyclomatic` — the
@@ -81,3 +81,13 @@ comparator has been unfrozen for `Х12П4`:
 Line numbers above were measured on this tree at the time Pakiet E ran;
 re-locate by content, not by line number, since sibling packages may have
 shifted surrounding lines by the time this is applied.
+
+> **Corrected by the orchestrator.** This section first said *revert to*
+> the old spellings. That direction is wrong: after GREEN the tree is
+> renamed and `complexity.cyclomatic` is no longer a rule, so reverting
+> would reintroduce `annotation.unresolved-directive` and break the
+> `applied-threshold` claim. The directives move to the NEW spelling,
+> which is what `00-overview.md` and `03-gate-and-hand-surfaces.md` say.
+> Both cases were re-run after the move: `annotations` reproduces its
+> original multiset exactly, and `applied-threshold` emits
+> `complexity.ccn` x1 plus `complexity.cognitive` x2 — exactly its claims.

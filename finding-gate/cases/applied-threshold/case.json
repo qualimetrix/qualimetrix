@@ -13,6 +13,7 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
+        "complexity.ccn@callable",
         "complexity.cognitive@callable",
         "complexity.cognitive@class"
     ],

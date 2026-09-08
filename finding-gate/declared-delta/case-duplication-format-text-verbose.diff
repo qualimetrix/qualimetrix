@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -6,1 +6,1 @@
--  duplication.clone                        ~15min    (1 violation)
-+  duplication.clone             ~15min    (1 violation)

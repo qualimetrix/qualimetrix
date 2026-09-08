@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -6,1 +6,1 @@
--    Examples of unclassified classes: Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore".  [architecture.coverage-gap]
-+    Examples of unclassified classes: Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage on "ignore".  [architecture.coverage-gap]
-@@ -36,1 +36,1 @@
--  architecture.coverage-gap                ~15min    (1 violation)
-+  architecture.coverage-gap                    ~15min    (1 violation)
