@@ -100,6 +100,38 @@ final class CommandInjectionRuleTest extends TestCase
         );
     }
 
+    /**
+     * Pins `occurrence` to `PATTERN_TYPE` read off a finding produced by
+     * {@see CommandInjectionRule::analyze()} itself, so a future edit to
+     * `PATTERN_TYPE` reddens this test even though it looks like a
+     * same-shaped refactor of the `security.{$type}` bag key
+     * `AbstractSecurityPatternRule::analyze()` shares with every other
+     * security-pattern rule. {@see itCreatesFindingForSingleFinding} already
+     * compares the same literal, but only a pin named by this convention is
+     * counted as this family's protection, and the expected leaf is written
+     * as a literal on purpose: substituting
+     * `CommandInjectionRule::PATTERN_TYPE` would make the comparison
+     * tautological and it would stop catching the move.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnPatternType(): void
+    {
+        $rule = new CommandInjectionRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '']),
+        );
+
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('command_injection', ['type' => 'command_injection', 'superglobal' => ''])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
+    }
+
     #[Test]
     public function itCreatesMultipleFindingsForMultipleFindings(): void
     {

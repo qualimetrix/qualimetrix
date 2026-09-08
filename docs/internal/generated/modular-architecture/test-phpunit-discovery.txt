@@ -374,6 +374,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itFailsBeforeEntryProjectionWhenAFileSymbolHasNoContainerPath
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itFlagsPromotedConstructorPropertyWhenOptionEnabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itIncludesNonPromotedConstructorParameterByDefault
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itKeysOccurrenceToItsOwnSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itPreservesEveryCollectorSubjectKind"class"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itPreservesEveryCollectorSubjectKind"file"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itPreservesEveryCollectorSubjectKind"function"
@@ -2955,6 +2956,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itFailsBeforeEntryProjectionWhenAFileSymbolHasNoContainerPath
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itHasCorrectNameAndCategory
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itIncludesSuperglobalInFindingMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itKeysOccurrenceToItsOwnPatternType
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itReturnsNoFindingsWhenNoFindings
@@ -3600,6 +3602,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsALevelAsNotRunOnlyWhereADefaultSwitchesItOff
  - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsEveryLevelTheChannelsDeclare
  - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceKindFreezeGuardTest::everyFrozenOccurrenceKindIsStillAPlainLiteralMatchingItsPin
+ - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyFrozenLeafIsAssertedByExactlyOnePinTest
+ - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyLeafOccurrenceConstantIsStillAPlainLiteralMatchingItsPin
+ - Qualimetrix\Tests\Analysis\Finding\Integration\OccurrenceLeafFreezeGuardTest::everyPinTestIsRegisteredWithPhpunitAndNotJustDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage

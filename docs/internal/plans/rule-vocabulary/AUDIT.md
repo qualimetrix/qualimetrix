@@ -419,6 +419,52 @@ Numbers, commands and the enumeration:
 `X10-freeze-and-carry/followups/d.md` and
 `X10-freeze-and-carry/enumeration-file-level-namespace-metrics.tsv`.
 
+## Х11 (2026-09-07) — two behaviour questions the naming pass refused to settle by naming
+
+Both were found while deciding names and are defects of behaviour or of
+documentation, so ADR 0048 names them and rules them out of its own scope
+rather than dressing a behaviour change as a rename.
+
+### The website says `size.method-count` counts the methods in a class; it does not
+
+`website/docs/rules/size.md:20` reads "Counts the number of methods in a class."
+The metric excludes getters and setters. Measured on a class holding `getA`,
+`setA` and `doWork`: `size.method-count` = 1 while `size.method-count.total` = 3.
+The exclusion reaches further than the bare key — `size.method-count.public` = 1
+for the same class, so "public" there means "public and not an accessor".
+
+`src/Analysis/Evidence/Size/README.md:219-223` documents the exclusion correctly.
+The page a user actually reads does not, and the four affected keys were kept as
+named (`decision-table.tsv`) precisely because the name is not the defect: the
+promise a reader is given is.
+
+- **Cost:** a user reading the website sizes a class by a number that is not the
+  number they were promised, and a threshold set from that page is set against a
+  different quantity.
+- **What would close it:** the page states the exclusion, the way the component
+  README already does. It is a documentation fix, not a metric change — unless
+  the owner decides the metric should be inclusive, which is the second question
+  and a breaking one.
+
+### Two channels report the same fat constructor twice
+
+`code-smell.constructor-overinjection` (default threshold 8) and
+`code-smell.long-parameter-list` (default 6) both judge `code-smell.parameter-count`,
+and `LongParameterListRule` does not exclude `__construct`. Measured: an
+8-parameter constructor raises **both** findings on one declaration.
+
+This was recorded in the plan as a legitimate many-to-one — "two situations of one
+metric" — and that reading is wrong. One is a subset of the other with a softer
+threshold pair; a constructor above 8 parameters is reported twice, a
+non-constructor method above 6 once.
+
+- **Cost:** double-counted findings on the noisiest declarations, and a baseline
+  that accepts the same defect under two channels.
+- **What would close it:** a decision about the intended layering — whether
+  `long-parameter-list` should exclude constructors, whether the two thresholds
+  should be one, or whether the overlap is deliberate and should be documented.
+  Not a naming question: renaming either channel leaves the double report intact.
+
 ## Disposition
 
 In scope for the rules-and-metrics pass: A1, A2, the `ViolationChannel` half of

@@ -1,0 +1,530 @@
+# Runtime witness enumeration for the X11 final-vocabulary ADR (second independent witness)
+#
+# Method: observe the PRODUCT'S OWN OUTPUT by running bin/qmx against various targets, never by
+# reading source code that declares rule/channel/metric names, and never by reading any
+# already-prepared enumeration (per the task brief: enumeration-*.tsv and
+# docs/internal/plans/rule-vocabulary/X11-final-vocabulary/* were not read).
+# The one deliberate exception: a single `grep -rn "'annotation.directive'"  src/` was run to
+# confirm that "annotation.directive" is an internal producer-rule-name that is never itself
+# published as a finding channel (its four concrete children are). This is noted inline below.
+#
+# All commands were run from the repository root, on branch
+# claude/x11-final-vocabulary, with `php bin/qmx` (project dev checkout, not a phar).
+#
+# ---- Channel-observing runs (bin/qmx check ... --format=json, field "channel" in "violations") ----
+#
+#   php bin/qmx rules
+#     -> gives the 51 RULE names (not channel names) and their --rule-opt keys; used only to
+#        know which --rule-opt overrides exist, and as a cross-check that every rule name maps
+#        to at least one observed channel (some rules publish several distinct child channels;
+#        one rule, annotation.directive, publishes none of its own name — see below).
+#
+#   php bin/qmx check src/ --format=json --workers=0 --fail-on=none -o src_default.json
+#   php bin/qmx check src/ --format=json --workers=0 --fail-on=none --preset=strict -o src_strict.json
+#   php bin/qmx check finding-gate/ --format=json --workers=0 --fail-on=none -o fg.json
+#   php bin/qmx check tests/ --format=json --workers=0 --fail-on=none -o tests.json
+#     -> whole-directory sweeps: the project's own source tree (default and strict presets),
+#        the finding-gate/ directory (which physically contains ~68 PHP fixture and tooling
+#        files used by the finding-equivalence gate, scanned with the ROOT qmx.yaml), and the
+#        tests/ tree (PHPUnit tests plus tests/Fixtures/*, also under the ROOT qmx.yaml).
+#
+#   For each subdirectory of finding-gate/cases/ that carries its own qmx.yaml, run that case
+#   with its own config (this is how the finding-equivalence gate itself exercises each
+#   fixture family — a case's fixtures are calibrated against its own thresholds, not the
+#   root's):
+#     for d in finding-gate/cases/*/; do
+#       php bin/qmx check "$d" -c "$d/qmx.yaml" --format=json --workers=0 --fail-on=none \
+#         -o "cases/$(basename "$d").json"
+#     done
+#   (cases: annotations, applied-threshold, complexity, coupling, cycle, design, disabled-rule,
+#    disabled-rule-duplication, duplication, excluded-path, health, layers, only-rules,
+#    rule-exclusion-ledger, security, smells)
+#
+#   Three targeted --rule-opt overrides were used to raise coverage for channels whose default
+#   thresholds are not tripped anywhere in reach (still "observe the runtime output", per the
+#   task brief's explicit invitation to combine options to raise coverage; never inferred from
+#   source, only confirmed by the finding actually appearing in a subsequent run):
+#
+#   php bin/qmx check src/ --format=json --workers=0 --fail-on=none \
+#     --rule-opt=maintainability.index:warning=100 --rule-opt=maintainability.index:error=100 \
+#     -o mi_force.json
+#
+#   php bin/qmx check finding-gate/cases/design/ -c finding-gate/cases/design/qmx.yaml \
+#     --format=json --workers=0 --fail-on=none \
+#     --rule-opt=design.noc:warning=1 --rule-opt=design.noc:error=1 \
+#     -o noc_force.json
+#
+#   php bin/qmx check tests/Fixtures --format=json --workers=0 --fail-on=none \
+#     --rule-opt=architecture.unassigned-class:mode=error \
+#     -o unassigned_error.json
+#
+#   Cross-format spot-check (no new channel ids found beyond what --format=json already showed;
+#   both formats republish the same "channel"/"check_name" string):
+#   php bin/qmx check src/ --format=sarif --workers=0 --fail-on=none -o src.sarif
+#   php bin/qmx check src/ --format=gitlab --workers=0 --fail-on=none -o src.gitlab.json
+#
+# ---- Metric-key-observing runs (bin/qmx check ... --format=metrics, per-symbol "metrics" maps) ----
+#
+#   php bin/qmx check src/ --format=metrics --workers=0 --fail-on=none -o src_metrics.json
+#   php bin/qmx check src/ --format=metrics --workers=0 --fail-on=none --preset=strict -o src_metrics_strict.json
+#   php bin/qmx check tests/ --format=metrics --workers=0 --fail-on=none -o tests_metrics.json
+#   php bin/qmx check finding-gate/ --format=metrics --workers=0 --fail-on=none -o fg_metrics.json
+#   php bin/qmx check finding-gate/cases/health/ -c finding-gate/cases/health/qmx.yaml \
+#     --format=metrics --workers=0 --fail-on=none -o health_metrics.json
+#   php bin/qmx check src/ --format=metrics --workers=0 --fail-on=none \
+#     --rule-opt=maintainability.index:warning=100 --rule-opt=maintainability.index:error=100 \
+#     -o mi_metrics.json
+#   php bin/qmx check finding-gate/cases/design/ -c finding-gate/cases/design/qmx.yaml \
+#     --format=metrics --workers=0 --fail-on=none --rule-opt=design.noc:warning=1 \
+#     -o noc_metrics.json
+#
+#   --format=metrics emits one JSON object per analysed symbol (type: file, class, method,
+#   function, namespace, project), each carrying a "metrics" map of key -> value. All 296
+#   observed keys below were pooled across these seven runs and across every symbol type.
+#
+# ---- Columns ----
+#   kind         channel | metric-key
+#   name         the exact string observed in the product's own output
+#   observed_in  comma-separated run labels (see command list above) where this name was
+#                actually seen — not where it was merely expected
+#   notes        free text: how a hard-to-reach name was actually triggered, or what is
+#                project-specific/open-ended about it. Empty for the common case.
+#
+# ---- Totals ----
+#   59 unique channel names observed (from `violations[].channel` across every run above)
+#   296 unique metric-key names observed (from `symbols[].metrics` keys across every run above)
+#
+# ---- WHAT THIS METHOD DOES NOT SEE ----
+#
+#   1. Rule names vs published channels are NOT the same vocabulary. `bin/qmx rules` lists 51
+#      rule names; only 44 of those ever appear verbatim as a runtime channel. Confirmed
+#      mismatches:
+#        - annotation.directive: never published itself. Its four concrete children
+#          (annotation.invalid-threshold, annotation.unresolved-directive,
+#          annotation.unsupported-threshold, annotation.unused-directive) are what actually
+#          appear in output. A single `grep` on the producer-rule-name constant in
+#          src/Analysis/Policy/Inline/Contract/Directive/InlineDirectivePolicyInterface.php
+#          confirmed this is structural, not a coverage gap of this run.
+#        - computed: a generic label for user-defined computed metrics. Only one concrete
+#          instance is reachable from this repository's own trees: computed.branch-load,
+#          declared solely in finding-gate/cases/health/qmx.yaml. The set of possible
+#          "computed.*" channel names is open-ended (whatever a user's qmx.yaml formula section
+#          names) and cannot be enumerated from product output alone.
+#      Conversely, four channels exist that have NO matching entry in `bin/qmx rules` at all —
+#      they are sibling diagnostics of architecture.layer-violation, not separately listed rules:
+#      architecture.coverage, architecture.unreachable-layer, architecture.empty-template,
+#      architecture.potential-shadow, plus architecture.pending-layer-matched. These were only
+#      observed via finding-gate/cases/layers/ (its own qmx.yaml deliberately misconfigures the
+#      layer policy to trip each one).
+#
+#   2. Channels that needed a threshold override to appear at all — meaning their DEFAULT
+#      configuration in this repository's own qmx.yaml (or the absence of any config) does not
+#      surface them anywhere in src/, tests/, or finding-gate/, only after deliberately
+#      loosening the rule:
+#        - design.noc (default warning/error=10; no fixture in reach has more than 3 direct
+#          children; forced to warning=1 against finding-gate/cases/design/src/Hierarchy/Base.php)
+#        - maintainability.index (default warning/error=35; no file in src/ or tests/ scores
+#          that low; forced to warning=100 against src/)
+#        - architecture.unassigned-class (silent unless --rule-opt mode=... is set; forced to
+#          mode=error against tests/Fixtures, which the src/-shaped layer patterns do not cover)
+#      A different corpus, a different --rule-opt value, or a future codebase that regresses
+#      past these thresholds could all surface the same channel through the normal default path
+#      — this run only proves the channel EXISTS and what it looks like, not that it fires
+#      under any specific project's real-world configuration.
+#
+#   3. architecture.layer-violation is enabled at severity=error in the project's own root
+#      qmx.yaml, yet src/ itself reports zero findings on this channel in every src/ run — the
+#      codebase is currently self-compliant with its own layer policy. It was only observed via
+#      the finding-gate/cases/layers/ fixture, which deliberately plants a violation. A
+#      self-compliant tree is legitimately invisible to this method for this specific channel;
+#      absence in src/ is not evidence the channel is unused in practice.
+#
+#   4. Rules/channels that fire only under conditions this run never constructed:
+#        - security.* channels (command-injection, hardcoded-credentials, sensitive-parameter,
+#          sql-injection, xss) never appear in src/ or tests/ output — only in
+#          finding-gate/cases/security/ and the finding-gate/ pooled run, both purpose-built
+#          fixtures. Confirms these rules exist and their five channel names, but says nothing
+#          about how often they'd fire on arbitrary real-world PHP.
+#        - code-smell.debug-code, .eval, .exit, .goto, .identical-subexpression,
+#          .superglobals, .unreachable-code, .unused-private, .count-in-loop, .empty-catch:
+#          absent from src/ (the project's own code is clean on these smells by construction),
+#          only observed via finding-gate/ and finding-gate/cases/smells/.
+#        - architecture.circular-dependency: absent from src/ and finding-gate/ pooled run,
+#          only via finding-gate/cases/cycle/ and tests/ fixtures.
+#
+#   5. Metric-key COVERAGE per symbol type was pooled across seven runs, but no run guarantees
+#      every declared metric appears at every symbol type it is theoretically defined for — a
+#      metric absent from all seven pooled runs simply never appeared in a "symbols[].metrics"
+#      map, and could still exist under a symbol type or project configuration this run never
+#      constructed (e.g. a metric gated behind a disabled-by-default collector, or one that only
+#      populates under global/cross-file context this run's targets never exercised).
+#
+#   6. --format=health and the JSON "health" summary block, and --format=text/summary, were not
+#      separately mined for additional names: a spot check on src/ (--format=sarif and
+#      --format=gitlab) showed both simply republish the same "channel"/"check_name" strings
+#      already captured from --format=json, so no further formats were pursued for channels.
+#      --format=summary/text/checkstyle/github/suppressed/html were not run at all; they were
+#      judged unlikely to add find-able names beyond channel/metric-key given the sarif/gitlab
+#      spot check, but that judgment was not independently verified for each format.
+#
+#   7. --preset=legacy and --preset=ci were not run (only default and --preset=strict); they
+#      change thresholds, not the vocabulary of possible names, so they were judged unlikely to
+#      add new channels beyond what --preset=strict and the forced --rule-opt runs already
+#      surfaced — but this was not empirically verified.
+#
+kind	name	observed_in	notes
+channel	annotation.invalid-threshold	check_json_case-annotations,check_json_finding-gate,check_json_tests	
+channel	annotation.unresolved-directive	check_json_case-annotations,check_json_finding-gate,check_json_tests	
+channel	annotation.unsupported-threshold	check_json_case-annotations,check_json_finding-gate	
+channel	annotation.unused-directive	check_json_case-annotations,check_json_finding-gate,check_json_tests	
+channel	architecture.circular-dependency	check_json_case-cycle,check_json_finding-gate,check_json_tests	
+channel	architecture.coverage	check_json_case-layers,check_json_tests,check_json_unassigned-forced	
+channel	architecture.empty-template	check_json_case-layers	
+channel	architecture.layer-violation	check_json_case-layers	root qmx.yaml enables this at severity=error but src/ itself reports none (self-compliant); only observed via finding-gate/cases/layers fixtures
+channel	architecture.pending-layer-matched	check_json_case-layers	
+channel	architecture.potential-shadow	check_json_case-layers	
+channel	architecture.unassigned-class	check_json_unassigned-forced	silent by default; triggered only via --rule-opt=architecture.unassigned-class:mode=error run against tests/Fixtures (a tree the src/ layer patterns do not cover)
+channel	architecture.unreachable-layer	check_json_case-layers,check_json_finding-gate,check_json_unassigned-forced	
+channel	code-smell.boolean-argument	check_json_case-smells,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	code-smell.constructor-overinjection	check_json_case-smells,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	code-smell.count-in-loop	check_json_case-smells,check_json_finding-gate,check_json_tests	
+channel	code-smell.debug-code	check_json_case-smells,check_json_finding-gate	
+channel	code-smell.empty-catch	check_json_case-smells,check_json_finding-gate,check_json_tests	
+channel	code-smell.error-suppression	check_json_case-smells,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	code-smell.eval	check_json_case-disabled-rule,check_json_case-excluded-path,check_json_case-only-rules,check_json_case-smells,check_json_finding-gate	
+channel	code-smell.exit	check_json_case-smells,check_json_finding-gate	
+channel	code-smell.goto	check_json_case-disabled-rule,check_json_case-disabled-rule-duplication,check_json_case-excluded-path,check_json_case-smells,check_json_finding-gate,check_json_tests	
+channel	code-smell.identical-subexpression	check_json_case-smells,check_json_finding-gate	
+channel	code-smell.long-parameter-list	check_json_case-coupling,check_json_case-health,check_json_case-rule-exclusion-ledger,check_json_case-smells,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	code-smell.superglobals	check_json_case-security,check_json_finding-gate	
+channel	code-smell.unreachable-code	check_json_case-smells,check_json_finding-gate	
+channel	code-smell.unused-private	check_json_case-smells,check_json_finding-gate,check_json_tests	
+channel	cohesion.lcom	check_json_case-complexity,check_json_tests	
+channel	complexity.cognitive	check_json_case-applied-threshold,check_json_case-complexity,check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	complexity.cyclomatic	check_json_case-applied-threshold,check_json_case-complexity,check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	complexity.npath	check_json_case-complexity,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	complexity.wmc	check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	computed.branch-load	check_json_case-health	user-defined computed metric declared only in finding-gate/cases/health/qmx.yaml; channel name is project-specific and open-ended, not enumerable from the product alone
+channel	coupling.cbo	check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	coupling.class-rank	check_json_case-annotations,check_json_case-applied-threshold,check_json_case-complexity,check_json_case-coupling,check_json_case-cycle,check_json_case-design,check_json_case-disabled-rule,check_json_case-disabled-rule-duplication,check_json_case-duplication,check_json_case-excluded-path,check_json_case-health,check_json_case-layers,check_json_case-rule-exclusion-ledger,check_json_case-security,check_json_case-smells,check_json_finding-gate,check_json_mi-forced,check_json_noc-forced,check_json_src_default,check_json_src_strict,check_json_tests,check_json_unassigned-forced	
+channel	coupling.distance	check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	coupling.instability	check_json_case-health,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	design.data-class	check_json_case-design,check_json_finding-gate,check_json_mi-forced,check_json_noc-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	design.god-class	check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	design.inheritance	check_json_case-design,check_json_finding-gate,check_json_noc-forced,check_json_tests	
+channel	design.noc	check_json_noc-forced	default threshold (warning=10) not tripped by any fixture in reach; triggered only after lowering it via --rule-opt=design.noc:warning=1 on finding-gate/cases/design (Base with 3 children)
+channel	design.type-coverage.param	check_json_case-design,check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_noc-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	design.type-coverage.property	check_json_case-design,check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_noc-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	design.type-coverage.return	check_json_case-design,check_json_case-health,check_json_finding-gate,check_json_noc-forced,check_json_src_strict	
+channel	duplication.code-duplication	check_json_case-disabled-rule-duplication,check_json_case-duplication,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	health.cohesion	check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	health.complexity	check_json_case-health,check_json_finding-gate	
+channel	health.coupling	check_json_case-health,check_json_tests	
+channel	health.maintainability	check_json_case-health,check_json_finding-gate,check_json_tests	
+channel	health.overall	check_json_case-health	
+channel	health.typing	check_json_case-health,check_json_finding-gate,check_json_mi-forced,check_json_src_default,check_json_src_strict	
+channel	maintainability.index	check_json_mi-forced	default threshold (warning=35) not tripped by src/ or tests/; triggered only after raising it via --rule-opt=maintainability.index:warning=100,error=100 on src/
+channel	security.command-injection	check_json_case-security,check_json_finding-gate	
+channel	security.hardcoded-credentials	check_json_case-security,check_json_finding-gate	
+channel	security.sensitive-parameter	check_json_case-security,check_json_finding-gate,check_json_tests	
+channel	security.sql-injection	check_json_case-security,check_json_finding-gate	
+channel	security.xss	check_json_case-security,check_json_finding-gate	
+channel	size.class-count	check_json_mi-forced,check_json_src_default,check_json_src_strict,check_json_tests	
+channel	size.method-count	check_json_tests	
+channel	size.property-count	check_json_tests	
+metric-key	code-smell.is-vo-constructor	check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: method
+metric-key	code-smell.parameter-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	code-smell.parameter-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	code-smell.parameter-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	code-smell.parameter-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	code-smell.parameter-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	code-smell.unreachable-code	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	code-smell.unreachable-code.first-line	check_metrics_finding-gate	levels: method
+metric-key	code-smell.unreachable-code.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	code-smell.unused-private.total	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	cohesion.lcc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	cohesion.lcc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcc.min	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcom	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	cohesion.lcom.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcom.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcom.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.lcom.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.pure-method-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	cohesion.tcc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	cohesion.tcc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.tcc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	cohesion.tcc.min	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	complexity.ccn	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	complexity.ccn.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.ccn.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.ccn.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.ccn.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	complexity.ccn.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.cognitive	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	complexity.cognitive.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.cognitive.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.cognitive.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.cognitive.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	complexity.cognitive.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.npath	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	complexity.npath.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.npath.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.npath.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	complexity.npath.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	complexity.wmc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	computed.branch-load	check_metrics_case-health	user-defined computed metric key, project-specific (declared only in finding-gate/cases/health/qmx.yaml)
+metric-key	coupling.abstractness	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	coupling.ca	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	coupling.ca.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	coupling.cbo	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	coupling.cbo-app	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.cbo-app.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo-app.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo-app.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo-app.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo-app.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.cbo.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	coupling.ce-framework	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.ce-framework.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-framework.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-framework.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-framework.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-packages	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.ce-packages.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-packages.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-packages.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce-packages.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.ce.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.class-rank	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.class-rank.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.class-rank.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.class-rank.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.class-rank.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.distance	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	coupling.distance.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: project
+metric-key	coupling.distance.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: project
+metric-key	coupling.instability	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	coupling.instability.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	coupling.instability.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	coupling.rfc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.rfc-external	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.rfc-external.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-external.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-external.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-external.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-external.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-own	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	coupling.rfc-own.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-own.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-own.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-own.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc-own.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	coupling.rfc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.dit	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.dit.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.dit.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.dit.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.dit.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-abstract	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-abstract.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-data-class	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-data-class.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-exception	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-exception.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-interface	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-interface.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-promoted-properties-only	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-promoted-properties-only.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.is-readonly	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.is-readonly.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.noc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.noc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.noc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.noc.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.noc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.param	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.param.total	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.param.total.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.param.typed	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.param.typed.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.pct	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.property	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.property.total	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.property.total.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.property.typed	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.property.typed.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.return	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.return.total	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.return.total.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.type-coverage.return.typed	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.type-coverage.return.typed.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.woc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	design.woc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.woc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.woc.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	design.woc.min	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	health.cohesion	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	health.complexity	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	health.coupling	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	health.maintainability	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	health.overall	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	health.typing	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.bugs	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.halstead.bugs.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	maintainability.halstead.bugs.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.difficulty	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.halstead.difficulty.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.difficulty.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.difficulty.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.difficulty.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	maintainability.halstead.effort	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.halstead.effort.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.effort.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.effort.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.effort.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	maintainability.halstead.time	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.halstead.time.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace
+metric-key	maintainability.halstead.time.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.volume	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.halstead.volume.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.volume.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.volume.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.halstead.volume.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	maintainability.mi	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	maintainability.mi.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.mi.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.mi.min	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	maintainability.mi.p5	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.abstract-class-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.abstract-class-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.abstract-class-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.class-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.class-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-loc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.class-loc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-loc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-loc.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-loc.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.class-loc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.cloc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.cloc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.cloc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.cloc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.enum-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.enum-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.enum-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.function-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.function-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.function-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.getter-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.getter-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.getter-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.getter-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.getter-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.getter-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.implementing-enum-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.implementing-enum-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.implementing-enum-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.interface-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.interface-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.interface-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.lloc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.lloc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.lloc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.lloc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.loc	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.loc.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.loc.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.loc.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.method-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.private	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.method-count.private.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.private.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.private.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.private.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.private.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.protected	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.method-count.protected.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.protected.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.protected.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.protected.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.protected.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.public	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.method-count.public.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.public.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.public.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.public.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.public.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.total	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.method-count.total.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.total.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.total.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.total.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-count.total.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.method-statement-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: function,method
+metric-key	size.method-statement-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	size.method-statement-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	size.method-statement-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	size.method-statement-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	size.promoted-property-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.promoted-property-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.promoted-property-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.promoted-property-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.promoted-property-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.promoted-property-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.property-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.private	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.property-count.private.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.private.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.private.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.private.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.private.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.protected	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.property-count.protected.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.protected.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.protected.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.protected.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.protected.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.public	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.property-count.public.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.public.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.public.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.public.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.public.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.property-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.setter-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class
+metric-key	size.setter-count.avg	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.setter-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.setter-count.max	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.setter-count.p95	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.setter-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.symbol-class-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project
+metric-key	size.symbol-method-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: class,namespace,project
+metric-key	size.trait-count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: file,namespace
+metric-key	size.trait-count.count	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace
+metric-key	size.trait-count.sum	check_metrics_case-health,check_metrics_finding-gate,check_metrics_mi-forced,check_metrics_noc-forced,check_metrics_src_default,check_metrics_src_strict,check_metrics_tests	levels: namespace,project

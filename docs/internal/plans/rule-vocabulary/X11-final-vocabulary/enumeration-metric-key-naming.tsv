@@ -1,0 +1,375 @@
+# Enumeration of properties of every one of the 82 canonical metric keys
+# (ReflectionClass(MetricName::class)->getConstants(), MetricName being a plain
+# final class with `public const string` members, not a backed enum) --
+# measured for X11 step П3, whose ADR names the FINAL vocabulary for all 82
+# keys, including the ones that are NOT renamed. This file only measures
+# properties the decision leans on; it decides nothing and proposes no names.
+#
+# ROW COUNT: 82 data rows, one per MetricName constant. Verified identical to
+# the kind=metric-key rows of docs/internal/plans/rule-vocabulary/enumeration-renames.tsv
+# by: `awk -F'\t' '$2=="metric-key"{print $1}' enumeration-renames.tsv | sort`
+# vs `php -r 'foreach ((new ReflectionClass(MetricName::class))->getConstants() as $v) echo $v."\n";' | sort`
+# -- diff is empty (see REPORT below for the exact command run).
+#
+# HOW THIS WAS PRODUCED, column by column:
+#  key/family/leaf -- key is one of the 82 MetricName::getConstants() values;
+#    family is the substring before the first '.', leaf is everything after
+#    it (`complexity.ccn` -> family `complexity`, leaf `ccn`;
+#    `design.type-coverage.param.total` -> family `design`, leaf
+#    `type-coverage.param.total`).
+#  leaf_form/is_abbreviation/expanded_meaning -- CODE READING, not a
+#    heuristic algorithm: each leaf was checked by hand against
+#    src/Analysis/Evidence/Measurement/Contract/MetricName.php's own docblock,
+#    the collector/rule docblocks that spell out the metric's name
+#    (e.g. RfcCollector.php/RfcVisitor.php: "Collects RFC (Response for a
+#    Class) metrics"; RFC has no website/docs/rules/coupling.md heading of its
+#    own -- its only prose source is these two docblocks), `bin/qmx rules`
+#    descriptions (e.g. "Checks Weighted Methods per Class (sum of method
+#    complexities)" for complexity.wmc), and the website rule pages under
+#    website/docs/rules/*.md (e.g. "## CBO -- Coupling Between Objects" style
+#    headings). RULE APPLIED: is_abbreviation is "yes" iff the leaf's FIRST
+#    dot/hyphen-separated token is one of the following, each with a source
+#    citation for its expansion above (ccn, wmc -- website/docs/rules/complexity.md
+#    headings; npath -- same page's "## NPath Complexity" heading + prose
+#    "counts the total number of unique execution paths"; ca, ce, cbo --
+#    src/Analysis/Evidence/Coupling/README.md's table; rfc -- RfcCollector.php/
+#    RfcVisitor.php docblocks, no website heading; tcc, lcc, lcom --
+#    website/docs/rules/cohesion.md headings; dit, noc, woc --
+#    website/docs/rules/design*.md; mi -- website/docs/rules/maintainability.md;
+#    loc, lloc, cloc -- src/Analysis/Evidence/Size/README.md). leaf_form
+#    classifies the WHOLE leaf as `abbreviation` (leaf is exactly one such
+#    token), `word` (a single ordinary English word, e.g. `cognitive`),
+#    `word-phrase` (two or more ordinary words/flags, hyphen- or dot-joined,
+#    none of them the leading abbreviation token), or `mixed` (an
+#    abbreviation token combined with an ordinary word, e.g. `cbo-app`,
+#    or a proper noun combined with a word, e.g. `halstead.volume` --
+#    "Halstead" is the researcher's name (Halstead, 1977), neither a common
+#    word nor an abbreviation). expanded_meaning is filled only when
+#    is_abbreviation=yes, from the citation named above; empty for `word` and
+#    for `mixed` leaves not led by the abbreviation token (their embedded
+#    abbreviation, if any, is called out in `notes` instead, e.g.
+#    code-smell.is-vo-constructor's "vo" = Value Object).
+#  levels_published/aggregation_suffixes_published -- REFLECTION + CODE
+#    READING. A PHP script (kept in scratch, not committed) boots the
+#    production container via Infrastructure\DependencyInjection\ContainerFactory,
+#    fetches the public AnalysisPipelineInterface service (the
+#    MeasurementAggregationInterface alias itself is private and unreachable
+#    from outside the container after compile), reflects into its private
+#    `measurementAggregation` property, then into that service's private
+#    `allDefinitions` array (list<MetricDefinition>, assembled from every
+#    registered collector/derived-collector/global-collector in
+#    MeasurementAggregationService's constructor -- see that class's own
+#    `$this->allDefinitions = [...$regularDefinitions, ...$derivedDefinitions,
+#    ...$this->globalDefinitions]`). For a key with a MetricDefinition (73 of
+#    82), levels_published is the single `collectedAt` level: reading
+#    ClassToNamespaceAggregator/NamespaceToProjectAggregator/
+#    TreeAwareNamespaceAggregator/AggregationHelper::applyAggregations shows a
+#    bare (unsuffixed) key is stored ONLY at its collection level -- every
+#    aggregation target level stores a SUFFIXED name (base + '.' + strategy)
+#    instead, never the bare key again. aggregation_suffixes_published is the
+#    union, across every target level in `$definition->aggregations`, of the
+#    declared AggregationStrategy values, PLUS an implicit `.count` wherever
+#    `.avg` is declared without an explicit `.count` at that same level
+#    (AggregationHelper::applyAggregations: "Auto-store count alongside
+#    Average so higher levels know the sample size" -- read directly, not
+#    inferred). 9 of the 82 keys have NO MetricDefinition at all (never touch
+#    this reflection path) and were resolved by grepping every
+#    `->with(MetricName::X` / `->withEntry(MetricName::X` call site by hand;
+#    each gets a `notes` entry and is listed below under "WHAT THIS METHOD
+#    DOES NOT SEE".
+#  judged_by_channels/coincides_with_channel_code -- REFLECTION. A second PHP
+#    script boots the same container, fetches
+#    ChannelDeclarationRegistryInterface (public), calls staticDeclarations()
+#    (the same oracle enumeration-renames.tsv's `channel` rows use), and for
+#    every channel reflects its private ChannelDeclaration::$judges
+#    (JudgedMetrics) down to the array of exact-spelling metric-key strings
+#    it names (per ChannelDeclaration::judging()'s own docblock: "Keys are
+#    declared in their exact published spelling, aggregate strategy
+#    included: size.class-count is judged as size.class-count.sum"). The
+#    per-key column lists every channel whose judged-key list contains this
+#    key's EXACT bare string -- a channel that names only the `.sum`/`.max`/...
+#    aggregate of a key (e.g. size.class-count is judged only as
+#    size.class-count.sum) does NOT count as judging the bare key, and that
+#    distinction is called out in `notes` for every row it affects.
+#    coincides_with_channel_code is a plain set-membership check of the 82
+#    keys against the 52 kind=channel rows of enumeration-renames.tsv.
+#  user_addressable -- CODE READING of
+#    src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php.
+#    `validateMetricKeyExistence()` -> `assertKeyIsCatalogued()` ->
+#    `existsInCatalog()` checks `MetricName::base($key)` (which strips a
+#    trailing `.<AggregationStrategy>` suffix) against `catalogBaseKeys()`,
+#    which reflects EVERY public constant of MetricName -- so a
+#    `computed_metrics` formula may address any of the 82 base keys (or any
+#    of their `.agg` suffix forms) as `m["<key>"]`, unconditionally, whether
+#    or not that key is ever actually published at the level the formula
+#    reads it from (the validator checks catalog membership, not runtime
+#    presence -- a formula addressing a key nothing ever populates simply
+#    reads null/0 at evaluation time). That half of the column is therefore
+#    identical ("yes: computed_metrics") for all 82 rows by construction,
+#    which is itself a measured fact, not an assumption; the TSV cell is kept
+#    to that one short phrase (plus the threshold half below) per the task's
+#    "yes/no + чем именно, коротко" -- the reasoning above lives here, not
+#    repeated 82 times in the file. The second half, present only for the 18
+#    keys with coincides_with_channel_code=yes, notes that a qmx.yaml/
+#    `@qmx-threshold`/`--rule-opt` threshold can be written against this
+#    literal because it doubles as a channel code -- corroborated by TWO
+#    independent witnesses: the judges.json reflection (a channel's judged-key
+#    list, cross-checked against `bin/qmx rules`' own printed text, which
+#    lists each channel's `--rule-opt=<channel>:<option>=...` options under
+#    that same literal) and MetricName.php's own docblock line
+#    `@qmx-threshold coupling.cbo 73 -- ...`, which addresses the metric key
+#    literally because it IS the channel code here. For a key that IS judged
+#    but by a DIFFERENTLY-spelled channel (e.g. complexity.ccn, judged by
+#    channel complexity.cyclomatic), the column says so explicitly: a user
+#    cannot write a threshold against the literal "complexity.ccn" -- only
+#    against "complexity.cyclomatic".
+#  sites_* -- SLICES of the same-named columns already measured by
+#    scripts/generate-rename-enumeration.php for this key's `metric-key` row
+#    in enumeration-renames.tsv (whole-identifier match, word-boundary rule --
+#    see that file's own header for the exact method). sites_docs = its
+#    `website_docs` column. sites_config_presets = `presets` + `config`
+#    summed. sites_total = the sum of ALL EIGHT of that file's occurrence
+#    columns (src, tests, presets, config, baseline, website_docs,
+#    benchmarks, finding_gate) -- wider than the four named sites_* slices,
+#    which is why sites_total can exceed sites_src + sites_tests + sites_docs
+#    + sites_config_presets (the difference is baseline + benchmarks +
+#    finding_gate occurrences, not separately broken out here).
+#
+# WHAT THIS METHOD DOES NOT SEE:
+#  - The reflection path for levels_published/aggregation_suffixes_published
+#    sees ONLY keys that flow through a registered MetricDefinition. 9 of the
+#    82 keys never do, and were resolved by hand instead (grep, cited
+#    file:line in each row's `notes`): complexity.wmc (synthesized in
+#    CallableToClassAggregator.php:67 from the class-level sum of
+#    complexity.ccn, written directly to the class bag, never aggregated
+#    further -- levels_published=class only); size.symbol-method-count /
+#    size.symbol-class-count (AggregationHelper::addSymbolCounts(), called
+#    directly from CallableToClassAggregator.php (class, method-count only),
+#    ClassToNamespaceAggregator.php / TreeAwareNamespaceAggregator.php
+#    (namespace, both), and NamespaceToProjectAggregator.php (project, both));
+#    security.hardcoded-credentials / security.sensitive-parameter (entry-type
+#    DataBag-like MetricBag::withEntry() writes, one per detected occurrence,
+#    at file level -- HardcodedCredentialsCollector.php,
+#    SensitiveParameterCollector.php); code-smell.unused-private.{total,
+#    method,property,constant} (UnusedPrivateCollector::getMetricDefinitions()
+#    literally `return [];` -- published instead through
+#    ClassMetricsProviderInterface at class level, UnusedPrivateCollector.php).
+#    A key outside this list of 9 that this method still could not resolve
+#    would show levels_published=unknown; none did -- every one of the 82 was
+#    resolved by one of the two methods.
+#  - The reflection path also cannot see a GlobalContextCollector writing a
+#    BARE key directly at a level beyond its MetricDefinition's `collectedAt`,
+#    bypassing the generic aggregation pipeline entirely -- found once, by
+#    hand, in CouplingCollector.php: computeNamespaceMetrics() (lines
+#    268-293) recomputes ca/ce/cbo/instability straight from the dependency
+#    graph and writes them bare at NAMESPACE level, alongside (not instead
+#    of) the aggregated .sum/.avg/.max/.p95 forms the same MetricDefinition
+#    publishes at that level from rolling up class values -- two different
+#    numbers under the base spelling and the suffixed spelling respectively.
+#    This was caught only by manually reading every GlobalContextCollector
+#    (6 of them) for repository->add()/->addScalar() calls beyond what
+#    getMetricDefinitions() declares; the other 5 (NocCollector,
+#    DitGlobalCollector, ClassRankCollector, DistanceCollector,
+#    AbstractnessCollector) write only their declared single level.
+#    DitGlobalCollector looks similar (it also writes design.dit) but is NOT
+#    a second level -- its own docblock says it "overwrites with correct
+#    cross-file values" at the SAME class level InheritanceDepthCollector
+#    already declared, and its getMetricDefinitions() deliberately returns
+#    `[]` to avoid a duplicate declaration. A systematic sweep for this
+#    pattern across every collector (not just the 82 keys already flagged
+#    here) was not run; it would be
+#    `grep -rn "addScalar(\|MetricBag())->with(" src/Analysis/Evidence/*/*.php`
+#    followed by comparing each write site's level against its
+#    MetricDefinition's collectedAt/aggregations, collector by collector.
+#  - Two more literal-key writer patterns were seen and are named, not
+#    measured further: (a) `MetricName::X . ':' . $classFqn` -- RfcCollector.php
+#    lines 90-92 and UnusedPrivateCollector::addClassMetrics() write a
+#    colon-suffixed variant of a MetricName literal into an intermediate
+#    per-file bag before the class-level bag is built; whether this
+#    colon-suffixed form ever reaches a published report was not checked here
+#    (the cheap check would be `grep -c ':' ` against a structurally-parsed
+#    report dump, the way enumeration-metric-key-spellings.tsv did it for the
+#    prior rename). (b) `DataBag` (src/Analysis/Evidence/Measurement/DataBag.php)
+#    is a second, separate keyed-entry container (occurrences/findings, not
+#    metrics) some collectors use instead of MetricBag; it was not inventoried
+#    here beyond noting that it exists and is a distinct namespace of keys
+#    from the one this file measures.
+#  - judged_by_channels/coincides_with_channel_code see only the STATIC
+#    per-rule channel declarations (staticDeclarations()), by the same
+#    construction enumeration-renames.tsv's channel rows use -- the run-time
+#    `computed.*`/`health.*` family is excluded by that method on purpose (no
+#    fixed set to enumerate; see ChannelDeclarationRegistryInterface's own
+#    docblock) and cannot judge a MetricName key by definition (a computed
+#    metric's formula READS catalog keys, its channel does not JUDGE one).
+#    ADR 0046 also names six channels a related check does not cover; this
+#    column does not re-derive that list, it only reads what `$judges`
+#    already carries for the 52 statically-declared channels.
+#  - user_addressable's `computed_metrics` half is a SYNTACTIC validator
+#    check (catalog membership), not a runtime-presence check: it says a
+#    formula MAY reference the key, not that the key WILL ever be non-null
+#    for every level the formula is defined at. Whether a specific formula
+#    misses at a specific level is a per-formula runtime question this
+#    column does not answer.
+#  - CLI/qmx.yaml threshold addressability was measured only through the
+#    literal-coincidence test (does the key spell a channel code exactly).
+#    A metric judged by a same-family but differently-spelled channel (e.g.
+#    complexity.ccn / complexity.cyclomatic) DOES have a working threshold
+#    path, just not one spelled with this key's own literal; that is called
+#    out per-row rather than counted as "no" outright.
+#
+# ARE THERE PUBLISHED METRIC KEYS OUTSIDE MetricName? YES -- MEASURED FROM
+# TWO INDEPENDENT WITNESSES, WRITE SIDE AND READ SIDE, THAT AGREE:
+#
+#  WITNESS 1 (write side): `grep -rnE "->with\('[a-zA-Z][a-zA-Z0-9._-]*'|
+#  ->withEntry\('[a-zA-Z][a-zA-Z0-9._-]*'" src/ | grep -v "MetricName::"` finds
+#  every MetricBag write keyed by a string literal instead of a MetricName::
+#  constant reference, then excludes the ones whose literal is merely a
+#  re-spelling of an existing MetricName value (e.g.
+#  CyclomaticComplexityVisitor.php:93 writes 'complexity.ccn' as a literal,
+#  but that string IS MetricName::COMPLEXITY_CCN's value). Two scalar-shaped
+#  survivors are NOT declared anywhere in MetricName.php:
+#    - `npath-complexity.factors` (NpathComplexityVisitor.php:133)
+#    - `cognitive-complexity.increments` (CognitiveComplexityVisitor.php:136)
+#  A companion check, `grep -rnE "const [A-Za-z_]+ = '[a-z][a-z-]*(\.[a-z][a-z-]*)+'"
+#  src/Analysis/Evidence | grep -v Contract/MetricName.php`, looked for a
+#  private collector-owned constant holding a dotted metric-like literal the
+#  way the pre-X10 vocabulary used to (see
+#  enumeration-metric-key-spellings.tsv's own "local collector-owned literals"
+#  paragraph) -- empty result: no such constant remains today.
+#
+#  WITNESS 2 (read side), which turned up a THIRD, WIDER pattern the write-side
+#  grep's `[a-zA-Z0-9._-]*` character class cannot match at all because these
+#  keys are built by RUNTIME STRING INTERPOLATION, not a literal:
+#  `grep -rn "->entries(" src/ | grep -v Contract/` lists every call that reads
+#  a MetricBag/DataBag entry list back, i.e. every key some producer actually
+#  publishes as consumable data. Four call sites read an INTERPOLATED key that
+#  can never appear in MetricName.php by construction:
+#    - `$metrics->entries("security.{$type}")` (AbstractSecurityPatternRule.php:125)
+#      -- PATTERN_TYPE is 'command_injection'/'sql_injection'/'xss' per
+#      concrete rule subclass, giving `security.command_injection`,
+#      `security.sql_injection`, `security.xss` (snake_case types under a
+#      dot, not the kebab-case MetricName convention; NOT the same string as
+#      the channel codes security.command-injection/security.sql-injection/
+#      security.xss, which use hyphens)
+#    - `$metrics->entries("codeSmell.{$type}")` (AbstractCodeSmellRule.php:126)
+#      -- SMELL_TYPE per subclass (boolean_argument, count_in_loop,
+#      debug_code, empty_catch, eval, exit, goto, error_suppression,
+#      superglobals), giving `codeSmell.boolean_argument` etc. -- a THIRD
+#      spelling convention (camelCase family + snake_case type) coexisting
+#      with MetricName's kebab-case `code-smell.*` and the channel registry's
+#      kebab-case `code-smell.*` channel codes; none of these codeSmell.*
+#      strings is a MetricName constant, a channel code, or reachable through
+#      `MetricName::base()`
+#    - `$metrics->entries("identicalSubExpression.{$type}")`
+#      (IdenticalSubExpressionRule.php:96) -- same camelCase-family pattern,
+#      keyed by IdenticalSubExpressionCollector's own finding-type strings
+#    - `$metrics->entries($entryKey)` (UnusedPrivateRule.php:93) -- reads back
+#      the ENTRY_METHOD/ENTRY_PROPERTY/ENTRY_CONSTANT literals, which for this
+#      one call site DO happen to be MetricName constants (see the 82-key
+#      table's code-smell.unused-private.{method,property,constant} rows) --
+#      named here only to show the read-side grep does not uniformly mean
+#      "outside MetricName": each hit was checked individually.
+#
+#  CROSS-CHECK, the "two witnesses" the task asked for: 73 of the 82
+#  MetricName constants have a MetricDefinition (measured for
+#  levels_published above); the other 9 do not, and BOTH the write-side and
+#  read-side greps independently converge on a published spelling for every
+#  one of those 9 without finding a 10th uncatalogued scalar key -- i.e. the
+#  MetricDefinition-shaped 73 + the by-hand 9 is exactly a bijection onto the
+#  82 constants, which is itself evidence the *scalar* catalog is complete.
+#  The camelCase/snake_case entry families above are a DIFFERENT thing: they
+#  are occurrence-shaped diagnostic breakdown data (which decision point, at
+#  which line, contributed how much), consumed only by their own rule's
+#  finding message, not scalar catalog metrics a report's top-level "metrics"
+#  object lists keyed by a MetricName constant -- but they ARE real, currently
+#  published MetricBag/DataBag content that MetricName's 82-constant
+#  enumeration does not, and structurally cannot, see. An ADR relying on "the
+#  82-key universe is everything this product publishes" should read this as
+#  the measured exception, not as a claim that no such exception exists: at
+#  least three more spelling FAMILIES (security.<snake_case>,
+#  codeSmell.<snake_case>, identicalSubExpression.<snake_case>) live entirely
+#  outside the 82-key, kebab-case vocabulary this file enumerates.
+#
+key	family	leaf	leaf_form	is_abbreviation	expanded_meaning	levels_published	aggregation_suffixes_published	judged_by_channels	coincides_with_channel_code	user_addressable	sites_total	sites_src	sites_tests	sites_docs	sites_config_presets	notes
+complexity.ccn	complexity	ccn	abbreviation	yes	Cyclomatic Complexity	callable	.avg,.count,.max,.p95,.sum	complexity.cyclomatic	no	yes: computed_metrics; threshold only via channel(s) complexity.cyclomatic, not this literal	382	46	325	11	0	
+complexity.cognitive	complexity	cognitive	word	no		callable	.avg,.count,.max,.p95,.sum	complexity.cognitive	yes	yes: computed_metrics; threshold via channel "complexity.cognitive"	206	22	87	50	4	
+complexity.npath	complexity	npath	abbreviation	yes	NPath Complexity (number of acyclic execution paths)	callable	.avg,.count,.max,.p95	complexity.npath	yes	yes: computed_metrics; threshold via channel "complexity.npath"	180	19	97	40	4	
+complexity.wmc	complexity	wmc	abbreviation	yes	Weighted Methods per Class	class	(none)	complexity.wmc	yes	yes: computed_metrics; threshold via channel "complexity.wmc"	156	19	86	33	4	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+coupling.ca	coupling	ca	abbreviation	yes	Afferent Coupling	class,namespace	.sum		no	yes: computed_metrics	77	10	65	2	0	CouplingCollector.php:268-293 (computeNamespaceMetrics) ALSO writes this bare key directly at namespace level, computed fresh from the dependency graph -- not a rollup of the class-level values, so it differs numerically from the aggregated .sum/.avg/.max/.p95 forms published at the same level by this key's MetricDefinition; both spellings coexist
+coupling.ce	coupling	ce	abbreviation	yes	Efferent Coupling	class,namespace	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	101	14	79	8	0	CouplingCollector.php:268-293 (computeNamespaceMetrics) ALSO writes this bare key directly at namespace level, computed fresh from the dependency graph -- not a rollup of the class-level values, so it differs numerically from the aggregated .sum/.avg/.max/.p95 forms published at the same level by this key's MetricDefinition; both spellings coexist
+coupling.cbo	coupling	cbo	abbreviation	yes	Coupling Between Objects	class,namespace	.avg,.count,.max,.p95,.sum	coupling.cbo	yes	yes: computed_metrics; threshold via channel "coupling.cbo"	505	65	316	106	6	CouplingCollector.php:268-293 (computeNamespaceMetrics) ALSO writes this bare key directly at namespace level, computed fresh from the dependency graph -- not a rollup of the class-level values, so it differs numerically from the aggregated .sum/.avg/.max/.p95 forms published at the same level by this key's MetricDefinition; both spellings coexist
+coupling.instability	coupling	instability	word	no		class,namespace	.avg,.count	coupling.instability	yes	yes: computed_metrics; threshold via channel "coupling.instability"	196	33	90	52	6	CouplingCollector.php:268-293 (computeNamespaceMetrics) ALSO writes this bare key directly at namespace level, computed fresh from the dependency graph -- not a rollup of the class-level values, so it differs numerically from the aggregated .sum/.avg/.max/.p95 forms published at the same level by this key's MetricDefinition; both spellings coexist
+coupling.abstractness	coupling	abstractness	word	no		namespace	(none)		no	yes: computed_metrics	55	17	38	0	0	
+coupling.distance	coupling	distance	word	no		namespace	.avg,.count	coupling.distance	yes	yes: computed_metrics; threshold via channel "coupling.distance"	174	28	75	35	4	short for "Distance from Main Sequence" (website/docs/rules/coupling.md); leaf itself is a plain word
+coupling.class-rank	coupling	class-rank	word-phrase	no		class	.avg,.count,.max,.p95		yes	yes: computed_metrics; threshold via channel "coupling.class-rank"	188	22	106	26	2	
+coupling.ce-packages	coupling	ce-packages	mixed	yes	Efferent Coupling	class	.avg,.count,.max,.p95		no	yes: computed_metrics	19	7	8	4	0	first token "ce" is the abbreviation, "packages" is a plain word
+coupling.cbo-app	coupling	cbo-app	mixed	yes	Coupling Between Objects	class	.avg,.count,.max,.p95,.sum	coupling.cbo	no	yes: computed_metrics; threshold only via channel(s) coupling.cbo, not this literal	37	9	14	14	0	first token "cbo" is the abbreviation, "app" is a plain-word qualifier (application-internal CBO)
+coupling.ce-framework	coupling	ce-framework	mixed	yes	Efferent Coupling	class	.avg,.count,.max,.sum		no	yes: computed_metrics	23	7	10	6	0	first token "ce" is the abbreviation, "framework" is a plain word
+coupling.rfc	coupling	rfc	abbreviation	yes	Response for a Class	class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	50	6	44	0	0	
+coupling.rfc-own	coupling	rfc-own	mixed	yes	Response for a Class	class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	16	1	15	0	0	first token "rfc" is the abbreviation, "own" is a plain-word qualifier
+coupling.rfc-external	coupling	rfc-external	mixed	yes	Response for a Class	class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	16	1	15	0	0	first token "rfc" is the abbreviation, "external" is a plain-word qualifier
+cohesion.tcc	cohesion	tcc	abbreviation	yes	Tight Class Cohesion	class	.avg,.count,.min		no	yes: computed_metrics	119	23	84	12	0	
+cohesion.lcc	cohesion	lcc	abbreviation	yes	Loose Class Cohesion	class	.avg,.count,.min		no	yes: computed_metrics	57	7	44	6	0	
+cohesion.pure-method-count	cohesion	pure-method-count	word-phrase	no		class	(none)		no	yes: computed_metrics	13	3	8	2	0	
+cohesion.lcom	cohesion	lcom	abbreviation	yes	Lack of Cohesion of Methods	class	.avg,.count,.max,.p95	cohesion.lcom	yes	yes: computed_metrics; threshold via channel "cohesion.lcom"	238	39	156	34	4	
+design.type-coverage.param.total	design	type-coverage.param.total	word-phrase	no		class	.sum		no	yes: computed_metrics	18	2	15	1	0	
+design.type-coverage.param.typed	design	type-coverage.param.typed	word-phrase	no		class	.sum		no	yes: computed_metrics	11	2	9	0	0	
+design.type-coverage.param	design	type-coverage.param	word-phrase	no		class	(none)	design.type-coverage.param	yes	yes: computed_metrics; threshold via channel "design.type-coverage.param"	97	8	57	25	3	
+design.type-coverage.return.total	design	type-coverage.return.total	word-phrase	no		class	.sum		no	yes: computed_metrics	11	2	9	0	0	
+design.type-coverage.return.typed	design	type-coverage.return.typed	word-phrase	no		class	.sum		no	yes: computed_metrics	5	2	3	0	0	
+design.type-coverage.return	design	type-coverage.return	word-phrase	no		class	(none)	design.type-coverage.return	yes	yes: computed_metrics; threshold via channel "design.type-coverage.return"	74	8	35	24	3	
+design.type-coverage.property.total	design	type-coverage.property.total	word-phrase	no		class	.sum		no	yes: computed_metrics	12	2	10	0	0	
+design.type-coverage.property.typed	design	type-coverage.property.typed	word-phrase	no		class	.sum		no	yes: computed_metrics	9	2	7	0	0	
+design.type-coverage.property	design	type-coverage.property	word-phrase	no		class	(none)	design.type-coverage.property	yes	yes: computed_metrics; threshold via channel "design.type-coverage.property"	68	8	28	24	3	
+design.type-coverage.pct	design	type-coverage.pct	mixed	no		class	(none)		no	yes: computed_metrics	40	13	25	2	0	trailing token "pct" (percent) is an abbreviation, but the leading token "type-coverage" is a word-phrase, so the leaf as a whole is not led by an abbreviation
+design.dit	design	dit	abbreviation	yes	Depth of Inheritance Tree	class	.avg,.count,.max,.p95	design.inheritance	no	yes: computed_metrics; threshold only via channel(s) design.inheritance, not this literal	101	9	90	2	0	
+design.is-readonly	design	is-readonly	word-phrase	no		class	.sum		no	yes: computed_metrics	33	5	28	0	0	
+design.is-promoted-properties-only	design	is-promoted-properties-only	word-phrase	no		class	.sum		no	yes: computed_metrics	10	3	7	0	0	
+design.is-data-class	design	is-data-class	word-phrase	no		class	.sum		no	yes: computed_metrics	5	2	3	0	0	
+design.noc	design	noc	abbreviation	yes	Number of Children	class	.avg,.count,.max,.sum	design.noc	yes	yes: computed_metrics; threshold via channel "design.noc"	76	12	35	22	4	
+design.is-abstract	design	is-abstract	word-phrase	no		class	.sum		no	yes: computed_metrics	6	2	4	0	0	
+design.is-interface	design	is-interface	word-phrase	no		class	.sum		no	yes: computed_metrics	6	2	4	0	0	
+design.is-exception	design	is-exception	word-phrase	no		class	.sum		no	yes: computed_metrics	7	2	5	0	0	
+design.woc	design	woc	abbreviation	yes	Weight of a Class	class	.avg,.count,.max,.min	design.data-class	no	yes: computed_metrics; threshold only via channel(s) design.data-class, not this literal	19	4	13	2	0	
+maintainability.halstead.volume	maintainability	halstead.volume	mixed	no		callable	.avg,.count,.max,.p95		no	yes: computed_metrics	45	6	37	2	0	"halstead" is the researcher's name (Halstead, 1977), not a common word or an abbreviation; "volume" is a plain word
+maintainability.halstead.difficulty	maintainability	halstead.difficulty	mixed	no		callable	.avg,.count,.max,.p95		no	yes: computed_metrics	7	2	5	0	0	same "halstead" proper-noun leading token as the other halstead.* keys
+maintainability.halstead.effort	maintainability	halstead.effort	mixed	no		callable	.avg,.count,.max,.p95		no	yes: computed_metrics	6	2	4	0	0	same "halstead" proper-noun leading token as the other halstead.* keys
+maintainability.halstead.bugs	maintainability	halstead.bugs	mixed	no		callable	.max,.sum		no	yes: computed_metrics	6	2	4	0	0	same "halstead" proper-noun leading token as the other halstead.* keys
+maintainability.halstead.time	maintainability	halstead.time	mixed	no		callable	.max,.sum		no	yes: computed_metrics	6	2	4	0	0	same "halstead" proper-noun leading token as the other halstead.* keys
+maintainability.mi	maintainability	mi	abbreviation	yes	Maintainability Index	callable	.avg,.count,.min,.p5	maintainability.index	no	yes: computed_metrics; threshold only via channel(s) maintainability.index, not this literal	148	13	133	2	0	
+security.hardcoded-credentials	security	hardcoded-credentials	word-phrase	no		file	(none)		yes	yes: computed_metrics; threshold via channel "security.hardcoded-credentials"	57	7	34	15	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+security.sensitive-parameter	security	sensitive-parameter	word-phrase	no		file	(none)		yes	yes: computed_metrics; threshold via channel "security.sensitive-parameter"	42	6	22	13	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+size.class-loc	size	class-loc	mixed	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	33	3	30	0	0	leading token "class" is a plain word; trailing "loc" is the abbreviation
+size.class-count	size	class-count	word-phrase	no		file	.sum		yes	yes: computed_metrics; threshold via channel "size.class-count"	192	28	122	31	3	channel size.class-count judges size.class-count.sum, not this bare key, per ChannelDeclaration::judging()'s own example -- judged_by_channels is empty by the exact-spelling rule even though coincides_with_channel_code=yes
+size.abstract-class-count	size	abstract-class-count	word-phrase	no		file	.sum		no	yes: computed_metrics	19	8	11	0	0	
+size.interface-count	size	interface-count	word-phrase	no		file	.sum		no	yes: computed_metrics	30	13	17	0	0	
+size.trait-count	size	trait-count	word-phrase	no		file	.sum		no	yes: computed_metrics	24	11	13	0	0	
+size.enum-count	size	enum-count	word-phrase	no		file	.sum		no	yes: computed_metrics	30	12	18	0	0	
+size.implementing-enum-count	size	implementing-enum-count	word-phrase	no		file	.sum		no	yes: computed_metrics	22	13	9	0	0	
+size.function-count	size	function-count	word-phrase	no		file	.sum		no	yes: computed_metrics	17	7	10	0	0	
+size.loc	size	loc	abbreviation	yes	Lines of Code	file	.avg,.count,.sum		no	yes: computed_metrics	212	11	196	5	0	
+size.lloc	size	lloc	abbreviation	yes	Logical Lines of Code	file	.avg,.count,.sum		no	yes: computed_metrics	29	8	18	3	0	
+size.cloc	size	cloc	abbreviation	yes	Comment Lines of Code	file	.avg,.count,.sum		no	yes: computed_metrics	25	5	20	0	0	
+size.method-statement-count	size	method-statement-count	word-phrase	no		callable	.avg,.count,.max,.sum		no	yes: computed_metrics	36	3	29	4	0	
+size.method-count.public	size	method-count.public	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	12	4	8	0	0	
+size.method-count.protected	size	method-count.protected	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	10	4	6	0	0	
+size.method-count.private	size	method-count.private	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	10	4	6	0	0	
+size.getter-count	size	getter-count	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	20	7	13	0	0	
+size.setter-count	size	setter-count	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	16	5	11	0	0	
+size.property-count.public	size	property-count.public	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	17	6	11	0	0	
+size.property-count.protected	size	property-count.protected	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	12	5	7	0	0	
+size.property-count.private	size	property-count.private	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	15	5	10	0	0	
+size.promoted-property-count	size	promoted-property-count	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	10	5	5	0	0	
+size.symbol-method-count	size	symbol-method-count	word-phrase	no		class,namespace,project	(none)		no	yes: computed_metrics	11	6	3	2	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+size.symbol-class-count	size	symbol-class-count	word-phrase	no		namespace,project	(none)		no	yes: computed_metrics	1	1	0	0	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+size.method-count	size	method-count	word-phrase	no		class	.avg,.count,.max,.p95,.sum	size.method-count	yes	yes: computed_metrics; threshold via channel "size.method-count"	232	23	150	52	4	
+size.method-count.total	size	method-count.total	word-phrase	no		class	.avg,.count,.max,.p95,.sum		no	yes: computed_metrics	22	6	16	0	0	
+size.property-count	size	property-count	word-phrase	no		class	.avg,.count,.max,.p95,.sum	size.property-count	yes	yes: computed_metrics; threshold via channel "size.property-count"	89	18	38	26	4	
+code-smell.unused-private.total	code-smell	unused-private.total	word-phrase	no		class	(none)	code-smell.unused-private	no	yes: computed_metrics; threshold only via channel(s) code-smell.unused-private, not this literal	24	1	21	2	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+code-smell.unused-private.method	code-smell	unused-private.method	word-phrase	no		class	(none)		no	yes: computed_metrics	43	1	42	0	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+code-smell.unused-private.property	code-smell	unused-private.property	word-phrase	no		class	(none)		no	yes: computed_metrics	21	1	20	0	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+code-smell.unused-private.constant	code-smell	unused-private.constant	word-phrase	no		class	(none)		no	yes: computed_metrics	14	1	13	0	0	no MetricDefinition: published by direct MetricBag::with()/withEntry() call, outside the generic collector/aggregation system (see HOW THIS WAS PRODUCED)
+code-smell.parameter-count	code-smell	parameter-count	word-phrase	no		callable	.avg,.count,.max,.p95	code-smell.constructor-overinjection,code-smell.long-parameter-list	no	yes: computed_metrics; threshold only via channel(s) code-smell.constructor-overinjection/code-smell.long-parameter-list, not this literal	60	3	53	4	0	
+code-smell.is-vo-constructor	code-smell	is-vo-constructor	mixed	no		callable	(none)		no	yes: computed_metrics	26	2	23	0	0	leading token "is" is a plain word; "vo" (Value Object) is an abbreviation embedded mid-leaf
+code-smell.unreachable-code	code-smell	unreachable-code	word-phrase	no		callable	.sum	code-smell.unreachable-code	yes	yes: computed_metrics; threshold via channel "code-smell.unreachable-code"	74	8	39	25	1	
+code-smell.unreachable-code.first-line	code-smell	unreachable-code.first-line	word-phrase	no		callable	(none)		no	yes: computed_metrics	11	2	9	0	0	
