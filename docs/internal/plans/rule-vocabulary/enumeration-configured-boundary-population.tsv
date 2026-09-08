@@ -139,8 +139,8 @@ code-smell.unused-private	class	UnusedPrivateRule	UnusedPrivateOptions	no	(none)
 cohesion.lcom	class	LcomRule	LcomOptions	yes	warning=3	3:->W 5:W>E	3
 complexity.cognitive	callable	CognitiveComplexityRule	MethodCognitiveComplexityOptions	yes	warning=15	15:->W 30:W>E	15
 complexity.cognitive	class	CognitiveComplexityRule	ClassCognitiveComplexityOptions	yes	maxWarning=30	30:->W 50:W>E	30
-complexity.cyclomatic	callable	ComplexityRule	MethodComplexityOptions	yes	warning=10	10:->W 20:W>E	10
-complexity.cyclomatic	class	ComplexityRule	ClassComplexityOptions	yes	maxWarning=30	30:->W 50:W>E	30
+complexity.ccn	callable	ComplexityRule	MethodComplexityOptions	yes	warning=10	10:->W 20:W>E	10
+complexity.ccn	class	ComplexityRule	ClassComplexityOptions	yes	maxWarning=30	30:->W 50:W>E	30
 complexity.npath	callable	NpathComplexityRule	MethodNpathComplexityOptions	yes	warning=200	200:->W 1000:W>E	200
 complexity.npath	class	NpathComplexityRule	ClassNpathComplexityOptions	yes	maxWarning=500	500:->W 1000:W>E	500
 complexity.wmc	class	WmcRule	WmcOptions	yes	warning=50	50:->W 80:W>E	50
@@ -152,13 +152,13 @@ coupling.instability	class	InstabilityRule	ClassInstabilityOptions	yes	maxWarnin
 coupling.instability	namespace	InstabilityRule	NamespaceInstabilityOptions	yes	maxWarning=0.8	0.8:->W 0.95:W>E	0.8
 design.data-class	class	DataClassRule	DataClassOptions	yes	(none)	constant(W)	NULL
 design.god-class	class	GodClassRule	GodClassOptions	yes	(none)	0.01:->W	NULL
-design.inheritance	class	InheritanceRule	InheritanceOptions	yes	warning=4	4:->W 6:W>E	4
+design.dit	class	InheritanceRule	InheritanceOptions	yes	warning=4	4:->W 6:W>E	4
 design.noc	class	NocRule	NocOptions	yes	warning=10	10:->W 15:W>E	10
 design.type-coverage.param	class	ParamTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
 design.type-coverage.property	class	PropertyTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
 design.type-coverage.return	class	ReturnTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
-duplication.code-duplication	project	CodeDuplicationRule	CodeDuplicationOptions	yes	warning=5	5:->W 50:W>E	5
-maintainability.index	callable	MaintainabilityRule	MaintainabilityOptions	yes	warning=40	20:E>W 40:W>-	40
+duplication.clone	project	CodeDuplicationRule	CodeDuplicationOptions	yes	warning=5	5:->W 50:W>E	5
+maintainability.mi	callable	MaintainabilityRule	MaintainabilityOptions	yes	warning=40	20:E>W 40:W>-	40
 security.command-injection	callable	CommandInjectionRule	SecurityPatternOptions	no	(none)	0.01:->E	NULL
 security.hardcoded-credentials	class	HardcodedCredentialsRule	HardcodedCredentialsOptions	no	(none)	0.01:->E	NULL
 security.sensitive-parameter	callable	SensitiveParameterRule	SensitiveParameterOptions	no	(none)	0.01:->W	NULL
