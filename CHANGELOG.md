@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-09-08
+
+### Breaking
+
+Five channel codes, one metric key and one configuration key are renamed. The
+full table, and a machine-readable map, are in
+[docs/migration/v0.26-rename-map.md](https://github.com/qualimetrix/qualimetrix/blob/main/docs/migration/v0.26-rename-map.md).
+
+| old                              | new                         |
+| -------------------------------- | --------------------------- |
+| `architecture.coverage`          | `architecture.coverage-gap` |
+| `complexity.cyclomatic`          | `complexity.ccn`            |
+| `design.inheritance`             | `design.dit`                |
+| `duplication.code-duplication`   | `duplication.clone`         |
+| `maintainability.index`          | `maintainability.mi`        |
+| `design.type-coverage.pct`       | `design.type-coverage.all`  |
+| `coverage:` (in `architecture:`) | `coverage-gap:`             |
+
+**Migration is not one command.** `bin/qmx baseline:rename-channels` carries one
+of the four things that change, and it needs two steps even there. The other
+three have no command, and one of them is silent:
+
+1. **Your baseline file — a command, and two steps.** An accepted entry on an old
+   channel stops suppressing: the finding it covered returns at its own severity.
+   The stale entry does not fail the run by itself — it prints `N baseline
+   entries could not be applied` — so CI can stay green while a suppression
+   evaporates, or redden for a reason its own output never names. Bring the file
+   to the current baseline version first (the carry substitutes a name and
+   converts nothing, and refuses an older version), then
+   `bin/qmx baseline:rename-channels qmx-baseline.json v0.26-rename-map.tsv`.
+2. **Configuration and command line — loud, exit 3.** `qmx.yaml` (`rules:`,
+   `only_rules:`, and the `architecture:` section's `coverage:` key),
+   `--rule-opt=`, `--disable-rule=`, and any `computed_metrics` formula reading
+   `m["design.type-coverage.pct"]`. An old name is an unknown rule, option owner,
+   key or metric: the run refuses and does not fall back to a default. Where the
+   message lists the allowed keys, the new name is in the list.
+3. **`@qmx-ignore` / `@qmx-threshold` in your own code — the suppression is
+   lost.** A directive naming an old channel becomes
+   `annotation.unresolved-directive`. You see it, but the finding it used to
+   suppress comes back at the same time. Rename by hand; there is no command.
+4. **Anything that stored our output — silent.** SARIF `ruleId` and
+   `rules[].name`, GitLab `check_name` and `fingerprint`, Checkstyle `source`,
+   JSON and metrics field values, dashboard columns. The old spelling stops
+   appearing, nothing fails, and your history splits in two unless you migrate
+   the store.
+
+Two published sentences move with the configuration key they name, so a tool
+matching on message text will notice: the layer-coverage diagnostic now reads
+`Architecture coverage-gap: N edge(s) …`, and its recommendation says `leaving
+coverage-gap on "ignore"`.
+
+Severities, thresholds, subject keys and occurrence keys are unchanged. The
+`--cyclomatic-*` CLI aliases keep their names.
+
 ## [0.25.0] - 2026-09-06
 
 ### Changed
@@ -927,6 +981,7 @@ Initial release.
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
 [Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...HEAD
+[0.26.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...v0.23.0
