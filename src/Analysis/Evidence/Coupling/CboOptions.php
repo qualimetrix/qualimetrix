@@ -48,15 +48,12 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
         // disabling one: CBO's class/namespace defaults already match
         // (14/20), and there is no historical single-level format to stay
         // compatible with here, so there is no reason to silence a level.
-        // A bare top-level `warning`/`error` is accepted for the same reason
-        // ComplexityOptions accepts `warningThreshold`/`errorThreshold` in its
-        // own legacy-flat branch: it lets ThresholdParser detect a genuine
-        // same-layer "threshold mixed with warning/error" conflict, and lets
-        // a higher-priority layer switch mode against a lower layer's flat
-        // form at this same nesting level. Because the condition — not only
-        // the body — reads them, a bare `warning`/`error` works alone here,
-        // which is why acceptedOptionKeys() declares them rather than
-        // leaving them unadvertised the way ComplexityOptions leaves its own.
+        // A bare top-level `warning`/`error` opens this branch on its own,
+        // because the condition below reads them and not only the body. That
+        // is what makes them real options here and declared as such, and it
+        // is where the complexity wrappers differ: their same-named top-level
+        // keys are read only inside a branch some other key opens, so writing
+        // one alone does nothing — and they are refused rather than declared.
         if (
             \array_key_exists(RuleOptionKey::THRESHOLD, $config)
             || \array_key_exists(RuleOptionKey::WARNING, $config)
@@ -102,12 +99,10 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
     }
 
     /**
-     * `warning`/`error` are declared here even though `CboOptions`' own
-     * docblock above calls them unadvertised: unlike the complexity wrappers'
-     * same-named keys, these sit in the legacy-flat branch's *condition*
-     * (not only its body), so a bare `warning`/`error` works alone — see the
-     * plan's Fact 1. Declaring a dead alias would be wrong; refusing a
-     * working one would be worse.
+     * `warning` and `error` are declared because they work alone here — see
+     * the flat-shorthand branch in `fromArray()`, whose condition reads them.
+     * The same two spellings at the top level of a complexity rule are refused
+     * instead, for the opposite reason.
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {

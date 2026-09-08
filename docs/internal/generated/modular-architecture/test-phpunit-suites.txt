@@ -4,4 +4,4 @@ Worktree test suites (derived from PHPUnit discovery):
  - Functional (19 files, 203 tests)
  - Infrastructure (69 files, 499 tests)
  - Integration (87 files, 611 tests)
- - Unit (457 files, 7006 tests)
+ - Unit (457 files, 7010 tests)

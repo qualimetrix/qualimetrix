@@ -173,6 +173,91 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
     }
 
     /**
+     * The map names, for each slot, the class the rule really hands out for
+     * that level.
+     *
+     * The depth-2 walk trusts `levelOptionsClasses()` alone for "which keys are
+     * allowed inside this slot", while every other consumer of a level's
+     * options goes through `forLevel()`. Two classes swapped between two slots
+     * of one rule would keep both sides well formed and every existing
+     * assertion green, and would then refuse a correct key in one slot and
+     * accept a wrong one in the other — both in silence, since the refusal
+     * quotes the vocabulary of whichever class the map named.
+     */
+    #[Test]
+    public function itNamesForEachSlotTheClassTheRuleHandsOutForThatLevel(): void
+    {
+        $slots = 0;
+
+        foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
+            $options = $optionsClass::fromArray([]);
+            self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
+
+            foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
+                self::assertSame(
+                    $levelClass,
+                    $options->forLevel(SymbolLevel::from($slot))::class,
+                    \sprintf('%s declares "%s" for slot "%s" but hands out another class for that level', $optionsClass, $levelClass, $slot),
+                );
+                ++$slots;
+            }
+        }
+
+        self::assertGreaterThan(0, $slots);
+    }
+
+    /**
+     * A slot name is also a key the user writes at depth 1, and the refusal at
+     * that depth prints only what the class declared.
+     *
+     * The walk dispatches into a slot before it ever consults the key set, so a
+     * slot missing from the declaration keeps working — and the sentence
+     * refusing its neighbour then advises a set that omits it, sending a reader
+     * away from the one key that would have fixed their file.
+     */
+    #[Test]
+    public function itDeclaresEveryLevelSlotAmongTheKeysItAcceptsAtDepthOne(): void
+    {
+        foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
+            $accepted = $optionsClass::acceptedOptionKeys();
+
+            foreach (array_keys($optionsClass::levelOptionsClasses()) as $slot) {
+                self::assertTrue(
+                    $accepted->accepts(ConfigKeySpelling::normalize((string) $slot)),
+                    \sprintf('%s dispatches slot "%s" but does not offer it among the keys allowed here', $optionsClass, $slot),
+                );
+            }
+        }
+    }
+
+    /**
+     * The walk looks a slot up with the *folded* spelling of what the user
+     * wrote, against a map keyed by the raw `SymbolLevel` values. That the two
+     * meet at all is a property of today's five level names, every one of which
+     * folds to itself — a two-word level would stop being dispatched, and every
+     * key below it would go unwalked in silence.
+     *
+     * Pinned rather than repaired: the fold is a one-line change in the walk the
+     * day the population stops being uniform, and this assertion is what names
+     * that day.
+     */
+    #[Test]
+    public function itKeepsEverySlotNameEqualToItsOwnFoldedSpelling(): void
+    {
+        foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
+            foreach (array_keys($optionsClass::levelOptionsClasses()) as $slot) {
+                $slot = (string) $slot;
+
+                self::assertSame(
+                    $slot,
+                    ConfigKeySpelling::normalize($slot),
+                    \sprintf('%s names slot "%s", which the walk would look up under another spelling', $optionsClass, $slot),
+                );
+            }
+        }
+    }
+
+    /**
      * The refusal prints the declared spelling verbatim as the fix to type. A
      * declaration written `maxWarning` still *compares* correctly — both sides
      * are folded — so nothing else in the tree notices that the sentence now

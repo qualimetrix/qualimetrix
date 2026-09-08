@@ -102,6 +102,26 @@ spellings, and its message carries migration text ("write `suppress_paths`")
 that "unknown key here, allowed keys are …" cannot. Specialisation before
 generalisation, one mechanism, not two.
 
+**5. The retired refusal keeps a framing of its own, and this decision does not
+unify the two.** The generic refusal above is a `ConfigLoadException`, which
+`check` prints as `Configuration error: <message>`. The retired one is raised in
+two places with two types: `YamlConfigLoader` refuses it before folding, through
+`RetiredSuppressionOptions::refuseInRules()`, as a `ConfigLoadException` — so it
+carries the prefix; `--rule-opt` refuses it in `RuleOptionsParser`, through
+`RetiredSuppressionOptions::refuseRuleOption()`, as an `InvalidArgumentException`,
+which `check` prints verbatim. The same mistake therefore reads as a
+configuration error through the file and as a bare sentence through the flag.
+`RuleOptionsFactory` calls `refuseRuleOption()` once more as a backstop. Measured,
+nothing reaches it first today: every file — `qmx.yaml`, a `--config` document and
+a preset alike — passes the loader's check, `--rule-opt` passes the parser's, and
+no `#[CliAlias]` the product ships names a retired key at all.
+
+Left as it is rather than repaired. Unifying the framing means changing which
+exception type a live refusal path raises, which is the error-routing subject
+decision 3 above already declines to open here. Recorded so the asymmetry is a
+decision on the record rather than an accident nobody named; the door-symmetry
+test pins the two framings as they are.
+
 ### Why a new ADR rather than a widening of ADR 0047
 
 0047's subject is the rename of two suppression mechanisms; its refusal clause
@@ -129,8 +149,11 @@ configuration that does not apply stays invisible, which is the defect this
 decision exists to close. A refusal under `-q` is silent too, but it exits 3.
 
 **Add a "did you mean" suggestion.** Rejected: at a rule-option position the
-allowed set is at most eight keys, and at most six inside a slot. It is printed
-in full, which is strictly more information than a single guess. The project's
+widest set any class declares is eight keys, and six inside a slot. The
+sentence at depth 1 prints three more than the class declared — the framework
+keys belong at that position and nothing declares them — so the widest refusal
+a user can see names eleven keys at depth 1 and six inside a slot. It is
+printed in full, which is strictly more information than a single guess. The project's
 three existing Levenshtein hints stay where they are; no fourth is added.
 
 **Keep the seven legacy aliases.** Rejected under CLAUDE.md's *Backward

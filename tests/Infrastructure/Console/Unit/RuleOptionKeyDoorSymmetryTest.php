@@ -208,24 +208,31 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     /**
      * Two refusals, two framings, one exit code. The generic one is a
      * `ConfigLoadException` and carries the `Configuration error: ` prefix that
-     * says the fault is in the configuration document; the retired-key one is
-     * an `InvalidArgumentException` printed verbatim, because the migration
-     * text it carries is the message. This plan did not unify them — editing
-     * ADR 0047's refusal for the sake of the new one's symmetry would trade a
-     * decision for a cosmetic — so the difference is pinned as a decision on
-     * the record rather than left to be discovered.
+     * says the fault is in the configuration document; the retired-key one
+     * reaching the flag door is an `InvalidArgumentException` printed verbatim,
+     * because the migration text it carries is the message. The same retired
+     * key written into a file is refused earlier, by the loader, and does carry
+     * the prefix — the asymmetry is between doors as much as between refusals.
+     * ADR 0049 decision 5 records why this plan left it that way; all three
+     * refusals are asserted below so the record stays true.
      */
     #[Test]
     public function itFramesTheGenericRefusalAsAConfigurationErrorAndTheRetiredOneWithoutAPrefix(): void
     {
         $generic = $this->check($this->write('flag', 'callable', 'max_warnign', 1));
         $retired = $this->check(['--rule-opt' => ['complexity.ccn:exclude_paths=src/Generated']]);
+        $retiredInAFile = $this->check(['--config' => $this->configFile(
+            "  complexity.ccn:\n    exclude_paths: ['src/Generated']\n",
+        )]);
 
         self::assertSame(3, $generic['exit']);
         self::assertSame(3, $retired['exit']);
+        self::assertSame(3, $retiredInAFile['exit']);
         self::assertStringStartsWith('Configuration error: ', $generic['refusal']);
         self::assertStringStartsWith('The "exclude_paths" option was retired', $retired['refusal']);
         self::assertStringNotContainsString('is not an option of rule', $retired['refusal']);
+        self::assertStringStartsWith('Configuration error: ', $retiredInAFile['refusal']);
+        self::assertStringContainsString('The "exclude_paths" option was retired', $retiredInAFile['refusal']);
     }
 
     /**
