@@ -128,6 +128,7 @@ final class FromArrayReader
         $this->methods = [];
         $this->visited = [];
         $this->guarded = [];
+        $this->locals = [];
 
         $classNode = $this->classNode($optionsClass);
         if ($classNode === null) {
@@ -556,6 +557,11 @@ final class RuleOptionKeyEnumeration
             'read_unguarded', 'read_branch_guarded', 'read_not_declared', 'declared_not_read',
         ])];
         $tableC = [implode("\t", ['options_class', 'blind_spot', 'sites', 'where'])];
+        $tableD = [implode("\t", [
+            'level_class', 'owning_options_class', 'slot', 'declared', 'declared_from',
+            'read_unguarded', 'read_branch_guarded', 'read_not_declared', 'declared_not_read',
+            'blind_spots',
+        ])];
         $classesPerBlindSpot = [];
         $classesWithGuardedOnlyKeys = 0;
         $filesWithSeveralClasses = 0;
@@ -595,6 +601,9 @@ final class RuleOptionKeyEnumeration
             ]);
 
             $tableA[] = $enumeration->rowA($optionsClass, $rules, $reader);
+            foreach ($enumeration->rowsD($optionsClass, $reader) as $levelRow) {
+                $tableD[] = $levelRow;
+            }
 
             foreach ($reading->unresolved as $kind => $count) {
                 if ($count === 0) {
@@ -613,6 +622,7 @@ final class RuleOptionKeyEnumeration
             'table-a.tsv' => $tableA,
             'table-b.tsv' => $tableB,
             'blind-spots.tsv' => $tableC,
+            'level-declared-vs-read.tsv' => $tableD,
         ];
 
         foreach ($sections as $name => $rows) {
@@ -639,6 +649,61 @@ final class RuleOptionKeyEnumeration
         echo 'files-holding-more-than-one-class', "\t", $filesWithSeveralClasses, "\n";
 
         return 0;
+    }
+
+    /**
+     * The same declared-versus-read question as table B, asked of the level
+     * classes table B never reaches: a hierarchical wrapper hands its slot's
+     * sub-array to a level class, and that class — not the wrapper — decides
+     * which keys are legal inside the slot.
+     *
+     * @param class-string<RuleOptionsInterface> $optionsClass
+     *
+     * @return list<string>
+     */
+    private function rowsD(string $optionsClass, FromArrayReader $reader): array
+    {
+        $options = $optionsClass::fromArray([]);
+        if (!$options instanceof HierarchicalRuleOptionsInterface) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($options->getSupportedLevels() as $level) {
+            $levelClass = $options->forLevel($level)::class;
+            $reading = $reader->read($levelClass);
+            $declared = $this->declaredKeys($levelClass);
+
+            $read = array_keys($reading->keys);
+            sort($read);
+            $unguarded = array_keys(array_filter($reading->keys));
+            sort($unguarded);
+            $guardedOnly = array_values(array_diff($read, $unguarded));
+            $declaredNames = array_keys($declared);
+            sort($declaredNames);
+
+            $blind = [];
+            foreach ($reading->unresolved as $kind => $count) {
+                if ($count > 0) {
+                    $blind[] = $kind . ':' . $count;
+                }
+            }
+
+            $rows[] = implode("\t", [
+                $levelClass,
+                $optionsClass,
+                $level->value,
+                self::set($declaredNames),
+                self::set(array_map(static fn(string $key): string => $key . ':' . $declared[$key], $declaredNames)),
+                self::set($unguarded),
+                self::set($guardedOnly),
+                self::set(array_values(array_diff($read, $declaredNames))),
+                self::set(array_values(array_diff($declaredNames, $read))),
+                self::set($blind),
+            ]);
+        }
+
+        return $rows;
     }
 
     /**
@@ -684,7 +749,7 @@ final class RuleOptionKeyEnumeration
     /**
      * Declared = what the factory compares a user key against.
      *
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param class-string $optionsClass
      *
      * @return array<string, string> canonical key => which contract declares it
      */

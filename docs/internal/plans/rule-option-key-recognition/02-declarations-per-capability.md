@@ -1,27 +1,41 @@
-# 02 — What each options class declares, and the 26 pairs that decide it
+# 02 — What each class declares, and the 36 pairs that decide it
 
-## The population
+## The population, and which measurement decides each part of it
 
-35 options classes (`measurement/option-declared-vs-read.tsv`, 35 data rows)
-and 10 level classes (`measurement/option-level-slots.tsv`, the five
-`hierarchical=yes` rows — file lines 12, 13, 14, 17 and 20, the same numbering
-as `option-declared-vs-read.tsv` since both carry a header line — two slots each, each slot's class named with
-`file:line` in column `slot_key_set_defined_at`). Every one of the 45 gains
-`acceptedOptionKeys()`; the five hierarchical wrappers also gain
-`levelOptionsClasses()`.
+**61 classes gain a declaration**, and they are not one population measured
+once. The overview's *The population* table names all three; this stage states
+what each one's declaration is transcribed **from**, because a declaration
+transcribed from the wrong source is exactly how a working key gets refused.
 
-For **27 of the 35**, the declaration is a transcription: `read_not_declared`
-and `declared_not_read` are both `-`, so the declared set is exactly the
-constructor parameters plus whatever the two deleted interfaces said, and
-`acceptedOptionKeys()` restates it. Those rows are not argued below; they are
-listed by line in the package tables at the end.
+| population                   | count | declaration transcribed from                                                                                     |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------- |
+| rule options classes         | 35    | `measurement/option-declared-vs-read.tsv` — `declared` plus the decisions below for its `read_not_declared` keys |
+| level (slot) options classes | 10    | `measurement/level-declared-vs-read.tsv` — `declared` plus `threshold`, pairs #27–#36 below                      |
+| test implementations         | 16    | nothing to measure: a fixture declares the keys its own `fromArray()` reads, and six are anonymous classes       |
+
+For **27 of the 35**, the declaration is a transcription with no decision:
+`read_not_declared` and `declared_not_read` are both `-`, so the declared set is
+exactly the constructor parameters plus whatever the two deleted interfaces
+said, and `acceptedOptionKeys()` restates it. Those rows are not argued below.
 
 The other seven carry the 23 measured `read_not_declared` pairs (lines 12, 13,
-14, 17, 19, 20, 35). An eighth class,
-`LayerViolationOptions` (line 34), carries three more that the measurement
-could not see — see the overview's Fact 3 and
+14, 17, 19, 20, 35). An eighth class, `LayerViolationOptions` (line 34), carries
+three more that the measurement could not see — see the overview's Fact 3 and
 `measurement/option-enumeration-blind-spots.tsv` row `LayerViolationOptions
-dynamic-key 2 (line 120)`. **26 pairs.**
+dynamic-key 2 (line 120)`. **All ten level classes** carry one each, measured in
+`level-declared-vs-read.tsv` and argued in the overview's Fact 4.
+
+23 + 3 + 10 = **36 pairs**.
+
+**`option-level-slots.tsv` and `level-declared-vs-read.tsv` are the source for a
+level class's declaration; `option-declared-vs-read.tsv` is not, and never
+carried a level-class row.** The first names each slot's key set with the
+`file:line` it is defined at; the second is the same declared-versus-read
+question asked of the level class itself. A package that transcribed a level
+class from "constructor parameters plus the two interfaces" would omit
+`threshold` ten times and turn a documented, working key into exit 3 — which is
+Fact 4, and the reason these ten rows exist as decisions rather than as
+transcription.
 
 ## The four decision kinds, and why the question has four answers and not two
 
@@ -40,9 +54,10 @@ dead key to be refused. Measurement forces two more:
   *Backward Compatibility Policy* ("a removed option beats an alias"). Seven
   pairs.
 
-## The 26 pairs
+## The 36 pairs
 
-`ref` is the line of `measurement/option-declared-vs-read.tsv`.
+For #1–#26, `ref` is the line of `measurement/option-declared-vs-read.tsv`;
+for #27–#36 it is the line of `measurement/level-declared-vs-read.tsv`.
 `E##` is a row of `measurement/merged-enumeration.md`.
 
 | #   | rule                            | key                          | ref | today                                                                                      | decision                       |
@@ -74,7 +89,23 @@ dead key to be refused. Measurement forces two more:
 | 25  | `architecture.layer-violation`  | `potential-shadow-severity`  | 34  | as #24                                                                                     | **answered by the class**      |
 | 26  | `architecture.layer-violation`  | `empty-template-severity`    | 34  | as #24                                                                                     | **answered by the class**      |
 
-Counts: 9 declare, 6 refuse, 7 remove-then-refuse, 4 answered-by-the-class.
+| 27  | `complexity.cognitive` → `MethodCognitiveComplexityOptions` | `threshold` | L2 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 28  | `complexity.cognitive` → `ClassCognitiveComplexityOptions` | `threshold` | L3 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 29  | `complexity.ccn` → `MethodComplexityOptions` | `threshold` | L4 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 30  | `complexity.ccn` → `ClassComplexityOptions` | `threshold` | L5 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 31  | `complexity.npath` → `MethodNpathComplexityOptions` | `threshold` | L6 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 32  | `complexity.npath` → `ClassNpathComplexityOptions` | `threshold` | L7 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 33  | `coupling.cbo` → `ClassCboOptions` | `threshold` | L8 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 34  | `coupling.cbo` → `NamespaceCboOptions` | `threshold` | L9 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 35  | `coupling.instability` → `ClassInstabilityOptions` | `threshold` | L10 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+| 36  | `coupling.instability` → `NamespaceInstabilityOptions` | `threshold` | L11 | read unguarded through `ThresholdParser::parse()`'s default `$thresholdKey`; declared by no constructor; documented and working — Fact 4 | **declare** |
+
+`ref` for rows #27–#36 is the line of `measurement/level-declared-vs-read.tsv`,
+whose row order is the same as the table above; every one of the ten has
+`declared_not_read` empty and zero blind spots, so `threshold` is the only
+decision a level class needs.
+
+Counts: 19 declare, 6 refuse, 7 remove-then-refuse, 4 answered-by-the-class.
 
 ### Consequences that follow from specific rows, and are not obvious
 
@@ -92,9 +123,10 @@ Counts: 9 declare, 6 refuse, 7 remove-then-refuse, 4 answered-by-the-class.
   remove-then-refuse pairs are the only rows of this table that change
   behaviour, and landing them a stage before the refusal that explains them
   would give a user reaching the intermediate state silence where they used to
-  get an effect. They are package П3.2, which touches four Options files and is
-  therefore parallel with П3.1's `RuleOptionsFactory.php`. The declarations
-  written here already omit the seven keys, so nothing else moves with them.
+  get an effect. They are package П3.2, which touches exactly four Options
+  files and lands **after** П3.1 rather than beside it — stage 03 states why.
+  The declarations written here already omit the seven keys, so nothing else
+  moves with them.
 - **#2/#3/#7/#8/#12/#13.** Removing the two legacy names narrows the
   legacy-flat branch's entry condition to `threshold` alone. It does **not**
   change what the branch does — including enumeration row 66, a top-level
@@ -116,28 +148,34 @@ Counts: 9 declare, 6 refuse, 7 remove-then-refuse, 4 answered-by-the-class.
 
 ## Work packages
 
-All five declaration packages touch disjoint file sets and are **parallel**.
-All depend on П1.1 and on nothing else. None is independently green — see
-*What this stage leaves broken* in `01-key-set-contract.md`: the union of
-П1.1 and П2.1–П2.5 is the landing unit, and the aggregate gate runs once over
-that union.
+Six packages, all parallel, all depending on П1.1 and on nothing else. **Each
+package's file set is its row group in `measurement/packages.tsv`**, and the
+intersection of the six was taken machine-wise and is empty (the command is in
+the overview, under *Work packages and their file sets*). None is independently
+green — see *What this stage leaves broken* in `01-key-set-contract.md`: the
+union of П1.1 and П2.1–П2.6 is the landing unit, and the aggregate gate runs
+once over that union.
+
+**No package here touches `docs/internal/modular-architecture-manifest.json` or
+`docs/internal/generated/modular-architecture/`.** П1.1 owns both for this
+landing unit, including the consumer rows for the imports these six packages
+add. That is what keeps the six parallel: a shared manifest would make every
+one of them edit one JSON file.
 
 ### П2.1 — Complexity
 
-`src/Analysis/Evidence/Complexity/`: `ComplexityOptions.php`,
-`CognitiveComplexityOptions.php`, `NpathComplexityOptions.php`,
-`WmcOptions.php` (lines 12–15), and the six level classes named in
-`option-level-slots.tsv` lines 12–14 (`Method*`/`Class*` for each of the three).
-Carries the declaration half of pairs #1–#15; the removals of #2/#3/#7/#8/#12/#13
-belong to П3.2. Also carries `levelOptionsClasses()` for its three wrappers.
+The three hierarchical wrappers, `WmcOptions`, and the six level classes
+(`Method*`/`Class*` for each of the three wrappers), plus the capability README.
+Carries the declaration half of pairs #1–#15 and pairs #27–#32; the removals of
+#2/#3/#7/#8/#12/#13 belong to П3.2. Also carries `levelOptionsClasses()` for its
+three wrappers.
 
 ### П2.2 — Coupling
 
-`src/Analysis/Evidence/Coupling/`: `CboOptions.php`, `InstabilityOptions.php`,
-`DistanceOptions.php`, `ClassRankOptions.php` (lines 17–20), and the four level classes
-(`ClassCboOptions`, `NamespaceCboOptions`, `ClassInstabilityOptions`,
-`NamespaceInstabilityOptions`; `option-level-slots.tsv` lines 17 and 20). Carries pairs #16–#21 and the declaration half of #22 (whose alias removal is
-П3.2), plus `levelOptionsClasses()` for its two wrappers.
+`CboOptions`, `InstabilityOptions`, `DistanceOptions`, `ClassRankOptions` and
+the four level classes, plus the capability README. Carries pairs #16–#21, the
+declaration half of #22 (whose alias removal is П3.2), pairs #33–#36, and
+`levelOptionsClasses()` for its two wrappers.
 
 ### П2.3 — CodeSmell, Cohesion, Size
 
@@ -145,7 +183,9 @@ Transcription only, twelve classes: `option-declared-vs-read.tsv` lines 3–10
 (`CodeSmell`, eight classes), line 11 (`LcomOptions`), lines 31–33 (`Size`,
 three classes). `LongParameterListOptions` (line 8) and the others here that
 implement `ShorthandOptionKeysInterface` move their `threshold` /
-`vo-threshold` declarations into the new method.
+`vo-threshold` declarations into the new method. Also carries the five test
+implementations that live under these capabilities' own tests — three in
+`CodeSmell/Unit`, two in `Size/Unit`, all five anonymous classes.
 
 ### П2.4 — Design, Maintainability, Security, Duplication, CircularDependency, ComputedMetrics
 
@@ -153,21 +193,29 @@ Transcription only, twelve classes: lines 2 (`CircularDependency`), 16
 (`ComputedMetricRuleOptions`), 21–25 (`Design`, five classes), 26
 (`Duplication`), 27 (`Maintainability`) and 28–30 (`Security`, three classes).
 `GodClassOptions` (line 22, eight accepted keys) is the widest set in the tree
-and is what fixes the "at most eight" claim in the overview.
+and is what fixes the "at most eight" claim in the overview. Also carries the
+one anonymous test implementation under `Design/Unit/TypeCoverage`.
 
 ### П2.5 — Policy
 
-`src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php` and
-`UnassignedClassOptions.php`, `src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php`
-(lines 34–36).
-Carries pairs #23–#26, i.e. the whole answered-by-the-class half. Also updates
-each capability README that lists these classes.
+`LayerViolationOptions`, `UnassignedClassOptions` and `InlineDirectiveOptions`
+(lines 34–36), plus the two Policy READMEs. Carries pairs #23–#26, i.e. the
+whole answered-by-the-class half.
+
+### П2.6 — the test implementations that belong to no capability
+
+Ten files: the four `tests/Analysis/Configuration/Fixtures/TestRuleOptions*`
+classes, five under `tests/Analysis/Finding/` (one integration, four unit, two
+of them anonymous) and `tests/Infrastructure/Unit/RulesCommandTest.php`. They
+are a package rather than a footnote because they are the half of the
+implementer population a production-only sweep does not see, and because six of
+the sixteen are anonymous classes that no grep for a class name would find.
 
 ## What this stage leaves broken
 
-- Between П1.1 and the end of П2.5 the tree does not compile. Only the union is
+- Between П1.1 and the end of П2.6 the tree does not compile. Only the union is
   offered for validation; no package here reports "green" on its own.
-- After П2.5 the declarations are complete and **inert**: the factory has not
+- After П2.6 the declarations are complete and **inert**: the factory has not
   been taught to read them, the two old interfaces are still implemented and
   still read, and no key changes what it does. That is the assertion this
   stage's gate run makes, and it is now true — the seven alias removals moved to
@@ -176,10 +224,15 @@ each capability README that lists these classes.
 ## Test plan (no tests written here)
 
 - One declaration test per capability package, table-driven over that package's
-  classes: for each, the declared accepted set equals the union of constructor
-  parameter names and the keys the class's `fromArray()` reads. The oracle is
-  the AST reader of `scripts/enumerate-rule-option-keys.php`, not a hand-typed
-  list — stage 04 turns this into the standing guard.
+  classes: for each, the declared accepted set contains every key the class's
+  `fromArray()` reads **outside a branch condition** — the `read_unguarded`
+  column, not `read_unguarded ∪ read_branch_guarded`. Stage 04 states why the
+  invariant is narrowed to that column and what it therefore cannot see. The
+  oracle is the AST reader of `scripts/enumerate-rule-option-keys.php`, not a
+  hand-typed list — stage 04 turns this into the standing guard.
+- One declaration test over the ten level classes, with the same invariant and
+  `measurement/level-declared-vs-read.tsv` as its subject; `threshold` is the
+  key it exists to catch.
 - Per hierarchical wrapper: `levelOptionsClasses()` keys equal
   `getSupportedLevels()` values as strings, and each named class implements
   `LevelOptionsInterface`.

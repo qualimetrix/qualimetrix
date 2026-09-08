@@ -31,13 +31,35 @@ inherited.
 
 **Closed as a byproduct, not aimed at:** enumeration row 34
 (`{CALLABLE: {…}}` warning under the mangled name `c-a-l-l-a-b-l-e`) — the new
-refusal quotes the authored spelling at depth 1 instead of de-camelising it,
-so the mangling has no site left. Row 34 stays an M3 row; only its text moves.
+refusal prints the key exactly as the factory received it (`cALLABLE`) instead
+of de-camelising it, so the mangling has no site left. Row 34 stays an M3 row;
+only its text moves, and *The spelling the refusal answers in* below states why
+`cALLABLE` and not `CALLABLE` is the honest answer.
 
 **Decided, and deliberately not a refusal:** row E60, `{callable:}` (null).
 An empty level block means the same thing as an omitted one, and refusing it
-would refuse a harmless YAML idiom. Accepted in silence, and stated in the
-website configuration page (stage 04).
+would refuse a harmless YAML idiom. Accepted in silence, stated in the website
+configuration page (stage 04), and — because "accepted in silence" is exactly
+the shape this plan is removing elsewhere — **carried as a regression case**, so
+that a later tightening of the not-a-map branch has to delete a green test
+rather than merely not notice.
+
+**Decided, and it is a refusal:** `{callable: false}`, which the enumeration did
+not address and which the not-a-map rule would otherwise swallow into E59's
+generic sentence. Today `ComplexityOptions.php:57-60` tests
+`isset($config[$callableKey]) && \is_array(...)`, so `false` is silently the
+same as an omitted slot. A rule has a universal off-switch
+(`rules: {X: false}` → `enabled: false`, `normalizeScalarConfig()`); a slot has
+none, so `callable: false` is a plausible thing to write and today it does
+nothing. It refuses, with the one sentence that says what to write instead:
+
+```
+Configuration error: Level "<slot>" of rule "<rule>" takes a map of options,
+got bool. To switch one level off write "<slot>: {enabled: false}".
+```
+
+The hint is part of the `false` case only; `callable: 10` keeps the bare
+not-a-map sentence, because no `{enabled: false}` was plausibly meant.
 
 **Not closed, handed off by name:** E45 (refuted; what remains is ADR 0044's
 open follow-up), E64 (`true` coerced to 1 — M11), E65/E66 (layer eviction and
@@ -58,7 +80,6 @@ removal.
 // RuleOptionsFactory::create(), replacing step 5
 private function refuseUnknownKeys(
     array $userConfig,          // NOT $merged — see below
-    array $authoredSpellings,   // normalised key => the spelling the author wrote
     string $ruleName,
     string $optionsClass,
 ): void {
@@ -71,7 +92,11 @@ private function refuseUnknownKeys(
 }
 ```
 
-Four decisions inside it, each with its reason:
+There is no authored-spelling side map among its arguments, and *The spelling
+the refusal answers in* below is why: by this point every door has folded the
+key, so there is nothing left to carry.
+
+Five decisions inside it, each with its reason:
 
 **It validates `$userConfig`, not `$merged`.** At `RuleOptionsFactory.php:124`,
 `$merged = $userConfig === [] ? $defaults : $userConfig`, and `$defaults` comes
@@ -84,12 +109,23 @@ is what the user wrote and is the only correct subject; the current code
 validates `$merged` only because at depth 1 the two agree whenever the user
 wrote anything.
 
-**The framework keys stay a top-level-only exception.** `suppress_paths`,
-`suppress_namespaces` and `suppress_namespace_channels` are stripped by
-`extractSuppressNamespaces()`/`extractSuppressPaths()` before this point and are
-read at depth 1 only. So inside a slot they are unknown, and that is the right
-answer — E48's retired `exclude_paths` at depth 2 is refused by the generic
-sentence because its *replacement* is not valid there either.
+**The framework keys stay a top-level-only exception, and the walk owns their
+list.** `suppress_paths`, `suppress_namespaces` and
+`suppress_namespace_channels` are stripped by
+`extractSuppressNamespaces()`/`extractSuppressPaths()` at
+`RuleOptionsFactory.php:96-97`, before this point, so a correctly spelled one
+never reaches the comparison. A *misspelled* one does, and becomes a hard
+refusal. They are declared by no options class and must not be, so their source
+at depth 1 is a constant of the factory beside the walk, and it is both compared
+against and printed — see *Where the printed set comes from* below. Inside a
+slot they stay unknown, and that is the right answer: E48's retired
+`exclude_paths` at depth 2 is refused by the generic sentence because its
+*replacement* is not valid there either.
+
+**A slot's value that is not a map is answered before its keys are.** `null` is
+accepted as an omitted slot, `false` refuses with the `{enabled: false}` hint,
+and anything else refuses with the bare not-a-map sentence. This branch runs
+before the depth-2 key walk, because a non-map has no keys to walk.
 
 **`RetiredSuppressionOptions::refuseRuleOption()` runs first and stays at
 depth 1.** It is called at line 95, before this walk, and its message names the
@@ -111,8 +147,27 @@ The exception class is chosen by the catch site, not by precedent.
 `CheckCommand::execute()` catches, in order:
 `ConfigLoadException|ArchitectureConfigurationException` → exit 3 with a
 `Configuration error: ` prefix (`CheckCommand.php:172`);
-`InvalidArgumentException` → exit 3, message verbatim (`:190`);
-`Throwable` → exit 1, `Unexpected error: ` (`:201`).
+`ArchitecturePreparationException` → exit 3 with its own prefix (`:179`);
+`InvalidArgumentException` → exit 3, message verbatim and **without any prefix**
+(`:190`); `Throwable` → exit 1, `Unexpected error: ` (`:201`).
+
+**A correction to what an earlier revision of this plan claimed.**
+`RetiredSuppressionOptions::refuseRuleOption()` throws
+`InvalidArgumentException` (`src/Analysis/Configuration/RetiredSuppressionOptions.php:136`),
+not `ConfigLoadException`. So the two halves of this mechanism do **not**
+already share one route, and the plan may not lean on that as its reason. The
+two routes reach the same exit code and print different framing, and this plan
+does not unify them: doing so would edit ADR 0047's refusal for the sake of the
+new one's symmetry, and the framing difference is small next to the migration
+text that refusal carries. Instead both stderr texts become pinned by test, so
+the difference is a decision on the record rather than a discovery.
+
+**`ConfigLoadException`, chosen on its own merits.** It is the route for an
+error *in the configuration document*, and it carries the `Configuration error: `
+prefix that says so; an unknown key in `qmx.yaml` is exactly that.
+`InvalidArgumentException` is the route the *classes* use for their own bespoke
+refusals (pairs #23–#26), and keeping the generic and the bespoke
+distinguishable is worth one import.
 
 The three-way choice is about `check`. `create()` is also reached from
 `baseline:explain` (`BaselineConfiguredThresholds.php:136`), where enumeration
@@ -120,16 +175,10 @@ row 129's measurement of `baseline:generate` says a `ConfigLoadException` from
 the same document exits **1 on stdout**. The new refusal inherits that; it is
 mechanism M6 and out of scope, and the test plan pins the `check` route only.
 
-**`ConfigLoadException`.** It is the class `RetiredSuppressionOptions` already
-throws from inside this same factory, so the two halves of one mechanism take
-one route and print one framing. `InvalidArgumentException` would also reach
-exit 3 but is the route the *classes* use for their own bespoke refusals
-(pairs #23–#26), and keeping those distinguishable is worth one import.
-
 Text, at depth 1:
 
 ```
-Configuration error: Option "<authored>" is not an option of rule "<rule>".
+Configuration error: Option "<key>" is not an option of rule "<rule>".
 Options here: <kebab list>.
 ```
 
@@ -141,12 +190,23 @@ Configuration error: Option "<key>" is not an option of rule "<rule>" at level
 different options.
 ```
 
-and for a slot whose value is not a map (E59):
+**Where the printed set comes from, at each depth.** At depth 2 it is exactly
+`<level class>::acceptedOptionKeys()->acceptedForDisplay()`. At depth 1 it is
+that of the options class **plus the three framework keys**
+(`suppress_paths`, `suppress_namespaces`, `suppress_namespace_channels`), which
+no options class declares and none ever will: they are stripped from
+`$userConfig` at `RuleOptionsFactory.php:96-97`, before this walk, and never
+reach `fromArray()`. They are legal at depth 1 and illegal inside a slot, so
+their source is a factory constant beside the walk, and the walk adds them at
+depth 1 only.
 
-```
-Configuration error: Level "<slot>" of rule "<rule>" takes a map of options,
-got <type>.
-```
+This is not cosmetic. A correctly spelled framework key never reaches the
+comparison, but a typo in one does — `suppress_path` — and under this plan it
+stops being a warning and becomes exit 3. A refusal that lists the allowed keys
+without listing the three keys that are allowed would name the fix nowhere.
+Today's warning has the same hole (`$availableOptions` is built from
+`$defaults` plus `$acceptedExtraKeys`, with no framework keys), which is
+survivable for a warning and not for a hard error.
 
 No "did you mean". The printed set is the whole answer: at most eight keys at
 depth 1 (`GodClassOptions`) and six at depth 2
@@ -160,87 +220,124 @@ measured mistake is writing one level's vocabulary into another's slot, and a
 reader who sees only "not an option at level `callable`" will try the same key
 at `class`.
 
-## Authored spelling — where it survives and where it does not
+## The spelling the refusal answers in
 
-ADR 0047 requires a refusal to answer in the spelling its author wrote. Where
-that spelling still exists at this point differs by door, and the plan states
-both rather than pretending one rule:
+An earlier revision of this plan promised that depth 1 would quote the author's
+spelling and that `--rule-opt` preserved it. **Both halves are wrong, measured:**
 
-| door                | depth 1                                                       | depth 2                                                                                                                        |
-| ------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `qmx.yaml` / preset | lost at `RuleOptionsFactory.php:71` (`normalizeKeys`)         | already lost in the loader — `rules` is `PRESERVE_IMMEDIATE_CHILDREN` (ADR 0009), so everything under a rule slug is camelised |
-| `--rule-opt`        | preserved — `expandDotNotation()` at `:75` does not normalise | preserved, same reason                                                                                                         |
+- YAML and presets: `rules` is `PRESERVE_IMMEDIATE_CHILDREN`
+  (`SectionNormalizationPolicy`, ADR 0009), which preserves the *rule slug* and
+  resumes camel folding at every depth below it. So the option key is folded in
+  the loader, at depth 1 as well as depth 2.
+- `--rule-opt`: `RuleOptionsParser::parseRuleOption()` calls
+  `ConfigKeySpelling::normalize()` on the option (`:153-156`) before the value
+  ever reaches the factory. The dot does not shield the tail:
+  `normalize('callable.max_warning')` returns `callable.maxWarning`, so
+  `expandDotNotation()` at `RuleOptionsFactory.php:75` receives an already
+  folded key at both depths.
 
-So: **depth 1 carries the authored spelling**, obtained by having
-`normalizeKeys()` return the normalised map together with a
-`normalised => authored` side map instead of discarding it, and the refusal
-quotes it. That alone retires the `c-a-l-l-a-b-l-e` mangling, because the
-lossy `toCanonicalDisplayName()` stops being applied to the *unknown* key (it
-stays in use for printing the *allowed* set, where the input is a constructor
-parameter name and the transformation is exact).
+So the door table has one row, not four: **every door folds separators and
+lower-cases the first character before the factory exists; the letters
+survive.** Two consequences, both stated rather than promised away:
 
-**Depth 2 from YAML quotes the camelised key**, because the section
-normalisation policy consumed the author's spelling before the factory existed.
-Making it survive means a third `SectionNormalizationPolicy` case, which ADR
-0044 considered and rejected as "an exception keyed by an option's name inside a
-model whose unit is a section". This plan does not reopen that. The new ADR
-records the limit explicitly, so it is a stated cost rather than a bug report
-waiting to be filed.
+- For a key whose letters are wrong — `warnign`, `errro`, `warn` — the folded
+  spelling *is* the authored spelling, and the refusal is exact.
+- For a key whose separators are wrong — `max_warnign` — the refusal says
+  `maxWarnign`. That is the ADR 0044 limit at this seam, and the new ADR records
+  it, pointing at the same open follow-up
+  `docs/internal/plans/rule-vocabulary/FOLLOWUPS.md` already tracks. Making it
+  survive would need a third `SectionNormalizationPolicy` case, which ADR 0044
+  considered and rejected as "an exception keyed by an option's name inside a
+  model whose unit is a section", **and** a spelling side-channel through the
+  CLI parser. This plan reopens neither.
 
-Consequence for the comparison, and for the tests: the same written key arrives
-snake from `--rule-opt` and camel from YAML at depth 2, so **both sides are
-normalised before comparison** — the declared kebab and the incoming key alike.
-Enumeration row 61 measured the three spellings' equivalence on the YAML door
-only; the test plan below adds the CLI door.
+The refusal therefore prints the key **verbatim as it reaches the factory** and
+applies no inverse transformation to it. `ConfigKeySpelling::rewriteLike()`
+exists and is not used here: with no authored string to imitate, it has nothing
+to key on.
+
+Printing verbatim is also what retires the mangling in enumeration row 34.
+Today the generic warning runs the unknown key through
+`toCanonicalDisplayName()`, which de-camelises, so `CALLABLE` — folded to
+`cALLABLE` — is printed `c-a-l-l-a-b-l-e`. Dropping that call for the *unknown*
+key leaves `cALLABLE`, which is what the product actually received.
+`toCanonicalDisplayName()` stays in use for printing the *allowed* set, where
+the input is a declared kebab spelling and the transformation is exact. Row 34
+stays an M3 row: only its text moves, and the folding itself is untouched.
+
+Consequence for the comparison, and for the tests: both sides are normalised
+before comparison — the declared kebab and the incoming key alike. Enumeration
+row 61 measured the three spellings' equivalence on the YAML door only; the test
+plan below adds the CLI door.
 
 ## Work packages
 
-**П3.1 — the walk and the refusal.** Sequential; both files are the same file
-group and cannot be split without two agents editing one method.
+Two packages, **sequential**: П3.2 lands after П3.1. Their file sets are the
+`П3.1` and `П3.2` row groups of `measurement/packages.tsv`, and their
+intersection was taken machine-wise and is empty.
 
-Files:
+An earlier revision called them parallel with disjoint file sets. They were
+neither. The four Options files П3.2 edits are four of the twenty that carry
+`implements ShorthandOptionKeysInterface` / `AdditionalOptionKeysInterface`, so
+a П3.1 that sheds those interfaces everywhere and a П3.2 that edits four of
+those same files are two agents in one class. Sequencing and reassigning fix the
+two halves of that with one move: **П3.1 excludes the four files, and П3.2 owns
+their interface cleanup along with the alias removal.**
 
-- `src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php`
+**П3.1 — the walk, the refusal, and the death of the two interfaces.**
+
+Twenty-six paths, in five groups:
+
+- `src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php`;
 - `src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php` (new — the
   sentences above, beside `ChannelLevelRefusalWording`, for the reason that
   file's own docblock gives: a refusal that names a level is a formulation that
-  belongs next to the judge)
-- `src/Analysis/Finding/README.md`
-- `src/Analysis/Finding/Contract/Rule/ShorthandOptionKeysInterface.php` (deleted)
-- `src/Analysis/Finding/Contract/Rule/AdditionalOptionKeysInterface.php` (deleted)
-- the twenty Options classes and two test files that reference them, for the
-  `implements`/`use` lines only — enumerated in `01-key-set-contract.md`
-- `tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php`
+  belongs next to the judge) and `src/Analysis/Finding/README.md`;
+- the two deleted interface files, and the sixteen production Options classes
+  that reference them outside П3.2's four;
+- `tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php` and
+  `tests/Analysis/Policy/Architecture/Unit/UnassignedClassOptionsTest.php`;
+- `scripts/enumerate-rule-option-keys.php`, and the manifest pair
+  (`docs/internal/modular-architecture-manifest.json` plus
+  `docs/internal/generated/modular-architecture/`).
 
-The two interfaces die here rather than in stage 01 because the factory is
-their last reader, and `is_a()` against a class string that no longer exists
-returns `false` without a word — deleting them earlier would have silently
-emptied the shorthand set. `ThresholdParser.php:27` and
-`LongParameterListOptions.php:32` mention them in prose and are updated with
-it.
+The script is in this package and not in stage 04, and it is not a cosmetic
+inclusion: its `declaredKeys()` imports both deleted interfaces and calls their
+statics, and `phpstan.neon` analyses `scripts` beside `src` and `tests`. Left
+out, stage 03 could not claim a green `composer check`, and the file that
+regenerates `measurement/` would be the one file in the tree that cannot run.
+П3.1 rewrites `declaredKeys()` to read `acceptedOptionKeys()`, which also makes
+the script and the guard agree on one source before stage 04 moves the reader.
+The manifest pair is in this package for the reason the overview gives: this is
+the landing unit's single manifest owner, and it carries both the two deleted
+declarations and the new `RuleOptionRefusalWording`. The JSON is written here;
+the generated directory is regenerated **after П3.2**, at the unit's close, by
+this package's owner — until then four files still import declarations this
+package deleted, and a generator run would measure that intermediate tree.
 
-Depends on: all of stage 02. Parallel with: П3.2.
+`ThresholdParser.php:27` and `LongParameterListOptions.php:32` mention the
+interfaces in prose without importing them and are updated here too.
 
-**П3.2 — the seven alias removals.** Pairs #2, #3, #7, #8, #12, #13 (the
-`warning_threshold`/`error_threshold` entry condition of the three complexity
-wrappers) and #22 (`project_namespaces` on `coupling.distance`).
+Depends on: all of stage 02.
 
-Files: `src/Analysis/Evidence/Complexity/ComplexityOptions.php`,
-`CognitiveComplexityOptions.php`, `NpathComplexityOptions.php`,
-`src/Analysis/Evidence/Coupling/DistanceOptions.php`, and the website pages
-those four teach from.
-
-Depends on: all of stage 02. **Parallel with П3.1** — disjoint file sets. It
-lands in this stage rather than stage 02 so that the removal and the refusal
-that explains it reach a user together; stage 02's declarations already omit
-the seven keys, so the removal moves nothing else.
+**П3.2 — the seven alias removals** — is the subject of
+`03-alias-removals.md`, which states its files, its two-edit shape and its own
+test plan. It depends on П3.1 and lands after it.
 
 ## What this stage leaves broken
 
 - Nothing structurally: after П3.1 and П3.2 the tree compiles and
-  `composer check` is expected green. Between the two, whichever lands first
-  leaves the other's half unexplained for the length of one commit; both are on
-  one branch and neither is offered for validation alone.
+  `composer check` is expected green. Between the two the tree does not
+  compile — П3.1 deletes two interfaces that П3.2's four files still implement
+  — which is the same landing-unit discipline stage 01 states, and neither
+  package is offered for validation alone.
+- At that intermediate commit the seven aliases are already **refused** rather
+  than silently dropped: stage 02's declarations omit them, so П3.1's walk
+  refuses them while the code that reads them is still present. That ordering
+  is deliberate. The reverse order — removing the reads first — would leave a
+  window in which the alias does nothing and only a warning says so, and `-q`
+  silences a warning (enumeration row 51). A user who checks out the
+  intermediate commit gets exit 3 and a sentence, in every verbosity.
 - The website and `CHANGELOG.md` still describe the old contract; stage 04 owns
   that and must follow before the branch is offered for review.
 - Enumeration row 51 — a warning silenced by `-q` — becomes moot for these
@@ -249,8 +346,9 @@ the seven keys, so the removal moves nothing else.
 
 ## Test plan (no tests written here)
 
-Regression case per closed position, and the list is the table at the top of
-this file — E48, E53, E54, E55, E56, E57, E58, E59, E61, E73 — plus:
+Regression case per closed position — E48, E53, E54, E55, E56, E57, E58, E59,
+E61, E73 — plus E60 (`callable:` null, accepted) and `callable: false`
+(refused with the `{enabled: false}` hint), plus:
 
 - **The Fact 1 discriminator, as one test with two halves.** Top-level
   `warning` on `coupling.cbo` is accepted *and* changes the findings; the same
@@ -263,19 +361,34 @@ this file — E48, E53, E54, E55, E56, E57, E58, E59, E61, E73 — plus:
   assertions on one rule.
 - **The Fact 3 pairs.** For each of #23–#26, exactly one sentence on stderr —
   the class's own — and no `Unknown option` line above it.
-- **Door symmetry.** The same unknown depth-2 key written as YAML
-  (`callable: {max_warning: 1}`) and as `--rule-opt`
-  (`complexity.ccn:callable.max_warning=1`) refuses identically; and the three
-  accepted spellings `max_warning` / `maxWarning` / `max-warning` are accepted
-  through **both** doors (row 61 measured YAML only).
-- **Routing.** The refusal exits 3 on stderr with the `Configuration error: `
-  prefix; it still exits 3 under `-q` (row 51) and under `--format=json` with
-  stdout left parseable (row 52); and it exits 3 under `--workers=2`. The last
-  one matters because the enumeration left worker-process diagnostics
-  unmeasured (item 7 of *Что осталось неизмеренным*); a `--workers=2` run of
-  the warning case was taken while planning and the two warnings appeared once
-  each on the parent's stderr, so options are built in the parent — the test
-  pins that rather than trusting it.
+- **The Fact 4 slots.** `{callable: {threshold: N}}` and `{class: {threshold: N}}`
+  accepted *and effective* on a complexity rule and on `coupling.cbo` — the ten
+  pairs #27–#36 are the reason depth 2 does not refuse a documented key, and a
+  test that only asserts "not refused" would pass against a declaration that
+  accepted the key and dropped it.
+- **Two refusal routes, both pinned.** The generic refusal prints
+  `Configuration error: …` (`ConfigLoadException`, `CheckCommand.php:172`); the
+  retired-key refusal prints its message with no prefix
+  (`InvalidArgumentException`, `:190`). Both exit 3. The two texts are asserted
+  in one test so that a later unification has to change an assertion rather than
+  quietly reframe one of them.
+- **The framework keys at depth 1.** `suppress_paths` is accepted; the typo
+  `suppress_path` is refused **and the printed set contains `suppress-paths`**;
+  `suppress_paths` written inside a slot is refused.
+- **Door symmetry, and the spelling the refusal prints.** The same unknown
+  depth-2 key written as YAML (`callable: {max_warnign: 1}`) and as
+  `--rule-opt` (`complexity.ccn:callable.max_warnign=1`) refuses identically,
+  and both print `maxWarnign` — the folded spelling, asserted verbatim, because
+  that is the stated limit and an accidental improvement to it should redden.
+  Separately, `max_warning` / `maxWarning` / `max-warning` are accepted through
+  **both** doors (row 61 measured YAML only).
+- **Routing.** The refusal exits 3 on stderr; it still exits 3 under `-q`
+  (row 51) and under `--format=json` with stdout left parseable (row 52); and it
+  exits 3 under `--workers=2`. The last one matters because the enumeration left
+  worker-process diagnostics unmeasured (item 7 of *Что осталось неизмеренным*);
+  a `--workers=2` run of the warning case was taken while planning and the two
+  warnings appeared once each on the parent's stderr, so options are built in
+  the parent — the test pins that rather than trusting it.
 - **The retired refusal still wins at depth 1.** `exclude_paths` as a rule
   option keeps ADR 0047's message naming `suppress_paths`, not the generic one;
   at depth 2 it gets the generic one.

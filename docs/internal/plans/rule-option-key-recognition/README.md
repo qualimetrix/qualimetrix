@@ -52,7 +52,21 @@ level by construction. What remains is narrower and real — a key naming a
 channel that never publishes at `namespace` level is accepted in silence and
 can never suppress anything.
 
+Two further files in `measurement/` are not part of the two-witness enumeration
+and are named separately so that nobody reads them as evidence of the same kind:
+
+| file                         | rows | what it is                                                                                      |
+| ---------------------------- | ---- | ----------------------------------------------------------------------------------------------- |
+| `level-declared-vs-read.tsv` | 10   | the declared-versus-read question asked of the ten level classes, from the same script          |
+| `packages.tsv`               | 128  | package → path, the plan's work-package file sets, so that "disjoint" is checkable not asserted |
+
+`level-declared-vs-read.tsv` was added while revising the plan: the original
+table covered the 35 options classes, and the plan applies its rules to the ten
+level classes as well. `scripts/enumerate-rule-option-keys.php` emits it as a
+fourth section; the other three sections are byte-identical to the files already
+here, before and after that change.
+
 ## Status
 
-Enumeration complete; treatment not planned. The naming question is not part
+Enumeration complete; treatment planned in this directory. The naming question is not part
 of this subject — level names are settled by ADR 0024 and are not reopened.

@@ -17,9 +17,11 @@ three sources (`RuleOptionsFactory.php:360-414`):
 
 All three describe the class from the outside. `fromArray()` is a method body,
 and reflection cannot see into it — which is exactly what
-`measurement/option-declared-vs-read.tsv` measures: six classes read keys none
-of the three sources mention, and `ShorthandOptionKeysInterface`'s own docblock
-already admits the gap it was written to patch. Two partial declarations beside
+`measurement/option-declared-vs-read.tsv` measures: seven of the 35 options
+classes read keys none of the three sources mention, and
+`measurement/level-declared-vs-read.tsv` measures that **all ten** level classes
+do. `ShorthandOptionKeysInterface`'s own docblock already admits the gap it was
+written to patch. Two partial declarations beside
 a body that is the real authority is one source too few and one too many.
 
 There is a decided precedent for the shape of the answer. ADR 0038 replaced a
@@ -128,17 +130,30 @@ become empty and every configuration writing a bare `threshold:` would start
 warning "Unknown option". PHPStan would redden on the two `use` lines; the
 runtime would not.
 
-The references were enumerated rather than estimated —
-`grep -rn 'ShorthandOptionKeysInterface\|AdditionalOptionKeysInterface' src tests scripts --include=*.php -l`
-returns **23 files**: 20 production Options classes across Complexity,
-Coupling, CodeSmell, Cohesion, Design, Duplication, Maintainability and Size,
-plus `RuleOptionsFactory` itself, plus
-`tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php`,
-`tests/Analysis/Policy/Architecture/Unit/UnassignedClassOptionsTest.php` and
-`scripts/enumerate-rule-option-keys.php`. Two further docblock mentions carry no
-import (`ThresholdParser.php:27`, `LongParameterListOptions.php:32`). Those 20
-classes implement *both* the old interfaces and the new method through stages 02
-and 03, and shed the old ones in П3.1.
+The references were enumerated rather than estimated. The command
+
+    grep -rn 'ShorthandOptionKeysInterface\|AdditionalOptionKeysInterface' \
+      src tests scripts --include=*.php -l
+
+returns **26 files**, and the breakdown is what the package boundary is cut
+from, not the total:
+
+| what                                                       | files |
+| ---------------------------------------------------------- | ----- |
+| production Options classes across eight capabilities       | 20    |
+| the two interface files themselves (deleted)               | 2     |
+| `RuleOptionsFactory.php`                                   | 1     |
+| `tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php`   | 1     |
+| `tests/…/Architecture/Unit/UnassignedClassOptionsTest.php` | 1     |
+| `scripts/enumerate-rule-option-keys.php`                   | 1     |
+
+Two further docblock mentions carry no import (`ThresholdParser.php:27`,
+`LongParameterListOptions.php:32`) and are updated with the deletion. Twenty-two
+of the 26 belong to П3.1 and four to П3.2; both lists are rows of
+`measurement/packages.tsv`, and stage 03 states why the split falls there.
+
+Those 20 classes implement *both* the old interfaces and the new method through
+stages 02 and 03, and shed the old ones in stage 03.
 
 Breaking; there are no external implementers by policy, and the migration is
 mechanical (`CHANGELOG.md`, stage 04).
@@ -174,24 +189,38 @@ implementing side — which is what a rule-authoring contract is for.
 
 ## Work packages
 
-**П1.1 — the contract (single package, nothing parallel).**
+**П1.1 — the contract (single package, nothing parallel).** Its file set is the
+`П1.1` rows of `measurement/packages.tsv`: the new `RuleOptionKeySet`, the three
+contract interfaces it is declared on, `src/Analysis/Finding/README.md`, a unit
+test for `RuleOptionKeySet` only, and — for the reason the overview gives under
+*Work packages and their file sets* — `docs/internal/modular-architecture-manifest.json`
+plus `docs/internal/generated/modular-architecture/`. The JSON is written in
+this package; the generated directory is **regenerated at the landing unit's
+close**, after the last of П2.1–П2.6, because the generator reads the tree and
+the imports П1.1's rows name do not exist until then. The path is П1.1's so
+that no other package writes it; the command is run by П1.1's owner once the
+unit is complete.
 
-Files:
-
-- `src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php` (new)
-- `src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php`
-- `src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php`
-- `src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php`
-- `src/Analysis/Finding/README.md`
-- `tests/Analysis/Finding/…` — unit tests for `RuleOptionKeySet` only
+The manifest work is not a formality and is sized here rather than discovered
+later: `RuleOptionKeySet` needs a `consumers` row per importing production
+class, and the population is known by name — the 45 classes of
+`measurement/option-declared-vs-read.tsv` and `measurement/level-declared-vs-read.tsv`.
+Sibling contracts show the shape: `RuleOptionsInterface` carries 39 consumer
+rows across 15 owners.
 
 Depends on: nothing. Parallel with: nothing.
 
 ## What this stage leaves broken
 
 Adding an abstract static to `RuleOptionsInterface` and `LevelOptionsInterface`
-breaks every implementer at once — 35 options classes and 10 level classes —
-so **the tree does not compile between П1.1 and the end of stage 02.**
+breaks every implementer at once — **61 classes: 35 options classes, 10 level
+classes and 16 implementations that live in `tests/`, six of them anonymous** —
+so **the tree does not compile between П1.1 and the end of stage 02.** The test
+implementations are not an afterthought of the production sweep: they are
+enumerated by the same php-parser walk (overview, *The population*), they are
+named individually in `measurement/packages.tsv`, and each is owned by the
+П2.x package that owns its subject — П2.3 and П2.4 take the five that sit under
+a capability's own tests, П2.6 takes the ten that do not.
 
 This is deliberate and it is the one place in the plan where a package's own
 Definition of Done cannot be "the aggregate is green". The alternatives were
@@ -208,6 +237,9 @@ So the two stages are one landing unit: **П1.1 and all of stage 02 are one
 commit series on one branch, and only their union is offered for validation.**
 Stage 02's package DoD names the aggregate; П1.1's DoD is `composer cs-check`
 plus its own unit tests plus a compile check of the contract files themselves.
+`composer architecture:check` is part of the union's DoD and of no package
+inside it: the manifest rows П1.1 writes name imports that П2.x has not added
+yet, and the checker refuses a consumer entry whose import is absent.
 
 Nothing user-visible changes in this stage: the factory still warns, still at
 depth 1 only, still from reflection. The new declarations are inert until

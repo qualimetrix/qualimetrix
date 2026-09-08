@@ -90,6 +90,7 @@ docs/internal/plans/phpdoc-dependencies.md	Architecture.Governance	shared	"Share
 docs/internal/plans/rule-option-key-recognition/00-overview.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-option-key-recognition/01-key-set-contract.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-option-key-recognition/02-declarations-per-capability.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/internal/plans/rule-option-key-recognition/03-alias-removals.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-option-key-recognition/04-guard-tests-and-publication.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-option-key-recognition/README.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

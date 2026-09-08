@@ -5,22 +5,55 @@
 Stages 01–03 make the declaration correct once. This stage makes it stay
 correct, and tells the outside world what changed.
 
-## The guard: declared ⊇ read, checked by a second witness
+## The guard: declared ⊇ read *outside a branch condition*, checked by a second witness
 
-`measurement/option-declared-vs-read.tsv` is a snapshot. The invariant behind
-it becomes a test:
+`measurement/option-declared-vs-read.tsv` and
+`measurement/level-declared-vs-read.tsv` are snapshots. The invariant behind
+them becomes a test:
 
 > For every options class and every level class, the key set declared by
 > `acceptedOptionKeys()` (both halves) contains every key its `fromArray()`
-> reads.
+> reads **outside a branch condition** — the `read_unguarded` column of the two
+> measurements, not `read_unguarded ∪ read_branch_guarded`.
 
-The oracle is not a hand-written list — a hand-written list is the same author
-filling in both the claim and its check, and it passes its own guard
+**Why the invariant is narrowed to that column, and what it therefore cannot
+see.** The wider form — declared ⊇ every key read anywhere — is not satisfiable
+together with stage 02's decisions, and the contradiction is structural rather
+than a wording slip. Six pairs (#4/#5/#9/#10/#14/#15) decide **refuse** for
+top-level `warning`/`error` on the three complexity wrappers, so those keys are
+in neither half of the declaration; and `ComplexityOptions::fromArray()` keeps
+reading them at `:44` through `ThresholdParser::parse()`, inside the flat
+branch, after П3.2 as before it. Declared ⊇ read and *refuse* cannot both hold
+for one key. The measurement already carries the distinction the resolution
+needs: `warning`/`error` appear in `read_branch_guarded` for those three classes
+and in `read_unguarded` for `CboOptions`, where the decision is **declare**.
+
+The narrowing costs one thing, and it is named here rather than discovered
+later: **a key read only inside a branch is invisible to this guard.** Six keys
+are in that position. They are pinned by behaviour instead — the Fact 1
+discriminator of `03-refusal-at-every-depth.md` asserts that top-level `warning`
+is refused on `complexity.ccn` and accepted-and-effective on `coupling.cbo`, in
+one test with two halves. That is a second witness of a different kind: the AST
+reader cannot produce it, and it fails if either verdict moves.
+
+The alternative was to make the wider invariant true by deleting the reads —
+dropping `RuleOptionKey::WARNING`/`ERROR` from the three wrappers'
+`ThresholdParser::parse()` call, which after П3.2 opens on `threshold` alone and
+so would need the call replaced by a direct read. Rejected: it is a
+behaviour-bearing edit to three classes, in the same package as the alias
+removal, bought for a strictly stronger *static* check of six keys that the
+behavioural test already pins — and CLAUDE.md's validation order puts the cheap
+signal first, not the invasive one. If the flat branch is ever removed for its
+own reasons, the invariant can widen with it.
+
+**The oracle is not a hand-written list** — a hand-written list is the same
+author filling in both the claim and its check, and it passes its own guard
 (`MEMORY.md`, *Two-witness enumeration*). It is the AST reader already written
 for the measurement: `scripts/enumerate-rule-option-keys.php` derives the read
-side by parsing `fromArray()` bodies, and the declared side from the real
-container plus reflection. The guard reuses that reader; the declaration and
-its oracle then come from two different places.
+side by parsing `fromArray()` bodies, and the declared side by calling
+`acceptedOptionKeys()` (П3.1 rewrites `declaredKeys()` to do that when the two
+old interfaces die). The declaration and its oracle then come from two different
+places.
 
 **Where the reader lives.** It moves out of the script into
 `tests/Analysis/Finding/RuleConfiguration/Support/`, under
@@ -31,13 +64,27 @@ invariant is Finding's — it is the factory's contract that is being kept
 honest — and the reader has exactly two consumers, the guard and the script
 that regenerates the measurement.
 
+**The reader carried one order-dependence, and it is fixed in this revision
+rather than inherited.** `FromArrayReader::read()` reset `reading`, `methods`,
+`visited` and `guarded` but not `$locals`, so a literal bound to a local
+variable in one class could leak into the next class read by the same instance —
+which would make a standing guard depend on the order its subjects are visited.
+`$this->locals = []` was added to the reset block and all four measurement
+tables were regenerated: **byte-identical**, so the defect was real and this
+population never triggered it. The guard inherits a reader without it, and П4.1
+carries a control asserting that reading the same class first and last in a run
+gives the same answer.
+
 **The guard's blind spots, stated as its limit rather than discovered later.**
 `measurement/option-enumeration-blind-spots.tsv` names 16 sites the reader
-cannot resolve to a literal key: 14 `nested-delegation` (a wrapper handing
-`$config` to a level class, five classes) and 2 `dynamic-key`
-(`LayerViolationOptions` line 120, the `foreach` over a constant map that hid
-pairs #24–#26). Consequences, both of which the guard must state in its own
-failure message:
+cannot resolve to a literal key, **across the 35 options classes only**: 14
+`nested-delegation` (a wrapper handing `$config` to a level class, five classes)
+and 2 `dynamic-key` (`LayerViolationOptions` line 120, the `foreach` over a
+constant map that hid pairs #24–#26). For the ten level classes the same reader
+reports **zero** blind spots of any kind, and that is now measured rather than
+assumed: `measurement/level-declared-vs-read.tsv` carries a `blind_spots` column
+per level class, and every row is `-`. Consequences the guard must state in its
+own failure message:
 
 - nested delegation is *why* the level classes are walked separately; with
   `LevelOptionsInterface::acceptedOptionKeys()` in place, the 14 sites are
@@ -55,23 +102,31 @@ exist, so a reintroduction is a red test rather than a review catch.
 ## Regression cases: one per position where a key can go unrecognised
 
 The population is not invented here; it is the list in
-`03-refusal-at-every-depth.md` plus the pairs table of
-`02-declarations-per-capability.md`:
+`03-refusal-at-every-depth.md` and `03-alias-removals.md` plus the pairs table
+of `02-declarations-per-capability.md`:
 
-| group                                          | cases | source                                          |
-| ---------------------------------------------- | ----- | ----------------------------------------------- |
-| depth-2 positions closed                       | 10    | E48, E53–E59, E61, E73                          |
-| the 26 pairs                                   | 26    | `02`, one per row                               |
-| Fact 1 / Fact 2 / Fact 3 discriminators        | 3     | `03`, *Test plan*                               |
-| door symmetry (YAML vs `--rule-opt`)           | 2     | `03`, *Test plan*                               |
-| routing (`-q`, `--format=json`, `--workers=2`) | 3     | rows 51, 52, and the unmeasured worker question |
-| the universal off-switch over every rule       | 1     | `02`, *Test plan* — `rules: {<rule>: false}`    |
-| retired refusal precedence, both depths        | 2     | ADR 0047 interplay                              |
+| group                                            | cases | source                                                               |
+| ------------------------------------------------ | ----- | -------------------------------------------------------------------- |
+| depth-2 positions closed                         | 10    | E48, E53–E59, E61, E73                                               |
+| slot values that are not a map                   | 2     | E60 (`null`, accepted) and `false` — E59 is counted in the row above |
+| the 36 pairs                                     | 36    | `02`, one per row                                                    |
+| Fact 1 / Fact 2 / Fact 3 / Fact 4 discriminators | 4     | `03`, *Test plan*                                                    |
+| the two refusal routes and their stderr framing  | 1     | `03`, *Test plan* — `ConfigLoadException` vs not                     |
+| the three framework keys at depth 1              | 3     | `03`, *Test plan* — correct, typo'd, in a slot                       |
+| door symmetry and the folded spelling            | 3     | `03`, *Test plan*                                                    |
+| routing (`-q`, `--format=json`, `--workers=2`)   | 3     | rows 51, 52, and the unmeasured worker question                      |
+| the universal off-switch over every rule         | 1     | `02`, *Test plan* — `rules: {<rule>: false}`                         |
+| retired refusal precedence, both depths          | 2     | ADR 0047 interplay                                                   |
 
-The 9 *declare* pairs assert the positive: the key works **and** no line is
-written to stderr. The 6 *refuse* and 7 *remove-then-refuse* pairs assert exit
-3 and the sentence. The 4 *answered-by-the-class* pairs assert exactly one
-sentence, the class's own.
+The 19 *declare* pairs assert the positive: the key works, changes the outcome,
+**and** no line is written to stderr. The 6 *refuse* and 7 *remove-then-refuse*
+pairs assert exit 3 and the sentence. The 4 *answered-by-the-class* pairs assert
+exactly one sentence, the class's own.
+
+The ten level-class pairs (#27–#36) are the group most easily faked: a test that
+asserts only "`threshold` is not refused" passes against a declaration that
+accepts the key and drops it. Each asserts the finding it produces, not the
+absence of a refusal.
 
 ## Documentation, and what its scope grew to
 
@@ -90,13 +145,22 @@ sentence, the class's own.
 - **`qmx.yaml.example`** — the commented examples at lines 57, 252–258 and 333
   are uncommented one at a time and run, because a commented example is invisible
   to both checkers used in the overview's reddening measurement.
-- **Capability READMEs** touched by П2.1/П2.2/П2.5 (`Complexity`, `Coupling`,
-  `Policy/Architecture`), and `src/Analysis/Finding/README.md` — the paragraph
-  describing `ThresholdAwareOptionsInterface::warningBoundary()` gains its
-  sibling paragraph about `acceptedOptionKeys()`, in the same shape.
-- **`CHANGELOG.md`, `Breaking`** — three entries, each naming old and new
+- **`src/Core/README.md`, lines 304–351** — it documents `RuleOptionsInterface`,
+  `HierarchicalRuleOptionsInterface`, `LevelOptionsInterface` and a section for
+  `AdditionalOptionKeysInterface`, naming `ShorthandOptionKeysInterface` beside
+  it. Two of those four no longer exist after П3.1 and the other two gain a
+  static, so this file is in П4.3's file set. It is the one documentation site
+  the earlier revision of this plan missed, and it is outside every capability
+  README, which is why a sweep of capability READMEs did not reach it.
+- **Capability READMEs** are updated by the П2.x package that owns them, not
+  here — they describe the classes that package declares. `src/Analysis/Finding/README.md`
+  belongs to П1.1 and П3.1: the paragraph describing
+  `ThresholdAwareOptionsInterface::warningBoundary()` gains its sibling
+  paragraph about `acceptedOptionKeys()`, in the same shape.
+- **`CHANGELOG.md`, `Breaking`** — four entries, each naming old and new
   surface: the seven removed aliases; top-level `warning`/`error` on the three
-  complexity rules becoming an error; and an unknown rule option key at any
+  complexity rules becoming an error; a level slot written as `false` becoming
+  an error instead of a silent no-op; and an unknown rule option key at any
   depth becoming exit 3 instead of a warning or silence.
 - **ADR** — the new one described in `00-overview.md`. Its migration section is
   written from the consumer's side: what a `qmx.yaml` written against the old
@@ -105,25 +169,32 @@ sentence, the class's own.
 
 ## Work packages
 
-**П4.1 — the guard.** Exactly three files:
-`tests/Analysis/Finding/RuleConfiguration/Support/FromArrayKeyReader.php` (the
-reader, moved out of the script),
+Three packages in parallel plus one that closes the branch. **Each package's
+file set is its row group in `measurement/packages.tsv`**, and the intersection
+of the three parallel ones was taken machine-wise and is empty.
+
+**П4.1 — the guard.** Three files: the reader moved out of the script into
+`tests/Analysis/Finding/RuleConfiguration/Support/FromArrayKeyReader.php`, the
+guard itself in
 `tests/Analysis/Finding/RuleConfiguration/Unit/DeclaredOptionKeysCoverReadKeysTest.php`
-(the guard, including the dead-interface assertion), and
-`scripts/enumerate-rule-option-keys.php` (now requiring the moved reader
-through composer's `autoload-dev`, which already maps `Qualimetrix\Tests\` to
-`tests/`). Depends on stage 03.
+(including the dead-interface assertion and the reader's order-independence
+control), and `scripts/enumerate-rule-option-keys.php`, which now requires the
+moved reader through composer's `autoload-dev`. The script's `declaredKeys()`
+was already rewritten onto `acceptedOptionKeys()` in П3.1; this package moves
+the reader and nothing else about it.
 
-**П4.2 — the regression cases.** Every other file under
-`tests/Analysis/Finding/RuleConfiguration/Unit/`, plus the CLI-door cases under
-`tests/Infrastructure/Console/`. The three filenames П4.1 owns are named above
-and are the whole of the overlap, so the two packages do not collide. Depends
-on stage 03. **Parallel with П4.1** — the guard is a different question from
-the behaviour.
+**П4.2 — the regression cases.** Three new files, named individually rather than
+by directory: the refusal cases and the declaration-coverage cases under
+`tests/Analysis/Finding/RuleConfiguration/Unit/`, and the CLI-door cases under
+`tests/Infrastructure/Console/Unit/`. `tests/Analysis/Finding/RuleConfiguration/`
+does not exist today — it is created by П4.1 and П4.2 together, and the file
+names are given so that "every other file under that directory" cannot silently
+mean a file another package owns. `RuleOptionsFactoryTest.php` is **not** in
+this package: it lives at `tests/Analysis/Finding/Unit/` and belongs to П3.1.
 
-**П4.3 — documentation and ADR.** `website/docs/**` (EN and RU),
-`qmx.yaml.example`, `CHANGELOG.md`, `docs/adr/00NN-*.md`, the four READMEs.
-Depends on stage 03. **Parallel with П4.1 and П4.2** — no file overlap.
+**П4.3 — documentation and ADR.** The website pages (EN and RU),
+`qmx.yaml.example`, `CHANGELOG.md`, the new ADR, and `src/Core/README.md`.
+Capability READMEs are not here; each belongs to its П2.x package.
 
 **П4.4 — validation and gate.** No files of its own. Runs after 4.1–4.3 land.
 

@@ -15,9 +15,6 @@ the same time.
 - **M2** (same table, row M2): the key set *declared* to the product
   (constructor parameters plus `ShorthandOptionKeysInterface` plus
   `AdditionalOptionKeysInterface`) is not the key set `fromArray()` reads.
-  `measurement/option-declared-vs-read.tsv` measures the difference over all 35
-  options classes: `read_not_declared` is non-empty in seven classes,
-  `declared_not_read` is empty everywhere.
 
 The cure is one sentence: **an unrecognised rule option key is refused with
 exit 3 at every depth it can be written at, and the set it is compared against
@@ -30,7 +27,38 @@ document exits **1 on stdout** under `baseline:generate`. That divergence is
 mechanism M6 and is out of scope: the new refusal inherits whatever routing its
 command already has, and only the `check` route is pinned by a test.
 
-## The three facts this plan is built on, and how each was checked
+## The population this plan applies its rules to
+
+**61 classes, and the plan states which measurement decides each.**
+
+| population                   | count | enumerated by                                           | decision source                                                  |
+| ---------------------------- | ----- | ------------------------------------------------------- | ---------------------------------------------------------------- |
+| rule options classes         | 35    | `measurement/option-declared-vs-read.tsv`               | same file, `read_not_declared` column                            |
+| level (slot) options classes | 10    | `measurement/level-declared-vs-read.tsv`                | same file, plus `option-level-slots.tsv` for each slot's key set |
+| test implementations         | 16    | `measurement/packages.tsv`, rows of П2.3, П2.4 and П2.6 | none needed — they declare an empty or fixture-shaped set        |
+
+**How the three lists were obtained, and what the method cannot see.** The 45
+production classes come from a php-parser walk of `src/` for every class whose
+`implements` clause names `RuleOptionsInterface`,
+`HierarchicalRuleOptionsInterface` or `LevelOptionsInterface`, cross-checked
+against the container-driven count inside
+`scripts/enumerate-rule-option-keys.php` (35 via the rule registry, 35 via an
+independent source scan, no difference in either direction). The 16 test
+implementations come from the same walk over `tests/`; **six of them are
+anonymous classes**, which a grep for a class name would not have found. The
+walk cannot see an implementation created by `eval`, by a mock framework at
+runtime, or in a package outside this repository — the first two do not occur
+here (PHPUnit doubles of an interface with a static method would fail at
+compile time, not silently), and the third is excluded by CLAUDE.md's
+*Backward Compatibility Policy*: there are no external implementers.
+
+The 45 production classes divide across the five capability packages of stage
+02 with no overlap, and the 16 test implementations across П2.3, П2.4 and П2.6.
+Every package's file set is a machine-readable list in
+`measurement/packages.tsv` rather than a prose description — see *Work packages
+and their file sets* below.
+
+## The four facts this plan is built on, and how each was checked
 
 Every command below is reproducible verbatim. The probe is a two-class PSR-4
 tree (`RecNs\Probe::complex` at CCN 15, `RecNs\Probe::simple`,
@@ -52,9 +80,11 @@ Structural cause, read in the two files: `CboOptions::fromArray()` has
 `warningThreshold`/`errorThreshold`/`threshold` only
 (`src/Analysis/Evidence/Complexity/ComplexityOptions.php:43`) and reads
 `warning`/`error` inside it, through `ThresholdParser::parse()` at line 44.
-This is why "declare all 23 undeclared-but-read keys" is not the cure: for
-half of them it would silence a warning about a key that genuinely does
-nothing.
+The measurement carries the same distinction as data: `warning`/`error` are in
+`read_branch_guarded` for the three complexity wrappers and in `read_unguarded`
+for `CboOptions`. This is why "declare all the undeclared-but-read keys" is not
+the cure: for half of them it would silence a warning about a key that
+genuinely does nothing.
 
 **Fact 2 — the slots of one rule take different key sets.**
 Four runs against `complexity.ccn` on the same probe:
@@ -77,22 +107,30 @@ bespoke refusal from
 The order is structural: `warnAboutUnknownKeys()` is step 5 of
 `RuleOptionsFactory::create()` and `fromArray()` is step 7.
 
-**Fact 3 is wider than the enumeration recorded.** The same shape was found on
-a second class while checking it: `rules: {architecture.layer-violation:
-{unreachable_layer_severity: info}}` prints
-`[WARNING] Unknown option "unreachable-layer-severity" …` and then
+The same shape was found on a second class while checking it:
+`rules: {architecture.layer-violation: {unreachable_layer_severity: info}}`
+prints `[WARNING] Unknown option "unreachable-layer-severity" …` and then
 `LayerViolationOptions::assertNoRemovedSeverityKeys()`'s own refusal, exit 3.
 `measurement/option-enumeration-blind-spots.tsv` row
 `LayerViolationOptions dynamic-key 2 (line 120)` is exactly this: the AST
 reader could not see keys read through a `foreach` over a constant map, so the
 three removed severity keys are absent from
-`option-declared-vs-read.tsv`'s `read_not_declared` column. The decision table
-in stage 02 therefore carries **26 pairs, not 23** — the 23 measured plus these
-three.
+`option-declared-vs-read.tsv`'s `read_not_declared` column.
 
-That run also exhibits the authored-spelling problem in one screen: the
-generic warning says `unreachable-layer-severity`, the class's own refusal says
-`unreachable_layer_severity`, for one key the author wrote once.
+**Fact 4 — the ten level classes all read a key none of them declares.**
+Measured, not inferred: `measurement/level-declared-vs-read.tsv` (produced by
+the same script, section `level-declared-vs-read.tsv`) shows `threshold` in
+`read_unguarded` and in `read_not_declared` for **all ten**, with
+`declared_not_read` empty and zero blind spots everywhere. The mechanism is
+`ThresholdParser::parse()`'s default `$thresholdKey`, which no constructor
+names. The key works (`MethodComplexityOptions::fromArray(['threshold' => 3])`
+yields warning 3, error 3) and is **published**:
+`website/docs/rules/complexity.md:126,238,373` and `coupling.md:143,340` teach
+`callable: {threshold: N}` and `class: {threshold: N}`, as do their `.ru.md`
+twins. A depth-2 comparison built from "constructor parameters plus the two
+interfaces" would therefore refuse a documented, working key in ten places.
+This is why stage 02 carries a decision row per level class and names
+`level-declared-vs-read.tsv` as their declaration source.
 
 ## What reddens in this tree — measured, and nothing does
 
@@ -135,9 +173,7 @@ The named refusal for an unrecognised key inside a rule's options already
 exists. ADR 0047 ("Suppression Is Not Exclusion", section *A retired key must
 fail loudly, not warn quietly*) established it for the five retired
 `exclude_*` spellings, and `RetiredSuppressionOptions` implements it —
-`RuleOptionsFactory.php:95` calls `refuseRuleOption()` before anything else,
-throwing `ConfigLoadException`, which `CheckCommand.php:172` catches and turns
-into exit 3 on stderr.
+`RuleOptionsFactory.php:95` calls `refuseRuleOption()` before anything else.
 
 **Decision: a new ADR, which generalises 0047's clause rather than replacing
 it.** The reasons, in order:
@@ -158,7 +194,11 @@ it.** The reasons, in order:
 
 The new ADR does not reopen level names — settled by ADR 0024 — and does not
 reopen ADR 0044's rule that identifier-keyed options keep the author's
-spelling.
+spelling. It **does** record what stage 03 measured about that rule's reach at
+this seam: by the time the factory sees a rule option key, every door has
+already folded its separators, so the refusal answers in the folded spelling
+and says so. That limit is the subject's share of the open follow-up recorded
+in `docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`.
 
 Backward compatibility is not a constraint (CLAUDE.md, *Backward Compatibility
 Policy*), and the owner confirmed it for this subject. The price is paid in
@@ -170,14 +210,79 @@ migration steps written from the consumer's side in the ADR.
 | stage                               | what it settles                                                         | depends on |
 | ----------------------------------- | ----------------------------------------------------------------------- | ---------- |
 | `01-key-set-contract.md`            | the contract by which a class states its own accepted keys, per slot    | —          |
-| `02-declarations-per-capability.md` | the 26-pair decision table and the declaration on all 35 + 10 classes   | 01         |
-| `03-refusal-at-every-depth.md`      | the walk, the refusal's code/stream/text, the CLI and spelling seams    | 02         |
+| `02-declarations-per-capability.md` | the 36-pair decision table and the declaration on all 45 + 16 classes   | 01         |
+| `03-refusal-at-every-depth.md`      | the walk, the refusal's code/stream/text, the spelling seam (П3.1)      | 02         |
+| `03-alias-removals.md`              | the seven legacy aliases and the four files that carry them (П3.2)      | П3.1       |
 | `04-guard-tests-and-publication.md` | the read ⊆ declared guard, regression cases, docs, ADR, CHANGELOG, gate | 03         |
 
 Order is strict. Stage 03 landing before 02 would refuse keys this tree's own
 options classes still read; stage 02 landing before 01 has no contract to
 declare into. What each stage leaves uncompensated for the next is stated in
 its own file, under *What this stage leaves broken*.
+
+## Work packages and their file sets
+
+Every package's file set is a row group in `measurement/packages.tsv`
+(`package`, `path`), not a prose description, so that the isolation claim is
+checkable rather than asserted. The intersection of every parallel group was
+taken machine-wise and is empty:
+
+```
+awk -F'\t' -v g="П2.1 П2.2 П2.3 П2.4 П2.5 П2.6" \
+  'BEGIN{n=split(g,a," ");for(i=1;i<=n;i++)want[a[i]]=1} NR>1 && want[$1]{print $2}' \
+  measurement/packages.tsv | sort | uniq -d
+```
+
+run for each of the three parallel groups — `{П2.1…П2.6}`, `{П3.1, П3.2}`,
+`{П4.1, П4.2, П4.3}` — printing nothing in all three.
+
+**The ownership manifest is a shared file, and exactly one package per landing
+unit writes it.** `docs/internal/modular-architecture-manifest.json` declares
+every production class by name together with each consumer's `source_fqcn`, and
+`scripts/generate-modular-architecture-production-inventory.php` compares that
+set to the AST exactly: an undeclared class fails, and so does a declared
+consumer entry whose import does not exist (`unused contract consumer entry`).
+So a new contract type used by 45 classes needs 45 consumer rows, and no
+automatic derivation exists — the generator has no mode that infers `consumers`
+from source.
+
+Consequence, and the reason the plan cannot name a single owner for the whole
+of it: the manifest must agree with the tree at the moment it is validated, and
+this plan has two landing units. **П1.1 writes the manifest rows for
+`RuleOptionKeySet` and all its consumers; П3.1 writes the deletion of the two
+retired interface declarations and the addition of `RuleOptionRefusalWording`.**
+No other package touches either path — П2.1–П2.6 and П3.2 do not, which is what
+keeps them parallel. Because only the union of a landing unit is offered for
+validation, П1.1 may declare consumer rows whose imports arrive later in the
+same unit.
+
+**Writing the JSON and regenerating the artefacts are two steps at two
+different times, and the plan separates them because one of them cannot run
+early.** The generator reads the same AST as the checker, so a run taken at
+П1.1 time — when the 45 imports the new rows name do not exist yet — produces
+either a failure or artefacts measured from an intermediate tree, and
+`architecture:check`'s freshness half would then redden at the union against
+artefacts that were never wrong about anything except when they were taken. So:
+the JSON is written by П1.1 and П3.1, and
+`docs/internal/generated/modular-architecture/` **is regenerated once per
+landing unit, at its close** — after the last of П2.1–П2.6, and after П3.2 — by
+the owner of the package that holds the path. The path stays in exactly one
+package's file set for isolation; the moment the command runs is a property of
+the unit, not of the package.
+
+## Where the two plan reviews disagreed, and what settled it
+
+Both reviews are read-only reports; the rows below are the places their
+verdicts pulled in different directions, each resolved by a measurement taken
+for this revision rather than by preferring a reviewer.
+
+| question                                                          | positions                                                                 | settled by                                                                                                               |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| does the generic refusal share an exception class with ADR 0047's | one review asserted the plan's claim held; the other said it does not     | `RetiredSuppressionOptions.php:136` throws `InvalidArgumentException`; `CheckCommand.php:172` vs `:190` are two branches |
+| is the authored spelling available at depth 1                     | plan and one review said yes for `--rule-opt`; the other said no anywhere | `RuleOptionsParser.php:153-156` folds before the factory; `normalize('callable.max_warning')` → `callable.maxWarning`    |
+| is the population 35 or larger                                    | one review measured 45; the other measured 35 + 16 test implementations   | both, and they do not overlap — the table under *The population* carries all three                                       |
+| how to reconcile guard `declared ⊇ read` with a *refuse* decision | drop the reads, or narrow the invariant                                   | `read_branch_guarded` is already a separate column; narrowing costs nothing and needs no behaviour-bearing edit          |
+| may П3.1 and П3.2 run in parallel                                 | one review found a 4-file overlap; the other an ordering hazard           | both are the same seam; П3.2 becomes sequential *and* disjoint, which closes each                                        |
 
 ## What this plan deliberately does not do
 
@@ -188,7 +293,8 @@ Named so that nobody reads a silence as an oversight. Each is a mechanism from
   Row 56 is closed here as a side effect — an upper-case key inside a slot is
   not folded, so it is genuinely unknown and gets refused — but the mechanism
   is not treated. In particular `Paths:`/`Callable:` in Title-case still fold
-  and still apply silently.
+  and still apply silently, and the refusal answers in the folded spelling
+  (stage 03, *Authored spelling*).
 - **M4** section sub-key checking, **M5** `computed_metrics` entry keys,
   **M7** value filters that match nothing, **M9** inline directives,
   **M10** baseline record fields, **M12** config-file discovery,

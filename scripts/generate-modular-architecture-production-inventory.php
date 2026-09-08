@@ -2702,6 +2702,7 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-option-key-recognition/01-key-set-contract.md',
         'docs/internal/plans/rule-option-key-recognition/02-declarations-per-capability.md',
         'docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md',
+        'docs/internal/plans/rule-option-key-recognition/03-alias-removals.md',
         'docs/internal/plans/rule-option-key-recognition/04-guard-tests-and-publication.md',
         'docs/internal/plans/rule-option-key-recognition/measurement/merged-enumeration.md',
         'docs/internal/plans/rule-option-key-recognition/measurement/witness-by-code.md',
