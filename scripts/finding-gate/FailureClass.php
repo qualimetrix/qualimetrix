@@ -100,6 +100,18 @@ final class FailureClass
     /** An artifact contains a path of the machine the gate ran on. */
     public const PATH_LEAK = 'path-leak';
 
+    /**
+     * One side's records are not in the order that side's own producer sorts by.
+     *
+     * The reference's translated artifact is put back into its key's order
+     * before it is compared ({@see PublishedOrder}), which is only sound while
+     * both sides are already in that order to begin with. A side that is not is
+     * either a product that stopped publishing in the order of its own sort key
+     * or a sort key the gate no longer reconstructs, and neither may be sorted
+     * away in silence.
+     */
+    public const PUBLISHED_ORDER_DRIFT = 'published-order-drift';
+
     /** @var list<string> */
     public const ALL = [
         self::ENV_MISMATCH,
@@ -130,5 +142,6 @@ final class FailureClass
         self::REFERENCE_INPUT_UNTRANSLATED,
         self::NONDETERMINISM_UNDECLARED,
         self::PATH_LEAK,
+        self::PUBLISHED_ORDER_DRIFT,
     ];
 }

@@ -11,7 +11,7 @@ use RuntimeException;
 /**
  * The controls, as a list.
  *
- * Nineteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * Twenty negative controls — the four the Ш1 DoD names, the four Ш4a adds for
  * the declared delta and the reference's vocabulary, the one Ш4b adds for
  * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
  * the two Ш5b0 adds for the fingerprint mechanism, the two Ш5d0 adds for the
@@ -28,7 +28,9 @@ use RuntimeException;
  * and a report value translated by `report-values.tsv` — and the one Х10-B adds
  * for the identity shape none of them reached: a declared rename of a channel
  * whose findings carry an `occurrence` hash, which the rename must leave where
- * it is ({@see occurrenceFrozenUnderDeclaredRename()}).
+ * it is ({@see occurrenceFrozenUnderDeclaredRename()}), and the one Х12П4-J adds
+ * for the class no control could reach until a permutation became something the
+ * gate does anything about at all ({@see publishedOrderPermuted()}).
  *
  * {@see deriveRefusesBrokenRun()} and {@see deriveWritesOnAGreenRun()} are the
  * only controls whose subject is not in the report at all. A derivation that
@@ -80,6 +82,7 @@ final class Controls
             self::fingerprintSelfDisagreement(),
             self::fingerprintDeclaredRename(),
             self::occurrenceFrozenUnderDeclaredRename(),
+            self::publishedOrderPermuted(),
             self::splitRowIdle(),
             self::splitWithoutRow(),
             self::movedAggregatedSpelling(),
@@ -94,6 +97,77 @@ final class Controls
         return array_map(
             static fn(Control $control): Control => self::force($control, $forcedExpectations),
             $controls,
+        );
+    }
+
+    /**
+     * A candidate that publishes two of its own findings in each other's places.
+     *
+     * The gate now translates the reference's names and puts its records back
+     * into the order those names give ({@see \QmxFindingGate\PublishedOrder}),
+     * because a channel rename moves a finding past its neighbours and the
+     * translated reference would otherwise carry the new vocabulary in the old
+     * order. That mechanism is the reason this control has to exist: until it
+     * landed, a permutation could only ever be a byte difference, and no control
+     * had to ask what the gate does when one appears.
+     *
+     * The mutation swaps the two findings of `Router::normalise` — same subject,
+     * same (absent) occurrence, same (absent) edge, different channel — so the
+     * only thing that distinguishes the mutated candidate from an honest one is
+     * where those two records sit. A gate that re-sorted *both* sides instead of
+     * asserting each side's own order would put them back and go green here, and
+     * that is the hole this control is pointed at. What must happen instead is
+     * `published-order-drift`: the candidate is not in the order of its own sort
+     * key, which is a product fact, and the gate says so rather than sorting it
+     * away.
+     *
+     * The byte difference on the same surface is tolerated rather than required:
+     * it is what the permutation looked like before the mechanism existed, and
+     * it is still produced, because a side that failed the order assertion is
+     * deliberately compared unsorted.
+     */
+    private static function publishedOrderPermuted(): Control
+    {
+        $surface = 'case:complexity|format:json';
+        // Anchored on the return rather than on the `usort` call, and the
+        // replacement returns through `array_values` rather than restating the
+        // matched line: a fragment edit is asserted to have *removed* what it
+        // matched, so a replacement containing its own anchor would read as a
+        // mutation that never landed.
+        $anchor = '        return $findings;';
+        $swap = <<<'PHP'
+                    $first = null;
+
+                    foreach ($findings as $index => $finding) {
+                        if (!\str_contains($finding->subject->toCanonical(), 'Corpus\\Complexity\\Router::normalise')) {
+                            continue;
+                        }
+
+                        if ($first === null) {
+                            $first = $index;
+
+                            continue;
+                        }
+
+                        [$findings[$first], $findings[$index]] = [$findings[$index], $findings[$first]];
+
+                        break;
+                    }
+
+                    return \array_values($findings);
+            PHP;
+
+        return Control::red(
+            'published-order-permuted',
+            'a candidate publishing two findings of one subject in each other\'s places',
+            Mutation::edit(
+                'src/Reporting/Formatter/Json/JsonFindingSection.php',
+                [$anchor => $swap],
+                'the JSON report publishes the two findings of Corpus\\Complexity\\Router::normalise'
+                . " in each other's places",
+            ),
+            [new Expectation(FailureClass::PUBLISHED_ORDER_DRIFT, $surface)],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, $surface)],
         );
     }
 

@@ -724,14 +724,27 @@ final class Gate
                 }
             }
 
+            // The reference's records are translated and then put back into the
+            // order their new names give, because a rename moves them: the
+            // product sorts findings by an identity whose first component is the
+            // channel code, and translating in place leaves the reference in the
+            // new vocabulary and the old order. Sound only while both sides are
+            // in the order of their own producer's key, which is asserted here
+            // on the raw artifacts and is a failure of its own when it does not
+            // hold — see {@see PublishedOrder}.
+            $ordered = $this->checkPublishedOrder($key, $surface, $candidateArtifact, $referenceArtifact);
+
             $left = $this->normalization->normalize($surface, $this->substituteFingerprints('candidate', $key, $candidateArtifact));
-            $right = $this->normalization->normalize(
+            $translated = $this->maps->forward(
+                $this->substituteFingerprints('reference', $key, $referenceArtifact),
                 $surface,
-                $this->maps->forward(
-                    $this->substituteFingerprints('reference', $key, $referenceArtifact),
-                    $surface,
-                ),
             );
+
+            if ($ordered && PublishedOrder::handles($surface)) {
+                $translated = PublishedOrder::reorder($surface, $translated);
+            }
+
+            $right = $this->normalization->normalize($surface, $translated);
 
             if ($left === $right) {
                 continue;
@@ -760,6 +773,39 @@ final class Gate
 
             $this->checkAgainstDeclaredDelta($key, $diff, $declared);
         }
+    }
+
+    /**
+     * Whether both sides publish this surface in the order of their own key.
+     *
+     * Asserted on the raw artifacts, each side against its own vocabulary and
+     * neither against the other. A side that fails it is reported and the
+     * reordering step is skipped for that surface, so the comparison stays the
+     * byte comparison it was: sorting a side the product did not sort would hide
+     * the very defect being reported.
+     */
+    private function checkPublishedOrder(string $key, string $surface, string $candidate, string $reference): bool
+    {
+        if (!PublishedOrder::handles($surface)) {
+            return false;
+        }
+
+        $ordered = true;
+
+        foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifact) {
+            try {
+                $disorder = PublishedOrder::disorder($surface, $artifact);
+            } catch (GateError $error) {
+                $disorder = $error->getMessage();
+            }
+
+            if ($disorder !== null) {
+                $this->report->fail(FailureClass::PUBLISHED_ORDER_DRIFT, $key, 'The ' . $side . ': ' . $disorder);
+                $ordered = false;
+            }
+        }
+
+        return $ordered;
     }
 
     /**
