@@ -39,9 +39,18 @@ different place, so fixing rows one at a time buys thirteen partial repairs
 and no closed class.
 
 Two things in there are defects rather than missing diagnostics, and are
-tracked as such: `suppress_namespace_channels` is validated and then silently
-does nothing while its siblings on the same rule work, and two inputs abort
-the run with exit 1 and no report at all.
+tracked as such: two inputs abort the run with exit 1 and no report at all —
+one leaking an internal `TypeError`, one routing a configuration refusal
+through the tool-crash path.
+
+A third claim did not survive its own remeasure, and the correction is left
+visible on purpose. `suppress_namespace_channels` was reported as validated
+and inert. It is not: dropping the three entries our own `qmx.yaml` carries
+adds seven findings back. The first probe pointed the option at a rule whose
+slots are `callable` and `class`, and the option suppresses at `namespace`
+level by construction. What remains is narrower and real — a key naming a
+channel that never publishes at `namespace` level is accepted in silence and
+can never suppress anything.
 
 ## Status
 
