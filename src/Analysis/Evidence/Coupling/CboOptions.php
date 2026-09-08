@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -116,6 +117,38 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
     public static function getAdditionalOptionKeys(): array
     {
         return ['scope'];
+    }
+
+    /**
+     * `warning`/`error` are declared here even though `CboOptions`' own
+     * docblock above calls them unadvertised: unlike the complexity wrappers'
+     * same-named keys, these sit in the legacy-flat branch's *condition*
+     * (not only its body), so a bare `warning`/`error` works alone — see the
+     * plan's Fact 1. Declaring a dead alias would be wrong; refusing a
+     * working one would be worse.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'class',
+            'enabled',
+            'error',
+            'namespace',
+            'scope',
+            'threshold',
+            'warning',
+        );
+    }
+
+    /**
+     * @return array<string, class-string<LevelOptionsInterface>>
+     */
+    public static function levelOptionsClasses(): array
+    {
+        return [
+            SymbolLevel::Class_->value => ClassCboOptions::class,
+            SymbolLevel::Namespace_->value => NamespaceCboOptions::class,
+        ];
     }
 
     public function isEnabled(): bool

@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
@@ -380,6 +381,11 @@ final readonly class StampOptions implements RuleOptionsInterface
     public function getSeverity(int|float $value): ?Severity
     {
         return null;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of();
     }
 }
 

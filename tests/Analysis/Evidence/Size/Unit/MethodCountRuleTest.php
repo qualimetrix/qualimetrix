@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -73,6 +74,11 @@ final class MethodCountRuleTest extends TestCase
             public function getSeverity(int|float $value): ?Severity
             {
                 return null;
+            }
+
+            public static function acceptedOptionKeys(): RuleOptionKeySet
+            {
+                return RuleOptionKeySet::of();
             }
         });
     }

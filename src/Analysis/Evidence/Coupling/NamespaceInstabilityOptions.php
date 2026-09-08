@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -48,6 +49,16 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
             minAfferent: (int) ($config['min_afferent'] ?? $config['minAfferent'] ?? 1),
         );
+    }
+
+    /**
+     * `threshold` is read unguarded through `ThresholdParser::parse()`'s
+     * default `$thresholdKey`, named by no constructor parameter; it is
+     * documented and working (plan pair #36).
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'max-error', 'max-warning', 'min-afferent', 'min-class-count', 'threshold');
     }
 
     public function isEnabled(): bool

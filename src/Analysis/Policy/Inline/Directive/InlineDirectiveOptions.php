@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -43,6 +44,11 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
                 $config['unused_directive_severity'] ?? $config['unusedDirectiveSeverity'] ?? null,
             ),
         );
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'unused-directive-severity');
     }
 
     /**

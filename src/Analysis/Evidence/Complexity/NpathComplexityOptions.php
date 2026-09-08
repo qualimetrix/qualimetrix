@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -114,5 +115,21 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
     public function getSupportedLevels(): array
     {
         return [SymbolLevel::Callable, SymbolLevel::Class_];
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('callable', 'class', 'enabled', 'threshold');
+    }
+
+    /**
+     * @return array<string, class-string<LevelOptionsInterface>>
+     */
+    public static function levelOptionsClasses(): array
+    {
+        return [
+            SymbolLevel::Callable->value => MethodNpathComplexityOptions::class,
+            SymbolLevel::Class_->value => ClassNpathComplexityOptions::class,
+        ];
     }
 }

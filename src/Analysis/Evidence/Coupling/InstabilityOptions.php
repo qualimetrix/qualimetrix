@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -92,6 +93,35 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
     public static function getShorthandOptionKeys(): array
     {
         return ['threshold'];
+    }
+
+    /**
+     * `max-warning`/`max-error` are declared here for the same reason
+     * `CboOptions::acceptedOptionKeys()` declares `warning`/`error`: they sit
+     * in the legacy-flat branch's condition, not only its body, so a bare
+     * `max-warning`/`max-error` works alone.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'class',
+            'enabled',
+            'max-error',
+            'max-warning',
+            'namespace',
+            'threshold',
+        );
+    }
+
+    /**
+     * @return array<string, class-string<LevelOptionsInterface>>
+     */
+    public static function levelOptionsClasses(): array
+    {
+        return [
+            SymbolLevel::Class_->value => ClassInstabilityOptions::class,
+            SymbolLevel::Namespace_->value => NamespaceInstabilityOptions::class,
+        ];
     }
 
     public function isEnabled(): bool

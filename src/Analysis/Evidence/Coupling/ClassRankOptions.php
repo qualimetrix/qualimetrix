@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
@@ -56,6 +57,11 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
     public static function getShorthandOptionKeys(): array
     {
         return ['threshold'];
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
     }
 
     public function isEnabled(): bool

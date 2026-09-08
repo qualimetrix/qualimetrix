@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
@@ -81,6 +82,25 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
     public static function getShorthandOptionKeys(): array
     {
         return ['threshold'];
+    }
+
+    /**
+     * `project-namespaces` is deliberately absent: it is an undeclared legacy
+     * alias of `include-namespaces` (plan pair #22, decision remove-then-refuse).
+     * It still works today — `fromArray()` reads it — but that read is removed
+     * in a later package; this declaration already omits it so nothing moves
+     * with the removal.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'enabled',
+            'include-namespaces',
+            'max-distance-error',
+            'max-distance-warning',
+            'min-class-count',
+            'threshold',
+        );
     }
 
     public function isEnabled(): bool

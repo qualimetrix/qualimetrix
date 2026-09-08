@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -145,5 +146,10 @@ final readonly class FixtureChannelPresentationRuleOptions implements RuleOption
     public function getSeverity(int|float $value): ?Severity
     {
         return null;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of();
     }
 }

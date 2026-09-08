@@ -29,4 +29,13 @@ interface LevelOptionsInterface
      * Returns severity for the given metric value, or null if within acceptable range.
      */
     public function getSeverity(int|float $value): ?Severity;
+
+    /**
+     * Declares which option keys may be written inside this level's slot.
+     *
+     * A slot answers for itself: two slots of one rule accept disjoint key
+     * sets — `callable` takes `warning`/`error` where `class` takes
+     * `max-warning`/`max-error` — so the parent cannot answer for either.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet;
 }

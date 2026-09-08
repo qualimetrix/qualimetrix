@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
@@ -156,5 +157,18 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
     public function warningBoundary(): NoConfiguredBoundary
     {
         return NoConfiguredBoundary::MoreThanOneBoundary;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of(
+            'enabled',
+            'error',
+            'threshold',
+            'vo-error',
+            'vo-threshold',
+            'vo-warning',
+            'warning',
+        );
     }
 }

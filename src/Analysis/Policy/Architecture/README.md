@@ -99,6 +99,24 @@ matched tally sees even when a broader layer wins every assignment.
 The Console debug command invokes the inspector contract over the same collected
 graph and class universe.
 
+## Rule option key declarations
+
+`LayerViolationOptions` and `UnassignedClassOptions` declare their accepted
+option keys through `RuleOptionsInterface::acceptedOptionKeys()`.
+`LayerViolationOptions` accepts `enabled`, `severity`, and additionally
+declares `empty-template-severity`, `potential-shadow-severity` and
+`unreachable-layer-severity` as answered-by-the-class: `fromArray()` refuses
+these three in its own words (the diagnostics they used to tune now gate the
+run unconditionally) rather than through the generic "unknown option"
+warning. `UnassignedClassOptions` accepts only `mode`, and declares `enabled`
+as answered-by-the-class: `fromArray()` accepts `enabled: false` when it
+agrees with `mode: ignore` and refuses it otherwise, naming `mode` as the
+replacement. These declarations are inert until `RuleOptionsFactory` is taught
+to read them
+(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
+today's behaviour — the generic warning printed above each class's own bespoke
+refusal — is unchanged.
+
 ## Definition of Done
 
 - Keep public consumers on the declared contracts; do not import an internal

@@ -368,6 +368,20 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
   LOC, statement, method, property, and class counts.
 
 
+## Rule option key declarations
+
+`ClassCountOptions`, `MethodCountOptions` and `PropertyCountOptions` declare
+their accepted option keys through
+`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`, `threshold`,
+`warning` for the first two; `PropertyCountOptions` adds
+`exclude-promoted-only` and `exclude-readonly`. Each declaration transcribes
+the class's own constructor parameters plus the `ShorthandOptionKeysInterface`
+shorthand key `threshold` — no key added or dropped by this stage. The
+declarations are inert until `RuleOptionsFactory` is taught to read them
+(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
+today's behaviour — warnings from constructor-parameter reflection, at depth 1
+only — is unchanged.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

@@ -53,6 +53,20 @@ instead of guessing property names; `getSeverity()` witnesses the declaration
 only for rules that delegate to it. See
 `docs/adr/0038-an-options-class-names-its-own-warning-boundary.md`.
 
+`RuleOptionKeySet` is how an options class states which option keys it answers
+for, at the rule's own depth and inside each level slot, instead of the reader
+reconstructing that set from constructor reflection plus opt-in interfaces. It
+holds three disjoint states — accepted, answered by the class itself (so that a
+class such as `UnassignedClassOptions` keeps refusing `enabled` in its own
+words), and unknown — declared in the canonical kebab spelling users type, and
+compared after `ConfigKeySpelling::normalize()` on both sides so snake, camel
+and kebab stay one key. `RuleOptionsInterface::acceptedOptionKeys()` and
+`LevelOptionsInterface::acceptedOptionKeys()` publish it; a hierarchical
+options class also names the level options class behind each slot through
+`HierarchicalRuleOptionsInterface::levelOptionsClasses()`, because slots of one
+rule accept different key sets and the map cannot be derived from parameter
+types.
+
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies
 them while selecting effective rule thresholds.

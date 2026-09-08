@@ -3946,6 +3946,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itReturnsFalseForRuleWithNoExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itScopesNamespaceExclusionToTheCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesGroupSelectorSemanticsForChannelExclusions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itAcceptsAnEmptyDeclaration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itAnswersAboutEveryKeyOfBothHalvesAndNoOther
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itDisplaysTheDeclaredKebabSpellingRatherThanTheFoldedOne
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"camel"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"kebab"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"padded"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"snake"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itKnowsAKeyTheClassAnswersAboutItselfWithoutAcceptingIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itLetsASecondAnsweredHalfJoinTheFirst
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnAcceptedKeyInTheAcceptedStateOnly
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnUndeclaredKeyInNeitherState
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesABlankKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyDeclaredInAnythingButKebab
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyThatWouldSitInTwoStatesAtOnce
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesTheSameKeySpelledTwoWaysInOneHalf
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsFloatStringForThresholdFields
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsNumericStringForThresholdFields
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesFlatThresholdShorthandThroughTheFactory

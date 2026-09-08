@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
@@ -97,5 +98,10 @@ final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareO
     public function warningBoundary(): int
     {
         return $this->warning;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('enabled', 'error', 'exclude-data-classes', 'threshold', 'warning');
     }
 }

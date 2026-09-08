@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -52,6 +53,18 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
         self::assertNoContradictoryEnabled($config, $mode);
 
         return new self(mode: $mode);
+    }
+
+    /**
+     * `enabled` is declared as answered-by-the-class, not accepted: `mode` is
+     * the only real switch, and {@see assertNoContradictoryEnabled()}
+     * recognises `enabled` only to accept the spelling that agrees with it or
+     * refuse the one that would lie, in its own words.
+     */
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of('mode')
+            ->alsoAnsweredByTheClass('enabled');
     }
 
     /**

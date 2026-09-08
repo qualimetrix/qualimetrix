@@ -224,6 +224,17 @@ When changing an inline annotation or its wire value:
 5. update the manifest and generated architecture inventory in the publication
    package; never expose `Extraction` internals to Run.
 
+## Rule option key declarations
+
+`InlineDirectiveOptions` declares its accepted option keys through
+`RuleOptionsInterface::acceptedOptionKeys()`: `enabled` and
+`unused-directive-severity`, a plain transcription of its constructor
+parameters — there is no answered-by-the-class key here, unlike the
+Architecture capability's two options classes. The declaration is inert until
+`RuleOptionsFactory` is taught to read it
+(`docs/internal/plans/rule-option-key-recognition/03-refusal-at-every-depth.md`):
+today's behaviour is unchanged.
+
 ## Definition of Done
 
 - Run imports only Inline contracts and stores no policy state.
