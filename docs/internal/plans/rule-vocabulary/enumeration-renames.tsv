@@ -4,7 +4,7 @@ annotation.unresolved-directive	channel	?		12	23	0	0	0	43	0	1	0	0	0	0
 annotation.unsupported-threshold	channel	?		6	6	0	0	0	19	0	1	0	0	0	0
 annotation.unused-directive	channel	?		22	27	0	0	0	45	0	2	0	0	0	0
 architecture.circular-dependency	channel	?		12	36	0	2	0	39	0	1	1	1	0	0
-architecture.coverage	channel	?		18	71	0	0	0	43	0	1	0	0	0	0
+architecture.coverage	channel	architecture.coverage-gap	Х12П4	18	71	0	0	0	43	0	1	0	0	0	0
 architecture.empty-template	channel	?		9	11	0	0	0	27	0	1	0	0	0	0
 architecture.layer-violation	channel	?		28	108	0	3	0	79	0	1	1	1	0	0
 architecture.pending-layer-matched	channel	?		8	11	0	0	0	25	0	1	0	0	0	0
@@ -27,7 +27,7 @@ code-smell.unreachable-code	channel	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3	0	0	0	0
 cohesion.lcom	channel	?		39	156	2	2	0	34	0	5	0	0	0	0
 complexity.cognitive	channel	?		22	87	2	2	31	50	0	12	0	0	0	0
-complexity.cyclomatic	channel	?		39	664	2	2	54	125	0	11	0	0	0	0
+complexity.cyclomatic	channel	complexity.ccn	Х12П4	39	664	2	2	54	125	0	11	0	0	0	0
 complexity.npath	channel	?		19	97	2	2	12	40	0	8	0	0	0	0
 complexity.wmc	channel	?		19	86	2	2	10	33	0	4	0	0	0	0
 coupling.cbo	channel	?		65	316	2	4	6	106	0	6	0	0	0	0
@@ -36,13 +36,13 @@ coupling.distance	channel	?		28	75	2	2	1	35	0	31	0	0	0	0
 coupling.instability	channel	?		33	90	2	4	7	52	0	8	0	0	0	0
 design.data-class	channel	?		15	16	1	1	10	33	0	3	0	0	0	0
 design.god-class	channel	?		17	23	1	2	2	36	0	7	0	0	0	0
-design.inheritance	channel	?		6	11	2	2	0	20	0	3	0	0	0	0
+design.inheritance	channel	design.dit	Х12П4	6	11	2	2	0	20	0	3	0	0	0	0
 design.noc	channel	?		12	35	2	2	0	22	0	3	0	0	0	0
 design.type-coverage.param	channel	?		8	57	2	1	1	25	0	3	0	0	0	0
 design.type-coverage.property	channel	?		8	28	2	1	1	24	0	4	0	0	0	0
 design.type-coverage.return	channel	?		8	35	2	1	0	24	0	4	0	0	0	0
-duplication.code-duplication	channel	?		22	73	0	2	12	46	0	4	1	1	0	0
-maintainability.index	channel	?		11	48	2	2	0	27	0	3	0	0	0	0
+duplication.code-duplication	channel	duplication.clone	Х12П4	22	73	0	2	12	46	0	4	1	1	0	0
+maintainability.index	channel	maintainability.mi	Х12П4	11	48	2	2	0	27	0	3	0	0	0	0
 security.command-injection	channel	?		3	5	0	0	0	13	0	1	0	0	1	1
 security.hardcoded-credentials	channel	?		7	34	0	0	0	15	0	1	1	1	0	0
 security.sensitive-parameter	channel	?		6	22	0	0	0	13	0	1	1	1	0	0
@@ -91,7 +91,7 @@ design.noc	metric-key	?		12	35	2	2	0	22	0	3	0	0	0	0
 design.type-coverage.param	metric-key	?		8	57	2	1	1	25	0	3	0	0	0	0
 design.type-coverage.param.total	metric-key	?		2	15	0	0	0	1	0	0	0	0	0	0
 design.type-coverage.param.typed	metric-key	?		2	9	0	0	0	0	0	0	0	0	0	0
-design.type-coverage.pct	metric-key	?		13	25	0	0	0	2	0	0	0	0	0	0
+design.type-coverage.pct	metric-key	design.type-coverage.all	Х12П4	13	25	0	0	0	2	0	0	0	0	0	0
 design.type-coverage.property	metric-key	?		8	28	2	1	1	24	0	4	0	0	0	0
 design.type-coverage.property.total	metric-key	?		2	10	0	0	0	0	0	0	0	0	0	0
 design.type-coverage.property.typed	metric-key	?		2	7	0	0	0	0	0	0	0	0	0	0
@@ -153,7 +153,7 @@ code-smell.unreachable-code	producer	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3	0	0	0	0
 cohesion.lcom	producer	?		39	156	2	2	0	34	0	5	0	0	0	0
 complexity.cognitive	producer	?		22	87	2	2	31	50	0	12	0	0	0	0
-complexity.cyclomatic	producer	?		39	664	2	2	54	125	0	11	0	0	0	0
+complexity.cyclomatic	producer	complexity.ccn	Х12П4	39	664	2	2	54	125	0	11	0	0	0	0
 complexity.npath	producer	?		19	97	2	2	12	40	0	8	0	0	0	0
 complexity.wmc	producer	?		19	86	2	2	10	33	0	4	0	0	0	0
 computed	producer	?		98	95	0	1	0	28	0	11	0	0	0	0
@@ -163,19 +163,19 @@ coupling.distance	producer	?		28	75	2	2	1	35	0	31	0	0	0	0
 coupling.instability	producer	?		33	90	2	4	7	52	0	8	0	0	0	0
 design.data-class	producer	?		15	16	1	1	10	33	0	3	0	0	0	0
 design.god-class	producer	?		17	23	1	2	2	36	0	7	0	0	0	0
-design.inheritance	producer	?		6	11	2	2	0	20	0	3	0	0	0	0
+design.inheritance	producer	design.dit	Х12П4	6	11	2	2	0	20	0	3	0	0	0	0
 design.noc	producer	?		12	35	2	2	0	22	0	3	0	0	0	0
 design.type-coverage.param	producer	?		8	57	2	1	1	25	0	3	0	0	0	0
 design.type-coverage.property	producer	?		8	28	2	1	1	24	0	4	0	0	0	0
 design.type-coverage.return	producer	?		8	35	2	1	0	24	0	4	0	0	0	0
-duplication.code-duplication	producer	?		22	73	0	2	12	46	0	4	0	0	0	0
+duplication.code-duplication	producer	duplication.clone	Х12П4	22	73	0	2	12	46	0	4	0	0	0	0
 health.cohesion	producer	?		36	120	0	2	16	36	0	19	0	0	0	0
 health.complexity	producer	?		49	180	0	1	0	22	0	22	0	0	0	0
 health.coupling	producer	?		39	38	0	0	0	13	0	19	0	0	0	0
 health.maintainability	producer	?		16	28	0	0	0	13	0	19	0	0	0	0
 health.overall	producer	?		110	140	0	0	0	20	0	19	0	0	0	0
 health.typing	producer	?		21	57	0	1	1	16	0	19	0	0	0	0
-maintainability.index	producer	?		11	48	2	2	0	27	0	3	0	0	0	0
+maintainability.index	producer	maintainability.mi	Х12П4	11	48	2	2	0	27	0	3	0	0	0	0
 security.command-injection	producer	?		3	5	0	0	0	13	0	1	0	0	0	0
 security.hardcoded-credentials	producer	?		7	34	0	0	0	15	0	1	0	0	0	0
 security.sensitive-parameter	producer	?		6	22	0	0	0	13	0	1	0	0	0	0
