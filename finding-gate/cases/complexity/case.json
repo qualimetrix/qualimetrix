@@ -10,10 +10,10 @@
         "--rule-opt=coupling.class-rank:error=2",
         "--rule-opt=coupling.distance:max_distance_warning=2",
         "--rule-opt=coupling.distance:max_distance_error=2",
-        "--rule-opt=complexity.cyclomatic:callable.warning=4",
-        "--rule-opt=complexity.cyclomatic:callable.error=8",
-        "--rule-opt=complexity.cyclomatic:class.max_warning=4",
-        "--rule-opt=complexity.cyclomatic:class.max_error=8",
+        "--rule-opt=complexity.ccn:callable.warning=4",
+        "--rule-opt=complexity.ccn:callable.error=8",
+        "--rule-opt=complexity.ccn:class.max_warning=4",
+        "--rule-opt=complexity.ccn:class.max_error=8",
         "--rule-opt=complexity.cognitive:callable.warning=4",
         "--rule-opt=complexity.cognitive:callable.error=8",
         "--rule-opt=complexity.cognitive:class.max_warning=4",
@@ -28,19 +28,19 @@
         "--rule-opt=cohesion.lcom:warning=2",
         "--rule-opt=cohesion.lcom:error=4",
         "--rule-opt=cohesion.lcom:minMethods=2",
-        "--rule-opt=maintainability.index:warning=100",
-        "--rule-opt=maintainability.index:error=60"
+        "--rule-opt=maintainability.mi:warning=100",
+        "--rule-opt=maintainability.mi:error=60"
     ],
     "channels": [
         "cohesion.lcom@class",
         "complexity.cognitive@callable",
         "complexity.cognitive@class",
-        "complexity.cyclomatic@callable",
-        "complexity.cyclomatic@class",
+        "complexity.ccn@callable",
+        "complexity.ccn@class",
         "complexity.npath@callable",
         "complexity.npath@class",
         "complexity.wmc@class",
-        "maintainability.index@callable"
+        "maintainability.mi@callable"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Complexity\\Router@src/Router.php",

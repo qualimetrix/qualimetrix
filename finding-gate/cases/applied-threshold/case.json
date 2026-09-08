@@ -14,8 +14,7 @@
     ],
     "channels": [
         "complexity.cognitive@callable",
-        "complexity.cognitive@class",
-        "complexity.cyclomatic@callable"
+        "complexity.cognitive@class"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\AppliedThreshold\\Retuned::classify@src/Retuned.php",

@@ -27,4 +27,4 @@ architecture:
     controller: []
     repository: []
     extra-broad: []
-  coverage: error
+  coverage-gap: error

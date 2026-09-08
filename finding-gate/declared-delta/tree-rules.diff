@@ -1,0 +1,32 @@
+--- candidate
++++ reference (mapped)
+@@ -50,6 +50,0 @@
+-  complexity.ccn                           Checks cyclomatic complexity at method and class levels
+-    complexity.ccn judges complexity.ccn, complexity.ccn.max
+-    --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
+-    --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
+-    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
+-    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
+@@ -62,0 +56,6 @@
++  complexity.ccn                    Checks cyclomatic complexity at method and class levels
++    complexity.ccn judges complexity.ccn, complexity.ccn.max
++    --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
++    --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
++    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
++    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
+@@ -104,4 +104,0 @@
+-  design.dit                               Checks Depth of Inheritance Tree (deep hierarchies increase complexity)
+-    design.dit judges design.dit
+-    --dit-warning (--rule-opt=design.dit:warning=...)
+-    --dit-error (--rule-opt=design.dit:error=...)
+@@ -116,0 +112,4 @@
++  design.dit                       Checks Depth of Inheritance Tree (deep hierarchies increase complexity)
++    design.dit judges design.dit
++    --dit-warning (--rule-opt=design.dit:warning=...)
++    --dit-error (--rule-opt=design.dit:error=...)
+@@ -133,1 +133,1 @@
+-  duplication.clone                        Detects duplicated code blocks
++  duplication.clone             Detects duplicated code blocks
+@@ -142,1 +142,1 @@
+-  maintainability.mi                       Checks Maintainability Index (lower values indicate harder to maintain code)
++  maintainability.mi                    Checks Maintainability Index (lower values indicate harder to maintain code)

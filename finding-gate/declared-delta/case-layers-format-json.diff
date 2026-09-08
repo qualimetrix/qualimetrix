@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -49,1 +49,1 @@
+-            "message": "Examples of unclassified classes: Corpus\\Layers\\Orphan\\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on \"ignore\".",
++            "message": "Examples of unclassified classes: Corpus\\Layers\\Orphan\\Loner. Declare layers covering these classes or accept the gap by leaving coverage on \"ignore\".",
+@@ -153,1 +153,1 @@
+-            "recommendation": "Examples of unclassified classes: Corpus\\Layers\\Orphan\\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on \"ignore\".",
++            "recommendation": "Examples of unclassified classes: Corpus\\Layers\\Orphan\\Loner. Declare layers covering these classes or accept the gap by leaving coverage on \"ignore\".",

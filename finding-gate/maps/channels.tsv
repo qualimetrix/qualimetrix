@@ -1,1 +1,6 @@
 old	new	reason
+architecture.coverage	architecture.coverage-gap	Х12П4 renames this channel
+complexity.cyclomatic	complexity.ccn	Х12П4 renames this channel
+design.inheritance	design.dit	Х12П4 renames this channel
+duplication.code-duplication	duplication.clone	Х12П4 renames this channel
+maintainability.index	maintainability.mi	Х12П4 renames this channel

@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -121,1 +121,1 @@
+-            "message": "Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "message": "Parameter type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
+@@ -133,1 +133,1 @@
+-            "message": "Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "message": "Return type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
+@@ -145,1 +145,1 @@
+-            "message": "Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "message": "Property type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
+@@ -279,1 +279,1 @@
+-            "recommendation": "Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "recommendation": "Parameter type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
+@@ -298,1 +298,1 @@
+-            "recommendation": "Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "recommendation": "Property type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
+@@ -317,1 +317,1 @@
+-            "recommendation": "Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations",
++            "recommendation": "Return type coverage-gap: 0.0% (threshold: 50.0%) — missing type declarations",
