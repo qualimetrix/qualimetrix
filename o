@@ -1,4 +1,0 @@
-{
-    "error": "Configuration error: Option \"bogusKey\" is not an option of computed metric \"computed.myscore\". Options here: description, enabled, error, formula, formulas, inverted, levels, threshold, warning.",
-    "exit_code": 3
-}
