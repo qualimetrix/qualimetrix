@@ -58,7 +58,7 @@ final class Probes
 
     private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditPresenter.php';
 
-    private const string FAILURE_TAXONOMY = 'src/Infrastructure/Console/ConfigurationFailure.php';
+    private const string CONFIG_FILE_STAGE = 'src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php';
 
     private const string TALLY = 'src/Infrastructure/Console/DirectiveVerdictTally.php';
 
@@ -1749,16 +1749,27 @@ final class Probes
             Probe::breaking(
                 'command-errors-in-prose-under-json',
                 'an error under --format=json is written as an <error> line rather than an envelope',
+                // Re-pointed by P01-5 (`01-refusal-evidence.md` §13.1). Both
+                // declared cases used to reach the `if ($format === 'json')`
+                // branch of the command's own `reportError()`; P01-5 moved
+                // both underlying refusals (a missing `--config` file, an
+                // unrecognised `--sweep`) onto the `ConfigurationRefusal`
+                // carrier, so they now leave the command through the single
+                // `catch (ConfigurationRefusal)` clause and
+                // `RefusalPresenter::refusal()` instead. The old fragment
+                // still stands (`reportError()` still serves the one
+                // remaining caller, the recognised-configuration-text branch
+                // of `catch (Exception)`), but mutating it no longer touches
+                // either declared case — measured, 0 of 179 red, both stayed
+                // green. Losing `$format` at the one call site the two
+                // routes still share reproduces the same defect this probe
+                // was written for: an envelope silently becomes prose.
                 self::COMMAND,
-                ["        if (\$format === 'json') {
-"
-                    . '            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));'
-                    => "        if (false) {
-"
-                    . '            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));'],
+                ['            return $this->refusalPresenter->refusal($output, $format, $refusal);'
+                    => '            return $this->refusalPresenter->refusal($output, null, $refusal);'],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson'],
             )->alsoReddens(
-                'the unknown-sweep-in-JSON case is refused through the same envelope this breakage removes',
+                'the unknown-sweep-in-JSON case is refused through the same carrier this breakage silences',
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAnUnknownSweepInJson',
                 ],
@@ -1766,11 +1777,30 @@ final class Probes
             Probe::breaking(
                 'unreadable-config-is-not-a-config-error',
                 'a configuration that failed to load is reported as an internal failure',
-                self::FAILURE_TAXONOMY,
-                ['            $failure instanceof ConfigLoadException,' => '            false,'],
+                // Re-pointed by P01-5 (`01-refusal-evidence.md` §13.1, and the
+                // measurement behind this move in
+                // `docs/internal/plans/configuration-refusal/`): both
+                // declared cases now reach `DirectivesCommand`'s
+                // `catch (ConfigurationRefusal)` before the retired
+                // configuration-failure taxonomy class this probe used to
+                // target is ever consulted — 03/P2 already turned a missing
+                // `--config` path into the round's carrier. Mutating that
+                // retired class's exception recognition no longer reaches
+                // either case (measured: `directives:controls
+                // --only=unreadable-config-is-not-a-config-error` missed both,
+                // 0 of 179 red). The throw site itself is the fragment whose
+                // presence or absence the two tests actually depend on.
+                self::CONFIG_FILE_STAGE,
+                [
+                    '                throw ConfigurationRefusal::aboutDocument(' . "\n"
+                        . '                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $request->configFilePath),' . "\n"
+                        . '                    \sprintf(\'Configuration file not found: %s\', $request->configFilePath),' . "\n"
+                        . '                );'
+                        => '                throw new \RuntimeException(\sprintf(\'Configuration file not found: %s\', $request->configFilePath));',
+                ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError'],
             )->alsoReddens(
-                'the JSON envelope case reaches the same failure taxonomy this breakage rewrites',
+                'the JSON envelope case reaches the same throw site this breakage rewrites — a plain RuntimeException is not the carrier, so it falls past the first catch clause to the generic one, which answers 1 and "Unexpected error" instead of 3 and "Configuration error"',
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson',
                 ],

@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
@@ -61,10 +58,6 @@ abstract class BaselineCommand extends Command
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
-        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            return $this->fail($output, \sprintf('Configuration error: %s', $e->getMessage()), $e);
-        } catch (ArchitecturePreparationException $e) {
-            return $this->fail($output, $e->getMessage(), $e);
         } catch (BaselineConflictException $e) {
             return $this->fail($output, $e->getMessage(), $e);
         } catch (InvalidArgumentException $e) {

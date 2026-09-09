@@ -3,7 +3,6 @@ Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	5	2
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	11	6
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	24	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	3	2
-Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException	Analysis.Configuration	3	1
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
@@ -17,7 +16,6 @@ Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterf
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration	Analysis.Evidence.Cohesion	3	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface	Analysis.Evidence.Cohesion	3	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface	Analysis.Evidence.Cohesion	5	3
-Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException	Analysis.Evidence.ComputedMetrics	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface	Analysis.Evidence.ComputedMetrics	2	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	1	1
@@ -147,9 +145,7 @@ Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Findi
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
-Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException	Analysis.Policy.Architecture	3	1
 Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface	Analysis.Policy.Architecture	3	2
-Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException	Analysis.Policy.Architecture	3	1
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface	Analysis.Policy.Architecture	2	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	1	1
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface	Analysis.Policy.Architecture	4	3
@@ -164,7 +160,6 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.B
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntry	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	2	2
-Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	5	3
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	1	1

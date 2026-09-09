@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -26,7 +21,6 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
@@ -173,41 +167,15 @@ final class CheckCommand extends Command
             // clause below it — down to `catch (Throwable)` — would otherwise
             // swallow it as a plain exception.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
-        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            return $this->refusalPresenter->fallbackRefusal($output, $format, self::framed('Configuration error', $e));
-        } catch (ArchitecturePreparationException $e) {
-            // Template-layer expansion failures are user-fixable misconfiguration
-            // (typo'd templates, ceiling exceeded, name collisions). Surface them
-            // with the same framing and exit code as ConfigLoadException so the
-            // user sees them as configuration errors, not internal crashes.
-            return $this->refusalPresenter->fallbackRefusal($output, $format, self::framed('Architecture configuration error', $e));
         } catch (InvalidArgumentException $e) {
             // The named secondary signal for code 3 (`00-overview.md` rule 1):
             // an `InvalidArgumentException` that never became a carrier.
             // Printed verbatim, unlike the clauses above — its message is
             // already the whole sentence.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
-        } catch (ComputedMetricConfigurationException|BaselineLoadException $e) {
-            // User-supplied formulas and baseline envelopes are input/configuration
-            // errors: a bad formula or an unreadable baseline is theirs to fix,
-            // not an internal crash.
-            return $this->refusalPresenter->fallbackRefusal($output, $format, self::framed('Configuration error', $e));
         } catch (Throwable $e) {
             return $this->refusalPresenter->internalError($output, $format, $e);
         }
-    }
-
-    /**
-     * Wraps a not-yet-carrier exception's message with the framing its clause
-     * used to build inline, so {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::fallbackRefusal()}
-     * still has one sentence to print. Framing itself stays owned by the
-     * presenter (its class docblock); this only supplies the words a bare
-     * `$failure->getMessage()` does not carry, for exception kinds this round
-     * has not yet converted to {@see ConfigurationRefusal} (`01-refusal-verdicts.md` §6.1).
-     */
-    private static function framed(string $prefix, Throwable $failure): Throwable
-    {
-        return new RuntimeException(\sprintf('%s: %s', $prefix, $failure->getMessage()), 0, $failure);
     }
 
     /**

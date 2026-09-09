@@ -386,7 +386,12 @@ E61, E73 — plus E60 (`callable:` null, accepted) and `callable: false`
   Separately, `max_warning` / `maxWarning` / `max-warning` are accepted through
   **both** doors (row 61 measured YAML only).
 - **Routing.** The refusal exits 3 on stderr; it still exits 3 under `-q`
-  (row 51) and under `--format=json` with stdout left parseable (row 52); and it
+  (row 51 — originally measured with both streams empty, the sentence fully
+  eaten by quiet; the sentence now survives on stderr under `-q` instead, per
+  `01-refusal-envelope.md` §2.3), and it now answers with a parseable
+  `{error, exit_code}` envelope on stdout under `--format=json` (row 52
+  originally measured stdout empty, nothing to parse — the envelope is this
+  round's addition, not a preexisting invariant); and it
   exits 3 under `--workers=2`. The last one matters because the enumeration left
   worker-process diagnostics unmeasured (item 7 of *Что осталось неизмеренным*);
   a `--workers=2` run of the warning case was taken while planning and the two

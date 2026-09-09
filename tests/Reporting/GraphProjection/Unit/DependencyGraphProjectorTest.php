@@ -16,17 +16,18 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
-use ValueError;
 
 final class DependencyGraphProjectorTest extends TestCase
 {
     /** @return iterable<string, array{GraphProjectionRequest, string}> */
     public static function provideSupportedFormats(): iterable
     {
-        yield 'dot' => [new GraphProjectionRequest(format: 'dot'), 'digraph Dependencies'];
-        yield 'json' => [new GraphProjectionRequest(format: 'json'), '"statistics"'];
+        yield 'dot' => [new GraphProjectionRequest(format: GraphExportFormat::Dot), 'digraph Dependencies'];
+        yield 'json' => [new GraphProjectionRequest(format: GraphExportFormat::Json), '"statistics"'];
     }
 
     #[Test]
@@ -38,30 +39,12 @@ final class DependencyGraphProjectorTest extends TestCase
         self::assertStringContainsString($expectedFragment, $projection);
     }
 
-    /**
-     * An unsupported format is no longer a `project()`-time refusal: it is
-     * now unconstructible. `$format` is typed by {@see \Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat},
-     * a two-case backed enum, so `match ($request->format)` in
-     * {@see DependencyGraphProjector::project()} is exhaustive by
-     * construction and the old `default => throw` arm has no case left to
-     * guard. The impossibility itself is the evidence — building a request
-     * with an unrecognised format string throws `ValueError` before a
-     * `GraphProjectionRequest` exists to pass anywhere.
-     */
-    #[Test]
-    public function itCannotConstructARequestWithAnUnsupportedFormat(): void
-    {
-        $this->expectException(ValueError::class);
-
-        new GraphProjectionRequest(format: 'mermaid');
-    }
-
     #[Test]
     public function itForwardsEveryRequestFieldToDotProjection(): void
     {
         $projection = (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(
-            format: 'dot',
-            direction: 'TB',
+            format: GraphExportFormat::Dot,
+            direction: GraphDirection::TB,
             groupByNamespace: false,
             includeNamespaces: ['App'],
             excludeNamespaces: ['App\\Excluded'],
@@ -77,7 +60,7 @@ final class DependencyGraphProjectorTest extends TestCase
     public function itForwardsNamespaceFiltersToJsonProjection(): void
     {
         $projection = (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(
-            format: 'json',
+            format: GraphExportFormat::Json,
             includeNamespaces: ['App'],
             excludeNamespaces: ['App\\Excluded'],
         ));

@@ -7039,7 +7039,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
- - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itCannotConstructARequestWithAnUnsupportedFormat
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"

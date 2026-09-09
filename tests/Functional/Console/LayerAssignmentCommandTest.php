@@ -217,7 +217,12 @@ final class LayerAssignmentCommandTest extends TestCase
         // which still write to stdout (`01-refusal-packages.md` scopes the
         // stdout-to-stderr move to `directives`, not this command).
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('Configuration error', $tester->getErrorOutput());
+        // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
+        // a per-command spelling of it) — pinned here because this command's
+        // own assertion of it was the one `01-refusal-packages.md` P01-7
+        // found missing when the shared baseline test that used to cover it
+        // was trimmed to baseline's own commands.
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
         self::assertStringContainsString($missing, $tester->getErrorOutput());
     }
 

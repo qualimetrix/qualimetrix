@@ -992,7 +992,12 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Configuration error', $tester->getErrorOutput());
+        // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
+        // a per-command spelling of it) — pinned here because this command's
+        // own assertion of it was the one `01-refusal-packages.md` P01-7
+        // found missing when the shared baseline test that used to cover it
+        // was trimmed to baseline's own commands.
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -1005,7 +1010,7 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         $decoded = self::decode($tester->getDisplay());
-        self::assertStringContainsString('Configuration error', $decoded['error']);
+        self::assertStringContainsString('Configuration error:', $decoded['error']);
         self::assertSame(3, $decoded['exit_code']);
     }
 

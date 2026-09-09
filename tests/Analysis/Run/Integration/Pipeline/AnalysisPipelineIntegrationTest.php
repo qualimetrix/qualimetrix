@@ -88,6 +88,7 @@ use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
@@ -548,19 +549,19 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $projector = $container->get(DependencyGraphProjectionInterface::class);
         self::assertInstanceOf(DependencyGraphProjectionInterface::class, $projector);
         self::assertSame(
-            $projector->project($sequentialGraph, new GraphProjectionRequest(format: 'dot')),
-            $projector->project($parallelGraph, new GraphProjectionRequest(format: 'dot')),
+            $projector->project($sequentialGraph, new GraphProjectionRequest(format: GraphExportFormat::Dot)),
+            $projector->project($parallelGraph, new GraphProjectionRequest(format: GraphExportFormat::Dot)),
         );
 
         /** @var array{meta: array{timestamp: string}, statistics: array<string, int>, nodes: list<array<string, string>>, edges: list<array<string, mixed>>} $sequentialJson */
         $sequentialJson = json_decode(
-            $projector->project($sequentialGraph, new GraphProjectionRequest(format: 'json')),
+            $projector->project($sequentialGraph, new GraphProjectionRequest(format: GraphExportFormat::Json)),
             true,
             flags: \JSON_THROW_ON_ERROR,
         );
         /** @var array{meta: array{timestamp: string}, statistics: array<string, int>, nodes: list<array<string, string>>, edges: list<array<string, mixed>>} $parallelJson */
         $parallelJson = json_decode(
-            $projector->project($parallelGraph, new GraphProjectionRequest(format: 'json')),
+            $projector->project($parallelGraph, new GraphProjectionRequest(format: GraphExportFormat::Json)),
             true,
             flags: \JSON_THROW_ON_ERROR,
         );

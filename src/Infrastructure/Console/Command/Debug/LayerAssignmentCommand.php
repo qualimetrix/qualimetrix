@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
@@ -161,14 +160,13 @@ final class LayerAssignmentCommand extends Command
         } catch (Exception $e) {
             // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
             // so genuine programming bugs in the pipeline surface in CI rather than
-            // being silently reported as exit code 1. Which of them the user can
-            // fix in their own configuration, and how each is worded, is
-            // {@see ConfigurationFailure}'s judgement rather than a second copy
-            // of the same taxonomy here.
+            // being silently reported as exit code 1. Configuration failures the
+            // user can fix are refused above as `ConfigurationRefusal`; anything
+            // still reaching here is not one, so it keeps this generic wording.
             $this->reportError(
                 $output,
                 $format,
-                ConfigurationFailure::message($e) ?? \sprintf('Failed to load configuration: %s', $e->getMessage()),
+                \sprintf('Failed to load configuration: %s', $e->getMessage()),
                 self::FAILURE,
             );
 

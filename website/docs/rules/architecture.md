@@ -751,7 +751,7 @@ Class: App\Service\Foo
     See architecture.potential-shadow diagnostic for the broader picture.
 ```
 
-Exit codes follow the standard convention: `0` for any informational result (including "class matches no declared layer"), `2` for invalid input (empty or malformed FQN), `1` for configuration-load errors.
+Exit codes follow the standard convention: `0` for any informational result (including "class matches no declared layer"), `3` for a refusal — invalid input such as an empty or malformed FQN, or a configuration-load error — and `1` only for a defect the input could not have caused.
 
 ### Options { #layer-violation-options }
 

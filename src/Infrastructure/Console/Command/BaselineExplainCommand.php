@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -180,7 +179,7 @@ final class BaselineExplainCommand extends BaselineCommand
 
     /**
      * A channel the file mentions at all, valid entry or inert — an entry is
-     * exactly {@see InertEntryReason::UndeclaredChannel} when the registry
+     * exactly {@see \Qualimetrix\Analysis\Policy\Baseline\InertEntryReason::UndeclaredChannel} when the registry
      * has already forgotten the channel a rename map has not yet carried the
      * file onto, which is precisely the legitimate case this check exists
      * for (`01-refusal-verdicts.md` §5.3).

@@ -72,6 +72,69 @@ exit code the run ended with.
 written; a bare `false` gets a hint toward `{enabled: false}`, the actual
 off-switch.
 
+**A configuration-input refusal now exits code 3 everywhere, never 1, 2 or
+255 depending on which command answered it.** `baseline:*`,
+`baseline:rename-channels`'s own `--format` and file checks, `rules`,
+`graph:export` and `debug:layer-assignment` used to pick their own exit code
+for bad input — 1 here, 2 there — and a crash while reading configuration
+could still reach the outer handler uncaught and exit 255 with a raw PHP
+trace on both streams. Every one of those routes now goes through the same
+ladder and exits 3 with stdout empty. A CI wrapper that only checked `exit
+code != 0` sees no change; one that branches on the code should treat 3 as
+"fix the configuration or the input", 1 as "file a bug", and 2 or 4 as
+"read the command's own report" (`directives`' inert-directive and
+incomplete-run codes, unchanged).
+
+**A configuration refusal now goes to standard error, and `-q` no longer
+hides it.** `baseline:*` commands used to write their refusal to standard
+output, the same channel as their report, at normal verbosity — a script
+piping `--format=json` output could be handed the refusal instead of the
+report on failure, and `-q` silenced the message entirely. It is now written
+to standard error as `<error>…</error>` text, or — under a machine-readable
+format — to standard output as the `{error, exit_code}` envelope, and at a
+verbosity `-q` does not suppress. `baseline:rename-channels --format=json`
+also moves from its own `{error}` shape to the same `{error, exit_code}`
+envelope every other machine-readable refusal in the tool now uses.
+
+**A command-line parsing error now exits 3, not 1.** An unknown option or an
+unknown command — anything Symfony's own console layer rejects before a
+command body runs — used to reach the outer handler uncaught and take its
+exit code from that exception's own `getCode()`, which is 0 for this class,
+giving 1. It is now caught by the same outermost ladder as every other
+refusal and exits 3.
+
+**A crash reading configuration now exits 1, not 255, and no longer prints a
+raw PHP trace to both streams.** Before this round, a defect that escaped
+every command-level `catch` reached Symfony's default uncaught-exception
+handling and exited 255. The outermost ladder now catches everything and
+assigns 1 to whatever is not one of the round's two refusal signals; a trace
+is still available, but only at `-v` and above, and only on standard error.
+
+**Input that used to be accepted silently is now refused.** `--direction` on
+`graph:export`, `--channel` on `baseline:explain`, and `--output`/`--format`
+on both `graph:export` and `debug:layer-assignment` used to fall through to a
+default or produce no match on an unrecognised spelling; each now names the
+accepted values and exits 3.
+
+**`baseline:generate` into an existing file without `--force` now exits 3 and
+writes to standard error, not 1.** The refusal message — regenerating
+discards every acceptance the file records — is unchanged; only its exit code
+and stream move to the round's shared shape.
+
+**Named debt: not every configuration-input refusal reaches exit 3 through
+the new carrier yet.** 178 throw sites still exit 3 through a named secondary
+signal — a caught `InvalidArgumentException` with no
+`ConfigurationRefusal` behind it — rather than through the carrier itself, as
+measured at `1513bf67`
+(`docs/internal/plans/configuration-refusal/measurement/03-catch-clauses.md`).
+After this round the same measurement counts 147: thirty-one sites moved onto
+the carrier, and the rest — `src/Infrastructure/Rule` and
+`src/Infrastructure/Git` among them — stay on the fallback by decision and are
+counted rather than converted. See
+[ADR 0051](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0051-refusal-is-not-routed-by-command.md)
+for why the exit code no longer depends on which command caught the failure,
+and why `-q` no longer hides which key or file was refused.
+
 ### Changed
 
 - The refusal for an unknown `health.<x>` name now lists all six built-in

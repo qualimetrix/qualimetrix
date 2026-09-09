@@ -1,0 +1,4 @@
+{
+    "error": "Configuration error: Option \"warning\" of computed metric \"computed.myscore\" must be a number or null, got string.",
+    "exit_code": 3
+}

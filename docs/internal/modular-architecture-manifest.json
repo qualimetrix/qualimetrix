@@ -997,30 +997,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Configuration\\Contract\\Exception\\ConfigLoadException": {
-      "path": "src/Analysis/Configuration/Contract/Exception/ConfigLoadException.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "contract",
-      "closure_package": "P3",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\KnownRuleNamesProviderInterface": {
       "path": "src/Analysis/Configuration/Contract/KnownRuleNamesProviderInterface.php",
       "kind": "interface",
@@ -2061,25 +2037,6 @@
       "visibility": "internal",
       "closure_package": "P5",
       "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricConfigurationException": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricConfigurationException.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "contract",
-      "closure_package": "P5",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
-          "closes_in": null
-        }
-      ]
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDefaults": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php",
@@ -11562,30 +11519,6 @@
       "closure_package": "P4",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\ArchitectureConfigurationException": {
-      "path": "src/Analysis/Policy/Architecture/Contract/ArchitectureConfigurationException.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "contract",
-      "closure_package": "P4",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\ArchitectureConfigurationWarning": {
       "path": "src/Analysis/Policy/Architecture/Contract/ArchitectureConfigurationWarning.php",
       "kind": "class",
@@ -11614,30 +11547,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\ArchitecturePreparationException": {
-      "path": "src/Analysis/Policy/Architecture/Contract/ArchitecturePreparationException.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Architecture",
-      "visibility": "contract",
-      "closure_package": "P4",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
           "closes_in": null
         }
       ]
@@ -12239,20 +12148,6 @@
       "visibility": "internal",
       "closure_package": "P6-C",
       "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoadException": {
-      "path": "src/Analysis/Policy/Baseline/BaselineLoadException.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Baseline",
-      "visibility": "contract",
-      "closure_package": "P6-C",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        }
-      ]
     },
     "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader": {
       "path": "src/Analysis/Policy/Baseline/BaselineLoader.php",
@@ -17703,14 +17598,6 @@
         }
       ]
     },
-    "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure": {
-      "path": "src/Infrastructure/Console/ConfigurationFailure.php",
-      "kind": "class",
-      "owner": "Infrastructure.Console",
-      "visibility": "internal",
-      "closure_package": "P8",
-      "consumers": []
-    },
     "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter": {
       "path": "src/Infrastructure/Console/ConfigurationInputAdapter.php",
       "kind": "class",
@@ -20330,8 +20217,8 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "closes_in": null,
           "operations": [
-            "service_registration",
-            "service_reference"
+            "service_reference",
+            "service_registration"
           ]
         }
       ]

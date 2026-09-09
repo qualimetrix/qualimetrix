@@ -20,7 +20,6 @@ Configuration/
 ├── Contract/
 │   ├── ConfigurationDocument.php # immutable ordered source contributions
 │   ├── Discovery/                # Composer autoload-path reader
-│   ├── Exception/                # ConfigLoadException — retired, pending removal (see Refusal/)
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
 │                                  # refusal by user input, and its origin/position vocabulary

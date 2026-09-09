@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -61,8 +60,6 @@ final class DirectivesCommand extends Command
 
     /** `1` means "warnings" in this product, and a verdict has no second degree of severity. */
     private const int EXIT_INERT_FOUND = 2;
-
-    private const int EXIT_CONFIG_ERROR = 3;
 
     public function __construct(
         private readonly DirectiveAuditInterface $directiveAudit,
@@ -174,13 +171,6 @@ final class DirectivesCommand extends Command
             // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
             // and swallowing it into an exit code would hide in CI exactly the
             // failures CI exists to surface.
-            $configuration = ConfigurationFailure::message($failure);
-            if ($configuration !== null) {
-                self::reportError($output, $format, $configuration, self::EXIT_CONFIG_ERROR);
-
-                return self::EXIT_CONFIG_ERROR;
-            }
-
             self::reportError(
                 $output,
                 $format,

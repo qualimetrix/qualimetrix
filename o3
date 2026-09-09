@@ -1,0 +1,4 @@
+{
+    "error": "Configuration error: Option \"enabled\" of computed metric \"computed.myscore\" must be a boolean, got string.",
+    "exit_code": 3
+}
