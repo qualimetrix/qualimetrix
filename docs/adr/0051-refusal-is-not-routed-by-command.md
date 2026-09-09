@@ -108,12 +108,16 @@ each measured rather than assumed:
    sentence where they previously got nothing on `baseline:*`'s failure path,
    or a code with nothing behind it elsewhere — on the same channel as
    without `-q`.
-3. Under a machine-readable format the message is not text at all: it is the
-   `{error, exit_code}` envelope on stdout (`RefusalPresenter::writeEnvelope()`),
-   the same shape `DirectiveAuditPresenter::jsonError()` and
-   `LayerAssignmentCommand::reportError()` already used. `-q` does not remove
-   the envelope; a machine-readable consumer piping stdout still gets a
-   parseable document on both the success and the failure path.
+3. Under one of the six JSON-document formats (`json`, `sarif`, `gitlab`,
+   `metrics`, `health`, `suppressed` — {@see MachineReadableFormats}) the
+   message is not text at all: it is the `{error, exit_code}` envelope on
+   stdout (`RefusalPresenter::writeEnvelope()`), the shape every command's
+   refusal and internal error now shares. `-q` does not remove the envelope;
+   a JSON-document consumer piping stdout still gets a parseable document on
+   both the success and the failure path. The other six formats (`text`,
+   `text-verbose`, `summary`, `checkstyle`, `github`, `html`) keep their
+   human-readable, XML or workflow-command stdout contract and get the
+   `<error>…</error>` line on stderr instead, same as no `--format` at all.
 
 **Rejected alternative: "quiet means only the exit code."** This is Symfony's
 own default — `VERBOSITY_QUIET` swallows everything a command writes,
@@ -157,10 +161,11 @@ run" (not).
   One that branches on the code should now read 3 as "fix the configuration
   or the input," 1 as "file a bug," and 2 or 4 as "read the command's own
   report."
-- The 178-site debt this ADR names is tracked by count, not by name: a future
+- The remaining debt this ADR names is tracked by count, not by name: a future
   package retiring throw sites onto `ConfigurationRefusal` re-runs
   `measurement/03-catch-clauses.md`'s method and compares the new count
-  against 178, not against a list of which sites moved.
+  against **147** — this round's own after-count above, not the 178 the round
+  started from — not against a list of which sites moved.
 - Supersedes no prior ADR. Builds on ADR 0050 (the carrier type this
   decision routes) and ADR 0045 (the single `ErrorStream` owner this
   decision's stream and progress-frame handling depend on).

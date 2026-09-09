@@ -23,7 +23,13 @@ final readonly class ConfigurationOrigin
         return $this->source;
     }
 
-    /** File path, preset name, or CLI option name. Null for {@see ConfigurationSource::Resolved}. */
+    /**
+     * File path, preset name, or CLI/config-key name. Usually null for
+     * {@see ConfigurationSource::Resolved} — a merged value with no single
+     * originating file or option left to name — except where a caller
+     * still has the resolved key name at hand and passes it as a
+     * diagnostic hint (e.g. `ConfigSchema::FAIL_ON`, `ConfigSchema::MEMORY_LIMIT`).
+     */
     public function locator(): ?string
     {
         return $this->locator;

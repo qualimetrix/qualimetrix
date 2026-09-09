@@ -1341,16 +1341,26 @@ rules:
   coupling.cbo:
     suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
-      # The configuration-refusal carrier and the document it refuses against
-      # (ADR 0050). Five capability owners and the console throw or catch this
-      # one type, which is what a contract is for; CBO counts exactly that
-      # reach and calls it a magnet. Measured after X15: ConfigurationRefusal
-      # 50, ConfigurationOrigin 44, ConfigurationSource 44 against a class
-      # error bound of 30 — every point of it inbound, from owners that are
-      # supposed to name it. Blanket by prefix, and deliberately so: the
-      # sub-namespace holds nothing but the carrier's own value types, and a
-      # future sibling there would be one of them.
-      - Qualimetrix\Analysis\Configuration\Contract
+      # The configuration-refusal carrier: ConfigurationRefusal itself plus
+      # the three value types it composes (ADR 0050). Five capability owners
+      # and the console throw or catch this one type, which is what a
+      # contract is for; CBO counts exactly that reach and calls it a magnet.
+      # Measured after X15: ConfigurationRefusal 50, ConfigurationOrigin 44,
+      # ConfigurationSource 44 against a class error bound of 30 — every
+      # point of it inbound, from owners that are supposed to name it.
+      # Blanket by prefix, and deliberately so: this exact sub-namespace
+      # holds nothing but the carrier's own value types, and a future
+      # sibling there would be one of them. Scoped to `\Refusal` and not to
+      # the parent `\Contract` namespace it lives under — X15's review found
+      # the wider prefix silently also suppressing four unrelated,
+      # unmeasured types (`ConfigurationDocument`, `KnownRuleNamesProviderInterface`,
+      # `Discovery\ComposerAutoloadPathReaderInterface`,
+      # `Pipeline\ConfigurationPipelineInterface`,
+      # `Pipeline\ConfigurationResolutionRequest`); re-measured after
+      # narrowing to just `\Refusal` and only `ConfigurationDocument` of
+      # those five turned out to actually exceed the threshold (see below) —
+      # the other four are unsuppressed and clean.
+      - Qualimetrix\Analysis\Configuration\Contract\Refusal
       # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
       # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
       # publication, not detection: a point threshold inside the namespace still
@@ -1421,6 +1431,16 @@ rules:
       # Infrastructure console commands and pipeline orchestrators need many deps
       - src/Infrastructure/Console
       - src/Analysis/Run/Pipeline
+      # `ConfigurationDocument`, which the `\Refusal` entry above deliberately
+      # does not sweep in: the shared configuration document every capability's
+      # resolver reads to build its own view. Measured on this tree: CBO 27
+      # against a class error bound of 20 — a connectivity magnet for the same
+      # reason as the carrier, many named readers of one document, but a
+      # distinct type, so it carries its own line and its own number. Written
+      # as a path because `suppress_namespaces` matches namespaces, and a class
+      # name written there matches nothing — measured: the entry looked right
+      # and suppressed nothing.
+      - src/Analysis/Configuration/Contract/ConfigurationDocument.php
     namespace:
       warning: 16
       error: 25

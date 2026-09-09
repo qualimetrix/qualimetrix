@@ -27,10 +27,16 @@ that a human-readable message describes in prose.
 
 **The carrier lives in `Analysis.Configuration`, not `Core`.** Its fields —
 key position, the spelling written, the spellings accepted at that position,
-the configuration source (`defaults`, `composer.json`, a file's base name,
-`preset:<names>`, `cli`) — are the vocabulary `Analysis.Configuration`
-already owns: `ConfigurationLayer::$source` is the same five-source
-enumeration the carrier's `ConfigurationOrigin` draws from. The argument for
+the configuration source — are the vocabulary `Analysis.Configuration`
+already owns. `ConfigurationLayer::$source` is a free-form string covering
+seven kinds of layer (`defaults`, `composer.json`, a config file's base
+name, `preset:<names>`, `cli`, a baseline file, and the merged/resolved
+document); the carrier's `ConfigurationOrigin` draws its source from
+{@see ConfigurationSource}, a five-case enum over the same vocabulary minus
+`Defaults` and `ComposerJson` — the two layers that can never fail to parse
+into a `ConfigurationRefusal`, because nothing reads them through a
+refusing path (`ConfigFile`, `Preset`, `CommandLine`, `BaselineFile`,
+`Resolved`; see the enum's own docblock). The argument for
 `Core` — "many owners throw it" — is the one CLAUDE.md §1 and ADR 0022
 reject by name: many imports do not make a type neutral. Moving it to `Core`
 would mean `Core` adopting the concept "configuration source", and every new

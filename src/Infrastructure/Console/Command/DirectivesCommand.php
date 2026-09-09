@@ -170,15 +170,11 @@ final class DirectivesCommand extends Command
         } catch (Exception $failure) {
             // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
             // and swallowing it into an exit code would hide in CI exactly the
-            // failures CI exists to surface.
-            self::reportError(
-                $output,
-                $format,
-                \sprintf('Unexpected error: %s', $failure->getMessage()),
-                self::FAILURE,
-            );
-
-            return self::FAILURE;
+            // failures CI exists to surface. Routed through the shared
+            // presenter's `internalError()` — the same envelope and
+            // `-q`/`--silent` survival every other command's internal error
+            // gets, not a local `reportError()` (`01-refusal-envelope.md` §2.1).
+            return $this->refusalPresenter->internalError($output, $format, $failure);
         }
     }
 
@@ -276,25 +272,5 @@ final class DirectivesCommand extends Command
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * In `json`, an error takes the envelope shape, so a parser reading stdout
-     * finds JSON where a report would have been rather than an `<error>` line.
-     *
-     * On an interactive terminal the progress bar still writes control bytes
-     * ahead of it — that is this product's behaviour for every command with a
-     * machine-readable format, `check` included, and not something to fix in
-     * one command. Redirect, or run where the output is not a TTY.
-     */
-    private static function reportError(OutputInterface $output, string $format, string $message, int $exitCode): void
-    {
-        if ($format === 'json') {
-            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));
-
-            return;
-        }
-
-        $output->writeln(\sprintf('<error>%s</error>', $message));
     }
 }

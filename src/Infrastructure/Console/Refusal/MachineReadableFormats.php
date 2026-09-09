@@ -7,13 +7,20 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
 /**
  * One question: does this format's stdout carry a JSON document?
  *
- * The set is closed and measured against `FormatterRegistry` on `1513bf67`
- * (`01-refusal-envelope.md` §2.1): `json`, `sarif`, `gitlab`, `metrics`,
- * `health`, `suppressed`. `text`, `text-verbose`, `summary`, `checkstyle`,
- * `github` and `html` are excluded — their stdout contract is human-readable,
- * XML, or workflow-command text, and a JSON envelope in that stream would be
- * worse than the empty stdout it replaces (`01-refusal-envelope.md` §2.1,
+ * The set is closed: `json`, `sarif`, `gitlab`, `metrics`, `health`,
+ * `suppressed`. `text`, `text-verbose`, `summary`, `checkstyle`, `github` and
+ * `html` are excluded — their stdout contract is human-readable, XML, or
+ * workflow-command text, and a JSON envelope in that stream would be worse
+ * than the empty stdout it replaces (`01-refusal-envelope.md` §2.1,
  * "Отвергнуто: конверт во всех двенадцати").
+ *
+ * "Closed" is enforced, not just claimed: both lists together are the
+ * complete classification this class promises, and
+ * `MachineReadableFormatsRegistryTest` boots the real DI container and
+ * asserts `self::knownFormats()` is exactly the set of names
+ * `FormatterRegistry` has registered — a formatter added under
+ * CLAUDE.md §7's automatic registration and left unclassified here fails
+ * that test rather than silently taking the `false` (no envelope) default.
  */
 final class MachineReadableFormats
 {
@@ -26,8 +33,30 @@ final class MachineReadableFormats
         'suppressed',
     ];
 
+    /** Every registered format whose stdout is deliberately not a JSON document. */
+    private const array NON_JSON_FORMATS = [
+        'text',
+        'text-verbose',
+        'summary',
+        'checkstyle',
+        'github',
+        'html',
+    ];
+
     public static function carriesJson(?string $format): bool
     {
         return $format !== null && \in_array($format, self::JSON_DOCUMENT_FORMATS, true);
+    }
+
+    /**
+     * Every format name this class has an explicit opinion about, JSON or
+     * not — the set `MachineReadableFormatsRegistryTest` compares against
+     * `FormatterRegistry`'s actual registrations.
+     *
+     * @return list<string>
+     */
+    public static function knownFormats(): array
+    {
+        return [...self::JSON_DOCUMENT_FORMATS, ...self::NON_JSON_FORMATS];
     }
 }

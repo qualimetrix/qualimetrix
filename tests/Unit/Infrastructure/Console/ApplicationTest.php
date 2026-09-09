@@ -16,11 +16,14 @@ use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Tests\Infrastructure\Console\Support\RestoresShellVerbosityEnvironment;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use Qualimetrix\Tests\Infrastructure\Console\Support\TerminalScreen;
+use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
+use Symfony\Component\Console\Exception\LogicException as ConsoleLogicException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -41,6 +44,8 @@ use Throwable;
 #[CoversClass(Application::class)]
 final class ApplicationTest extends TestCase
 {
+    use RestoresShellVerbosityEnvironment;
+
     private string $originalCwd;
 
     protected function setUp(): void
@@ -50,11 +55,13 @@ final class ApplicationTest extends TestCase
             self::fail('Cannot get current directory');
         }
         $this->originalCwd = $cwd;
+        $this->snapshotShellVerbosityEnvironment();
     }
 
     protected function tearDown(): void
     {
         chdir($this->originalCwd);
+        $this->restoreShellVerbosityEnvironment();
     }
 
     #[Test]
@@ -199,6 +206,85 @@ final class ApplicationTest extends TestCase
         );
 
         self::assertSame(ConsoleExitCode::InternalError->value, $exitCode);
+    }
+
+    /**
+     * X15 review, mechanism C: {@see ConsoleLogicException}
+     * implements {@see \Symfony\Component\Console\Exception\ExceptionInterface}
+     * (the same interface `CommandNotFoundException`/`InvalidOptionException`
+     * implement) but is thrown only on a malformed command *declaration* — a
+     * defect in this project's own command wiring, never something a user's
+     * input could trigger. Before the fix it was caught by the broad
+     * `ConsoleExceptionInterface` clause and answered with the round's
+     * user-input code (3); it must answer with the internal-error code (1)
+     * instead, same as any other product defect.
+     */
+    #[Test]
+    public function itReturnsInternalErrorExitCodeForAConsoleLogicException(): void
+    {
+        $app = self::application();
+        $app->setAutoExit(false);
+        $app->addCommand(self::commandThatThrows(
+            new ConsoleLogicException('an option was declared twice'),
+        ));
+
+        $exitCode = $app->doRun(
+            new ArrayInput(['command' => 'throws']),
+            new NullOutput(),
+        );
+
+        self::assertSame(ConsoleExitCode::InternalError->value, $exitCode);
+    }
+
+    /**
+     * X15 review, mechanism B1: Symfony's `--silent` sets
+     * `OutputInterface::VERBOSITY_SILENT` (8), a level `Output::write()`
+     * cannot address — its bitmask lookup only recognises
+     * `VERBOSITY_QUIET|NORMAL|VERBOSE|VERY_VERBOSE|DEBUG`, so once the
+     * output's verbosity is silent, nothing written at any verbosity
+     * survives, including {@see RefusalPresenter}'s `VERBOSITY_QUIET`
+     * writes. `Application::configureIO()` demotes it to `VERBOSITY_QUIET`
+     * so the run-ending message keeps the guarantee rule 3 of
+     * `00-overview.md` makes for it.
+     */
+    #[Test]
+    public function itDemotesSilentVerbosityToQuiet(): void
+    {
+        $app = self::application();
+        $input = new ArrayInput(['--silent' => true]);
+        $output = new BufferedOutput();
+
+        $method = new ReflectionMethod(Application::class, 'configureIO');
+        $method->invoke($app, $input, $output);
+
+        self::assertSame(OutputInterface::VERBOSITY_QUIET, $output->getVerbosity());
+    }
+
+    /**
+     * End-to-end companion to {@see self::itDemotesSilentVerbosityToQuiet()}:
+     * proves the demotion actually keeps a refusal message alive under
+     * `--silent`, not just that the verbosity constant changes.
+     */
+    #[Test]
+    public function itStillDeliversARefusalMessageUnderSilent(): void
+    {
+        $app = self::application();
+        $app->setAutoExit(false);
+        $app->addCommand(self::commandThatThrows(ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--bogus'),
+            'a refusal that must survive --silent',
+        )));
+
+        $input = new ArrayInput(['command' => 'throws', '--silent' => true]);
+        $output = new BufferedOutput();
+
+        $method = new ReflectionMethod(Application::class, 'configureIO');
+        $method->invoke($app, $input, $output);
+
+        $exitCode = $app->doRun($input, $output);
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exitCode);
+        self::assertStringContainsString('a refusal that must survive --silent', $output->fetch());
     }
 
     #[Test]

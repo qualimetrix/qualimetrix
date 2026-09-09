@@ -125,16 +125,6 @@ final readonly class DirectiveAuditPresenter
     }
 
     /**
-     * The error shape `debug:layer-assignment` established, so one parser reads
-     * both. Static because an error is reported before there is a report to
-     * hold — a configuration that failed to resolve produced no measurement.
-     */
-    public static function jsonError(string $message, int $exitCode): string
-    {
-        return self::encode(['error' => $message, 'exit_code' => $exitCode]);
-    }
-
-    /**
      * How the verdicts were measured, said in the report that carries them.
      *
      * Printed on every run and not only on the expensive one: a reader

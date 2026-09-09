@@ -18,6 +18,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -169,6 +170,44 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('must not be empty', $tester->getDisplay());
     }
 
+    /**
+     * X15 review, mechanism A (comprehensive-01 / codex-01): the empty-FQN
+     * check used to write through the command's own `writeln()`/`reportError()`
+     * at the default verbosity, which `-q` (`VERBOSITY_QUIET`) suppresses —
+     * exit 3, zero bytes on both streams. Now routed through
+     * `RefusalPresenter::fallbackRefusal()`, whose write survives `-q` like
+     * every other refusal in the tool.
+     */
+    #[Test]
+    public function itKeepsTheEmptyFqnRefusalVisibleUnderQuiet(): void
+    {
+        $tester = $this->newTester();
+        $exit = $tester->execute(
+            ['fqn' => ''],
+            ['verbosity' => OutputInterface::VERBOSITY_QUIET, 'capture_stderr_separately' => true],
+        );
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('must not be empty', $tester->getErrorOutput());
+    }
+
+    /**
+     * Same mechanism as {@see self::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet()},
+     * for the unknown-`--format` route.
+     */
+    #[Test]
+    public function itKeepsTheUnknownFormatRefusalVisibleUnderQuiet(): void
+    {
+        $tester = $this->newTester();
+        $exit = $tester->execute(
+            ['fqn' => 'App\\Service\\Foo', '--format' => 'yaml'],
+            ['verbosity' => OutputInterface::VERBOSITY_QUIET, 'capture_stderr_separately' => true],
+        );
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('Unknown format', $tester->getErrorOutput());
+    }
+
     #[Test]
     public function itExitsInvalidForAWhitespaceOnlyFqn(): void
     {
@@ -213,9 +252,9 @@ final class LayerAssignmentCommandTest extends TestCase
         // This route is the `ConfigurationRefusal` carrier caught by the
         // command's own clause and handed to `RefusalPresenter::refusal()`,
         // which writes the human form to stderr (`01-refusal-envelope.md`
-        // §2.1) — unlike the command's own `reportError()` paths above,
-        // which still write to stdout (`01-refusal-packages.md` scopes the
-        // stdout-to-stderr move to `directives`, not this command).
+        // §2.1) — the same presenter every early-return route above now goes
+        // through too (X15 review, mechanism A), so stdout is empty here for
+        // the same reason it is empty on those.
         self::assertSame('', $tester->getDisplay());
         // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
         // a per-command spelling of it) — pinned here because this command's

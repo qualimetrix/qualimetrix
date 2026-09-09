@@ -79,22 +79,26 @@ off-switch.
 for bad input — 1 here, 2 there — and a crash while reading configuration
 could still reach the outer handler uncaught and exit 255 with a raw PHP
 trace on both streams. Every one of those routes now goes through the same
-ladder and exits 3 with stdout empty. A CI wrapper that only checked `exit
-code != 0` sees no change; one that branches on the code should treat 3 as
-"fix the configuration or the input", 1 as "file a bug", and 2 or 4 as
-"read the command's own report" (`directives`' inert-directive and
-incomplete-run codes, unchanged).
+ladder and exits 3. Stdout stays empty for a human-readable format; under
+one of the six JSON-document formats (`json`, `sarif`, `gitlab`, `metrics`,
+`health`, `suppressed`) the refusal replaces the report there as a
+`{error, exit_code}` envelope instead — see the next entry. A CI wrapper
+that only checked `exit code != 0` sees no change; one that branches on the
+code should treat 3 as "fix the configuration or the input", 1 as "file a
+bug", and 2 or 4 as "read the command's own report" (`directives`'
+inert-directive and incomplete-run codes, unchanged).
 
 **A configuration refusal now goes to standard error, and `-q` no longer
 hides it.** `baseline:*` commands used to write their refusal to standard
 output, the same channel as their report, at normal verbosity — a script
 piping `--format=json` output could be handed the refusal instead of the
 report on failure, and `-q` silenced the message entirely. It is now written
-to standard error as `<error>…</error>` text, or — under a machine-readable
-format — to standard output as the `{error, exit_code}` envelope, and at a
-verbosity `-q` does not suppress. `baseline:rename-channels --format=json`
-also moves from its own `{error}` shape to the same `{error, exit_code}`
-envelope every other machine-readable refusal in the tool now uses.
+to standard error as `<error>…</error>` text, or — under one of the six
+JSON-document formats above — to standard output as the `{error, exit_code}`
+envelope, and at a verbosity `-q` does not suppress. `baseline:rename-channels
+--format=json` also moves from its own `{error}` shape to the same
+`{error, exit_code}` envelope every other JSON-document refusal in the tool
+now uses.
 
 **A command-line parsing error now exits 3, not 1.** An unknown option or an
 unknown command — anything Symfony's own console layer rejects before a

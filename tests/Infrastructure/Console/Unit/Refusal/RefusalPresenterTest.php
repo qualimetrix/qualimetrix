@@ -181,6 +181,35 @@ final class RefusalPresenterTest extends TestCase
         );
     }
 
+    /**
+     * X15 review, mechanism B2: a refusal message can embed raw CLI input the
+     * user typed (an option value quoted back into the message, e.g.
+     * `graph:export --direction=<garbage>`), and PHP argv bytes are not
+     * guaranteed valid UTF-8. Before the fix, `json_encode(...,
+     * JSON_THROW_ON_ERROR)` on such a message threw a `JsonException` out of
+     * `writeEnvelope()`, escaping the command's own `catch
+     * (ConfigurationRefusal)` block and landing in the outer ladder as an
+     * internal error — exit code 1 instead of the exit code 3 this refusal
+     * had already committed to returning. `JSON_INVALID_UTF8_SUBSTITUTE`
+     * keeps the envelope valid JSON instead.
+     */
+    #[Test]
+    public function itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--direction'),
+            "Unknown direction \"\xff\xfe\". Supported directions: LR, TB, RL, BT.",
+        );
+
+        $exit = $this->presenter()->refusal($output, 'json', $refusal);
+
+        self::assertSame(3, $exit);
+        $decoded = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $decoded['exit_code']);
+        self::assertStringContainsString('Configuration error: Unknown direction', $decoded['error']);
+    }
+
     #[Test]
     public function itStopsALiveProgressFrameBeforePresenting(): void
     {

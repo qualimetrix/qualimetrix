@@ -114,17 +114,26 @@ final class RefusalPresenter
     }
 
     /**
-     * Writes the `{error, exit_code}` envelope to stdout — the shape already
-     * used by `DirectiveAuditPresenter::jsonError()` and
-     * `LayerAssignmentCommand::reportError()` (`01-refusal-envelope.md` §2.1).
-     * `origin()`/`position()` are not structural fields here; they reach the
-     * reader through the wording of `$message` instead.
+     * Writes the `{error, exit_code}` envelope to stdout — the shape every
+     * command's refusal and internal-error path now shares
+     * (`01-refusal-envelope.md` §2.1). `origin()`/`position()` are not
+     * structural fields here; they reach the reader through the wording of
+     * `$message` instead.
+     *
+     * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
+     * (an option value, a path) that the user typed, and PHP argv bytes are
+     * not guaranteed valid UTF-8. Without this flag, `JSON_THROW_ON_ERROR`
+     * turns a malformed-input refusal into a `JsonException` that escapes
+     * this method and is caught by the outer ladder as an internal error —
+     * exit code 1 instead of the exit code 3 this refusal already committed
+     * to returning. Substituting the invalid bytes keeps the envelope valid
+     * JSON and keeps the refusal a refusal.
      */
     private function writeEnvelope(OutputInterface $output, string $message, int $exitCode): void
     {
         $payload = json_encode(
             ['error' => $message, 'exit_code' => $exitCode],
-            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR,
         ) . "\n";
 
         // Mirrors OutputHelper::write()'s blocking-mode restore (amphp leaves

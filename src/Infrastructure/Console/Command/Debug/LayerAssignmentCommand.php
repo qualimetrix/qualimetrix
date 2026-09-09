@@ -14,7 +14,6 @@ use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
-use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -103,17 +102,17 @@ final class LayerAssignmentCommand extends Command
         /** @var string $format */
         $format = $input->getOption('format');
         if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
-            $output->writeln(\sprintf(
-                '<error>Unknown format "%s". Supported formats: %s.</error>',
-                $format,
-                implode(', ', self::SUPPORTED_FORMATS),
-            ));
-
             // §4 of `01-refusal-verdicts.md` moves this route from 2 to 3:
             // malformed CLI input is the round's Refusal code, not
-            // `Command::INVALID`. The stream stays stdout — moving it is
-            // named as `directives`-only work in `01-refusal-packages.md`.
-            return ConsoleExitCode::Refusal->value;
+            // `Command::INVALID`. Routed through the shared presenter (not a
+            // local `writeln()`) so the framing, the stream and the
+            // `-q`/`--silent` survival contract are the same one every other
+            // command's refusal gets (`01-refusal-envelope.md` §2.1).
+            return $this->refusalPresenter->fallbackRefusal($output, $format, new InvalidArgumentException(\sprintf(
+                'Unknown format "%s". Supported formats: %s.',
+                $format,
+                implode(', ', self::SUPPORTED_FORMATS),
+            )));
         }
 
         /** @var string $rawFqn */
@@ -121,9 +120,9 @@ final class LayerAssignmentCommand extends Command
 
         $validationError = $this->validateFqn($rawFqn);
         if ($validationError !== null) {
-            $this->reportError($output, $format, $validationError, ConsoleExitCode::Refusal->value);
-
-            return ConsoleExitCode::Refusal->value;
+            // Same rationale as the format check above: through the shared
+            // presenter, not the command's own `reportError()`.
+            return $this->refusalPresenter->fallbackRefusal($output, $format, new InvalidArgumentException($validationError));
         }
 
         $symbol = SymbolPath::fromClassFqn($rawFqn);
@@ -162,15 +161,10 @@ final class LayerAssignmentCommand extends Command
             // so genuine programming bugs in the pipeline surface in CI rather than
             // being silently reported as exit code 1. Configuration failures the
             // user can fix are refused above as `ConfigurationRefusal`; anything
-            // still reaching here is not one, so it keeps this generic wording.
-            $this->reportError(
-                $output,
-                $format,
-                \sprintf('Failed to load configuration: %s', $e->getMessage()),
-                self::FAILURE,
-            );
-
-            return self::FAILURE;
+            // still reaching here is not one, so it goes through the presenter's
+            // `internalError()` — the same envelope and `-q`/`--silent` survival
+            // every other command's internal error gets, not a local `reportError()`.
+            return $this->refusalPresenter->internalError($output, $format, $e);
         }
 
         if ($format === 'json') {
@@ -180,27 +174,6 @@ final class LayerAssignmentCommand extends Command
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Reports an error consistently with the requested `--format`: an
-     * `<error>` line for `text` (byte-for-byte identical to the pre-JSON
-     * behaviour), or an `{error, exit_code}` envelope for `json` so a
-     * machine consumer never has to distinguish an error from a report by
-     * shape alone.
-     */
-    private function reportError(OutputInterface $output, string $format, string $message, int $exitCode): void
-    {
-        if ($format === 'json') {
-            OutputHelper::write($output, $this->encodeJson([
-                'error' => $message,
-                'exit_code' => $exitCode,
-            ]));
-
-            return;
-        }
-
-        $output->writeln(\sprintf('<error>%s</error>', $message));
     }
 
     /**

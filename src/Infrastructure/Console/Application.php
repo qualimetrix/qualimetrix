@@ -12,6 +12,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
+use Symfony\Component\Console\Exception\LogicException as ConsoleLogicException;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -79,6 +80,17 @@ final class Application extends BaseApplication
      * would otherwise catch the general-purpose console exceptions first, so
      * the more specific clauses come first.
      *
+     * {@see ConsoleLogicException} is caught ahead of, and excluded from,
+     * `ConsoleExceptionInterface`: it is thrown only on a malformed command
+     * *declaration* (an empty command name, a duplicate option name, a
+     * default value on a `VALUE_NONE` option, a hint closure that returned
+     * something other than an array) — every throw site is in Symfony's own
+     * `Application`/`InputOption`/`InputArgument`, reachable only by a bug in
+     * this project's own command wiring, never by anything a user typed. That
+     * makes it a product defect, not a refusal, so it gets exit code 1 like
+     * any other one — rule 2 of `00-overview.md` ("an internal error stays
+     * internal").
+     *
      * `ConsoleExceptionInterface` and the bare `InvalidArgumentException`
      * clause are named secondary signals for exit code 3
      * (`01-refusal-exit-ladder.md` §2.5/§2.6): a caught console-argument
@@ -101,6 +113,8 @@ final class Application extends BaseApplication
             return parent::doRun($input, $output);
         } catch (ConfigurationRefusal $refusal) {
             return $this->refusalPresenter->refusal($output, null, $refusal);
+        } catch (ConsoleLogicException $e) {
+            return $this->refusalPresenter->internalError($output, null, $e);
         } catch (ConsoleExceptionInterface $e) {
             return $this->refusalPresenter->fallbackRefusal($output, null, $e);
         } catch (InvalidArgumentException $e) {
@@ -143,6 +157,34 @@ final class Application extends BaseApplication
                 ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
                 \sprintf('Failed to change working directory to: %s', $resolved),
             );
+        }
+    }
+
+    /**
+     * Demotes Symfony's `--silent` (`VERBOSITY_SILENT`, 8) to `-q`
+     * (`VERBOSITY_QUIET`, 16) after the base class applies it.
+     *
+     * `VERBOSITY_SILENT` is not one of the five bits `Output::write()`
+     * recognises (`VERBOSITY_QUIET | VERBOSITY_NORMAL | VERBOSITY_VERBOSE |
+     * VERBOSITY_VERY_VERBOSE | VERBOSITY_DEBUG`), so once the output's
+     * verbosity is silent, `write()`'s bitmask lookup falls back to
+     * `VERBOSITY_NORMAL` for *every* call regardless of the verbosity a
+     * caller asked for — there is no verbosity value a message can carry
+     * that survives it. That includes {@see RefusalPresenter}'s
+     * `VERBOSITY_QUIET` writes, the ones this round built specifically so a
+     * run-ending message survives `-q` (rule 3, `00-overview.md`: "the
+     * reason a run refused is delivered always"). Symfony's own docs read
+     * `--silent` as "no output at all", which is a legitimate request for
+     * the report — just not for the message that has to explain why there
+     * is no report. Treating it as `-q` keeps that promise and still drops
+     * everything `-q` already drops.
+     */
+    protected function configureIO(InputInterface $input, OutputInterface $output): void
+    {
+        parent::configureIO($input, $output);
+
+        if ($output->getVerbosity() === OutputInterface::VERBOSITY_SILENT) {
+            $output->setVerbosity(OutputInterface::VERBOSITY_QUIET);
         }
     }
 

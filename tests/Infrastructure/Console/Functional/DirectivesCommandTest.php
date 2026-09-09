@@ -911,7 +911,11 @@ final class DirectivesCommandTest extends TestCase
      * anywhere in discovery: `RecursiveDirectoryIterator` throws a bare
      * `UnexpectedValueException` (a `RuntimeException`, so neither of the
      * two named clauses above it), landing in the generic `catch (Exception)`
-     * branch and its "Unexpected error" wording.
+     * branch, which now hands the throwable to
+     * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
+     * (X15 review, mechanism A) instead of a local `reportError()` — same
+     * "Internal error:" wording and stream every other command's internal
+     * error uses, not a `DirectivesCommand`-only dialect.
      */
     #[Test]
     public function itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath(): void
@@ -929,7 +933,8 @@ final class DirectivesCommandTest extends TestCase
         }
 
         self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('Unexpected error:', $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Internal error:', $tester->getErrorOutput());
     }
 
     #[Test]

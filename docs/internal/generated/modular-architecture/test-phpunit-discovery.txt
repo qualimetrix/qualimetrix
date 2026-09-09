@@ -6330,6 +6330,8 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidWithoutRunningResolutionForAnUnknownFormat
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itHandlesAClassInTheGlobalNamespace
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itIsRegisteredAndDiscoverableOnAConsoleApplication
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheUnknownFormatRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itNormalisesALeadingBackslashInTheFqnArgument
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsAClassMatchingNoLayerAsUnclassifiedAndSuggestsACatchAllPattern
@@ -6621,6 +6623,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -6697,6 +6702,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheRefusalSentenceVisibleUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
@@ -7505,16 +7511,19 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itDemotesSilentVerbosityToQuiet
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsInternalErrorExitCodeForAConsoleLogicException
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsInternalErrorExitCodeForAnUnrelatedThrowable
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAConfigurationRefusalThrownBeforeExecute
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnInvalidWorkingDirectoryInsteadOfThrowing
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnknownCommandNonInteractively
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnreadableWorkingDirectoryWithoutChdir
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itStillDeliversARefusalMessageUnderSilent
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itDescribesShowResolvedAsBaselineEntries
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersABooleanAliasAsValueNone
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersANumericAliasAsValueRequired
