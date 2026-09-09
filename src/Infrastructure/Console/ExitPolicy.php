@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -21,7 +23,7 @@ final readonly class ExitPolicy
     public function __construct(public Severity|false|null $failOn = null)
     {
         if ($failOn instanceof Severity && !$failOn->gatesRun()) {
-            throw new InvalidArgumentException(self::rejection($failOn->value));
+            throw self::refusal($failOn->value);
         }
     }
 
@@ -51,9 +53,15 @@ final readonly class ExitPolicy
             return new self(Severity::from($value));
         }
 
-        throw new InvalidArgumentException(self::rejection(
-            \is_scalar($value) ? (string) $value : get_debug_type($value),
-        ));
+        throw self::refusal(\is_scalar($value) ? (string) $value : get_debug_type($value));
+    }
+
+    private static function refusal(string $value): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved, ConfigSchema::FAIL_ON),
+            self::rejection($value),
+        );
     }
 
     private static function rejection(string $value): string

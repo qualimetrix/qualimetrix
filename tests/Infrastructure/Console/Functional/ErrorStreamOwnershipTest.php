@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -85,7 +86,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         // Symfony hands `renderThrowable()` the already-resolved error stream,
         // never the console output, which is why the owner is asked for the
         // writer it is already bound to.
-        (new Application($errorStream))->renderThrowable(
+        (new Application($errorStream, new RefusalPresenter($errorStream)))->renderThrowable(
             new RuntimeException('a failure with the frame still up'),
             $output->getErrorOutput(),
         );
@@ -138,7 +139,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $errorStream = new ErrorStream();
         $output = new BufferedOutput();
 
-        $application = new Application($errorStream);
+        $application = new Application($errorStream, new RefusalPresenter($errorStream));
         $application->setAutoExit(false);
         $application->addCommand(self::commandThatBindsThenThrows($errorStream, 'a failure with nowhere to go'));
 

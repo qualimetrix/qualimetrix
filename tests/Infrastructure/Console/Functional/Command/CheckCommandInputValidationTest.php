@@ -11,6 +11,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionMethod;
@@ -78,10 +79,9 @@ final class CheckCommandInputValidationTest extends TestCase
             );
 
             self::assertSame(3, $tester->getStatusCode());
-            self::assertSame('', $tester->getDisplay());
             self::assertStringContainsString(
                 'Invalid value for "cache.enabled": expected boolean, got string',
-                $tester->getErrorOutput(),
+                self::envelopeError($tester),
             );
         } finally {
             unlink($config);
@@ -98,8 +98,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
+        self::assertStringContainsString('does not match any registered', self::envelopeError($tester));
     }
 
     /**
@@ -122,11 +121,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString(
-            'Write "complexity.ccn"',
-            $tester->getErrorOutput(),
-        );
+        self::assertStringContainsString('Write "complexity.ccn"', self::envelopeError($tester));
     }
 
     /**
@@ -151,8 +146,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('it does not report at level "file"', $tester->getErrorOutput());
+        self::assertStringContainsString('it does not report at level "file"', self::envelopeError($tester));
     }
 
     /** A level a channel does declare is accepted, so the refusal above is not refusing every pair. */
@@ -187,7 +181,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('names no level after ":"', $tester->getErrorOutput());
+        self::assertStringContainsString('names no level after ":"', self::envelopeError($tester));
     }
 
     #[Test]
@@ -200,8 +194,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('Rule option owner', $tester->getErrorOutput());
+        self::assertStringContainsString('Rule option owner', self::envelopeError($tester));
     }
 
     #[Test]
@@ -214,8 +207,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('does not resolve to a commit', $tester->getErrorOutput());
+        self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
         self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
     }
 
@@ -266,7 +258,7 @@ final class CheckCommandInputValidationTest extends TestCase
                 '--only-rule' => ['computed.a'],
             ], ['capture_stderr_separately' => true]);
             self::assertSame(3, $tester->getStatusCode());
-            self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
+            self::assertStringContainsString('does not match any registered', self::envelopeError($tester));
 
             $tester->execute([
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
@@ -302,10 +294,10 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString(\sprintf('The "%s" option was retired', $retired), $tester->getErrorOutput());
-        self::assertStringContainsString(\sprintf('use "%s"', $replacement), $tester->getErrorOutput());
-        self::assertStringContainsString('"--exclude" option instead', $tester->getErrorOutput());
+        $error = self::envelopeError($tester);
+        self::assertStringContainsString(\sprintf('The "%s" option was retired', $retired), $error);
+        self::assertStringContainsString(\sprintf('use "%s"', $replacement), $error);
+        self::assertStringContainsString('"--exclude" option instead', $error);
     }
 
     /**
@@ -357,8 +349,21 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('The "exclude-paths" option was retired', $tester->getErrorOutput());
-        self::assertStringContainsString('use "suppress-paths"', $tester->getErrorOutput());
+        $error = self::envelopeError($tester);
+        self::assertStringContainsString('The "exclude-paths" option was retired', $error);
+        self::assertStringContainsString('use "suppress-paths"', $error);
+    }
+
+    /**
+     * Parses the `{error, exit_code}` envelope every `--format=json` refusal
+     * carries on stdout (`01-refusal-envelope.md` §2.1) and returns its message.
+     */
+    private static function envelopeError(CommandTester $tester): string
+    {
+        /** @var array{error: string, exit_code: int} $envelope */
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $envelope['error'];
     }
 
     private function tester(): CommandTester
@@ -366,7 +371,9 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application(new ErrorStream());
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $application = new Application(new ErrorStream(), $refusalPresenter);
         $application->addCommand($command);
 
         return new CommandTester($command);

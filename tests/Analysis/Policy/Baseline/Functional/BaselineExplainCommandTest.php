@@ -43,6 +43,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -215,8 +217,46 @@ final class BaselineExplainCommandTest extends TestCase
     {
         $tester = $this->execute([], ['--channel' => 'complexity.ccn#complexity.ccn']);
 
-        self::assertSame(Command::INVALID, $tester->getStatusCode());
-        self::assertStringContainsString('Write "complexity.ccn"', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Write "complexity.ccn"', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownChannel(): void
+    {
+        $tester = $this->execute([], ['--channel' => 'no.such.channel']);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('declared by no rule', $tester->getErrorOutput());
+        self::assertStringContainsString('no.such.channel', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itAcceptsAChannelTheRegistryNoLongerDeclaresWhenTheLoadedBaselineStillCarriesIt(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([
+            new BaselineEntry(self::identity($symbol, 'renamed.channel'), [25.0], 1),
+        ]);
+
+        // 'renamed.channel' is declared by no rule this test registers, so
+        // the entry loads inert (`InertEntryReason::UndeclaredChannel`) and
+        // addressability comes from the loaded baseline alone
+        // (`01-refusal-verdicts.md` §5.3): a channel a rename map has
+        // already carried a baseline onto is a legitimate `--channel` before
+        // the release declaring it lands, even though an inert entry has no
+        // accepted magnitude of its own to print.
+        $tester = $this->execute(
+            [],
+            ['--baseline' => $this->baselinePath, '--channel' => 'renamed.channel'],
+            symbol: $symbol,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Channel: renamed.channel', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      (none)', $tester->getDisplay());
     }
 
     #[Test]
@@ -228,8 +268,9 @@ final class BaselineExplainCommandTest extends TestCase
             symbol: SymbolPath::forMethod('App', 'Missing', 'method'),
         );
 
-        self::assertSame(Command::INVALID, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Unknown subject', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Unknown subject', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -327,14 +368,19 @@ final class BaselineExplainCommandTest extends TestCase
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
                 new RuleOptionsFactory($registry),
             ),
+            $declarations,
         );
+        $command->setRefusalPresenter(self::refusalPresenter());
 
         $tester = new CommandTester($command);
-        $tester->execute([
-            'subject' => self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
-            'paths' => ['src'],
-            ...$options,
-        ]);
+        $tester->execute(
+            [
+                'subject' => self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
+                'paths' => ['src'],
+                ...$options,
+            ],
+            ['capture_stderr_separately' => true],
+        );
 
         return $tester;
     }
@@ -355,14 +401,19 @@ final class BaselineExplainCommandTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BoundaryExplanationService(self::producerEdge()),
             new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            $declarations,
         );
+        $command->setRefusalPresenter(self::refusalPresenter());
 
         $tester = new CommandTester($command);
-        $tester->execute([
-            'subject' => self::subject(SymbolPath::forClass('App', 'OrderService'))->toCanonical(),
-            'paths' => ['src'],
-            ...$options,
-        ]);
+        $tester->execute(
+            [
+                'subject' => self::subject(SymbolPath::forClass('App', 'OrderService'))->toCanonical(),
+                'paths' => ['src'],
+                ...$options,
+            ],
+            ['capture_stderr_separately' => true],
+        );
 
         return $tester;
     }
@@ -388,6 +439,11 @@ final class BaselineExplainCommandTest extends TestCase
                 return [];
             }
         };
+    }
+
+    private static function refusalPresenter(): RefusalPresenter
+    {
+        return new RefusalPresenter(new ErrorStream());
     }
 
     /**

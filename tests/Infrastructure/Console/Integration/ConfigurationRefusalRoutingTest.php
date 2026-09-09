@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -42,7 +43,6 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use ReflectionClass;
 use ReflectionProperty;
@@ -140,11 +140,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
             $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-            $this->inert(ConfiguredFindingExclusionsResolverInterface::class),
-            $this->inert(OutputFormatResolverInterface::class),
+            $this->inert(CheckConfigurationResolvers::class),
             $this->freshPresenter(),
         );
 
@@ -176,14 +172,17 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInDebugLayerAssignment(): void
     {
+        // `AnalysisPreflight` reduces the command to three constructor
+        // arguments (P01-5's fix for the `code-smell.constructor-overinjection`
+        // finding its former eight-parameter constructor tripped): the same
+        // helper `itAnswersTheCarrierWithExitThreeInDirectives` already
+        // builds, reused here rather than duplicated. `resolve()` reaches the
+        // throwing `ConfigurationInputAdapter` before any of the run/cache/
+        // parallel resolvers or `RuleInputValidator` it bundles, so those
+        // stay inert.
         $command = new LayerAssignmentCommand(
-            $this->realRuntimeConfigurator(),
+            $this->realAnalysisPreflight(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver'),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-            $this->realRuleInputValidator(),
             $this->freshPresenter(),
         );
 
@@ -269,6 +268,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds'),
+            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -309,14 +309,20 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         self::assertSame(4, $code);
     }
 
+    /**
+     * `ConflictingCliAliasException` predates the carrier and, unlike the
+     * cases above, was never a configuration refusal: its clause in
+     * `CheckCommand::execute()` was dead code — the alias collision it names
+     * is built by `RuleRegistry` from rule classes' own declarations, not
+     * from anything a CLI invocation supplies, so the CLI path this test
+     * drives can never throw it (`01-refusal-verdicts.md` §6.2). P01-3 removed
+     * the clause; this case now proves the exception falls all the way to
+     * `catch (Throwable)` and answers as a product defect, code 1, not 3 —
+     * the behaviour the removal is supposed to have, not a regression of it.
+     */
     #[Test]
-    public function itLeavesConflictingCliAliasAtExitThreeInCheck(): void
+    public function itLeavesConflictingCliAliasAtExitOneAsAnInternalError(): void
     {
-        // ConflictingCliAliasException predates the carrier and keeps its own
-        // exit code 3 answer: it must still be reachable below the new first
-        // clause, not shadowed by it. Its handler writes through
-        // ResultPresenter, so — unlike the other cases in this class — that
-        // one collaborator must be real rather than inert.
         $command = new CheckCommand(
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
@@ -329,18 +335,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
                 'security.hardcoded-credentials',
                 '--strict',
             )),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-            $this->inert(ConfiguredFindingExclusionsResolverInterface::class),
-            $this->inert(OutputFormatResolverInterface::class),
+            $this->inert(CheckConfigurationResolvers::class),
             $this->freshPresenter(),
         );
 
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']]);
 
-        self::assertSame(3, $code);
+        self::assertSame(1, $code);
     }
 
     private function freshPresenter(): RefusalPresenter

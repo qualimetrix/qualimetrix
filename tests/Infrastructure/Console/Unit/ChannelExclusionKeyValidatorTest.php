@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
@@ -37,7 +37,7 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
     #[Test]
     public function itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'keyed by "coupling.*:namespace", addresses "coupling.class-rank",'
             . ' and it does not report at level "namespace"',
@@ -63,7 +63,7 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
     #[Test]
     public function itRefusesALevelTheOptionNeverAsksAbout(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'names level "class", and this option removes namespace aggregates only: the one level it can name'
             . ' is "namespace". Drop the level, or write "coupling.cbo:namespace".',
@@ -89,7 +89,7 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
     #[Test]
     public function itRefusesTheRetiredPairBeforeTheLevel(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('spelling of a channel is gone');
 
         self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo#coupling.cbo:class');
@@ -99,7 +99,7 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
     #[Test]
     public function itRefusesALevelFreeKeyNamingAnotherRulesChannel(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('none of them produced by "coupling.class-rank"');
 
         self::validator()->assertAddressesAProducedChannel('coupling.class-rank', 'coupling.cbo');

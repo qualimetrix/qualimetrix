@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
@@ -105,7 +107,7 @@ final readonly class BaselineRun implements BaselineRunInterface
      *
      * @param list<AbsolutePath> $paths
      *
-     * @throws InvalidArgumentException
+     * @throws ConfigurationRefusal
      */
     private function assertPathsExist(array $paths): void
     {
@@ -118,10 +120,10 @@ final readonly class BaselineRun implements BaselineRunInterface
         }
 
         if ($missing !== []) {
-            throw new InvalidArgumentException(\sprintf(
-                'Path(s) do not exist: %s',
-                implode(', ', $missing),
-            ));
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'paths'),
+                \sprintf('Path(s) do not exist: %s', implode(', ', $missing)),
+            );
         }
     }
 

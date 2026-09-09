@@ -20,6 +20,7 @@ use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
@@ -39,7 +40,7 @@ foreach ($autoloadPaths as $autoloadPath) {
 }
 
 if (!$autoloaderFound) {
-    fwrite(STDERR, "Error: Could not find autoloader. Run 'composer install'.\n");
+    fwrite(\STDERR, "Error: Could not find autoloader. Run 'composer install'.\n");
     exit(1);
 }
 
@@ -54,8 +55,25 @@ $container = $containerFactory->create();
 // resolution of the entire dependency tree for lightweight operations
 // like --help or hook:status.
 // The application shares the container's error-stream owner so an uncaught
-// throwable is rendered through the same sections as the progress frame.
-$application = new Application($container->get(ErrorStream::class));
+// throwable is rendered through the same sections as the progress frame, and
+// the container's single RefusalPresenter so the ladder in Application::doRun()
+// prints through the same framing every command uses — a second instance here
+// would be a second, silently diverging diagnostic dialect
+// (`01-refusal-exit-ladder.md` §3).
+$application = new Application($container->get(ErrorStream::class), $container->get(RefusalPresenter::class));
+
+// setCatchErrors(true) turns a PHP Error reaching Symfony's own run() —
+// specifically during its configureIO() call, the one window before
+// Application::doRun()'s own ladder is entered — into a caught throwable
+// instead of a PHP fatal (`01-refusal-exit-ladder.md` §2.4). Measured, not
+// assumed: an Error thrown from inside doRun() itself (command construction,
+// execute()) is already caught by doRun()'s own `catch (Throwable)` clause
+// regardless of this flag, because that clause wraps the call to
+// parent::doRun() the same way any other try/catch would — run()'s
+// setCatchErrors gate is never consulted for it. This call is what stands
+// between a fatal and exit 255 for the one window the ladder does not cover.
+$application->setCatchErrors(true);
+
 $application->setCommandLoader(new ContainerCommandLoader($container, [
     'check' => CheckCommand::class,
     'baseline:generate' => BaselineGenerateCommand::class,

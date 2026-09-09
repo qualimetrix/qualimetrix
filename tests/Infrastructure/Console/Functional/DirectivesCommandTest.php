@@ -849,7 +849,7 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('analysed no PHP files', $tester->getDisplay());
+        self::assertStringContainsString('analysed no PHP files', $tester->getErrorOutput());
     }
 
     /** A run that measured nothing has no standing to call a tree clean. */
@@ -859,7 +859,7 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('analysed no PHP files', $tester->getDisplay());
+        self::assertStringContainsString('analysed no PHP files', $tester->getErrorOutput());
     }
 
     /**
@@ -887,7 +887,7 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'yaml']);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Unknown format "yaml"', $tester->getDisplay());
+        self::assertStringContainsString('Unknown format "yaml"', $tester->getErrorOutput());
     }
 
     /** No `--sweep` at all must run exactly what `--sweep=narrow` runs, not a third scope. */
@@ -963,9 +963,9 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--sweep' => 'quick']);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Unknown sweep "quick"', $tester->getDisplay());
-        self::assertStringContainsString('narrow', $tester->getDisplay());
-        self::assertStringContainsString('full', $tester->getDisplay());
+        self::assertStringContainsString('Unknown sweep "quick"', $tester->getErrorOutput());
+        self::assertStringContainsString('narrow', $tester->getErrorOutput());
+        self::assertStringContainsString('full', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -992,7 +992,7 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Configuration error', $tester->getDisplay());
+        self::assertStringContainsString('Configuration error', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -1128,7 +1128,12 @@ final class DirectivesCommandTest extends TestCase
         self::assertInstanceOf(DirectivesCommand::class, $command);
 
         $tester = new CommandTester($command);
-        $tester->execute($input);
+        // Every refusal this command throws now flows through
+        // `RefusalPresenter`, which writes the human (`text`) form to
+        // stderr (`01-refusal-envelope.md` §2.1) — separately captured so a
+        // human-format assertion can read it from `getErrorOutput()` rather
+        // than the now-empty `getDisplay()`.
+        $tester->execute($input, ['capture_stderr_separately' => true]);
 
         return $tester;
     }

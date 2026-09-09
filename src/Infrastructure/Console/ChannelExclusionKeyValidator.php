@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
@@ -73,7 +75,7 @@ final readonly class ChannelExclusionKeyValidator
         private ChannelUniverseInterface $channels,
     ) {}
 
-    /** @throws InvalidArgumentException when the key can never exclude anything */
+    /** @throws ConfigurationRefusal when the key can never exclude anything */
     public function assertAddressesAProducedChannel(string $ruleName, string $key): void
     {
         // The retired pair goes first, here and in every other seam that reads
@@ -81,7 +83,7 @@ final readonly class ChannelExclusionKeyValidator
         // would call that half unparseable instead of naming the spelling that
         // was retired and the one that replaced it.
         if (FindingChannel::isRetiredPairSpelling($key)) {
-            throw new InvalidArgumentException(ChannelExclusionKeyHints::notASelector($ruleName, $key));
+            throw $this->refusal(ChannelExclusionKeyHints::notASelector($ruleName, $key));
         }
 
         $produced = $this->channels->channelsProducedBy($ruleName);
@@ -93,7 +95,7 @@ final readonly class ChannelExclusionKeyValidator
         }
 
         $parsed = ChannelLevelSelector::tryParse($key)
-            ?? throw new InvalidArgumentException(ChannelExclusionKeyHints::notASelector($ruleName, $key));
+            ?? throw $this->refusal(ChannelExclusionKeyHints::notASelector($ruleName, $key));
 
         $addressed = $this->channels->expand($parsed->channel());
 
@@ -105,15 +107,13 @@ final readonly class ChannelExclusionKeyValidator
             }
         }
 
-        throw new InvalidArgumentException(
-            ChannelExclusionKeyHints::refusal($ruleName, $parsed->channel(), $addressed, $produced),
-        );
+        throw $this->refusal(ChannelExclusionKeyHints::refusal($ruleName, $parsed->channel(), $addressed, $produced));
     }
 
     /**
      * @param list<FindingChannel> $produced
      *
-     * @throws InvalidArgumentException
+     * @throws ConfigurationRefusal
      */
     private function assertPairAddressesAProducedChannel(string $ruleName, string $key, array $produced): void
     {
@@ -125,11 +125,11 @@ final readonly class ChannelExclusionKeyValidator
         );
 
         if ($problem !== null) {
-            throw new InvalidArgumentException($problem);
+            throw $this->refusal($problem);
         }
 
         $parsed = ChannelLevelSelector::tryParse($key)
-            ?? throw new InvalidArgumentException(ChannelExclusionKeyHints::notASelector($ruleName, $key));
+            ?? throw $this->refusal(ChannelExclusionKeyHints::notASelector($ruleName, $key));
 
         $level = $parsed->level();
 
@@ -137,7 +137,7 @@ final readonly class ChannelExclusionKeyValidator
             return;
         }
 
-        throw new InvalidArgumentException(\sprintf(
+        throw $this->refusal(\sprintf(
             '%s names level "%s", and this option removes namespace aggregates only: the one level it can name'
             . ' is "%s". Drop the level, or write "%s%s%s".',
             self::subject($ruleName, $key),
@@ -147,6 +147,11 @@ final readonly class ChannelExclusionKeyValidator
             ChannelLevelSelector::LEVEL_SEPARATOR,
             self::APPLIED_LEVEL->value,
         ));
+    }
+
+    private function refusal(string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved), $summary);
     }
 
     /**

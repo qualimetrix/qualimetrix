@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -14,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
+use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -52,6 +57,7 @@ final class BaselineExplainCommand extends BaselineCommand
         private readonly BaselineLoader $loader,
         private readonly BoundaryExplanationService $explanationService,
         private readonly BaselineConfiguredThresholds $configuredThresholds,
+        private readonly ChannelDeclarationRegistryInterface $declarations,
     ) {
         parent::__construct();
     }
@@ -92,10 +98,7 @@ final class BaselineExplainCommand extends BaselineCommand
         /** @var string $subjectKey */
         $subjectKey = $input->getArgument('subject');
 
-        $channel = $this->readChannel($input, $output);
-        if ($channel === false) {
-            return self::EXIT_INVALID_INPUT;
-        }
+        $channel = $this->readChannel($input);
 
         // The run first, then the file (ADR 0017). A `computed.*` / `health.*`
         // channel's declaration is resolved from configuration this run
@@ -104,6 +107,24 @@ final class BaselineExplainCommand extends BaselineCommand
         // applies on the same file.
         $context = $this->baselineRun->measure($input, $output);
         $baseline = $this->readBaseline($input);
+
+        // Addressability is checked here, not in readChannel(): the registry
+        // side needs the computed-metric definitions this run just resolved,
+        // and a channel absent from the registry can still be legitimate —
+        // baseline:rename-channels exists precisely because a file outlives a
+        // rename, so a channel the registry no longer knows is a valid input
+        // when the loaded baseline still carries it (`01-refusal-verdicts.md`
+        // §5.3).
+        if ($channel !== null && $this->declarations->declarationFor($channel) === null
+            && !self::channelInBaseline($channel, $baseline)) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--channel'),
+                \sprintf(
+                    'Channel "%s" is declared by no rule and appears in no entry of the loaded baseline.',
+                    $channel->code,
+                ),
+            );
+        }
 
         $explanation = $this->explanationService->explain(
             $subjectKey,
@@ -116,12 +137,13 @@ final class BaselineExplainCommand extends BaselineCommand
         );
 
         if ($explanation->status === BoundaryExplanationStatus::Unknown) {
-            $output->writeln(\sprintf(
-                '<error>Unknown subject "%s": it is absent from both the current analysis and the baseline.</error>',
-                $subjectKey,
-            ));
-
-            return self::EXIT_INVALID_INPUT;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'subject'),
+                \sprintf(
+                    'Unknown subject "%s": it is absent from both the current analysis and the baseline.',
+                    $subjectKey,
+                ),
+            );
         }
 
         self::render($explanation, $output);
@@ -136,11 +158,8 @@ final class BaselineExplainCommand extends BaselineCommand
         return \is_string($path) && $path !== '' ? $this->loader->load($path) : null;
     }
 
-    /**
-     * `false` when `--channel` was given but is not a channel name; `null`
-     * when it was not given at all, which means "every channel".
-     */
-    private function readChannel(InputInterface $input, OutputInterface $output): FindingChannel|false|null
+    /** `null` when `--channel` was not given at all, which means "every channel". */
+    private function readChannel(InputInterface $input): ?FindingChannel
     {
         $raw = $input->getOption('channel');
 
@@ -151,10 +170,40 @@ final class BaselineExplainCommand extends BaselineCommand
         try {
             return new FindingChannel($raw);
         } catch (InvalidArgumentException $e) {
-            $output->writeln(\sprintf('<error>%s</error>', $e->getMessage()));
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--channel'),
+                $e->getMessage(),
+                $e,
+            );
+        }
+    }
 
+    /**
+     * A channel the file mentions at all, valid entry or inert — an entry is
+     * exactly {@see InertEntryReason::UndeclaredChannel} when the registry
+     * has already forgotten the channel a rename map has not yet carried the
+     * file onto, which is precisely the legitimate case this check exists
+     * for (`01-refusal-verdicts.md` §5.3).
+     */
+    private static function channelInBaseline(FindingChannel $channel, ?Baseline $baseline): bool
+    {
+        if ($baseline === null) {
             return false;
         }
+
+        foreach ($baseline->entries as $entry) {
+            if ($entry->identity->channel->code === $channel->code) {
+                return true;
+            }
+        }
+
+        foreach ($baseline->inertEntries as $entry) {
+            if ($entry->identity?->channel->code === $channel->code) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function render(BoundaryExplanation $explanation, OutputInterface $output): void

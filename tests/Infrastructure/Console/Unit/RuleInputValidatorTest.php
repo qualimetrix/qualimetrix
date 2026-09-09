@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -118,7 +118,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelection(),
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('is keyed by "health", which addresses no channel');
         $validator->validate(new ArrayInput([], new InputDefinition()), $rejected, $definitions);
     }
@@ -155,7 +155,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelection(),
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('it does not report at level "file"');
         $validator->validate(new ArrayInput([], new InputDefinition()), $rejected, $definitions);
     }
@@ -169,7 +169,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         $validator = $this->validatorForComputedHealth();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('removes namespace aggregates only');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
@@ -193,7 +193,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelection(disabled: ['health.complexity#health.complexity:class']),
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('is written in the retired channel-pair form');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
@@ -232,7 +232,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         $validator = $this->validatorForComputedHealth();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Write "health.complexity"');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
@@ -262,7 +262,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelection(),
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('addresses no channel');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
@@ -291,7 +291,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelection(),
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('none of them produced by "cohesion.lcom"');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),

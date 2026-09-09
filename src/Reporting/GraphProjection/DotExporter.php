@@ -33,7 +33,7 @@ final class DotExporter
 
         $lines = [];
         $lines[] = 'digraph Dependencies {';
-        $lines[] = '    rankdir=' . $this->options->direction . ';';
+        $lines[] = '    rankdir=' . $this->options->direction->value . ';';
         $lines[] = '    node [shape=box, style=filled, fillcolor=lightblue, fontname="Arial"];';
         $lines[] = '    edge [color=gray];';
         $lines[] = '';

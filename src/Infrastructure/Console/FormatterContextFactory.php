@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -37,11 +39,10 @@ final class FormatterContextFactory
                 : $formatter->getDefaultGroupBy();
         } catch (ValueError) {
             $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
-            throw new InvalidArgumentException(\sprintf(
-                'Invalid --group-by value "%s". Valid values: %s',
-                $groupByValue,
-                $valid,
-            ));
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group-by'),
+                \sprintf('Invalid --group-by value "%s". Valid values: %s', $groupByValue, $valid),
+            );
         }
 
         // Parse --format-opt key=value pairs
@@ -51,10 +52,10 @@ final class FormatterContextFactory
         foreach ($formatOpts as $opt) {
             $eqPos = strpos($opt, '=');
             if ($eqPos === false) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Invalid --format-opt value "%s": expected format key=value',
-                    $opt,
-                ));
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format-opt'),
+                    \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
+                );
             }
             $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
         }
@@ -64,7 +65,8 @@ final class FormatterContextFactory
         if ($allFlag) {
             $existingFindings = $options['violations'] ?? '';
             if ($existingFindings !== '' && $existingFindings !== 'all') {
-                throw new InvalidArgumentException(
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--all'),
                     'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
                     . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
                 );
@@ -79,7 +81,10 @@ final class FormatterContextFactory
         $classFilter = $input->getOption('class');
 
         if ($namespaceFilter !== null && $classFilter !== null) {
-            throw new InvalidArgumentException('Options --namespace and --class are mutually exclusive');
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--namespace/--class'),
+                'Options --namespace and --class are mutually exclusive',
+            );
         }
 
         $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();

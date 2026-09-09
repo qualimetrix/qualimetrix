@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
-use RuntimeException;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -71,9 +74,23 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 . 'of, so a carried entry gets a new selector: a saved' . "\n"
                 . '"baseline:cleanup --remove SELECTOR" stops addressing it.' . "\n\n"
                 . 'A refusal is reported in the chosen format too: with --format=json it' . "\n"
-                . 'is an object with an "error" key, so a script does not have to read the' . "\n"
-                . 'outcome off the exit code alone.',
+                . 'is the {error, exit_code} envelope every other machine-readable refusal' . "\n"
+                . 'in this tool uses, so a script does not have to read the outcome off the' . "\n"
+                . 'exit code alone.',
             );
+    }
+
+    /**
+     * The only one of the five `baseline:*` commands with a `--format`
+     * option of its own (`01-refusal-packages.md`, P01-4): the shared ladder
+     * asks the concrete command rather than reading the option itself, so
+     * the other four are never asked for an option they never declared.
+     */
+    protected function refusalFormat(InputInterface $input): ?string
+    {
+        $format = $input->getOption('format');
+
+        return \is_string($format) ? $format : null;
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
@@ -87,40 +104,54 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
 
         // Resolved before the file checks, not after: a caller that asked for
         // a machine format has asked for every outcome in it, and an
-        // unreadable path is one of the outcomes. The only failure this
-        // command still answers in prose is a `--format` value it could not
-        // read, where there is no chosen format to answer in.
+        // unreadable path is one of the outcomes.
         if ($format !== 'text' && $format !== 'json') {
-            $output->writeln('<error>Unknown --format; expected text or json.</error>');
-
-            return self::EXIT_INVALID_INPUT;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+                'Unknown --format; expected text or json.',
+            );
         }
 
-        foreach ([$baselinePath, $mapPath] as $path) {
-            if (!is_file($path) || !is_readable($path)) {
-                return ChannelRenameReporter::refuse(\sprintf('Not a readable file: %s', $path), $format, $output);
-            }
+        if (!is_file($baselinePath) || !is_readable($baselinePath)) {
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
+                \sprintf('Not a readable file: %s', $baselinePath),
+            );
+        }
+
+        if (!is_file($mapPath) || !is_readable($mapPath)) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
+                \sprintf('Not a readable file: %s', $mapPath),
+            );
         }
 
         try {
-            $report = $this->renamer->carry($baselinePath, ChannelRenameMap::fromFile($mapPath));
-        } catch (RuntimeException $e) {
-            // Only the machine format is answered here. Text is BaselineCommand's,
-            // unchanged, because that is where a refusal still carries its trace
-            // under -v — and the trace matters most exactly when the guess that a
-            // refusal is the user's to fix turns out wrong. A JSON caller trades
-            // it for an outcome it can parse.
-            //
-            // The `{"error": ...}` envelope answers every RuntimeException on this
-            // path alike, including one that means a defect in this tool rather
-            // than an outcome of the carry (e.g. {@see BaselineDocumentLayout}'s
-            // own `ini_set` failure surfaces as one); this surface cannot tell the
-            // two apart today.
-            if ($format !== 'json') {
-                throw $e;
-            }
+            $map = ChannelRenameMap::fromFile($mapPath);
+        } catch (ChannelRenameRefusal $e) {
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
+                $e->getMessage(),
+                $e,
+            );
+        }
 
-            return ChannelRenameReporter::refuse($e->getMessage(), $format, $output);
+        // `ChannelRenameRefusal` is a plain `RuntimeException` (`01-refusal-verdicts.md`
+        // §7, decision on `rename-channels`'s exit codes): the carry
+        // understood the baseline envelope and declined, which is the user's
+        // to fix, so it is normalized here rather than left for the shared
+        // ladder's generic `RuntimeException` clause to answer with code 1.
+        // This `catch` goes dead the day 03/P5 converts the throw sites in
+        // `BaselineChannelRenamer` itself to the carrier directly — a
+        // deliberate, named residual rather than an oversight.
+        try {
+            $report = $this->renamer->carry($baselinePath, $map);
+        } catch (ChannelRenameRefusal $e) {
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
+                $e->getMessage(),
+                $e,
+            );
         }
 
         ChannelRenameReporter::report($report, $format, $output);

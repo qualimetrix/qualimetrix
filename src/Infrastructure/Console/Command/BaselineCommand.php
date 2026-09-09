@@ -32,12 +32,6 @@ use Throwable;
  */
 abstract class BaselineCommand extends Command
 {
-    /**
-     * Exit code for malformed input — a value the command cannot act on at
-     * all, as opposed to a refusal to act on input it understood.
-     */
-    protected const int EXIT_INVALID_INPUT = self::INVALID;
-
     /** Analysis/tool failure, distinct from policy and input/configuration outcomes. */
     protected const int EXIT_ANALYSIS_INCOMPLETE = 4;
 
@@ -56,15 +50,15 @@ abstract class BaselineCommand extends Command
 
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $format = $this->refusalFormat($input);
+
         try {
             return $this->doExecute($input, $output);
         } catch (ConfigurationRefusal $refusal) {
-            // First clause: the carrier is a RuntimeException, and the
-            // `InvalidArgumentException|RuntimeException` clause below would
-            // otherwise catch it and answer with code 1 instead of 3.
-            // `format: null`: none of these five commands thread `--format`
-            // into the presenter yet.
-            return $this->refusalPresenter->refusal($output, null, $refusal);
+            // First clause: the carrier is a RuntimeException, and the split
+            // pair below would otherwise catch it and answer with code 1
+            // instead of 3.
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
         } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
@@ -73,18 +67,38 @@ abstract class BaselineCommand extends Command
             return $this->fail($output, $e->getMessage(), $e);
         } catch (BaselineConflictException $e) {
             return $this->fail($output, $e->getMessage(), $e);
-        } catch (InvalidArgumentException|RuntimeException $e) {
-            // The baseline loader and the v5 reader report every envelope
-            // problem as a RuntimeException, and a path that does not exist
-            // arrives as an InvalidArgumentException. Both are usually the
-            // user's to fix — hence the bare message by default — but
-            // "usually" is why the trace is still available under -v.
+        } catch (InvalidArgumentException $e) {
+            // The named secondary signal for code 3 (`00-overview.md` rule 1,
+            // `01-refusal-exit-ladder.md` §2.6): an `InvalidArgumentException`
+            // that never became a carrier. No trace even under -v — a refusal
+            // is the user's to fix, not ours to explain with a stack.
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
+        } catch (RuntimeException $e) {
+            // The baseline loader and the v5 reader used to report every
+            // envelope problem this way; both are now carriers (03/P5), so
+            // what still reaches here is either a genuine defect or a type
+            // this round has not normalized yet. Either way it is not a
+            // proven refusal, so it keeps the trace-on-`-v` treatment rather
+            // than the presenter's code 3.
             return $this->fail($output, $e->getMessage(), $e);
         } catch (Throwable $e) {
             // Anything else is a bug in this tool rather than in the user's
             // input, and is labelled as such so the two are not confused.
             return $this->fail($output, \sprintf('Unexpected error: %s', $e->getMessage()), $e);
         }
+    }
+
+    /**
+     * The machine format this concrete command answers a refusal in, or
+     * `null` when it has none. Read here — once, before `doExecute()` runs —
+     * rather than each command reading its own `--format` option, because
+     * only one of the five (`baseline:rename-channels`) declares that option
+     * at all; the other four would fail on `getOption('format')` before ever
+     * reaching their own logic (`01-refusal-packages.md`, P01-4).
+     */
+    protected function refusalFormat(InputInterface $input): ?string
+    {
+        return null;
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;

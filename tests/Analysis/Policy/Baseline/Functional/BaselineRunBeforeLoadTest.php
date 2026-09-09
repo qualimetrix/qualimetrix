@@ -229,6 +229,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BoundaryExplanationService(self::producerEdge()),
             new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            $declarations,
         );
 
         return self::tester($command, [

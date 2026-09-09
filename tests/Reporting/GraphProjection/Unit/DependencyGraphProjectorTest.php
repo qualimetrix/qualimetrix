@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\GraphProjection\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +18,7 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
+use ValueError;
 
 final class DependencyGraphProjectorTest extends TestCase
 {
@@ -38,13 +38,22 @@ final class DependencyGraphProjectorTest extends TestCase
         self::assertStringContainsString($expectedFragment, $projection);
     }
 
+    /**
+     * An unsupported format is no longer a `project()`-time refusal: it is
+     * now unconstructible. `$format` is typed by {@see \Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat},
+     * a two-case backed enum, so `match ($request->format)` in
+     * {@see DependencyGraphProjector::project()} is exhaustive by
+     * construction and the old `default => throw` arm has no case left to
+     * guard. The impossibility itself is the evidence — building a request
+     * with an unrecognised format string throws `ValueError` before a
+     * `GraphProjectionRequest` exists to pass anywhere.
+     */
     #[Test]
-    public function itRejectsUnsupportedFormat(): void
+    public function itCannotConstructARequestWithAnUnsupportedFormat(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported format: mermaid. Supported formats: dot, json');
+        $this->expectException(ValueError::class);
 
-        (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(format: 'mermaid'));
+        new GraphProjectionRequest(format: 'mermaid');
     }
 
     #[Test]

@@ -18,6 +18,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -54,8 +56,9 @@ final class BaselineGenerateCommandTest extends TestCase
 
         $tester = $this->execute([]);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString('already exists', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('already exists', $tester->getErrorOutput());
         self::assertSame('do not touch', file_get_contents($this->baselinePath));
     }
 
@@ -100,8 +103,9 @@ final class BaselineGenerateCommandTest extends TestCase
 
         $tester = $this->execute([]);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('already exists', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('already exists', $tester->getErrorOutput());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
     }
@@ -196,8 +200,9 @@ final class BaselineGenerateCommandTest extends TestCase
     {
         $tester = $this->execute(['--mode' => 'ratched']);
 
-        self::assertSame(Command::INVALID, $tester->getStatusCode());
-        self::assertStringContainsString('Unknown --mode value', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Unknown --mode value', $tester->getErrorOutput());
         self::assertFileDoesNotExist($this->baselinePath);
     }
 
@@ -238,9 +243,13 @@ final class BaselineGenerateCommandTest extends TestCase
             new BaselineGenerator($declarations, new FixedClock()),
             new BaselineWriter(),
         );
+        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
 
         $tester = new CommandTester($command);
-        $tester->execute(['baseline' => $this->baselinePath, 'paths' => ['src'], ...$options]);
+        $tester->execute(
+            ['baseline' => $this->baselinePath, 'paths' => ['src'], ...$options],
+            ['capture_stderr_separately' => true],
+        );
 
         return $tester;
     }

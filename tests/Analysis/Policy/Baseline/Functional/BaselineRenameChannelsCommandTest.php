@@ -88,8 +88,18 @@ final class BaselineRenameChannelsCommandTest extends TestCase
         self::assertStringContainsString('"channel":"alpha.renamed"', (string) file_get_contents($baseline));
     }
 
+    /**
+     * A malformed baseline envelope is the user's to fix — the version they
+     * pointed the command at, not a defect this tool caused
+     * (`01-refusal-verdicts.md` §7, decision on `rename-channels`'s exit
+     * codes). Distinct from `BaselineConflictException` and from
+     * `ChannelRenameRefusal`'s own docblock, which groups it with an
+     * unreadable file under one exit code the other four `baseline:*`
+     * commands never use for either — that grouping is what this round
+     * changes for the case it can reach without editing 03/P5's files.
+     */
     #[Test]
-    public function itAnswersAContentRefusalWithOne(): void
+    public function itAnswersAContentRefusalWithThree(): void
     {
         $baseline = $this->baseline([], version: 5);
         $before = (string) file_get_contents($baseline);
@@ -102,15 +112,16 @@ final class BaselineRenameChannelsCommandTest extends TestCase
             escapeshellarg($this->map("alpha.one\talpha.renamed")),
         ), $status);
 
-        self::assertSame(1, $status, $output);
+        self::assertSame(3, $status, $output);
         self::assertSame($before, (string) file_get_contents($baseline));
     }
 
     /**
-     * A caller that asked for a machine format asked for every outcome in it.
-     * Answering a refusal in prose leaves a script to tell the outcomes apart
-     * by exit code alone, which is the one thing `--format=json` exists to
-     * spare it.
+     * A caller that asked for a machine format asked for every outcome in
+     * it, in the same `{error, exit_code}` envelope every other
+     * machine-readable refusal in this tool uses — not this command's own
+     * former ad hoc `{"error": ...}` shape, which carried no exit code at
+     * all.
      */
     #[Test]
     public function itAnswersARefusalInTheChosenFormat(): void
@@ -126,17 +137,18 @@ final class BaselineRenameChannelsCommandTest extends TestCase
                 $map,
             ), $status);
 
-            self::assertSame(1, $status, $output);
+            self::assertSame(3, $status, $output);
 
             $decoded = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
             self::assertIsArray($decoded);
             self::assertArrayHasKey('error', $decoded);
             self::assertNotSame('', $decoded['error']);
+            self::assertSame(3, $decoded['exit_code']);
         }
     }
 
     #[Test]
-    public function itAnswersAMalformedMapWithOne(): void
+    public function itAnswersAMalformedMapWithThree(): void
     {
         $baseline = $this->baseline(['class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]]]);
         $before = (string) file_get_contents($baseline);
@@ -151,17 +163,18 @@ final class BaselineRenameChannelsCommandTest extends TestCase
             escapeshellarg($map),
         ), $status);
 
-        self::assertSame(1, $status, $output);
+        self::assertSame(3, $status, $output);
         self::assertSame($before, (string) file_get_contents($baseline));
     }
 
     /**
-     * Without this assertion, a missing file could regress to exit code 2 —
-     * the malformed-CLI-value code the other four baseline commands never
-     * use for a missing/unreadable file (they answer that with 1 instead).
+     * A missing/unreadable file is a refusal by user input (a path they
+     * named), same as `baseline:generate`'s own missing-argument checks —
+     * not the code-2 `--format`/`--group` family, and no longer the code-1
+     * this command used to share with a malformed envelope either.
      */
     #[Test]
-    public function itAnswersAnUnreachableFileWithOne(): void
+    public function itAnswersAnUnreachableFileWithThree(): void
     {
         $map = $this->map("alpha.one\talpha.renamed");
         $status = 0;
@@ -171,14 +184,14 @@ final class BaselineRenameChannelsCommandTest extends TestCase
             escapeshellarg($this->tempDir . '/absent.json'),
             escapeshellarg($map),
         ), $status);
-        self::assertSame(1, $status);
+        self::assertSame(3, $status);
 
         $this->qmx(\sprintf(
             'baseline:rename-channels %s %s',
             escapeshellarg($this->baseline([])),
             escapeshellarg($this->tempDir . '/absent.tsv'),
         ), $status);
-        self::assertSame(1, $status);
+        self::assertSame(3, $status);
     }
 
     /**

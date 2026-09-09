@@ -5,21 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -42,9 +39,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * performed by the shared {@see LayerAssignmentResolver} so the
  * matching algorithm has a single source of truth.
  *
- * Exits 0 for any informational result (including "no layer matches"), 2
- * (`Command::INVALID`) for malformed input, and 1 (`Command::FAILURE`) for
- * configuration-load errors.
+ * Exits 0 for any informational result (including "no layer matches"), 3
+ * for malformed input or a configuration-load error recognised as the
+ * user's to fix (`ConsoleExitCode::Refusal`), and 1 (`Command::FAILURE`) for
+ * anything else the configuration step throws.
  *
  * `--format=json` renders the same {@see LayerAssignmentResolver::resolve()}
  * result as a machine-readable document instead of the human-readable
@@ -63,13 +61,8 @@ final class LayerAssignmentCommand extends Command
     private const array SUPPORTED_FORMATS = ['text', 'json'];
 
     public function __construct(
-        private readonly RuntimeConfigurator $runtimeConfigurator,
+        private readonly AnalysisPreflight $preflight,
         private readonly LayerAssignmentResolver $layerAssignmentResolver,
-        private readonly ConfigurationInputAdapter $configurationInputAdapter,
-        private readonly RunConfigurationResolverInterface $runConfigurationResolver,
-        private readonly CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
-        private readonly RuleInputValidator $ruleInputValidator,
         private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
@@ -117,7 +110,11 @@ final class LayerAssignmentCommand extends Command
                 implode(', ', self::SUPPORTED_FORMATS),
             ));
 
-            return self::INVALID;
+            // §4 of `01-refusal-verdicts.md` moves this route from 2 to 3:
+            // malformed CLI input is the round's Refusal code, not
+            // `Command::INVALID`. The stream stays stdout — moving it is
+            // named as `directives`-only work in `01-refusal-packages.md`.
+            return ConsoleExitCode::Refusal->value;
         }
 
         /** @var string $rawFqn */
@@ -125,27 +122,17 @@ final class LayerAssignmentCommand extends Command
 
         $validationError = $this->validateFqn($rawFqn);
         if ($validationError !== null) {
-            $this->reportError($output, $format, $validationError, self::INVALID);
+            $this->reportError($output, $format, $validationError, ConsoleExitCode::Refusal->value);
 
-            return self::INVALID;
+            return ConsoleExitCode::Refusal->value;
         }
 
         $symbol = SymbolPath::fromClassFqn($rawFqn);
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $this->runtimeConfigurator->resetRunState();
-            $document = $this->configurationInputAdapter->resolve($input);
-            $configuration = $this->runConfigurationResolver->resolve($document);
-            $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
-            $this->runtimeConfigurator->configure(
-                $document,
-                $findingConfiguration,
-                $this->cacheConfigurationResolver->resolve($document, $configuration->projectRoot),
-                $this->parallelConfigurationResolver->resolve($document),
-                $input,
-                $output,
-            );
+            $prepared = $this->preflight->resolve($input, $output);
+            $configuration = $prepared->runConfiguration;
             $paths = array_map(static fn($path): string => $path->value(), $configuration->paths);
             $resolution = $configuration->generatedFilePolicy === GeneratedFilePolicy::Include
                 ? $this->layerAssignmentResolver->resolveIncludingGenerated(
@@ -164,10 +151,13 @@ final class LayerAssignmentCommand extends Command
             // First clause: the carrier is a RuntimeException, and the
             // `catch (Exception)` below would otherwise catch it and answer
             // with FAILURE (1) instead of the round's Refusal code.
-            // `format: null`: this command's own `--format=json` envelope is
-            // not routed through the presenter yet, so it keeps using
-            // `reportError()` for that.
-            return $this->refusalPresenter->refusal($output, null, $refusal);
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
+        } catch (InvalidArgumentException $e) {
+            // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
+            // §2.6): an `InvalidArgumentException` that never became a
+            // carrier, caught here rather than falling through to the
+            // `Exception` branch below and answering with 1.
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Exception $e) {
             // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
             // so genuine programming bugs in the pipeline surface in CI rather than

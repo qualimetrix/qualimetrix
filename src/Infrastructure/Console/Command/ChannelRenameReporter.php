@@ -5,36 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Renders a `baseline:rename-channels` outcome — a refusal or a
+ * Renders a `baseline:rename-channels` success outcome — a
  * {@see ChannelRenameReport} — in the caller's chosen format.
  *
  * Mirrors {@see BaselineCaptureReporter}: the command resolves and validates
  * `--format` itself, this class only renders what the command already
- * decided to report.
+ * decided to report. A refusal is no longer this class's concern: it is the
+ * shared {@see BaselineCommand} ladder's, via
+ * {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
+ * and {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter} — the
+ * same `{error, exit_code}` envelope every other machine-readable refusal in
+ * this tool uses, rather than this class's own ad hoc `{"error": ...}` shape.
  */
 final class ChannelRenameReporter
 {
-    /**
-     * The refusal, in the format the caller asked for.
-     *
-     * The exit code is the one {@see BaselineCommand} gives every refusal of
-     * this family, so answering here changes what is printed and nothing
-     * else — hence {@see Command::FAILURE} rather than a value owned by this
-     * class, which is not itself a command.
-     */
-    public static function refuse(string $message, string $format, OutputInterface $output): int
-    {
-        $output->writeln($format === 'json'
-            ? json_encode(['error' => $message], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT)
-            : \sprintf('<error>%s</error>', $message));
-
-        return Command::FAILURE;
-    }
-
     public static function report(ChannelRenameReport $report, string $format, OutputInterface $output): void
     {
         if ($format === 'json') {

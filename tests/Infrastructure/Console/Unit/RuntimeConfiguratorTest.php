@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
@@ -235,7 +236,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new BufferedOutput(),
             );
             self::fail('Unknown selector validation must fail.');
-        } catch (InvalidArgumentException) {
+        } catch (ConfigurationRefusal) {
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertNull($this->parallelStore->current()->workers);
             self::assertSame([], $this->rules->all());

@@ -10,15 +10,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -31,7 +27,6 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string ARCHITECTURE_POLICY = 'Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy';
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
-    private const string RUNTIME_CONFIGURATOR = 'Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator';
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
     private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector';
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
@@ -77,13 +72,8 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
             ]);
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
-                new Reference(self::RUNTIME_CONFIGURATOR),
+                new Reference(AnalysisPreflight::class),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(RuleInputValidator::class),
                 new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);

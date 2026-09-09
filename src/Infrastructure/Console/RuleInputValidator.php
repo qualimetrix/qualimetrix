@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
@@ -96,11 +98,14 @@ final readonly class RuleInputValidator
 
         foreach ($selectors as $selector) {
             if (FindingChannel::isRetiredPairSpelling($selector)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Rule selector "%s" is written in the retired channel-pair form. %s',
-                    $selector,
-                    FindingChannel::retiredPairAdvice($selector),
-                ));
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    \sprintf(
+                        'Rule selector "%s" is written in the retired channel-pair form. %s',
+                        $selector,
+                        FindingChannel::retiredPairAdvice($selector),
+                    ),
+                );
             }
 
             // The subject goes into the seam rather than in front of its answer:
@@ -109,15 +114,18 @@ final readonly class RuleInputValidator
             $pairProblem = $levels->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
 
             if ($pairProblem !== null) {
-                throw new InvalidArgumentException($pairProblem);
+                throw ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved), $pairProblem);
             }
 
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Rule selector "%s" does not match any registered producer, group, or channel%s.',
-                    $selector,
-                    ChannelLevelSelector::carriesLevelSeparator($selector) ? ' at that level' : '',
-                ));
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    \sprintf(
+                        'Rule selector "%s" does not match any registered producer, group, or channel%s.',
+                        $selector,
+                        ChannelLevelSelector::carriesLevelSeparator($selector) ? ' at that level' : '',
+                    ),
+                );
             }
         }
     }
@@ -139,20 +147,24 @@ final readonly class RuleInputValidator
         foreach ($cliOptions as $option) {
             $colon = strpos($option, ':');
             if ($colon === false || $colon === 0) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.',
-                    $option,
-                ));
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--rule-opt'),
+                    \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $option),
+                );
             }
             $owners[] = substr($option, 0, $colon);
         }
 
         foreach (array_unique($owners) as $owner) {
             if ($owner === '' || FindingChannel::isRetiredPairSpelling($owner) || !$this->ruleSelector->matchesKnownProducer($owner, $producers)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Rule option owner "%s" does not match any registered producer rule.',
-                    $owner,
-                ));
+                // Owners are merged from both `rules:`/presets and `--rule-opt`
+                // (`array_unique` above), so which source named this one is no
+                // longer recoverable — the same reasoning as
+                // `RuleOptionsFactory:367-369` for the sibling "unknown owner" refusal.
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    \sprintf('Rule option owner "%s" does not match any registered producer rule.', $owner),
+                );
             }
         }
     }
@@ -228,7 +240,8 @@ final readonly class RuleInputValidator
         }
 
         if (filter_var($workers, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false) {
-            throw new InvalidArgumentException(
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--workers'),
                 \sprintf('Invalid value "%s" for --workers. Expected a non-negative integer.', $workers),
             );
         }

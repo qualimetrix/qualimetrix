@@ -5260,19 +5260,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itReportsASelectorThatMatchesNothingAndWritesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itReportsAndWritesNothingWithoutRemove
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itWritesANarrowedRunUnderForce
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a configuration that will not load"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a defect in the tool itself"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a file somebody else rewrote"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a path that does not exist"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"an unreadable baseline envelope"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itFramesCheckArchitectureSyntaxAndPreparationLikeBeforeP4
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itFramesDebugArchitectureSyntaxAndPreparationLikeBeforeP4
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itPreservesBaselineArchitectureFailureFraming"Architecture preparation failure"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itPreservesBaselineArchitectureFailureFraming"invalid Architecture syntax"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a configuration that will not load"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"a configuration that will not load"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"an InvalidArgumentException nothing normalized"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a defect in the tool itself"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a file somebody else rewrote"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a path that does not exist"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"an unreadable baseline envelope"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itResetsSharedBaselineRuntimeBeforeConfigurationLoadingFails
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAcceptsEveryOptionThatDecidesWhatIsMeasured"cleanup"
@@ -5289,12 +5283,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itNoLongerLetsCheckWriteABaseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itAcceptsAChannelTheRegistryNoLongerDeclaresWhenTheLoadedBaselineStillCarriesIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsThatABaselineOnlySubjectIsAbsentFromTheCurrentRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsAllThreeSources
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheStoredAndTheCurrentNumberOnADriftingChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRefusesToPickOneOfTwoThresholdsAChannelIsJudgedAgainst
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAChannelWrittenInTheRetiredPairForm
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownSubjectEvenWhenAChannelWasExplicitlyRequested
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSpellsAnAbsentSourceDifferentlyFromAZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itStillResolvesAChannelWhoseOptionsHoldOneBoundary
@@ -5328,10 +5324,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithOne
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithThree
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersARefusalInTheChosenFormat
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
@@ -6412,6 +6408,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itRebuildsTheCacheOnTheNextCreateAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itReturnsAFileCacheConfiguredFromTheProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itUsesTheCacheDirFromTheConfigurationAtFirstCall
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itPrintsATraceForAnInternalErrorUnderVerboseButNotForARefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAWorkingDirectoryThatIsAFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownCommandNonInteractively
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownRuleGroupThroughTheApplicationLadder
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnreadableWorkingDirectoryWithoutAPhpWarning
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
@@ -6547,10 +6550,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsGraphToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itFailsWhenNoFilesFound
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionOrFormatWithoutRunningAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionWithAParseableJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT output file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT stdout"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON output file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnwritableOutputPathBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNoClustersOption
@@ -6598,7 +6604,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInCheck
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDebugLayerAssignment
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDirectives
- - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitThreeInCheck
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitOneAsAnInternalError
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesIncompleteAnalysisAtExitFourInTheSharedLadder
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itWiresThePresenterIntoEveryCommandTheRealContainerBuilds
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itGivesEveryConsumerTheOneOwnerTheContainerHolds
@@ -6687,8 +6693,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAcceptsAWritableOutputTargetOrNoTargetAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesAnUnwritableOutputTargetBeforeAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
@@ -6711,8 +6720,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedLevelKeyIdenticallyThroughBothDoors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedTopLevelKeyIdenticallyThroughBothDoors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersTheSameTypoTheSameWayWhicheverDoorItArrivesThrough
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itFramesTheGenericRefusalAsAConfigurationErrorAndTheRetiredOneWithoutAPrefix
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itLeavesStdoutEmptyUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersWithAParseableEnvelopeUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itFramesEveryRefusalAsAConfigurationErrorRegardlessOfDoorOrCause
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"configuration file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"rule-opt flag"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"configuration file"
@@ -7030,11 +7039,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itCannotConstructARequestWithAnUnsupportedFormat
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"json"
- - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itRejectsUnsupportedFormat
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itChangesDirection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itColorsByInstability
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itDisablesColorByInstability
@@ -7487,8 +7496,16 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itThrowsForAnInvalidWorkingDirectory
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsInternalErrorExitCodeForAnUnrelatedThrowable
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAConfigurationRefusalThrownBeforeExecute
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnInvalidWorkingDirectoryInsteadOfThrowing
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnknownCommandNonInteractively
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnreadableWorkingDirectoryWithoutChdir
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itDescribesShowResolvedAsBaselineEntries
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersABooleanAliasAsValueNone
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersANumericAliasAsValueRequired

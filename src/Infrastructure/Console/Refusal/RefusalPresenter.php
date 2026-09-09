@@ -92,9 +92,25 @@ final class RefusalPresenter
         $this->writeStderr($output, \sprintf('<error>%s</error>', $message));
     }
 
+    /**
+     * `errorStream->writer()` first, only to bind — its return is discarded
+     * here — then `boundWriter()` to write. Every message this class writes
+     * is the message that ends the run, and `writer()`'s no-channel drop is
+     * scoped to ordinary diagnostics (a log line, a preflight warning) — see
+     * the exemption on `boundWriter()`'s own docblock. Calling `boundWriter()`
+     * alone, unbound, would resolve its fallback against `$output` itself
+     * rather than against `$output`'s error channel: the callers here (a
+     * command's `execute()`, this round's own ladder) hand in the console
+     * output, not an already-resolved error stream the way
+     * `Application::renderThrowable()` receives one. Binding first is what
+     * lets `boundWriter()` fall back only when `$output` truly has no
+     * separate channel — an embedder's single-channel output — rather than
+     * merely because nothing bound this run yet.
+     */
     private function writeStderr(OutputInterface $output, string $message): void
     {
-        $this->errorStream->writer($output)->writeln($message, OutputInterface::VERBOSITY_QUIET);
+        $this->errorStream->writer($output);
+        $this->errorStream->boundWriter($output)->writeln($message, OutputInterface::VERBOSITY_QUIET);
     }
 
     /**

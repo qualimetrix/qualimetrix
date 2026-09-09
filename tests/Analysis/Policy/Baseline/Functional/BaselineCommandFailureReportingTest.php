@@ -11,8 +11,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -21,37 +23,24 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
-use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
@@ -64,19 +53,13 @@ use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Health\SummaryEnricher;
-use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 use Throwable;
@@ -92,9 +75,10 @@ use Throwable;
  * default output stays a single sentence — nobody wants a trace for a typo'd
  * path — and `-v` is what it was asked for.
  *
- * {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand} makes the
- * same trade, which is the point: the two commands must not answer the same
- * flag differently.
+ * {@see self::provideRefusals()} covers the round's own carrier and its
+ * named secondary signal separately: both give code 3 on stderr, and neither
+ * ever carries a trace, which is the opposite trade from the rest of this
+ * file's cases.
  */
 #[CoversClass(BaselineCommand::class)]
 final class BaselineCommandFailureReportingTest extends TestCase
@@ -104,19 +88,9 @@ final class BaselineCommandFailureReportingTest extends TestCase
      */
     public static function provideFailures(): iterable
     {
-        yield 'a path that does not exist' => [
-            new InvalidArgumentException('Path(s) do not exist: src'),
-            'Path(s) do not exist: src',
-        ];
-
         yield 'an unreadable baseline envelope' => [
             new RuntimeException('Baseline file not found: b.json'),
             'Baseline file not found: b.json',
-        ];
-
-        yield 'a configuration that will not load' => [
-            ConfigLoadException::fileNotFound('qmx.yaml'),
-            'Configuration error:',
         ];
 
         yield 'a file somebody else rewrote' => [
@@ -145,8 +119,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
     }
 
     /**
-     * Under `-v` the same failure carries the trace — including the two
-     * classes previously declared not to deserve one.
+     * Under `-v` the same failure carries the trace.
      */
     #[Test]
     #[DataProvider('provideFailures')]
@@ -160,60 +133,40 @@ final class BaselineCommandFailureReportingTest extends TestCase
         self::assertStringContainsString(self::class, $tester->getDisplay());
     }
 
-    /** @return iterable<string, array{Throwable, string}> */
-    public static function provideArchitectureFailures(): iterable
+    /**
+     * The round's own carrier and its named secondary signal
+     * (`00-overview.md` rule 1, `01-refusal-exit-ladder.md` §2.6): both give
+     * code 3 on stderr, and neither ever carries a trace — a refusal is the
+     * user's to fix, not ours to explain with a stack.
+     *
+     * @return iterable<string, array{Throwable, string}>
+     */
+    public static function provideRefusals(): iterable
     {
-        yield 'invalid Architecture syntax' => [
-            new ArchitectureConfigurationException('architecture.layers', 'invalid architecture syntax'),
-            'Configuration error: invalid architecture syntax',
+        yield 'an InvalidArgumentException nothing normalized' => [
+            new InvalidArgumentException('Path(s) do not exist: src'),
+            'Path(s) do not exist: src',
         ];
 
-        yield 'Architecture preparation failure' => [
-            new ArchitecturePreparationException('template expansion failed'),
-            'template expansion failed',
+        yield 'a configuration that will not load' => [
+            ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
+                'qmx.yaml was not found',
+            ),
+            'Configuration error: qmx.yaml was not found',
         ];
     }
 
     #[Test]
-    #[DataProvider('provideArchitectureFailures')]
-    public function itPreservesBaselineArchitectureFailureFraming(Throwable $thrown, string $expected): void
+    #[DataProvider('provideRefusals')]
+    public function itAnswersARefusalOnStderrWithExitThreeAndNoTrace(Throwable $thrown, string $expected): void
     {
-        $tester = self::execute($thrown, verbose: false);
+        $tester = self::execute($thrown, verbose: true);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertSame($expected, trim($tester->getDisplay()));
-    }
-
-    #[Test]
-    public function itFramesCheckArchitectureSyntaxAndPreparationLikeBeforeP4(): void
-    {
-        [$syntaxExit, $syntaxOutput] = $this->executeCheckFailure(
-            new ArchitectureConfigurationException('architecture.layers', 'invalid architecture syntax'),
-        );
-        [$preparationExit, $preparationOutput] = $this->executeCheckFailure(
-            new ArchitecturePreparationException('template expansion failed'),
-        );
-
-        self::assertSame(3, $syntaxExit);
-        self::assertSame('Configuration error: invalid architecture syntax', $syntaxOutput);
-        self::assertSame(3, $preparationExit);
-        self::assertSame('Architecture configuration error: template expansion failed', $preparationOutput);
-    }
-
-    #[Test]
-    public function itFramesDebugArchitectureSyntaxAndPreparationLikeBeforeP4(): void
-    {
-        $syntax = $this->executeDebugFailure(
-            new ArchitectureConfigurationException('architecture.layers', 'invalid architecture syntax'),
-        );
-        $preparation = $this->executeDebugFailure(
-            new ArchitecturePreparationException('template expansion failed'),
-        );
-
-        self::assertSame(Command::FAILURE, $syntax->getStatusCode());
-        self::assertSame('Configuration error: invalid architecture syntax', trim($syntax->getDisplay()));
-        self::assertSame(Command::FAILURE, $preparation->getStatusCode());
-        self::assertSame('Failed to load configuration: template expansion failed', trim($preparation->getDisplay()));
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString($expected, $tester->getErrorOutput());
+        self::assertStringNotContainsString('Stack trace:', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -243,7 +196,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $profile->enable();
 
         $pipeline = self::createStub(ConfigurationPipelineInterface::class);
-        $pipeline->method('resolve')->willThrowException(ConfigLoadException::fileNotFound('qmx.yaml'));
+        $pipeline->method('resolve')->willThrowException(ConfigurationRefusal::aboutDocument(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
+            'qmx.yaml was not found',
+        ));
         $baselineRun = new BaselineRun(
             $runtime,
             self::withoutConstructor(MeasuredFindingSet::class),
@@ -258,7 +214,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
             self::fail('Configuration loading must fail.');
-        } catch (ConfigLoadException) {
+        } catch (ConfigurationRefusal) {
             self::assertSame(
                 $staticChannels,
                 (new ReflectionClass($selector))->getProperty('channels')->getValue($selector),
@@ -282,62 +238,16 @@ final class BaselineCommandFailureReportingTest extends TestCase
                 throw $this->thrown;
             }
         };
+        $command->setRefusalPresenter(self::refusalPresenter());
 
         $tester = new CommandTester($command);
-        $tester->execute([], $verbose ? ['verbosity' => OutputInterface::VERBOSITY_VERBOSE] : []);
-
-        return $tester;
-    }
-
-    /** @return array{int, string} */
-    private function executeCheckFailure(Throwable $thrown): array
-    {
-        $pipeline = self::createStub(ConfigurationPipelineInterface::class);
-        $pipeline->method('resolve')->willThrowException($thrown);
-        $rules = self::createStub(RuleRegistryInterface::class);
-        $rules->method('getClasses')->willReturn([]);
-        $rules->method('getAllCliAliases')->willReturn([]);
-
-        $command = new CheckCommand(
-            self::createStub(AnalysisPipelineInterface::class),
-            self::withoutConstructor(FindingFilterOrchestrator::class),
-            self::runtimeConfigurator(),
-            self::resultPresenter(),
-            self::ruleInputValidator($rules),
-            self::withoutConstructor(CheckScopeResolver::class),
-            self::configurationInputAdapter($pipeline),
-            self::createStub(RunConfigurationResolverInterface::class),
-            self::createStub(CacheConfigurationResolverInterface::class),
-            self::createStub(ParallelConfigurationResolverInterface::class),
-            self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
-            self::createStub(OutputFormatResolverInterface::class),
-            self::refusalPresenter(),
+        $tester->execute(
+            [],
+            [
+                'capture_stderr_separately' => true,
+                ...($verbose ? ['verbosity' => OutputInterface::VERBOSITY_VERBOSE] : []),
+            ],
         );
-
-        $diagnostics = new BufferedOutput();
-        $output = new ConsoleOutput();
-        $output->setErrorOutput($diagnostics);
-        $exit = $command->run(new ArrayInput([], $command->getDefinition()), $output);
-
-        return [$exit, trim($diagnostics->fetch())];
-    }
-
-    private function executeDebugFailure(Throwable $thrown): CommandTester
-    {
-        $pipeline = self::createStub(ConfigurationPipelineInterface::class);
-        $pipeline->method('resolve')->willThrowException($thrown);
-        $command = new LayerAssignmentCommand(
-            self::runtimeConfigurator(),
-            self::withoutConstructor(LayerAssignmentResolver::class),
-            self::configurationInputAdapter($pipeline),
-            self::createStub(RunConfigurationResolverInterface::class),
-            self::createStub(CacheConfigurationResolverInterface::class),
-            self::createStub(ParallelConfigurationResolverInterface::class),
-            self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
-            self::refusalPresenter(),
-        );
-        $tester = new CommandTester($command);
-        $tester->execute(['fqn' => 'App\\Service\\Example']);
 
         return $tester;
     }
@@ -413,28 +323,6 @@ final class BaselineCommandFailureReportingTest extends TestCase
         );
     }
 
-    private static function resultPresenter(): ResultPresenter
-    {
-        $profile = new ProfileSession();
-        $errorStream = new ErrorStream();
-
-        return new ResultPresenter(
-            self::createStub(FormatterRegistryInterface::class),
-            $profile,
-            self::withoutConstructor(SummaryEnricher::class),
-            new ProfilePresenter($profile, $errorStream),
-            new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
-            new FindingFilter(),
-            new FormatterContextFactory(),
-            self::createStub(RuleConfigurationInterface::class),
-            $errorStream,
-        );
-    }
-
-    /**
-     * Never exercised here: every case in this file throws before either
-     * command reaches its own `catch (ConfigurationRefusal)` clause.
-     */
     private static function refusalPresenter(): RefusalPresenter
     {
         return new RefusalPresenter(new ErrorStream());

@@ -807,6 +807,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
+        - 'Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers'
+        - 'Qualimetrix\Infrastructure\Console\CheckResolvedConfiguration'
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
@@ -1037,6 +1039,8 @@ architecture:
     - name: reporting-graphprojection
       patterns:
         - 'Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat'
         - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest'
         - 'Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector'
         - 'Qualimetrix\Reporting\GraphProjection\DotExporter'

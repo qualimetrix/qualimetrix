@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
 use Symfony\Component\Console\Application;
@@ -23,8 +24,11 @@ use Symfony\Component\Console\Tester\CommandTester;
  * Functional tests for {@see LayerAssignmentCommand}.
  *
  * Tests cover the exit-code contract documented in `docs/internal/plans/architecture-rules-followup.md`
- * (Step 6): SUCCESS for any informational outcome (including "no layer matches"),
- * INVALID for malformed input, FAILURE for config-load problems.
+ * (Step 6) as narrowed by `docs/internal/plans/configuration-refusal/01-refusal-verdicts.md`
+ * §4: SUCCESS for any informational outcome (including "no layer matches"),
+ * `ConsoleExitCode::Refusal` (3) for malformed input or a configuration-load
+ * error recognised as the user's to fix, FAILURE for anything else the
+ * configuration step throws.
  *
  * The "command-vs-runtime agreement" regression test pins the key invariant:
  * the command MUST report the same layer assignment the runtime
@@ -161,7 +165,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => '']);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         self::assertStringContainsString('must not be empty', $tester->getDisplay());
     }
 
@@ -171,7 +175,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => "   \t  "]);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         self::assertStringContainsString('must not be empty', $tester->getDisplay());
     }
 
@@ -181,7 +185,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => 'App\\Service Foo']);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         self::assertStringContainsString('whitespace', $tester->getDisplay());
     }
 
@@ -191,7 +195,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $tester = $this->newTester();
         $exit = $tester->execute(['fqn' => 'App\\Service-Foo']);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         self::assertStringContainsString('not a valid PHP', $tester->getDisplay());
     }
 
@@ -203,11 +207,18 @@ final class LayerAssignmentCommandTest extends TestCase
         $exit = $tester->execute([
             'fqn' => 'App\\Service\\Foo',
             '--config' => $missing,
-        ]);
+        ], ['capture_stderr_separately' => true]);
 
-        self::assertSame(Command::FAILURE, $exit);
-        self::assertStringContainsString('Configuration error', $tester->getDisplay());
-        self::assertStringContainsString($missing, $tester->getDisplay());
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        // This route is the `ConfigurationRefusal` carrier caught by the
+        // command's own clause and handed to `RefusalPresenter::refusal()`,
+        // which writes the human form to stderr (`01-refusal-envelope.md`
+        // §2.1) — unlike the command's own `reportError()` paths above,
+        // which still write to stdout (`01-refusal-packages.md` scopes the
+        // stdout-to-stderr move to `directives`, not this command).
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Configuration error', $tester->getErrorOutput());
+        self::assertStringContainsString($missing, $tester->getErrorOutput());
     }
 
     #[Test]
@@ -272,7 +283,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
-        self::assertCount(8, $commandConstructor->getParameters());
+        self::assertCount(3, $commandConstructor->getParameters());
         self::assertCount(6, $resolverConstructor->getParameters());
     }
 
@@ -520,10 +531,13 @@ final class LayerAssignmentCommandTest extends TestCase
         $exit = $tester->execute([
             'fqn' => 'App\\Service\\UserService',
             '--config' => $this->writeConfigWithComputedSelector('computed.stale'),
-        ]);
+        ], ['capture_stderr_separately' => true]);
 
-        self::assertSame(Command::FAILURE, $exit);
-        self::assertStringContainsString('does not match any registered', $tester->getDisplay());
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        // Thrown as the `ConfigurationRefusal` carrier and presented on
+        // stderr — see the note in `itExitsFailureForANonExistentConfigPath`.
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
     }
 
     /**
@@ -684,7 +698,7 @@ final class LayerAssignmentCommandTest extends TestCase
             '--format' => 'yaml',
         ]);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         self::assertStringContainsString('Unknown format "yaml"', $tester->getDisplay());
         self::assertStringContainsString('text, json', $tester->getDisplay());
     }
@@ -698,11 +712,11 @@ final class LayerAssignmentCommandTest extends TestCase
             '--format' => 'json',
         ]);
 
-        self::assertSame(Command::INVALID, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertArrayHasKey('error', $decoded);
         self::assertStringContainsString('must not be empty', $decoded['error']);
-        self::assertSame(Command::INVALID, $decoded['exit_code']);
+        self::assertSame(ConsoleExitCode::Refusal->value, $decoded['exit_code']);
     }
 
     #[Test]
@@ -716,12 +730,12 @@ final class LayerAssignmentCommandTest extends TestCase
             '--format' => 'json',
         ]);
 
-        self::assertSame(Command::FAILURE, $exit);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertArrayHasKey('error', $decoded);
         self::assertStringContainsString('Configuration error', $decoded['error']);
         self::assertStringContainsString($missing, $decoded['error']);
-        self::assertSame(Command::FAILURE, $decoded['exit_code']);
+        self::assertSame(ConsoleExitCode::Refusal->value, $decoded['exit_code']);
     }
 
     private function newTester(): CommandTester

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -48,6 +49,8 @@ final class ScopeWarningChecker
         foreach ($analyzedPaths as $path) {
             try {
                 $resolvedAnalyzed[] = $path->canonicalize();
+            } catch (ConfigurationRefusal $e) {
+                throw $e;
             } catch (RuntimeException) {
                 // Best-effort coverage check: a non-existent analyzed path is
                 // already a separate, more relevant error reported by the
@@ -61,6 +64,8 @@ final class ScopeWarningChecker
             try {
                 $resolvedAutoload = PathFactory::fromCliArgument($autoloadPath, $projectRoot)
                     ->canonicalize();
+            } catch (ConfigurationRefusal $e) {
+                throw $e;
             } catch (RuntimeException) {
                 // Autoload directory doesn't exist on disk — skip
                 continue;
@@ -90,6 +95,8 @@ final class ScopeWarningChecker
     {
         try {
             $resolvedRoot = $projectRoot->canonicalize();
+        } catch (ConfigurationRefusal $e) {
+            throw $e;
         } catch (RuntimeException) {
             // Fall back to non-canonicalized comparison when the project root
             // cannot be resolved (e.g., tested with a synthetic in-memory root).

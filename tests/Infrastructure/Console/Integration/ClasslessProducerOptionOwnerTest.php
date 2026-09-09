@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
@@ -214,7 +214,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
                 self::configurationExcluding($owner, 'health.typing'),
                 $definitions,
             );
-        } catch (InvalidArgumentException $refusal) {
+        } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(
                 \sprintf('none of them produced by "%s"', $owner),
                 $refusal->getMessage(),
@@ -293,7 +293,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
                 self::configurationOwning($owner),
                 new ResolvedComputedMetricDefinitions([]),
             );
-        } catch (InvalidArgumentException $refusal) {
+        } catch (ConfigurationRefusal $refusal) {
             return $refusal->getMessage();
         }
 

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -198,6 +199,12 @@ final class RulesCommandWiringTest extends TestCase
      * known group in the wrong case, are refused instead of answered with an
      * empty listing and exit 0. Checked against the real container, so the
      * groups the failure offers are the ones the listing actually prints.
+     *
+     * `RulesCommand` throws the round's carrier and has no ladder of its own
+     * (`01-refusal-verdicts.md` §5.7); under `CommandTester` that carrier
+     * flies out of `execute()` rather than settling as a status code, so each
+     * group gets its own try/catch — `expectException()` would only survive
+     * the first iteration of the loop.
      */
     #[Test]
     public function itRefusesAGroupNoProducerHas(): void
@@ -209,11 +216,14 @@ final class RulesCommandWiringTest extends TestCase
 
         foreach (['nonexistent', 'Complexity'] as $group) {
             $tester = new CommandTester($command);
-            $tester->execute(['--group' => $group]);
 
-            self::assertSame(1, $tester->getStatusCode(), $group);
-            self::assertStringContainsString(\sprintf('No rule group "%s"', $group), $tester->getDisplay());
-            self::assertStringContainsString('complexity', $tester->getDisplay(), 'the failure names the groups that exist');
+            try {
+                $tester->execute(['--group' => $group]);
+                self::fail(\sprintf('Expected a ConfigurationRefusal for group "%s".', $group));
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString(\sprintf('No rule group "%s"', $group), $refusal->summary(), $group);
+                self::assertStringContainsString('complexity', $refusal->summary(), 'the failure names the groups that exist');
+            }
         }
     }
 }

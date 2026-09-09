@@ -125,6 +125,16 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Configuration\\ConfiguredFindingExclusionsResolver",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimits",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimitsController",
+          "closes_in": null
         }
       ]
     },
@@ -249,6 +259,11 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Contract\\ConfiguredFindingExclusionsResolverInterface",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
+          "closes_in": null
         }
       ]
     },
@@ -357,6 +372,91 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicy",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimits",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimitsController",
           "closes_in": null
         }
       ]
@@ -497,6 +597,86 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicy",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimits",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimitsController",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
+          "closes_in": null
         }
       ]
     },
@@ -605,6 +785,91 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicy",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimits",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimitsController",
           "closes_in": null
         }
       ]
@@ -6532,6 +6797,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
           "closes_in": null
         }
       ]
@@ -13090,6 +13360,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "closes_in": null
         }
       ]
     },
@@ -13107,17 +13382,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
           "closes_in": null
         },
         {
@@ -16955,6 +17220,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "closes_in": null
         }
       ]
     },
@@ -16972,17 +17242,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
           "closes_in": null
         },
         {
@@ -17060,6 +17320,15 @@
           "operations": [
             "service_reference",
             "service_registration"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference"
           ]
         }
       ]
@@ -17452,15 +17721,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
-          "closes_in": null,
-          "operations": [
-            "service_reference"
-          ]
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "closes_in": null,
           "operations": [
@@ -17718,15 +17978,6 @@
       "visibility": "internal",
       "closure_package": "P8",
       "consumers": [
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
-          "closes_in": null,
-          "operations": [
-            "service_reference"
-          ]
-        },
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
@@ -18428,6 +18679,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "closes_in": null
         }
       ]
     },
@@ -18445,17 +18701,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
           "closes_in": null
         },
         {
@@ -18877,15 +19123,9 @@
       "path": "src/Infrastructure/Rule/Exception/ConflictingCliAliasException.php",
       "kind": "class",
       "owner": "Infrastructure.Rule",
-      "visibility": "contract",
+      "visibility": "internal",
       "closure_package": "P8",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        }
-      ]
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Rule\\KnownRuleNamesAdapter": {
       "path": "src/Infrastructure/Rule/KnownRuleNamesAdapter.php",
@@ -19051,6 +19291,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "closes_in": null
         }
       ]
     },
@@ -19063,7 +19308,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
           "closes_in": null
         },
         {
@@ -19136,6 +19381,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration",
+          "closes_in": null
         }
       ]
     },
@@ -19153,7 +19403,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers",
           "closes_in": null
         },
         {
@@ -19949,9 +20199,15 @@
       "path": "src/Analysis/Policy/Baseline/ChannelRenameRefusal.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P6-C",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Policy\\Baseline\\ChannelRenameReport": {
       "path": "src/Analysis/Policy/Baseline/ChannelRenameReport.php",
@@ -20060,6 +20316,61 @@
       "visibility": "internal",
       "closure_package": "P5",
       "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\CheckConfigurationResolvers": {
+      "path": "src/Infrastructure/Console/CheckConfigurationResolvers.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_registration",
+            "service_reference"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\CheckResolvedConfiguration": {
+      "path": "src/Infrastructure/Console/CheckResolvedConfiguration.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\Contract\\GraphDirection": {
+      "path": "src/Reporting/GraphProjection/Contract/GraphDirection.php",
+      "kind": "enum",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\Contract\\GraphExportFormat": {
+      "path": "src/Reporting/GraphProjection/Contract/GraphExportFormat.php",
+      "kind": "enum",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand",
+          "closes_in": null
+        }
+      ]
     }
   },
   "enforcement_seams": {}

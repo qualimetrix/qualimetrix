@@ -27,6 +27,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -139,7 +141,8 @@ final class BaselineCleanupCommandTest extends TestCase
         $bytesBefore = (string) file_get_contents($this->baselinePath);
         $tester = $this->execute(['--remove' => ['file:src/Legacy.php']]);
 
-        self::assertSame(Command::INVALID, $tester->getStatusCode());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Not entry selectors', $tester->getErrorOutput());
         self::assertSame($bytesBefore, file_get_contents($this->baselinePath));
     }
 
@@ -213,9 +216,13 @@ final class BaselineCleanupCommandTest extends TestCase
             new BaselineWriter(),
             $declarations,
         );
+        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
 
         $tester = new CommandTester($command);
-        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options]);
+        $tester->execute(
+            ['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options],
+            ['capture_stderr_separately' => true],
+        );
 
         return $tester;
     }

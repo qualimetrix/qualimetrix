@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -17,6 +18,12 @@ use Symfony\Component\Console\Tester\CommandTester;
  * not as exit code 1 ("Unexpected error"). The documented contract reserves 3
  * for a family of user-fixable inputs that fail safely, and this class pins the
  * five that were previously misclassified as generic failures.
+ *
+ * Every case here runs under `--format=json`, so P01-3 moves the refusal from
+ * stderr to the `{error, exit_code}` envelope on stdout
+ * (`01-refusal-envelope.md` §2.1): a machine-readable format must never pair
+ * exit code 3 with zero bytes of parseable stdout, which is the defect this
+ * round exists to close.
  */
 final class CheckCommandConfigErrorExitCodeTest extends TestCase
 {
@@ -49,8 +56,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('Invalid formula syntax', $tester->getErrorOutput());
+        self::assertStringContainsString('Invalid formula syntax', self::envelopeError($tester));
     }
 
     #[Test]
@@ -69,8 +75,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('references unknown metric', $tester->getErrorOutput());
+        self::assertStringContainsString('references unknown metric', self::envelopeError($tester));
     }
 
     #[Test]
@@ -84,7 +89,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Invalid JSON in baseline file', $tester->getErrorOutput());
+        self::assertStringContainsString('Invalid JSON in baseline file', self::envelopeError($tester));
     }
 
     #[Test]
@@ -98,7 +103,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Baseline version 10 cannot be converted', $tester->getErrorOutput());
+        self::assertStringContainsString('Baseline version 10 cannot be converted', self::envelopeError($tester));
     }
 
     #[Test]
@@ -118,7 +123,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
             ]);
 
             self::assertSame(3, $tester->getStatusCode());
-            self::assertStringContainsString('Not inside a git repository', $tester->getErrorOutput());
+            self::assertStringContainsString('Not inside a git repository', self::envelopeError($tester));
         } finally {
             chdir($originalWorkingDirectory);
         }
@@ -132,7 +137,9 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application(new ErrorStream());
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $application = new Application(new ErrorStream(), $refusalPresenter);
         $application->addCommand($command);
 
         $tester = new CommandTester($command);
@@ -144,6 +151,15 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         ], ['capture_stderr_separately' => true]);
 
         return $tester;
+    }
+
+    /** Parses the `{error, exit_code}` envelope off stdout and returns its message. */
+    private static function envelopeError(CommandTester $tester): string
+    {
+        /** @var array{error: string, exit_code: int} $envelope */
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $envelope['error'];
     }
 
     private function writeFile(string $name, string $contents): string
