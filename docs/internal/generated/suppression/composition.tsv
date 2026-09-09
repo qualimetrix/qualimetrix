@@ -139,6 +139,7 @@ rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Comple
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Coupling/RfcVisitor.php	Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor	warning	1
