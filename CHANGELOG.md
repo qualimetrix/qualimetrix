@@ -100,6 +100,18 @@ envelope, and at a verbosity `-q` does not suppress. `baseline:rename-channels
 `{error, exit_code}` envelope every other JSON-document refusal in the tool
 now uses.
 
+**`--silent` now behaves like `-q`, not like "no output at all": it also no
+longer hides a refusal or an internal error.** `--silent` used to leave
+`VERBOSITY_SILENT` in place, which drops every write regardless of the
+message's own verbosity — so a run that failed under `--silent` still
+produced zero bytes on both streams, the same behaviour `-q` had before this
+round. `Application::configureIO()` now demotes `VERBOSITY_SILENT` to
+`VERBOSITY_QUIET` immediately after Symfony applies it, so `--silent` is
+`-q` under a different spelling: the report stays suppressed, but the
+message explaining why there is no report is not. A CI wrapper that relied
+on `--silent` producing zero bytes on every exit code sees output on a
+refusal or an internal error where it previously saw none.
+
 **A command-line parsing error now exits 3, not 1.** An unknown option or an
 unknown command — anything Symfony's own console layer rejects before a
 command body runs — used to reach the outer handler uncaught and take its

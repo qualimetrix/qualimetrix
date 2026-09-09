@@ -3589,3 +3589,13 @@ X10 заморозил дискриминатор в шести правилах
 
 - **Чего это НЕ закрывает:** вопрос имени. Имена уровней решены ADR 0024 и
   переоткрытию не подлежат.
+
+## X15 round-2 review (2026-09-09) — unmeasured blanket suppressions of the same shape the round narrowed
+
+`qmx.yaml`'s `coupling.cbo` and `coupling.class-rank` entries for
+`Qualimetrix\Analysis\Finding\Contract` (73 classes under the prefix, 19 and 4
+respectively actually exceed threshold) and `coupling.cbo` for
+`Qualimetrix\Core\Symbol` (15 classes, 6 actually exceed) are the same
+unmeasured-blanket shape X15 narrowed for `…\Configuration\Contract\Refusal`;
+not narrowed here — out of round-2's scope, named as debt per
+`docs/internal/generated/suppression/composition.tsv`.

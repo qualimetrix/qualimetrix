@@ -84,12 +84,15 @@ final class Application extends BaseApplication
      * `ConsoleExceptionInterface`: it is thrown only on a malformed command
      * *declaration* (an empty command name, a duplicate option name, a
      * default value on a `VALUE_NONE` option, a hint closure that returned
-     * something other than an array) — every throw site is in Symfony's own
-     * `Application`/`InputOption`/`InputArgument`, reachable only by a bug in
-     * this project's own command wiring, never by anything a user typed. That
-     * makes it a product defect, not a refusal, so it gets exit code 1 like
-     * any other one — rule 2 of `00-overview.md` ("an internal error stays
-     * internal").
+     * something other than an array) — every throw site is in
+     * `symfony/console` itself (about fifty, spread across `Application`,
+     * `Command`, `InputDefinition`, `InputOption`, `InputArgument`,
+     * `Helper/ProgressBar`, `Helper/ProgressIndicator`, `Question` and
+     * `Command/LockableTrait`; `grep -rn "new LogicException(" vendor/symfony/console`
+     * finds the current set), reachable only by a bug in this project's own
+     * command wiring, never by anything a user typed. That makes it a
+     * product defect, not a refusal, so it gets exit code 1 like any other
+     * one — rule 2 of `00-overview.md` ("an internal error stays internal").
      *
      * `ConsoleExceptionInterface` and the bare `InvalidArgumentException`
      * clause are named secondary signals for exit code 3
@@ -164,20 +167,26 @@ final class Application extends BaseApplication
      * Demotes Symfony's `--silent` (`VERBOSITY_SILENT`, 8) to `-q`
      * (`VERBOSITY_QUIET`, 16) after the base class applies it.
      *
-     * `VERBOSITY_SILENT` is not one of the five bits `Output::write()`
-     * recognises (`VERBOSITY_QUIET | VERBOSITY_NORMAL | VERBOSITY_VERBOSE |
-     * VERBOSITY_VERY_VERBOSE | VERBOSITY_DEBUG`), so once the output's
-     * verbosity is silent, `write()`'s bitmask lookup falls back to
-     * `VERBOSITY_NORMAL` for *every* call regardless of the verbosity a
-     * caller asked for — there is no verbosity value a message can carry
-     * that survives it. That includes {@see RefusalPresenter}'s
-     * `VERBOSITY_QUIET` writes, the ones this round built specifically so a
-     * run-ending message survives `-q` (rule 3, `00-overview.md`: "the
-     * reason a run refused is delivered always"). Symfony's own docs read
-     * `--silent` as "no output at all", which is a legitimate request for
-     * the report — just not for the message that has to explain why there
-     * is no report. Treating it as `-q` keeps that promise and still drops
-     * everything `-q` already drops.
+     * `Output::write()` drops a message when the verbosity it was tagged
+     * with compares greater than the output's own verbosity ({@see
+     * \Symfony\Component\Console\Output\Output::write()}: `$verbosity >
+     * $this->getVerbosity()`). `VERBOSITY_SILENT` (8) is lower than every
+     * bit `write()` recognises for a tagged call — `VERBOSITY_QUIET` (16) is
+     * the lowest of them — so once the output's own verbosity is silent, any
+     * call, whatever verbosity it asked for, compares greater and is
+     * dropped: there is no verbosity value a message can carry that survives
+     * it. That includes {@see RefusalPresenter}'s `VERBOSITY_QUIET` writes,
+     * the ones this round built specifically so a run-ending message
+     * survives `-q` (rule 3, `00-overview.md`: "the reason a run refused is
+     * delivered always"). Symfony's own docs read `--silent` as "no output
+     * at all", which is a legitimate request for the report — just not for
+     * the message that has to explain why there is no report. Treating it
+     * as `-q` keeps that promise and still drops everything `-q` already
+     * drops.
+     *
+     * This is a documented change to `--silent`'s external contract: see
+     * `CHANGELOG.md` (Unreleased, the `-q` entry) and
+     * `docs/adr/0051-refusal-is-not-routed-by-command.md` §3.
      */
     protected function configureIO(InputInterface $input, OutputInterface $output): void
     {

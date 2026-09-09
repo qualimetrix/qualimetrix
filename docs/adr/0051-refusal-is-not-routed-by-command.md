@@ -119,6 +119,22 @@ each measured rather than assumed:
    human-readable, XML or workflow-command stdout contract and get the
    `<error>…</error>` line on stderr instead, same as no `--format` at all.
 
+**`--silent` is folded into this same decision, not a separate one.**
+`VERBOSITY_SILENT` (8) is lower than `VERBOSITY_QUIET` (16), so before this
+round `--silent` suppressed the round's own `VERBOSITY_QUIET` writes too:
+a run that refused or crashed under `--silent` produced zero bytes on both
+streams, silently reintroducing the exact failure mode point 2 above closes
+for `-q`. `Application::configureIO()` demotes `VERBOSITY_SILENT` to
+`VERBOSITY_QUIET` right after Symfony applies it (before any command runs),
+so `--silent` now gets the same one sentence `-q` gets on a failed run, and
+still drops everything `-q` already drops otherwise — measured: `check
+--silent --format=json` on input that produces no configuration refusal
+still writes zero bytes to both streams, whatever exit code the analysis
+result itself carries. `--silent` and `-q` are consequently
+indistinguishable in observable behaviour after this round; both are kept
+because removing the flag is a separate decision from fixing its
+suppression, and remains open.
+
 **Rejected alternative: "quiet means only the exit code."** This is Symfony's
 own default — `VERBOSITY_QUIET` swallows everything a command writes,
 including its own final diagnostic — and it is a legitimate design, not a

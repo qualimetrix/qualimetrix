@@ -152,9 +152,12 @@ final class DirectivesCommand extends Command
             // answer with the wrong text and, on a product defect, the wrong
             // code. `$format` here is always one of `self::SUPPORTED_FORMATS`
             // or the raw (possibly invalid) value read above — the presenter
-            // only treats `json` as machine-readable, so an invalid
-            // `--format` itself falls through to stderr, matching every
-            // other input this command cannot make sense of.
+            // decides the stream from {@see MachineReadableFormats}, not from
+            // whether this command itself supports the value, so an unknown
+            // `--format` still lands on stdout as a JSON envelope when it
+            // names one of the six machine-readable formats (e.g.
+            // `--format=sarif`, which this command does not support) and
+            // falls through to stderr only for the other six.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
             // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
