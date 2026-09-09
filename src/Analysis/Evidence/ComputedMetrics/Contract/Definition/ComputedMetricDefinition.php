@@ -12,7 +12,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class ComputedMetricDefinition
 {
     /** `health.` or `computed.`, then one or more lower-case kebab segments. */
-    private const string NAME_TEMPLATE = '/^(?:health|computed)(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$/';
+    public const string NAME_TEMPLATE = '/^(?:health|computed)(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$/';
 
     /**
      * @param array<string, string> $formulas Keys: 'class', 'namespace', 'project'
@@ -113,13 +113,29 @@ final readonly class ComputedMetricDefinition
      */
     private function validateLevels(): void
     {
-        $values = array_map(static fn(SymbolLevel $level): string => $level->value, $this->levels);
-
-        if (\count(array_unique($values)) !== \count($values)) {
+        if (self::hasDuplicateLevel($this->levels)) {
             throw new InvalidArgumentException(
                 \sprintf('Computed metric "%s" declares the same level more than once', $this->name),
             );
         }
+    }
+
+    /**
+     * The predicate a configuration reader asks before ever constructing a
+     * definition, so that a repeated `levels:` entry is refused at the point
+     * of configuration rather than reaching this invariant.
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader}
+     * is the only caller with a name to refuse in; a caller that constructs a
+     * definition directly (a test, {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults})
+     * still meets the same rule here, in {@see validateLevels()}.
+     *
+     * @param list<SymbolLevel> $levels
+     */
+    public static function hasDuplicateLevel(array $levels): bool
+    {
+        $values = array_map(static fn(SymbolLevel $level): string => $level->value, $levels);
+
+        return \count(array_unique($values)) !== \count($values);
     }
 
     /**
@@ -137,7 +153,7 @@ final readonly class ComputedMetricDefinition
      */
     private function validateName(): void
     {
-        if (preg_match(self::NAME_TEMPLATE, $this->name) === 1 && !self::endsInAnAggregationStrategy($this->name)) {
+        if (self::isValidName($this->name)) {
             return;
         }
 
@@ -147,6 +163,18 @@ final readonly class ComputedMetricDefinition
             $this->name,
             self::NAME_TEMPLATE,
         ));
+    }
+
+    /**
+     * The predicate {@see validateName()} and
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader::create()}
+     * both ask, so the grammar is spelled once: the reader refuses a bad name
+     * before ever constructing a definition, and this invariant still holds
+     * for a caller that constructs one directly.
+     */
+    public static function isValidName(string $name): bool
+    {
+        return preg_match(self::NAME_TEMPLATE, $name) === 1 && !self::endsInAnAggregationStrategy($name);
     }
 
     /**

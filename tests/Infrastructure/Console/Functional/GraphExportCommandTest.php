@@ -13,11 +13,15 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -57,6 +61,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -96,6 +101,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -130,6 +136,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -163,6 +170,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -200,6 +208,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -234,6 +243,7 @@ final class GraphExportCommandTest extends TestCase
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
 
@@ -345,6 +355,88 @@ final class GraphExportCommandTest extends TestCase
     }
 
     /**
+     * `--direction`/`--format` are refused before `analyzeDependencyGraph()`
+     * runs at all (`01-refusal-packages.md`, P01-5 DoD): the evidence is a
+     * call counter on a substituted analyzer, not a timing comparison —
+     * `01-refusal-evidence.md` §10 names the counter as the required proof.
+     * The positive case at the end of this test is what makes the counter
+     * meaningful: a spy that is never shown to fire proves nothing.
+     */
+    #[Test]
+    public function itRefusesABogusDirectionOrFormatWithoutRunningAnalysis(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/ClassA.php',
+            '<?php namespace Test; class ClassA { public function use(ClassB $b) {} }',
+        );
+
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+
+        foreach ([['--direction' => 'NE'], ['--format' => 'yaml']] as $badOption) {
+            $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+            $exit = $tester->execute(
+                ['paths' => [$this->tempDir], ...$badOption],
+                ['capture_stderr_separately' => true],
+            );
+
+            self::assertSame(3, $exit, (string) json_encode($badOption));
+            self::assertSame(0, $analyzer->calls, 'the analyzer must not run for a refused ' . array_key_first($badOption));
+        }
+
+        // The positive control: the same spy, given valid input, does run —
+        // proving the assertions above test a refusal, not a spy that never
+        // fires.
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $exit = $tester->execute(['paths' => [$this->tempDir]]);
+        self::assertSame(0, $exit);
+        self::assertSame(1, $analyzer->calls);
+    }
+
+    /**
+     * `--direction=bogus --format=json` must give a parseable envelope on
+     * stdout, not zero bytes — this is the defect the round exists to fix,
+     * reproduced in the command P01-5 owns (`01-refusal-packages.md` DoD).
+     */
+    #[Test]
+    public function itRefusesABogusDirectionWithAParseableJsonEnvelope(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+
+        $tester = $this->createCommandTester();
+        $exit = $tester->execute([
+            'paths' => [$this->tempDir],
+            '--direction' => 'bogus',
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(3, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('error', $decoded);
+        self::assertStringContainsString('Unknown direction "bogus"', $decoded['error']);
+        self::assertSame(3, $decoded['exit_code']);
+    }
+
+    #[Test]
+    public function itRefusesAnUnwritableOutputPathBeforeAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/ClassA.php', '<?php namespace Test; class ClassA {}');
+        $unwritableDir = $this->tempDir . '/locked';
+        mkdir($unwritableDir, 0o555);
+
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $exit = $tester->execute(
+            ['paths' => [$this->tempDir], '--output' => $unwritableDir . '/graph.dot'],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $exit);
+        self::assertSame(0, $analyzer->calls);
+
+        chmod($unwritableDir, 0o755);
+    }
+
+    /**
      * Recursively remove a directory.
      */
     private function removeDirectory(string $dir): void
@@ -374,15 +466,42 @@ final class GraphExportCommandTest extends TestCase
 
     private function createCommandTester(): CommandTester
     {
+        return $this->createCommandTesterWithAnalyzer($this->createAnalyzer());
+    }
+
+    private function createCommandTesterWithAnalyzer(DependencyGraphAnalyzerInterface $analyzer): CommandTester
+    {
         $command = new GraphExportCommand(
-            $this->createAnalyzer(),
+            $analyzer,
             new DependencyGraphProjector(),
             new ErrorStream(),
+            new RefusalPresenter(new ErrorStream()),
             new NullLogger(),
         );
         $application = new Application();
         $application->addCommand($command);
 
         return new CommandTester($command);
+    }
+}
+
+/**
+ * Counts `analyze()` calls without changing what it returns — the DoD's
+ * evidence for "refused before analysis runs" is a call count, not a timing
+ * comparison (`01-refusal-packages.md`).
+ *
+ * @internal
+ */
+final class CountingDependencyGraphAnalyzer implements DependencyGraphAnalyzerInterface
+{
+    public int $calls = 0;
+
+    public function __construct(private readonly DependencyGraphAnalyzerInterface $delegate) {}
+
+    public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
+    {
+        ++$this->calls;
+
+        return $this->delegate->analyze($paths, $projectRoot);
     }
 }

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
@@ -85,7 +85,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             \sprintf(
                 'Option "%s" is not an option of rule "complexity.ccn" at level "%s".'
@@ -130,7 +130,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString('Option "warnign"', $refusal->getMessage());
         self::assertStringNotContainsString('errro', $refusal->getMessage());
     }
@@ -149,7 +149,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             'Level "callable" of rule "complexity.ccn" takes a map of options, got int.',
             $refusal->getMessage(),
@@ -172,7 +172,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             'Level "callable" of rule "complexity.ccn" takes a map of options, got bool.'
             . ' To switch one level off write "callable: {enabled: false}".',
@@ -249,7 +249,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
         $refusal = $this->refusalFrom("  complexity.ccn:\n    warning: 3\n", 'complexity.ccn', ComplexityOptions::class);
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             'Option "warning" is not an option of rule "complexity.ccn". Options here:',
             $refusal->getMessage(),
@@ -286,7 +286,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             'complexity.ccn',
             ComplexityOptions::class,
         );
-        self::assertInstanceOf(ConfigLoadException::class, $inClass);
+        self::assertInstanceOf(ConfigurationRefusal::class, $inClass);
         self::assertStringContainsString('at level "class". Options at that level: enabled, max-error, max-warning, threshold.', $inClass->getMessage());
 
         $inCallable = $this->refusalFrom(
@@ -294,7 +294,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             'complexity.ccn',
             ComplexityOptions::class,
         );
-        self::assertInstanceOf(ConfigLoadException::class, $inCallable);
+        self::assertInstanceOf(ConfigurationRefusal::class, $inCallable);
         self::assertStringContainsString('at level "callable". Options at that level: enabled, error, threshold, warning.', $inCallable->getMessage());
     }
 
@@ -452,7 +452,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     ): void {
         $refusal = $this->refusalFrom(\sprintf("  %s:\n    %s: 3\n", $ruleName, $key), $ruleName, $optionsClass);
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             \sprintf('Option "%s" is not an option of rule "%s".', $key, $ruleName),
             $refusal->getMessage(),
@@ -493,7 +493,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     ): void {
         $refusal = $this->refusalFrom(\sprintf("  %s:\n    %s: 3\n", $ruleName, $alias), $ruleName, $optionsClass);
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString(
             \sprintf('Option "%s" is not an option of rule "%s".', $printedAlias, $ruleName),
             $refusal->getMessage(),
@@ -585,7 +585,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString('Option "suppressPath" is not an option of rule "complexity.ccn".', $refusal->getMessage());
         self::assertStringContainsString('suppress-paths', $refusal->getMessage());
     }
@@ -604,7 +604,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString('at level "callable"', $refusal->getMessage());
         self::assertStringNotContainsString('suppress-paths', $refusal->getMessage(), 'the slot does not take it, so it must not be advertised there');
     }
@@ -624,7 +624,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             static fn() => (new RuleOptionsFactory($registry))->create('complexity.ccn', ComplexityOptions::class),
         );
 
-        self::assertInstanceOf(InvalidArgumentException::class, $atDepthOne);
+        self::assertInstanceOf(ConfigurationRefusal::class, $atDepthOne);
         self::assertStringContainsString('The "excludePaths" option was retired', $atDepthOne->getMessage());
         self::assertStringContainsString('suppressPaths', $atDepthOne->getMessage());
 
@@ -634,7 +634,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigLoadException::class, $insideASlot);
+        self::assertInstanceOf(ConfigurationRefusal::class, $insideASlot);
         self::assertStringContainsString('is not an option of rule', $insideASlot->getMessage());
         self::assertStringNotContainsString('was retired', $insideASlot->getMessage());
     }

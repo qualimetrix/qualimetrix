@@ -51,12 +51,129 @@ documented rather than undeclared, as are `max_warning` / `max_error` on
 write `callable: {enabled: false}`. An empty or omitted slot is unchanged and
 still means "leave this level at its defaults".
 
+**A `computed_metrics:` entry now declares its own vocabulary too.** An
+unrecognised key inside a `computed_metrics.<name>` entry, or inside its
+`formulas:` map, used to be dropped in silence — `warnign: 60` never applied,
+`formulas: {clas: "..."}` was never read. It now stops the run with exit 3,
+naming the key and the nine (respectively three) accepted spellings. Run
+`bin/qmx check` and fix what it refuses.
+
+**A `computed_metrics:` value of the wrong type now refuses instead of being
+dropped or changing behaviour silently.** `formula`, `description` must be a
+string; `inverted`, `enabled` must be a boolean; `levels` must be a list of
+level words; `threshold`, `warning`, `error` must be a number or `null`. Two
+of these used to be worse than silent: `warning`/`error` written with a
+non-numeric value (a typo, say) silently dropped the threshold instead of
+keeping the default, changing which findings the metric produced and which
+exit code the run ended with.
+
+**`computed_metrics.<name>` where `<name>` is not a map now refuses.**
+`computed.x: 5` used to be accepted and ignored, as if the entry were never
+written; a bare `false` gets a hint toward `{enabled: false}`, the actual
+off-switch.
+
+**A configuration-input refusal now exits code 3 everywhere, never 1, 2 or
+255 depending on which command answered it.** `baseline:*`,
+`baseline:rename-channels`'s own `--format` and file checks, `rules`,
+`graph:export` and `debug:layer-assignment` used to pick their own exit code
+for bad input — 1 here, 2 there — and a crash while reading configuration
+could still reach the outer handler uncaught and exit 255 with a raw PHP
+trace on both streams. Every one of those routes now goes through the same
+ladder and exits 3. Stdout stays empty for a human-readable format; under
+one of the six JSON-document formats (`json`, `sarif`, `gitlab`, `metrics`,
+`health`, `suppressed`) the refusal replaces the report there as a
+`{error, exit_code}` envelope instead — see the next entry. A CI wrapper
+that only checked `exit code != 0` sees no change; one that branches on the
+code should treat 3 as "fix the configuration or the input", 1 as "file a
+bug", and 2 or 4 as "read the command's own report" (`directives`'
+inert-directive and incomplete-run codes, unchanged).
+
+**A configuration refusal now goes to standard error, and `-q` no longer
+hides it.** `baseline:*` commands used to write their refusal to standard
+output, the same channel as their report, at normal verbosity — a script
+piping `--format=json` output could be handed the refusal instead of the
+report on failure, and `-q` silenced the message entirely. It is now written
+to standard error as `<error>…</error>` text, or — under one of the six
+JSON-document formats above — to standard output as the `{error, exit_code}`
+envelope, and at a verbosity `-q` does not suppress. `baseline:rename-channels
+--format=json` also moves from its own `{error}` shape to the same
+`{error, exit_code}` envelope every other JSON-document refusal in the tool
+now uses.
+
+**`--silent` now behaves like `-q`, not like "no output at all": it also no
+longer hides a refusal or an internal error.** `--silent` used to leave
+`VERBOSITY_SILENT` in place, which drops every write regardless of the
+message's own verbosity — so a run that failed under `--silent` still
+produced zero bytes on both streams, the same behaviour `-q` had before this
+round. `Application::configureIO()` now demotes `VERBOSITY_SILENT` to
+`VERBOSITY_QUIET` immediately after Symfony applies it, so `--silent` is
+`-q` under a different spelling: the report stays suppressed, but the
+message explaining why there is no report is not. A CI wrapper that relied
+on `--silent` producing zero bytes on every exit code sees output on a
+refusal or an internal error where it previously saw none.
+
+**A command-line parsing error now exits 3, not 1.** An unknown option or an
+unknown command — anything Symfony's own console layer rejects before a
+command body runs — used to reach the outer handler uncaught and take its
+exit code from that exception's own `getCode()`, which is 0 for this class,
+giving 1. It is now caught by the same outermost ladder as every other
+refusal and exits 3.
+
+**A crash reading configuration now exits 1, not 255, and no longer prints a
+raw PHP trace to both streams.** Before this round, a defect that escaped
+every command-level `catch` reached Symfony's default uncaught-exception
+handling and exited 255. The outermost ladder now catches everything and
+assigns 1 to whatever is not one of the round's two refusal signals; a trace
+is still available, but only at `-v` and above, and only on standard error.
+
+**Input that used to be accepted silently is now refused.** `--direction` on
+`graph:export`, `--channel` on `baseline:explain`, and `--output`/`--format`
+on both `graph:export` and `debug:layer-assignment` used to fall through to a
+default or produce no match on an unrecognised spelling; each now names the
+accepted values and exits 3.
+
+**`baseline:generate` into an existing file without `--force` now exits 3 and
+writes to standard error, not 1.** The refusal message — regenerating
+discards every acceptance the file records — is unchanged; only its exit code
+and stream move to the round's shared shape.
+
+**Named debt: not every configuration-input refusal reaches exit 3 through
+the new carrier yet.** 178 throw sites still exit 3 through a named secondary
+signal — a caught `InvalidArgumentException` with no
+`ConfigurationRefusal` behind it — rather than through the carrier itself, as
+measured at `1513bf67`
+(`docs/internal/plans/configuration-refusal/measurement/03-catch-clauses.md`).
+After this round the same measurement counts 147: thirty-one sites moved onto
+the carrier, and the rest — `src/Infrastructure/Rule` and
+`src/Infrastructure/Git` among them — stay on the fallback by decision and are
+counted rather than converted. See
+[ADR 0051](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0051-refusal-is-not-routed-by-command.md)
+for why the exit code no longer depends on which command caught the failure,
+and why `-q` no longer hides which key or file was refused.
+
+### Changed
+
+- The refusal for an unknown `health.<x>` name now lists all six built-in
+  dimensions (`health.complexity`, `health.cohesion`, `health.coupling`,
+  `health.typing`, `health.maintainability`, `health.overall`) instead of
+  five: the list used to be built from the five sub-dimensions and omitted
+  `health.overall`, even though `health.overall` can itself be overridden.
+  The same refusal now fires identically whether the entry carried a formula
+  or `enabled: false` — two different messages for the same typo are gone.
+
 ### Fixed
 
 - `qmx.yaml.example` no longer ships three examples that fail: the rule
   selectors under `disabled_rules:` / `only_rules:` needed the `X.*` wildcard
   form, and the custom computed-metric example still used the retired
   `ccn__avg` variable encoding.
+- `computed_metrics.<name>.levels` written as a map (a value copied from the
+  `rules:` section, which does have a per-level block) used to crash instead
+  of refusing, and the three commands that read configuration crashed
+  differently: `check` exited 1 with an "Unexpected error" and empty stdout,
+  while `directives` and `debug:layer-assignment` exited 255 with a raw PHP
+  trace on both streams. All three now refuse with exit 3 and a message
+  naming the entry and the accepted level words.
 
 ## [0.26.0] - 2026-09-08
 

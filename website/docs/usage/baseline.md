@@ -112,10 +112,12 @@ one row's target is renamed again by another; or *this carry* would give two
 entries in one subject a single identity — a duplicate the file already held is
 carried, not refused, even when it stands on a renamed channel. A declared
 rename that matches nothing in this file is reported, not refused. Exit codes:
-`0` carried (including "nothing matched"), `1` refused on content or the
-baseline or the map is not a readable file, `2` a malformed `--format` value.
-A refusal is reported in the chosen format: under `--format=json` it is an
-object with an `error` key.
+`0` carried (including "nothing matched"), `3` refused — on content, on the
+baseline or the map not being a readable file, or on a malformed `--format`
+value; every refusal takes the same code regardless of which of those caused
+it. A refusal is reported in the chosen format: under `--format=json` it is
+the `{error, exit_code}` envelope every other machine-readable refusal in the
+tool uses, not a bespoke `error`-only object.
 
 Two consequences are worth knowing before you run it:
 

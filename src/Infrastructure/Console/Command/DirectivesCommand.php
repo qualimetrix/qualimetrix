@@ -6,15 +6,18 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Exception;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -58,11 +61,10 @@ final class DirectivesCommand extends Command
     /** `1` means "warnings" in this product, and a verdict has no second degree of severity. */
     private const int EXIT_INERT_FOUND = 2;
 
-    private const int EXIT_CONFIG_ERROR = 3;
-
     public function __construct(
         private readonly DirectiveAuditInterface $directiveAudit,
         private readonly AnalysisPreflight $preflight,
+        private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
     }
@@ -125,55 +127,57 @@ final class DirectivesCommand extends Command
     {
         /** @var string $format */
         $format = $input->getOption('format');
-        if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
-            // Reported as text: an unrecognised `--format` is not a request for
-            // any particular format, so there is none to honour here.
-            $output->writeln(\sprintf(
-                '<error>Unknown format "%s". Supported formats: %s.</error>',
-                $format,
-                implode(', ', self::SUPPORTED_FORMATS),
-            ));
-
-            return self::EXIT_CONFIG_ERROR;
-        }
 
         try {
-            return $this->audit($input, $output, $format);
-        } catch (InvalidArgumentException $failure) {
-            // Read as the caller's mistake, exactly as `check` reads it. The
-            // reading is coarser than it looks: the path and symbol value
-            // objects throw the same class on a violated invariant, and one of
-            // those is a bug in the tool wearing a configuration error's
-            // clothes. Diverging from `check` here would be worse — one
-            // malformed option, two exit codes, depending on which command saw
-            // it — so the coarseness is inherited deliberately.
-            self::reportError(
-                $output,
-                $format,
-                \sprintf('Configuration error: %s', $failure->getMessage()),
-                self::EXIT_CONFIG_ERROR,
-            );
+            if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
+                // A refusal like any other in this command's `--sweep`,
+                // `paths` and empty-scope checks below: the carrier lets one
+                // `catch` clause own presentation instead of every check
+                // duplicating the json/text branch inline
+                // (`01-refusal-envelope.md` §2.1).
+                throw ConfigurationRefusal::aboutInput(
+                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+                    \sprintf(
+                        'Unknown format "%s". Supported formats: %s.',
+                        $format,
+                        implode(', ', self::SUPPORTED_FORMATS),
+                    ),
+                );
+            }
 
-            return self::EXIT_CONFIG_ERROR;
+            return $this->audit($input, $output, $format);
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and the
+            // `catch (Exception)` clause below would otherwise catch it and
+            // answer with the wrong text and, on a product defect, the wrong
+            // code. `$format` here is always one of `self::SUPPORTED_FORMATS`
+            // or the raw (possibly invalid) value read above — the presenter
+            // decides the stream from {@see MachineReadableFormats}, not from
+            // whether this command itself supports the value, so an unknown
+            // `--format` still lands on stdout as a JSON envelope when it
+            // names one of the six machine-readable formats (e.g.
+            // `--format=sarif`, which this command does not support) and
+            // falls through to stderr only for the other six.
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
+        } catch (InvalidArgumentException $failure) {
+            // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
+            // §2.6): an `InvalidArgumentException` that never became a
+            // carrier. Read as the caller's mistake, exactly as `check` reads
+            // it — the path and symbol value objects throw the same class on
+            // a violated invariant, and one of those is a bug in the tool
+            // wearing a configuration error's clothes. Diverging from `check`
+            // here would be worse — one malformed option, two exit codes,
+            // depending on which command saw it — so the coarseness is
+            // inherited deliberately.
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
         } catch (Exception $failure) {
             // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
             // and swallowing it into an exit code would hide in CI exactly the
-            // failures CI exists to surface.
-            $configuration = ConfigurationFailure::message($failure);
-            if ($configuration !== null) {
-                self::reportError($output, $format, $configuration, self::EXIT_CONFIG_ERROR);
-
-                return self::EXIT_CONFIG_ERROR;
-            }
-
-            self::reportError(
-                $output,
-                $format,
-                \sprintf('Unexpected error: %s', $failure->getMessage()),
-                self::FAILURE,
-            );
-
-            return self::FAILURE;
+            // failures CI exists to surface. Routed through the shared
+            // presenter's `internalError()` — the same envelope and
+            // `-q`/`--silent` survival every other command's internal error
+            // gets, not a local `reportError()` (`01-refusal-envelope.md` §2.1).
+            return $this->refusalPresenter->internalError($output, $format, $failure);
         }
     }
 
@@ -188,9 +192,8 @@ final class DirectivesCommand extends Command
             // unrecognised value is a caller who asked for a measurement this
             // command cannot make, and answering with the other one would put
             // a scope in the report's header that nobody requested.
-            self::reportError(
-                $output,
-                $format,
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--sweep'),
                 \sprintf(
                     'Unknown sweep "%s". Supported scopes: %s.',
                     $requestedSweep,
@@ -199,10 +202,7 @@ final class DirectivesCommand extends Command
                         DirectiveSweepScope::cases(),
                     )),
                 ),
-                self::EXIT_CONFIG_ERROR,
             );
-
-            return self::EXIT_CONFIG_ERROR;
         }
 
         $prepared = $this->preflight->resolve($input, $output);
@@ -211,9 +211,10 @@ final class DirectivesCommand extends Command
         if ($missing !== []) {
             // Every one of them, as `check` reports them: a user who mistyped
             // two paths should learn both from one run.
-            self::reportError($output, $format, implode("\n", $missing), self::EXIT_CONFIG_ERROR);
-
-            return self::EXIT_CONFIG_ERROR;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'paths'),
+                implode("\n", $missing),
+            );
         }
 
         // The discovery the preflight resolved, not the pipeline's default: the
@@ -234,14 +235,10 @@ final class DirectivesCommand extends Command
             // the run then skipped was not read either. A run that failed to
             // parse everything it found is a different answer, and the code
             // below already gives it.
-            self::reportError(
-                $output,
-                $format,
-                'Error: the configured scope analysed no PHP files, so no directive could be judged',
-                self::EXIT_CONFIG_ERROR,
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                'the configured scope analysed no PHP files, so no directive could be judged',
             );
-
-            return self::EXIT_CONFIG_ERROR;
         }
 
         $exitCode = self::exitCodeFor($report);
@@ -278,25 +275,5 @@ final class DirectivesCommand extends Command
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * In `json`, an error takes the envelope shape, so a parser reading stdout
-     * finds JSON where a report would have been rather than an `<error>` line.
-     *
-     * On an interactive terminal the progress bar still writes control bytes
-     * ahead of it — that is this product's behaviour for every command with a
-     * machine-readable format, `check` included, and not something to fix in
-     * one command. Redirect, or run where the output is not a TTY.
-     */
-    private static function reportError(OutputInterface $output, string $format, string $message, int $exitCode): void
-    {
-        if ($format === 'json') {
-            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));
-
-            return;
-        }
-
-        $output->writeln(\sprintf('<error>%s</error>', $message));
     }
 }

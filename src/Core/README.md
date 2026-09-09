@@ -359,9 +359,9 @@ A key is in exactly one of three states, disjoint and exhaustive:
   words, or accept a spelling meaning "leave things as they are"; a reader must neither warn
   nor refuse on these (`UnassignedClassOptions::assertNoContradictoryEnabled()` is the case
   that forces the state to exist)
-- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a `ConfigLoadException`
-  at whichever depth it was written (exit 3 under `check`; the exception inherits each
-  command's own routing)
+- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a
+  `ConfigurationRefusal` at whichever depth it was written (exit 3 under `check`, uniformly
+  across commands — see `docs/internal/plans/configuration-refusal/00-overview.md`)
 
 Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
 through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay

@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -162,24 +163,32 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
 
     /**
      * Enumeration row 52. A structured run must never be handed a broken
-     * document to parse: the refusal goes to stderr and stdout is left empty
-     * rather than half-written.
+     * document to parse: `json` is a machine-readable format
+     * (`01-refusal-envelope.md` §2.1), so the refusal is the `{error,
+     * exit_code}` envelope on stdout, not a half-written report. stderr may
+     * still carry the unrelated scope-coverage warning this fixture always
+     * triggers, but never the refusal sentence — the envelope is the one
+     * place that goes.
      */
     #[Test]
-    public function itLeavesStdoutEmptyUnderJsonFormat(): void
+    public function itAnswersWithAParseableEnvelopeUnderJsonFormat(): void
     {
         $run = $this->check($this->write('file', 'callable', 'max_warnign', 1), ['--format' => 'json']);
 
         self::assertSame(3, $run['exit']);
-        self::assertSame('', $run['stdout']);
-        self::assertStringContainsString('Configuration error:', $run['stderr']);
+        self::assertStringNotContainsString('Configuration error:', $run['stderr']);
+        /** @var array{error: string, exit_code: int} $envelope */
+        $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $envelope['exit_code']);
+        self::assertStringContainsString('Configuration error:', $envelope['error']);
     }
 
     /**
      * Enumeration row 51: `-q` silenced the old warning, and a silenced
-     * warning is why this position was invisible. A refusal is not a log line,
-     * so the verdict survives quiet even though the sentence does not — which
-     * is the behaviour pinned here, not a claim that the text is printed.
+     * warning is why this position was invisible. `01-refusal-envelope.md`
+     * §2.3 rejects "quiet means only the exit code": the sentence that ends a
+     * run is not payload `-q` is allowed to swallow, so it survives quiet even
+     * though the progress frame and the report do not.
      */
     #[Test]
     public function itStillRefusesUnderQuiet(): void
@@ -188,7 +197,11 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
 
         self::assertSame(3, $run['exit']);
         self::assertSame('', $run['stdout']);
-        self::assertSame('', $run['stderr'], 'quiet silences the sentence; the exit code is what carries the refusal');
+        self::assertStringContainsString(
+            'Configuration error: Option "maxWarnign"',
+            $run['stderr'],
+            'quiet silences the report and the progress frame, never the sentence that ends the run',
+        );
     }
 
     /**
@@ -206,18 +219,22 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     }
 
     /**
-     * Two refusals, two framings, one exit code. The generic one is a
-     * `ConfigLoadException` and carries the `Configuration error: ` prefix that
-     * says the fault is in the configuration document; the retired-key one
-     * reaching the flag door is an `InvalidArgumentException` printed verbatim,
-     * because the migration text it carries is the message. The same retired
-     * key written into a file is refused earlier, by the loader, and does carry
-     * the prefix — the asymmetry is between doors as much as between refusals.
-     * ADR 0049 decision 5 records why this plan left it that way; all three
-     * refusals are asserted below so the record stays true.
+     * Two refusals, one framing, one exit code. Both the generic key mistake
+     * and the retired-option mistake are a {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
+     * by the time either reaches the command, and {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter}
+     * frames every one of them the same way — "framing lives here and only
+     * here" (its class docblock). The asymmetry this test used to pin (generic
+     * framed, retired verbatim) was a stale artifact of the retired option
+     * still being an `InvalidArgumentException` printed by the command itself;
+     * now that {@see \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions}
+     * throws the same carrier, a second framing rule for it would be exactly
+     * the per-dialect special case the round collapses. Rejected alternative:
+     * keep the retired message unframed by having the presenter pattern-match
+     * on carrier content — that reopens the "framing happens at every call
+     * site" problem the presenter was built to close.
      */
     #[Test]
-    public function itFramesTheGenericRefusalAsAConfigurationErrorAndTheRetiredOneWithoutAPrefix(): void
+    public function itFramesEveryRefusalAsAConfigurationErrorRegardlessOfDoorOrCause(): void
     {
         $generic = $this->check($this->write('flag', 'callable', 'max_warnign', 1));
         $retired = $this->check(['--rule-opt' => ['complexity.ccn:exclude_paths=src/Generated']]);
@@ -229,7 +246,8 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertSame(3, $retired['exit']);
         self::assertSame(3, $retiredInAFile['exit']);
         self::assertStringStartsWith('Configuration error: ', $generic['refusal']);
-        self::assertStringStartsWith('The "exclude_paths" option was retired', $retired['refusal']);
+        self::assertStringStartsWith('Configuration error: ', $retired['refusal']);
+        self::assertStringContainsString('The "exclude_paths" option was retired', $retired['refusal']);
         self::assertStringNotContainsString('is not an option of rule', $retired['refusal']);
         self::assertStringStartsWith('Configuration error: ', $retiredInAFile['refusal']);
         self::assertStringContainsString('The "exclude_paths" option was retired', $retiredInAFile['refusal']);
@@ -311,7 +329,9 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         $container = (new ContainerFactory())->create();
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
-        (new Application(new ErrorStream()))->addCommand($command);
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        self::assertInstanceOf(RefusalPresenter::class, $refusalPresenter);
+        (new Application(new ErrorStream(), $refusalPresenter))->addCommand($command);
 
         return new CommandTester($command);
     }

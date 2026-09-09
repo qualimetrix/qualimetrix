@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
@@ -71,11 +74,19 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             return $excludedNames;
         }
 
-        throw new InvalidArgumentException(\sprintf(
-            'Unknown health dimension(s) in --exclude-health: %s. Valid dimensions: %s',
-            implode(', ', $unknownDimensions),
-            implode(', ', array_keys($knownDimensions)),
-        ));
+        // The rejected element, not the "exclude_health" key, is what is
+        // wrong here — the position names the key, the element and the
+        // accepted names live in the summary, per the same rule
+        // `02-computed-metric-keys.md` §2 gives every list-element refusal.
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(['exclude_health'], 'exclude_health'),
+            \sprintf(
+                'Unknown health dimension(s) in --exclude-health: %s. Valid dimensions: %s',
+                implode(', ', $unknownDimensions),
+                implode(', ', array_keys($knownDimensions)),
+            ),
+        );
     }
 
     /**
@@ -160,15 +171,24 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             // explicitly so the user can either drop the exclusion or rewrite
             // their custom formula to handle the missing dimension via `??`.
             if ($terms === null) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
-                    . 'health dimensions: the custom formula does not match the canonical '
-                    . 'weighted-sum shape `(m["health.dimension"] ?? fallback) * weight`. '
-                    . 'Either rewrite the custom formula to reference disabled dimensions '
-                    . 'via `??` fallbacks, or remove the exclusion. Formula: %s',
-                    $level,
-                    $formula,
-                ));
+                // $overall->name is always "health.overall": the reserved-prefix
+                // segment slicing rule (`02-computed-metric-keys.md` §2) is applied
+                // by hand rather than through ComputedMetricEntryKeys::nameSegments()
+                // — that helper is Root-internal, and this class is Health-internal
+                // (see ComputedMetricsInternalTopologyTest's zone DAG).
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open(['computed_metrics', 'health', 'overall', 'formulas', $level], $level),
+                    \sprintf(
+                        'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
+                        . 'health dimensions: the custom formula does not match the canonical '
+                        . 'weighted-sum shape `(m["health.dimension"] ?? fallback) * weight`. '
+                        . 'Either rewrite the custom formula to reference disabled dimensions '
+                        . 'via `??` fallbacks, or remove the exclusion. Formula: %s',
+                        $level,
+                        $formula,
+                    ),
+                );
             }
 
             $rebuilt = self::buildWeightedFormula($terms, $excludedSet);

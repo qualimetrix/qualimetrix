@@ -5,28 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
-use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
@@ -52,11 +46,8 @@ final class CheckCommand extends Command
         private readonly RuleInputValidator $ruleInputValidator,
         private readonly CheckScopeResolver $checkScopeResolver,
         private readonly ConfigurationInputAdapter $configurationInputAdapter,
-        private readonly RunConfigurationResolverInterface $runConfigurationResolver,
-        private readonly CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
-        private readonly ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
-        private readonly OutputFormatResolverInterface $outputFormatResolver,
+        private readonly CheckConfigurationResolvers $configurationResolvers,
+        private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
     }
@@ -93,17 +84,6 @@ final class CheckCommand extends Command
 
         return $filteredDefinition;
     }
-
-    /**
-     * Exit code for input/configuration errors (distinct from analysis results).
-     *
-     * Exit code semantics:
-     * - 0: clean (no findings at configured fail level)
-     * - 1: warnings found (with --fail-on=warning)
-     * - 2: errors found (findings at error severity)
-     * - 3: input/configuration error (bad paths, invalid config, etc.)
-     */
-    private const int EXIT_CONFIG_ERROR = 3;
 
     /** @var array<string, string> retired flag => the flag that suppresses findings now */
     private const array RETIRED_SUPPRESSION_FLAGS = [
@@ -144,73 +124,57 @@ final class CheckCommand extends Command
                     continue;
                 }
 
-                $this->resultPresenter->writeDiagnostic(
+                return $this->refusalPresenter->refusal(
                     $output,
-                    '<error>' . RetiredSuppressionOptions::refusalText($retired, $current) . '</error>',
+                    self::formatOption($input),
+                    ConfigurationRefusal::aboutInput(
+                        ConfigurationOrigin::of(ConfigurationSource::CommandLine, $retired),
+                        RetiredSuppressionOptions::refusalText($retired, $current),
+                    ),
                 );
-
-                return self::EXIT_CONFIG_ERROR;
             }
 
             throw $e;
         }
     }
 
+    /**
+     * `--format`, read off the raw argv rather than the bound
+     * {@see InputInterface}. Symfony's own option-binding failure is exactly
+     * what this method exists to survive: {@see self::run()} catches it
+     * before `execute()` ever runs, so `getOption()` may not have a value
+     * yet. `getParameterOption()` reads the tokens directly and needs no
+     * binding, which is also why {@see self::execute()} uses this instead of
+     * `getOption('format')` — a `--format` value is available for the
+     * envelope even when everything after it in `doExecute()` throws before
+     * resolving one itself (`01-refusal-envelope.md` §2.1-2.2).
+     */
+    private static function formatOption(InputInterface $input): ?string
+    {
+        $value = $input->getParameterOption(['--format', '-f'], null);
+
+        return \is_string($value) ? $value : null;
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $format = self::formatOption($input);
+
         try {
             return $this->doExecute($input, $output);
-        } catch (ConflictingCliAliasException $e) {
-            $this->resultPresenter->writeDiagnostic($output, \sprintf(
-                '<error>CLI alias conflict: "%s" is used by both "%s" and "%s" rules</error>',
-                $e->alias,
-                $e->firstRule,
-                $e->secondRule,
-            ));
-
-            return self::EXIT_CONFIG_ERROR;
-        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            $this->resultPresenter->writeDiagnostic($output, \sprintf(
-                '<error>Configuration error: %s</error>',
-                $e->getMessage(),
-            ));
-
-            return self::EXIT_CONFIG_ERROR;
-        } catch (ArchitecturePreparationException $e) {
-            // Template-layer expansion failures are user-fixable misconfiguration
-            // (typo'd templates, ceiling exceeded, name collisions). Surface them
-            // with the same framing and exit code as ConfigLoadException so the
-            // user sees them as configuration errors, not internal crashes.
-            $this->resultPresenter->writeDiagnostic($output, \sprintf(
-                '<error>Architecture configuration error: %s</error>',
-                $e->getMessage(),
-            ));
-
-            return self::EXIT_CONFIG_ERROR;
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and every
+            // clause below it — down to `catch (Throwable)` — would otherwise
+            // swallow it as a plain exception.
+            return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $e) {
-            $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>%s</error>', $e->getMessage()));
-
-            return self::EXIT_CONFIG_ERROR;
-        } catch (ComputedMetricConfigurationException|BaselineLoadException $e) {
-            // User-supplied formulas and baseline envelopes are input/configuration
-            // errors: a bad formula or an unreadable baseline is theirs to fix,
-            // not an internal crash.
-            $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
-
-            return self::EXIT_CONFIG_ERROR;
+            // The named secondary signal for code 3 (`00-overview.md` rule 1):
+            // an `InvalidArgumentException` that never became a carrier.
+            // Printed verbatim, unlike the clauses above — its message is
+            // already the whole sentence.
+            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Throwable $e) {
-            $this->resultPresenter->writeDiagnostic($output, \sprintf(
-                '<error>Unexpected error: %s</error>',
-                $e->getMessage(),
-            ));
-
-            if ($output->isVerbose()) {
-                $this->resultPresenter->writeDiagnostic($output, '');
-                $this->resultPresenter->writeDiagnostic($output, '<comment>Stack trace:</comment>');
-                $this->resultPresenter->writeDiagnostic($output, $e->getTraceAsString());
-            }
-
-            return self::FAILURE;
+            return $this->refusalPresenter->internalError($output, $format, $e);
         }
     }
 
@@ -223,14 +187,19 @@ final class CheckCommand extends Command
     {
         $this->runtimeConfigurator->resetRunState();
 
+        // Refuse an unwritable `--output` before analysis starts — a fast,
+        // named precheck, not a guarantee (`01-refusal-verdicts.md` §5.4).
+        $this->resultPresenter->assertOutputIsWritable($input);
+
         // Resolve configuration through pipeline
         $document = $this->configurationInputAdapter->resolve($input);
-        $runConfiguration = $this->runConfigurationResolver->resolve($document);
-        $cacheConfiguration = $this->cacheConfigurationResolver->resolve($document, $runConfiguration->projectRoot);
-        $parallelConfiguration = $this->parallelConfigurationResolver->resolve($document);
+        $resolved = $this->configurationResolvers->resolve($document);
+        $runConfiguration = $resolved->runConfiguration;
+        $cacheConfiguration = $resolved->cacheConfiguration;
+        $parallelConfiguration = $resolved->parallelConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
-        $findingExclusions = $this->findingExclusionsResolver->resolve($document);
-        $outputFormat = $this->outputFormatResolver->resolve($document);
+        $findingExclusions = $resolved->findingExclusions;
+        $outputFormat = $resolved->outputFormat;
         $exitPolicy = $this->configurationInputAdapter->exitPolicy($document);
 
         // Configure runtime using resolved config
@@ -263,11 +232,10 @@ final class CheckCommand extends Command
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
-            foreach ($pathErrors as $error) {
-                $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>%s</error>', $error));
-            }
-
-            return self::EXIT_CONFIG_ERROR;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'paths'),
+                implode(' ', $pathErrors),
+            );
         }
 
         $projectRoot = $runConfiguration->projectRoot;

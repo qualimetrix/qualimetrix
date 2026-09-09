@@ -10,11 +10,15 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionMethod;
 use ReflectionProperty;
+use Symfony\Component\Console\Input\StringInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class CheckCommandInputValidationTest extends TestCase
@@ -78,10 +82,9 @@ final class CheckCommandInputValidationTest extends TestCase
             );
 
             self::assertSame(3, $tester->getStatusCode());
-            self::assertSame('', $tester->getDisplay());
             self::assertStringContainsString(
                 'Invalid value for "cache.enabled": expected boolean, got string',
-                $tester->getErrorOutput(),
+                self::envelopeError($tester),
             );
         } finally {
             unlink($config);
@@ -98,8 +101,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
+        self::assertStringContainsString('does not match any registered', self::envelopeError($tester));
     }
 
     /**
@@ -122,11 +124,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString(
-            'Write "complexity.ccn"',
-            $tester->getErrorOutput(),
-        );
+        self::assertStringContainsString('Write "complexity.ccn"', self::envelopeError($tester));
     }
 
     /**
@@ -151,8 +149,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('it does not report at level "file"', $tester->getErrorOutput());
+        self::assertStringContainsString('it does not report at level "file"', self::envelopeError($tester));
     }
 
     /** A level a channel does declare is accepted, so the refusal above is not refusing every pair. */
@@ -187,7 +184,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('names no level after ":"', $tester->getErrorOutput());
+        self::assertStringContainsString('names no level after ":"', self::envelopeError($tester));
     }
 
     #[Test]
@@ -200,8 +197,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('Rule option owner', $tester->getErrorOutput());
+        self::assertStringContainsString('Rule option owner', self::envelopeError($tester));
     }
 
     #[Test]
@@ -214,8 +210,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('does not resolve to a commit', $tester->getErrorOutput());
+        self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
         self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
     }
 
@@ -266,7 +261,7 @@ final class CheckCommandInputValidationTest extends TestCase
                 '--only-rule' => ['computed.a'],
             ], ['capture_stderr_separately' => true]);
             self::assertSame(3, $tester->getStatusCode());
-            self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
+            self::assertStringContainsString('does not match any registered', self::envelopeError($tester));
 
             $tester->execute([
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
@@ -284,8 +279,14 @@ final class CheckCommandInputValidationTest extends TestCase
     /**
      * A retired suppression flag is refused the way its config-file twin is —
      * by name, with the fork spelled out, at exit 3. Symfony's own
-     * "option does not exist" arrives before `execute()` and leaves exit 1, so
-     * a CI wrapper that tells 3 from 1 would read a migration as a crash.
+     * "option does not exist" is a distinct route from this one — it never
+     * reaches `execute()`, and cannot be reproduced through `CommandTester`
+     * at all (it throws `InvalidOptionException` straight out of
+     * `Command::run()`, uncaught) — but it lands at the same exit 3, through
+     * `Application::doRun()`'s `catch (ConsoleExceptionInterface)` clause
+     * rather than this command's own `ConfigurationRefusal` handling
+     * ({@see self::itRejectsAnUnknownOptionThroughTheApplicationLadder()}).
+     * A CI wrapper that tells 3 from 1 would not see a difference either way.
      */
     #[Test]
     #[DataProvider('provideRetiredSuppressionFlags')]
@@ -302,10 +303,10 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString(\sprintf('The "%s" option was retired', $retired), $tester->getErrorOutput());
-        self::assertStringContainsString(\sprintf('use "%s"', $replacement), $tester->getErrorOutput());
-        self::assertStringContainsString('"--exclude" option instead', $tester->getErrorOutput());
+        $error = self::envelopeError($tester);
+        self::assertStringContainsString(\sprintf('The "%s" option was retired', $retired), $error);
+        self::assertStringContainsString(\sprintf('use "%s"', $replacement), $error);
+        self::assertStringContainsString('"--exclude" option instead', $error);
     }
 
     /**
@@ -338,6 +339,73 @@ final class CheckCommandInputValidationTest extends TestCase
     }
 
     /**
+     * Route 6 (`m6-routes-merged.md`): an option `check`'s own definition
+     * never declared. `CommandTester` cannot show this — it runs the command
+     * directly and the `InvalidOptionException` comes out of `Command::run()`
+     * uncaught, never touching a `catch` clause — so this goes through the
+     * real `Application::doRun()` ladder in-process instead, the same
+     * mechanism {@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest}
+     * proves synthetically. `setCatchExceptions(false)` keeps Symfony's own
+     * `run()` out of the way so a wrong answer here fails the assertion
+     * instead of being swallowed by the base class's fallback handling.
+     */
+    #[Test]
+    public function itRejectsAnUnknownOptionThroughTheApplicationLadder(): void
+    {
+        [$exitCode, $display] = $this->runThroughApplication(
+            new StringInput('check tests/Fixtures/Ast/empty_file.php --this-option-does-not-exist'),
+        );
+
+        self::assertSame(3, $exitCode);
+        self::assertStringContainsString('option does not exist', $display);
+    }
+
+    /**
+     * Route 6's second live input, on a different command: `rules` declares
+     * no positional argument at all, so a stray one is Symfony's own
+     * "no arguments expected" — the same uncaught-outside-`Application`
+     * shape as the unknown option above.
+     */
+    #[Test]
+    public function itRejectsAnUnexpectedArgumentForRulesThroughTheApplicationLadder(): void
+    {
+        [$exitCode, $display] = $this->runThroughApplication(new StringInput('rules extra-arg'));
+
+        self::assertSame(3, $exitCode);
+        self::assertStringContainsString('No arguments expected', $display);
+    }
+
+    /**
+     * Builds the real `Application` ladder around the real, container-wired
+     * commands and drives it in-process — no subprocess needed, since
+     * `Application::doRun()` is public and does not call `exit()`.
+     *
+     * @return array{int, string}
+     */
+    private function runThroughApplication(StringInput $input): array
+    {
+        $container = (new ContainerFactory())->create();
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $app = new Application(new ErrorStream(), $refusalPresenter);
+        $app->setAutoExit(false);
+        $app->setCatchExceptions(false);
+
+        $checkCommand = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $checkCommand);
+        $app->addCommand($checkCommand);
+
+        $rulesCommand = $container->get(RulesCommand::class);
+        self::assertInstanceOf(RulesCommand::class, $rulesCommand);
+        $app->addCommand($rulesCommand);
+
+        $output = new BufferedOutput();
+        $exitCode = $app->doRun($input, $output);
+
+        return [$exitCode, $output->fetch()];
+    }
+
+    /**
      * The `--rule-opt` door of the retired per-rule option: refused while the
      * name is still spelled the way it was typed, so kebab is answered in
      * kebab. The config-file door is the loader's
@@ -357,8 +425,21 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('The "exclude-paths" option was retired', $tester->getErrorOutput());
-        self::assertStringContainsString('use "suppress-paths"', $tester->getErrorOutput());
+        $error = self::envelopeError($tester);
+        self::assertStringContainsString('The "exclude-paths" option was retired', $error);
+        self::assertStringContainsString('use "suppress-paths"', $error);
+    }
+
+    /**
+     * Parses the `{error, exit_code}` envelope every `--format=json` refusal
+     * carries on stdout (`01-refusal-envelope.md` §2.1) and returns its message.
+     */
+    private static function envelopeError(CommandTester $tester): string
+    {
+        /** @var array{error: string, exit_code: int} $envelope */
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $envelope['error'];
     }
 
     private function tester(): CommandTester
@@ -366,7 +447,9 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application(new ErrorStream());
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $application = new Application(new ErrorStream(), $refusalPresenter);
         $application->addCommand($command);
 
         return new CommandTester($command);

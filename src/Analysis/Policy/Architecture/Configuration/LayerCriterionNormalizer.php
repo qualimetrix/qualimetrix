@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 
@@ -17,7 +20,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
  * raw value plus the path-prefixing fields ({@code $index},
  * {@code $layerName}, {@code $kind}) and either returns a normalized list
  * of strings (or {@see MatchMode}) or throws a
- * {@see ArchitectureConfigurationException} with the {@code 'architecture'} path.
+ * {@see ConfigurationRefusal} addressed to the resolved document.
  *
  * Accepts three input shapes for criterion lists:
  *
@@ -33,8 +36,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
  */
 final class LayerCriterionNormalizer
 {
-    private const string CONFIG_PATH = 'architecture';
-
     /**
      * @return list<string>
      */
@@ -148,10 +149,11 @@ final class LayerCriterionNormalizer
      * The `architecture.layers[i] ("name"): ...` prefix both entry-level
      * normalizers report against, so the two cannot drift apart.
      */
-    private function entryError(int $index, string $layerName, string $message): ArchitectureConfigurationException
+    private function entryError(int $index, string $layerName, string $message): ConfigurationRefusal
     {
-        return new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        return ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(['architecture', 'layers', (string) $index], $layerName),
             \sprintf('architecture.layers[%d] ("%s"): %s', $index, $layerName, $message),
         );
     }
@@ -221,8 +223,9 @@ final class LayerCriterionNormalizer
         $entries = \is_string($value) ? [$value] : $value;
 
         if (!\is_array($entries)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got %s.',
                     $index,
@@ -237,8 +240,9 @@ final class LayerCriterionNormalizer
             // Associative map where an ordered list is required — the
             // typical mistake is using YAML mapping syntax ({@code key: val})
             // for what should be a sequence ({@code - val}).
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got an associative map (keys: %s). Use sequence syntax (a "-" prefix per entry) or omit the key to leave the criterion undeclared.',
                     $index,
@@ -250,8 +254,9 @@ final class LayerCriterionNormalizer
         }
 
         if ($entries === []) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must contain at least one entry; omit the key to leave the criterion undeclared.',
                     $index,
@@ -293,8 +298,9 @@ final class LayerCriterionNormalizer
         callable $semanticCheck,
     ): string {
         if (!\is_string($entry) || $entry === '') {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d must be a non-empty string (got %s).',
                     $index,
@@ -308,8 +314,9 @@ final class LayerCriterionNormalizer
 
         $semanticError = $semanticCheck($entry);
         if ($semanticError !== null) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $entry),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d %s',
                     $index,

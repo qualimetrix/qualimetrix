@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use JsonException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use RuntimeException;
 
 /**
@@ -231,13 +232,18 @@ final readonly class BaselineChannelRenamer
     private static function assertEnvelopeLoads(array $document, string $path): void
     {
         try {
-            BaselineLoader::parseGenerated($document['generated'] ?? null);
-            BaselineLoader::parseScope($document['scope'] ?? null);
-        } catch (BaselineLoadException $e) {
+            BaselineLoader::parseGenerated($document['generated'] ?? null, $path);
+            BaselineLoader::parseScope($document['scope'] ?? null, $path);
+        } catch (ConfigurationRefusal $e) {
+            // Translated at the boundary rather than let through: this carry
+            // keeps its own local signal for the reasons
+            // {@see ChannelRenameRefusal} documents, so a change to how the
+            // loader reports its own refusals must not change the type this
+            // method throws.
             throw new ChannelRenameRefusal(\sprintf(
                 '%s: %s. A carry writes the envelope back as it found it, so the file is left untouched.',
                 $path,
-                $e->getMessage(),
+                $e->summary(),
             ));
         }
     }

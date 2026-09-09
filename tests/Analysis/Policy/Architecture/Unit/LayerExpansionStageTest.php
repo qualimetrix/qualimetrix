@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionResult;
@@ -22,7 +22,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(LayerExpansionStage::class)]
 #[CoversClass(LayerExpansionResult::class)]
-#[CoversClass(ArchitecturePreparationException::class)]
+#[CoversClass(ConfigurationRefusal::class)]
 #[CoversClass(TupleExtractor::class)]
 #[CoversClass(LayerInstantiator::class)]
 final class LayerExpansionStageTest extends TestCase
@@ -186,7 +186,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\Module\\Reports\\Domain\\C',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.max_expanded_layers ceiling of 2');
 
         $this->stage->expand([$template], $classes, 2);
@@ -216,8 +216,8 @@ final class LayerExpansionStageTest extends TestCase
 
         try {
             $this->stage->expand([$first, $second], $classes, 3);
-            self::fail('Expected ArchitecturePreparationException due to cumulative ceiling overflow.');
-        } catch (ArchitecturePreparationException $e) {
+            self::fail('Expected ConfigurationRefusal due to cumulative ceiling overflow.');
+        } catch (ConfigurationRefusal $e) {
             $message = $e->getMessage();
             self::assertStringContainsString('"second-{module}"', $message);
             self::assertStringContainsString('added 2 layers', $message);
@@ -234,7 +234,7 @@ final class LayerExpansionStageTest extends TestCase
             new MembershipSpec(patterns: ['App\\Module\\{module}\\Domain\\**']),
         );
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('max-expansion ceiling must be >= 1');
 
         $this->stage->expand([$template], self::classSet([]), 0);
@@ -260,7 +260,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\Module\\order\\Domain\\A',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('"domain-order"');
         $this->expectExceptionMessage('static layer');
 
@@ -284,7 +284,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\OtherModules\\Order\\Domain\\B',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('"domain-Order"');
 
         $this->stage->expand([$first, $second], $classes, 500);
@@ -309,7 +309,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\Module\\1Numeric\\Domain\\X',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('invalid concrete layer name');
         $this->expectExceptionMessage('Binding values must consist of');
 
@@ -402,7 +402,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\Module\\Billing\\Domain\\Z',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.max_expanded_layers ceiling of 2');
 
         // 3 observed tuples post-M2 (suffix no longer narrows); ceiling is 2 → fail.
@@ -486,7 +486,7 @@ final class LayerExpansionStageTest extends TestCase
             'App\\Tenant\\AcmeCorp\\Service',
         ]);
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('incomplete binding tuple');
         $this->expectExceptionMessage('module');
         $this->expectExceptionMessage('match: all');
@@ -549,7 +549,7 @@ final class LayerExpansionStageTest extends TestCase
         $first = new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Infra\\**']));
         $second = new LayerDefinition('infra', new MembershipSpec(patterns: ['App\\Other\\**']));
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('"infra"');
 
         $this->stage->expand([$first, $second], self::classSet([]), 500);

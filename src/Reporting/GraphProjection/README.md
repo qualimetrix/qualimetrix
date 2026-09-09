@@ -2,11 +2,18 @@
 
 `GraphProjection` renders the DependencyModel graph for delivery adapters.
 
-Its public surface is deliberately limited to
-`Contract\DependencyGraphProjectionInterface` and
-`Contract\GraphProjectionRequest`. The Console adapter supplies a request and
-receives bytes; DOT and JSON exporters, their options, and the dispatcher stay
-internal to this module.
+Its public surface is `Contract\DependencyGraphProjectionInterface`,
+`Contract\GraphProjectionRequest`, and the two vocabularies that request
+types by: `Contract\GraphDirection` (DOT `rankdir`) and
+`Contract\GraphExportFormat` (`dot`/`json`). Each is a single-owner backed
+enum — before they existed the same four-word and two-word vocabularies were
+written out separately in the command's option help, `DotExporterOptions`'s
+docblock, and the DOT `rankdir` attribute, with no shared source
+(`docs/internal/plans/configuration-refusal/01-refusal-verdicts.md` §5.1).
+The Console adapter validates a raw `--direction`/`--format` against these
+enums *before* running the analysis, then supplies a typed request and
+receives bytes; DOT and JSON exporters, their options, and the dispatcher
+stay internal to this module.
 
 ## Structure
 
@@ -14,6 +21,8 @@ internal to this module.
 GraphProjection/
 ├── Contract/
 │   ├── DependencyGraphProjectionInterface.php
+│   ├── GraphDirection.php
+│   ├── GraphExportFormat.php
 │   └── GraphProjectionRequest.php
 ├── DependencyGraphProjector.php
 ├── DotExporter.php
@@ -23,12 +32,15 @@ GraphProjection/
 
 ## Definition of Done
 
-- Only the two `Contract` types are imported by delivery adapters.
+- Only the four `Contract` types are imported by delivery adapters.
 - DOT and JSON output preserve the graph projection behaviour used by
   `graph:export`.
+- `GraphDirection` and `GraphExportFormat` remain the sole owners of their
+  vocabularies: no second literal list of direction or format values exists
+  outside this module's `Contract/`.
 
 ## Locality
 
-GraphProjection owns delivery-facing graph rendering. Console imports its two
-declared contracts; exporters and options remain internal, while graph
+GraphProjection owns delivery-facing graph rendering. Console imports its
+four declared contracts; exporters and options remain internal, while graph
 semantics stay with DependencyModel.

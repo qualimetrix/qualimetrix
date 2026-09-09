@@ -127,9 +127,6 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Analysis/Finding/Contract/FindingChannel.php' =>
             'the channel name authority refusing a code with a level inside it: a statement about one malformed'
             . ' code, not about a pair addressed at the universe',
-        'src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php' =>
-            'refuses a computed metric name whose last segment is a level word, at the moment the name is read'
-            . ' from configuration: there is no channel and no pair yet',
     ];
 
     /** Detector one has to find the seam, or its scan has stopped recognising anything. */

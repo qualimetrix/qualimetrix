@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -70,6 +71,13 @@ final class RulesCommandTest extends TestCase
      * empty listing and exit 0 — the same answer as "this group exists and is
      * empty", which no group is. The failure names the groups that do exist,
      * because the reader who typed it needs the list, not the refusal.
+     *
+     * The command has no machine format and no catch-ladder of its own
+     * (`01-refusal-verdicts.md` §5.7): it throws the round's carrier and
+     * leaves it to `Application`'s ladder to turn into exit code 3, so under
+     * `CommandTester` — which runs `Command::run()` directly, with nothing
+     * above it to catch — the carrier flies out of `execute()` rather than
+     * being reported as a status code.
      */
     #[Test]
     public function itFailsOnAGroupNoProducerHas(): void
@@ -78,11 +86,14 @@ final class RulesCommandTest extends TestCase
         $other = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$rule, $other]));
-        $tester->execute(['--group' => 'complexty']);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('No rule group "complexty"', $tester->getDisplay());
-        self::assertStringContainsString('Groups: complexity, size', $tester->getDisplay());
+        try {
+            $tester->execute(['--group' => 'complexty']);
+            self::fail('Expected a ConfigurationRefusal to be thrown.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('No rule group "complexty"', $refusal->summary());
+            self::assertStringContainsString('Groups: complexity, size', $refusal->summary());
+        }
     }
 
     /**
@@ -96,10 +107,13 @@ final class RulesCommandTest extends TestCase
         $rule = $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
-        $tester->execute(['--group' => 'Complexity']);
 
-        self::assertSame(1, $tester->getStatusCode());
-        self::assertStringContainsString('No rule group "Complexity"', $tester->getDisplay());
+        try {
+            $tester->execute(['--group' => 'Complexity']);
+            self::fail('Expected a ConfigurationRefusal to be thrown.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('No rule group "Complexity"', $refusal->summary());
+        }
     }
 
     #[Test]

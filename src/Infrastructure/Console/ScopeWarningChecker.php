@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -46,27 +47,24 @@ final class ScopeWarningChecker
 
         $resolvedAnalyzed = [];
         foreach ($analyzedPaths as $path) {
-            try {
-                $resolvedAnalyzed[] = $path->canonicalize();
-            } catch (RuntimeException) {
-                // Best-effort coverage check: a non-existent analyzed path is
-                // already a separate, more relevant error reported by the
-                // discovery layer, so silently skipping it here is intentional.
-                continue;
+            // Best-effort coverage check: a non-existent analyzed path is
+            // already a separate, more relevant error reported by the
+            // discovery layer, so silently skipping it here is intentional.
+            $resolved = $this->tryResolve(static fn(): AbsolutePath => $path->canonicalize());
+
+            if ($resolved !== null) {
+                $resolvedAnalyzed[] = $resolved;
             }
         }
 
         $uncoveredPaths = [];
         foreach ($autoloadPaths as $autoloadPath) {
-            try {
-                $resolvedAutoload = PathFactory::fromCliArgument($autoloadPath, $projectRoot)
-                    ->canonicalize();
-            } catch (RuntimeException) {
-                // Autoload directory doesn't exist on disk — skip
-                continue;
-            }
+            // Autoload directory doesn't exist on disk — skip
+            $resolvedAutoload = $this->tryResolve(
+                static fn(): AbsolutePath => PathFactory::fromCliArgument($autoloadPath, $projectRoot)->canonicalize(),
+            );
 
-            if (!$this->isCoveredByAny($resolvedAutoload, $resolvedAnalyzed, $projectRoot)) {
+            if ($resolvedAutoload !== null && !$this->isCoveredByAny($resolvedAutoload, $resolvedAnalyzed, $projectRoot)) {
                 $uncoveredPaths[] = $autoloadPath;
             }
         }
@@ -88,13 +86,9 @@ final class ScopeWarningChecker
      */
     private function isCoveredByAny(AbsolutePath $autoload, array $analyzedPaths, AbsolutePath $projectRoot): bool
     {
-        try {
-            $resolvedRoot = $projectRoot->canonicalize();
-        } catch (RuntimeException) {
-            // Fall back to non-canonicalized comparison when the project root
-            // cannot be resolved (e.g., tested with a synthetic in-memory root).
-            $resolvedRoot = null;
-        }
+        // Fall back to non-canonicalized comparison when the project root
+        // cannot be resolved (e.g., tested with a synthetic in-memory root).
+        $resolvedRoot = $this->tryResolve(static fn(): AbsolutePath => $projectRoot->canonicalize());
 
         foreach ($analyzedPaths as $analyzed) {
             // Analyzed path equals the project root — covers everything
@@ -117,5 +111,23 @@ final class ScopeWarningChecker
         }
 
         return false;
+    }
+
+    /**
+     * Runs a path-resolving closure, letting a genuine configuration refusal
+     * propagate while treating any other {@see RuntimeException} (a path that
+     * does not exist on disk) as "not resolvable" rather than fatal.
+     *
+     * @param callable(): AbsolutePath $resolve
+     */
+    private function tryResolve(callable $resolve): ?AbsolutePath
+    {
+        try {
+            return $resolve();
+        } catch (ConfigurationRefusal $e) {
+            throw $e;
+        } catch (RuntimeException) {
+            return null;
+        }
     }
 }

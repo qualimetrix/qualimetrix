@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -170,9 +171,11 @@ final class ChannelExclusionKeySpellingTest extends TestCase
         $tester = $this->runCheck($this->config("      size.class-count#size.class-count: ['Fx\\Deep']"));
 
         self::assertSame(3, $tester->getStatusCode());
+        /** @var array{error: string, exit_code: int} $envelope */
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertStringContainsString(
             'keyed by "size.class-count#size.class-count", which is not a channel selector',
-            $tester->getErrorOutput(),
+            $envelope['error'],
         );
     }
 
@@ -206,7 +209,9 @@ final class ChannelExclusionKeySpellingTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application(new ErrorStream());
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $application = new Application(new ErrorStream(), $refusalPresenter);
         $application->addCommand($command);
 
         $tester = new CommandTester($command);

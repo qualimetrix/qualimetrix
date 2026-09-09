@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Preset;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 
 #[CoversClass(PresetResolver::class)]
@@ -67,7 +67,7 @@ final class PresetResolverTest extends TestCase
     #[Test]
     public function itRefusesAnUnknownPresetNameListingAvailablePresets(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown preset.*foo/');
         self::expectExceptionMessageMatches('/Available presets/');
 
@@ -117,7 +117,7 @@ final class PresetResolverTest extends TestCase
     #[Test]
     public function itRefusesAFilePathThatDoesNotExist(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         $this->resolver->resolve('./missing.yaml', '/tmp');
     }

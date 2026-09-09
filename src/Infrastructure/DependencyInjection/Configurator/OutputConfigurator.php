@@ -43,6 +43,7 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -68,6 +69,7 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -291,6 +293,21 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // progress section and every diagnostic writer come from this one
         // shared instance, which is what makes them redraw around each other.
         $container->register(ErrorStream::class)->setPublic(true);
+
+        // RefusalPresenter: the single writer for a configuration refusal or
+        // an internal error, shared by every command whose exit-code ladder
+        // catches ConfigurationRefusal — `check`, the five `baseline:*`, and
+        // `directives` here; `debug:layer-assignment` gets its own reference
+        // in ArchitectureConfigurator. Public, like ErrorStream above: `bin/qmx`
+        // fetches this exact instance to hand `Application` (`01-refusal-exit-ladder.md`
+        // §3) — a second, container-invisible instance built there would be
+        // the second diagnostic dialect the round exists to remove.
+        $container->register(RefusalPresenter::class)
+            ->setPublic(true)
+            ->setArguments([
+                new Reference(ErrorStream::class),
+            ]);
+
         $container->register(ProgressConfigurator::class)
             ->setArguments([
                 new Reference(SwitchableProgressReporter::class),
@@ -364,6 +381,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
                 new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
             ]);
+        $container->register(CheckConfigurationResolvers::class)
+            ->setArguments([
+                new Reference(RunConfigurationResolverInterface::class),
+                new Reference(CacheConfigurationResolverInterface::class),
+                new Reference(ParallelConfigurationResolverInterface::class),
+                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
+                new Reference(OutputFormatResolverInterface::class),
+            ]);
+
         $container->register(CheckCommand::class)
             ->setArguments([
                 new Reference(AnalysisPipelineInterface::class),
@@ -373,11 +399,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleInputValidator::class),
                 new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
                 new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
-                new Reference(OutputFormatResolverInterface::class),
+                new Reference(CheckConfigurationResolvers::class),
+                new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);
 
@@ -426,6 +449,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(DirectiveAuditInterface::class),
                 new Reference(AnalysisPreflight::class),
+                new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);
 
@@ -454,6 +478,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
                 new Reference(ErrorStream::class),
+                new Reference(RefusalPresenter::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
@@ -489,12 +514,22 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleOptionsFactory::class),
             ]);
 
+        // Every one of the five gets RefusalPresenter through a method call
+        // rather than a constructor argument: BaselineCommand's shared ladder
+        // declares the setter precisely so this doesn't mean touching five
+        // different constructors. Five separate calls, named individually
+        // below rather than in a loop, so a missed registration shows up as
+        // one command short an argument rather than dropped silently from an
+        // iterable.
+        $refusalPresenterCall = ['setRefusalPresenter', [new Reference(RefusalPresenter::class)]];
+
         $container->register(BaselineGenerateCommand::class)
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
             ])
+            ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
 
         $container->register(BaselineUpdateCommand::class)
@@ -504,6 +539,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineUpdater::class),
                 new Reference(BaselineWriter::class),
             ])
+            ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
 
         $container->register(BaselineCleanupCommand::class)
@@ -514,6 +550,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineWriter::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
             ])
+            ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
 
         // The one baseline command with no measured run: a carry substitutes a
@@ -523,6 +560,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineChannelRenamer::class),
             ])
+            ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
 
         $container->register(BaselineExplainCommand::class)
@@ -531,7 +569,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(BoundaryExplanationService::class),
                 new Reference(BaselineConfiguredThresholds::class),
+                new Reference(ChannelDeclarationRegistryInterface::class),
             ])
+            ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
     }
 }

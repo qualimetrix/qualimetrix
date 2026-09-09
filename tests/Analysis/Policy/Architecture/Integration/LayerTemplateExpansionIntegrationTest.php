@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -82,7 +82,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
         // Fixture has 3 modules — ceiling = 1 must blow up.
         $config['max_expanded_layers'] = 1;
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.max_expanded_layers ceiling of 1');
 
         $this->runPipelineWithConfig($config);
@@ -115,7 +115,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
         $caught = null;
         try {
             $this->runPipelineWithConfig($configTight);
-        } catch (ArchitecturePreparationException $exception) {
+        } catch (ConfigurationRefusal $exception) {
             $caught = $exception;
         }
         self::assertNotNull(

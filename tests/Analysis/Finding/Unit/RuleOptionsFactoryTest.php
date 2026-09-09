@@ -8,7 +8,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
@@ -26,7 +27,6 @@ use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType;
-use RuntimeException;
 use stdClass;
 
 #[CoversClass(RuleOptionsFactory::class)]
@@ -905,10 +905,17 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('option "warningThreshold" must be numeric');
-
-        $this->factory->create('test-rule', TestRuleOptions::class);
+        try {
+            $this->factory->create('test-rule', TestRuleOptions::class);
+            self::fail('The non-numeric value was accepted.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('option "warningThreshold" must be numeric', $e->getMessage());
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertNull($e->origin()->locator());
+            self::assertNotNull($e->position());
+            self::assertSame('warningThreshold', $e->position()->written());
+            self::assertFalse($e->position()->isClosed());
+        }
     }
 
     #[Test]
@@ -920,7 +927,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(RuntimeException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('option "errorThreshold" must be numeric');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
@@ -969,7 +976,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(RuntimeException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('rule "complexity.ccn"');
 
         $this->factory->create('complexity.ccn', TestRuleOptions::class);
@@ -1291,10 +1298,11 @@ final class RuleOptionsFactoryTest extends TestCase
         try {
             $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
             self::fail('The retired spelling was accepted.');
-        } catch (InvalidArgumentException $e) {
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('The "exclude_namespaces" option was retired', $e->getMessage());
             self::assertStringContainsString('use "suppress_namespaces"', $e->getMessage());
             self::assertStringContainsString('"exclude" option instead', $e->getMessage());
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 
@@ -1305,7 +1313,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'code-smell.long-parameter-list' => ['excludeNamespaces' => ['App\\Tests']],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppressNamespaces/');
 
         $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -1316,7 +1324,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->addCliOption('computed.health', 'exclude_namespace_channels', ['health.cohesion' => ['App\\Metrics']]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppress_namespace_channels/');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1327,7 +1335,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_paths', ['src/Legacy/**']);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppress_paths/');
 
         $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -1338,7 +1346,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->addCliOption('code-smell.long-parameter-list', 'excludePaths', ['src/Legacy/**']);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/suppressPaths/');
 
         $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -1519,7 +1527,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // It used to be a warning, at depth 1 only: a key written inside a level
     // slot was compared against nothing at all, and a run continued at the
     // defaults the author believed they had replaced. The exception class is
-    // `ConfigLoadException` because this is an error in the configuration
+    // `ConfigurationRefusal` because this is an error in the configuration
     // document; `CheckCommand` prefixes it with "Configuration error: " and
     // exits 3.
 
@@ -1530,7 +1538,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'size.method-count' => ['nonsense' => 1],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "nonsense" is not an option of rule "size.method-count". Options here: enabled, error,'
             . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
@@ -1552,7 +1560,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'size.method-count' => ['suppress_path' => ['src/']],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "suppressPath" is not an option of rule "size.method-count". Options here: enabled, error,'
             . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
@@ -1568,7 +1576,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'coupling.cbo' => ['class' => ['maxWarning' => 1]],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "maxWarning" is not an option of rule "coupling.cbo" at level "class". Options at that level:'
             . ' enabled, error, scope, threshold, warning. Other levels of this rule take different options.',
@@ -1601,7 +1609,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'coupling.instability' => ['class' => ['warning' => 0.6]],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('at level "class"');
 
         $this->factory->create('coupling.instability', InstabilityOptions::class);
@@ -1655,7 +1663,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'coupling.cbo' => ['class' => false],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Level "class" of rule "coupling.cbo" takes a map of options, got bool.'
             . ' To switch one level off write "class: {enabled: false}".',
@@ -1671,7 +1679,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'coupling.cbo' => ['class' => 10],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Level "class" of rule "coupling.cbo" takes a map of options, got int.');
 
         $this->factory->create('coupling.cbo', CboOptions::class);
@@ -1696,7 +1704,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'coupling.instability' => ['class' => ['maxWarnign' => 1]],
         ]);
 
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Option "maxWarnign" is not an option');
 
         $this->factory->create('coupling.instability', InstabilityOptions::class);

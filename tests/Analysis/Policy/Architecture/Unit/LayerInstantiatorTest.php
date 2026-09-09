@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
@@ -98,7 +98,7 @@ final class LayerInstantiatorTest extends TestCase
             new MembershipSpec(patterns: ['App\\{tenant}\\Module\\{module}\\Domain\\**']),
         );
 
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessageMatches('/incomplete binding tuple .* "module"/');
 
         $this->instantiator->instantiate($template, ['tenant' => 'AcmeCorp']);
@@ -114,7 +114,7 @@ final class LayerInstantiatorTest extends TestCase
 
         // A binding value containing a backslash is rejected by the relaxed
         // expansion-mode regex.
-        $this->expectException(ArchitecturePreparationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessageMatches('/invalid concrete layer name/');
 
         $this->instantiator->instantiate($template, ['module' => 'Order\\Foo']);

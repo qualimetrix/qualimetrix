@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate;
@@ -104,10 +107,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
         self::reportCandidates($candidates, $output);
 
-        $selectors = $this->readSelectors($input, $output);
-        if ($selectors === false) {
-            return self::EXIT_INVALID_INPUT;
-        }
+        $selectors = $this->readSelectors($input);
 
         if ($selectors === []) {
             $output->writeln('<info>Nothing removed: pass --remove=SELECTOR for each entry you want gone.</info>');
@@ -156,9 +156,9 @@ final class BaselineCleanupCommand extends BaselineCommand
      * the subset that parsed is how a typo turns into "it worked" over a file
      * that lost the wrong lines.
      *
-     * @return list<EntrySelector>|false
+     * @return list<EntrySelector>
      */
-    private function readSelectors(InputInterface $input, OutputInterface $output): array|false
+    private function readSelectors(InputInterface $input): array
     {
         /** @var list<string> $raw */
         $raw = $input->getOption('remove');
@@ -179,13 +179,14 @@ final class BaselineCleanupCommand extends BaselineCommand
         }
 
         if ($invalid !== []) {
-            $output->writeln(\sprintf(
-                '<error>Not entry selectors (expected %d hexadecimal characters, as printed above): %s</error>',
-                EntrySelector::LENGTH,
-                implode(', ', $invalid),
-            ));
-
-            return false;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--remove'),
+                \sprintf(
+                    'Not entry selectors (expected %d hexadecimal characters, as printed above): %s',
+                    EntrySelector::LENGTH,
+                    implode(', ', $invalid),
+                ),
+            );
         }
 
         return $selectors;

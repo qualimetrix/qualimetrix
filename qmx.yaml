@@ -50,10 +50,13 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException'
         - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
@@ -171,7 +174,6 @@ architecture:
     - name: analysis-evidence-computedmetrics
       patterns:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
@@ -181,6 +183,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricShapeRefusalWording'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
@@ -540,16 +546,15 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch'
@@ -618,7 +623,6 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
-        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoader'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigrator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigratorResult'
@@ -800,6 +804,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
+        - 'Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers'
+        - 'Qualimetrix\Infrastructure\Console\CheckResolvedConfiguration'
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
@@ -823,7 +829,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\HookStatusCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
-        - 'Qualimetrix\Infrastructure\Console\ConfigurationFailure'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
@@ -843,6 +848,9 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
         - 'Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
@@ -1027,6 +1035,8 @@ architecture:
     - name: reporting-graphprojection
       patterns:
         - 'Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat'
         - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest'
         - 'Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector'
         - 'Qualimetrix\Reporting\GraphProjection\DotExporter'
@@ -1076,6 +1086,7 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-computedmetrics-health:
+      - analysis-configuration
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
       - core-neutral
@@ -1160,6 +1171,7 @@ architecture:
       - core-symbol
       - external
     analysis-policy-baseline:
+      - analysis-configuration
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
@@ -1329,6 +1341,26 @@ rules:
   coupling.cbo:
     suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
+      # The configuration-refusal carrier: ConfigurationRefusal itself plus
+      # the three value types it composes (ADR 0050). Five capability owners
+      # and the console throw or catch this one type, which is what a
+      # contract is for; CBO counts exactly that reach and calls it a magnet.
+      # Measured after X15: ConfigurationRefusal 50, ConfigurationOrigin 44,
+      # ConfigurationSource 44 against a class error bound of 30 — every
+      # point of it inbound, from owners that are supposed to name it.
+      # Blanket by prefix, and deliberately so: this exact sub-namespace
+      # holds nothing but the carrier's own value types, and a future
+      # sibling there would be one of them. Scoped to `\Refusal` and not to
+      # the parent `\Contract` namespace it lives under — X15's review found
+      # the wider prefix silently also suppressing four unrelated,
+      # unmeasured types (`ConfigurationDocument`, `KnownRuleNamesProviderInterface`,
+      # `Discovery\ComposerAutoloadPathReaderInterface`,
+      # `Pipeline\ConfigurationPipelineInterface`,
+      # `Pipeline\ConfigurationResolutionRequest`); re-measured after
+      # narrowing to just `\Refusal` and only `ConfigurationDocument` of
+      # those five turned out to actually exceed the threshold (see below) —
+      # the other four are unsuppressed and clean.
+      - Qualimetrix\Analysis\Configuration\Contract\Refusal
       # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
       # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
       # publication, not detection: a point threshold inside the namespace still
@@ -1399,6 +1431,17 @@ rules:
       # Infrastructure console commands and pipeline orchestrators need many deps
       - src/Infrastructure/Console
       - src/Analysis/Run/Pipeline
+      # `ConfigurationDocument`, which the `\Refusal` entry above deliberately
+      # does not sweep in: the shared configuration document every capability's
+      # resolver reads to build its own view. Measured on this tree: CBO 27
+      # against the class thresholds below (`warning: 20, error: 30`) — past
+      # the warning bound and reported as `warning`, a connectivity magnet for
+      # the same reason as the carrier, many named readers of one document, but
+      # a distinct type, so it carries its own line and its own number. Written
+      # as a path because `suppress_namespaces` matches namespaces, and a class
+      # name written there matches nothing — measured: the entry looked right
+      # and suppressed nothing.
+      - src/Analysis/Configuration/Contract/ConfigurationDocument.php
     namespace:
       warning: 16
       error: 25
@@ -1416,6 +1459,10 @@ rules:
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
+      # Same reason as the CBO channel above, narrowed to the leaf that earns
+      # it: ConfigurationSource sits at 0.0071 against 0.0066 because every
+      # refusal in the tree names one of its five cases.
+      - Qualimetrix\Analysis\Configuration\Contract\Refusal
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1476,6 +1523,19 @@ rules:
       # override on the file the finding is attributed to left the violation
       # standing and the audit reported that directive inert.
       - '[Q]ualimetrix\Analysis\Configuration'
+      # Two exact roots the line above deliberately leaves measured, and X15
+      # moved both. `Contract` holds the configuration document and its
+      # contracts; the refusal carrier's four value types were added beneath
+      # it (ADR 0050), which lowers the parent's abstractness by four concrete
+      # classes: 0.60 against a 0.5 ceiling. The child root is the extreme case
+      # of the same shape — a final exception plus three `final readonly`
+      # values, A=0 by construction, and every capability owner now names it,
+      # so I approaches 1 and D = |A + I - 1| approaches 1 with it: 0.98. There
+      # is no refactoring that lowers it while the type stays a contract; an
+      # abstract seam in front of an exception's factory methods would buy the
+      # number and cost the reader.
+      - '[Q]ualimetrix\Analysis\Configuration\Contract'
+      - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -1724,8 +1784,12 @@ rules:
     suppress_paths:
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
-      # mis-models the design rather than reporting debt. These seven classes sit
+      # mis-models the design rather than reporting debt. These six classes sit
       # at exactly 40 and are the whole of that debt on this root today.
+      # (`DirectivesCommand` stood here through X14; X15 removed its own
+      # `reportError()` helper, which raised its cohesion to 75.36 — above
+      # this rule's warning boundary — so the entry suppressed nothing and
+      # was dropped rather than carried forward inert.)
       #
       # Named one by one rather than by the namespace they share, and the
       # difference is measured, not stylistic. The namespace form took the
@@ -1741,14 +1805,40 @@ rules:
       # What it costs instead: a listed file whose cohesion later rises leaves a
       # path exclusion that silences nothing and says so to nobody. An exclusion
       # has no staleness verdict, unlike an inline directive; that is the price
-      # of keeping the decision in configuration rather than in seven docblocks.
+      # of keeping the decision in configuration rather than in six docblocks.
       - src/Infrastructure/Console/Command/BaselineCleanupCommand.php
       - src/Infrastructure/Console/Command/BaselineExplainCommand.php
       - src/Infrastructure/Console/Command/BaselineGenerateCommand.php
       - src/Infrastructure/Console/Command/BaselineUpdateCommand.php
       - src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
-      - src/Infrastructure/Console/Command/DirectivesCommand.php
       - src/Infrastructure/Console/Command/HookUninstallCommand.php
+      # X15 adds two more of the same shape. `GraphExportCommand` measured
+      # 40.0 before the round touched it and measures the same after, so it
+      # is the existing debt of this root becoming visible, not new debt.
+      # `BaselineRenameChannelsCommand` is the one the round moved, and the
+      # mechanism was measured rather than assumed: splitting its
+      # `doExecute()` took it from 4 methods to 9, and `health.cohesion`
+      # gives a fixed boost only below 6, so the score fell while LCOM stayed
+      # at 3. The metric reports the cliff, not the design.
+      #
+      # `Application` is the round's own new debt, named as such: adding
+      # `configureIO()` (the `--silent` demotion above) took it from 30.0 to
+      # 20.0, which crosses this rule's own error/warning boundary (25.0) —
+      # `docs/internal/generated/suppression/composition.tsv` records the
+      # entry's severity as `error` where it was `warning` before this round.
+      # Accepted rather than split further: `doRun()`, `renderThrowable()`,
+      # `applyWorkingDirOption()` and `configureIO()` are four independent
+      # ladder/IO concerns that share no fields by construction, the same
+      # argument the class comment above makes for the seven listed commands.
+      - src/Infrastructure/Console/Application.php
+      - src/Infrastructure/Console/Command/GraphExportCommand.php
+      - src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+      # The carrier's own three types, for the same reason the namespace entry
+      # below gives for their root: the file channel is addressed separately
+      # from the namespace one, so the root entry alone leaves these standing.
+      - src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
+      - src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
+      - src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share
@@ -1757,3 +1847,8 @@ rules:
         # The exact root recursively unions independent Debt and Impact
         # subjects; shared-field cohesion 48.6 is not a root invariant.
         - '[Q]ualimetrix\Analysis\Evidence\Prioritization'
+        # An exception carrying an origin and a position, and three immutable
+        # values it is built from, share no fields with each other: cohesion is
+        # structurally inapplicable to this exact root, the same argument the
+        # Expansion entry above makes.
+        - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'

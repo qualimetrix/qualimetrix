@@ -83,6 +83,7 @@ src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\Cache
 src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	P8	"adapter session or cache"	-	configuration	reset
 src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	P8	"adapter session or cache"	-	cache	reset,resetConfiguration
 src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	P8	"adapter session or cache"	-	serializerVerified	clear,set
+src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	P8	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	P8	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	P8	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	P8	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
@@ -74,7 +74,7 @@ final class FormatterContextFactoryTest extends TestCase
             '--format-opt' => ['violations=10'],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Conflicting options: --all cannot be combined with --format-opt=violations=N');
 
         $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());

@@ -144,6 +144,20 @@ bin/qmx check src/ --format=html -o report.html
 
 ## Настройка
 
+### Допустимые ключи
+
+Каждая запись `computed_metrics:` принимает ровно девять ключей: `formula`,
+`formulas`, `levels`, `description`, `inverted`, `threshold`, `warning`,
+`error` и `enabled`. `threshold` задаёт `warning` и `error` одним и тем же
+значением и не сочетается ни с одним из них. Внутри `formulas:` допустимы
+только три слова уровня: `class`, `namespace` и `project`.
+
+Неизвестный ключ, значение неверного типа или имя `health.*` вне шести
+встроенных измерений (`health.complexity`, `health.cohesion`,
+`health.coupling`, `health.typing`, `health.maintainability`,
+`health.overall`) отклоняются с кодом возврата 3 и сообщением, называющим
+написанное и допустимое — ни один из этих случаев не игнорируется молча.
+
 ### Настройка порогов
 
 Переопределите пороги warning/error для любого измерения здоровья:

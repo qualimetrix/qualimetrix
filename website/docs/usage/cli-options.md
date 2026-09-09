@@ -804,7 +804,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 - `assigned` is `null` when no layer matched (empty `shadowed` follows).
 - `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
-- On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 2 regardless of format.
+- On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
 
 ### directives
 

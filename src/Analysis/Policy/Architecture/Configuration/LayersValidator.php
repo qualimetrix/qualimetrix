@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -13,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Throwable;
 
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
@@ -31,22 +35,20 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *       patterns: ['App\Repository\Legacy\**']
  * ```
  *
- * Produces a typed {@see LayerRegistry} preserving declaration order. Rejects
- * duplicate patterns across layers — under declaration-order matching the
- * second occurrence is unreachable and always a configuration mistake.
+ * Produces a typed {@see LayerRegistry} preserving declaration order.
  *
  * Per-criterion shape validation is delegated to
  * {@see LayerCriterionNormalizer}; the {@code exclude:} sub-block is
- * delegated to {@see ExcludeBlockValidator}. Both helpers stay inside the
- * same namespace so the schema surface is co-located.
+ * delegated to {@see ExcludeBlockValidator}; cross-entry duplicate-pattern
+ * reachability is delegated to {@see DuplicatePatternRejector}. All three
+ * helpers stay inside the same namespace so the schema surface is
+ * co-located.
  *
- * All errors surface as {@see ArchitectureConfigurationException} with the logical path
- * {@code 'architecture'}.
+ * All errors surface as {@see ConfigurationRefusal} addressed to the
+ * resolved document.
  */
 final class LayersValidator
 {
-    private const string CONFIG_PATH = 'architecture';
-
     private const array ALLOWED_ENTRY_KEYS = [
         'name',
         'patterns',
@@ -66,6 +68,17 @@ final class LayersValidator
         $this->normalizer = new LayerCriterionNormalizer();
     }
 
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+            $previous,
+        );
+    }
+
     /**
      * Parses the raw {@code layers} value into the declaration-order list of
      * static {@see LayerDefinition}s and parameterised
@@ -82,7 +95,7 @@ final class LayersValidator
     public function validate(mixed $layersRaw): array
     {
         $entries = $this->buildLayerEntries($layersRaw);
-        self::rejectDuplicatePatterns($entries);
+        DuplicatePatternRejector::reject($entries);
 
         return $entries;
     }
@@ -97,15 +110,15 @@ final class LayersValidator
         }
 
         if (!\is_array($layersRaw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture.layers',
                 'architecture.layers: must be an ordered list of layer entries, got ' . get_debug_type($layersRaw) . '.',
             );
         }
 
         if (!array_is_list($layersRaw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture.layers',
                 'architecture.layers: must be an ordered list of layer entries (each entry an object with "name" and at least one criterion key), not a map. '
                 . 'See ADR 0006 for the schema change rationale.',
             );
@@ -152,7 +165,7 @@ final class LayersValidator
      * name contains capture variables. Catches the construction-time
      * invariant violations (empty name, variable in name not bound by any
      * capture-producing pattern, invalid capture grammar, undeclared
-     * exclude variables) and rewraps them as {@see ArchitectureConfigurationException} so
+     * exclude variables) and rewraps them as {@see ConfigurationRefusal} so
      * the user sees a config-layer error.
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
@@ -175,8 +188,8 @@ final class LayersValidator
                 ),
             );
         } catch (InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf('architecture.layers[%d] ("%s"): %s', $index, $nameTemplate, $e->getMessage()),
                 $e,
             );
@@ -223,8 +236,8 @@ final class LayersValidator
                 lifecycle: $lifecycle,
             );
         } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
                 $e,
             );
@@ -240,8 +253,8 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            \sprintf('architecture.layers[%d]', $index),
             \sprintf(
                 'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
                 $index,
@@ -256,8 +269,8 @@ final class LayersValidator
     private static function ensureEntryIsAssociativeArray(int $index, mixed $entry): array
     {
         if (!\is_array($entry) || array_is_list($entry)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf(
                     'architecture.layers[%d]: each entry must be a map with "name" and at least one criterion key, got %s.',
                     $index,
@@ -279,8 +292,12 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        $accepted = self::ALLOWED_ENTRY_KEYS;
+        sort($accepted);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed(['architecture', 'layers', (string) $index], implode(', ', $unknown), $accepted),
             \sprintf(
                 'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
                 $index,
@@ -296,8 +313,8 @@ final class LayersValidator
     private static function extractValidName(int $index, array $entry): string
     {
         if (!\array_key_exists('name', $entry) || !\is_string($entry['name']) || $entry['name'] === '') {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d].name', $index),
                 \sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index),
             );
         }
@@ -314,8 +331,8 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            \sprintf('architecture.layers[%d].name', $index),
             \sprintf(
                 'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
                 $index,
@@ -337,108 +354,4 @@ final class LayersValidator
         return implode(', ', $quoted);
     }
 
-    /**
-     * Rejects duplicate patterns across different entries. Under
-     * declaration-order semantics any class matching the duplicate would
-     * always belong to the earlier entry — the second occurrence is
-     * unreachable and is always a configuration mistake.
-     *
-     * Same-pattern entries within ONE entry are not duplicates (the entry
-     * itself can list whatever it wants), so the check is cross-entry only.
-     *
-     * Only the {@code patterns} criterion is duplicate-checked: suffix /
-     * attributes / implements / extends entries can legitimately overlap
-     * across entries because their match semantics are richer than a literal
-     * FQN prefix (a suffix-only class might match multiple suffix entries; the
-     * declaration-order rule already chooses the assignment unambiguously).
-     *
-     * Both {@see LayerDefinition} and {@see TemplateLayerDefinition} are
-     * walked uniformly — a static entry's pattern colliding with a template's
-     * raw pattern would also be unreachable under declaration order.
-     *
-     * **Mode-aware skip (H1 remediation).** When at least one of the two
-     * colliding entries declares {@code match: all} together with a non-empty
-     * non-pattern criterion (suffix / attributes / implements / extends), the
-     * pattern overlap is NOT necessarily unreachable: the narrowing entry
-     * only claims the subset of pattern matches that also satisfy the extra
-     * criteria, leaving room for the sibling entry to legitimately catch the
-     * residue. The check is skipped in that case to avoid the false-positive
-     * documented in the architecture-rules remediation plan (Phase 1.2).
-     *
-     * Trade-off: a {@code match: any} entry sitting AFTER a {@code match: all}
-     * narrowing entry on the same pattern is technically reachable, while a
-     * {@code match: all} narrowing entry sitting AFTER a {@code match: any}
-     * blanket entry on the same pattern is technically unreachable. The skip
-     * accepts the latter false negative to eliminate the former false
-     * positive — losing a "rare unreachable layer" warning is less harmful
-     * than rejecting a valid config. Order-symmetric "one or both" predicate
-     * keeps the rule simple for users to reason about.
-     *
-     * @param list<LayerDefinition|TemplateLayerDefinition> $entries
-     */
-    private static function rejectDuplicatePatterns(array $entries): void
-    {
-        $owners = [];
-        foreach ($entries as $entryIndex => $entry) {
-            $entryName = $entry instanceof TemplateLayerDefinition ? $entry->nameTemplate() : $entry->name();
-            $membership = $entry->membership();
-            $entryNarrows = self::narrowsByNonPatternCriteria($membership);
-            $patterns = $membership->patterns;
-            $seenInThisEntry = [];
-            foreach ($patterns as $pattern) {
-                $normalized = rtrim($pattern, '\\');
-                if (isset($seenInThisEntry[$normalized])) {
-                    continue;
-                }
-                $seenInThisEntry[$normalized] = true;
-
-                if (isset($owners[$normalized]) && $owners[$normalized]['name'] !== $entryName) {
-                    if ($owners[$normalized]['narrows'] || $entryNarrows) {
-                        // Either the earlier owner narrows its pattern matches
-                        // with non-pattern AND-criteria, or this entry does —
-                        // the second occurrence is not necessarily unreachable.
-                        continue;
-                    }
-
-                    throw new ArchitectureConfigurationException(
-                        self::CONFIG_PATH,
-                        \sprintf(
-                            'architecture.layers: pattern "%s" declared in both "%s" (architecture.layers[%d]) and "%s" (architecture.layers[%d]). Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
-                            $normalized,
-                            $owners[$normalized]['name'],
-                            $owners[$normalized]['index'],
-                            $entryName,
-                            $entryIndex,
-                        ),
-                    );
-                }
-
-                if (!isset($owners[$normalized])) {
-                    $owners[$normalized] = ['name' => $entryName, 'index' => $entryIndex, 'narrows' => $entryNarrows];
-                }
-            }
-        }
-    }
-
-    /**
-     * True when the entry declares {@code match: all} AND carries at least
-     * one non-empty non-pattern criterion (suffix / attributes / implements /
-     * extends). Such an entry only claims the subset of pattern matches that
-     * also satisfy the extra criteria — its patterns can legitimately overlap
-     * with siblings without rendering anyone unreachable.
-     *
-     * {@code match: any} entries never narrow: their patterns alone are
-     * sufficient to claim every match.
-     */
-    private static function narrowsByNonPatternCriteria(MembershipSpec $membership): bool
-    {
-        if ($membership->mode !== MatchMode::All) {
-            return false;
-        }
-
-        return $membership->suffix !== []
-            || $membership->attributes !== []
-            || $membership->implements !== []
-            || $membership->extends !== [];
-    }
 }

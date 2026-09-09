@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Vali
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
@@ -14,7 +16,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 
 #[CoversClass(AllowValidator::class)]
@@ -149,7 +150,7 @@ final class AllowValidatorTest extends TestCase
         // user can rename it confidently.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("unknown long-form key 'types'");
 
         $this->validator->validate(
@@ -168,7 +169,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
@@ -187,7 +188,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
@@ -286,7 +287,7 @@ final class AllowValidatorTest extends TestCase
         // between "remove the entry entirely" and "list at least one kind".
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must list at least one relation kind');
 
         $this->validator->validate(
@@ -305,7 +306,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller[0].relations: must be a list');
 
         $this->validator->validate(
@@ -324,7 +325,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("unknown relation kind 'tipes'");
 
         $this->validator->validate(
@@ -454,7 +455,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("'allow_cross_instance' must be a boolean, got string");
 
         $this->validator->validate(
@@ -540,7 +541,7 @@ final class AllowValidatorTest extends TestCase
         // would surprise the user. Reject explicitly.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("specify either 'allow_cross_instance' or 'allowCrossInstance', not both");
 
         $this->validator->validate(
@@ -563,7 +564,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("'allowCrossInstance' must be a boolean, got string");
 
         $this->validator->validate(
@@ -585,7 +586,7 @@ final class AllowValidatorTest extends TestCase
         // configuration error.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("unknown long-form key 'tipes'");
 
         $this->validator->validate(
@@ -641,7 +642,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
 
         $this->validator->validate(
@@ -656,7 +657,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("architecture.allow.controller[0]: unknown layer 'servise'");
 
         $this->validator->validate(
@@ -726,7 +727,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
@@ -741,7 +742,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("architecture.allow.controller[0]");
 
         $this->validator->validate(
@@ -756,7 +757,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.app-{m');
 
         $this->validator->validate(
@@ -771,7 +772,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("only ':**' is supported");
 
         $this->validator->validate(
@@ -786,7 +787,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('invalid capture name');
 
         $this->validator->validate(
@@ -805,7 +806,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow');
 
         $this->validator->validate(['a', 'b'], ['a'], $warnings);
@@ -816,7 +817,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow');
 
         $this->validator->validate('wrong', ['a'], $warnings);
@@ -827,7 +828,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller');
 
         $this->validator->validate(
@@ -842,7 +843,7 @@ final class AllowValidatorTest extends TestCase
     {
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->validator->validate(
@@ -853,15 +854,15 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itUsesArchitectureAsTheConfigPathForAllErrors(): void
+    public function itAddressesTheResolvedDocumentForAllErrors(): void
     {
         $warnings = [];
 
         try {
             $this->validator->validate('wrong', ['a'], $warnings);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 
@@ -875,7 +876,7 @@ final class AllowValidatorTest extends TestCase
         // 'app-{x}': ['domain-{y}'] — target {y} is not bound by source {x}.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
 
         $this->validator->validate(
@@ -891,7 +892,7 @@ final class AllowValidatorTest extends TestCase
         // 'shared-*': ['domain-{m}'] — source produces no binding for {m}.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("source 'shared-*' is a glob selector and declares no capture variables");
 
         $this->validator->validate(
@@ -907,7 +908,7 @@ final class AllowValidatorTest extends TestCase
         // 'controller': ['domain-{m}'] — exact source has no captures.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("source 'controller' is an exact layer name and declares no capture variables");
 
         $this->validator->validate(
@@ -974,7 +975,7 @@ final class AllowValidatorTest extends TestCase
         // value, target's :** annotation would be silently ignored.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("'m' (source: {var}, target: {var:**})");
 
         $this->validator->validate(
@@ -990,7 +991,7 @@ final class AllowValidatorTest extends TestCase
         // Reverse direction: source binds multi-segment, target declares single.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("'m' (source: {var:**}, target: {var})");
 
         $this->validator->validate(
@@ -1024,7 +1025,7 @@ final class AllowValidatorTest extends TestCase
         // meaningless at runtime even in cross-instance mode.
         $warnings = [];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
 
         $this->validator->validate(

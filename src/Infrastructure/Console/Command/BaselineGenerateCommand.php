@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -98,21 +101,19 @@ final class BaselineGenerateCommand extends BaselineCommand
         $baselinePath = $input->getArgument('baseline');
         $force = $input->getOption('force') === true;
 
-        $mode = $this->readMode($input, $output);
-        if ($mode === false) {
-            return self::EXIT_INVALID_INPUT;
-        }
+        $mode = $this->readMode($input);
 
         $destinationExists = self::destinationExists($baselinePath);
 
         if ($destinationExists && !$force) {
-            $output->writeln(\sprintf(
-                '<error>%s already exists. Regenerating discards every acceptance it records — '
-                . 'pass --force if that is intended, or use `baseline:update` to tighten it in place.</error>',
-                $baselinePath,
-            ));
-
-            return self::FAILURE;
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'baseline'),
+                \sprintf(
+                    '%s already exists. Regenerating discards every acceptance it records — '
+                    . 'pass --force if that is intended, or use `baseline:update` to tighten it in place.',
+                    $baselinePath,
+                ),
+            );
         }
 
         $destination = $destinationExists
@@ -186,10 +187,9 @@ final class BaselineGenerateCommand extends BaselineCommand
     }
 
     /**
-     * `false` when the value is not a mode at all — distinct from `null`,
-     * which is the ratchet default and the one mode that writes nothing.
+     * `null` is the ratchet default and the one mode that writes nothing.
      */
-    private function readMode(InputInterface $input, OutputInterface $output): BaselineEntryMode|false|null
+    private function readMode(InputInterface $input): ?BaselineEntryMode
     {
         $raw = $input->getOption('mode');
 
@@ -201,14 +201,15 @@ final class BaselineGenerateCommand extends BaselineCommand
             return BaselineEntryMode::Suppress;
         }
 
-        $output->writeln(\sprintf(
-            '<error>Unknown --mode value "%s". Expected %s or %s.</error>',
-            \is_scalar($raw) ? (string) $raw : \gettype($raw),
-            self::MODE_RATCHET,
-            self::MODE_SUPPRESS,
-        ));
-
-        return false;
+        throw ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--mode'),
+            \sprintf(
+                'Unknown --mode value "%s". Expected %s or %s.',
+                \is_scalar($raw) ? (string) $raw : \gettype($raw),
+                self::MODE_RATCHET,
+                self::MODE_SUPPRESS,
+            ),
+        );
     }
 
     /**

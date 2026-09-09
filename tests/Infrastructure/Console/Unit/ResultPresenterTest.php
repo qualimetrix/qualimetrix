@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
@@ -148,6 +149,79 @@ final class ResultPresenterTest extends TestCase
             [],
             $this->analysisResult(coverage: $coverage),
             $this->input(),
+            new BufferedOutput(),
+            AbsolutePath::fromString('/project'),
+            new OutputFormat(),
+            new ExitPolicy(),
+        );
+    }
+
+    /**
+     * `01-refusal-verdicts.md` §5.4: an unwritable `--output` target is
+     * refused before analysis runs, not discovered afterward. The counter
+     * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::doExecute()},
+     * which calls this precheck before `runAnalysis()` — this test pins the
+     * precheck itself, in isolation from that ordering.
+     */
+    #[Test]
+    public function itRefusesAnUnwritableOutputTargetBeforeAnalysis(): void
+    {
+        $dir = sys_get_temp_dir() . '/qmx-result-presenter-precheck-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o755, true);
+        chmod($dir, 0o555);
+
+        try {
+            $this->presenter(self::createStub(FormatterRegistryInterface::class))
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+            self::fail('An unwritable --output directory must be refused before analysis runs.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($dir, $refusal->summary());
+        } finally {
+            chmod($dir, 0o755);
+            rmdir($dir);
+        }
+    }
+
+    #[Test]
+    public function itAcceptsAWritableOutputTargetOrNoTargetAtAll(): void
+    {
+        self::expectNotToPerformAssertions();
+
+        $presenter = $this->presenter(self::createStub(FormatterRegistryInterface::class));
+        $writableTarget = sys_get_temp_dir() . '/qmx-result-presenter-writable-' . bin2hex(random_bytes(6)) . '.json';
+
+        // Neither call may throw — the assertion is that execution reaches the end.
+        $presenter->assertOutputIsWritable($this->input());
+        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]));
+    }
+
+    /**
+     * The second mechanism the precheck above cannot cover: a target that was
+     * writable when checked and stops being writable before the write
+     * happens, or a directory that never existed because the precheck was
+     * bypassed (as here, calling {@see ResultPresenter::presentResults()}
+     * directly). `writeOutput()` throws rather than reporting the findings'
+     * own exit code — the refusal beats the outcome, because a report that
+     * never reached disk cannot honestly be exit code 2.
+     */
+    #[Test]
+    public function itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode(): void
+    {
+        $formatter = self::createStub(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('format')->willReturn('rendered');
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $finding = $this->finding(Severity::Error);
+        $missingDirectoryTarget = sys_get_temp_dir() . '/qmx-result-presenter-missing-'
+            . bin2hex(random_bytes(6)) . '/report.json';
+
+        $this->expectException(ConfigurationRefusal::class);
+
+        $this->presenter($registry)->presentResults(
+            [$finding],
+            $this->analysisResult([$finding]),
+            $this->input(['--output' => $missingDirectoryTarget]),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
             new OutputFormat(),

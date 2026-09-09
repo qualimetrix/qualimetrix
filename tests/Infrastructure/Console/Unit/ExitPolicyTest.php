@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Infrastructure\Console\ExitPolicy;
 
@@ -23,7 +23,7 @@ final class ExitPolicyTest extends TestCase
     #[DataProvider('provideInfoSpellings')]
     public function itRejectsInfoAsAFailOnThreshold(mixed $configured): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('report-only');
 
         ExitPolicy::fromContributions([$configured]);
@@ -39,7 +39,7 @@ final class ExitPolicyTest extends TestCase
     #[Test]
     public function itRefusesToBeConstructedWithInfoAtAll(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
 
         new ExitPolicy(Severity::Info);
     }
@@ -64,7 +64,7 @@ final class ExitPolicyTest extends TestCase
     #[Test]
     public function itNamesTheAllowedValuesWhenRejectingAnUnknownWord(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Allowed values: none, warning, error');
 
         ExitPolicy::fromContributions(['warnin']);

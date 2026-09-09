@@ -6,6 +6,10 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -13,7 +17,6 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
-use RuntimeException;
 
 /**
  * Factory for creating RuleOptions instances with merged configuration.
@@ -89,7 +92,7 @@ final class RuleOptionsFactory
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
-        RetiredSuppressionOptions::refuseRuleOption($userConfig);
+        RetiredSuppressionOptions::refuseRuleOption($userConfig, ConfigurationOrigin::of(ConfigurationSource::Resolved));
         $this->extractSuppressNamespaces($ruleName, $userConfig);
         $this->extractSuppressPaths($ruleName, $userConfig);
 
@@ -331,7 +334,7 @@ final class RuleOptionsFactory
      *
      * @param array<string, mixed> $options
      *
-     * @throws RuntimeException when a numeric field contains a non-numeric string value
+     * @throws ConfigurationRefusal when a numeric field contains a non-numeric string value
      */
     private function validateNumericFields(array $options, string $ruleName, string $path = ''): void
     {
@@ -361,7 +364,9 @@ final class RuleOptionsFactory
             }
 
             if ($isNumericField && (!is_numeric($value) || !is_finite((float) $value))) {
-                throw new RuntimeException(
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open(explode('.', $fullKey), (string) $key),
                     \sprintf(
                         'Invalid configuration for rule "%s": option "%s" must be numeric, got "%s".',
                         $ruleName,

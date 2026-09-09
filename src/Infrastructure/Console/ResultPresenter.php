@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -194,7 +197,62 @@ final class ResultPresenter
     }
 
     /**
+     * Refuses an unwritable `--output` target before analysis runs
+     * (`01-refusal-verdicts.md` §5.4). Not a guarantee: the path can still
+     * become unwritable between this check and the write, which
+     * {@see self::writeOutput()} catches on its own.
+     */
+    public function assertOutputIsWritable(InputInterface $input): void
+    {
+        $target = self::outputTarget($input);
+        if ($target === null) {
+            return;
+        }
+
+        if (file_exists($target)) {
+            if (!is_writable($target)) {
+                throw self::outputRefusal(\sprintf('Path "%s" is not writable.', $target));
+            }
+
+            return;
+        }
+
+        $directory = \dirname($target);
+        if (!is_dir($directory) || !is_writable($directory)) {
+            throw self::outputRefusal(\sprintf(
+                'Directory "%s" for output path "%s" does not exist or is not writable.',
+                $directory,
+                $target,
+            ));
+        }
+    }
+
+    private static function outputTarget(InputInterface $input): ?string
+    {
+        /** @var string|null $outputPath */
+        $outputPath = $input->hasOption('output') ? $input->getOption('output') : null;
+
+        return \is_string($outputPath) && $outputPath !== '' ? $outputPath : null;
+    }
+
+    private static function outputRefusal(string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+            $summary,
+        );
+    }
+
+    /**
      * Writes formatted output to file (--output) or stdout.
+     *
+     * A write that fails here — the precheck passed but the target became
+     * unwritable in the race, or `rename()` itself failed — carries a
+     * {@see ConfigurationRefusal} rather than reporting success with an
+     * undelivered report: the refusal beats whatever exit code the analysis
+     * findings would otherwise have produced (`01-refusal-verdicts.md` §5.4),
+     * which is why this method throws instead of returning a status for the
+     * caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
         string $formattedOutput,
@@ -202,33 +260,23 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        /** @var string|null $outputPath */
-        $outputPath = $input->getOption('output');
+        $outputPath = self::outputTarget($input);
 
-        if (\is_string($outputPath) && $outputPath !== '') {
+        if ($outputPath !== null) {
             // Atomic write: tmp file + rename
             $tmpFile = $outputPath . '.tmp.' . getmypid();
             $writeResult = @file_put_contents($tmpFile, $formattedOutput);
 
             if ($writeResult === false) {
-                $this->errorStream->write(
-                    $output,
-                    \sprintf('<error>Failed to write output to %s</error>', $outputPath),
-                );
-
-                return;
+                throw self::outputRefusal(\sprintf('Failed to write output to %s', $outputPath));
             }
 
             if (!rename($tmpFile, $outputPath)) {
-                $this->errorStream->write(
-                    $output,
-                    \sprintf('<error>Failed to rename temporary file to %s</error>', $outputPath),
-                );
                 if (file_exists($tmpFile)) {
                     unlink($tmpFile);
                 }
 
-                return;
+                throw self::outputRefusal(\sprintf('Failed to rename temporary file to %s', $outputPath));
             }
 
             $this->errorStream->write(

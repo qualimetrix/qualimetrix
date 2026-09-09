@@ -102,6 +102,7 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -451,7 +452,7 @@ PHP;
         self::assertNotNull($checkConstructor);
         self::assertNotNull($baselineRunConstructor);
         self::assertNotNull($measuredFindingSetConstructor);
-        self::assertCount(12, $checkConstructor->getParameters());
+        self::assertCount(9, $checkConstructor->getParameters());
         self::assertCount(8, $baselineRunConstructor->getParameters());
         self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
@@ -524,25 +525,27 @@ PHP;
             CheckScopeResolver::class,
             (new ReflectionProperty(CheckCommand::class, 'checkScopeResolver'))->getValue($command),
         );
+        $configurationResolvers = (new ReflectionProperty(CheckCommand::class, 'configurationResolvers'))->getValue($command);
+        self::assertInstanceOf(CheckConfigurationResolvers::class, $configurationResolvers);
         self::assertInstanceOf(
             RunConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckCommand::class, 'runConfigurationResolver'))->getValue($command),
+            (new ReflectionProperty(CheckConfigurationResolvers::class, 'runConfigurationResolver'))->getValue($configurationResolvers),
         );
         self::assertInstanceOf(
             CacheConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckCommand::class, 'cacheConfigurationResolver'))->getValue($command),
+            (new ReflectionProperty(CheckConfigurationResolvers::class, 'cacheConfigurationResolver'))->getValue($configurationResolvers),
         );
         self::assertInstanceOf(
             ParallelConfigurationResolverInterface::class,
-            (new ReflectionProperty(CheckCommand::class, 'parallelConfigurationResolver'))->getValue($command),
+            (new ReflectionProperty(CheckConfigurationResolvers::class, 'parallelConfigurationResolver'))->getValue($configurationResolvers),
         );
         self::assertInstanceOf(
             ConfiguredFindingExclusionsResolverInterface::class,
-            (new ReflectionProperty(CheckCommand::class, 'findingExclusionsResolver'))->getValue($command),
+            (new ReflectionProperty(CheckConfigurationResolvers::class, 'findingExclusionsResolver'))->getValue($configurationResolvers),
         );
         self::assertInstanceOf(
             OutputFormatResolverInterface::class,
-            (new ReflectionProperty(CheckCommand::class, 'outputFormatResolver'))->getValue($command),
+            (new ReflectionProperty(CheckConfigurationResolvers::class, 'outputFormatResolver'))->getValue($configurationResolvers),
         );
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);

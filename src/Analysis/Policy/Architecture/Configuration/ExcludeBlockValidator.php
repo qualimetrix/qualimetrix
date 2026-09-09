@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Throwable;
 
 /**
  * Parses and validates the optional {@code exclude:} block inside a single
@@ -29,8 +33,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *
  * The class is stateless: a single entry point
  * ({@see parse()}) drives the flow. Errors surface as
- * {@see ArchitectureConfigurationException} with the {@code 'architecture'} config path so
- * the user sees a consistent error namespace.
+ * {@see ConfigurationRefusal} addressed to the resolved document so the
+ * user sees a consistent error namespace.
  *
  * Lives in {@code Configuration/Architecture/Validation/} alongside
  * {@see LayersValidator}; the {@code architecture.layers[*].exclude}
@@ -39,7 +43,16 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  */
 final class ExcludeBlockValidator
 {
-    private const string CONFIG_PATH = 'architecture';
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+            $previous,
+        );
+    }
 
     /**
      * Keys accepted inside an {@code exclude:} block. Mirrors the positive
@@ -72,8 +85,8 @@ final class ExcludeBlockValidator
      *                                             FQN-shaped lists and the
      *                                             {@code match} mode).
      *
-     * @throws ArchitectureConfigurationException On any shape, key, or capture-placement
-     *                                            violation.
+     * @throws ConfigurationRefusal On any shape, key, or capture-placement
+     *                              violation.
      */
     public static function parse(
         int $index,
@@ -115,8 +128,8 @@ final class ExcludeBlockValidator
                 mode: $mode,
             );
         } catch (InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d].exclude', $index),
                 \sprintf('architecture.layers[%d] ("%s"): exclude — %s', $index, $layerName, $e->getMessage()),
                 $e,
             );
@@ -126,8 +139,8 @@ final class ExcludeBlockValidator
     private static function assertMapShape(int $index, string $layerName, mixed $value): void
     {
         if (!\is_array($value)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d].exclude', $index),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "exclude" must be a non-empty map of criterion keys (patterns / suffix / attributes / implements / extends / match), got %s.',
                     $index,
@@ -141,8 +154,8 @@ final class ExcludeBlockValidator
         // empty arrays ({@code exclude: []}) — omit the key entirely to
         // leave the clause undeclared.
         if (array_is_list($value)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d].exclude', $index),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "exclude" must be a non-empty map of criterion keys (patterns / suffix / attributes / implements / extends / match), got %s.',
                     $index,
@@ -178,7 +191,18 @@ final class ExcludeBlockValidator
             $message .= ' Nested "exclude" is not supported — the exclude filter is single-level.';
         }
 
-        throw new ArchitectureConfigurationException(self::CONFIG_PATH, $message);
+        $accepted = self::ALLOWED_EXCLUDE_KEYS;
+        sort($accepted);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed(
+                ['architecture', 'layers', (string) $index, 'exclude'],
+                implode(', ', $unknown),
+                $accepted,
+            ),
+            $message,
+        );
     }
 
     /**
@@ -208,8 +232,8 @@ final class ExcludeBlockValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            \sprintf('architecture.layers[%d].exclude', $index),
             \sprintf(
                 'architecture.layers[%d] ("%s"): "exclude" must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends" (omit the "exclude" key to leave it undeclared).',
                 $index,
@@ -277,8 +301,8 @@ final class ExcludeBlockValidator
                     continue;
                 }
 
-                throw new ArchitectureConfigurationException(
-                    self::CONFIG_PATH,
+                self::refuse(
+                    \sprintf('architecture.layers[%d].exclude.%s[%d]', $index, $kind, $entryIndex),
                     \sprintf(
                         'architecture.layers[%d] ("%s"): exclude.%s entry at index %d "%s" contains a capture variable — %s',
                         $index,

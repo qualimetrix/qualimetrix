@@ -98,6 +98,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsTheCorrectSubKeysPerSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsADocumentRefusalWithoutAPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAPositionedRefusalFromAt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAnInputRefusalWithoutAPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCanBeCaughtAsARuntimeException
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCarriesThePreviousExceptionForDiagnostics
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationSourceTest::itHasExactlyFiveCases
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionWithItsAcceptedSpellings
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAnOpenPositionWithoutAnAcceptedList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itRefusesToBuildAClosedPositionWithNoAcceptedSpelling
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"aggregation auto depth"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"aggregation prefixes"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"namespace composer json"
@@ -167,6 +178,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSupportsYamlExtension
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForInvalidYaml
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForScalarValue
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsWhenFileIsNotReadable
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsWhenFileNotFound
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itDropsUnknownKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCacheSectionIntoDottedKeys
@@ -232,6 +244,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAPathContainingASlashAsAFilePath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAYamlExtensionAsAFilePath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAYmlExtensionAsAFilePath
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itAcceptsAConfigNotNamingAnyRetiredOption
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredCliOptionUnderAnExplicitlyPassedOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredCliOptionWithTheRuleOptDoorAsItsDefaultOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredKeyInsideARulesBlockWithTheConfigFileOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredRootKeyWithTheConfigFileOriginAndAnOpenPosition
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itReplacesResultsAcrossSequentialPrepares
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itResetsPreparedCyclesWithoutTraversingTheGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itDetectsDirectCycle
@@ -1548,6 +1565,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidComputedName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidHealthName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidMultiSegmentName
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itAcceptsANullFormulasBlockTheSameAsAnOmittedOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itAcceptsEveryDeclaredEntryKeyWithoutRefusing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAFormulaKeyThatIsARealLevelWordNotReportedAt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAFormulaKeyThatIsNotALevelAtAll
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAnUnknownEntryKeyPrintingItAsReceived
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesFormulasThatIsNotAMap
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresSixSortedHealthNamesIncludingOverall
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresTheNineEntryKeys
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresTheThreeFormulaKeys
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itKeepsAUserChosenNameAsOneOpaqueSegment
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itSlicesAHealthNameAtTheReservedPrefix
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itAcceptsAMetricPresentOnlyOnSomeSymbolsAsKnown
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itAveragesComplexityHealthPerMethodRatherThanPerClassAtNamespaceLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itBoostsCohesionHealthForClassesWithPureMethods
@@ -1627,6 +1655,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesTheUniqueExactClassDeclarationAsTheLogicalClassPresentationLocation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAFormulaReferencingAKnownCatalogKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAKnownAggregationSuffixOnACatalogKey
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsANullEntryAsAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"class"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"project"
@@ -1643,15 +1672,30 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulaSingular
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulasPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthThresholdOnly
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itPositionsAnUnknownHealthDimensionAtTheShortName
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanEnabled
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanInverted
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericError
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericWarning
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringDescription
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringFormulaShorthand
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringFormulasElement
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesARepeatedLevelInAnOverrideToo
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAUserDefinedMetricNameEndingInALevelWord
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnEntryThatIsFalseWithAHintAboutEnabledFalse
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnEntryThatIsNotAMap
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnUnknownKeyEvenWhenTheEntryIsDisabled
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"bare name, no prefix segment"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"callable"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"class"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"file"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"project"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesLevelsWrittenAsAScalarInsteadOfAList
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesTheFirstUnknownKeyInDocumentOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itResolveWithEmptyConfigReturns6Defaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"callable"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"file"
@@ -4553,10 +4597,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itTreatsAttributeAsAStandaloneTokenNotAnAlias
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAGlobAllowSelectorThatMatchesNoCurrentRegistryLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAnExactDirectedAcyclicGraph
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheAllowValidatorThrows
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheCoverageValidatorThrows
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheLayersValidatorThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAssemblesLayersAllowAndCoverageIntoOneConfiguration
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheAllowValidatorThrows
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheCoverageValidatorThrows
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheLayersValidatorThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsPresetLayersWhileMergingAllowAndCoverageAcrossContributions
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsTheLayersListWhenAnOverlayOmitsIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itListsEveryUnknownTopLevelKeyInTheException
@@ -4583,6 +4627,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsBothRelationsAndAllowCrossInstanceInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsMatchingMultiSegmentShapes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAddressesTheResolvedDocumentForAllErrors
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesAMixOfRelationsAliasAndDirectValuesInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesDuplicateExactTargets
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDefaultsAllowCrossInstanceToFalseInALongFormAllowEntry
@@ -4631,7 +4676,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobTargetSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itStillRejectsAnUnknownLayerForAnExactSource
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUsesArchitectureAsTheConfigPathForAllErrors
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itAddressesTheResolvedDocumentForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itDefaultsToIgnoreWhenValueIsNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesCoverageValuesCaseInsensitively
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesError
@@ -4640,11 +4685,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsABooleanCoverageValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsACoverageValueOfTheWrongType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsAnUnknownCoverageValue
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itReportsArchitectureAsTheConfigPathForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itAcceptsEmptyAndAcyclicExactGraphs
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itDoesNotProjectGlobOrCapturedSelectorsAsConcreteNodes
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itReportsADeterministicClosedCyclePath
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itTreatsDisjointRelationFiltersAsADeclaredCycle
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itCountsInvalidArgumentExceptionThrowsInTheMembershipCallTreeAsZeroOneTwo
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itKeepsTheMembershipTryBodyToOneCallAndTheCatchToTheTwoNamedTypes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itLetsEmptyMembershipCriteriaReachTheConfigurationCarrier
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsADeclaredCaptureVariableInATemplateLayersExcludePatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAFqnStringForAFullyQualifiedCriterion"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAFqnStringForAFullyQualifiedCriterion"extends"
@@ -4657,6 +4704,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAShortClassNameForTheSuffixCriterion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsStringShorthandForExcludeCriterionLists
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsThePendingFlagAndCarriesItOntoTheDefinition
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAddressesTheResolvedDocumentForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"implements"
@@ -4747,7 +4795,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsPendingOnATemplateLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheLegacyMapShapeForLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheSingleKeyMapShorthandForALayerEntry
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itReportsTheArchitectureConfigPathForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itTreatsATrailingBackslashPatternAsTheSameDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itAccumulatesMultipleSelfGlobEntriesIntoASingleWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itEmitsNoWarningForACapturedSelfReferenceBoundAtRuntime
@@ -5213,19 +5260,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itReportsASelectorThatMatchesNothingAndWritesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itReportsAndWritesNothingWithoutRemove
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itWritesANarrowedRunUnderForce
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a configuration that will not load"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a defect in the tool itself"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a file somebody else rewrote"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"a path that does not exist"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAddsTheTraceWhenTheUserAsksForVerbosity"an unreadable baseline envelope"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itFramesCheckArchitectureSyntaxAndPreparationLikeBeforeP4
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itFramesDebugArchitectureSyntaxAndPreparationLikeBeforeP4
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itPreservesBaselineArchitectureFailureFraming"Architecture preparation failure"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itPreservesBaselineArchitectureFailureFraming"invalid Architecture syntax"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a configuration that will not load"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"a configuration that will not load"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"an InvalidArgumentException nothing normalized"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a defect in the tool itself"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a file somebody else rewrote"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a path that does not exist"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"an unreadable baseline envelope"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itResetsSharedBaselineRuntimeBeforeConfigurationLoadingFails
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itAcceptsEveryOptionThatDecidesWhatIsMeasured"cleanup"
@@ -5242,12 +5283,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itNoLongerLetsCheckWriteABaseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itAcceptsAChannelTheRegistryNoLongerDeclaresWhenTheLoadedBaselineStillCarriesIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsThatABaselineOnlySubjectIsAbsentFromTheCurrentRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsAllThreeSources
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheStoredAndTheCurrentNumberOnADriftingChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRefusesToPickOneOfTwoThresholdsAChannelIsJudgedAgainst
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAChannelWrittenInTheRetiredPairForm
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownSubjectEvenWhenAChannelWasExplicitlyRequested
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSpellsAnAbsentSourceDifferentlyFromAZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itStillResolvesAChannelWhoseOptionsHoldOneBoundary
@@ -5281,10 +5324,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithOne
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithThree
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersARefusalInTheChosenFormat
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAnUnreachableFileWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
@@ -5532,6 +5575,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileWithNoEntries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecordsTheContentHashOfTheFileItRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRefusesAnUnreadableEnvelopeAsAWholeDocumentCarrier
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#2
@@ -6286,6 +6330,8 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidWithoutRunningResolutionForAnUnknownFormat
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itHandlesAClassInTheGlobalNamespace
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itIsRegisteredAndDiscoverableOnAConsoleApplication
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheUnknownFormatRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itNormalisesALeadingBackslashInTheFqnArgument
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsAClassMatchingNoLayerAsUnclassifiedAndSuggestsACatchAllPattern
@@ -6364,6 +6410,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itRebuildsTheCacheOnTheNextCreateAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itReturnsAFileCacheConfiguredFromTheProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itUsesTheCacheDirFromTheConfigurationAtFirstCall
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itPrintsATraceForAnInternalErrorUnderVerboseButNotForARefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAWorkingDirectoryThatIsAFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownCommandNonInteractively
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"baseline:explain"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"directives"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"graph:export"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownRuleGroupThroughTheApplicationLadder
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnreadableWorkingDirectoryWithoutAPhpWarning
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnBaselineGenerate
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnCheck
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
@@ -6395,6 +6454,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorNamingALevelItsChannelDoesNotReportAt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorWhoseLevelIsNotOne
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAnUnexpectedArgumentForRulesThroughTheApplicationLadder
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAnUnknownOptionThroughTheApplicationLadder
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsWrongTypedScalarConfigValueAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itValidatesDynamicComputedSelectorsAgainstTheCurrentCommandConfiguration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itWritesPartialScopeWarningOnlyToStderrBeforeStructuredPayload
@@ -6426,6 +6487,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
@@ -6446,6 +6508,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesANonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownFormat
@@ -6499,10 +6562,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsGraphToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itFailsWhenNoFilesFound
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionOrFormatWithoutRunningAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionWithAParseableJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT output file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT stdout"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON output file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnwritableOutputPathBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNoClustersOption
@@ -6543,10 +6609,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:status"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:uninstall"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInBaselineCleanup
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInBaselineExplain
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInBaselineGenerate
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInBaselineUpdate
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInCheck
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDebugLayerAssignment
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDirectives
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitOneAsAnInternalError
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesIncompleteAnalysisAtExitFourInTheSharedLadder
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itWiresThePresenterIntoEveryCommandTheRealContainerBuilds
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itGivesEveryConsumerTheOneOwnerTheContainerHolds
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -6598,8 +6677,43 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTypedProfileStatistics
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itIsANoOpByDefaultAndAfterReset
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\ConsoleExitCodeTest::itCarriesExactlyTheTwoCodesTheRoundOwns
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsAnUnknownFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#6
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrWithCodeThree
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeParseableForAMessageContainingInvalidUtf8
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheRefusalSentenceVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAcceptsAWritableOutputTargetOrNoTargetAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesAnUnwritableOutputTargetBeforeAnalysis
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
@@ -6622,8 +6736,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedLevelKeyIdenticallyThroughBothDoors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersAnUnrecognisedTopLevelKeyIdenticallyThroughBothDoors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersTheSameTypoTheSameWayWhicheverDoorItArrivesThrough
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itFramesTheGenericRefusalAsAConfigurationErrorAndTheRetiredOneWithoutAPrefix
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itLeavesStdoutEmptyUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itAnswersWithAParseableEnvelopeUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itFramesEveryRefusalAsAConfigurationErrorRegardlessOfDoorOrCause
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"configuration file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped"rule-opt flag"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"configuration file"
@@ -6945,7 +7059,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"json"
- - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itRejectsUnsupportedFormat
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itChangesDirection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itColorsByInstability
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itDisablesColorByInstability
@@ -7398,8 +7511,19 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Unit\Infrastructure\Cache\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itDemotesSilentVerbosityToQuiet
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itThrowsForAnInvalidWorkingDirectory
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsInternalErrorExitCodeForAConsoleLogicException
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsInternalErrorExitCodeForAnUnrelatedThrowable
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAConfigurationRefusalThrownBeforeExecute
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnInvalidWorkingDirectoryInsteadOfThrowing
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnknownCommandNonInteractively
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForAnUnreadableWorkingDirectoryWithoutChdir
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itStillDeliversARefusalMessageUnderSilent
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itDescribesShowResolvedAsBaselineEntries
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersABooleanAliasAsValueNone
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CheckCommandDefinitionTest::itRegistersANumericAliasAsValueRequired

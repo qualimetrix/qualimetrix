@@ -849,7 +849,7 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('analysed no PHP files', $tester->getDisplay());
+        self::assertStringContainsString('analysed no PHP files', $tester->getErrorOutput());
     }
 
     /** A run that measured nothing has no standing to call a tree clean. */
@@ -859,7 +859,27 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('analysed no PHP files', $tester->getDisplay());
+        self::assertStringContainsString('analysed no PHP files', $tester->getErrorOutput());
+    }
+
+    /**
+     * A path that never existed is a distinct refusal from a scope that
+     * existed but analysed nothing (the case directly above): the preflight
+     * ({@see \Qualimetrix\Infrastructure\Console\AnalysisPreflight::missingPaths()},
+     * shared with `check`) rejects it before any discovery or measurement
+     * runs, and this command has no test pinning that it inherits the check.
+     */
+    #[Test]
+    public function itRefusesANonExistentPath(): void
+    {
+        $tester = $this->audit(['paths' => [$this->tempDir . '/no-such-directory']]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString(
+            "path '" . $this->tempDir . "/no-such-directory' does not exist",
+            $tester->getErrorOutput(),
+        );
     }
 
     /**
@@ -881,13 +901,49 @@ final class DirectivesCommandTest extends TestCase
         self::assertStringContainsString('no directive can be called dead by this run', $tester->getDisplay());
     }
 
+    /**
+     * Route 28 (`m6-routes-merged.md`), verified as still distinct from route
+     * 27 by a live run rather than by reading the two `catch` clauses alone:
+     * `catch (ConfigurationRefusal)` (route 27) answers exit 3 and
+     * `catch (Exception)` (route 28, the fallback below it) answers exit 1 —
+     * the ladder never unified the two. An unreadable scanned path is not
+     * wrapped into a {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
+     * anywhere in discovery: `RecursiveDirectoryIterator` throws a bare
+     * `UnexpectedValueException` (a `RuntimeException`, so neither of the
+     * two named clauses above it), landing in the generic `catch (Exception)`
+     * branch, which now hands the throwable to
+     * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
+     * (X15 review, mechanism A) instead of a local `reportError()` — same
+     * "Internal error:" wording and stream every other command's internal
+     * error uses, not a `DirectivesCommand`-only dialect.
+     */
+    #[Test]
+    public function itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath(): void
+    {
+        if (posix_getuid() === 0) {
+            self::markTestSkipped('Root ignores directory permission bits.');
+        }
+
+        chmod($this->tempDir . '/src', 0o000);
+
+        try {
+            $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+        } finally {
+            chmod($this->tempDir . '/src', 0o755);
+        }
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Internal error:', $tester->getErrorOutput());
+    }
+
     #[Test]
     public function itRefusesAnUnknownFormat(): void
     {
         $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'yaml']);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Unknown format "yaml"', $tester->getDisplay());
+        self::assertStringContainsString('Unknown format "yaml"', $tester->getErrorOutput());
     }
 
     /** No `--sweep` at all must run exactly what `--sweep=narrow` runs, not a third scope. */
@@ -963,9 +1019,9 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--sweep' => 'quick']);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Unknown sweep "quick"', $tester->getDisplay());
-        self::assertStringContainsString('narrow', $tester->getDisplay());
-        self::assertStringContainsString('full', $tester->getDisplay());
+        self::assertStringContainsString('Unknown sweep "quick"', $tester->getErrorOutput());
+        self::assertStringContainsString('narrow', $tester->getErrorOutput());
+        self::assertStringContainsString('full', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -992,7 +1048,12 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('Configuration error', $tester->getDisplay());
+        // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
+        // a per-command spelling of it) — pinned here because this command's
+        // own assertion of it was the one `01-refusal-packages.md` P01-7
+        // found missing when the shared baseline test that used to cover it
+        // was trimmed to baseline's own commands.
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -1005,7 +1066,7 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         $decoded = self::decode($tester->getDisplay());
-        self::assertStringContainsString('Configuration error', $decoded['error']);
+        self::assertStringContainsString('Configuration error:', $decoded['error']);
         self::assertSame(3, $decoded['exit_code']);
     }
 
@@ -1128,7 +1189,12 @@ final class DirectivesCommandTest extends TestCase
         self::assertInstanceOf(DirectivesCommand::class, $command);
 
         $tester = new CommandTester($command);
-        $tester->execute($input);
+        // Every refusal this command throws now flows through
+        // `RefusalPresenter`, which writes the human (`text`) form to
+        // stderr (`01-refusal-envelope.md` §2.1) — separately captured so a
+        // human-format assertion can read it from `getErrorOutput()` rather
+        // than the now-empty `getDisplay()`.
+        $tester->execute($input, ['capture_stderr_separately' => true]);
 
         return $tester;
     }

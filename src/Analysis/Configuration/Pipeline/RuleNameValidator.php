@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
-
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 
@@ -24,7 +27,7 @@ final class RuleNameValidator
     /**
      * Validates rule names in the "rules:" config section against registered rules.
      *
-     * Throws ConfigLoadException if any key is not the **exact** name of a
+     * Throws ConfigurationRefusal if any key is not the **exact** name of a
      * registered rule. A `rules:` key owns an options object, and options are
      * applied by exact key — a group key such as `complexity` matched the old
      * prefix logic, passed validation, and then configured nothing, which is
@@ -38,7 +41,7 @@ final class RuleNameValidator
      * @param string $configSource label for error messages (e.g., "preset:strict", "qmx.yaml")
      * @param string $configPath path to config file for error messages
      *
-     * @throws ConfigLoadException if unknown rule names are found
+     * @throws ConfigurationRefusal if unknown rule names are found
      */
     public static function validateRuleNames(
         array $data,
@@ -52,8 +55,24 @@ final class RuleNameValidator
         }
 
         $knownNames = $provider->getKnownRuleNames();
-        $unknowns = [];
+        $unknowns = self::collectUnknownNames($rulesSection, $knownNames);
 
+        if ($unknowns === []) {
+            return;
+        }
+
+        self::refuseUnknownNames($unknowns, $knownNames, $configSource, $configPath);
+    }
+
+    /**
+     * @param array<string, mixed> $rulesSection
+     * @param list<string> $knownNames
+     *
+     * @return list<string>
+     */
+    private static function collectUnknownNames(array $rulesSection, array $knownNames): array
+    {
+        $unknowns = [];
         foreach (array_keys($rulesSection) as $configuredName) {
             $name = (string) $configuredName;
 
@@ -62,10 +81,17 @@ final class RuleNameValidator
             }
         }
 
-        if ($unknowns === []) {
-            return;
-        }
+        return $unknowns;
+    }
 
+    /**
+     * @param non-empty-list<string> $unknowns
+     * @param list<string> $knownNames
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseUnknownNames(array $unknowns, array $knownNames, string $configSource, string $configPath): never
+    {
         $messages = [];
         foreach ($unknowns as $unknown) {
             $suggestion = self::findClosestMatch($unknown, $knownNames);
@@ -76,8 +102,12 @@ final class RuleNameValidator
             $messages[] = $line;
         }
 
-        throw ConfigLoadException::invalidStructure(
-            $configPath,
+        $source = str_starts_with($configSource, 'preset:') ? ConfigurationSource::Preset : ConfigurationSource::ConfigFile;
+        $firstUnknown = $unknowns[array_key_first($unknowns)];
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of($source, $configPath),
+            RefusedPosition::closed([ConfigSchema::RULES, $firstUnknown], $firstUnknown, $knownNames),
             implode("\n", $messages),
         );
     }

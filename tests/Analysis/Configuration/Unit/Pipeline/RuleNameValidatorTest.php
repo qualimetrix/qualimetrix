@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 
 #[CoversClass(RuleNameValidator::class)]
@@ -33,7 +33,7 @@ final class RuleNameValidatorTest extends TestCase
         // `rules: { complexity: ... }` used to pass validation by prefix and
         // then configure nothing at all, because options are applied by exact
         // key. Passing validation was the bug.
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity' => ['cyclomatic' => ['callable' => ['warning' => 10]]]]],
@@ -47,7 +47,7 @@ final class RuleNameValidatorTest extends TestCase
     public function itRejectsAKeyRefiningARuleNameWithAChannelSuffix(): void
     {
         // A `rules:` key owns an options object; a channel does not have one.
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.cyclomatic.callable' => ['warning' => 10]]],
@@ -60,7 +60,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itRejectsAWildcardKey(): void
     {
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.*' => ['warning' => 10]]],
@@ -73,7 +73,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itRejectsAnUnknownRuleName(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown rule "nonexistent\.rule"/');
 
         RuleNameValidator::validateRuleNames(
@@ -113,7 +113,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itReportsAllUnknownNamesWhenMultipleRulesAreInvalid(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/nonexistent\.one/');
         self::expectExceptionMessageMatches('/nonexistent\.two/');
 
@@ -131,7 +131,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itNamesTheSourceFileInTheExceptionForAnUnknownRule(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown rule "bogus\.rule" in qmx\.yaml/');
 
         RuleNameValidator::validateRuleNames(
@@ -145,7 +145,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itSuggestsACloseMatchForAMisspelledRuleName(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown rule "complexty".*Did you mean "complexity"\?/');
 
         RuleNameValidator::validateRuleNames(
@@ -166,8 +166,8 @@ final class RuleNameValidatorTest extends TestCase
                 $this->createProvider(['complexity.ccn', 'cohesion.lcom4']),
                 '/project/qmx.yaml',
             );
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('Unknown rule "zzzzz"', $e->getMessage());
             self::assertStringNotContainsString('Did you mean', $e->getMessage());
         }
@@ -182,7 +182,7 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance(): void
     {
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown rule "design\.lcom".*Did you mean "cohesion\.lcom"\?/');
 
         RuleNameValidator::validateRuleNames(
@@ -206,8 +206,8 @@ final class RuleNameValidatorTest extends TestCase
                 $this->createProvider(['complexity.ccn']),
                 '/project/qmx.yaml',
             );
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('Unknown rule "bogus.one"', $e->getMessage());
             self::assertStringContainsString('Unknown rule "bogus.two"', $e->getMessage());
         }

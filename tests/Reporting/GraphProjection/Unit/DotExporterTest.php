@@ -15,6 +15,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\DotExporter;
 use Qualimetrix\Reporting\GraphProjection\DotExporterOptions;
 
@@ -291,7 +292,7 @@ final class DotExporterTest extends TestCase
         ];
 
         $graph = $this->createGraph($dependencies);
-        $exporter = new DotExporter(new DotExporterOptions(direction: 'TB'));
+        $exporter = new DotExporter(new DotExporterOptions(direction: GraphDirection::TB));
         $dot = $exporter->export($graph);
 
         self::assertStringContainsString('rankdir=TB', $dot);

@@ -10,6 +10,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader;
@@ -317,6 +319,27 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/not found/');
 
         $this->loader->load($this->tempDir . '/absent.json');
+    }
+
+    /**
+     * Every envelope failure is a whole-document refusal, never a keyed
+     * position: nothing about "version", "generated" or "scope" being wrong
+     * points at one key among several, the whole file is untrusted.
+     */
+    #[Test]
+    public function itRefusesAnUnreadableEnvelopeAsAWholeDocumentCarrier(): void
+    {
+        $path = $this->tempDir . '/absent.json';
+
+        try {
+            $this->loader->load($path);
+            self::fail('Expected a ConfigurationRefusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::BaselineFile, $refusal->origin()->source());
+            self::assertSame($path, $refusal->origin()->locator());
+            self::assertNull($refusal->position());
+            self::assertStringContainsString('not found', $refusal->summary());
+        }
     }
 
     /**

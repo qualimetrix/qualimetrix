@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 /**
  * Parses the long-form allow-target map ({@code [target: ..., relations:
@@ -24,8 +27,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationE
  */
 final class LongFormAllowEntryNormalizer
 {
-    private const string CONFIG_PATH = 'architecture';
-
     /**
      * Long-form allow target keys. Any other key is rejected here as
      * "unknown long-form key" so a user-side typo cannot silently widen the
@@ -55,9 +56,9 @@ final class LongFormAllowEntryNormalizer
      *
      * @param array<array-key, mixed> $entry The long-form map.
      *
-     * @throws ArchitectureConfigurationException When an unsupported key is present, the
-     *                                            target field is missing/empty, or the
-     *                                            per-key shape is violated.
+     * @throws ConfigurationRefusal When an unsupported key is present, the
+     *                              target field is missing/empty, or the
+     *                              per-key shape is violated.
      *
      * @return array{0: string, 1: bool, 2: list<DependencyType>|null}
      */
@@ -66,8 +67,9 @@ final class LongFormAllowEntryNormalizer
         self::rejectUnsupportedKeys($source, $index, $entry);
 
         if (!isset($entry['target']) || !\is_string($entry['target']) || $entry['target'] === '') {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), 'target'], 'target'),
                 \sprintf(
                     "architecture.allow.%s[%d]: long-form entry must include a non-empty 'target' key.",
                     $source,
@@ -132,8 +134,9 @@ final class LongFormAllowEntryNormalizer
         }
 
         if (\count($presentKeys) > 1) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index)], implode(', ', $presentKeys)),
                 \sprintf(
                     "architecture.allow.%s[%d]: specify either 'allow_cross_instance' or 'allowCrossInstance', not both.",
                     $source,
@@ -145,8 +148,9 @@ final class LongFormAllowEntryNormalizer
         $key = $presentKeys[0];
         $value = $entry[$key];
         if (!\is_bool($value)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), $key], $key),
                 \sprintf(
                     "architecture.allow.%s[%d]: '%s' must be a boolean, got %s.",
                     $source,
@@ -179,8 +183,13 @@ final class LongFormAllowEntryNormalizer
                 continue;
             }
 
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::closed(
+                    ['architecture', 'allow', \sprintf('%s[%d]', $source, $index)],
+                    (string) $key,
+                    self::sortedAllowedKeys(),
+                ),
                 \sprintf(
                     "architecture.allow.%s[%d]: unknown long-form key '%s'. Allowed keys: %s.",
                     $source,
@@ -205,5 +214,18 @@ final class LongFormAllowEntryNormalizer
     private static function canonicalAllowedKeys(): array
     {
         return ['target', 'relations', 'allow_cross_instance'];
+    }
+
+    /**
+     * Same vocabulary as {@see self::canonicalAllowedKeys()}, sorted for {@see RefusedPosition::closed()}.
+     *
+     * @return list<string>
+     */
+    private static function sortedAllowedKeys(): array
+    {
+        $keys = self::canonicalAllowedKeys();
+        sort($keys);
+
+        return $keys;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\GraphProjection\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +16,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 
@@ -25,8 +26,8 @@ final class DependencyGraphProjectorTest extends TestCase
     /** @return iterable<string, array{GraphProjectionRequest, string}> */
     public static function provideSupportedFormats(): iterable
     {
-        yield 'dot' => [new GraphProjectionRequest(format: 'dot'), 'digraph Dependencies'];
-        yield 'json' => [new GraphProjectionRequest(format: 'json'), '"statistics"'];
+        yield 'dot' => [new GraphProjectionRequest(format: GraphExportFormat::Dot), 'digraph Dependencies'];
+        yield 'json' => [new GraphProjectionRequest(format: GraphExportFormat::Json), '"statistics"'];
     }
 
     #[Test]
@@ -39,20 +40,11 @@ final class DependencyGraphProjectorTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsUnsupportedFormat(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported format: mermaid. Supported formats: dot, json');
-
-        (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(format: 'mermaid'));
-    }
-
-    #[Test]
     public function itForwardsEveryRequestFieldToDotProjection(): void
     {
         $projection = (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(
-            format: 'dot',
-            direction: 'TB',
+            format: GraphExportFormat::Dot,
+            direction: GraphDirection::TB,
             groupByNamespace: false,
             includeNamespaces: ['App'],
             excludeNamespaces: ['App\\Excluded'],
@@ -68,7 +60,7 @@ final class DependencyGraphProjectorTest extends TestCase
     public function itForwardsNamespaceFiltersToJsonProjection(): void
     {
         $projection = (new DependencyGraphProjector())->project($this->graph(), new GraphProjectionRequest(
-            format: 'json',
+            format: GraphExportFormat::Json,
             includeNamespaces: ['App'],
             excludeNamespaces: ['App\\Excluded'],
         ));

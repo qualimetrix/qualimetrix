@@ -14,13 +14,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelector
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 /**
  * Direct coverage of the D4 selector grammar — kind detection from content,
  * source/target match semantics, and parser error surface. Configuration-layer
  * tests in {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest}
- * verify the rewrap-as-{@code ArchitectureConfigurationException} behaviour.
+ * verify the rewrap-as-{@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal} behaviour.
  */
 #[CoversClass(LayerSelector::class)]
 #[CoversClass(LayerSelectorParser::class)]
