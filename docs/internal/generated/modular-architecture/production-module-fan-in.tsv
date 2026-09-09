@@ -7,6 +7,7 @@ Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException	Analys
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface	Analysis.Evidence.Cohesion	2	2

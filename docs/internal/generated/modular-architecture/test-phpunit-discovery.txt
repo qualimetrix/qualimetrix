@@ -98,6 +98,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsTheCorrectSubKeysPerSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsADocumentRefusalWithoutAPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAPositionedRefusalFromAt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAnInputRefusalWithoutAPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCanBeCaughtAsARuntimeException
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCarriesThePreviousExceptionForDiagnostics
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationSourceTest::itHasExactlyFiveCases
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionWithItsAcceptedSpellings
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAnOpenPositionWithoutAnAcceptedList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itRefusesToBuildAClosedPositionWithNoAcceptedSpelling
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"aggregation auto depth"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"aggregation prefixes"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"namespace composer json"
@@ -6598,6 +6609,37 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTypedProfileStatistics
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itIsANoOpByDefaultAndAfterReset
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\ConsoleExitCodeTest::itCarriesExactlyTheTwoCodesTheRoundOwns
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsAnUnknownFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#6
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#2
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#3
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#4
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#5
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrWithCodeThree
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAFallbackRefusalWithTheCaughtMessageUnframed
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheEnvelopeVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheRefusalSentenceVisibleUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages

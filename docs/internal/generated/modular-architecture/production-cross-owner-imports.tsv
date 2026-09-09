@@ -1790,6 +1790,7 @@ Qualimetrix\Infrastructure\Console\ProfilePresenter	Infrastructure.Console	Quali
 Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer	Infrastructure.Console	Qualimetrix\Infrastructure\Profiler\Contract\ProfileSummary	Infrastructure.Profiler	contract	P8
 Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	contract	P8
 Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	contract	P8
+Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract	P3
 Qualimetrix\Infrastructure\Console\ResolvedCheckScope	Infrastructure.Console	Qualimetrix\Infrastructure\Git\GitScopeResolution	Infrastructure.Git	contract	P8
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage	Analysis.Run	contract	P3
