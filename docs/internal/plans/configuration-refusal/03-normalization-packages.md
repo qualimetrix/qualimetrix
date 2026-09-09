@@ -108,9 +108,10 @@ Src не трогает. Дерево зелёное.
 
 Файлы: 9 файлов-бросателей `ArchitectureConfigurationException`, `LayerInstantiator.php`,
 `LayerExpansionStage.php`, места из вердикта P1 по этому каталогу,
-`tests/Analysis/Policy/Architecture/{Unit,Integration}/**` (в т.ч. 13 проверок
-`$e->configPath === 'architecture'` в `AllowValidatorTest`, `ExactAllowCycleValidatorTest`,
-`CoverageValidatorTest`, `ArchitectureConfigurationFactoryTest`, `LayersValidatorTest`),
+`tests/Analysis/Policy/Architecture/{Unit,Integration}/**` (в т.ч. 15 проверок
+`$e->configPath === 'architecture'`: `AllowValidatorTest` 1, `ExactAllowCycleValidatorTest`
+1, `CoverageValidatorTest` 1, `ArchitectureConfigurationFactoryTest` 7,
+`LayersValidatorTest` 5),
 `src/Analysis/Policy/Architecture/README.md`,
 **`tests/Infrastructure/Console/Integration/RuntimeConfigurationIsolationTest.php`**
 (правка клаузы — довод ниже; импорт снимает 01/P01-7).
@@ -120,20 +121,35 @@ Src не трогает. Дерево зелёное.
 `RuntimeConfigurationIsolationTest.php:139-150` ловит `ArchitectureConfigurationException`
 вокруг `RuntimeConfigurator::configure()`; после конверсии носитель (`RuntimeException`) в
 эту клаузу не попадёт, отказ вылетит из `try` и тест упадёт. Файл числится в наборе 01
-(P01-7), который по порядку идёт **после** P3–P5, — то есть между P4 и P01-7 аггрегат был
-бы красным, а DoD обоих требует зелёного `check:code`. Механизм тот же, которым 02/P2
+(P01-7), который по порядку идёт **после** P3–P5. Механизм тот же, которым 02/P2
 синхронизирует четыре чужих теста в своём изменении: **клаузу переписывает тот, кто её
-ломает**, а 01/P01-7 остаётся снятие импорта. Пересечение наборов здесь законно, потому
-что ребро жёсткое и названо в обоих планах (`01-refusal-evidence.md` §13.2).
+ломает**. Пересечение наборов здесь законно, потому что ребро жёсткое и названо в обоих
+планах (`01-refusal-evidence.md` §13.2).
+
+**Окно между P4 и снятием мёртвого импорта — красное, и это не P01-7.** Переписывание
+клаузы снимает единственное употребление `ArchitectureConfigurationException` в
+файле — импорт остаётся, `php-cs-fixer` его не терпит (измерено: `exit 8`, дифф
+удаляет ровно строку `use`). P01-7 по очереди (`01-refusal-order.md` §8) идёт позже P4,
+поэтому не может закрыть это окно первым; закрывает его один из сводящих пакетов
+манифеста оркестратора (см. «Что раунд добавил сверх плана» в `00-overview.md`), который
+и снимает неиспользуемый импорт в том же изменении, где P4 переписал клаузу. DoD P4 несёт
+проверку этого шва явно (ниже), а не полагается на «зелёный `check:code` по всей цепочке
+раунда».
 
 **DoD:**
 * `grep -rn 'ArchitectureConfigurationException\|ArchitecturePreparationException' src/Analysis/Policy/Architecture`
   пуст (кроме самих файлов классов, которые удаляет P6);
-* **все тринадцать проверок `configPath` переписаны, а не удалены** — каждая утверждает
+* **все пятнадцать проверок `configPath` переписаны, а не удалены** — каждая утверждает
   теперь `origin()->source() === ConfigurationSource::Resolved` и `position()`/`summary()`;
-  счёт до и после совпадает, иначе утверждение исчезло вместе с полем;
+  счёт до и после совпадает (1+1+1+7+5 по пяти файлам выше), иначе утверждение исчезло
+  вместе с полем;
 * докблок `ArchitecturePreparationException`-мест переписан (§3): «runtime error» заменено
   на отказ конфигурации с названным чинящим;
+* клауза `RuntimeConfigurationIsolationTest.php:139-150` переписана на носителя в этом
+  же изменении; **импорт `ArchitectureConfigurationException` остаётся неиспользуемым до
+  сводящего пакета манифеста** — на выходе именно этого пакета `php-cs-fixer` красен
+  (`exit 8`, неиспользуемый `use`), это названное, ожидаемое состояние, а не регрессия;
+  закрывает импорт сводящий пакет манифеста оркестратора, не этот пакет и не P01-7;
 * **клауза `LayersValidator.php:225` осталась исключением, которое можно проверить**
   (§4.1 `03-normalization-verdicts.md`). Страж двусторонний, и вторая сторона добавлена
   третьим раундом: закрепление одного лишь тела `try` ловит расширение клаузы и **не**

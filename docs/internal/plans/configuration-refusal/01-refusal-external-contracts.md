@@ -144,8 +144,13 @@ M6 не свидетельствует (причина в обзоре: корп
    `composer directives:controls` не запускается вовсе.
 2. **`src/Infrastructure/Console/Command/{BaselineUpdateCommand,BaselineCleanupCommand,BaselineRenameChannelsCommand}.php`
    и `ChannelRenameReporter.php`** (P01-4). Предикат «команда читает конфигурацию» даёт
-   восемь команд, а не пять, и `baseline:rename-channels` вдобавок несёт `--format=json`,
-   то есть подпадает под правило конверта §2.1. Набор 01 их и так покрывает
+   семь команд, а не пять — `baseline:rename-channels` в их число не входит:
+   `BaselineChannelRenamer`, единственная её зависимость, по докблоку не берёт ни
+   `--config`, ни измеренного набора. Она попадает в этот пакет по симметрии с
+   остальными `baseline:*` (общий носитель, общее правило конверта через
+   `ChannelRenameReporter`) и потому, что несёт собственный `--format=json` — то есть
+   подпадает под правило конверта §2.1 на общих основаниях, а не как восьмая
+   конфигурационная команда. Набор 01 их и так покрывает
    (`src/Infrastructure/Console/**`), но пакет их не называл.
 3. **`src/Infrastructure/Console/Command/GraphExportCommand.php` получает собственную
    `catch`-лестницу** (P01-5), а не только вердикт по кодам. Довод — §2.1 первой части:

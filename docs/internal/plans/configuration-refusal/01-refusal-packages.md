@@ -128,8 +128,15 @@ P01-2 приобретает зависимость от P01-1, и критич�
 Файлы: `Command/{BaselineCommand,BaselineExplainCommand,BaselineGenerateCommand,BaselineRun}.php`,
 **`Command/{BaselineUpdateCommand,BaselineCleanupCommand,BaselineRenameChannelsCommand}.php`
 и `Command/ChannelRenameReporter.php`** (расширение по второму раунду: предикат «читает
-конфигурацию» даёт восемь команд, а `baseline:rename-channels` вдобавок несёт
-`--format=json`, то есть подпадает под правило конверта);
+конфигурацию» даёт СЕМЬ команд — `baseline:rename-channels` в их число не входит.
+`BaselineRenameChannelsCommand::__construct` берёт только `BaselineChannelRenamer`, и её
+докблок называет это прямо: «no `--config`, no measured set» — команда только
+переписывает поле `channel` в уже существующем baseline-файле по карте, которую подаёт
+пользователь, анализ не запускает и `qmx.yaml` не открывает. Она включена в этот пакет
+не по предикату чтения конфигурации, а для симметрии с остальными `baseline:*` —
+`ChannelRenameReporter` разделяет с ними носителя и правило конверта, а
+`baseline:rename-channels` вдобавок несёт собственный `--format=json`, то есть подпадает
+под правило конверта на общих основаниях);
 файлы `tests/Analysis/Policy/Baseline/Functional/`, **утверждающие код возврата отказа** —
 сегодня это `{BaselineCommandFailureReportingTest,BaselineExplainCommandTest,BaselineCleanupCommandTest,BaselineUpdateCommandTest,BaselineGenerateCommandTest,BaselineRenameChannelsCommandTest,BaselineIncompleteAnalysisTest,BaselineRunBeforeLoadTest}.php`
 (критерий и его согласование с 03 — §9).
@@ -161,8 +168,9 @@ found». Стабы переводятся на носителя (`Configuration
 `baseline:generate` с битым `qmx.yaml` даёт `ec=3`, stderr непуст, stdout пуст;
 `baseline:generate <существующий файл>` без `--force` даёт `ec=3` и stdout 0 байт;
 `baseline:explain` с неизвестным `subject` даёт `ec=3`;
-`baseline:rename-channels --format=json` на битом `qmx.yaml` даёт `ec=3` и **конверт**
-на stdout, а на верном входе — свой обычный JSON;
+`baseline:rename-channels --format=json` на нечитаемом файле карты (команда `qmx.yaml`
+не читает вовсе — см. описание пакета выше) даёт `ec=3` и **конверт** на stdout, а на
+верном входе — свой обычный JSON;
 `BaselineConflictException` по-прежнему `ec=1`, `IncompleteAnalysisException` — `ec=4`;
 `grep -rn 'ConfigLoadException\|ArchitectureConfigurationException\|ArchitecturePreparationException' tests/Analysis/Policy/Baseline/Functional/`
 пуст;
@@ -347,8 +355,13 @@ input …, `1` for configuration-load errors»), то есть ровно мар
 P01-5 переводит на 3. Новый способ: `grep -rln 'exit code\|код возврата' website/docs/`
 плюс `grep -rln` по именам затронутых команд, по всему дереву сайта. Слепое пятно способа
 названо: страница, описывающая коды словами без этих подстрок, им не находится.
-Отдельно: в `architecture.ru.md` соответствующего абзаца **нет** — EN и RU уже разошлись,
-и правило «править одновременно» здесь означает дописать RU, а не отзеркалить правку.
+Отдельно: в `architecture.ru.md` соответствующий абзац **есть**, только под другим
+заголовком — «Коды выхода» (`:757`), со старыми кодами (`2` для невалидного ввода,
+`1` для ошибки загрузки конфигурации). Способ перечисления его не нашёл: он искал
+подстроку «код возврата», а страница озаглавливает раздел иначе и использует эту фразу
+только внутри абзаца. Правило «править одновременно» здесь означает **исправить** уже
+существующий RU-абзац под новые коды, а не дописывать отсутствующий; слепое пятно способа
+дополнено этим случаем — заголовок раздела тоже нужно грепать, не только тело.
 
 **Правка чужого плана — работа этого пакета, не побочный эффект:**
 `…/03-refusal-at-every-depth.md:389` обещает «under `--format=json` with stdout left
