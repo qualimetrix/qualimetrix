@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -105,29 +106,56 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         // Resolved before the file checks, not after: a caller that asked for
         // a machine format has asked for every outcome in it, and an
         // unreadable path is one of the outcomes.
+        self::assertKnownFormat($format);
+        self::assertBaselineReadable($baselinePath);
+        self::assertMapReadable($mapPath);
+
+        $map = self::loadMap($mapPath);
+        $report = $this->carryBaseline($baselinePath, $map);
+
+        ChannelRenameReporter::report($report, $format, $output);
+
+        return self::SUCCESS;
+    }
+
+    /** @throws ConfigurationRefusal */
+    private static function assertKnownFormat(mixed $format): void
+    {
         if ($format !== 'text' && $format !== 'json') {
             throw ConfigurationRefusal::aboutInput(
                 ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
                 'Unknown --format; expected text or json.',
             );
         }
+    }
 
+    /** @throws ConfigurationRefusal */
+    private static function assertBaselineReadable(string $baselinePath): void
+    {
         if (!is_file($baselinePath) || !is_readable($baselinePath)) {
             throw ConfigurationRefusal::aboutDocument(
                 ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
                 \sprintf('Not a readable file: %s', $baselinePath),
             );
         }
+    }
 
+    /** @throws ConfigurationRefusal */
+    private static function assertMapReadable(string $mapPath): void
+    {
         if (!is_file($mapPath) || !is_readable($mapPath)) {
             throw ConfigurationRefusal::aboutInput(
                 ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
                 \sprintf('Not a readable file: %s', $mapPath),
             );
         }
+    }
 
+    /** @throws ConfigurationRefusal */
+    private static function loadMap(string $mapPath): ChannelRenameMap
+    {
         try {
-            $map = ChannelRenameMap::fromFile($mapPath);
+            return ChannelRenameMap::fromFile($mapPath);
         } catch (ChannelRenameRefusal $e) {
             throw ConfigurationRefusal::aboutDocument(
                 ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
@@ -135,7 +163,11 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 $e,
             );
         }
+    }
 
+    /** @throws ConfigurationRefusal */
+    private function carryBaseline(string $baselinePath, ChannelRenameMap $map): ChannelRenameReport
+    {
         // `ChannelRenameRefusal` is a plain `RuntimeException` (`01-refusal-verdicts.md`
         // §7, decision on `rename-channels`'s exit codes): the carry
         // understood the baseline envelope and declined, which is the user's
@@ -145,7 +177,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         // `BaselineChannelRenamer` itself to the carrier directly — a
         // deliberate, named residual rather than an oversight.
         try {
-            $report = $this->renamer->carry($baselinePath, $map);
+            return $this->renamer->carry($baselinePath, $map);
         } catch (ChannelRenameRefusal $e) {
             throw ConfigurationRefusal::aboutDocument(
                 ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
@@ -153,9 +185,5 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
                 $e,
             );
         }
-
-        ChannelRenameReporter::report($report, $format, $output);
-
-        return self::SUCCESS;
     }
 }

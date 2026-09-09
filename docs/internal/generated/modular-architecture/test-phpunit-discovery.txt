@@ -6408,13 +6408,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itRebuildsTheCacheOnTheNextCreateAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itReturnsAFileCacheConfiguredFromTheProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itUsesTheCacheDirFromTheConfigurationAtFirstCall
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itPrintsATraceForAnInternalErrorUnderVerboseButNotForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAWorkingDirectoryThatIsAFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownCommandNonInteractively
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"baseline:explain"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"directives"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder"graph:export"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnknownRuleGroupThroughTheApplicationLadder
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesAnUnreadableWorkingDirectoryWithoutAPhpWarning
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnBaselineGenerate
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnCheck
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
@@ -6446,6 +6452,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorNamingALevelItsChannelDoesNotReportAt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorWhoseLevelIsNotOne
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAnUnexpectedArgumentForRulesThroughTheApplicationLadder
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAnUnknownOptionThroughTheApplicationLadder
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsWrongTypedScalarConfigValueAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itValidatesDynamicComputedSelectorsAgainstTheCurrentCommandConfiguration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itWritesPartialScopeWarningOnlyToStderrBeforeStructuredPayload
@@ -6477,6 +6485,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
@@ -6497,6 +6506,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesANonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownFormat

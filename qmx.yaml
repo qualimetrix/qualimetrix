@@ -186,6 +186,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricShapeRefusalWording'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
@@ -545,6 +546,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer'
@@ -1339,6 +1341,16 @@ rules:
   coupling.cbo:
     suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
+      # The configuration-refusal carrier and the document it refuses against
+      # (ADR 0050). Five capability owners and the console throw or catch this
+      # one type, which is what a contract is for; CBO counts exactly that
+      # reach and calls it a magnet. Measured after X15: ConfigurationRefusal
+      # 50, ConfigurationOrigin 44, ConfigurationSource 44 against a class
+      # error bound of 30 — every point of it inbound, from owners that are
+      # supposed to name it. Blanket by prefix, and deliberately so: the
+      # sub-namespace holds nothing but the carrier's own value types, and a
+      # future sibling there would be one of them.
+      - Qualimetrix\Analysis\Configuration\Contract
       # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
       # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
       # publication, not detection: a point threshold inside the namespace still
@@ -1426,6 +1438,10 @@ rules:
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
+      # Same reason as the CBO channel above, narrowed to the leaf that earns
+      # it: ConfigurationSource sits at 0.0071 against 0.0066 because every
+      # refusal in the tree names one of its five cases.
+      - Qualimetrix\Analysis\Configuration\Contract\Refusal
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1486,6 +1502,19 @@ rules:
       # override on the file the finding is attributed to left the violation
       # standing and the audit reported that directive inert.
       - '[Q]ualimetrix\Analysis\Configuration'
+      # Two exact roots the line above deliberately leaves measured, and X15
+      # moved both. `Contract` holds the configuration document and its
+      # contracts; the refusal carrier's four value types were added beneath
+      # it (ADR 0050), which lowers the parent's abstractness by four concrete
+      # classes: 0.60 against a 0.5 ceiling. The child root is the extreme case
+      # of the same shape — a final exception plus three `final readonly`
+      # values, A=0 by construction, and every capability owner now names it,
+      # so I approaches 1 and D = |A + I - 1| approaches 1 with it: 0.98. There
+      # is no refactoring that lowers it while the type stays a contract; an
+      # abstract seam in front of an exception's factory methods would buy the
+      # number and cost the reader.
+      - '[Q]ualimetrix\Analysis\Configuration\Contract'
+      - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -1759,6 +1788,23 @@ rules:
       - src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
       - src/Infrastructure/Console/Command/DirectivesCommand.php
       - src/Infrastructure/Console/Command/HookUninstallCommand.php
+      # X15 adds three more of the same shape. `Application` and
+      # `GraphExportCommand` measured 30.0 and 40.0 before the round touched
+      # them and measure the same after, so they are the existing debt of this
+      # root becoming visible, not new debt. `BaselineRenameChannelsCommand` is
+      # the one the round moved, and the mechanism was measured rather than
+      # assumed: splitting its `doExecute()` took it from 4 methods to 9, and
+      # `health.cohesion` gives a fixed boost only below 6, so the score fell
+      # while LCOM stayed at 3. The metric reports the cliff, not the design.
+      - src/Infrastructure/Console/Application.php
+      - src/Infrastructure/Console/Command/GraphExportCommand.php
+      - src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+      # The carrier's own three types, for the same reason the namespace entry
+      # below gives for their root: the file channel is addressed separately
+      # from the namespace one, so the root entry alone leaves these standing.
+      - src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
+      - src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
+      - src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share
@@ -1767,3 +1813,8 @@ rules:
         # The exact root recursively unions independent Debt and Impact
         # subjects; shared-field cohesion 48.6 is not a root invariant.
         - '[Q]ualimetrix\Analysis\Evidence\Prioritization'
+        # An exception carrying an origin and a position, and three immutable
+        # values it is built from, share no fields with each other: cohesion is
+        # structurally inapplicable to this exact root, the same argument the
+        # Expansion entry above makes.
+        - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'

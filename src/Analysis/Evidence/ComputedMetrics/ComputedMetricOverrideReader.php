@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricShapeRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
@@ -115,7 +116,7 @@ final class ComputedMetricOverrideReader
         // only specific levels, they should use 'formulas' (plural) instead.
         if (isset($config['formula'])) {
             if (!\is_string($config['formula'])) {
-                throw self::leafRefusal($name, 'formula', ComputedMetricRefusalWording::mustBeAString($name, 'formula', $config['formula']));
+                throw self::leafRefusal($name, 'formula', ComputedMetricShapeRefusalWording::mustBeAString($name, 'formula', $config['formula']));
             }
 
             foreach (ComputedMetricEntryKeys::REPORTING_LEVELS as $level) {
@@ -140,7 +141,7 @@ final class ComputedMetricOverrideReader
                         [...ComputedMetricEntryKeys::nameSegments($name), 'formulas', (string) $levelKey],
                         (string) $levelKey,
                     ),
-                    ComputedMetricRefusalWording::formulaValueMustBeAString($name, (string) $levelKey, $formula),
+                    ComputedMetricShapeRefusalWording::formulaValueMustBeAString($name, (string) $levelKey, $formula),
                 );
             }
 
@@ -174,7 +175,7 @@ final class ComputedMetricOverrideReader
             throw ConfigurationRefusal::at(
                 ConfigurationOrigin::of(ConfigurationSource::Resolved),
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
-                ComputedMetricRefusalWording::levelListNotAList($name, $config['levels']),
+                ComputedMetricShapeRefusalWording::levelListNotAList($name, $config['levels']),
             );
         }
 
@@ -199,7 +200,7 @@ final class ComputedMetricOverrideReader
             throw self::leafRefusal(
                 $name,
                 'description',
-                ComputedMetricRefusalWording::mustBeAString($name, 'description', $config['description']),
+                ComputedMetricShapeRefusalWording::mustBeAString($name, 'description', $config['description']),
             );
         }
 
@@ -224,7 +225,7 @@ final class ComputedMetricOverrideReader
             throw self::leafRefusal(
                 $name,
                 'inverted',
-                ComputedMetricRefusalWording::mustBeABoolean($name, 'inverted', $config['inverted']),
+                ComputedMetricShapeRefusalWording::mustBeABoolean($name, 'inverted', $config['inverted']),
             );
         }
 
@@ -401,7 +402,7 @@ final class ComputedMetricOverrideReader
             return (float) $value;
         }
 
-        throw self::leafRefusal($name, $key, ComputedMetricRefusalWording::mustBeANumber($name, $key, $value));
+        throw self::leafRefusal($name, $key, ComputedMetricShapeRefusalWording::mustBeANumber($name, $key, $value));
     }
 
     private static function leafRefusal(string $name, string $key, string $summary): ConfigurationRefusal

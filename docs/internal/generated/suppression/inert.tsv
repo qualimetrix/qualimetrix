@@ -1,4 +1,5 @@
 mechanism	suppressor
+rule-namespace-suppression	coupling.cbo: coupling.cbo:namespace [Q]ualimetrix\Analysis\Configuration\Contract
 rule-namespace-suppression	coupling.class-rank: Qualimetrix\Analysis\Finding\Rule
 rule-namespace-suppression	coupling.distance: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
 rule-namespace-suppression	coupling.distance: Qualimetrix\Analysis\Policy\Architecture\Layer

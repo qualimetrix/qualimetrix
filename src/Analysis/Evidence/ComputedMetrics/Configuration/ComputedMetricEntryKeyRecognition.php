@@ -78,7 +78,7 @@ final class ComputedMetricEntryKeyRecognition
             throw ConfigurationRefusal::at(
                 ConfigurationOrigin::of(ConfigurationSource::Resolved),
                 RefusedPosition::open([...$segments, 'formulas'], 'formulas'),
-                ComputedMetricRefusalWording::formulasNotAMap($metricName, $value),
+                ComputedMetricShapeRefusalWording::formulasNotAMap($metricName, $value),
             );
         }
 

@@ -38,7 +38,7 @@ final class ComputedMetricContributionReader
                 throw ConfigurationRefusal::at(
                     ConfigurationOrigin::of(ConfigurationSource::Resolved),
                     RefusedPosition::open(['computed_metrics'], 'computed_metrics'),
-                    ComputedMetricRefusalWording::computedMetricsSectionNotAMap(),
+                    ComputedMetricShapeRefusalWording::computedMetricsSectionNotAMap(),
                 );
             }
 
@@ -61,7 +61,7 @@ final class ComputedMetricContributionReader
                 throw ConfigurationRefusal::at(
                     ConfigurationOrigin::of(ConfigurationSource::Resolved),
                     RefusedPosition::open(['exclude_health'], 'exclude_health'),
-                    ComputedMetricRefusalWording::excludeHealthNotAList(),
+                    ComputedMetricShapeRefusalWording::excludeHealthNotAList(),
                 );
             }
 
@@ -70,7 +70,7 @@ final class ComputedMetricContributionReader
                     throw ConfigurationRefusal::at(
                         ConfigurationOrigin::of(ConfigurationSource::Resolved),
                         RefusedPosition::open(['exclude_health'], 'exclude_health'),
-                        ComputedMetricRefusalWording::excludeHealthEntryNotAString(),
+                        ComputedMetricShapeRefusalWording::excludeHealthEntryNotAString(),
                     );
                 }
 

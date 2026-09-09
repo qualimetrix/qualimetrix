@@ -336,6 +336,11 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\DuplicatePatternRejector",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExactAllowCycleValidator",
           "closes_in": null
         },
@@ -526,6 +531,11 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\DuplicatePatternRejector",
           "closes_in": null
         },
         {
@@ -745,6 +755,11 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\DuplicatePatternRejector",
           "closes_in": null
         },
         {
@@ -969,6 +984,11 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerInstantiator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\DuplicatePatternRejector",
           "closes_in": null
         }
       ]
@@ -20107,6 +20127,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\ChannelRenameReporter",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand",
+          "closes_in": null
         }
       ]
     },
@@ -20258,6 +20283,22 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\DuplicatePatternRejector": {
+      "path": "src/Analysis/Policy/Architecture/Configuration/DuplicatePatternRejector.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "closure_package": "P4",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricShapeRefusalWording": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricShapeRefusalWording.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
@@ -144,6 +145,29 @@ final class ApplicationRefusalTest extends TestCase
     }
 
     /**
+     * Route 4: the interactive alternative to the case directly above.
+     * Symfony's own `Application::doRunCommand()` asks "Do you want to run
+     * X instead?" whenever exactly one alternative exists and the input is
+     * interactive — a property `ArgvInput` defaults to `true` for and only
+     * `--no-interaction`/`-n` (or `NO_INTERACTION`) turns off, regardless of
+     * whether stdin is an actual TTY. So this reaches the question with a
+     * plain piped, non-TTY stdin: no pty is required. An empty stream is a
+     * valid answer to the question (it defaults to "no", same as declining),
+     * and the run then exits the way declining the alternative always has —
+     * outside this round's ladder entirely, since the question is answered
+     * and the command genuinely never ran; that exit code is not the subject
+     * here; the reproduction of the question on stdout is.
+     */
+    #[Test]
+    public function itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright(): void
+    {
+        $run = $this->runBin(['chek'], stdin: '');
+
+        self::assertStringContainsString('Command "chek" is not defined.', $run['stdout']);
+        self::assertStringContainsString('Do you want to run "check" instead?', $run['stdout']);
+    }
+
+    /**
      * The sequential end of P01-6's own DoD: this route only turns green once
      * both edges of `01-refusal-packages.md`'s ребро P01-6 → P01-5 are in —
      * the carrier thrown by `RulesCommand` (P01-5) and the first clause of
@@ -157,6 +181,34 @@ final class ApplicationRefusalTest extends TestCase
 
         self::assertSame(self::REFUSAL, $run['exitCode']);
         self::assertNotSame('', $run['stderr']);
+    }
+
+    /**
+     * The bare-`ConsoleExceptionInterface` route
+     * ({@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier()}
+     * proves the mechanism synthetically) is asserted here as a real-input
+     * fact about the surface, not just the mechanism: an unknown option is
+     * refused through `Application::doRun()`'s ladder — never reaching a
+     * command's own `execute()` — on three commands that do not share a
+     * base class or a common option-validation call site.
+     */
+    #[Test]
+    #[DataProvider('provideCommandsForTheUnknownOptionRoute')]
+    public function itRefusesAnUnknownOptionOnDifferentCommandsThroughTheApplicationLadder(string $command): void
+    {
+        $run = $this->runBin([$command, '--this-option-does-not-exist']);
+
+        self::assertSame(self::REFUSAL, $run['exitCode']);
+        self::assertSame('', $run['stdout']);
+        self::assertStringContainsString('option does not exist', $run['stderr']);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideCommandsForTheUnknownOptionRoute(): iterable
+    {
+        yield 'baseline:explain' => ['baseline:explain'];
+        yield 'directives' => ['directives'];
+        yield 'graph:export' => ['graph:export'];
     }
 
     #[Test]

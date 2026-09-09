@@ -55,8 +55,24 @@ final class RuleNameValidator
         }
 
         $knownNames = $provider->getKnownRuleNames();
-        $unknowns = [];
+        $unknowns = self::collectUnknownNames($rulesSection, $knownNames);
 
+        if ($unknowns === []) {
+            return;
+        }
+
+        self::refuseUnknownNames($unknowns, $knownNames, $configSource, $configPath);
+    }
+
+    /**
+     * @param array<string, mixed> $rulesSection
+     * @param list<string> $knownNames
+     *
+     * @return list<string>
+     */
+    private static function collectUnknownNames(array $rulesSection, array $knownNames): array
+    {
+        $unknowns = [];
         foreach (array_keys($rulesSection) as $configuredName) {
             $name = (string) $configuredName;
 
@@ -65,10 +81,17 @@ final class RuleNameValidator
             }
         }
 
-        if ($unknowns === []) {
-            return;
-        }
+        return $unknowns;
+    }
 
+    /**
+     * @param non-empty-list<string> $unknowns
+     * @param list<string> $knownNames
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseUnknownNames(array $unknowns, array $knownNames, string $configSource, string $configPath): never
+    {
         $messages = [];
         foreach ($unknowns as $unknown) {
             $suggestion = self::findClosestMatch($unknown, $knownNames);

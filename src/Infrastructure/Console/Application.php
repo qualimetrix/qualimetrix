@@ -96,29 +96,7 @@ final class Application extends BaseApplication
     public function doRun(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $workingDir = $input->getParameterOption(['--working-dir', '-d']);
-
-            if (\is_string($workingDir) && $workingDir !== '') {
-                $resolved = realpath($workingDir);
-
-                // is_readable() is checked before chdir(), not after a failed
-                // chdir(): chdir() on an unreadable directory emits a PHP
-                // Warning that would land on stdout and stderr both,
-                // contradicting the DoD's "no PHP Warning, 0 bytes of stdout".
-                if ($resolved === false || !is_dir($resolved) || !is_readable($resolved)) {
-                    throw ConfigurationRefusal::aboutInput(
-                        ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
-                        \sprintf('Invalid working directory: %s', $workingDir),
-                    );
-                }
-
-                if (!chdir($resolved)) {
-                    throw ConfigurationRefusal::aboutInput(
-                        ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
-                        \sprintf('Failed to change working directory to: %s', $resolved),
-                    );
-                }
-            }
+            self::applyWorkingDirOption($input);
 
             return parent::doRun($input, $output);
         } catch (ConfigurationRefusal $refusal) {
@@ -129,6 +107,42 @@ final class Application extends BaseApplication
             return $this->refusalPresenter->fallbackRefusal($output, null, $e);
         } catch (Throwable $e) {
             return $this->refusalPresenter->internalError($output, null, $e);
+        }
+    }
+
+    /**
+     * Applies `--working-dir` / `-d` before the wrapped command runs, per the
+     * class docblock. Split out of {@see self::doRun()} so the exit-code
+     * ladder there stays the only thing that method does.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function applyWorkingDirOption(InputInterface $input): void
+    {
+        $workingDir = $input->getParameterOption(['--working-dir', '-d']);
+
+        if (!\is_string($workingDir) || $workingDir === '') {
+            return;
+        }
+
+        $resolved = realpath($workingDir);
+
+        // is_readable() is checked before chdir(), not after a failed
+        // chdir(): chdir() on an unreadable directory emits a PHP
+        // Warning that would land on stdout and stderr both,
+        // contradicting the DoD's "no PHP Warning, 0 bytes of stdout".
+        if ($resolved === false || !is_dir($resolved) || !is_readable($resolved)) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
+                \sprintf('Invalid working directory: %s', $workingDir),
+            );
+        }
+
+        if (!chdir($resolved)) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
+                \sprintf('Failed to change working directory to: %s', $resolved),
+            );
         }
     }
 

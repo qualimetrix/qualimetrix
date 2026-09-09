@@ -863,6 +863,26 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
+     * A path that never existed is a distinct refusal from a scope that
+     * existed but analysed nothing (the case directly above): the preflight
+     * ({@see \Qualimetrix\Infrastructure\Console\AnalysisPreflight::missingPaths()},
+     * shared with `check`) rejects it before any discovery or measurement
+     * runs, and this command has no test pinning that it inherits the check.
+     */
+    #[Test]
+    public function itRefusesANonExistentPath(): void
+    {
+        $tester = $this->audit(['paths' => [$this->tempDir . '/no-such-directory']]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString(
+            "path '" . $this->tempDir . "/no-such-directory' does not exist",
+            $tester->getErrorOutput(),
+        );
+    }
+
+    /**
      * A run that could not read part of the tree has not earned the right to
      * call anything dead — even when it did find something inert in the part it
      * could read.
@@ -879,6 +899,37 @@ final class DirectivesCommandTest extends TestCase
 
         self::assertSame(4, $tester->getStatusCode());
         self::assertStringContainsString('no directive can be called dead by this run', $tester->getDisplay());
+    }
+
+    /**
+     * Route 28 (`m6-routes-merged.md`), verified as still distinct from route
+     * 27 by a live run rather than by reading the two `catch` clauses alone:
+     * `catch (ConfigurationRefusal)` (route 27) answers exit 3 and
+     * `catch (Exception)` (route 28, the fallback below it) answers exit 1 —
+     * the ladder never unified the two. An unreadable scanned path is not
+     * wrapped into a {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
+     * anywhere in discovery: `RecursiveDirectoryIterator` throws a bare
+     * `UnexpectedValueException` (a `RuntimeException`, so neither of the
+     * two named clauses above it), landing in the generic `catch (Exception)`
+     * branch and its "Unexpected error" wording.
+     */
+    #[Test]
+    public function itAnswersExitOneForAnUnrecognisedExceptionFromAnUnreadablePath(): void
+    {
+        if (posix_getuid() === 0) {
+            self::markTestSkipped('Root ignores directory permission bits.');
+        }
+
+        chmod($this->tempDir . '/src', 0o000);
+
+        try {
+            $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+        } finally {
+            chmod($this->tempDir . '/src', 0o755);
+        }
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('Unexpected error:', $tester->getDisplay());
     }
 
     #[Test]

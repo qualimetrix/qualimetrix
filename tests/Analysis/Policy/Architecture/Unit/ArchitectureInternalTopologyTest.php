@@ -40,6 +40,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer',

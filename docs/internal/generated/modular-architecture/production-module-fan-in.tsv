@@ -6,10 +6,10 @@ Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReader
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	37	6
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	42	6
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	37	6
-Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	18	4
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	38	6
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	43	6
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	38	6
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	19	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface	Analysis.Evidence.Cohesion	2	2
@@ -170,7 +170,7 @@ Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal	Analysis.Policy.Baseline	1	1
-Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	1	1
+Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	2	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1

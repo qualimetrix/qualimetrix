@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 /**
- * The words of every refusal `computed_metrics:` raises, held in one place for
- * the same reason {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording}
+ * The words of every domain-semantic refusal `computed_metrics:` raises —
+ * an unknown key, an invalid level or name, or an invalid formula — held in
+ * one place for the same reason {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording}
  * is: a refusal that names a key or a level is a formulation, and three
  * different seams author one here — the key traversal, the entry reader, and
  * the name resolver. Keeping them in one file is what keeps the three
  * consistent with each other as the section grows a fourth.
+ *
+ * Plain type-mismatch sentences (a value written where a map, list, string,
+ * boolean or number was expected) live in
+ * {@see ComputedMetricShapeRefusalWording} instead — a different kind of
+ * formulation, split out to keep each file's sentence count readable.
  *
  * Every sentence prints a key or a metric name exactly as the throw site
  * received it; only the *accepted* set is printed in the canonical spelling
@@ -26,35 +32,6 @@ final class ComputedMetricRefusalWording
             $key,
             $metricName,
             implode(', ', $acceptedHere),
-        );
-    }
-
-    /**
-     * `false` gets a sentence of its own, the same way
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording::levelTakesAMapOfOptions()}
-     * does: an entry has a universal off switch (`{enabled: false}`), so a bare
-     * `false` reads like a shorthand for it and does nothing. Every other
-     * non-map names no intention worth guessing at.
-     */
-    public static function entryNotAMap(string $metricName, mixed $written): string
-    {
-        $sentence = \sprintf(
-            'Computed metric entry "%s" must be a map of options, got %s.',
-            $metricName,
-            get_debug_type($written),
-        );
-
-        return $written === false
-            ? $sentence . ' To disable this metric write "{enabled: false}".'
-            : $sentence;
-    }
-
-    public static function formulasNotAMap(string $metricName, mixed $written): string
-    {
-        return \sprintf(
-            '"formulas" of computed metric "%s" must be a map of level to formula, got %s.',
-            $metricName,
-            get_debug_type($written),
         );
     }
 
@@ -84,15 +61,6 @@ final class ComputedMetricRefusalWording
         return \sprintf('Computed metric "%s" declares a formula for "%s", which is not a level at all.', $metricName, $key);
     }
 
-    public static function levelListNotAList(string $metricName, mixed $written): string
-    {
-        return \sprintf(
-            '"levels" of computed metric "%s" must be a list of level words, got %s.',
-            $metricName,
-            get_debug_type($written),
-        );
-    }
-
     /** @param list<string> $reportingLevels canonical level words, sorted */
     public static function levelWordNotAReportingLevel(string $level, array $reportingLevels): string
     {
@@ -109,46 +77,6 @@ final class ComputedMetricRefusalWording
     public static function levelWordNotALevelAtAll(string $level): string
     {
         return \sprintf('Invalid computed metric level: "%s"', $level);
-    }
-
-    public static function mustBeAString(string $metricName, string $key, mixed $written): string
-    {
-        return \sprintf(
-            'Option "%s" of computed metric "%s" must be a string, got %s.',
-            $key,
-            $metricName,
-            get_debug_type($written),
-        );
-    }
-
-    public static function mustBeABoolean(string $metricName, string $key, mixed $written): string
-    {
-        return \sprintf(
-            'Option "%s" of computed metric "%s" must be a boolean, got %s.',
-            $key,
-            $metricName,
-            get_debug_type($written),
-        );
-    }
-
-    public static function mustBeANumber(string $metricName, string $key, mixed $written): string
-    {
-        return \sprintf(
-            'Option "%s" of computed metric "%s" must be a number or null, got %s.',
-            $key,
-            $metricName,
-            get_debug_type($written),
-        );
-    }
-
-    public static function formulaValueMustBeAString(string $metricName, string $level, mixed $written): string
-    {
-        return \sprintf(
-            'The "formulas.%s" value of computed metric "%s" must be a string, got %s.',
-            $level,
-            $metricName,
-            get_debug_type($written),
-        );
     }
 
     public static function duplicateLevel(string $metricName): string
@@ -192,21 +120,6 @@ final class ComputedMetricRefusalWording
             $name,
             implode(', ', array_map(static fn(string $n): string => 'health.' . $n, $acceptedNames)),
         );
-    }
-
-    public static function computedMetricsSectionNotAMap(): string
-    {
-        return 'computed_metrics must be an associative map.';
-    }
-
-    public static function excludeHealthNotAList(): string
-    {
-        return 'exclude_health must be a list.';
-    }
-
-    public static function excludeHealthEntryNotAString(): string
-    {
-        return 'exclude_health entries must be strings.';
     }
 
     public static function invalidFormulaSyntax(string $metricName, string $level, string $reason, string $formula): string

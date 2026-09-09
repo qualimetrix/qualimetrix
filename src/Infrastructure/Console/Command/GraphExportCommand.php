@@ -136,46 +136,20 @@ final class GraphExportCommand extends Command
         // not pay for a Discovery+Collection run that their own answer
         // throws away (`01-refusal-packages.md`, P01-5 DoD: a bogus
         // `--direction`/`--format` reaches the analyzer zero times).
-        $format = GraphExportFormat::tryFrom($rawFormat);
-        if ($format === null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
-                \sprintf(
-                    'Unknown format "%s". Supported formats: %s.',
-                    $rawFormat,
-                    implode(', ', array_map(static fn(GraphExportFormat $f): string => $f->value, GraphExportFormat::cases())),
-                ),
-            );
-        }
+        $format = self::resolveFormat($rawFormat);
 
         /** @var string $rawDirection */
         $rawDirection = $input->getOption('direction');
-        $direction = GraphDirection::tryFrom($rawDirection);
-        if ($direction === null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--direction'),
-                \sprintf(
-                    'Unknown direction "%s". Supported directions: %s.',
-                    $rawDirection,
-                    implode(', ', array_map(static fn(GraphDirection $d): string => $d->value, GraphDirection::cases())),
-                ),
-            );
-        }
+        $direction = self::resolveDirection($rawDirection);
 
         /** @var string|null $outputFile */
         $outputFile = $input->getOption('output');
         if ($outputFile !== null) {
-            $this->assertWritable($outputFile);
+            self::assertWritable($outputFile);
         }
 
-        /** @var list<string> $rawPaths */
-        $rawPaths = $input->getArgument('paths');
-
         $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $rawPaths,
-        );
+        $paths = self::resolvePaths($input, $cwd);
 
         $this->logger->info('Starting dependency graph export', [
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
@@ -212,39 +186,11 @@ final class GraphExportCommand extends Command
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
 
-        // Create exporter with options
-        /** @var array<string> $includeNamespaces */
-        $includeNamespaces = $input->getOption('namespace');
-        /** @var array<string> $excludeNamespaces */
-        $excludeNamespaces = $input->getOption('exclude-namespace');
-
-        $request = new GraphProjectionRequest(
-            format: $format,
-            direction: $direction,
-            groupByNamespace: $input->getOption('no-clusters') !== true,
-            includeNamespaces: $includeNamespaces !== [] ? $includeNamespaces : null,
-            excludeNamespaces: $excludeNamespaces,
-        );
+        $request = self::buildProjectionRequest($input, $format, $direction);
         $content = $this->projection->project($result->graph, $request);
 
         if ($outputFile !== null) {
-            // The pre-check above catches most cases before analysis runs;
-            // this catches the race (writability changed since) and a
-            // `rename()`/write failure `@`-silenced before the round
-            // (`01-refusal-verdicts.md` §5.2, the `check --output` sibling
-            // of this check at §5.4).
-            if (@file_put_contents($outputFile, $content) === false) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
-                    \sprintf('Failed to write output to %s', $outputFile),
-                );
-            }
-
-            $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile));
-
-            if ($format === GraphExportFormat::Dot) {
-                $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
-            }
+            self::writeToFile($output, $outputFile, $content, $format);
         } else {
             OutputHelper::write($output, $content);
         }
@@ -252,11 +198,97 @@ final class GraphExportCommand extends Command
         return self::SUCCESS;
     }
 
+    /** @throws ConfigurationRefusal */
+    private static function resolveFormat(string $rawFormat): GraphExportFormat
+    {
+        $format = GraphExportFormat::tryFrom($rawFormat);
+        if ($format === null) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+                \sprintf(
+                    'Unknown format "%s". Supported formats: %s.',
+                    $rawFormat,
+                    implode(', ', array_map(static fn(GraphExportFormat $f): string => $f->value, GraphExportFormat::cases())),
+                ),
+            );
+        }
+
+        return $format;
+    }
+
+    /** @throws ConfigurationRefusal */
+    private static function resolveDirection(string $rawDirection): GraphDirection
+    {
+        $direction = GraphDirection::tryFrom($rawDirection);
+        if ($direction === null) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--direction'),
+                \sprintf(
+                    'Unknown direction "%s". Supported directions: %s.',
+                    $rawDirection,
+                    implode(', ', array_map(static fn(GraphDirection $d): string => $d->value, GraphDirection::cases())),
+                ),
+            );
+        }
+
+        return $direction;
+    }
+
+    /** @return list<AbsolutePath> */
+    private static function resolvePaths(InputInterface $input, AbsolutePath $cwd): array
+    {
+        /** @var list<string> $rawPaths */
+        $rawPaths = $input->getArgument('paths');
+
+        return array_map(
+            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
+            $rawPaths,
+        );
+    }
+
+    private static function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
+    {
+        /** @var array<string> $includeNamespaces */
+        $includeNamespaces = $input->getOption('namespace');
+        /** @var array<string> $excludeNamespaces */
+        $excludeNamespaces = $input->getOption('exclude-namespace');
+
+        return new GraphProjectionRequest(
+            format: $format,
+            direction: $direction,
+            groupByNamespace: $input->getOption('no-clusters') !== true,
+            includeNamespaces: $includeNamespaces !== [] ? $includeNamespaces : null,
+            excludeNamespaces: $excludeNamespaces,
+        );
+    }
+
+    /** @throws ConfigurationRefusal */
+    private static function writeToFile(OutputInterface $output, string $outputFile, string $content, GraphExportFormat $format): void
+    {
+        // The pre-check in doExecute() catches most cases before analysis
+        // runs; this catches the race (writability changed since) and a
+        // `rename()`/write failure `@`-silenced before the round
+        // (`01-refusal-verdicts.md` §5.2, the `check --output` sibling
+        // of this check at §5.4).
+        if (@file_put_contents($outputFile, $content) === false) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+                \sprintf('Failed to write output to %s', $outputFile),
+            );
+        }
+
+        $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile));
+
+        if ($format === GraphExportFormat::Dot) {
+            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
+        }
+    }
+
     /**
      * Checked before analysis so a doomed `--output` fails fast rather than
      * after a full Discovery+Collection run.
      */
-    private function assertWritable(string $outputFile): void
+    private static function assertWritable(string $outputFile): void
     {
         if (file_exists($outputFile)) {
             if (!is_writable($outputFile)) {
