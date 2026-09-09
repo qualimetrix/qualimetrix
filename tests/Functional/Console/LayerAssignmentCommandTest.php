@@ -272,7 +272,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
-        self::assertCount(7, $commandConstructor->getParameters());
+        self::assertCount(8, $commandConstructor->getParameters());
         self::assertCount(6, $resolverConstructor->getParameters());
     }
 

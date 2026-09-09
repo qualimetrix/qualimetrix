@@ -44,7 +44,7 @@ design.type-coverage.return	channel	?		8	35	2	1	0	24	0	4	0	0	0	0
 duplication.clone	channel	?		21	71	0	2	12	39	0	4	0	0	0	0
 maintainability.mi	channel	?		20	182	2	2	0	29	0	3	0	0	0	0
 security.command-injection	channel	?		3	5	0	0	0	13	0	1	0	0	1	1
-security.hardcoded-credentials	channel	?		7	34	0	0	0	15	0	1	1	1	0	0
+security.hardcoded-credentials	channel	?		7	35	0	0	0	15	0	1	1	1	0	0
 security.sensitive-parameter	channel	?		6	22	0	0	0	13	0	1	1	1	0	0
 security.sql-injection	channel	?		3	7	0	0	0	13	0	1	0	0	1	1
 security.xss	channel	?		4	17	0	0	0	13	0	1	0	0	1	1
@@ -105,7 +105,7 @@ maintainability.halstead.effort	metric-key	?		2	4	0	0	0	0	0	0	0	0	0	0
 maintainability.halstead.time	metric-key	?		2	4	0	0	0	0	0	0	0	0	0	0
 maintainability.halstead.volume	metric-key	?		6	37	0	0	0	2	0	0	0	0	0	0
 maintainability.mi	metric-key	?		20	182	2	2	0	29	0	3	0	0	0	0
-security.hardcoded-credentials	metric-key	?		7	34	0	0	0	15	0	1	0	0	0	0
+security.hardcoded-credentials	metric-key	?		7	35	0	0	0	15	0	1	0	0	0	0
 security.sensitive-parameter	metric-key	?		6	22	0	0	0	13	0	1	0	0	0	0
 size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	0	0	0	0	0
 size.class-count	metric-key	?		28	122	2	1	4	31	0	4	0	0	0	0
@@ -177,7 +177,7 @@ health.overall	producer	?		110	140	0	0	0	20	0	19	0	0	0	0
 health.typing	producer	?		21	57	0	1	1	16	0	19	0	0	0	0
 maintainability.mi	producer	?		20	182	2	2	0	29	0	3	0	0	0	0
 security.command-injection	producer	?		3	5	0	0	0	13	0	1	0	0	0	0
-security.hardcoded-credentials	producer	?		7	34	0	0	0	15	0	1	0	0	0	0
+security.hardcoded-credentials	producer	?		7	35	0	0	0	15	0	1	0	0	0	0
 security.sensitive-parameter	producer	?		6	22	0	0	0	13	0	1	0	0	0	0
 security.sql-injection	producer	?		3	7	0	0	0	13	0	1	0	0	0	0
 security.xss	producer	?		4	17	0	0	0	13	0	1	0	0	0	0

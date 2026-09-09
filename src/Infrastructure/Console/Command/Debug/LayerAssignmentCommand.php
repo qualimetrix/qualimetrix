@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -15,6 +16,7 @@ use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -68,6 +70,7 @@ final class LayerAssignmentCommand extends Command
         private readonly CacheConfigurationResolverInterface $cacheConfigurationResolver,
         private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
         private readonly RuleInputValidator $ruleInputValidator,
+        private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
     }
@@ -157,6 +160,14 @@ final class LayerAssignmentCommand extends Command
                     $configuration->projectRoot,
                     $symbol,
                 );
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and the
+            // `catch (Exception)` below would otherwise catch it and answer
+            // with FAILURE (1) instead of the round's Refusal code.
+            // `format: null`: this command's own `--format=json` envelope is
+            // not routed through the presenter yet, so it keeps using
+            // `reportError()` for that.
+            return $this->refusalPresenter->refusal($output, null, $refusal);
         } catch (Exception $e) {
             // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
             // so genuine programming bugs in the pipeline surface in CI rather than

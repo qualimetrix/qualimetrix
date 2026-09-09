@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
@@ -20,6 +21,7 @@ use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -57,6 +59,7 @@ final class CheckCommand extends Command
         private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
         private readonly ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
         private readonly OutputFormatResolverInterface $outputFormatResolver,
+        private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
     }
@@ -160,6 +163,12 @@ final class CheckCommand extends Command
     {
         try {
             return $this->doExecute($input, $output);
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and every
+            // clause below it — down to `catch (Throwable)` — would otherwise
+            // swallow it as a plain exception. `format: null`: this command
+            // does not yet thread its own `--format` into the presenter.
+            return $this->refusalPresenter->refusal($output, null, $refusal);
         } catch (ConflictingCliAliasException $e) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<error>CLI alias conflict: "%s" is used by both "%s" and "%s" rules</error>',

@@ -266,6 +266,26 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "closes_in": null
         }
       ]
     },
@@ -19582,7 +19602,27 @@
       "owner": "Infrastructure.Console",
       "visibility": "internal",
       "closure_package": "P8",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference"
+          ]
+        }
+      ]
     }
   },
   "enforcement_seams": {}

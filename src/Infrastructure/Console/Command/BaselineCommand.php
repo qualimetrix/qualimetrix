@@ -6,11 +6,13 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,10 +41,30 @@ abstract class BaselineCommand extends Command
     /** Analysis/tool failure, distinct from policy and input/configuration outcomes. */
     protected const int EXIT_ANALYSIS_INCOMPLETE = 4;
 
+    /**
+     * Setter rather than a constructor argument: five concrete commands
+     * extend this class, each with its own constructor and DI registration,
+     * and a constructor parameter here would mean editing all five instead
+     * of the one shared ladder.
+     */
+    private RefusalPresenter $refusalPresenter;
+
+    public function setRefusalPresenter(RefusalPresenter $refusalPresenter): void
+    {
+        $this->refusalPresenter = $refusalPresenter;
+    }
+
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             return $this->doExecute($input, $output);
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and the
+            // `InvalidArgumentException|RuntimeException` clause below would
+            // otherwise catch it and answer with code 1 instead of 3.
+            // `format: null`: none of these five commands thread `--format`
+            // into the presenter yet.
+            return $this->refusalPresenter->refusal($output, null, $refusal);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
         } catch (ConfigLoadException|ArchitectureConfigurationException $e) {

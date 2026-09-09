@@ -46,6 +46,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
         'Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator',
         'Qualimetrix\\Infrastructure\\Console\\ProfilePresenter',
         'Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator',
+        'Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter',
         'Qualimetrix\\Infrastructure\\Console\\ResultPresenter',
         'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator',
     ];

@@ -50,6 +50,7 @@ use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -310,6 +311,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             self::createStub(ParallelConfigurationResolverInterface::class),
             self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
             self::createStub(OutputFormatResolverInterface::class),
+            self::refusalPresenter(),
         );
 
         $diagnostics = new BufferedOutput();
@@ -332,6 +334,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             self::createStub(CacheConfigurationResolverInterface::class),
             self::createStub(ParallelConfigurationResolverInterface::class),
             self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
+            self::refusalPresenter(),
         );
         $tester = new CommandTester($command);
         $tester->execute(['fqn' => 'App\\Service\\Example']);
@@ -426,5 +429,14 @@ final class BaselineCommandFailureReportingTest extends TestCase
             self::createStub(RuleConfigurationInterface::class),
             $errorStream,
         );
+    }
+
+    /**
+     * Never exercised here: every case in this file throws before either
+     * command reaches its own `catch (ConfigurationRefusal)` clause.
+     */
+    private static function refusalPresenter(): RefusalPresenter
+    {
+        return new RefusalPresenter(new ErrorStream());
     }
 }

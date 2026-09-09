@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -83,6 +84,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheConfigurationResolverInterface::class),
                 new Reference(ParallelConfigurationResolverInterface::class),
                 new Reference(RuleInputValidator::class),
+                new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);
     }

@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Exception;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
@@ -15,6 +16,7 @@ use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -63,6 +65,7 @@ final class DirectivesCommand extends Command
     public function __construct(
         private readonly DirectiveAuditInterface $directiveAudit,
         private readonly AnalysisPreflight $preflight,
+        private readonly RefusalPresenter $refusalPresenter,
     ) {
         parent::__construct();
     }
@@ -139,6 +142,13 @@ final class DirectivesCommand extends Command
 
         try {
             return $this->audit($input, $output, $format);
+        } catch (ConfigurationRefusal $refusal) {
+            // First clause: the carrier is a RuntimeException, and the
+            // `catch (Exception)` clause below would otherwise catch it and
+            // answer with the wrong text and, on a product defect, the wrong
+            // code. `format: null`: the JSON envelope for this command's
+            // `--format=json` is not wired through the presenter yet.
+            return $this->refusalPresenter->refusal($output, null, $refusal);
         } catch (InvalidArgumentException $failure) {
             // Read as the caller's mistake, exactly as `check` reads it. The
             // reading is coarser than it looks: the path and symbol value
