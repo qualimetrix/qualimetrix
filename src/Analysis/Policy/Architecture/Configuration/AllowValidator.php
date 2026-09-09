@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
+use Throwable;
 
 /**
  * Parses and validates the {@code architecture.allow} sub-tree.
@@ -37,7 +41,16 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  */
 final class AllowValidator
 {
-    private const string CONFIG_PATH = 'architecture';
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+            $previous,
+        );
+    }
 
     /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation of exact selectors only.
@@ -52,10 +65,7 @@ final class AllowValidator
         }
 
         if (!\is_array($allowRaw) || array_is_list($allowRaw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
-                'architecture.allow: must be a map of layer-name → list of target layer names.',
-            );
+            self::refuse('architecture.allow', 'architecture.allow: must be a map of layer-name → list of target layer names.');
         }
 
         $layerSet = array_flip($layerNames);
@@ -63,10 +73,7 @@ final class AllowValidator
 
         foreach ($allowRaw as $sourceRaw => $targets) {
             if (!\is_string($sourceRaw)) {
-                throw new ArchitectureConfigurationException(
-                    self::CONFIG_PATH,
-                    'architecture.allow: must be a map of layer-name → list of target layer names.',
-                );
+                self::refuse('architecture.allow', 'architecture.allow: must be a map of layer-name → list of target layer names.');
             }
 
             $sourceSelector = $this->parseSelector(
@@ -75,8 +82,8 @@ final class AllowValidator
             );
 
             if ($sourceSelector->isExact() && !isset($layerSet[$sourceRaw])) {
-                throw new ArchitectureConfigurationException(
-                    self::CONFIG_PATH,
+                self::refuse(
+                    \sprintf('architecture.allow.%s', $sourceRaw),
                     \sprintf('architecture.allow.%s: unknown layer.', $sourceRaw),
                 );
             }
@@ -104,8 +111,8 @@ final class AllowValidator
         }
 
         if (!\is_array($targets) || !array_is_list($targets)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.allow.%s', $source),
                 \sprintf('architecture.allow.%s: must be a list of target layer names.', $source),
             );
         }
@@ -187,8 +194,8 @@ final class AllowValidator
         }
 
         if ($undeclared !== []) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.allow.%s[%d]', $source, $index),
                 $this->renderUndeclaredCaptureMessage(
                     $source,
                     $index,
@@ -200,8 +207,8 @@ final class AllowValidator
         }
 
         if ($shapeMismatches !== []) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.allow.%s[%d]', $source, $index),
                 $this->renderShapeMismatchMessage(
                     $source,
                     $index,
@@ -347,8 +354,8 @@ final class AllowValidator
         $targetName = $targetSelector->originalString();
 
         if (!isset($layerSet[$targetName])) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.allow.%s[%d]', $source, $index),
                 \sprintf("architecture.allow.%s[%d]: unknown layer '%s'.", $source, $index, $targetName),
             );
         }
@@ -389,10 +396,7 @@ final class AllowValidator
 
         if (\is_string($entry)) {
             if ($entry === '') {
-                throw new ArchitectureConfigurationException(
-                    self::CONFIG_PATH,
-                    \sprintf('%s: target must be a non-empty string.', $context),
-                );
+                self::refuse($context, \sprintf('%s: target must be a non-empty string.', $context));
             }
 
             return [$this->parseSelector($entry, $context), false, null];
@@ -404,8 +408,8 @@ final class AllowValidator
             return [$this->parseSelector($targetRaw, $context), $allowCrossInstance, $relations];
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            $context,
             \sprintf(
                 "%s: each target must be a layer name (string) or a map with a non-empty 'target' key.",
                 $context,
@@ -416,18 +420,14 @@ final class AllowValidator
     /**
      * Catches the Core-domain {@see InvalidSelectorException} from
      * {@see LayerSelectorParser::parse()} and rewraps it as a
-     * {@see ArchitectureConfigurationException} with the user-facing config path prefix.
+     * {@see ConfigurationRefusal} with the user-facing config path prefix.
      */
     private function parseSelector(string $raw, string $context): LayerSelector
     {
         try {
             return LayerSelectorParser::parse($raw);
         } catch (InvalidSelectorException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
-                \sprintf('%s: %s', $context, $e->getMessage()),
-                $e,
-            );
+            self::refuse($context, \sprintf('%s: %s', $context, $e->getMessage()), $e);
         }
     }
 }

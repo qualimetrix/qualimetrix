@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
@@ -59,7 +62,7 @@ final class RuleOptionKeyRecognition
      * @param array<string, mixed> $userConfig what the user actually wrote, after the framework keys were taken out
      * @param class-string<RuleOptionsInterface> $optionsClass
      *
-     * @throws ConfigLoadException on the first unrecognised key in document order
+     * @throws ConfigurationRefusal on the first unrecognised key in document order
      */
     public static function refuseUnknownKeys(array $userConfig, string $ruleName, string $optionsClass): void
     {
@@ -82,11 +85,15 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            throw new ConfigLoadException('', RuleOptionRefusalWording::notAnOptionOfRule(
-                $key,
-                $ruleName,
-                self::optionsHere($acceptedHere),
-            ));
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::closed([$ruleName], $key, self::optionsHere($acceptedHere)),
+                RuleOptionRefusalWording::notAnOptionOfRule(
+                    $key,
+                    $ruleName,
+                    self::optionsHere($acceptedHere),
+                ),
+            );
         }
     }
 
@@ -99,7 +106,7 @@ final class RuleOptionKeyRecognition
      *
      * @param class-string<LevelOptionsInterface> $levelOptionsClass
      *
-     * @throws ConfigLoadException
+     * @throws ConfigurationRefusal
      */
     private static function refuseUnknownKeysInsideLevel(
         mixed $value,
@@ -112,8 +119,9 @@ final class RuleOptionKeyRecognition
         }
 
         if (!\is_array($value)) {
-            throw new ConfigLoadException(
-                '',
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([$ruleName, $level], $level),
                 RuleOptionRefusalWording::levelTakesAMapOfOptions($level, $ruleName, $value),
             );
         }
@@ -127,12 +135,16 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            throw new ConfigLoadException('', RuleOptionRefusalWording::notAnOptionAtLevel(
-                $key,
-                $ruleName,
-                $level,
-                $acceptedThere->acceptedForDisplay(),
-            ));
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::closed([$ruleName, $level], $key, $acceptedThere->acceptedForDisplay()),
+                RuleOptionRefusalWording::notAnOptionAtLevel(
+                    $key,
+                    $ruleName,
+                    $level,
+                    $acceptedThere->acceptedForDisplay(),
+                ),
+            );
         }
     }
 

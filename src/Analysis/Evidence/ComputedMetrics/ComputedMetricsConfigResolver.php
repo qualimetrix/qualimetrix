@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
@@ -13,6 +19,12 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 /**
  * Merges default computed metric definitions with user overrides from YAML
  * and validates the result (syntax, coverage, circular deps, references).
+ *
+ * The per-entry order below is part of the contract
+ * (`02-computed-metric-keys.md` §6): an entry's name is recognised before its
+ * keys are walked, and its keys are walked before the `enabled: false` branch
+ * — otherwise a disabled entry would swallow a typo in a sibling key, which
+ * is exactly the silent acceptance this stage exists to close.
  */
 final class ComputedMetricsConfigResolver
 {
@@ -30,6 +42,8 @@ final class ComputedMetricsConfigResolver
      *                                    `enabled: false` in YAML) are folded into the same
      *                                    exclusion pipeline so both disable paths produce the
      *                                    same renormalized weights in `health.overall`.
+     *
+     * @throws ConfigurationRefusal
      *
      * @return list<ComputedMetricDefinition>
      */
@@ -49,13 +63,46 @@ final class ComputedMetricsConfigResolver
         // 2. Apply user overrides, collecting disabled health.* metrics
         $disabledHealth = [];
         foreach ($rawConfig as $name => $overrides) {
-            if (!\is_array($overrides)) {
+            $name = (string) $name;
+
+            // Step 0 — an empty YAML block means the same as an omitted entry.
+            if ($overrides === null) {
                 continue;
             }
 
-            // Handle enabled: false
+            // Step 1 — the entry itself must be a map.
+            if (!\is_array($overrides)) {
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
+                    ComputedMetricRefusalWording::entryNotAMap($name, $overrides),
+                );
+            }
+
+            // Step 2 — the name is recognised before anything about its body is
+            // read: a `health.*` name must name one of the six known dimensions,
+            // regardless of what the entry goes on to say.
+            $isHealth = str_starts_with($name, 'health.');
+            if ($isHealth && !isset($definitions[$name])) {
+                $this->refuseUnknownHealthDimension($name);
+            }
+
+            // Step 3 — every key of the entry, and the shape of `formulas:`, is
+            // walked before the `enabled: false` branch below, so a disabled
+            // entry cannot hide a typo in a sibling key.
+            ComputedMetricEntryKeyRecognition::refuseUnknownKeys($overrides, $name);
+
+            if (\array_key_exists(RuleOptionKey::ENABLED, $overrides) && !\is_bool($overrides[RuleOptionKey::ENABLED])) {
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'enabled'], 'enabled'),
+                    ComputedMetricRefusalWording::mustBeABoolean($name, 'enabled', $overrides[RuleOptionKey::ENABLED]),
+                );
+            }
+
+            // Step 4 — enabled: false.
             if (isset($overrides[RuleOptionKey::ENABLED]) && $overrides[RuleOptionKey::ENABLED] === false) {
-                if (str_starts_with($name, 'health.') && $name !== HealthDimension::Overall->value) {
+                if ($isHealth && $name !== HealthDimension::Overall->value) {
                     // Route disabled health dimensions through HealthFormulaExcluder so that
                     // dependent formulas (e.g. `health.overall` referencing the disabled dim
                     // via `??`) get their weights renormalized — same outcome as `exclude_health`.
@@ -74,30 +121,17 @@ final class ComputedMetricsConfigResolver
                 continue;
             }
 
-            if (isset($definitions[$name])) {
-                // Merge override into existing (health.*)
-                $definitions[$name] = ComputedMetricOverrideReader::merge($definitions[$name], $overrides);
-            } elseif (str_starts_with($name, 'health.')) {
-                throw new ComputedMetricConfigurationException(\sprintf(
-                    'Computed metric name "%s" uses reserved "health.*" prefix. '
-                    . 'Use "computed.*" prefix for user-defined metrics.',
-                    $name,
-                ));
-            } else {
-                // New user-defined metric
-                $definitions[$name] = ComputedMetricOverrideReader::create($name, $overrides);
-            }
+            // Step 5 — merge() / create(). A `health.*` name reaches here only
+            // known: an unknown one already refused in step 2.
+            $definitions[$name] = isset($definitions[$name])
+                ? ComputedMetricOverrideReader::merge($definitions[$name], $overrides)
+                : ComputedMetricOverrideReader::create($name, $overrides);
         }
 
         $result = array_values($definitions);
 
         // 3. Apply combined exclude-health (explicit + auto-collected from enabled:false)
         //    BEFORE validation so that the formula validator sees the final state.
-        //    Disabled health dimensions are validated separately to produce an error message
-        //    that points at the actual config source (`computed_metrics.health.X.enabled`)
-        //    instead of `--exclude-health`.
-        $this->validateDisabledHealthDimensions($disabledHealth, $result);
-
         $combinedExclusions = array_values(array_unique([...$disabledHealth, ...$normalizedExcludeHealth]));
         if ($combinedExclusions !== []) {
             $result = $this->healthFormulaExcluder->applyExcludeHealth($result, $combinedExclusions);
@@ -110,36 +144,26 @@ final class ComputedMetricsConfigResolver
     }
 
     /**
-     * Validates that every name in `enabled: false` (for `health.*` metrics) matches a real
-     * default dimension. Produces a clearer error than HealthFormulaExcluder would, because
-     * the source is the user's `computed_metrics` section, not `--exclude-health`.
+     * The one refusal both of yesterday's two paths collapsed into
+     * (`02-computed-metric-keys.md` §2): `health.<unknown>` used to answer
+     * "reserved prefix" when the entry carried a formula and "unknown
+     * dimension" when it carried `enabled: false`. Both intents are the same
+     * mistake — a typo in one of the six known names — so both now raise the
+     * same refusal, at the point the name is recognised, before either branch
+     * is reached.
      *
-     * @param list<string> $disabledHealth
-     * @param list<ComputedMetricDefinition> $definitions
+     * @throws ConfigurationRefusal
      */
-    private function validateDisabledHealthDimensions(array $disabledHealth, array $definitions): void
+    private function refuseUnknownHealthDimension(string $name): never
     {
-        if ($disabledHealth === []) {
-            return;
-        }
-
-        $known = [];
-        foreach ($definitions as $definition) {
-            if (str_starts_with($definition->name, 'health.') && $definition->name !== HealthDimension::Overall->value) {
-                $known[$definition->name] = true;
-            }
-        }
-
-        foreach ($disabledHealth as $name) {
-            if (!isset($known[$name])) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Unknown health dimension "%s" disabled via "computed_metrics.%s.enabled: false". '
-                    . 'Valid dimensions: %s.',
-                    $name,
-                    $name,
-                    implode(', ', array_keys($known)),
-                ));
-            }
-        }
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed(
+                ComputedMetricEntryKeys::nameSegments($name),
+                substr($name, \strlen('health.')),
+                ComputedMetricEntryKeys::acceptedHealthNames(),
+            ),
+            ComputedMetricRefusalWording::unknownHealthDimension($name, ComputedMetricEntryKeys::acceptedHealthNames()),
+        );
     }
 }

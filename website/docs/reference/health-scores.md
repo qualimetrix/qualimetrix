@@ -117,6 +117,20 @@ See [Output Formats](../usage/output-formats.md) for details.
 
 ## Configuration
 
+### Accepted Keys
+
+Each `computed_metrics:` entry accepts exactly nine keys: `formula`, `formulas`,
+`levels`, `description`, `inverted`, `threshold`, `warning`, `error`, and
+`enabled`. `threshold` sets both `warning` and `error` to the same value and
+cannot be combined with either of them. Inside `formulas:`, the only accepted
+keys are the three report levels: `class`, `namespace`, and `project`.
+
+An unknown key, a value of the wrong type, or a `health.*` name outside the
+six built-in dimensions (`health.complexity`, `health.cohesion`,
+`health.coupling`, `health.typing`, `health.maintainability`,
+`health.overall`) is refused with exit code 3 and a message naming what was
+written and what is accepted — none of these are ignored silently.
+
 ### Customizing Thresholds
 
 ```yaml

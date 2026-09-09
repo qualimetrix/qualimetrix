@@ -6,6 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use DateTimeImmutable;
 use JsonException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Throwable;
 
 /**
  * Reads a version 13 baseline file.
@@ -71,16 +75,16 @@ final readonly class BaselineLoader
     ) {}
 
     /**
-     * @throws BaselineLoadException if the file is missing, unreadable, or its envelope is invalid
+     * @throws ConfigurationRefusal if the file is missing, unreadable, or its envelope is invalid
      */
     public function load(string $path): Baseline
     {
         if (!file_exists($path)) {
-            throw new BaselineLoadException("Baseline file not found: {$path}");
+            throw self::refusal($path, "Baseline file not found: {$path}");
         }
 
         if (!is_readable($path)) {
-            throw new BaselineLoadException("Baseline file is not readable: {$path}");
+            throw self::refusal($path, "Baseline file is not readable: {$path}");
         }
 
         // Constructed here rather than injected: the recogniser is an
@@ -89,42 +93,56 @@ final readonly class BaselineLoader
         // for its own sake.
         $canonical = (new CanonicalBaselineReader($this->entryParser))->read($path);
         if ($canonical !== null) {
-            return $this->assembleCanonical($canonical);
+            return $this->assembleCanonical($canonical, $path);
         }
 
         $content = file_get_contents($path);
         if ($content === false) {
-            throw new BaselineLoadException("Failed to read baseline file: {$path}");
+            throw self::refusal($path, "Failed to read baseline file: {$path}");
         }
 
         try {
             $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw new BaselineLoadException("Invalid JSON in baseline file: {$e->getMessage()}", 0, $e);
+            throw self::refusal($path, "Invalid JSON in baseline file: {$e->getMessage()}", $e);
         }
 
         if (!\is_array($data)) {
-            throw new BaselineLoadException('Baseline file must contain a JSON object');
+            throw self::refusal($path, 'Baseline file must contain a JSON object');
         }
 
-        return $this->parseBaseline($data, hash('sha256', $content));
+        return $this->parseBaseline($data, hash('sha256', $content), $path);
     }
 
     /**
      * @param array<mixed, mixed> $data
      */
-    private function parseBaseline(array $data, string $contentHash): Baseline
+    private function parseBaseline(array $data, string $contentHash, string $path): Baseline
     {
-        $this->assertVersion($data['version'] ?? null);
+        $this->assertVersion($data['version'] ?? null, $path);
 
-        [$entries, $inertEntries] = $this->parseEntries($data['entries'] ?? null);
+        [$entries, $inertEntries] = $this->parseEntries($data['entries'] ?? null, $path);
 
         return new Baseline(
-            generated: self::parseGenerated($data['generated'] ?? null),
-            scope: self::parseScope($data['scope'] ?? null),
+            generated: self::parseGenerated($data['generated'] ?? null, $path),
+            scope: self::parseScope($data['scope'] ?? null, $path),
             entries: $entries,
             inertEntries: $inertEntries,
             sourceContentHash: $contentHash,
+        );
+    }
+
+    /**
+     * The one place a {@see ConfigurationRefusal} is built for this file: the
+     * envelope is refused wholesale, never at a single key's position, so
+     * every case uses {@see ConfigurationRefusal::aboutDocument()}.
+     */
+    private static function refusal(string $path, string $summary, ?Throwable $previous = null): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::aboutDocument(
+            ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $path),
+            $summary,
+            $previous,
         );
     }
 
@@ -143,17 +161,17 @@ final readonly class BaselineLoader
      *     contentHash: string
      * } $canonical
      */
-    private function assembleCanonical(array $canonical): Baseline
+    private function assembleCanonical(array $canonical, string $path): Baseline
     {
         $envelope = $canonical['envelope'];
 
-        $this->assertVersion($envelope['version'] ?? null);
+        $this->assertVersion($envelope['version'] ?? null, $path);
 
         [$entries, $inertEntries] = $this->separateDuplicates($canonical['entries'], $canonical['inert']);
 
         return new Baseline(
-            generated: self::parseGenerated($envelope['generated'] ?? null),
-            scope: self::parseScope($envelope['scope'] ?? null),
+            generated: self::parseGenerated($envelope['generated'] ?? null, $path),
+            scope: self::parseScope($envelope['scope'] ?? null, $path),
             entries: $entries,
             inertEntries: $inertEntries,
             sourceContentHash: $canonical['contentHash'],
@@ -170,10 +188,10 @@ final readonly class BaselineLoader
      * removal or the shortened occurrence key {@see BaselineFormatVersion::CURRENT}
      * introduces.
      */
-    private function assertVersion(mixed $version): void
+    private function assertVersion(mixed $version, string $path): void
     {
         if (!\is_int($version)) {
-            throw new BaselineLoadException('Baseline "version" must be an integer');
+            throw self::refusal($path, 'Baseline "version" must be an integer');
         }
 
         if ($version === BaselineFormatVersion::CURRENT) {
@@ -182,10 +200,10 @@ final readonly class BaselineLoader
 
         $reason = self::REJECTED_VERSION_REASONS[$version] ?? null;
         if ($reason !== null) {
-            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) BaselineFormatVersion::CURRENT]));
+            throw self::refusal($path, strtr($reason, ['%v%' => (string) BaselineFormatVersion::CURRENT]));
         }
 
-        throw new BaselineLoadException(\sprintf(
+        throw self::refusal($path, \sprintf(
             'Unsupported baseline version: %d. Expected version %d.',
             $version,
             BaselineFormatVersion::CURRENT,
@@ -209,10 +227,10 @@ final readonly class BaselineLoader
      * carry that wrote an envelope this loader refuses would produce a file
      * only one half of the capability can read.
      */
-    public static function parseGenerated(mixed $generated): DateTimeImmutable
+    public static function parseGenerated(mixed $generated, string $path): DateTimeImmutable
     {
         if (!\is_string($generated)) {
-            throw new BaselineLoadException('Baseline "generated" must be a string (ISO 8601 datetime)');
+            throw self::refusal($path, 'Baseline "generated" must be a string (ISO 8601 datetime)');
         }
 
         foreach (self::GENERATED_FORMATS as $format) {
@@ -224,7 +242,7 @@ final readonly class BaselineLoader
             }
         }
 
-        throw new BaselineLoadException(\sprintf(
+        throw self::refusal($path, \sprintf(
             'Baseline "generated" must be an ISO 8601 datetime with an offset (for example '
             . '2026-08-05T12:00:00+03:00), got: %s',
             $generated,
@@ -240,19 +258,19 @@ final readonly class BaselineLoader
      *
      * @return list<string>
      */
-    public static function parseScope(mixed $scope): array
+    public static function parseScope(mixed $scope, string $path): array
     {
         if (!\is_array($scope) || !array_is_list($scope)) {
-            throw new BaselineLoadException('Baseline "scope" must be an array of analysed paths');
+            throw self::refusal($path, 'Baseline "scope" must be an array of analysed paths');
         }
 
         $paths = [];
-        foreach ($scope as $path) {
-            if (!\is_string($path)) {
-                throw new BaselineLoadException('Baseline "scope" must hold strings');
+        foreach ($scope as $scopePath) {
+            if (!\is_string($scopePath)) {
+                throw self::refusal($path, 'Baseline "scope" must hold strings');
             }
 
-            $paths[] = $path;
+            $paths[] = $scopePath;
         }
 
         return $paths;
@@ -269,10 +287,10 @@ final readonly class BaselineLoader
      *
      * @return array{list<BaselineEntry>, list<InertBaselineEntry>}
      */
-    private function parseEntries(mixed $entries): array
+    private function parseEntries(mixed $entries, string $path): array
     {
         if (!\is_array($entries)) {
-            throw new BaselineLoadException('Baseline "entries" must be an object');
+            throw self::refusal($path, 'Baseline "entries" must be an object');
         }
 
         $parsed = [];

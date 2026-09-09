@@ -21,8 +21,13 @@ External owners use only the contracts in `Contract/`:
   subset of them.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
-- `ArchitectureConfigurationException` and `ArchitecturePreparationException`
-  are the Console-facing failures.
+- Configuration and preparation failures are surfaced as
+  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`,
+  addressed to `ConfigurationSource::Resolved` because Architecture validates
+  the already-merged document and cannot attribute a rejected value back to
+  one file or CLI option. The two capability-owned exception classes this
+  replaced are retired and kept only until a later cleanup removes them and
+  their remaining Console-side callers.
 
 The concrete `ArchitecturePolicy` owns configured and prepared state for one
 run. It resets before a new configuration and before disabled preparation; no

@@ -20,8 +20,10 @@ Configuration/
 ├── Contract/
 │   ├── ConfigurationDocument.php # immutable ordered source contributions
 │   ├── Discovery/                # Composer autoload-path reader
-│   ├── Exception/                # configuration load error
-│   └── Pipeline/                 # resolution request and pipeline contracts
+│   ├── Exception/                # ConfigLoadException — retired, pending removal (see Refusal/)
+│   ├── Pipeline/                 # resolution request and pipeline contracts
+│   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
+│                                  # refusal by user input, and its origin/position vocabulary
 ├── Discovery/          # Composer metadata reader
 ├── Loader/             # YAML load and section normalization
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
@@ -170,7 +172,7 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
 ## Definition of Done
 
 - The same input layers resolve deterministically and invalid document data
-  fails with `ConfigLoadException`.
+  fails with `ConfigurationRefusal` (`Contract/Refusal/`).
 - Two analysis invocations in one process do not leak owner-local runtime or
   rule-option state.
 - Every new YAML key is added to `ConfigSchema` and consumed by its natural

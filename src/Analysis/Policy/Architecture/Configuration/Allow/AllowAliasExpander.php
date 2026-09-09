@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 /**
  * Expands a user-written list of {@code relations:} tokens into a deduplicated
@@ -29,7 +32,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationE
  * yields {@code [Extends, Implements, TraitUse]} (the trailing `extends` is
  * absorbed by the alias expansion that already includes it).
  *
- * Errors are surfaced as {@see ArchitectureConfigurationException} so the configuration
+ * Errors are surfaced as {@see ConfigurationRefusal} so the configuration
  * pipeline can prepend its own user-facing path prefix.
  */
 final class AllowAliasExpander
@@ -82,8 +85,8 @@ final class AllowAliasExpander
      * next to the rest of the alias-expansion concern.
      *
      *
-     * @throws ArchitectureConfigurationException When the shape contract is violated or a
-     *                                            token cannot be expanded.
+     * @throws ConfigurationRefusal When the shape contract is violated or a
+     *                              token cannot be expanded.
      *
      * @return list<DependencyType>|null
      */
@@ -94,15 +97,17 @@ final class AllowAliasExpander
         }
 
         if (!\is_array($raw) || !array_is_list($raw)) {
-            throw new ArchitectureConfigurationException(
-                'architecture',
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
                 \sprintf('%s.relations: must be a list of relation kinds or aliases.', $context),
             );
         }
 
         if ($raw === []) {
-            throw new ArchitectureConfigurationException(
-                'architecture',
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
                 \sprintf(
                     "%s.relations: must list at least one relation kind. " .
                     'Use a bare target (e.g. `- target_layer` instead of `- target: target_layer`) ' .
@@ -125,8 +130,8 @@ final class AllowAliasExpander
      * @param string $context User-facing config path prefix used in error messages
      *                        (e.g. {@code architecture.allow.app[0]}).
      *
-     * @throws ArchitectureConfigurationException When a token is neither a direct
-     *                                            {@see DependencyType} value nor a known alias.
+     * @throws ConfigurationRefusal When a token is neither a direct
+     *                              {@see DependencyType} value nor a known alias.
      *
      * @return list<DependencyType>
      */
@@ -137,8 +142,9 @@ final class AllowAliasExpander
 
         foreach ($tokens as $index => $token) {
             if (!\is_string($token) || $token === '') {
-                throw new ArchitectureConfigurationException(
-                    'architecture',
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open([...explode('.', $context), 'relations', (string) $index], (string) $index),
                     \sprintf(
                         '%s.relations[%d]: each entry must be a non-empty string.',
                         $context,
@@ -178,8 +184,12 @@ final class AllowAliasExpander
             return [$direct];
         }
 
-        throw new ArchitectureConfigurationException(
-            'architecture',
+        $accepted = [...self::acceptedDirectValues(), ...array_keys(self::ALIASES)];
+        sort($accepted);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed([...explode('.', $context), 'relations'], $token, $accepted),
             \sprintf(
                 "%s.relations: unknown relation kind '%s'. Known direct values: %s. Known aliases: %s.",
                 $context,
@@ -187,6 +197,15 @@ final class AllowAliasExpander
                 self::renderDirectValues(),
                 self::renderAliases(),
             ),
+        );
+    }
+
+    /** @return list<string> */
+    private static function acceptedDirectValues(): array
+    {
+        return array_map(
+            static fn(DependencyType $type): string => $type->value,
+            DependencyType::cases(),
         );
     }
 

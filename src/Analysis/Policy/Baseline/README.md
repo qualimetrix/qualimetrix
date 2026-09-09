@@ -29,9 +29,8 @@ Baseline/
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
-├── BaselineLoader.php           # Loads the exact typed-subject version 13 file
+├── BaselineLoader.php           # Loads the exact typed-subject version 13 file; envelope failures throw ConfigurationRefusal (Analysis/Configuration)
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
-├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
 ├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename

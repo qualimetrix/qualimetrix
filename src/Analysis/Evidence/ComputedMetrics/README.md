@@ -35,7 +35,10 @@ ComputedMetrics/
 │   ├── Evaluation/                   # concrete evaluation service consumed by Run
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
-│   └── ComputedMetricContributionReader.php
+│   ├── ComputedMetricContributionReader.php
+│   ├── ComputedMetricEntryKeys.php           # declared entry-key set, formula-key set, six health names
+│   ├── ComputedMetricEntryKeyRecognition.php # refuses every entry key neither depth answers for
+│   └── ComputedMetricRefusalWording.php      # the words of every refusal this section raises
 ├── Finding/
 │   └── ComputedMetricFindingBuilder.php
 ├── ComputedMetricAnalysis.php        # instance-owned catalog and configuration facade
@@ -112,16 +115,28 @@ are not public, and neither taxonomy namespace is an allow target.
   validation and `health.overall` weight normalization.
 - Definitions may reference other computed metrics; cycles and unknown
   references fail configuration before publication.
+- Every entry answers to a declared vocabulary, not an open one read by
+  `isset()`: `ComputedMetricEntryKeys::acceptedEntryKeys()` names the nine
+  keys a `computed_metrics.<name>` entry may carry,
+  `acceptedFormulaKeys()` the three level words `formulas:` may carry, and
+  `acceptedHealthNames()` the six short names a `health.*` entry may name. A
+  key outside its depth's declared set, a value of the wrong shape, or a
+  name outside the closed `health.*` half refuses with
+  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`
+  instead of being read silently or crashing — `ComputedMetricEntryKeyRecognition`
+  walks the keys, `ComputedMetricOverrideReader` checks every leaf value's
+  shape, and `ComputedMetricRefusalWording` holds the sentences both raise.
 
-The public YAML keys, formulas, thresholds, metric names, channel names, CLI
-behavior, and report schemas are unchanged by the ownership migration.
+Formulas, thresholds, metric names, channel names, CLI behavior, and report
+schemas are unchanged by the ownership migration. The YAML keys are not: a
+key or value form nothing previously read now refuses (see `CHANGELOG.md`).
 
 ## Tests
 
 Owned tests live under `tests/Analysis/Evidence/ComputedMetrics/`. The
-materialized P5-F2 slice contains 28 PHPUnit classes, 281 discovered IDs, one
-support class, and no fixtures when the three retained Reporting assembly tests
-are included. Topology tests classify 42 raw relations exactly: 37 classified
+materialized slice contains 30 PHPUnit classes (two added for the declared
+entry-key vocabulary), one support class, and no fixtures when the three
+retained Reporting assembly tests are included. Topology tests classify 42 raw relations exactly: 37 classified
 relations (21 non-Health and 16 Health) plus five unchanged composed carriers.
 The classified set includes `ResolvedComputedMetricDefinitions` relations to
 `AnalysisRuntimeConfigurator`, `RuleInputValidator`, and

@@ -178,6 +178,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSupportsYamlExtension
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForInvalidYaml
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForScalarValue
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsWhenFileIsNotReadable
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsWhenFileNotFound
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itDropsUnknownKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCacheSectionIntoDottedKeys
@@ -243,6 +244,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAPathContainingASlashAsAFilePath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAYamlExtensionAsAFilePath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itTreatsAYmlExtensionAsAFilePath
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itAcceptsAConfigNotNamingAnyRetiredOption
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredCliOptionUnderAnExplicitlyPassedOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredCliOptionWithTheRuleOptDoorAsItsDefaultOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredKeyInsideARulesBlockWithTheConfigFileOrigin
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredSuppressionOptionsTest::itRefusesARetiredRootKeyWithTheConfigFileOriginAndAnOpenPosition
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itReplacesResultsAcrossSequentialPrepares
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itResetsPreparedCyclesWithoutTraversingTheGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itDetectsDirectCycle
@@ -1559,6 +1565,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidComputedName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidHealthName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidMultiSegmentName
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itAcceptsANullFormulasBlockTheSameAsAnOmittedOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itAcceptsEveryDeclaredEntryKeyWithoutRefusing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAFormulaKeyThatIsARealLevelWordNotReportedAt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAFormulaKeyThatIsNotALevelAtAll
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesAnUnknownEntryKeyPrintingItAsReceived
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeyRecognitionTest::itRefusesFormulasThatIsNotAMap
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresSixSortedHealthNamesIncludingOverall
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresTheNineEntryKeys
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itDeclaresTheThreeFormulaKeys
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itKeepsAUserChosenNameAsOneOpaqueSegment
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEntryKeysTest::itSlicesAHealthNameAtTheReservedPrefix
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itAcceptsAMetricPresentOnlyOnSomeSymbolsAsKnown
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itAveragesComplexityHealthPerMethodRatherThanPerClassAtNamespaceLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itBoostsCohesionHealthForClassesWithPureMethods
@@ -1638,6 +1655,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesTheUniqueExactClassDeclarationAsTheLogicalClassPresentationLocation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAFormulaReferencingAKnownCatalogKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsAKnownAggregationSuffixOnACatalogKey
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsANullEntryAsAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"class"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted"project"
@@ -1654,15 +1672,30 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulaSingular
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulasPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthThresholdOnly
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itPositionsAnUnknownHealthDimensionAtTheShortName
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanEnabled
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonBooleanInverted
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericError
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonNumericWarning
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringDescription
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringFormulaShorthand
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesANonStringFormulasElement
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesARepeatedLevelInAnOverrideToo
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAUserDefinedMetricNameEndingInALevelWord
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnEntryThatIsFalseWithAHintAboutEnabledFalse
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnEntryThatIsNotAMap
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesAnUnknownKeyEvenWhenTheEntryIsDisabled
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"bare name, no prefix segment"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"callable"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"class"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"file"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"project"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesLevelsWrittenAsAScalarInsteadOfAList
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesTheFirstUnknownKeyInDocumentOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itResolveWithEmptyConfigReturns6Defaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"callable"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"file"
@@ -4564,10 +4597,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itTreatsAttributeAsAStandaloneTokenNotAnAlias
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAGlobAllowSelectorThatMatchesNoCurrentRegistryLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAnExactDirectedAcyclicGraph
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheAllowValidatorThrows
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheCoverageValidatorThrows
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAddressesTheResolvedDocumentWhenTheLayersValidatorThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAssemblesLayersAllowAndCoverageIntoOneConfiguration
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheAllowValidatorThrows
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheCoverageValidatorThrows
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheArchitectureConfigPathWhenTheLayersValidatorThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsPresetLayersWhileMergingAllowAndCoverageAcrossContributions
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsTheLayersListWhenAnOverlayOmitsIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itListsEveryUnknownTopLevelKeyInTheException
@@ -4594,6 +4627,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsBothRelationsAndAllowCrossInstanceInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAcceptsMatchingMultiSegmentShapes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itAddressesTheResolvedDocumentForAllErrors
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesAMixOfRelationsAliasAndDirectValuesInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDeduplicatesDuplicateExactTargets
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itDefaultsAllowCrossInstanceToFalseInALongFormAllowEntry
@@ -4642,7 +4676,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itSkipsRegistryCrossValidationForAGlobTargetSelector
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itStillRejectsAnUnknownLayerForAnExactSource
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest::itUsesArchitectureAsTheConfigPathForAllErrors
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itAddressesTheResolvedDocumentForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itDefaultsToIgnoreWhenValueIsNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesCoverageValuesCaseInsensitively
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itParsesError
@@ -4651,11 +4685,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsABooleanCoverageValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsACoverageValueOfTheWrongType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itRejectsAnUnknownCoverageValue
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\CoverageValidatorTest::itReportsArchitectureAsTheConfigPathForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itAcceptsEmptyAndAcyclicExactGraphs
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itDoesNotProjectGlobOrCapturedSelectorsAsConcreteNodes
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itReportsADeterministicClosedCyclePath
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\ExactAllowCycleValidatorTest::itTreatsDisjointRelationFiltersAsADeclaredCycle
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itCountsInvalidArgumentExceptionThrowsInTheMembershipCallTreeAsZeroOneTwo
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itKeepsTheMembershipTryBodyToOneCallAndTheCatchToTheTwoNamedTypes
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorMembershipRefusalGuardTest::itLetsEmptyMembershipCriteriaReachTheConfigurationCarrier
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsADeclaredCaptureVariableInATemplateLayersExcludePatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAFqnStringForAFullyQualifiedCriterion"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAFqnStringForAFullyQualifiedCriterion"extends"
@@ -4668,6 +4704,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAShortClassNameForTheSuffixCriterion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsStringShorthandForExcludeCriterionLists
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsThePendingFlagAndCarriesItOntoTheDefinition
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAddressesTheResolvedDocumentForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"attributes"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll"implements"
@@ -4758,7 +4795,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsPendingOnATemplateLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheLegacyMapShapeForLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsTheSingleKeyMapShorthandForALayerEntry
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itReportsTheArchitectureConfigPathForEveryError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itTreatsATrailingBackslashPatternAsTheSameDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itAccumulatesMultipleSelfGlobEntriesIntoASingleWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\WildcardSelfAllowDetectorTest::itEmitsNoWarningForACapturedSelfReferenceBoundAtRuntime
@@ -5543,6 +5579,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileWithNoEntries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecordsTheContentHashOfTheFileItRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRefusesAnUnreadableEnvelopeAsAWholeDocumentCarrier
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#2

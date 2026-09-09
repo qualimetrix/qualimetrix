@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 
 #[CoversClass(YamlConfigLoader::class)]
@@ -118,10 +118,35 @@ YAML);
     {
         $path = $this->tempDir . '/nonexistent.yaml';
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Configuration file not found');
 
         $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itThrowsWhenFileIsNotReadable(): void
+    {
+        if (\function_exists('posix_getuid') && posix_getuid() === 0) {
+            self::markTestSkipped('root ignores file permission bits, so this refusal is unreachable here.');
+        }
+
+        $path = $this->tempDir . '/unreadable.yaml';
+        file_put_contents($path, "rules:\n  size.loc: {}\n");
+        chmod($path, 0o000);
+
+        try {
+            if (is_readable($path)) {
+                self::markTestSkipped('the filesystem does not honour the permission bits this test relies on.');
+            }
+
+            self::expectException(ConfigurationRefusal::class);
+            self::expectExceptionMessage('Configuration file is not readable');
+
+            $this->loader->load($path);
+        } finally {
+            chmod($path, 0o644);
+        }
     }
 
     #[Test]
@@ -135,7 +160,7 @@ rules:
       syntax: [
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Failed to parse configuration file');
 
         $this->loader->load($path);
@@ -147,7 +172,7 @@ YAML);
         $path = $this->tempDir . '/scalar.yaml';
         file_put_contents($path, 'just a string');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('is not valid YAML format');
 
         $this->loader->load($path);
@@ -182,7 +207,7 @@ unknown_key: some_value
 another_bad_key: true
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         // Error message should show original key names (snake_case), not camelCase
         self::expectExceptionMessage('"unknown_key", "another_bad_key"');
 
@@ -195,7 +220,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'rules: not_an_array');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"rules" must be an associative array');
 
         $this->loader->load($path);
@@ -210,7 +235,7 @@ rules:
   complexity: "invalid string value"
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Rule "complexity" configuration must be an array, boolean, or null');
 
         $this->loader->load($path);
@@ -252,7 +277,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'cache: not_an_array');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"cache" must be an associative array');
 
         $this->loader->load($path);
@@ -264,7 +289,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'namespace: not_an_array');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown configuration key: "namespace"');
 
         $this->loader->load($path);
@@ -276,7 +301,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'disabled_rules: not_a_list');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"disabled_rules" must be a list');
 
         $this->loader->load($path);
@@ -319,7 +344,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'suppress_paths: not_a_list');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"suppress_paths" must be a list');
 
         $this->loader->load($path);
@@ -398,7 +423,7 @@ YAML);
         try {
             $this->loader->load($path);
             self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
-        } catch (ConfigLoadException $e) {
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString(
                 \sprintf('The "%s" option was retired', $authored),
                 $e->getMessage(),
@@ -484,7 +509,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "cache:\n  enabled: \"false\"\n");
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid value for "cache.enabled": expected boolean, got string');
 
         $this->loader->load($path);
@@ -496,7 +521,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "parallel:\n  workers: \"four\"\n");
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid value for "parallel.workers": expected integer, got string');
 
         $this->loader->load($path);
@@ -508,7 +533,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "memory_limit: 12345\n");
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid value for "memory_limit": expected string, got integer');
 
         $this->loader->load($path);
@@ -520,7 +545,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "include_generated: \"yes\"\n");
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid value for "include_generated": expected boolean, got string');
 
         $this->loader->load($path);
@@ -659,7 +684,7 @@ cache:
   typo_key: something
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
 
         $this->loader->load($path);
@@ -674,7 +699,7 @@ namespace:
   straetgy: psr4
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown configuration key: "namespace"');
 
         $this->loader->load($path);
@@ -689,7 +714,7 @@ parallel:
   worker: 4
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "workers"?');
 
         $this->loader->load($path);
@@ -704,7 +729,7 @@ cahce:
   enabled: true
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "cache"?');
 
         $this->loader->load($path);
@@ -720,8 +745,8 @@ YAML);
 
         try {
             $this->loader->load($path);
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('"zzzzzzz"', $e->getMessage());
             self::assertStringNotContainsString('did you mean', $e->getMessage());
         }
@@ -737,7 +762,7 @@ cache:
   baz: qux
 YAML);
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Unknown keys in "cache" section');
 
         $this->loader->load($path);
@@ -754,8 +779,8 @@ YAML);
 
         try {
             $this->loader->load($path);
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('Allowed keys: dir, enabled', $e->getMessage());
         }
     }
@@ -766,7 +791,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'architecture: false');
 
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"architecture" must be an associative array');
 
         $this->loader->load($path);
@@ -779,7 +804,7 @@ YAML);
         file_put_contents($path, 'computed_metrics: not_a_map');
 
         // Belongs to the same associativeRootKeys() family — verify symmetry with rules
-        self::expectException(ConfigLoadException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('"computed_metrics" must be an associative array');
 
         $this->loader->load($path);

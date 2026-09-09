@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -190,21 +189,48 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains('computed.foo', $names);
     }
 
+    /**
+     * A typo in a `health.*` name is refused the same way whether the entry
+     * carries `enabled: false` or a formula — the two paths that used to
+     * disagree ({@see itThrowsForReservedHealthPrefixOnNewMetric()} is the
+     * other) collapse into one refusal, raised before either branch runs.
+     */
     #[Test]
     public function itDisablingUnknownHealthDimensionThrowsTailoredError(): void
     {
-        // Typo in the YAML key for `enabled: false` on a health metric must produce an
-        // error that points at the actual source (`computed_metrics.health.X.enabled`),
-        // not at `--exclude-health` / `exclude_health`.
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('Unknown health dimension "health.typying"');
-        self::expectExceptionMessage('computed_metrics.health.typying.enabled: false');
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Computed metric name "health.typying" is not a known "health.*" dimension');
+        self::expectExceptionMessage('health.overall');
 
         $this->resolver->resolve([
             'health.typying' => [
                 'enabled' => false,
             ],
         ]);
+    }
+
+    /**
+     * The position pins the split rule of `02-computed-metric-keys.md` §2: a
+     * `health.*` name is sliced at the reserved prefix, so the position's last
+     * segment is the short dimension name, not the whole `health.typying`.
+     */
+    #[Test]
+    public function itPositionsAnUnknownHealthDimensionAtTheShortName(): void
+    {
+        try {
+            $this->resolver->resolve(['health.typying' => ['enabled' => false]]);
+            self::fail('Expected a refusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['computed_metrics', 'health', 'typying'], $position->segments());
+            self::assertSame('typying', $position->written());
+            self::assertTrue($position->isClosed());
+            self::assertSame(
+                ['cohesion', 'complexity', 'coupling', 'maintainability', 'overall', 'typing'],
+                $position->accepted(),
+            );
+        }
     }
 
     #[Test]
@@ -225,7 +251,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         // Unknown name in the excludeHealth arg must surface as an error from
         // HealthFormulaExcluder (different source than enabled:false, different message).
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown health dimension.*nonexistent/');
 
         $this->resolver->resolve([], ['nonexistent']);
@@ -268,7 +294,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itRefusesARepeatedLevel(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('declares the same level more than once');
 
         $this->resolver->resolve([
@@ -282,7 +308,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itRefusesARepeatedLevelInAnOverrideToo(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('declares the same level more than once');
 
         $this->resolver->resolve([
@@ -301,7 +327,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itRefusesAUserDefinedMetricNameEndingInALevelWord(): void
     {
-        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must not end in the level word "class"');
 
         $this->resolver->resolve([
@@ -332,7 +358,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[DataProvider('provideLevelWordsEndingAName')]
     public function itRefusesEveryLevelWordAsTheLastSegment(string $name): void
     {
-        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         $this->resolver->resolve([
             $name => [
@@ -345,7 +371,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThrowsForInvalidPrefix(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
         $this->resolver->resolve([
@@ -506,11 +532,17 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
+    /**
+     * `health.custom` with a formula used to answer "reserved prefix", a
+     * different message from the same name with `enabled: false`
+     * ({@see itDisablingUnknownHealthDimensionThrowsTailoredError()}). Both
+     * paths now raise the one unified "not a known dimension" refusal.
+     */
     #[Test]
     public function itThrowsForReservedHealthPrefixOnNewMetric(): void
     {
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('reserved "health.*" prefix');
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Computed metric name "health.custom" is not a known "health.*" dimension');
 
         $this->resolver->resolve([
             'health.custom' => [
@@ -599,7 +631,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[DataProvider('provideLevelWordsAComputedMetricCannotReportAt')]
     public function itStillRefusesLevelsAComputedMetricCannotReportAt(string $spelling): void
     {
-        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage(\sprintf(
             'Computed metric level "%s" is not supported; computed metrics report at "class", "namespace" or "project" only.',
             $spelling,
@@ -616,7 +648,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThrowsForAWordThatIsNotALevelAtAll(): void
     {
-        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Invalid computed metric level: "bogus"');
 
         $this->resolver->resolve([
@@ -692,7 +724,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThrowsWhenThresholdMixedWithWarning(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold"');
 
         $this->resolver->resolve([
@@ -706,13 +738,196 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[Test]
     public function itThrowsWhenThresholdMixedWithError(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         $this->resolver->resolve([
             'health.complexity' => [
                 'threshold' => 45.0,
                 'error' => 30.0,
             ],
+        ]);
+    }
+
+    /**
+     * The two measured crashes `02-computed-metric-keys.md` §9 names as the
+     * regression this stage exists to close: what used to be a `TypeError`
+     * out of `mapLevel(string)` is now a refusal raised before `array_map()`
+     * ever runs, and `mapLevel()` is provably never called with a non-string.
+     */
+    #[Test]
+    public function itRefusesAMapWhereLevelsExpectsAListInsteadOfCrashing(): void
+    {
+        try {
+            $this->resolver->resolve([
+                'computed.x' => [
+                    'formula' => '1+1',
+                    'levels' => ['class' => ['warning' => 1]],
+                ],
+            ]);
+            self::fail('Expected a refusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['computed_metrics', 'computed.x', 'levels'], $position->segments());
+        }
+    }
+
+    #[Test]
+    public function itRefusesTheFirstUnknownKeyInDocumentOrder(): void
+    {
+        try {
+            $this->resolver->resolve([
+                'health.complexity' => ['warnign' => 60, 'erorr' => 30],
+            ]);
+            self::fail('Expected a refusal.');
+        } catch (ConfigurationRefusal $refusal) {
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['computed_metrics', 'health', 'complexity', 'warnign'], $position->segments());
+            self::assertSame('warnign', $position->written());
+            self::assertSame(
+                ['description', 'enabled', 'error', 'formula', 'formulas', 'inverted', 'levels', 'threshold', 'warning'],
+                $position->accepted(),
+            );
+            self::assertTrue($position->isClosed());
+        }
+    }
+
+    /**
+     * An unknown key on a *record* refuses even when the entry also carries
+     * `enabled: false` — the ordering this stage's §6 fixes, because the walk
+     * now runs before the `enabled` branch instead of never running at all.
+     */
+    #[Test]
+    public function itRefusesAnUnknownKeyEvenWhenTheEntryIsDisabled(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "bogusKey"');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formula' => '1', 'enabled' => false, 'bogusKey' => 1],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesAnEntryThatIsNotAMap(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('must be a map of options');
+
+        $this->resolver->resolve(['computed.x' => 5]);
+    }
+
+    #[Test]
+    public function itAcceptsANullEntryAsAnAbsentOverride(): void
+    {
+        $result = $this->resolver->resolve(['health.complexity' => null]);
+
+        self::assertCount(6, $result);
+    }
+
+    #[Test]
+    public function itRefusesAnEntryThatIsFalseWithAHintAboutEnabledFalse(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('{enabled: false}');
+
+        $this->resolver->resolve(['computed.x' => false]);
+    }
+
+    #[Test]
+    public function itRefusesANonStringFormulaShorthand(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "formula" of computed metric "computed.x" must be a string');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formula' => 5, 'levels' => ['namespace']],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesANonStringDescription(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "description" of computed metric "computed.x" must be a string');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formula' => '1', 'levels' => ['namespace'], 'description' => 5],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesANonBooleanInverted(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "inverted" of computed metric "computed.x" must be a boolean');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formula' => '1', 'levels' => ['namespace'], 'inverted' => 'yes'],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesANonBooleanEnabled(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "enabled" of computed metric "health.complexity" must be a boolean');
+
+        $this->resolver->resolve(['health.complexity' => ['enabled' => 'false']]);
+    }
+
+    #[Test]
+    public function itRefusesANonNumericThreshold(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "threshold" of computed metric "health.complexity" must be a number or null');
+
+        $this->resolver->resolve(['health.complexity' => ['threshold' => 'abc']]);
+    }
+
+    /**
+     * `warning: abc` used to silently drop the threshold to `null` instead of
+     * refusing — a change in behaviour, not just a missed value, because it
+     * altered which findings the metric produced without saying a word.
+     */
+    #[Test]
+    public function itRefusesANonNumericWarning(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "warning" of computed metric "health.complexity" must be a number or null');
+
+        $this->resolver->resolve(['health.complexity' => ['warning' => 'abc']]);
+    }
+
+    #[Test]
+    public function itRefusesANonNumericError(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "error" of computed metric "health.complexity" must be a number or null');
+
+        $this->resolver->resolve(['health.complexity' => ['error' => 'abc']]);
+    }
+
+    #[Test]
+    public function itRefusesANonStringFormulasElement(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('The "formulas.class" value of computed metric "computed.x" must be a string');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formulas' => ['class' => 5], 'levels' => ['class']],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesLevelsWrittenAsAScalarInsteadOfAList(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('"levels" of computed metric "computed.x" must be a list');
+
+        $this->resolver->resolve([
+            'computed.x' => ['formula' => '1', 'levels' => 'class'],
         ]);
     }
 

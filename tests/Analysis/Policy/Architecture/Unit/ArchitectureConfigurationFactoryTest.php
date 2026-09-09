@@ -7,11 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -187,7 +188,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itRejectsAnExactSelfLoopBeforeAnalysis(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('service -> service');
 
@@ -204,7 +205,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itRejectsAnExactTwoLayerCycleBeforeAnalysis(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('controller -> service -> controller');
 
@@ -223,7 +224,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itRejectsAnExactTransitiveCycleBeforeAnalysis(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('application -> domain -> persistence -> application');
 
@@ -285,7 +286,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         // Demonstrates the orchestration handoff: the registry's layerNames()
         // is what AllowValidator consults.
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
 
         $this->factory->fromArray([
@@ -305,9 +306,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         try {
             $this->factory->fromArray(['foo', 'bar']);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertStringContainsString('sequential list is not allowed', $e->getMessage());
         }
     }
@@ -319,9 +320,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             $this->factory->fromArray([
                 'layres' => [],
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertStringContainsString('layres', $e->getMessage());
             self::assertStringContainsString('Allowed keys', $e->getMessage());
             self::assertStringContainsString('layers', $e->getMessage());
@@ -336,9 +337,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
                 'imports' => ['some.yaml'],
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertStringContainsString('imports', $e->getMessage());
         }
     }
@@ -352,8 +353,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'foo' => 1,
                 'bar' => 2,
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('foo', $e->getMessage());
             self::assertStringContainsString('bar', $e->getMessage());
             self::assertStringContainsString('unknown keys', $e->getMessage());
@@ -361,47 +362,47 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // configPath is "architecture" for all errors (factory + validators)
+    // origin()->source() is Resolved for all errors (factory + validators)
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function itCarriesTheArchitectureConfigPathWhenTheLayersValidatorThrows(): void
+    public function itAddressesTheResolvedDocumentWhenTheLayersValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
                 'layers' => 'not-a-list',
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 
     #[Test]
-    public function itCarriesTheArchitectureConfigPathWhenTheAllowValidatorThrows(): void
+    public function itAddressesTheResolvedDocumentWhenTheAllowValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
                 'layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]],
                 'allow' => 'wrong',
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 
     #[Test]
-    public function itCarriesTheArchitectureConfigPathWhenTheCoverageValidatorThrows(): void
+    public function itAddressesTheResolvedDocumentWhenTheCoverageValidatorThrows(): void
     {
         try {
             $this->factory->fromArray([
                 'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
                 'coverage-gap' => 'verbose',
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 
@@ -489,9 +490,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                     'controller' => ['domain-{m'],
                 ],
             ]);
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertStringContainsString('architecture.allow.controller[0]', $e->getMessage());
             self::assertStringContainsString("unbalanced '{'", $e->getMessage());
         }

@@ -68,10 +68,12 @@ rule accept different key sets and the map cannot be derived from parameter
 types.
 
 `RuleOptionKeyRecognition` compares what the user wrote against those
-declarations at both depths and refuses — `ConfigLoadException`, which `check`
-prints as `Configuration error: …` and exits 3 on — the first key in document
-order that nothing at its depth answers for. `RuleOptionsFactory` calls it on
-the user-written config, after the framework keys are taken out and before
+declarations at both depths and refuses — `ConfigurationRefusal`
+(`Analysis\Configuration\Contract\Refusal`), which `check` prints as
+`Configuration error: …` and exits 3 on, uniformly across commands — the
+first key in document order that nothing at its depth answers for.
+`RuleOptionsFactory` calls it on the user-written config, after the
+framework keys are taken out and before
 `fromArray()`. A key the class declared as answered by itself passes through
 untouched, so `fromArray()` may refuse it in its own words; the three framework
 keys (`suppress-paths`, `suppress-namespaces`, `suppress-namespace-channels`)

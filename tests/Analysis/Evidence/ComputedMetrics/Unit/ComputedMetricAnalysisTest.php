@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
@@ -51,7 +51,7 @@ final class ComputedMetricAnalysisTest extends TestCase
         try {
             $analysis->resolve($this->document([['excludeHealth' => ['unknown']]]));
             self::fail('Expected invalid configuration.');
-        } catch (InvalidArgumentException) {
+        } catch (ConfigurationRefusal) {
             self::assertNotNull($analysis->find('health.overall'));
         }
     }

@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use ReflectionClass;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
+use Throwable;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
@@ -32,7 +39,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      *
-     * @throws ComputedMetricConfigurationException If any validation fails
+     * @throws ConfigurationRefusal If any validation fails
      */
     public function validate(array $definitions): void
     {
@@ -57,27 +64,30 @@ final class ComputedMetricFormulaValidator
                     continue; // Coverage validation handles missing formulas
                 }
 
+                $levelKey = $level->value;
+
                 try {
                     $this->expression->parse($formula);
                 } catch (SyntaxError $e) {
-                    $levelKey = $level->value;
-
-                    throw new ComputedMetricConfigurationException(\sprintf(
-                        'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
+                    // Narrow on purpose: the try body is one call, and SyntaxError
+                    // is the exact family that call's contract names. Widening this
+                    // to Throwable/InvalidArgumentException would let a product
+                    // defect from inside ExpressionLanguage masquerade as a user
+                    // refusal (`00-overview.md` rule 2).
+                    throw $this->refuse(
                         $definition->name,
                         $levelKey,
-                        $e->getMessage(),
-                        $formula,
-                    ));
+                        ComputedMetricRefusalWording::invalidFormulaSyntax($definition->name, $levelKey, $e->getMessage(), $formula),
+                        $e,
+                    );
                 }
 
                 if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
-                    throw new ComputedMetricConfigurationException(\sprintf(
-                        'Computed metric "%s" reaches "m" by something other than a quoted metric key, which makes'
-                        . ' the key unverifiable. Write every access as m["<metric key>"]. Formula: %s',
+                    throw $this->refuse(
                         $definition->name,
-                        $formula,
-                    ));
+                        $levelKey,
+                        ComputedMetricRefusalWording::everyAccessMustBeALiteralIndex($definition->name, $formula),
+                    );
                 }
             }
         }
@@ -96,11 +106,11 @@ final class ComputedMetricFormulaValidator
                 if ($formula === null) {
                     $levelKey = $level->value;
 
-                    throw new ComputedMetricConfigurationException(\sprintf(
-                        'Computed metric "%s" has no formula for level "%s"',
+                    throw $this->refuse(
                         $definition->name,
                         $levelKey,
-                    ));
+                        ComputedMetricRefusalWording::noFormulaForLevel($definition->name, $levelKey),
+                    );
                 }
             }
         }
@@ -133,13 +143,18 @@ final class ComputedMetricFormulaValidator
             if (isset($inStack[$node])) {
                 $cycleStart = array_search($node, $path, true);
                 \assert($cycleStart !== false);
-                $cycle = \array_slice($path, (int) $cycleStart);
+                $cycle = array_values(\array_slice($path, (int) $cycleStart));
                 $cycle[] = $node;
 
-                throw new ComputedMetricConfigurationException(\sprintf(
-                    'Circular dependency detected in computed metrics: %s',
-                    implode(' -> ', $cycle),
-                ));
+                // The position names the node the cycle closed on — the one
+                // already in $inStack — because a carrier has one position and
+                // the chain is a fact about the whole set, not one metric's
+                // entry; the full chain is named in the summary instead.
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($node), $node),
+                    ComputedMetricRefusalWording::circularDependency($cycle),
+                );
             }
 
             if (isset($visited[$node])) {
@@ -181,12 +196,11 @@ final class ComputedMetricFormulaValidator
             foreach ($definition->formulas as $formula) {
                 foreach ($this->extractComputedMetricReferences($formula) as $ref) {
                     if (!isset($nameSet[$ref])) {
-                        throw new ComputedMetricConfigurationException(\sprintf(
-                            'Computed metric "%s" references unknown metric "%s" in formula: %s',
-                            $definition->name,
-                            $ref,
-                            $formula,
-                        ));
+                        throw ConfigurationRefusal::at(
+                            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definition->name), $definition->name),
+                            ComputedMetricRefusalWording::referencesUnknownMetric($definition->name, $ref, $formula),
+                        );
                     }
                 }
             }
@@ -236,12 +250,11 @@ final class ComputedMetricFormulaValidator
             return;
         }
 
-        throw new ComputedMetricConfigurationException(\sprintf(
-            'Computed metric "%s" references unknown metric key "%s" in formula: %s',
-            $definitionName,
-            $key,
-            $formula,
-        ));
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+            ComputedMetricRefusalWording::referencesUnknownMetricKey($definitionName, $key, $formula),
+        );
     }
 
     /**
@@ -288,4 +301,13 @@ final class ComputedMetricFormulaValidator
         return self::$catalogBaseKeys = $keys;
     }
 
+    private function refuse(string $metricName, string $level, string $summary, ?Throwable $previous = null): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($metricName), 'formulas', $level], $level),
+            $summary,
+            $previous,
+        );
+    }
 }

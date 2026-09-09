@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Loader;
 
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 interface ConfigLoaderInterface
 {
@@ -12,7 +12,7 @@ interface ConfigLoaderInterface
      * Loads configuration from the given path.
      *
      *
-     * @throws ConfigLoadException If the configuration cannot be loaded
+     * @throws ConfigurationRefusal If the configuration cannot be loaded
      *
      * @return array<string, mixed>
      */

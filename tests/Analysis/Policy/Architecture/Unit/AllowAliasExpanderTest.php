@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 #[CoversClass(AllowAliasExpander::class)]
 final class AllowAliasExpanderTest extends TestCase
@@ -213,8 +213,8 @@ final class AllowAliasExpanderTest extends TestCase
     {
         try {
             AllowAliasExpander::expand(['tipes'], 'architecture.allow.app[0]');
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
             $message = $e->getMessage();
             self::assertStringContainsString("unknown relation kind 'tipes'", $message);
             // Known direct values list MUST mention enum cases dynamically.
@@ -233,7 +233,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itRejectsAnEmptyStringToken(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a non-empty string');
 
         AllowAliasExpander::expand([''], 'architecture.allow.app[0]');
@@ -242,7 +242,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itRejectsANonStringToken(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a non-empty string');
 
         /** @phpstan-ignore-next-line — intentional malformed input */
@@ -275,7 +275,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itRejectsAnEmptyRelationsListWithABareStringHint(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must list at least one relation kind');
 
         AllowAliasExpander::parseList([], 'architecture.allow.app[0]');
@@ -287,7 +287,7 @@ final class AllowAliasExpanderTest extends TestCase
         // YAML `relations: {foo: bar}` would arrive here as an associative
         // array; rejecting it explicitly avoids a confusing downstream error
         // from `expand()`.
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a list of relation kinds or aliases');
 
         AllowAliasExpander::parseList(['foo' => 'bar'], 'architecture.allow.app[0]');
@@ -296,7 +296,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itRejectsAScalarRelationsValueWithAListHint(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a list of relation kinds or aliases');
 
         AllowAliasExpander::parseList('extends', 'architecture.allow.app[0]');

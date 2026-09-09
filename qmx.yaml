@@ -185,6 +185,9 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
@@ -1083,6 +1086,7 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-computedmetrics-health:
+      - analysis-configuration
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
       - core-neutral
@@ -1167,6 +1171,7 @@ architecture:
       - core-symbol
       - external
     analysis-policy-baseline:
+      - analysis-configuration
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding

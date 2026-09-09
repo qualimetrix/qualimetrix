@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Preset;
 
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
  * Resolves preset names to absolute file paths.
@@ -23,7 +26,7 @@ final class PresetResolver
      * Built-in names (ci, legacy, strict) resolve to bundled YAML files.
      * Values containing '/' or '\', or ending with '.yaml'/'.yml' are treated as file paths.
      *
-     * @throws ConfigLoadException If the preset name is unknown or the file does not exist
+     * @throws ConfigurationRefusal If the preset name is unknown or the file does not exist
      */
     public function resolve(string $name, string $workingDirectory): string
     {
@@ -32,8 +35,9 @@ final class PresetResolver
         }
 
         if (!$this->isBuiltIn($name)) {
-            throw new ConfigLoadException(
-                $name,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Preset, $name),
+                RefusedPosition::closed([$name], $name, self::getAvailableNames()),
                 \sprintf(
                     'Unknown preset "%s". Available presets: %s. To use a custom file, specify a path (e.g., --preset=./my-preset.yaml)',
                     $name,
@@ -76,7 +80,10 @@ final class PresetResolver
             : $workingDirectory . '/' . $path;
 
         if (!file_exists($resolvedPath)) {
-            throw ConfigLoadException::fileNotFound($resolvedPath);
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::Preset, $resolvedPath),
+                \sprintf('Configuration file not found: %s', $resolvedPath),
+            );
         }
 
         return $resolvedPath;

@@ -51,12 +51,50 @@ documented rather than undeclared, as are `max_warning` / `max_error` on
 write `callable: {enabled: false}`. An empty or omitted slot is unchanged and
 still means "leave this level at its defaults".
 
+**A `computed_metrics:` entry now declares its own vocabulary too.** An
+unrecognised key inside a `computed_metrics.<name>` entry, or inside its
+`formulas:` map, used to be dropped in silence — `warnign: 60` never applied,
+`formulas: {clas: "..."}` was never read. It now stops the run with exit 3,
+naming the key and the nine (respectively three) accepted spellings. Run
+`bin/qmx check` and fix what it refuses.
+
+**A `computed_metrics:` value of the wrong type now refuses instead of being
+dropped or changing behaviour silently.** `formula`, `description` must be a
+string; `inverted`, `enabled` must be a boolean; `levels` must be a list of
+level words; `threshold`, `warning`, `error` must be a number or `null`. Two
+of these used to be worse than silent: `warning`/`error` written with a
+non-numeric value (a typo, say) silently dropped the threshold instead of
+keeping the default, changing which findings the metric produced and which
+exit code the run ended with.
+
+**`computed_metrics.<name>` where `<name>` is not a map now refuses.**
+`computed.x: 5` used to be accepted and ignored, as if the entry were never
+written; a bare `false` gets a hint toward `{enabled: false}`, the actual
+off-switch.
+
+### Changed
+
+- The refusal for an unknown `health.<x>` name now lists all six built-in
+  dimensions (`health.complexity`, `health.cohesion`, `health.coupling`,
+  `health.typing`, `health.maintainability`, `health.overall`) instead of
+  five: the list used to be built from the five sub-dimensions and omitted
+  `health.overall`, even though `health.overall` can itself be overridden.
+  The same refusal now fires identically whether the entry carried a formula
+  or `enabled: false` — two different messages for the same typo are gone.
+
 ### Fixed
 
 - `qmx.yaml.example` no longer ships three examples that fail: the rule
   selectors under `disabled_rules:` / `only_rules:` needed the `X.*` wildcard
   form, and the custom computed-metric example still used the retired
   `ccn__avg` variable encoding.
+- `computed_metrics.<name>.levels` written as a map (a value copied from the
+  `rules:` section, which does have a per-level block) used to crash instead
+  of refusing, and the three commands that read configuration crashed
+  differently: `check` exited 1 with an "Unexpected error" and empty stdout,
+  while `directives` and `debug:layer-assignment` exited 255 with a raw PHP
+  trace on both streams. All three now refuse with exit 3 and a message
+  naming the entry and the accepted level words.
 
 ## [0.26.0] - 2026-09-08
 

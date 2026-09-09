@@ -6,7 +6,10 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -18,17 +21,27 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     public function load(string $path): array
     {
         if (!file_exists($path)) {
-            throw ConfigLoadException::fileNotFound($path);
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                \sprintf('Configuration file not found: %s', $path),
+            );
         }
 
         if (!is_readable($path)) {
-            throw new ConfigLoadException($path, \sprintf('Configuration file is not readable: %s', $path));
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                \sprintf('Configuration file is not readable: %s', $path),
+            );
         }
 
         try {
             $content = Yaml::parseFile($path);
         } catch (ParseException $e) {
-            throw ConfigLoadException::parseError($path, $e->getMessage(), $e);
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                \sprintf('Failed to parse configuration file %s: %s', $path, $e->getMessage()),
+                $e,
+            );
         }
 
         if (!\is_array($content)) {
@@ -36,7 +49,10 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 // Empty file is valid, return empty config
                 return [];
             }
-            throw ConfigLoadException::invalidFormat($path, 'YAML');
+            throw ConfigurationRefusal::aboutDocument(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                \sprintf('Configuration file %s is not valid %s format', $path, 'YAML'),
+            );
         }
 
         // Build reverse map (normalizedKey → originalKey) for user-facing error messages
@@ -223,8 +239,11 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 : \sprintf('"%s"', $original);
         }
 
-        throw ConfigLoadException::invalidStructure(
-            $path,
+        $firstOriginal = $this->originalKey($unknownKeys[array_key_first($unknownKeys)], $keyMap);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+            RefusedPosition::closed([$firstOriginal], $firstOriginal, $allowedRootKeys),
             \sprintf('Unknown configuration %s: %s', \count($messages) === 1 ? 'key' : 'keys', implode(', ', $messages)),
         );
     }
@@ -246,16 +265,23 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         if (!\is_array($config[ConfigSchema::RULES])) {
-            throw ConfigLoadException::invalidStructure(
-                $path,
-                \sprintf('"%s" must be an associative array', $this->originalKey(ConfigSchema::RULES, $keyMap)),
+            $originalRulesKey = $this->originalKey(ConfigSchema::RULES, $keyMap);
+
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                RefusedPosition::open([$originalRulesKey], $originalRulesKey),
+                \sprintf('"%s" must be an associative array', $originalRulesKey),
             );
         }
 
         foreach ($config[ConfigSchema::RULES] as $ruleName => $ruleConfig) {
             if (!\is_array($ruleConfig) && !\is_bool($ruleConfig) && $ruleConfig !== null) {
-                throw ConfigLoadException::invalidStructure(
-                    $path,
+                $originalRulesKey = $this->originalKey(ConfigSchema::RULES, $keyMap);
+                $ruleNameString = (string) $ruleName;
+
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                    RefusedPosition::open([$originalRulesKey, $ruleNameString], $ruleNameString),
                     \sprintf('Rule "%s" configuration must be an array, boolean, or null', $ruleName),
                 );
             }
@@ -278,18 +304,24 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             }
 
             if (!\is_array($config[$section])) {
-                throw ConfigLoadException::invalidStructure(
-                    $path,
-                    \sprintf('"%s" must be an associative array', $this->originalKey($section, $keyMap)),
+                $originalSection = $this->originalKey($section, $keyMap);
+
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                    RefusedPosition::open([$originalSection], $originalSection),
+                    \sprintf('"%s" must be an associative array', $originalSection),
                 );
             }
         }
 
         foreach (ConfigSchema::listKeys() as $field) {
             if (isset($config[$field]) && !\is_array($config[$field])) {
-                throw ConfigLoadException::invalidStructure(
-                    $path,
-                    \sprintf('"%s" must be a list', $this->originalKey($field, $keyMap)),
+                $originalField = $this->originalKey($field, $keyMap);
+
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                    RefusedPosition::open([$originalField], $originalField),
+                    \sprintf('"%s" must be a list', $originalField),
                 );
             }
         }
@@ -328,8 +360,15 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                     : \sprintf('"%s"', $originalSubKey);
             }
 
-            throw ConfigLoadException::invalidStructure(
-                $path,
+            $firstOriginalSubKey = $this->findOriginalSubKey($section, $unknownSubKeys[array_key_first($unknownSubKeys)], $rawConfig);
+
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                RefusedPosition::closed(
+                    [$originalSection, $firstOriginalSubKey],
+                    $firstOriginalSubKey,
+                    $this->getOriginalSectionSubKeys($section, $rawConfig),
+                ),
                 \sprintf(
                     'Unknown %s in "%s" section: %s. Allowed keys: %s',
                     \count($messages) === 1 ? 'key' : 'keys',
@@ -369,8 +408,9 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 continue;
             }
 
-            throw ConfigLoadException::invalidStructure(
-                $path,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                RefusedPosition::open(explode('.', $sourcePath), $resultKey),
                 \sprintf(
                     'Invalid value for "%s": expected %s, got %s',
                     $resultKey,

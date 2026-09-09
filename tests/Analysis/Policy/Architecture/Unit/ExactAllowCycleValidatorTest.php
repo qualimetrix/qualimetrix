@@ -7,13 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Vali
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(ExactAllowCycleValidator::class)]
@@ -48,9 +49,10 @@ final class ExactAllowCycleValidatorTest extends TestCase
                 'application' => ['domain'],
                 'domain' => ['persistence'],
             ]));
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $exception) {
-            self::assertSame('architecture', $exception->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $exception) {
+            self::assertSame(ConfigurationSource::Resolved, $exception->origin()->source());
+            self::assertNull($exception->position());
             self::assertStringContainsString(
                 'application -> domain -> persistence -> application',
                 $exception->getMessage(),
@@ -72,7 +74,7 @@ final class ExactAllowCycleValidatorTest extends TestCase
             ),
         ];
 
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('application -> domain -> application');
 
         $this->validator->validate($entries);

@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -89,7 +89,7 @@ final class ConfigFileStageTest extends TestCase
     public function itRejectsAMissingExplicitConfigPath(): void
     {
         $this->loader->expects(self::never())->method('load');
-        $this->expectException(ConfigLoadException::class);
+        $this->expectException(ConfigurationRefusal::class);
         (new ConfigFileStage($this->loader))->apply(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), $this->directory . '/missing.yaml'),
         );

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 
 final class DeadConfigurationKeysTest extends TestCase
@@ -30,7 +30,7 @@ final class DeadConfigurationKeysTest extends TestCase
         file_put_contents($path, $yaml);
 
         try {
-            $this->expectException(ConfigLoadException::class);
+            $this->expectException(ConfigurationRefusal::class);
             (new YamlConfigLoader())->load($path);
         } finally {
             @unlink($path);

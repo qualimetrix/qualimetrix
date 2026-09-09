@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Throwable;
 
 /**
  * Converts the raw YAML map under the {@code architecture:} key into a typed
@@ -47,8 +51,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * 3. Assembles the typed {@see ArchitectureConfiguration} and returns it
  *    together with the warning values.
  *
- * All structural errors surface as {@see ArchitectureConfigurationException} with the
- * logical path {@code 'architecture'}.
+ * All structural errors surface as {@see ConfigurationRefusal} addressed to
+ * the resolved document.
  *
  * **Warning delivery.** The factory does not depend on a PSR-3 logger. Architecture
  * consumes its ordered contributions through the neutral Configuration document
@@ -58,9 +62,18 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  */
 final class ArchitectureConfigurationFactory
 {
-    private const string CONFIG_PATH = 'architecture';
-
     private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage-gap', 'max_expanded_layers'];
+
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+            $previous,
+        );
+    }
 
     private readonly LayersValidator $layersValidator;
 
@@ -95,7 +108,7 @@ final class ArchitectureConfigurationFactory
      * level and rejected by structural validation below.
      *
      * Unknown top-level keys (typos like {@code layres:} or unrecognized fields
-     * like {@code imports:}) trigger a {@see ArchitectureConfigurationException} so that user
+     * like {@code imports:}) trigger a {@see ConfigurationRefusal} so that user
      * mistakes never silently disable architecture rules.
      *
      * @param array<string, mixed>|array<int, mixed> $raw
@@ -150,10 +163,7 @@ final class ArchitectureConfigurationFactory
         $merged = [];
         foreach ($contributions as $contribution) {
             if (!\is_array($contribution)) {
-                throw new \Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException(
-                    self::CONFIG_PATH,
-                    'Invalid configuration in architecture: expected an associative array.',
-                );
+                self::refuse('architecture', 'Invalid configuration in architecture: expected an associative array.');
             }
             $merged = self::mergeContribution($merged, $contribution);
         }
@@ -202,11 +212,7 @@ final class ArchitectureConfigurationFactory
         try {
             return new LayerRegistry($staticLayers);
         } catch (InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
-                \sprintf('architecture.layers: %s', $e->getMessage()),
-                $e,
-            );
+            self::refuse('architecture.layers', \sprintf('architecture.layers: %s', $e->getMessage()), $e);
         }
     }
 
@@ -247,8 +253,8 @@ final class ArchitectureConfigurationFactory
             $offending = \is_int($value)
                 ? (string) $value
                 : \sprintf('%s (%s)', get_debug_type($value), self::renderScalarForError($value));
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture.max_expanded_layers',
                 \sprintf(
                     'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %s. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
                     $offending,
@@ -289,8 +295,8 @@ final class ArchitectureConfigurationFactory
     private function validateTopLevelStructure(array $raw): void
     {
         if (array_is_list($raw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture',
                 'architecture: must be a map with keys "layers", "allow", "coverage-gap"; a sequential list is not allowed.',
             );
         }
@@ -306,8 +312,12 @@ final class ArchitectureConfigurationFactory
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        $accepted = self::ALLOWED_TOP_LEVEL_KEYS;
+        sort($accepted);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed(['architecture'], implode(', ', $unknown), $accepted),
             \sprintf(
                 'architecture: unknown %s %s. Allowed keys: %s.',
                 \count($unknown) === 1 ? 'key' : 'keys',

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
@@ -141,7 +141,7 @@ final class HealthFormulaExcluderTest extends TestCase
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessageMatches('/Unknown health dimension.*health\.nonexistent/');
 
         $excluder->applyExcludeHealth($definitions, ['nonexistent']);
@@ -223,7 +223,7 @@ final class HealthFormulaExcluderTest extends TestCase
             ),
         ];
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot auto-renormalize "health.overall"');
 
         $this->excluder->applyExcludeHealth($definitions, ['a']);

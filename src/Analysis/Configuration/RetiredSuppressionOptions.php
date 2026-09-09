@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration;
 
-use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
  * The retired `exclude*` suppression spellings, and the one refusal that names
@@ -64,9 +66,14 @@ final class RetiredSuppressionOptions
 
             foreach (array_keys($ruleConfig) as $authored) {
                 $refusal = self::refusalFor((string) $authored);
+                $authoredString = (string) $authored;
 
                 if ($refusal !== null) {
-                    throw ConfigLoadException::invalidStructure($path, $refusal);
+                    throw ConfigurationRefusal::at(
+                        ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                        RefusedPosition::open([$rulesKey, $authoredString], $authoredString),
+                        $refusal,
+                    );
                 }
             }
         }
@@ -103,8 +110,9 @@ final class RetiredSuppressionOptions
 
             $authored = $keyMap[$key] ?? $key;
 
-            throw ConfigLoadException::invalidStructure(
-                $path,
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                RefusedPosition::open([$authored], $authored),
                 self::refusalText($authored, ConfigKeySpelling::rewriteLike($replacement, $authored)),
             );
         }
@@ -126,14 +134,27 @@ final class RetiredSuppressionOptions
      * its message says so by printing them.
      *
      * @param array<array-key, mixed> $userConfig option keys as the caller received them
+     * @param ConfigurationOrigin|null $origin defaults to the `--rule-opt` door;
+     *                                         the factory door passes its own
+     *                                         because it validates a merged
+     *                                         config-file-plus-CLI map, which
+     *                                         cannot be attributed to a single
+     *                                         source ({@see ConfigurationSource::Resolved})
      */
-    public static function refuseRuleOption(array $userConfig): void
+    public static function refuseRuleOption(array $userConfig, ?ConfigurationOrigin $origin = null): void
     {
+        $origin ??= ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--rule-opt');
+
         foreach (array_keys($userConfig) as $authored) {
             $refusal = self::refusalFor((string) $authored);
+            $authoredString = (string) $authored;
 
             if ($refusal !== null) {
-                throw new InvalidArgumentException($refusal);
+                throw ConfigurationRefusal::at(
+                    $origin,
+                    RefusedPosition::open([$authoredString], $authoredString),
+                    $refusal,
+                );
             }
         }
     }

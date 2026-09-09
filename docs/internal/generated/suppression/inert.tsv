@@ -1,5 +1,7 @@
 mechanism	suppressor
 rule-namespace-suppression	coupling.class-rank: Qualimetrix\Analysis\Finding\Rule
+rule-namespace-suppression	coupling.distance: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
+rule-namespace-suppression	coupling.distance: Qualimetrix\Analysis\Policy\Architecture\Layer
 rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Coupling/*Visitor.php
 rule-path-suppression	complexity.ccn: src/Analysis/Evidence/Security/*Visitor.php

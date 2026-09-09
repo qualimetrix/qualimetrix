@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
-
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
@@ -21,7 +23,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * (ADR 0008). Behavior-preserving — the substitution rules, validation, and
  * error messages are unchanged.
  *
- * Surfaces a {@see ArchitecturePreparationException} when:
+ * Surfaces a {@see ConfigurationRefusal} when:
  * - The tuple is incomplete (a variable referenced by the template is not
  *   bound). This typically happens under {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode::Any}
  *   with multiple capture-producing patterns binding different variables.
@@ -34,7 +36,7 @@ final class LayerInstantiator
     /**
      * @param array<string, string> $bindings
      *
-     * @throws ArchitecturePreparationException
+     * @throws ConfigurationRefusal
      */
     public function instantiate(TemplateLayerDefinition $template, array $bindings): LayerDefinition
     {
@@ -47,17 +49,21 @@ final class LayerInstantiator
         // name retains literal `{var}` placeholders).
         $missing = array_values(array_diff($template->variables(), array_keys($bindings)));
         if ($missing !== []) {
-            throw new ArchitecturePreparationException(\sprintf(
-                'LayerExpansionStage: template "%s" produced an incomplete binding tuple %s — variable(s) "%s" '
-                . 'were not bound by any matching capture-producing pattern. '
-                . 'This typically happens when "match: any" is combined with multiple capture-producing patterns '
-                . 'that each bind a different variable. Switch to "match: all" so every pattern is required and '
-                . 'their bindings union, or ensure each capture-producing pattern binds every variable referenced '
-                . 'in the name template.',
-                $template->nameTemplate(),
-                self::renderBindings($bindings),
-                implode('", "', $missing),
-            ));
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers'], $template->nameTemplate()),
+                \sprintf(
+                    'LayerExpansionStage: template "%s" produced an incomplete binding tuple %s — variable(s) "%s" '
+                    . 'were not bound by any matching capture-producing pattern. '
+                    . 'This typically happens when "match: any" is combined with multiple capture-producing patterns '
+                    . 'that each bind a different variable. Switch to "match: all" so every pattern is required and '
+                    . 'their bindings union, or ensure each capture-producing pattern binds every variable referenced '
+                    . 'in the name template.',
+                    $template->nameTemplate(),
+                    self::renderBindings($bindings),
+                    implode('", "', $missing),
+                ),
+            );
         }
 
         $concreteName = CapturePattern::applySubstitution($template->nameTemplate(), $bindings);
@@ -66,14 +72,19 @@ final class LayerInstantiator
         try {
             return LayerDefinition::expanded($concreteName, $concreteMembership);
         } catch (InvalidLayerDefinitionException $e) {
-            throw new ArchitecturePreparationException(\sprintf(
-                'LayerExpansionStage: template "%s" produced invalid concrete layer name "%s" for bindings %s — %s. '
-                . 'Binding values must consist of letters, digits, hyphens, and underscores, starting with a letter.',
-                $template->nameTemplate(),
-                $concreteName,
-                self::renderBindings($bindings),
-                $e->getMessage(),
-            ), 0, $e);
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(['architecture', 'layers'], $template->nameTemplate()),
+                \sprintf(
+                    'LayerExpansionStage: template "%s" produced invalid concrete layer name "%s" for bindings %s — %s. '
+                    . 'Binding values must consist of letters, digits, hyphens, and underscores, starting with a letter.',
+                    $template->nameTemplate(),
+                    $concreteName,
+                    self::renderBindings($bindings),
+                    $e->getMessage(),
+                ),
+                $e,
+            );
         }
     }
 

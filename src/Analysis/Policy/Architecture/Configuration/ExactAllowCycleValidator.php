@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 /**
  * Rejects directed cycles in the exact-selector projection of architecture.allow.
@@ -23,12 +25,10 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationE
  */
 final class ExactAllowCycleValidator
 {
-    private const string CONFIG_PATH = 'architecture';
-
     /**
      * @param list<AllowListEntry> $entries
      *
-     * @throws ArchitectureConfigurationException
+     * @throws ConfigurationRefusal
      */
     public function validate(array $entries): void
     {
@@ -37,8 +37,8 @@ final class ExactAllowCycleValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        throw ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
             \sprintf(
                 'architecture.allow: directed cycle detected in exact declared layer graph: %s. '
                 . 'Module dependencies must form a DAG; remove at least one allow edge from this cycle.',

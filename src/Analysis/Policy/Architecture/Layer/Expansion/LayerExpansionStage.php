@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
-
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 
@@ -35,7 +37,10 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
  * never together produces zero layers, not the cartesian {@code AcmeCorp×Order}
  * combinations.
  *
- * **Failure modes** (all surface as {@see ArchitecturePreparationException}):
+ * **Failure modes** (all surface as {@see ConfigurationRefusal} — the round's
+ * decision is that they are refusals fixed by the author of the template
+ * layer, not runtime crashes, even though the triggering condition is only
+ * discoverable once the project's class set is known):
  * - Cumulative expansion exceeds {@code architecture.max_expanded_layers}.
  * - A concrete name produced by substitution collides with a static layer
  *   name (or another template-expanded name).
@@ -69,6 +74,16 @@ final class LayerExpansionStage
         $this->layerInstantiator = $layerInstantiator ?? new LayerInstantiator();
     }
 
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+        );
+    }
+
     /**
      * @param list<LayerDefinition|TemplateLayerDefinition> $entries Mixed
      *                                                               layer-and-template
@@ -81,12 +96,12 @@ final class LayerExpansionStage
      *                          layers ({@code architecture.max_expanded_layers}).
      *                          Must be positive.
      *
-     * @throws ArchitecturePreparationException
+     * @throws ConfigurationRefusal
      */
     public function expand(array $entries, ClassSet $classes, int $maxExpansion): LayerExpansionResult
     {
         if ($maxExpansion < 1) {
-            throw new ArchitecturePreparationException(\sprintf(
+            self::refuse('architecture.max_expanded_layers', \sprintf(
                 'LayerExpansionStage: max-expansion ceiling must be >= 1, got %d.',
                 $maxExpansion,
             ));
@@ -117,7 +132,7 @@ final class LayerExpansionStage
             $thisTemplateCount = \count($tuples);
             $totalTemplateExpansions += $thisTemplateCount;
             if ($totalTemplateExpansions > $maxExpansion) {
-                throw new ArchitecturePreparationException(\sprintf(
+                self::refuse('architecture.max_expanded_layers', \sprintf(
                     'LayerExpansionStage: template "%s" added %d layers (cumulative %d across all templates), '
                     . 'exceeding the architecture.max_expanded_layers ceiling of %d. '
                     . 'Raise the ceiling via architecture.max_expanded_layers in your config, '
@@ -152,7 +167,7 @@ final class LayerExpansionStage
     private static function recordName(array &$seenNames, string $name, string $source, string $origin): void
     {
         if (isset($seenNames[$name])) {
-            throw new ArchitecturePreparationException(\sprintf(
+            self::refuse('architecture.layers', \sprintf(
                 'LayerExpansionStage: layer name "%s" produced by %s "%s" collides with %s "%s". '
                 . 'Each expanded layer name must be unique — rename one of the templates or static layers.',
                 $name,

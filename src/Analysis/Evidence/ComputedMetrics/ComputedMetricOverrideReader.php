@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
@@ -24,40 +29,37 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Every operation is static because reading a document entry needs no state
  * and no collaborator; the resolver stays constructible exactly as its callers
  * already build it.
+ *
+ * Every leaf-value form this reader checks is checked here, not by the key
+ * traversal {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition}
+ * that runs before it: the traversal answers for key names and the shape of
+ * the containers it walks, this reader for what a caller — the traversal's
+ * caller included — actually does with a value, so `merge()`/`create()` stay
+ * safe no matter what already ran.
  */
 final class ComputedMetricOverrideReader
 {
     /**
-     * The levels a computed metric reports at, named once for both readers of
-     * the fact: the `formula:` shorthand writes one key per level here, and
-     * {@see mapLevel()} refuses every other level word against the same list.
-     *
-     * Three named cases rather than {@see SymbolLevel::cases()}: the set is a
-     * fact about this capability — {@see ComputedMetricDefinition}'s
-     * `formulas` and {@see ComputedMetricDefaults} have no `callable` or
-     * `file` entry — and iterating the vocabulary would silently widen both
-     * the accepted `levels:` domain and the keys the shorthand writes from
-     * three to five.
-     *
-     * @var list<SymbolLevel>
-     */
-    private const array REPORTING_LEVELS = [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project];
-
-    /**
      * Merges user overrides into an existing definition.
      *
      * @param array<string, mixed> $overrides
+     *
+     * @throws ConfigurationRefusal
      */
     public static function merge(ComputedMetricDefinition $base, array $overrides): ComputedMetricDefinition
     {
-        $thresholds = self::thresholds($overrides, $base->warningThreshold, $base->errorThreshold);
+        $name = $base->name;
+        $thresholds = self::thresholds($overrides, $base->warningThreshold, $base->errorThreshold, $name);
+        $levels = self::levels($overrides, $base->levels, $name);
+
+        self::refuseDuplicateLevel($levels, $name);
 
         return new ComputedMetricDefinition(
-            name: $base->name,
-            formulas: self::formulas($overrides, $base->formulas),
-            description: self::description($overrides, $base->description),
-            levels: self::levels($overrides, $base->levels),
-            inverted: self::inverted($overrides) ?? $base->inverted,
+            name: $name,
+            formulas: self::formulas($overrides, $base->formulas, $name),
+            description: self::description($overrides, $base->description, $name),
+            levels: $levels,
+            inverted: self::inverted($overrides, $name) ?? $base->inverted,
             warningThreshold: $thresholds['warningThreshold'],
             errorThreshold: $thresholds['errorThreshold'],
         );
@@ -71,19 +73,25 @@ final class ComputedMetricOverrideReader
      * formula, no description, not inverted, and namespace plus project.
      *
      * @param array<string, mixed> $config
+     *
+     * @throws ConfigurationRefusal
      */
     public static function create(string $name, array $config): ComputedMetricDefinition
     {
+        self::refuseInvalidNameGrammar($name);
         self::assertNameDoesNotEndInALevel($name);
 
-        $thresholds = self::thresholds($config, null, null);
+        $thresholds = self::thresholds($config, null, null, $name);
+        $levels = self::levels($config, [SymbolLevel::Namespace_, SymbolLevel::Project], $name);
+
+        self::refuseDuplicateLevel($levels, $name);
 
         return new ComputedMetricDefinition(
             name: $name,
-            formulas: self::formulas($config, []),
-            description: self::description($config, ''),
-            levels: self::levels($config, [SymbolLevel::Namespace_, SymbolLevel::Project]),
-            inverted: self::inverted($config) ?? false,
+            formulas: self::formulas($config, [], $name),
+            description: self::description($config, '', $name),
+            levels: $levels,
+            inverted: self::inverted($config, $name) ?? false,
             warningThreshold: $thresholds['warningThreshold'],
             errorThreshold: $thresholds['errorThreshold'],
         );
@@ -93,9 +101,11 @@ final class ComputedMetricOverrideReader
      * @param array<string, mixed> $config
      * @param array<string, string> $defaults
      *
+     * @throws ConfigurationRefusal
+     *
      * @return array<string, string>
      */
-    private static function formulas(array $config, array $defaults): array
+    private static function formulas(array $config, array $defaults, string $name): array
     {
         $formulas = $defaults;
 
@@ -103,58 +113,122 @@ final class ComputedMetricOverrideReader
         // This replaces any existing per-level formulas (including specialized ones
         // like health.coupling's project formula). If the user wants to override
         // only specific levels, they should use 'formulas' (plural) instead.
-        if (isset($config['formula']) && \is_string($config['formula'])) {
-            foreach (self::REPORTING_LEVELS as $level) {
+        if (isset($config['formula'])) {
+            if (!\is_string($config['formula'])) {
+                throw self::leafRefusal($name, 'formula', ComputedMetricRefusalWording::mustBeAString($name, 'formula', $config['formula']));
+            }
+
+            foreach (ComputedMetricEntryKeys::REPORTING_LEVELS as $level) {
                 $formulas[$level->value] = $config['formula'];
             }
         }
 
-        // 'formulas' (plural) per-level — takes precedence
+        // 'formulas' (plural) per-level — takes precedence. The container's
+        // shape and its key names are the traversal's business
+        // (ComputedMetricEntryKeyRecognition); by the time this runs, a
+        // non-map or an unknown key has already refused. Each value's shape
+        // is this reader's own business, same as every other leaf value.
         if (!isset($config['formulas']) || !\is_array($config['formulas'])) {
             return $formulas;
         }
 
         foreach ($config['formulas'] as $levelKey => $formula) {
-            if (\is_string($formula)) {
-                $formulas[$levelKey] = $formula;
+            if (!\is_string($formula)) {
+                throw ConfigurationRefusal::at(
+                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    RefusedPosition::open(
+                        [...ComputedMetricEntryKeys::nameSegments($name), 'formulas', (string) $levelKey],
+                        (string) $levelKey,
+                    ),
+                    ComputedMetricRefusalWording::formulaValueMustBeAString($name, (string) $levelKey, $formula),
+                );
             }
+
+            $formulas[$levelKey] = $formula;
         }
 
         return $formulas;
     }
 
     /**
+     * `levels:` must be a list of level words. The check sits here rather
+     * than in the traversal because the traversal owns key names and
+     * container shapes it walks, not this leaf value's shape — and because a
+     * reader that stays safe on its own is what keeps `merge()`/`create()`
+     * safe for every caller, this and any future one.
+     *
      * @param array<string, mixed> $config
      * @param list<SymbolLevel> $defaults
      *
+     * @throws ConfigurationRefusal
+     *
      * @return list<SymbolLevel>
      */
-    private static function levels(array $config, array $defaults): array
+    private static function levels(array $config, array $defaults, string $name): array
     {
-        if (!isset($config['levels']) || !\is_array($config['levels'])) {
+        if (!isset($config['levels'])) {
             return $defaults;
         }
 
-        return array_values(array_map(self::mapLevel(...), $config['levels']));
-    }
+        if (!\is_array($config['levels']) || !array_is_list($config['levels'])) {
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
+                ComputedMetricRefusalWording::levelListNotAList($name, $config['levels']),
+            );
+        }
 
-    /** @param array<string, mixed> $config */
-    private static function description(array $config, string $default): string
-    {
-        return isset($config['description']) && \is_string($config['description'])
-            ? $config['description']
-            : $default;
+        return array_values(array_map(
+            static fn(mixed $level): SymbolLevel => self::mapLevel($level, $name),
+            $config['levels'],
+        ));
     }
 
     /**
      * @param array<string, mixed> $config
      *
+     * @throws ConfigurationRefusal
+     */
+    private static function description(array $config, string $default, string $name): string
+    {
+        if (!isset($config['description'])) {
+            return $default;
+        }
+
+        if (!\is_string($config['description'])) {
+            throw self::leafRefusal(
+                $name,
+                'description',
+                ComputedMetricRefusalWording::mustBeAString($name, 'description', $config['description']),
+            );
+        }
+
+        return $config['description'];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     *
+     * @throws ConfigurationRefusal
+     *
      * @return ?bool what the entry says, or `null` when it does not say — the
      *               caller alone knows what an unstated `inverted` falls back to
      */
-    private static function inverted(array $config): ?bool
+    private static function inverted(array $config, string $name): ?bool
     {
-        return isset($config['inverted']) && \is_bool($config['inverted']) ? $config['inverted'] : null;
+        if (!isset($config['inverted'])) {
+            return null;
+        }
+
+        if (!\is_bool($config['inverted'])) {
+            throw self::leafRefusal(
+                $name,
+                'inverted',
+                ComputedMetricRefusalWording::mustBeABoolean($name, 'inverted', $config['inverted']),
+            );
+        }
+
+        return $config['inverted'];
     }
 
     /**
@@ -164,6 +238,8 @@ final class ComputedMetricOverrideReader
      * name, so it is refused at the same point the reserved `health.*` prefix
      * is refused by the resolver — the moment the name is read from
      * configuration, before it can become a channel.
+     *
+     * @throws ConfigurationRefusal
      */
     private static function assertNameDoesNotEndInALevel(string $name): void
     {
@@ -171,15 +247,55 @@ final class ComputedMetricOverrideReader
         $lastSegment = $lastDot === false ? $name : substr($name, $lastDot + 1);
 
         if (SymbolLevel::tryFrom($lastSegment) !== null) {
-            throw new ComputedMetricConfigurationException(\sprintf(
-                'Computed metric name "%s" must not end in the level word "%s". '
-                . 'A level is addressed beside the channel name, with "%s%s", not inside the name.',
-                $name,
-                $lastSegment,
-                FindingChannel::LEVEL_SEPARATOR,
-                $lastSegment,
-            ));
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
+                ComputedMetricRefusalWording::nameEndsInALevelWord($name, $lastSegment, FindingChannel::LEVEL_SEPARATOR),
+            );
         }
+    }
+
+    /**
+     * The name-grammar invariant {@see ComputedMetricDefinition} enforces at
+     * construction is refused here first, so that a user-defined metric with a
+     * malformed name never reaches the constructor at all.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseInvalidNameGrammar(string $name): void
+    {
+        if (ComputedMetricDefinition::isValidName($name)) {
+            return;
+        }
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
+            ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE),
+        );
+    }
+
+    /**
+     * The repeated-level invariant {@see ComputedMetricDefinition} enforces at
+     * construction is refused here first, from both {@see merge()} and
+     * {@see create()}, so that a `levels:` list with a repeat never reaches
+     * the constructor.
+     *
+     * @param list<SymbolLevel> $levels
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseDuplicateLevel(array $levels, string $name): void
+    {
+        if (!ComputedMetricDefinition::hasDuplicateLevel($levels)) {
+            return;
+        }
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
+            ComputedMetricRefusalWording::duplicateLevel($name),
+        );
     }
 
     /**
@@ -187,35 +303,42 @@ final class ComputedMetricOverrideReader
      * vocabulary as everywhere else ({@see SymbolLevel}), not from a private
      * word list of this capability's own. `callable` and `file` are therefore
      * recognised as real level words and refused here for being outside
-     * {@see REPORTING_LEVELS}, rather than falling through to the generic
-     * "not a level at all" message a stray word gets.
+     * {@see ComputedMetricEntryKeys::REPORTING_LEVELS}, rather than falling
+     * through to the generic "not a level at all" message a stray word gets.
+     *
+     * @throws ConfigurationRefusal
      */
-    private static function mapLevel(string $level): SymbolLevel
+    private static function mapLevel(mixed $level, string $name): SymbolLevel
     {
-        $symbolLevel = SymbolLevel::tryFrom($level)
-            ?? throw new ComputedMetricConfigurationException(\sprintf('Invalid computed metric level: "%s"', $level));
+        $written = \is_string($level) ? $level : get_debug_type($level);
+        $symbolLevel = \is_string($level) ? SymbolLevel::tryFrom($level) : null;
 
-        if (!\in_array($symbolLevel, self::REPORTING_LEVELS, true)) {
-            throw new ComputedMetricConfigurationException(\sprintf(
-                'Computed metric level "%s" is not supported; computed metrics report at %s only.',
-                $level,
-                self::reportingLevelWords(),
-            ));
+        if ($symbolLevel === null) {
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
+                ComputedMetricRefusalWording::levelWordNotALevelAtAll($written),
+            );
+        }
+
+        if (!\in_array($symbolLevel, ComputedMetricEntryKeys::REPORTING_LEVELS, true)) {
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
+                ComputedMetricRefusalWording::levelWordNotAReportingLevel($written, self::reportingLevelWords()),
+            );
         }
 
         return $symbolLevel;
     }
 
-    /** Renders {@see REPORTING_LEVELS} the way the refusal message names them. */
-    private static function reportingLevelWords(): string
+    /** @return list<string> */
+    private static function reportingLevelWords(): array
     {
-        $words = array_map(
-            static fn(SymbolLevel $level): string => \sprintf('"%s"', $level->value),
-            self::REPORTING_LEVELS,
+        return array_map(
+            static fn(SymbolLevel $level): string => $level->value,
+            ComputedMetricEntryKeys::REPORTING_LEVELS,
         );
-        $last = array_pop($words);
-
-        return implode(', ', $words) . ' or ' . $last;
     }
 
     /**
@@ -224,43 +347,69 @@ final class ComputedMetricOverrideReader
      *
      * @param array<string, mixed> $config
      *
+     * @throws ConfigurationRefusal
+     *
      * @return array{warningThreshold: ?float, errorThreshold: ?float}
      */
-    private static function thresholds(array $config, ?float $defaultWarning, ?float $defaultError): array
+    private static function thresholds(array $config, ?float $defaultWarning, ?float $defaultError, string $name): array
     {
         $hasThreshold = \array_key_exists('threshold', $config);
         $hasWarning = \array_key_exists('warning', $config);
         $hasError = \array_key_exists('error', $config);
 
         if ($hasThreshold && ($hasWarning || $hasError)) {
-            throw new InvalidArgumentException(
-                'Cannot mix "threshold" with "warning"/"error". Use either "threshold" alone (simple mode) or "warning"/"error" (graduated mode).',
+            throw ConfigurationRefusal::at(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'threshold'], 'threshold'),
+                ComputedMetricRefusalWording::thresholdMixedWithGraduated(),
             );
         }
 
         if ($hasThreshold) {
-            $value = self::threshold($config[RuleOptionKey::THRESHOLD]);
+            $rawThreshold = $config[RuleOptionKey::THRESHOLD];
 
             // threshold: null means "not set" — fall back to defaults (consistent with ThresholdParser)
-            if ($value === null) {
+            if ($rawThreshold === null) {
                 return ['warningThreshold' => $defaultWarning, 'errorThreshold' => $defaultError];
             }
+
+            $value = self::threshold($rawThreshold, $name, 'threshold');
 
             return ['warningThreshold' => $value, 'errorThreshold' => $value];
         }
 
         return [
-            'warningThreshold' => $hasWarning ? self::threshold($config[RuleOptionKey::WARNING]) : $defaultWarning,
-            'errorThreshold' => $hasError ? self::threshold($config[RuleOptionKey::ERROR]) : $defaultError,
+            'warningThreshold' => $hasWarning ? self::thresholdOrNull($config[RuleOptionKey::WARNING], $name, 'warning') : $defaultWarning,
+            'errorThreshold' => $hasError ? self::thresholdOrNull($config[RuleOptionKey::ERROR], $name, 'error') : $defaultError,
         ];
     }
 
-    private static function threshold(mixed $value): ?float
+    /**
+     * `null` means "not set"; anything else must be numeric.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function thresholdOrNull(mixed $value, string $name, string $key): ?float
+    {
+        return $value === null ? null : self::threshold($value, $name, $key);
+    }
+
+    /** @throws ConfigurationRefusal */
+    private static function threshold(mixed $value, string $name, string $key): float
     {
         if (\is_int($value) || \is_float($value)) {
             return (float) $value;
         }
 
-        return null;
+        throw self::leafRefusal($name, $key, ComputedMetricRefusalWording::mustBeANumber($name, $key, $value));
+    }
+
+    private static function leafRefusal(string $name, string $key, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), $key], $key),
+            $summary,
+        );
     }
 }

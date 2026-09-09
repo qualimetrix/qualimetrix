@@ -7,19 +7,18 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Contract;
 use RuntimeException;
 
 /**
- * Thrown by {@see LayerExpansionStage::expand()} on conditions that make
- * the expansion result meaningless or unsafe to consume downstream:
+ * Retired: every throw site in {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage::expand()}
+ * and {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator::instantiate()}
+ * now raises {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
+ * instead. This class and its remaining consumers are kept only until a
+ * later cleanup removes them.
  *
- * - Cartesian-blowup ceiling exceeded ({@code architecture.max_expanded_layers}).
- * - Name collision between a static layer and a template-expanded layer.
- * - Name collision between two template-expanded layers.
- * - Invalid concrete name produced by substitution (binding contains
- *   characters that violate {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition}'s
- *   expanded-mode name regex).
- *
- * Surfaces as a runtime error rather than a configuration error because the
- * triggering condition is discovered only after the project's class set is
- * known — the same template definition can be valid in one codebase and
- * collide in another.
+ * The conditions it used to surface — a cumulative expansion ceiling
+ * exceeded, a name collision between two expanded layers, or an invalid
+ * substituted name — are a configuration refusal the author of the template
+ * layer fixes, not an internal crash: the refusal's kind is decided by who
+ * fixes it, not by which phase discovered it. That the triggering condition
+ * is only knowable once the project's class set has been observed does not
+ * change who is responsible for the fix.
  */
 final class ArchitecturePreparationException extends RuntimeException {}

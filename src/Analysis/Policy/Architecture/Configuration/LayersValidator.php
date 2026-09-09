@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -13,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Throwable;
 
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
@@ -40,13 +44,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * delegated to {@see ExcludeBlockValidator}. Both helpers stay inside the
  * same namespace so the schema surface is co-located.
  *
- * All errors surface as {@see ArchitectureConfigurationException} with the logical path
- * {@code 'architecture'}.
+ * All errors surface as {@see ConfigurationRefusal} addressed to the
+ * resolved document.
  */
 final class LayersValidator
 {
-    private const string CONFIG_PATH = 'architecture';
-
     private const array ALLOWED_ENTRY_KEYS = [
         'name',
         'patterns',
@@ -64,6 +66,17 @@ final class LayersValidator
     public function __construct()
     {
         $this->normalizer = new LayerCriterionNormalizer();
+    }
+
+    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
+    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
+    {
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::open(explode('.', $position), $position),
+            $summary,
+            $previous,
+        );
     }
 
     /**
@@ -97,15 +110,15 @@ final class LayersValidator
         }
 
         if (!\is_array($layersRaw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture.layers',
                 'architecture.layers: must be an ordered list of layer entries, got ' . get_debug_type($layersRaw) . '.',
             );
         }
 
         if (!array_is_list($layersRaw)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                'architecture.layers',
                 'architecture.layers: must be an ordered list of layer entries (each entry an object with "name" and at least one criterion key), not a map. '
                 . 'See ADR 0006 for the schema change rationale.',
             );
@@ -152,7 +165,7 @@ final class LayersValidator
      * name contains capture variables. Catches the construction-time
      * invariant violations (empty name, variable in name not bound by any
      * capture-producing pattern, invalid capture grammar, undeclared
-     * exclude variables) and rewraps them as {@see ArchitectureConfigurationException} so
+     * exclude variables) and rewraps them as {@see ConfigurationRefusal} so
      * the user sees a config-layer error.
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
@@ -175,8 +188,8 @@ final class LayersValidator
                 ),
             );
         } catch (InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf('architecture.layers[%d] ("%s"): %s', $index, $nameTemplate, $e->getMessage()),
                 $e,
             );
@@ -223,8 +236,8 @@ final class LayersValidator
                 lifecycle: $lifecycle,
             );
         } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
                 $e,
             );
@@ -240,8 +253,8 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            \sprintf('architecture.layers[%d]', $index),
             \sprintf(
                 'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
                 $index,
@@ -256,8 +269,8 @@ final class LayersValidator
     private static function ensureEntryIsAssociativeArray(int $index, mixed $entry): array
     {
         if (!\is_array($entry) || array_is_list($entry)) {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d]', $index),
                 \sprintf(
                     'architecture.layers[%d]: each entry must be a map with "name" and at least one criterion key, got %s.',
                     $index,
@@ -279,8 +292,12 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        $accepted = self::ALLOWED_ENTRY_KEYS;
+        sort($accepted);
+
+        throw ConfigurationRefusal::at(
+            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            RefusedPosition::closed(['architecture', 'layers', (string) $index], implode(', ', $unknown), $accepted),
             \sprintf(
                 'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
                 $index,
@@ -296,8 +313,8 @@ final class LayersValidator
     private static function extractValidName(int $index, array $entry): string
     {
         if (!\array_key_exists('name', $entry) || !\is_string($entry['name']) || $entry['name'] === '') {
-            throw new ArchitectureConfigurationException(
-                self::CONFIG_PATH,
+            self::refuse(
+                \sprintf('architecture.layers[%d].name', $index),
                 \sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index),
             );
         }
@@ -314,8 +331,8 @@ final class LayersValidator
             return;
         }
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
+        self::refuse(
+            \sprintf('architecture.layers[%d].name', $index),
             \sprintf(
                 'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
                 $index,
@@ -400,8 +417,8 @@ final class LayersValidator
                         continue;
                     }
 
-                    throw new ArchitectureConfigurationException(
-                        self::CONFIG_PATH,
+                    self::refuse(
+                        'architecture.layers',
                         \sprintf(
                             'architecture.layers: pattern "%s" declared in both "%s" (architecture.layers[%d]) and "%s" (architecture.layers[%d]). Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
                             $normalized,

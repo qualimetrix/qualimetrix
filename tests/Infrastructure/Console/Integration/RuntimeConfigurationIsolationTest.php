@@ -8,10 +8,10 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -146,7 +146,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
                 new BufferedOutput(),
             );
             self::fail('Invalid architecture configuration must fail before mutating owner stores or effects.');
-        } catch (ArchitectureConfigurationException) {
+        } catch (ConfigurationRefusal) {
         }
 
         $this->assertDefaultOwnerState($runtimeConfigurator);

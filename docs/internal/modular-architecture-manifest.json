@@ -48,6 +48,11 @@
       "closure_package": "P3",
       "consumers": [
         {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet",
           "closes_in": null
@@ -251,9 +256,110 @@
       "path": "src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P3",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\AllowAliasExpander",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfigurationFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExactAllowCycleValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExcludeBlockValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LongFormAllowEntryNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionStage",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerInstantiator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Refusal\\ConfigurationRefusal": {
       "path": "src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php",
@@ -263,13 +369,108 @@
       "closure_package": "P3",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter",
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator",
           "closes_in": null
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\AllowAliasExpander",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfigurationFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExactAllowCycleValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExcludeBlockValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LongFormAllowEntryNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionStage",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerInstantiator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineChannelRenamer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader",
           "closes_in": null
         },
         {
@@ -279,12 +480,22 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "closes_in": null
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter",
           "closes_in": null
         }
       ]
@@ -293,17 +504,209 @@
       "path": "src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php",
       "kind": "enum",
       "owner": "Analysis.Configuration",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P3",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\AllowAliasExpander",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfigurationFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExactAllowCycleValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExcludeBlockValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LongFormAllowEntryNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionStage",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerInstantiator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Refusal\\RefusedPosition": {
       "path": "src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P3",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\AllowAliasExpander",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfigurationFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CoverageValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ExcludeBlockValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LongFormAllowEntryNormalizer",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionStage",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerInstantiator",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface": {
       "path": "src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php",
@@ -336,11 +739,6 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
-          "closes_in": null
-        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand",
@@ -9219,6 +9617,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeys",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions",
           "closes_in": null
@@ -15157,6 +15560,16 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeys",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
           "closes_in": null
         },
@@ -19623,6 +20036,30 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeys": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricEntryKeys.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeyRecognition": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricEntryKeyRecognition.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricRefusalWording": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricRefusalWording.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

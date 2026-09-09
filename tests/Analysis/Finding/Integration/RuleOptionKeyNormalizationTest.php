@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
@@ -144,7 +144,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         try {
             $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
             self::fail('An unknown rule option must be refused.');
-        } catch (ConfigLoadException $refusal) {
+        } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(
                 'Option "notARealOption" is not an option of rule "code-smell.long-parameter-list"',
                 $refusal->getMessage(),

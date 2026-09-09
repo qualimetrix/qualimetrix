@@ -53,8 +53,6 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/AcceptedLevel.php	Qualimetrix\Analysis\Finding\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Configuration/Allow/AllowAliasExpander.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow	warning	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/CapturePattern.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Util/NamespaceMatcher.php	Qualimetrix\Core\Util	error	1

@@ -7,9 +7,10 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Vali
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 
 #[CoversClass(CoverageValidator::class)]
 final class CoverageValidatorTest extends TestCase
@@ -55,7 +56,7 @@ final class CoverageValidatorTest extends TestCase
     #[Test]
     public function itRejectsAnUnknownCoverageValue(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.coverage-gap');
 
         $this->validator->validate('verbose');
@@ -64,7 +65,7 @@ final class CoverageValidatorTest extends TestCase
     #[Test]
     public function itRejectsACoverageValueOfTheWrongType(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.coverage-gap');
 
         $this->validator->validate(42);
@@ -73,20 +74,20 @@ final class CoverageValidatorTest extends TestCase
     #[Test]
     public function itRejectsABooleanCoverageValue(): void
     {
-        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessageMatches('/got bool/');
 
         $this->validator->validate(true);
     }
 
     #[Test]
-    public function itReportsArchitectureAsTheConfigPathForEveryError(): void
+    public function itAddressesTheResolvedDocumentForEveryError(): void
     {
         try {
             $this->validator->validate('verbose');
-            self::fail('Expected ArchitectureConfigurationException');
-        } catch (ArchitectureConfigurationException $e) {
-            self::assertSame('architecture', $e->configPath);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
         }
     }
 }
