@@ -31,6 +31,9 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
@@ -258,6 +261,7 @@ final class TestPipelineBuilder
                     'TestPipelineBuilder: defaultDiscovery is required (call withDefaultDiscovery())',
                 ),
                 new GeneratedFileFilter(),
+                new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()),
             ),
             collectionOrchestrator: $this->collectionOrchestrator ?? throw new LogicException(
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',

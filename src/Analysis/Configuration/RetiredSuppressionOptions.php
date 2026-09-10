@@ -69,8 +69,8 @@ final class RetiredSuppressionOptions
                 $authoredString = (string) $authored;
 
                 if ($refusal !== null) {
-                    throw ConfigurationRefusal::at(
-                        ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+                    throw ConfigurationRefusal::atConfigFileKey(
+                        $path,
                         RefusedPosition::open([$rulesKey, $authoredString], $authoredString),
                         $refusal,
                     );
@@ -110,8 +110,8 @@ final class RetiredSuppressionOptions
 
             $authored = $keyMap[$key] ?? $key;
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path),
+            throw ConfigurationRefusal::atConfigFileKey(
+                $path,
                 RefusedPosition::open([$authored], $authored),
                 self::refusalText($authored, ConfigKeySpelling::rewriteLike($replacement, $authored)),
             );

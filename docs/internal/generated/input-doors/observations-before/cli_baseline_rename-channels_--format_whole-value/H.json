@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "{\n    \"written\": true,\n    \"entries\": 13,\n    \"renamed\": 2,\n    \"rows\": {\n        \"complexity.ccn\": 2\n    },\n    \"idle_rows\": [],\n    \"unreadable\": []\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

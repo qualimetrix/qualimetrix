@@ -78,4 +78,21 @@ final class FormatterRegistry implements FormatterRegistryInterface
 
         return $names;
     }
+
+    public function declaredFormatOptionKeys(): array
+    {
+        $keys = [];
+        foreach ($this->formatters as $formatter) {
+            if ($formatter instanceof FormatOptionKeysInterface) {
+                foreach ($formatter->formatOptionKeys() as $key) {
+                    $keys[$key] = true;
+                }
+            }
+        }
+
+        $keys = array_keys($keys);
+        sort($keys);
+
+        return $keys;
+    }
 }

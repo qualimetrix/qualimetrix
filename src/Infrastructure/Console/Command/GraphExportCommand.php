@@ -7,9 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
@@ -92,7 +90,7 @@ final class GraphExportCommand extends Command
                 'namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Include only these namespaces',
+                'Include only these namespaces (a value matching no analyzed class is refused with exit code 3)',
             )
             ->addOption(
                 'exclude-namespace',
@@ -187,6 +185,7 @@ final class GraphExportCommand extends Command
         ]);
 
         $request = self::buildProjectionRequest($input, $format, $direction);
+        $this->assertIncludeNamespacesBind($result, $request);
         $content = $this->projection->project($result->graph, $request);
 
         if ($outputFile !== null) {
@@ -198,13 +197,40 @@ final class GraphExportCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * An include namespace matching nothing renders a graph the caller cannot
+     * tell apart from a genuinely empty one, so it is refused rather than
+     * drawn (`docs/internal/plans/silent-acceptance/02-cure.md` §2). The
+     * excluding sibling `--exclude-namespace` deliberately keeps its silence:
+     * a miss there leaves the graph exactly as it would have been, and the
+     * caller loses nothing.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private function assertIncludeNamespacesBind(DependencyGraphAnalysisResult $result, GraphProjectionRequest $request): void
+    {
+        $unbound = $this->projection->unboundIncludeNamespaces($result->graph, $request);
+        if ($unbound === []) {
+            return;
+        }
+
+        throw ConfigurationRefusal::aboutCommandLineInput(
+            '--namespace',
+            \sprintf(
+                'No analyzed class belongs to %s: %s.',
+                \count($unbound) === 1 ? 'namespace' : 'namespaces',
+                implode(', ', array_map(static fn(string $namespace): string => '"' . $namespace . '"', $unbound)),
+            ),
+        );
+    }
+
     /** @throws ConfigurationRefusal */
     private static function resolveFormat(string $rawFormat): GraphExportFormat
     {
         $format = GraphExportFormat::tryFrom($rawFormat);
         if ($format === null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--format',
                 \sprintf(
                     'Unknown format "%s". Supported formats: %s.',
                     $rawFormat,
@@ -221,8 +247,8 @@ final class GraphExportCommand extends Command
     {
         $direction = GraphDirection::tryFrom($rawDirection);
         if ($direction === null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--direction'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--direction',
                 \sprintf(
                     'Unknown direction "%s". Supported directions: %s.',
                     $rawDirection,
@@ -271,8 +297,8 @@ final class GraphExportCommand extends Command
         // (`01-refusal-verdicts.md` §5.2, the `check --output` sibling
         // of this check at §5.4).
         if (@file_put_contents($outputFile, $content) === false) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--output',
                 \sprintf('Failed to write output to %s', $outputFile),
             );
         }
@@ -292,8 +318,8 @@ final class GraphExportCommand extends Command
     {
         if (file_exists($outputFile)) {
             if (!is_writable($outputFile)) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--output',
                     \sprintf('Output path "%s" is not writable', $outputFile),
                 );
             }
@@ -303,8 +329,8 @@ final class GraphExportCommand extends Command
 
         $directory = \dirname($outputFile);
         if (!is_dir($directory) || !is_writable($directory)) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--output',
                 \sprintf('Output path "%s" is not writable', $outputFile),
             );
         }

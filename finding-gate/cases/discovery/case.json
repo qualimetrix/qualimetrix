@@ -1,0 +1,14 @@
+{
+    "id": "discovery",
+    "description": "An exclude pattern naming a directory the tree does not contain, so the run measured everything it was written to skip.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "channels": [
+        "discovery.unmatched-exclude@project"
+    ],
+    "explainSubjects": [
+        "project:"
+    ]
+}

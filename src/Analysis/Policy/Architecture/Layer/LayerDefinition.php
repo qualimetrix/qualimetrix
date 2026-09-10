@@ -21,10 +21,12 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * exclude clause is evaluated as a hard filter AFTER the positive match
  * succeeds. If the exclude criteria combine (per their own
  * {@see ExcludeSpec::$mode}) into a hit, {@see matches()} returns
- * {@see MembershipResult::noMatch()} — exclusion overrides positive match
- * regardless of either side's match mode. Excluded classes are
- * indistinguishable from non-matching classes at the rule layer; exclude
- * does not surface a separate descriptor.
+ * {@see MembershipResult::excluded()} — exclusion overrides positive match
+ * regardless of either side's match mode. Excluded classes are non-members
+ * exactly like non-matching ones, and exclude surfaces no criterion
+ * descriptor; the variant is separate only so
+ * {@see LayerRegistry::excludedLayers()} can answer whether the clause ever
+ * fired.
  *
  * Under declaration-order resolution ({@see LayerRegistry}), layer entries are
  * scanned in declared order and the first matching entry decides the class's
@@ -67,6 +69,13 @@ final readonly class LayerDefinition
      * @param bool $expanded Internal flag toggling the regex variant used
      *                       for name validation. Not exposed as a property —
      *                       no downstream code reads it after construction.
+     * @param ?string $declaredAs The template this layer was expanded from,
+     *                            or `null` for a layer written out in full.
+     *                            A diagnostic about the *declaration* — an
+     *                            `exclude:` clause the author wrote once —
+     *                            must judge every instance the template
+     *                            produced together, and after expansion the
+     *                            instances are the only objects left.
      *
      * @throws InvalidLayerDefinitionException If the name is invalid.
      */
@@ -75,6 +84,7 @@ final readonly class LayerDefinition
         public MembershipSpec $membership,
         public LayerLifecycle $lifecycle = LayerLifecycle::Active,
         bool $expanded = false,
+        private ?string $declaredAs = null,
     ) {
         $this->validateName($name, $expanded);
     }
@@ -95,9 +105,24 @@ final readonly class LayerDefinition
      *                                         backslash, dot, or starts
      *                                         with a digit).
      */
-    public static function expanded(string $name, MembershipSpec $membership): self
+    public static function expanded(string $name, MembershipSpec $membership, ?string $declaredAs = null): self
     {
-        return new self($name, $membership, expanded: true);
+        return new self($name, $membership, expanded: true, declaredAs: $declaredAs);
+    }
+
+    /**
+     * The declaration this layer came from: the template's name for an
+     * expanded instance, the layer's own name otherwise.
+     *
+     * A judgement about what the author wrote — that an `exclude:` clause
+     * removed nothing — is a judgement about this, not about the name. One
+     * clause under `domain-{module}` becomes one instance per module, and
+     * asking each instance separately accuses the author once per module that
+     * happens to hold nothing to exclude.
+     */
+    public function declarationName(): string
+    {
+        return $this->declaredAs ?? $this->name;
     }
 
     /**
@@ -142,8 +167,11 @@ final readonly class LayerDefinition
      * When {@see MembershipSpec::$exclude} is declared, the exclude clause
      * is evaluated AFTER positive criteria succeed and acts as a hard
      * filter — if exclusion fires (per its own {@see MatchMode}), the
-     * result downgrades to {@see MembershipResult::noMatch()} regardless of
-     * the positive match.
+     * result downgrades to {@see MembershipResult::excluded()} regardless of
+     * the positive match. That variant is a non-match like any other for
+     * every membership consumer; it is distinguishable only so that
+     * `architecture.unmatched-exclude` can tell a clause that removed
+     * something from one that removed nothing.
      *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
      * five positive criterion lists empty cannot exist (constructor invariant).
@@ -181,7 +209,7 @@ final readonly class LayerDefinition
         }
 
         if ($this->exclusionFires($context)) {
-            return MembershipResult::noMatch();
+            return MembershipResult::excluded();
         }
 
         return MembershipResult::match($matched);

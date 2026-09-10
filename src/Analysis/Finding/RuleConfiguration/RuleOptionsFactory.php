@@ -364,8 +364,7 @@ final class RuleOptionsFactory
             }
 
             if ($isNumericField && (!is_numeric($value) || !is_finite((float) $value))) {
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(explode('.', $fullKey), (string) $key),
                     \sprintf(
                         'Invalid configuration for rule "%s": option "%s" must be numeric, got "%s".',

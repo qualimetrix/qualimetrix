@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/discovery",
+    "description": "Corpus case: an exclude pattern that removes no directory",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Discovery\\": "src/"
+        }
+    }
+}

@@ -79,6 +79,50 @@ coupling:
 
 **Partition property:** `Ce = Ce_app + Ce_framework` (outgoing dependencies partition cleanly).
 
+#### When a prefix classifies nothing
+
+`UnmatchedFrameworkNamespaceRule` reports `coupling.unmatched-framework-namespace`
+(warning, project level, one finding per prefix) for a configured prefix that no
+name in the run falls under. Nothing was moved out of the application scope for
+it, and before the channel existed the miss and a run with no prefix at all
+produced byte-identical reports — the classification is only observable through
+`coupling.cbo-app` / `coupling.ce-framework`, never through the finding set.
+
+Two facts about the shape, both measured rather than chosen:
+
+- **It is its own rule, not a second channel on `CboRule`.** A magnitude
+  producer must give every channel a `WorseDirection`
+  (`ChannelDeclarationCompilerPass`), and this finding judges no measured
+  value; declaring it on `CboRule` is refused at container build.
+- **It is a rule and not a `ConfigurationValidatorInterface`.** A validator's
+  channel bypasses `fail_on` and can never be accepted by a baseline. A prefix
+  that binds nothing is ordinary debt — a shared `qmx.yaml` may name a
+  framework one repository does not use — so the finding answers to `fail_on`,
+  `--disable-rule` and the baseline. Three mechanical guards hold that: the
+  compiler pass refuses a channel declared by both producer kinds, the
+  declared-channel fixture carries no `config-error` token, and an integration
+  case pins exit 0 under `--fail-on=none` against exit 2 under
+  `--fail-on=warning`.
+
+The binding universe is `FrameworkClassificationSites::names()` — the two
+positions where the collector's own walk calls `isFrameworkSymbol()`: the target
+of a measured class's outgoing edge, and the source of its incoming one.
+`CouplingAnalysis` owns the predicate for both answers, so the rule cannot
+disagree with the metric, and the universe is asked of the collector rather than
+re-derived, so it cannot be wider than the classification. It was wider once:
+enumerating both ends of every edge counted a measured class whose only edge
+points at unmeasured code, which the collector never classifies, so a prefix over
+it read as bound while it moved no metric. A test pins the number of call sites
+the enumeration mirrors.
+Two preconditions keep it quiet where a prefix is inert for a reason other
+than its spelling: no dependency graph at all, and a graph with no edge in
+it — the collector then had nothing to classify, and a correct project-wide
+`qmx.yaml` must not be reported because someone checked one self-contained
+file. The precondition is deliberately not "the run depends on code it did
+not analyse": a prefix naming the project's own namespaces moves
+`coupling.cbo-app` too, so a run whose edges all stay inside the analysed
+set is one where prefixes bind and the channel must still speak.
+
 When no `framework-namespaces` are configured, `coupling.cbo-app` = `coupling.cbo` and `coupling.ce-framework` = 0.
 
 **CBO rule scope:** The `coupling.cbo` rule supports a `scope` option:

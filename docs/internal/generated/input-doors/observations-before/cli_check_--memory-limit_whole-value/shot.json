@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--memory-limit|whole-value",
+    "fingerprint": "0a96496e0e5e29085fc2ec61806dd66d0dfcb3f351359c84c4093d3e3fc09493",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

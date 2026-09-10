@@ -40,6 +40,7 @@ coupling.cbo
 coupling.class-rank
 coupling.distance
 coupling.instability
+coupling.unmatched-framework-namespace
 design.data-class
 design.god-class
 design.dit
@@ -56,7 +57,11 @@ security.xss
 size.class-count
 size.method-count
 size.property-count
+suppression.unmatched-path
+suppression.unmatched-namespace
+suppression.unmatched-rule-ledger
 architecture.layer-violation
+architecture.unmatched-exclude
 architecture.coverage-gap
 architecture.unreachable-layer
 architecture.potential-shadow
@@ -65,6 +70,7 @@ architecture.pending-layer-matched
 architecture.unassigned-class
 architecture.circular-dependency
 duplication.clone
+discovery.unmatched-exclude
 annotation.unresolved-directive
 annotation.unsupported-threshold
 annotation.invalid-threshold

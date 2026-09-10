@@ -16,6 +16,14 @@ use Throwable;
  * every form is built through a named factory rather than a shared one with a
  * boolean flag, so an impossible combination (a closed position with nothing
  * accepted) cannot be constructed at all.
+ *
+ * The per-source factories that follow the three forms are shorthands, not a
+ * fourth form: each delegates to `at()`, `aboutDocument()` or `aboutInput()`
+ * with the origin built here. A throw site that names its source literally
+ * would otherwise have to import {@see ConfigurationOrigin} and
+ * {@see ConfigurationSource} for no reason but to assemble a constant — three
+ * type dependencies where one would do. The three general forms stay public
+ * for the sites that compute their source or forward an origin they were given.
  */
 final class ConfigurationRefusal extends RuntimeException
 {
@@ -54,6 +62,125 @@ final class ConfigurationRefusal extends RuntimeException
         ?Throwable $previous = null,
     ): self {
         return new self($origin, null, $summary, $previous);
+    }
+
+    /**
+     * A key position inside a configuration file.
+     *
+     * @param string $path the file the key was written in
+     */
+    public static function atConfigFileKey(
+        string $path,
+        RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $position, $summary, $previous);
+    }
+
+    /**
+     * A key position inside a preset.
+     *
+     * @param string $preset the preset the key was written in
+     */
+    public static function atPresetKey(
+        string $preset,
+        RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::Preset, $preset), $position, $summary, $previous);
+    }
+
+    /**
+     * A key position in the merged document, where no single file or option can
+     * be named any more. The locator trails and defaults to null because
+     * {@see ConfigurationSource::Resolved} has none by construction; a caller
+     * that still holds the resolved key name passes it as a diagnostic hint.
+     */
+    public static function atResolvedKey(
+        RefusedPosition $position,
+        string $summary,
+        ?string $key = null,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::Resolved, $key), $position, $summary, $previous);
+    }
+
+    /**
+     * A configuration file that could not be read, parsed, or accepted as a whole.
+     *
+     * @param string $path the file itself
+     */
+    public static function aboutConfigFileDocument(
+        string $path,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutDocument(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $summary, $previous);
+    }
+
+    /** A preset that could not be read, parsed, or accepted as a whole. */
+    public static function aboutPresetDocument(
+        string $preset,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutDocument(ConfigurationOrigin::of(ConfigurationSource::Preset, $preset), $summary, $previous);
+    }
+
+    /** A baseline file that could not be read, parsed, or accepted as a whole. */
+    public static function aboutBaselineFileDocument(
+        string $path,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutDocument(
+            ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $path),
+            $summary,
+            $previous,
+        );
+    }
+
+    /**
+     * A document a command-line argument pointed at, refused as a whole — the
+     * argument names it, so the argument is the locator.
+     */
+    public static function aboutCommandLineDocument(
+        string $option,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutDocument(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, $option),
+            $summary,
+            $previous,
+        );
+    }
+
+    /**
+     * A command-line value with no position in any document.
+     *
+     * @param string $option the option or argument that carried it
+     */
+    public static function aboutCommandLineInput(
+        string $option,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutInput(ConfigurationOrigin::of(ConfigurationSource::CommandLine, $option), $summary, $previous);
+    }
+
+    /**
+     * A merged value with no position in any document. The locator trails for
+     * the same reason as in {@see self::atResolvedKey()}.
+     */
+    public static function aboutResolvedInput(
+        string $summary,
+        ?string $key = null,
+        ?Throwable $previous = null,
+    ): self {
+        return self::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved, $key), $summary, $previous);
     }
 
     public function origin(): ConfigurationOrigin

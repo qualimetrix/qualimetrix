@@ -137,6 +137,64 @@ final class CouplingAnalysisTest extends TestCase
         self::assertFalse($analysis->isFramework('Psr\\Log\\LoggerInterface'));
     }
 
+    /**
+     * The question the unmatched-framework-namespace channel asks: which of
+     * the declared prefixes did the run's own names never fall under.
+     */
+    #[Test]
+    public function itNamesEveryPrefixNoNameFellUnder(): void
+    {
+        $fn = $this->configured(['Symfony', 'Nope\\Missing', 'Doctrine\\ORM']);
+
+        self::assertSame(
+            ['Nope\\Missing', 'Doctrine\\ORM'],
+            $fn->unboundPrefixes(['Symfony\\Component\\Console\\Command\\Command', 'App\\Service']),
+        );
+    }
+
+    /** Order follows the declaration, so a report reads like the config file. */
+    #[Test]
+    public function itKeepsDeclarationOrderAmongTheUnboundPrefixes(): void
+    {
+        $fn = $this->configured(['Zeta\\Missing', 'Alpha\\Missing']);
+
+        self::assertSame(['Zeta\\Missing', 'Alpha\\Missing'], $fn->unboundPrefixes([]));
+    }
+
+    /**
+     * The exact-name and boundary cases {@see CouplingAnalysis::isFramework()}
+     * accepts must bind here too — the two answers come from one predicate,
+     * and a caller that re-spelled it could disagree with the metric.
+     */
+    #[Test]
+    public function itBindsOnTheSameBoundaryIsFrameworkMatchesOn(): void
+    {
+        self::assertSame([], $this->configured(['Symfony'])->unboundPrefixes(['Symfony']));
+        self::assertSame([], $this->configured(['Symfony'])->unboundPrefixes(['Symfony\\Console']));
+        self::assertSame(
+            ['Symfony'],
+            $this->configured(['Symfony'])->unboundPrefixes(['SymfonyBundle\\Thing']),
+            'A prefix that is only a string prefix binds nothing, exactly as it classifies nothing.',
+        );
+    }
+
+    /** A prefix written twice is one mistake, and is reported once. */
+    #[Test]
+    public function itReportsARepeatedPrefixOnce(): void
+    {
+        self::assertSame(
+            ['Nope\\Missing'],
+            $this->configured(['Nope\\Missing', 'Nope\\Missing'])->unboundPrefixes(['App\\Service']),
+        );
+    }
+
+    /** Nothing declared is not a prefix that failed. */
+    #[Test]
+    public function itNamesNoPrefixWhenNoneAreConfigured(): void
+    {
+        self::assertSame([], $this->configured([])->unboundPrefixes(['App\\Service']));
+    }
+
     /** @param list<string> $prefixes */
     private function configured(array $prefixes): CouplingAnalysis
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
@@ -67,6 +69,9 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
     private const string GENERATED_FILE_FILTER_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\GeneratedFileFilter';
+    private const string EXCLUDE_BINDING_PROBE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe';
+    private const string UNMATCHED_EXCLUDE_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit';
+    private const string UNMATCHED_EXCLUDE_RULE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule';
 
     public function configure(ContainerBuilder $container): void
     {
@@ -80,6 +85,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
                 new Reference(GeneratedFileFilterInterface::class),
+                new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
             ]);
 
         // ThresholdOverrideExtractor - per-rule @qmx-threshold validator map injected
@@ -136,6 +142,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 '$profiler' => new Reference(ProfilerInterface::class),
             ]);
 
+        $this->registerUnmatchedExcludeProducer($container);
         $this->registerInlineDirectivePolicy($container);
         $this->registerRuleProducerPreparation($container);
         $this->registerAnalysisPipeline($container);
@@ -205,6 +212,41 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setLazy(true);
     }
 
+    /**
+     * Run's own producer: the rule that gives the channel an identity, and the
+     * audit that measures and builds what it reports.
+     *
+     * The rule is registered by name rather than found by a scan, for the
+     * reason every capability configurator registers its own roots by name —
+     * a pattern over `Discovery/` would silently enrol the next class added
+     * there.
+     *
+     * The audit answers to the rule's **own** Options service, derived the way
+     * {@see RuleOptionsCompilerPass} derives it when it registers that service
+     * later in the build, so one setting is read in one place.
+     */
+    private function registerUnmatchedExcludeProducer(ContainerBuilder $container): void
+    {
+        $container->register(self::EXCLUDE_BINDING_PROBE_CLASS, self::EXCLUDE_BINDING_PROBE_CLASS);
+
+        // Lazy, and that is the whole reason the audit may hold its rule's
+        // Options service: constructed eagerly it would capture the options as
+        // they stood before the console applied `rules.<name>.enabled` or
+        // `--rule-opt`. Its first call is inside discovery, by which time the
+        // runtime configuration is settled.
+        $container->register(self::UNMATCHED_EXCLUDE_AUDIT_CLASS, self::UNMATCHED_EXCLUDE_AUDIT_CLASS)
+            ->setArguments([
+                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNMATCHED_EXCLUDE_RULE_CLASS)),
+                new Reference(self::EXCLUDE_BINDING_PROBE_CLASS),
+            ])
+            ->setLazy(true);
+
+        $container->register(self::UNMATCHED_EXCLUDE_RULE_CLASS, self::UNMATCHED_EXCLUDE_RULE_CLASS)
+            ->setAutoconfigured(true)
+            ->setAutowired(false)
+            ->setLazy(true);
+    }
+
     private function registerRuleProducerPreparation(ContainerBuilder $container): void
     {
         $container->register(self::RULE_PRODUCER_PREPARATION, self::RULE_PRODUCER_PREPARATION_CLASS)
@@ -221,6 +263,13 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
     private function registerAnalysisPipeline(ContainerBuilder $container): void
     {
+        // One instance answers the scope question: the run configuration
+        // resolver stamps its answer onto every RunConfiguration, and the
+        // console derives its incomplete-scope warning from the same answer.
+        $container->register(ProjectScopeCoverage::class)
+            ->setArgument('$composerReader', new Reference(ComposerAutoloadPathReaderInterface::class))
+            ->setPublic(true);
+
         $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
 
         // AnalysisPipeline owns the complete phase order while every capability

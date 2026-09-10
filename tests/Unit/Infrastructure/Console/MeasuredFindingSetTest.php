@@ -164,6 +164,8 @@ final class MeasuredFindingSetTest extends TestCase
             ['vendor', 'node_modules', '.git', 'generated'],
             $root,
             GeneratedFilePolicy::Exclude,
+            coversProjectScope: true,
+            authoredPathExcludes: [],
         );
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $factory = self::createMock(FileDiscoveryFactoryInterface::class);
@@ -253,7 +255,7 @@ final class MeasuredFindingSetTest extends TestCase
     {
         $root = AbsolutePath::fromString(sys_get_temp_dir());
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Exclude);
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Exclude, coversProjectScope: true, authoredPathExcludes: []);
     }
 
     private static function finding(string $file, string $namespace, string $class): Finding

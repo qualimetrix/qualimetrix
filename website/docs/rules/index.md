@@ -166,6 +166,26 @@ This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in 
 
 [Read more about Annotation rules --&gt;](annotation.md)
 
+### Discovery Rules
+
+This rule reports on the run's own file selection rather than on the code: an `--exclude` value or an `exclude:` entry that matched no directory. The report then covers files the author meant to leave out, and without this channel a missed exclusion and no exclusion at all produce byte-identical output.
+
+| Rule                              | ID                            | What it detects                              |
+| --------------------------------- | ----------------------------- | -------------------------------------------- |
+| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+
+[Read more about Discovery rules --&gt;](discovery.md)
+
+### Suppression Rules
+
+This rule reports on the run's own suppression configuration rather than on the code: a `suppress_paths` or `suppress_namespaces` value — global or under `rules.<name>` — that names no file this run analysed and no namespace it declared. Such a value hides nothing and never will, while the author believes it is hiding something.
+
+| Rule                                        | ID                          | What it detects                                         |
+| ------------------------------------------- | --------------------------- | ------------------------------------------------------- |
+| [Suppression configuration](suppression.md) | `suppression.configuration` | A suppression value that names nothing the run measured |
+
+[Read more about Suppression rules --&gt;](suppression.md)
+
 ## Disabling Rules
 
 You can disable individual rules or entire groups:
@@ -226,13 +246,15 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
 - **Design:** `design.dit`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (rule); `cohesion.tcc`, `cohesion.lcc` (metrics only, no rule — used as inputs by `design.god-class`)
-- **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
+- **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`, `coupling.unmatched-framework-namespace`
 - **Maintainability:** `maintainability.mi`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
 - **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))
+- **Discovery:** `discovery.unmatched-exclude` (see [Discovery rules](discovery.md))
+- **Suppression:** `suppression.configuration` (its channels are listed on [Suppression rules](suppression.md))
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->

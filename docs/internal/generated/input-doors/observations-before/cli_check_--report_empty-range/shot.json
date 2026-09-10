@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--report|empty-range",
+    "fingerprint": "fc4a23ed4d42e56bbe6ca03ac87e9231e3a95dd5dfe93ca4b3c8ae78b85ec0eb",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

@@ -34,8 +34,14 @@ final readonly class LayerEvidence
      *                                            guidance — stays with the rule.
      * @param array<string, int> $assignedHits Layer name => number of classes and dependency-edge
      *                                         ends assigned to it.
-     * @param array<string, array<string, true>> $matchedSymbols Layer name => set of canonical symbols
-     *                                                           the layer matched at all, winning or not.
+     * @param array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>} $symbolSets
+     *                                                                                                                     The two per-layer symbol sets the walk records, as one field: `matched` is every canonical
+     *                                                                                                                     symbol the layer's criteria matched at all, winning or not; `excluded` is every one its
+     *                                                                                                                     `exclude:` clause removed after those criteria had already succeeded. One field rather than
+     *                                                                                                                     two adjacent parameters of the same type because they are two columns of a single
+     *                                                                                                                     observation — filled by the same tally helper, merged by the same merge, and disjoint by
+     *                                                                                                                     construction, since an excluded symbol is not a member. Read through {@see matchedCounts()}
+     *                                                                                                                     and {@see excludedCounts()}.
      * @param array<string, array<string, list<ShadowEntry>>> $shadowEvidence (assigned, shadowed) => evidence.
      * @param array{classes: array<string, string>, analysed: int} $unassigned What the analysed set left
      *                                                                         outside every declared layer, and how many class-like declarations the walk saw — the
@@ -48,7 +54,7 @@ final readonly class LayerEvidence
         public ArchitectureConfiguration $architecture,
         public array $forbiddenEdges,
         public array $assignedHits,
-        public array $matchedSymbols,
+        public array $symbolSets,
         public array $shadowEvidence,
         public array $unassigned,
         public array $coverageState,
@@ -75,6 +81,15 @@ final readonly class LayerEvidence
      */
     public function matchedCounts(): array
     {
-        return array_map(\count(...), $this->matchedSymbols);
+        return array_map(\count(...), $this->symbolSets['matched']);
+    }
+
+    /**
+     * @return array<string, int> layer name => number of DISTINCT symbols its
+     *                            `exclude:` clause removed
+     */
+    public function excludedCounts(): array
+    {
+        return array_map(\count(...), $this->symbolSets['excluded']);
     }
 }

@@ -326,6 +326,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 [],
                 AbsolutePath::fromString($fixtureRoot),
                 GeneratedFilePolicy::Include,
+                coversProjectScope: true,
+                authoredPathExcludes: [],
             ));
 
             return [$result, $profileReport->summary()->spans];
@@ -957,6 +959,6 @@ PHP);
 
     private static function runConfiguration(AbsolutePath $root): RunConfiguration
     {
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include);
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []);
     }
 }

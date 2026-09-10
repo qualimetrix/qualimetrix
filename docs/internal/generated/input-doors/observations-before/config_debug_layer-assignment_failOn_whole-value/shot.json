@@ -1,0 +1,5 @@
+{
+    "key": "config|debug:layer-assignment|failOn|whole-value",
+    "fingerprint": "38d96a8ab84e797abc0aa0038873fbdd510ecdd7f64f670045ed88d8bac56456",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

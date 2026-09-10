@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
  * - Aggregated edges (unique from->to pairs with all types collected)
  * - Node list with FQN and namespace
  * - Statistics (node/edge counts)
- * - Namespace filtering (include/exclude) via shared options
+ * - Namespace filtering (include/exclude) via the shared {@see NamespaceFilter}
  */
 final class JsonGraphExporter
 {
@@ -28,7 +28,7 @@ final class JsonGraphExporter
 
     public function export(DependencyGraphInterface $graph): string
     {
-        $classes = $this->filterClasses($graph->getAllClasses());
+        $classes = (new NamespaceFilter($this->includeNamespaces, $this->excludeNamespaces))->apply($graph->getAllClasses());
 
         $classSet = [];
         foreach ($classes as $classPath) {
@@ -105,65 +105,5 @@ final class JsonGraphExporter
         ];
 
         return json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
-    }
-
-    /**
-     * Filters classes based on include/exclude namespaces.
-     *
-     * @param array<\Qualimetrix\Core\Symbol\SymbolPath> $classes
-     *
-     * @return array<\Qualimetrix\Core\Symbol\SymbolPath>
-     */
-    private function filterClasses(array $classes): array
-    {
-        $filtered = [];
-
-        foreach ($classes as $classPath) {
-            if (!$this->shouldIncludeClass($classPath)) {
-                continue;
-            }
-
-            $filtered[] = $classPath;
-        }
-
-        return $filtered;
-    }
-
-    private function shouldIncludeClass(\Qualimetrix\Core\Symbol\SymbolPath $classPath): bool
-    {
-        $namespace = $classPath->namespace ?? '';
-
-        // Check exclude list first
-        foreach ($this->excludeNamespaces as $excludeNs) {
-            if ($this->namespaceMatches($namespace, $excludeNs)) {
-                return false;
-            }
-        }
-
-        // Check include list (if specified)
-        if ($this->includeNamespaces !== null) {
-            foreach ($this->includeNamespaces as $includeNs) {
-                if ($this->namespaceMatches($namespace, $includeNs)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if a class namespace matches a filter namespace.
-     * Supports exact match and prefix match.
-     */
-    private function namespaceMatches(string $classNamespace, string $filterNamespace): bool
-    {
-        if ($classNamespace === $filterNamespace) {
-            return true;
-        }
-
-        return str_starts_with($classNamespace, $filterNamespace . '\\');
     }
 }

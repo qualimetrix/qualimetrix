@@ -1,0 +1,5 @@
+{
+    "key": "cli|directives|--rule-opt|rule-option-name",
+    "fingerprint": "6960bd0dcd765902be707053e86af7e3c229cd56fd9a45ee3e23dfc0f1530bfa",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

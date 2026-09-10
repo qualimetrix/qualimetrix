@@ -1,0 +1,16 @@
+{
+    "id": "suppression",
+    "description": "Global and per-rule suppression values naming a path and a namespace the tree does not contain, so nothing was hidden and the report covers everything.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "channels": [
+        "suppression.unmatched-path@project",
+        "suppression.unmatched-namespace@project",
+        "suppression.unmatched-rule-ledger@project"
+    ],
+    "explainSubjects": [
+        "project:"
+    ]
+}

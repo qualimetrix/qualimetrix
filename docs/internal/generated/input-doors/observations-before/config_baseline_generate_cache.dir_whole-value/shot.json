@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:generate|cache.dir|whole-value",
+    "fingerprint": "9a564f51d97699a11efda972a227f761e7573f1786669a08af9776092db02697",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

@@ -78,12 +78,54 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     public function isFramework(string $fqcn): bool
     {
         foreach ($this->frameworkNamespaces as $prefix) {
-            if (str_starts_with($fqcn, $prefix . '\\') || $fqcn === $prefix) {
+            if (self::covers($prefix, $fqcn)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * The declared prefixes that no name in $fqcns falls under.
+     *
+     * A prefix that binds nothing changes no metric: every class stays in
+     * `coupling.cbo-app` and `coupling.ce-framework` stays zero, which is
+     * exactly the state the author wrote the prefix to leave. Answering here
+     * rather than in the caller keeps one home for the matching rule — the
+     * caller would otherwise re-spell {@see isFramework()}'s comparison and
+     * the two could disagree about, say, a leading backslash.
+     *
+     * Prefixes are compared verbatim, without normalisation: `\Symfony` never
+     * matches anything {@see isFramework()} is asked about either, so it is a
+     * genuinely unbound prefix rather than a spelling this method should
+     * repair.
+     *
+     * @param iterable<string> $fqcns The names the run actually classified
+     *
+     * @return list<string> In declaration order; empty when every prefix bound
+     */
+    public function unboundPrefixes(iterable $fqcns): array
+    {
+        $unbound = array_values(array_unique($this->frameworkNamespaces));
+
+        foreach ($fqcns as $fqcn) {
+            $unbound = array_values(array_filter(
+                $unbound,
+                static fn(string $prefix): bool => !self::covers($prefix, $fqcn),
+            ));
+
+            if ($unbound === []) {
+                return [];
+            }
+        }
+
+        return $unbound;
+    }
+
+    private static function covers(string $prefix, string $fqcn): bool
+    {
+        return str_starts_with($fqcn, $prefix . '\\') || $fqcn === $prefix;
     }
 
     public function isFrameworkNamespace(?string $namespace): bool

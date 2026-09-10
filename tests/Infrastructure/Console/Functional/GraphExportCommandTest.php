@@ -436,6 +436,147 @@ final class GraphExportCommandTest extends TestCase
         chmod($unwritableDir, 0o755);
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function provideExportFormats(): iterable
+    {
+        yield 'dot' => ['dot'];
+        yield 'json' => ['json'];
+    }
+
+    /**
+     * The pair that makes the verdict readable: without the observed hit, an
+     * empty projection is indistinguishable from a fixture that renders
+     * nothing at all.
+     */
+    #[Test]
+    #[DataProvider('provideExportFormats')]
+    public function itRefusesAnIncludeNamespaceThatMatchesNoClass(string $format): void
+    {
+        $this->writeTwoNamespaceFixture();
+
+        $miss = $this->createCommandTester();
+        $missExit = $miss->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--namespace' => ['Zzz\\Nope'],
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $missExit);
+        self::assertStringNotContainsString('digraph Dependencies', $miss->getDisplay());
+        self::assertStringNotContainsString('"nodes"', $miss->getDisplay());
+
+        $hit = $this->createCommandTester();
+        $hitExit = $hit->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--namespace' => ['Acme\\Deep'],
+        ]);
+
+        self::assertSame(0, $hitExit);
+        self::assertStringContainsString('Deep', $hit->getDisplay());
+        self::assertStringNotContainsString('Other', $hit->getDisplay());
+
+        // The control for the assertion above: `Other` is in the fixture and
+        // is rendered when nothing filters it out, so its absence under
+        // `--namespace` is the filter working rather than the fixture being
+        // half-empty.
+        $unfiltered = $this->createCommandTester();
+        self::assertSame(0, $unfiltered->execute(['paths' => [$this->tempDir], '--format' => $format]));
+        self::assertStringContainsString('Other', $unfiltered->getDisplay());
+    }
+
+    #[Test]
+    public function itNamesEveryUnboundIncludeNamespaceInAJsonEnvelope(): void
+    {
+        $this->writeTwoNamespaceFixture();
+
+        $tester = $this->createCommandTester();
+        $exit = $tester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'json',
+            '--namespace' => ['Acme\\Deep', 'Zzz\\Nope', 'Aaa\\None'],
+        ]);
+
+        self::assertSame(3, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $decoded['exit_code']);
+        self::assertStringContainsString('Zzz\\Nope', $decoded['error']);
+        self::assertStringContainsString('Aaa\\None', $decoded['error']);
+        self::assertStringNotContainsString('Acme\\Deep', $decoded['error']);
+    }
+
+    #[Test]
+    #[DataProvider('provideExportFormats')]
+    public function itRefusesAnUnboundNamespaceWithoutCreatingAnOutputFile(string $format): void
+    {
+        $this->writeTwoNamespaceFixture();
+        $destination = $this->tempDir . '/graph.' . $format;
+
+        $tester = $this->createCommandTester();
+        $exit = $tester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--output' => $destination,
+            '--namespace' => ['Zzz\\Nope'],
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $exit);
+        self::assertFileDoesNotExist($destination);
+    }
+
+    /**
+     * The neighbouring door stays silent on purpose: a missed exclusion leaves
+     * the graph exactly what it would have been, so the caller loses nothing
+     * (`docs/internal/plans/silent-acceptance/00-overview.md`, the third row of
+     * the rule). This is the regression guard against the refusal spreading.
+     */
+    #[Test]
+    #[DataProvider('provideExportFormats')]
+    public function itKeepsAMissedExcludeNamespaceSilentAndUnchanged(string $format): void
+    {
+        $this->writeTwoNamespaceFixture();
+
+        $plain = $this->createCommandTester();
+        self::assertSame(0, $plain->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+        ]));
+
+        $missedExclude = $this->createCommandTester();
+        self::assertSame(0, $missedExclude->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--exclude-namespace' => ['Zzz\\Nope'],
+        ]));
+
+        self::assertSame(
+            self::withoutTimestamp($plain->getDisplay()),
+            self::withoutTimestamp($missedExclude->getDisplay()),
+        );
+    }
+
+    /**
+     * The JSON envelope carries `meta.timestamp` from `date('c')`, which
+     * differs across a second boundary — comparing it would make the
+     * byte-for-byte guard flaky about the wrong thing.
+     */
+    private static function withoutTimestamp(string $rendered): string
+    {
+        return (string) preg_replace('/"timestamp": "[^"]+"/', '"timestamp": "-"', $rendered);
+    }
+
+    private function writeTwoNamespaceFixture(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Deep.php',
+            '<?php namespace Acme\\Deep; class Deep { public function use(\\Acme\\Other\\Other $o) {} }',
+        );
+        file_put_contents(
+            $this->tempDir . '/Other.php',
+            '<?php namespace Acme\\Other; class Other {}',
+        );
+    }
+
     /**
      * Recursively remove a directory.
      */

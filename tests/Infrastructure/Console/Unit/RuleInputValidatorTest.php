@@ -25,6 +25,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(RuleInputValidator::class)]
 final class RuleInputValidatorTest extends TestCase
@@ -328,6 +329,51 @@ final class RuleInputValidatorTest extends TestCase
         $validator->replaceChannels($snapshot);
 
         self::assertFalse($selector->isProducerEnabled('health.complexity', [], $disabled));
+    }
+
+    /**
+     * The pair form is owner, option and value: a pair carrying no `=` assigns
+     * nothing, and the run it silently accepted applied none of it.
+     */
+    #[Test]
+    public function itRefusesARuleOptionPairThatAssignsNoValue(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([LcomRule::class]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Invalid --rule-opt "cohesion.lcom:exclude_methods". Expected RULE:OPTION=VALUE.');
+        $this->validator($rules)->validate(
+            self::ruleOptionInput('cohesion.lcom:exclude_methods'),
+            new FindingConfiguration(new RuleOptionsDocument([]), new FindingCliOverrides([]), new RuleSelection()),
+            new ResolvedComputedMetricDefinitions([]),
+        );
+    }
+
+    #[Test]
+    public function itAcceptsARuleOptionPairThatCarriesAValue(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([LcomRule::class]);
+        $input = self::ruleOptionInput('cohesion.lcom:exclude_methods=getName');
+
+        $this->validator($rules)->validate(
+            $input,
+            new FindingConfiguration(new RuleOptionsDocument([]), new FindingCliOverrides([]), new RuleSelection()),
+            new ResolvedComputedMetricDefinitions([]),
+        );
+
+        self::assertSame(['cohesion.lcom:exclude_methods=getName'], $input->getOption('rule-opt'));
+    }
+
+    private static function ruleOptionInput(string $pair): ArrayInput
+    {
+        return new ArrayInput(
+            ['--rule-opt' => [$pair]],
+            new InputDefinition([
+                new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            ]),
+        );
     }
 
     private function validatorForComputedHealth(): RuleInputValidator

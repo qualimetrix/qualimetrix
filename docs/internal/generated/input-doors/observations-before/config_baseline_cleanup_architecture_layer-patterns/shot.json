@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:cleanup|architecture|layer-patterns",
+    "fingerprint": "b68072bc4d41217542d8647eed65c6cb02b54bb7510a94947c1bd5a2dc1059b6",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

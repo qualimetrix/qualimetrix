@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--disable-rule|whole-value",
+    "fingerprint": "bf3d2e3b389caaee5621ec4514f31007fa03e6b0b7d626c4c2d9539d84876886",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

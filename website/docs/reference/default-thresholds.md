@@ -59,14 +59,15 @@ Rules that check class design and inheritance structure.
 
 Rules that check how tightly classes and namespaces are connected to each other.
 
-| Rule        | ID                     | Warning | Error | Scope     |
-| ----------- | ---------------------- | ------- | ----- | --------- |
-| CBO         | `coupling.cbo`         | 14      | 20    | Class     |
-| CBO         | `coupling.cbo`         | 14      | 20    | Namespace |
-| Instability | `coupling.instability` | 0.8     | 0.95  | Class     |
-| Instability | `coupling.instability` | 0.8     | 0.95  | Namespace |
-| Distance    | `coupling.distance`    | 0.3     | 0.5   | Namespace |
-| ClassRank   | `coupling.class-rank`  | 0.02    | 0.05  | Class     |
+| Rule                          | ID                                       | Warning            | Error | Scope     |
+| ----------------------------- | ---------------------------------------- | ------------------ | ----- | --------- |
+| CBO                           | `coupling.cbo`                           | 14                 | 20    | Class     |
+| CBO                           | `coupling.cbo`                           | 14                 | 20    | Namespace |
+| Instability                   | `coupling.instability`                   | 0.8                | 0.95  | Class     |
+| Instability                   | `coupling.instability`                   | 0.8                | 0.95  | Namespace |
+| Distance                      | `coupling.distance`                      | 0.3                | 0.5   | Namespace |
+| ClassRank                     | `coupling.class-rank`                    | 0.02               | 0.05  | Class     |
+| Unmatched framework namespace | `coupling.unmatched-framework-namespace` | — (warning, fixed) | —     | Project   |
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
@@ -75,6 +76,8 @@ Rules that check how tightly classes and namespaces are connected to each other.
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 
 **ClassRank** uses the PageRank algorithm on the dependency graph to identify the most critical classes. Ranks sum to 1.0 across the project; a high rank means many (or important) classes depend on it. Thresholds are automatically adjusted by project size using sqrt scaling (calibrated for 100 classes).
+
+**Unmatched framework namespace** has no numeric threshold: it reports a `framework-namespaces` prefix that no name in the run falls under, once per prefix, at a fixed warning severity. It is an ordinary finding, so `--fail-on`, `--disable-rule` and the baseline all reach it. See [Coupling rules](../rules/coupling.md#unmatched-framework-namespace).
 
 ## Maintainability Rules
 
@@ -100,6 +103,24 @@ Rules that detect structural problems in the dependency graph. These rules do no
 | Empty Template            | `architecture.empty-template`        | Error (fixed, not configurable)            | enabled (fires only with template layers)                | One diagnostic per template layer that expanded to zero concrete instances — silently disables the policy attached to it. Typical causes: typo in the template pattern, every candidate excluded, or single-segment `{var}` where `{var:**}` is needed. This is a **configuration error**: it fails the run unconditionally, independent of `--fail-on`, and cannot be baselined or suppressed. The removed `empty_template_severity` option no longer exists — severity is fixed.                                                                                                                                                      |
 | Architecture Coverage Gap | `architecture.coverage-gap`          | Warning or Error (per `coverage-gap` mode) | disabled (`coverage-gap: ignore`)                        | One aggregated diagnostic when `architecture.coverage-gap` is `warn` or `error` and analysed logical classes (including isolated classes with no edges) or dependency-edge endpoints are outside every declared layer. The printed word matches the configured `coverage-gap:` mode, but this is still a **configuration error**: whenever it fires it fails the run unconditionally, independent of `--fail-on`, and it cannot be baselined or suppressed. `coverage-gap: ignore` remains the way to decline the diagnostic entirely.                                                                                                  |
 | Unassigned Class          | `architecture.unassigned-class`      | Warning or Error (per `mode`)              | disabled (`mode: ignore`)                                | One aggregated diagnostic counting the analysed class-like declarations (classes, interfaces, traits, enums) that match no declared layer. Unlike `architecture.coverage-gap` it never counts a dependency-edge end, so vendor code the project cannot classify does not enter the number. The reported metric value is the absolute count, so a project can accept the current count in a baseline and ratchet it down. Set with its own `mode` option (CLI: `--unassigned-class-mode`).                                                                                                                                               |
+
+## Discovery Rules
+
+The built-in `discovery.unmatched-exclude` rule reports on the run's own file selection: an `--exclude` value or an `exclude:` entry that matched no directory. It has no numeric thresholds.
+
+| Channel                       | Severity                          | Default | Notes                                                                                                                                                                                                                                  |
+| ----------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `discovery.unmatched-exclude` | Warning (fixed, not configurable) | enabled | Ordinary finding, not a configuration error: a shared configuration may legitimately name a path one repository does not have. Reported at project level, and only on a run whose paths cover the project's production autoload roots. |
+
+## Suppression Rules
+
+The built-in `suppression.configuration` rule reports on the run's own suppression configuration: a `suppress_paths` or `suppress_namespaces` value, global or per-rule, that names nothing this run holds. It has no numeric thresholds.
+
+| Channel                             | Severity                          | Default | Notes                                                                                                                                                                          |
+| ----------------------------------- | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `suppression.unmatched-path`        | Warning (fixed, not configurable) | enabled | A global `suppress_paths` value matching no analysed file. Reported at project level, only on a run covering the production autoload roots, and never written into a baseline. |
+| `suppression.unmatched-namespace`   | Warning (fixed, not configurable) | enabled | The same for `suppress_namespaces` against the namespaces the run declared.                                                                                                    |
+| `suppression.unmatched-rule-ledger` | Warning (fixed, not configurable) | enabled | The same for either key configured under `rules.<name>`.                                                                                                                       |
 
 ## Annotation Rules
 

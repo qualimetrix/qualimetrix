@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "{\n    \"error\": \"Configuration error: Invalid memory_limit \\\"zzz\\\". Expected bytes or a K, M, or G suffix.\",\n    \"exit_code\": 3\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Directive audit\n\n  Scope        7 file(s) analysed, 12 finding(s) produced\n  Sweep        narrow — each directive is judged by re-executing the rule it addresses\n  Disabled     coupling.class-rank, coupling.distance\n\n  No inline directives in the analysed scope.\n\n",
+    "stderr": "",
+    "file": false,
+    "dir": true
+}

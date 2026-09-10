@@ -1,0 +1,111 @@
+surface	command	door	type	is_array	referential	non_referential_reason	b_row	verdict	zero_kind	verdict_source	note
+cli	(global)	--working-dir	option	no	yes			REFUSES	binding-0	me-measured	exit 3 'Invalid working directory'
+cli	(global)	command	argument	no	yes			REFUSES	binding-0	me-measured	"Symfony: 'Command ""x"" is not defined.' exit 3"
+cli	_complete	--shell	option	no	n-a (Symfony completion internals)	Symfony internal		NOT MEASURED	n-a	not-measured	Symfony _complete internals, not a product door
+cli	_complete	--input	option	yes	n-a (Symfony completion internals)	Symfony internal		NOT MEASURED	n-a	not-measured	Symfony _complete internals, not a product door
+cli	_complete	--current	option	no	n-a (Symfony completion internals)	Symfony internal		NOT MEASURED	n-a	not-measured	Symfony _complete internals, not a product door
+cli	_complete	--api-version	option	no	n-a (Symfony completion internals)	Symfony internal		NOT MEASURED	n-a	not-measured	Symfony _complete internals, not a product door
+cli	_complete	--symfony	option	no	n-a (Symfony completion internals)	Symfony internal		NOT MEASURED	n-a	not-measured	Symfony _complete internals, not a product door
+cli	baseline:cleanup	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	baseline:cleanup	--preset	option	yes	yes		19	REFUSES	binding-0	inherited-from-check	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	baseline:cleanup	--disable-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML disabledRules -> same refusal
+cli	baseline:cleanup	--only-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML onlyRules -> same refusal
+cli	baseline:cleanup	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	inherited-from-check	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	baseline:cleanup	--remove	option	yes	yes			SPEAKS, exit 0	binding-0	me-measured	'No entry with selector X; nothing removed for it.' Selector must be 12 hex chars; a canonical subject key is refused (exit 3)
+cli	baseline:cleanup	baseline	argument	no	yes			REFUSES	binding-0	me-measured	missing baseline path -> exit 3
+cli	baseline:cleanup	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	baseline:explain	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	baseline:explain	--preset	option	yes	yes		19	REFUSES	binding-0	inherited-from-check	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	baseline:explain	--disable-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML disabledRules -> same refusal
+cli	baseline:explain	--only-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML onlyRules -> same refusal
+cli	baseline:explain	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	inherited-from-check	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	baseline:explain	--baseline	option	no	yes			REFUSES	binding-0	me-measured	missing file -> exit 3 'Baseline file not found'
+cli	baseline:explain	--channel	option	no	yes		30	REFUSES	binding-0	B-measured + me	me re-measured: exit 3 'declared by no rule and appears in no entry'
+cli	baseline:explain	subject	argument	no	yes		29	REFUSES	binding-0	B-measured	exit 3 'absent from both the current analysis and the baseline'
+cli	baseline:explain	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	baseline:generate	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	baseline:generate	--preset	option	yes	yes		19	REFUSES	binding-0	inherited-from-check	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	baseline:generate	--disable-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML disabledRules -> same refusal
+cli	baseline:generate	--only-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML onlyRules -> same refusal
+cli	baseline:generate	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	inherited-from-check	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	baseline:generate	--mode	option	no	yes			REFUSES	binding-0	me-measured	baseline:generate ratchet|suppress -> exit 3
+cli	baseline:generate	baseline	argument	no	yes			REFUSES	binding-0	me-measured	missing baseline path -> exit 3
+cli	baseline:generate	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	baseline:rename-channels	--format	option	no	yes		14	REFUSES	binding-0	B-measured + me	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	baseline:rename-channels	baseline	argument	no	yes			REFUSES	binding-0	me-measured	missing baseline path -> exit 3
+cli	baseline:rename-channels	map	argument	no	yes			SPLIT: REFUSES missing file; SPEAKS on unmatched row	binding-0	me-measured	"*** file missing -> exit 3; a map ROW whose 'old' channel is in no entry -> exit 0 + 'Declared rename of ""zzz.nope"" matched no entry.'"
+cli	baseline:update	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	baseline:update	--preset	option	yes	yes		19	REFUSES	binding-0	inherited-from-check	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	baseline:update	--disable-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML disabledRules -> same refusal
+cli	baseline:update	--only-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML onlyRules -> same refusal
+cli	baseline:update	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	inherited-from-check	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	baseline:update	baseline	argument	no	yes			REFUSES	binding-0	me-measured	missing baseline path -> exit 3
+cli	baseline:update	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	check	--preset	option	yes	yes		19	REFUSES	binding-0	B-measured	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	check	--exclude	option	yes	yes		3	SILENT	binding-0	B-measured	tier D; miss -> byte-identical run, exit 0
+cli	check	--suppress-path	option	yes	yes		4	SILENT in normal report	binding-0	B-measured	neverMatched only under --format=suppressed
+cli	check	--suppress-namespace	option	yes	yes		5	SILENT in normal report	binding-0	B-measured	neverMatched only under --format=suppressed
+cli	check	--config	option	no	yes			REFUSES	binding-0	me-measured	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	check	--format	option	no	yes		14	REFUSES	binding-0	B-measured + me	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	check	--output	option	no	yes			REFUSES	binding-0	me-measured	nonexistent parent dir -> exit 3; contrast --log-file which CREATES it
+cli	check	--fail-on	option	no	yes			REFUSES	binding-0	me-measured	closed enum; CLI and YAML failOn both exit 3
+cli	check	--namespace	option	no	yes		7 / 9	SILENT	binding-0	B-measured	check: 'No violations found.' indistinguishable from a clean real namespace; graph:export: empty graph
+cli	check	--class	option	no	yes		8	SILENT	binding-0	B-measured	exact FQCN; 'No violations found.'
+cli	check	--cache-dir	option	no	yes			SILENT  <-- NEW (weak)	binding-0	me-measured	*** unwritable path (/nope/zzz/cache) -> exit 0, stderr empty, dir not created, caching silently off. Discriminator: writable path -> dir created
+cli	check	--baseline	option	no	yes			REFUSES	binding-0	me-measured	missing file -> exit 3 'Baseline file not found'
+cli	check	--report	option	no	yes		13,25	SPLIT: REFUSES bad ref/scheme; SILENT on empty range	effect-0	B-measured + me	me: --report=zzznope (non-git scheme) -> exit 3; B: git:HEAD..HEAD selecting nothing -> silent
+cli	check	--workers	option	no	no	integer count, no referent		REFUSES	n-a	me-measured	non-integer -> exit 3
+cli	check	--log-file	option	no	yes	write target, product creates the parent		n-a (write target, parent auto-created)	n-a	me-measured	nonexistent parent is created; no miss possible
+cli	check	--log-level	option	no	yes			SILENT  <-- NEW	binding-0	me-measured	*** garbage value accepted, exit 0, stderr empty, silently falls back to info. Discriminator: debug=15 log lines, garbage=8 (=info default), error=0
+cli	check	--memory-limit	option	no	no	PHP size string, no referent		REFUSES	n-a	me-measured	non-size -> exit 3
+cli	check	--profile	option	no	yes	write target / optional flag		n-a (VALUE_OPTIONAL write target)	n-a	me-measured	bare flag or file path
+cli	check	--profile-format	option	no	yes			SPEAKS on stderr, does NOT refuse  <-- NEW	binding-0	me-measured	*** 'Invalid profile format' on stderr but exit 0 and NO profile file written; json=31095B, chrome-tracing=18050B, garbage=absent
+cli	check	--group-by	option	no	yes		15	REFUSES	binding-0	B-read-only + me-measured	B had code-reading only; I measured: exit 3 with enumeration
+cli	check	--format-opt	option	yes	yes		1	SILENT (key)	binding-0	B-measured	no key registry at all; value-level miss unmeasured by both witnesses
+cli	check	--detail	option	no	no	integer count / 'all', no referent		SILENT coercion	n-a	me-measured	--detail=abc behaves as the default 200, exit 0, no message (type miss)
+cli	check	--top	option	no	no	integer count, no referent		SILENT coercion	n-a	me-measured	--top=abc behaves as the default 10, exit 0, no message (type miss, not binding-0)
+cli	check	--exclude-health	option	yes	yes		18	REFUSES	binding-0	B-measured	me: YAML excludeHealth same refusal
+cli	check	--disable-rule	option	yes	yes		16	REFUSES	binding-0	B-measured	also measured by me via YAML disabledRules -> same refusal
+cli	check	--only-rule	option	yes	yes		16	REFUSES	binding-0	B-measured	also measured by me via YAML onlyRules -> same refusal
+cli	check	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	B-measured	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	check	paths	argument	yes	yes		24	REFUSES	binding-0	B-measured	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	completion	shell	argument	no	yes			REFUSES	binding-0	me-measured	completion: exit 2 with supported shells
+cli	debug:layer-assignment	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	debug:layer-assignment	--format	option	no	yes		14	REFUSES	binding-0	B-measured + me	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	debug:layer-assignment	fqn	argument	no	yes			SILENT  <-- NEW	binding-0	me-measured	*** debug:layer-assignment on a class that does not exist prints 'Assigned to: (no layer)' + a catch-all suggestion, exit 0 - byte-shape identical to a REAL class that matches no layer. Nonexistence and unclassified are conflated. The command RUNS Collection (it injects Collection services), so the declaration set is in hand and the two cases ARE distinguishable - this is a conflation, not a pattern-matcher's honest limit.
+cli	directives	--config	option	no	yes			REFUSES	binding-0	inherited-from-check	missing file -> exit 3 'Configuration file not found'; measured on check only
+cli	directives	--format	option	no	yes		14	REFUSES	binding-0	B-measured + me	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	directives	--sweep	option	no	yes			REFUSES	binding-0	me-measured	directives narrow|full -> exit 3
+cli	directives	--preset	option	yes	yes		19	REFUSES	binding-0	inherited-from-check	named preset not in ci/legacy/strict -> exit 3 with enumeration; preset-as-FILE measured by me: missing path -> exit 3
+cli	directives	--disable-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML disabledRules -> same refusal
+cli	directives	--only-rule	option	yes	yes		16	REFUSES	binding-0	inherited-from-check	also measured by me via YAML onlyRules -> same refusal
+cli	directives	--rule-opt	option	yes	yes		2,17	SPLIT: REFUSES rule/option name; SILENT on missing '=value'	binding-0	inherited-from-check	rule name and option name refuse (exit 3); 'rule:option' with no '=' is dropped silently
+cli	directives	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	graph:export	--output	option	no	yes			REFUSES	binding-0	me-measured	nonexistent parent dir -> exit 3; contrast --log-file which CREATES it
+cli	graph:export	--format	option	no	yes		14	REFUSES	binding-0	B-measured + me	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	graph:export	--direction	option	no	yes			REFUSES	binding-0	me-measured	graph:export enum -> exit 3
+cli	graph:export	--namespace	option	yes	yes		7 / 9	SILENT	binding-0	B-measured	check: 'No violations found.' indistinguishable from a clean real namespace; graph:export: empty graph
+cli	graph:export	--exclude-namespace	option	yes	yes		10	SILENT	binding-0	B-measured	graph:export; B argues not-a-defect
+cli	graph:export	paths	argument	yes	yes		24	REFUSES	binding-0	inherited-from-check	exit 3 'path ... does not exist'; me: YAML paths: [nosuchdir] refuses too
+cli	help	--format	option	no	yes			REFUSES	binding-0	me-measured (Symfony formats, not FormatterRegistry)	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	help	command_name	argument	no	yes			REFUSES	binding-0	me-measured	"help: exit 3 'Command ""x"" is not defined.'"
+cli	list	--format	option	no	yes			REFUSES	binding-0	me-measured (Symfony formats, not FormatterRegistry)	check FormatterRegistry exit 3 (B); me: graph:export/directives/debug:layer-assignment/baseline:rename-channels each refuse with own enumeration; help/list are Symfony txt|xml|json|md, NOT row 14 - measured separately, exit 3 'Unsupported format'
+cli	list	namespace	argument	no	yes			REFUSES	binding-0	me-measured	"list: exit 3 'There are no commands defined in the ""x"" namespace.'"
+cli	rules	--group	option	no	yes			REFUSES	binding-0	me-measured	rules --group: exit 3 with the 13 group names
+config	(qmx.yaml)	paths	config-root		yes		24	REFUSES	binding-0	B-measured	YAML nonexistent path -> exit 3 (me-measured)
+config	(qmx.yaml)	exclude	config-root		yes		3	SILENT	binding-0	B-measured	B measured both CLI and YAML halves
+config	(qmx.yaml)	format	config-root		yes		14	REFUSES	binding-0	B+me	me: YAML format: zzznope -> exit 3
+config	(qmx.yaml)	rules	config-root		yes		17	REFUSES	binding-0	B+me	me: YAML unknown rule name -> exit 3 'Unknown rule'; unknown per-rule option -> exit 3. CLI RuleInputValidator is NOT the only guard.
+config	(qmx.yaml)	disabledRules	config-root		yes		16	REFUSES	binding-0	me-measured	me: YAML path refuses identically to CLI
+config	(qmx.yaml)	onlyRules	config-root		yes		16	REFUSES	binding-0	me-measured	me: YAML path refuses identically to CLI
+config	(qmx.yaml)	suppressPaths	config-root		yes		4	SILENT in normal report	binding-0	B-measured (CLI half)	YAML half inherited from the CLI measurement - same filter class
+config	(qmx.yaml)	suppressNamespaces	config-root		yes		5	SILENT in normal report	binding-0	B-measured (CLI half)	YAML half inherited - same filter class
+config	(qmx.yaml)	failOn	config-root		yes			REFUSES	binding-0	me-measured	exit 3 with allowed values
+config	(qmx.yaml)	cache.dir	config-subkey		yes			SILENT  <-- NEW (weak)	binding-0	me-measured	unwritable dir -> exit 0, silent, caching off
+config	(qmx.yaml)	cache.enabled	config-subkey		no	boolean		n-a	n-a		no referent
+config	(qmx.yaml)	parallel.workers	config-subkey		no	integer count		REFUSES	n-a	me-measured	me: YAML workers: abc -> exit 3 'expected integer, got string' (own message, NOT the CLI validator's)
+config	(qmx.yaml)	coupling.frameworkNamespaces	config-subkey		yes		31	SILENT  <-- NEW VERDICT	binding-0	B-NO-VERDICT -> me-measured	*** B could not get a discriminator. I changed the OBSERVABLE to --format=metrics on a fixture importing Symfony/Doctrine: miss ['Nope\Missing'] = byte-identical to no-config; hit ['Symfony','Doctrine'] moves coupling.cbo-app 3->0 and coupling.ce-framework 0->3. Miss is silent, exit 0.
+config	(qmx.yaml)	includeGenerated	config-root		no	boolean		n-a	n-a		no referent
+config	(qmx.yaml)	memoryLimit	config-root		no	PHP size string		REFUSES	n-a	me-measured	me: YAML memoryLimit: abc -> exit 3, same message as --memory-limit
+config	(qmx.yaml)	architecture	config-root		yes		11,21,28	SPLIT: REFUSES unknown subkeys; layer patterns SPEAK loudly; layer exclude.patterns SILENT	binding-0	B-measured	row 11 is the silent one: layers[].exclude.patterns matching nothing -> exit 0, no diagnostic, while an empty layer RESULT is loud (architecture.unreachable-layer)
+config	(qmx.yaml)	excludeHealth	config-root		yes		18	REFUSES	binding-0	B+me	NOT an ENTRIES row - reachable only via DOCUMENT_ROOTS (A's finding); me: YAML half refuses

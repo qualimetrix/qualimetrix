@@ -1,0 +1,5 @@
+{
+    "key": "cli|directives|paths|whole-value",
+    "fingerprint": "30d11b60fd4a176bd7f469cb3af74f3890fd54660621de1130da8b11ad082e22",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

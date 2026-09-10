@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate;
@@ -179,8 +177,8 @@ final class BaselineCleanupCommand extends BaselineCommand
         }
 
         if ($invalid !== []) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--remove'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--remove',
                 \sprintf(
                     'Not entry selectors (expected %d hexadecimal characters, as printed above): %s',
                     EntrySelector::LENGTH,

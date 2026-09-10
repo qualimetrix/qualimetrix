@@ -7,16 +7,22 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -391,7 +397,28 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator($pipeline, new ErrorStream());
+        return new FindingFilterOrchestrator(
+            $pipeline,
+            new ErrorStream(),
+            self::silentSuppressionAudit(),
+            new ProjectScopeCoverage(self::createStub(ComposerAutoloadPathReaderInterface::class)),
+            self::createStub(ComposerAutoloadPathReaderInterface::class),
+        );
+    }
+
+    /**
+     * The suppression-binding channels are not this file's subject and have
+     * their own end-to-end cases; switched off, the audit answers with an
+     * empty list before it reads anything, so these cases keep measuring what
+     * they measured.
+     */
+    private static function silentSuppressionAudit(): UnboundSuppressionAudit
+    {
+        return new UnboundSuppressionAudit(
+            new UnboundSuppressionOptions(enabled: false),
+            self::createStub(RuleExecutionInterface::class),
+            self::createStub(RuleConfigurationInterface::class),
+        );
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput

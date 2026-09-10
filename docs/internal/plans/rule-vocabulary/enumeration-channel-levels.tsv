@@ -10,6 +10,7 @@ architecture.layer-violation#architecture.layer-violation	class	no	no	C4	both
 architecture.pending-layer-matched#architecture.pending-layer-matched	project	no	no	C4	both
 architecture.potential-shadow#architecture.potential-shadow	project	no	no	C4	both
 architecture.unassigned-class#architecture.unassigned-class	project	no	no	C4	both
+architecture.unmatched-exclude#architecture.unmatched-exclude	project	no	no	C4	x16-p8
 architecture.unreachable-layer#architecture.unreachable-layer	project	no	no	C4	both
 code-smell.boolean-argument#code-smell.boolean-argument	callable	no	no	C1	both
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable	no	no	C1	both
@@ -45,6 +46,7 @@ coupling.class-rank#coupling.class-rank	class	no	no	C1 C2 C3 C4	both
 coupling.distance#coupling.distance	namespace	no	no	C1	both
 coupling.instability#coupling.instability.class	class	no	yes	C1 C2	both
 coupling.instability#coupling.instability.namespace	namespace	no	yes	C1	both
+coupling.unmatched-framework-namespace#coupling.unmatched-framework-namespace	project	no	no	C7	x16-p9
 design.data-class#design.data-class	class	no	no	C1 C2	both
 design.god-class#design.god-class	class	no	no	C1 C2	both
 design.dit#design.dit	class	no	no	C1 C2	both
@@ -52,6 +54,7 @@ design.noc#design.noc	class	no	no	C2	both
 design.type-coverage.param#design.type-coverage.param	class	no	no	C2	both
 design.type-coverage.property#design.type-coverage.property	class	no	no	C2	both
 design.type-coverage.return#design.type-coverage.return	class	no	no	C2	both
+discovery.unmatched-exclude#discovery.unmatched-exclude	project	no	no	C4	x16-p6
 duplication.clone#duplication.clone	project	no	no	C1	both
 maintainability.mi#maintainability.mi	callable	no	no	C1 C2	both
 security.command-injection#security.command-injection	callable	no	no	C2	both
@@ -62,8 +65,11 @@ security.xss#security.xss	callable	no	no	C2	both
 size.class-count#size.class-count	namespace	no	no	C1 C2	both
 size.method-count#size.method-count	class	no	no	C1 C2	both
 size.property-count#size.property-count	class	no	no	C1 C2	both
+suppression.unmatched-namespace#suppression.unmatched-namespace	project	no	no	C8	x16-p7
+suppression.unmatched-path#suppression.unmatched-path	project	no	no	C8	x16-p7
+suppression.unmatched-rule-ledger#suppression.unmatched-rule-ledger	project	no	no	C8	x16-p7
 #
-# 63 of 63 channels. The channel set is not hand-listed: it is the 57 lines of
+# 66 of 66 channels. The channel set is not hand-listed: it is the 60 lines of
 # tests/Analysis/Finding/Fixtures/Channels/declared.txt (a fixture the container
 # guards in both directions) plus the 6 cases of HealthDimension.
 #
@@ -106,8 +112,28 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #       whose code exists, a template expanding to nothing, a class outside
 #       every layer, `coverage: error` and `--rule-opt=architecture.unassigned-class:mode=error`.
 #   C5  a three-class dependency cycle.
+#   C7  the gate corpus case `finding-gate/cases/coupling`, whose qmx.yaml
+#       names the framework namespace `NoSuchVendor\Framework` that nothing in
+#       it falls under. Re-runnable: it is the case
+#       ChannelLevelDeclarationDriftTest measures over.
 #   C6  src/ and C2 with every health threshold raised to 100, so all six
 #       health scores breach at every level they are computed at.
+#
+# ROWS ADDED AFTER THAT PASS carry the round that measured them in the
+# `witnesses` column instead of `both`: one run of the corpus named in
+# `corpus`, not the two independent observations Ш0 made. The counts in the
+# findings below are the pass's own and are not restated for them.
+#   x16-p8  architecture.unmatched-exclude, project, over C4 extended with an
+#           `exclude:` clause on the `controller` layer that removes no class.
+#   x16-p6  discovery.unmatched-exclude, project, over C4 run with
+#           `--exclude=NoSuchDir`, a directory the corpus does not contain.
+#   x16-p9  coupling.unmatched-framework-namespace, project, over C7 — the
+#           corpus is named separately because no earlier one configures a
+#           framework namespace at all.
+#   x16-p7  the three suppression.unmatched-* channels, project, over C8 — a
+#           corpus named separately for the same reason: no earlier one
+#           configures suppress_paths or suppress_namespaces at all, and a
+#           value that binds is not what the channels report.
 #
 # FINDINGS OF THIS PASS:
 #  - `file` is a real reporting level after all: all four `annotation.*`
@@ -134,7 +160,7 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #    level here may be capable of another on code these corpora do not contain.
 #    The claim "no static channel is multi-level" is a claim about this corpus;
 #    for the health family the declaration backs it independently, for the
-#    static 57 nothing does.
+#    static 60 nothing does.
 #  - a user-defined `computed.*` metric declares its own `levels:` in
 #    `qmx.yaml` and is outside any fixed enumeration by construction.
 #  - `duplication.clone` and `architecture.circular-dependency`

@@ -22,7 +22,9 @@ Configuration/
 │   ├── Discovery/                # Composer autoload-path reader
 │   ├── Pipeline/                 # resolution request and pipeline contracts
 │   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
-│                                  # refusal by user input, and its origin/position vocabulary
+│                                  # refusal by user input, and its origin/position vocabulary;
+│                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
+│                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
 ├── Loader/             # YAML load and section normalization
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages

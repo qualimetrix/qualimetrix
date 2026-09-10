@@ -1,0 +1,5 @@
+{
+    "key": "config|directives|computedMetrics|whole-value",
+    "fingerprint": "807e1f6b78250e40bfdc7ae1d0c1691d224e4f82b3e7720e21972b60e8a393ed",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -143,13 +144,98 @@ final class LayerRegistryTest extends TestCase
         self::assertIsArray($cache);
         self::assertArrayHasKey($symbol->toCanonical(), $cache);
 
-        $matches = $cache[$symbol->toCanonical()];
-        self::assertCount(1, $matches);
-        self::assertSame('service', $matches[0]->layerName);
+        // One cache entry carries BOTH outputs of the single walk: the match
+        // list and the layers an `exclude:` clause removed the class from.
+        $entry = $cache[$symbol->toCanonical()];
+        self::assertSame(['matches', 'excluded'], array_keys($entry));
+        self::assertCount(1, $entry['matches']);
+        self::assertSame('service', $entry['matches'][0]->layerName);
+        self::assertSame([], $entry['excluded']);
 
         $registry->resolveLayer(SymbolPath::forClass('Other\\Place', 'Foo'));
         $cache = $reflection->getValue($registry);
         self::assertCount(2, $cache, 'Negative result (empty match list) is cached separately.');
+    }
+
+    /**
+     * The preservation half of the `exclude:` evidence: telling an excluded
+     * class from a non-matching one must not change what membership answers.
+     * `debug:layer-assignment`, shadow evidence and every layer assignment
+     * read {@see LayerRegistry::resolveAll()}, and an excluded class has
+     * always been — and stays — a class the layer does not hold.
+     */
+    #[Test]
+    public function itStillResolvesAnExcludedClassToNoLayerAtAll(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', new MembershipSpec(
+                ['App\Service\**'],
+                exclude: new ExcludeSpec(['App\Service\Legacy\**']),
+            )),
+        ]);
+
+        $excluded = SymbolPath::forClass('App\Service\Legacy', 'OldService');
+        $kept = SymbolPath::forClass('App\Service', 'UserService');
+
+        self::assertSame([], $registry->resolveAll($excluded));
+        self::assertNull($registry->resolveLayer($excluded));
+        self::assertSame(['service'], array_map(
+            static fn(LayerMatch $match): string => $match->layerName,
+            $registry->resolveAll($kept),
+        ));
+    }
+
+    /**
+     * The added half: which layers the clause removed the class from is
+     * answerable, and answered only for the class the clause actually
+     * removed. A class no positive criterion caught was never offered to the
+     * clause, so its list is empty for a different reason — the distinction
+     * `architecture.unmatched-exclude` rests on.
+     */
+    #[Test]
+    public function itNamesTheLayersAnExcludeClauseRemovedAClassFrom(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', new MembershipSpec(
+                ['App\Service\**'],
+                exclude: new ExcludeSpec(['App\Service\Legacy\**']),
+            )),
+        ]);
+
+        self::assertSame(
+            ['service'],
+            $registry->excludedLayers(SymbolPath::forClass('App\Service\Legacy', 'OldService')),
+        );
+        self::assertSame([], $registry->excludedLayers(SymbolPath::forClass('App\Service', 'UserService')));
+        self::assertSame([], $registry->excludedLayers(SymbolPath::forClass('Other\Place', 'Foo')));
+    }
+
+    /**
+     * Both answers come out of one cached walk, so asking for one must not
+     * leave the other unpopulated — two parallel caches would drift apart at
+     * exactly this call order.
+     */
+    #[Test]
+    public function itAnswersBothExitsOfTheWalkFromOneCacheEntry(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', new MembershipSpec(
+                ['App\Service\**'],
+                exclude: new ExcludeSpec(['App\Service\Legacy\**']),
+            )),
+        ]);
+
+        $excluded = SymbolPath::forClass('App\Service\Legacy', 'OldService');
+
+        // resolveAll first, excludedLayers off the cache.
+        self::assertSame([], $registry->resolveAll($excluded));
+        self::assertSame(['service'], $registry->excludedLayers($excluded));
+
+        $registry->clearCache();
+
+        // And the other way round.
+        self::assertSame(['service'], $registry->excludedLayers($excluded));
+        self::assertSame([], $registry->resolveAll($excluded));
     }
 
     #[Test]

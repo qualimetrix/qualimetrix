@@ -1,0 +1,5 @@
+{
+    "key": "config|debug:layer-assignment|coupling.frameworkNamespaces|whole-value",
+    "fingerprint": "8ac789a768a2a85cb95106f064ed56ccb8c0fb1c021be05b0081dc001c9a3d77",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

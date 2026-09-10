@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: FindingChannel code \"nosuch.rule#nosuch-code\" carries \"#\". The \"ruleName#code\" spelling of a channel is gone: a channel is named by its code alone. Write \"nosuch-code\".\n",
+    "file": false,
+    "dir": false
+}

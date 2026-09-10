@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
  *
- * @qmx-threshold coupling.cbo 47 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 46.
+ * @qmx-threshold coupling.cbo 48 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 47. X16 raised the raw value from 46 through exactly one new importer, `Infrastructure\Console\DrillDownBinding`, which reads this repository to build the namespace universe a `--namespace` value is judged against. The threshold is inclusive, so 48 keeps today's 47 silent and reports the next dependent.
  */
 interface MetricRepositoryInterface
 {

@@ -1,0 +1,5 @@
+{
+    "key": "config|directives|suppressPaths|whole-value",
+    "fingerprint": "672cbd4293bb2087fd46a1a76e12a4ffc8d4a4671f3d78446e23fe4a24ed63f5",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

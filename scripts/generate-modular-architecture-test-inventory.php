@@ -1039,6 +1039,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/FindingProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/Formatter/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
@@ -1070,7 +1071,7 @@ function currentSuite(string $path): string
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1) {
         return 'Unit';
     }
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1) {
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity|Coupling)/Integration/#', $path) === 1) {
         return 'Integration';
     }
     foreach (testSuitePrefixTable() as $entry) {

@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Unknown subject \"declaration:callable:Fixture\\NoSuch\\Ghost::x@src/Ghost.php\": it is absent from both the current analysis and the baseline.\n",
+    "file": false,
+    "dir": false
+}

@@ -1,0 +1,242 @@
+surface	command	door	site	outcome	decided_by	signal_source	note
+cli	(global)	--working-dir	whole-value	REFUSES	exit codes plus the product refusal framing	observation	
+cli	(global)	command	whole-value	NOT OBSERVABLE	text	observation	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+cli	_complete	--api-version	whole-value	NOT REFERENTIAL	annotation	none	Symfony completion internals
+cli	_complete	--current	whole-value	NOT REFERENTIAL	annotation	none	Symfony completion internals
+cli	_complete	--input	whole-value	NOT REFERENTIAL	annotation	none	Symfony completion internals
+cli	_complete	--shell	whole-value	NOT REFERENTIAL	annotation	none	Symfony completion internals
+cli	_complete	--symfony	whole-value	NOT REFERENTIAL	annotation	none	Symfony completion internals
+cli	baseline:cleanup	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	--remove	whole-value	SPEAKS	declared signal fired on M	observation	
+cli	baseline:cleanup	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	baseline:cleanup	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	baseline	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:cleanup	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--baseline	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--channel	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	baseline:explain	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:explain	subject	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--mode	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	baseline:generate	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:generate	baseline	whole-value	SILENT	declared none	none	
+cli	baseline:generate	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:rename-channels	--format	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:rename-channels	baseline	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:rename-channels	map	map-file	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:rename-channels	map	map-row	SPEAKS	declared signal fired on M	observation	
+cli	baseline:update	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	baseline:update	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	baseline	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	baseline:update	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--baseline	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--cache-dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	check	--class	whole-value	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
+cli	check	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--detail	whole-value	NOT REFERENTIAL	annotation	none	integer count or the literal 'all'; nothing to point at
+cli	check	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
+cli	check	--exclude-health	whole-value	SILENT	declared none	none	
+cli	check	--fail-on	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--format	whole-value	SILENT	declared, not fired	dictionary	
+cli	check	--format-opt	pair-key	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
+cli	check	--group-by	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--log-file	whole-value	SILENT	declared, not fired	dictionary	
+cli	check	--log-level	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	check	--memory-limit	whole-value	REFUSES	exit codes plus the product refusal framing	observation	
+cli	check	--namespace	whole-value	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
+cli	check	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--output	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--profile	whole-value	SILENT	declared, not fired	dictionary	
+cli	check	--profile-format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+cli	check	--report	empty-range	SILENT	declared none	none	
+cli	check	--report	ref-and-scheme	SILENT	declared, not fired	dictionary	
+cli	check	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	check	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	check	--suppress-namespace	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+cli	check	--suppress-path	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+cli	check	--top	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+cli	check	--workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+cli	check	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	completion	shell	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+cli	debug:layer-assignment	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	debug:layer-assignment	--format	whole-value	SILENT	declared, not fired	dictionary	
+cli	debug:layer-assignment	fqn	whole-value	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
+cli	directives	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--format	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--only-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--preset	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+cli	directives	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	--sweep	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	directives	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	graph:export	--direction	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	graph:export	--exclude-namespace	whole-value	SILENT	declared none	none	
+cli	graph:export	--format	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	graph:export	--namespace	whole-value	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
+cli	graph:export	--output	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+cli	graph:export	paths	whole-value	SILENT	declared, not fired	dictionary	
+cli	help	--format	whole-value	SILENT	declared, not fired	dictionary	
+cli	help	command_name	whole-value	SPEAKS	declared signal fired on M	observation	
+cli	list	--format	whole-value	SILENT	declared, not fired	dictionary	
+cli	list	namespace	whole-value	SILENT	declared none	none	
+cli	rules	--group	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:cleanup	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:cleanup	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	baseline:cleanup	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:cleanup	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:cleanup	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:cleanup	exclude	whole-value	SILENT	declared none	none	
+config	baseline:cleanup	excludeHealth	whole-value	SILENT	declared none	none	
+config	baseline:cleanup	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:cleanup	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	baseline:cleanup	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:cleanup	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	baseline:cleanup	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	rules	rule-suppress-pattern	SILENT	declared none	none	
+config	baseline:cleanup	suppressNamespaces	whole-value	SILENT	declared none	none	
+config	baseline:cleanup	suppressPaths	whole-value	SILENT	declared none	none	
+config	baseline:explain	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:explain	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	baseline:explain	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:explain	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:explain	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:explain	exclude	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	excludeHealth	whole-value	SILENT	declared none	none	
+config	baseline:explain	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:explain	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	baseline:explain	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:explain	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	baseline:explain	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	suppressNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:explain	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:generate	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	baseline:generate	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:generate	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:generate	coupling.frameworkNamespaces	whole-value	SILENT	declared none	none	
+config	baseline:generate	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:generate	exclude	whole-value	SILENT	declared none	none	
+config	baseline:generate	excludeHealth	whole-value	SILENT	declared none	none	
+config	baseline:generate	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:generate	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	baseline:generate	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:generate	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	baseline:generate	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	rules	rule-suppress-pattern	SILENT	declared none	none	
+config	baseline:generate	suppressNamespaces	whole-value	SILENT	declared none	none	
+config	baseline:generate	suppressPaths	whole-value	SILENT	declared none	none	
+config	baseline:update	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:update	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	baseline:update	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:update	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:update	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:update	exclude	whole-value	SILENT	declared none	none	
+config	baseline:update	excludeHealth	whole-value	SILENT	declared none	none	
+config	baseline:update	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	baseline:update	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	baseline:update	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	baseline:update	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	baseline:update	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	rules	rule-suppress-pattern	SILENT	declared none	none	
+config	baseline:update	suppressNamespaces	whole-value	SILENT	declared none	none	
+config	baseline:update	suppressPaths	whole-value	SILENT	declared none	none	
+config	check	architecture	layer-exclude-patterns	SPEAKS	declared signal fired on M	cure:P8	
+config	check	architecture	layer-patterns	NOT OBSERVABLE	text	observation	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	check	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	check	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	check	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	check	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	check	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	cure:R2	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	check	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	check	exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
+config	check	excludeHealth	whole-value	SILENT	declared none	none	
+config	check	failOn	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	check	format	whole-value	SILENT	declared, not fired	dictionary	
+config	check	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	check	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	check	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	check	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	check	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	check	rules	rule-suppress-pattern	SPEAKS	declared signal fired on M	cure:P7	
+config	check	suppressNamespaces	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+config	check	suppressPaths	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+config	debug:layer-assignment	architecture	layer-exclude-patterns	SILENT	declared none	none	
+config	debug:layer-assignment	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	debug:layer-assignment	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	debug:layer-assignment	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	debug:layer-assignment	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	debug:layer-assignment	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	debug:layer-assignment	exclude	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	excludeHealth	whole-value	SILENT	declared none	none	
+config	debug:layer-assignment	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	debug:layer-assignment	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	debug:layer-assignment	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	debug:layer-assignment	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	debug:layer-assignment	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	debug:layer-assignment	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	suppressNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	debug:layer-assignment	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	architecture	layer-exclude-patterns	SILENT	declared none	none	
+config	directives	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	directives	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
+config	directives	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	directives	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	directives	coupling.frameworkNamespaces	whole-value	SILENT	declared none	none	
+config	directives	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	directives	exclude	whole-value	SILENT	declared none	none	
+config	directives	excludeHealth	whole-value	SILENT	declared none	none	
+config	directives	failOn	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	format	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
+config	directives	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
+config	directives	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
+config	directives	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
+config	directives	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	suppressNamespaces	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	directives	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit

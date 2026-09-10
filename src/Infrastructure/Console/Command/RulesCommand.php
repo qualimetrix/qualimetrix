@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -58,8 +56,8 @@ final class RulesCommand extends Command
             // `01-refusal-verdicts.md`): the carrier is left to fly past this
             // command into the first clause of `Application`'s ladder
             // (P01-6), which is what gives it exit code 3.
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--group',
                 \sprintf(
                     'No rule group "%s". Groups: %s',
                     $groupFilter,

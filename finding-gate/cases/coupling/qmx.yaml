@@ -1,3 +1,8 @@
+coupling:
+  # Matches nothing in this corpus, which is what
+  # coupling.unmatched-framework-namespace is the fixture for: the prefix
+  # moves no class out of coupling.cbo-app and the run used to say nothing.
+  framework-namespaces: ['NoSuchVendor\Framework']
 suppress_paths: []
 computed_metrics:
   health.complexity: { enabled: false }

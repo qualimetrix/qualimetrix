@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Option \"suppressNosuch\" is not an option of rule \"complexity.ccn\". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.\n",
+    "file": false,
+    "dir": false
+}

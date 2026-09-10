@@ -6,10 +6,8 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -71,8 +69,8 @@ final class ConfigFileStage implements ConfigurationStageInterface
     {
         if ($request->configFilePath !== null) {
             if (!file_exists($request->configFilePath)) {
-                throw ConfigurationRefusal::aboutDocument(
-                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $request->configFilePath),
+                throw ConfigurationRefusal::aboutConfigFileDocument(
+                    $request->configFilePath,
                     \sprintf('Configuration file not found: %s', $request->configFilePath),
                 );
             }

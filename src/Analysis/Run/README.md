@@ -24,7 +24,11 @@ Run/
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # orchestration and per-file processing
+├── Configuration/              # run configuration resolution and project
+│                               # scope coverage
 ├── Discovery/                  # discovery coordination and implementations
+├── ExcludeBinding/             # what the run's exclude patterns bound to, and
+│                               # the `discovery.unmatched-exclude` producer
 ├── FileSetInspection/          # rule-selected composite
 ├── Pipeline/                   # ordered analysis pipeline, plus the prepared
 │                               # run both of its entry points share
@@ -38,6 +42,30 @@ Discovery -> Collection -> DependencyModel build -> Architecture policy ->
 Measurement aggregation -> ComputedMetrics evaluation -> CircularDependency
 preparation -> FileSet inspection -> Rule execution -> result projection
 ```
+
+`ProjectScopeCoverage` answers whether a run looked at the whole project or at
+a slice of it: its denominator is every production autoload target of
+`composer.json` — `psr-4` and `psr-0` roots, `classmap` and `files` entries
+alike — so `check src/` on a project autoloading `src/` covers the project
+while `check src/Foo/` does not. A `classmap` or `files` entry may name a
+single file, which changes nothing: the question is containment.
+`ProjectScopeMeasurement` carries both halves of one measurement — the
+uncovered targets the console warns about, and the verdict a channel reads —
+because a manifest declaring no readable production autoload at all (absent,
+unparseable, or without a production section) names no uncovered target and
+still may not be judged. The answer travels on
+`RunConfiguration::$coversProjectScope` because it is a fact about that
+configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
+refills it from `CheckScopeResolver` when a Git report scope narrows the run
+after resolution, and `AnalysisPipeline` copies it onto
+`AnalysisContext::$coversProjectScope` for the rules. The console's
+incomplete-scope warning is rendered from the same single measurement, so the
+warning and the findings cannot disagree about whether the run was a slice. The
+field has no default: every site that narrows a run states its own answer. A rule that reports a configured value as
+having bound to nothing must read it first: "bound nothing" is a fact about the
+pair (configuration, run scope), and a slice cannot carry the configuration's
+denominator. The predicate sees narrowing by path only, and answers "covers"
+when there is no composer manifest to be a denominator.
 
 `AnalysisFileDiscovery` coordinates the default or explicit discovery strategy,
 deduplicates overlapping roots by project-relative path, and applies
@@ -81,6 +109,42 @@ and stores no computed-metric state or result payload.
   which suppressions silenced nothing, and what each `@qmx-threshold` did —
   through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`.
+
+## `discovery.unmatched-exclude`
+
+Run's own channel, and the only one it produces. An `--exclude` value or an
+`exclude:` entry that matches no directory keeps nothing out of the analysis,
+and before the channel existed that run's report was byte-identical to one
+configured with no exclusion at all.
+
+Three pieces, in the order the run reaches them:
+
+- `RunConfigurationResolver` records the author's entries separately, in
+  `RunConfiguration::$authoredPathExcludes`. The merged `pathExcludes` cannot
+  answer for them: it also carries the built-in `vendor`, `node_modules` and
+  `.git`, and `node_modules` is legitimately absent from most PHP trees.
+- `ExcludeBindingProbe` walks the run's roots and answers, per pattern, whether
+  any directory matched — by Symfony's own two-branch rule, read from
+  `ExcludeDirectoryFilterIterator`. It has to be asked *during* discovery:
+  `Finder::exclude()` removes the matching directories before anything
+  downstream can count them, so a pattern that worked and one that matched
+  nothing are indistinguishable from the output.
+- `UnmatchedExcludeAudit` turns that answer into findings, and
+  `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
+  files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are
+  published through `RuleExecutionInterface::publishable()` after rule
+  execution, like every other finding. The audit is registered **lazy**: built
+  eagerly it would capture its rule's Options before the console had applied
+  `rules.<name>.enabled` or `--rule-opt`.
+- `UnmatchedExcludeRule` gives the channel its identity — `qmx rules`,
+  `--disable-rule`, severity, baseline. It emits nothing; the channel's name
+  lives on `UnmatchedExcludeOptions`, which is what keeps the rule and the
+  audit from naming each other and forming a cycle.
+
+The channel is silent on a run narrowed below the project's production
+autoload roots (`RunConfiguration::$coversProjectScope`): there a pattern binds
+nothing because of the path the caller chose, not because of anything the
+author wrote.
 
 ## The two entry points
 

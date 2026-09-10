@@ -166,6 +166,26 @@ Qualimetrix содержит набор встроенных правил для
 
 [Подробнее о правилах аннотаций --&gt;](annotation.ru.md)
 
+### Правила обнаружения файлов (Discovery)
+
+Это правило сообщает о выборе файлов самим прогоном, а не о коде: значение `--exclude` или запись `exclude:`, не совпавшая ни с одним каталогом. Отчёт тогда покрывает файлы, которые автор собирался исключить, а без этого канала промахнувшееся исключение и его отсутствие давали побайтно одинаковый вывод.
+
+| Правило                                     | ID                            | Что обнаруживает                                   |
+| ------------------------------------------- | ----------------------------- | -------------------------------------------------- |
+| [Непривязанное исключение](discovery.ru.md) | `discovery.unmatched-exclude` | Паттерн исключения, не убравший ни одного каталога |
+
+[Подробнее о правилах обнаружения файлов --&gt;](discovery.ru.md)
+
+### Правила подавления (Suppression)
+
+Это правило сообщает о конфигурации подавлений самого прогона, а не о коде: значение `suppress_paths` или `suppress_namespaces` — глобальное или под `rules.<имя>` — не назвавшее ни одного проанализированного файла и ни одного объявленного неймспейса. Такое значение ничего не прячет и не спрячет, тогда как автор считает, что прячет.
+
+| Правило                                      | ID                          | Что обнаруживает                                        |
+| -------------------------------------------- | --------------------------- | ------------------------------------------------------- |
+| [Конфигурация подавлений](suppression.ru.md) | `suppression.configuration` | Значение подавления, не назвавшее ничего из измеренного |
+
+[Подробнее о правилах подавления --&gt;](suppression.ru.md)
+
 ## Отключение правил
 
 Можно отключить отдельные правила или целые группы:
@@ -226,13 +246,15 @@ rules:
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
 - **Design:** `design.dit`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
-- **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
+- **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`, `coupling.unmatched-framework-namespace`
 - **Maintainability:** `maintainability.mi`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
 - **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (публикуется через четыре канала — см. [Правила аннотаций](annotation.ru.md))
+- **Discovery:** `discovery.unmatched-exclude` (см. [Правила обнаружения файлов](discovery.ru.md))
+- **Suppression:** `suppression.configuration` (его каналы перечислены на странице [Правила подавления](suppression.ru.md))
 
 Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell.*` (по wildcard; захватывает только потомков, не сам `code-smell`).
 -->

@@ -1,0 +1,16 @@
+surface	command	door	site	place
+cli	check	--exclude	whole-value	B3 CLI half
+config	check	exclude	whole-value	B3 configuration half
+config	check	suppressPaths	whole-value	B4
+config	check	suppressNamespaces	whole-value	B5
+cli	check	--namespace	whole-value	B7
+cli	check	--class	whole-value	B8
+cli	graph:export	--namespace	whole-value	B9
+cli	check	--log-level	whole-value	N1
+cli	check	--cache-dir	whole-value	N2
+cli	debug:layer-assignment	fqn	whole-value	N3
+config	check	coupling.frameworkNamespaces	whole-value	N4
+cli	check	--format-opt	pair-key	B1
+cli	check	--rule-opt	missing-equals-value	B2
+config	check	rules	rule-suppress-pattern	B6
+config	check	architecture	layer-exclude-patterns	B11

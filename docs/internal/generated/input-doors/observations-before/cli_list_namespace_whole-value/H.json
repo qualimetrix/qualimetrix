@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Qualimetrix dev-main\n\nUsage:\n  command [options] [arguments]\n\nOptions:\n  -h, --help                     Display help for the given command. When no command is given display help for the list command\n      --silent                   Do not output any message\n  -q, --quiet                    Only errors are displayed. All other output is suppressed\n  -V, --version                  Display this application version\n      --ansi|--no-ansi           Force (or disable --no-ansi) ANSI output\n  -n, --no-interaction           Do not ask any interactive question\n  -d, --working-dir=WORKING-DIR  Use the given directory as working directory\n  -v|vv|vvv, --verbose           Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug\n\nAvailable commands for the \"baseline\" namespace:\n  baseline:cleanup          List baseline entries nothing reports any more, and remove the ones you name\n  baseline:explain          Show the effective boundary for a metric subject and where it comes from\n  baseline:generate         Capture the current findings as a new baseline file\n  baseline:rename-channels  Rewrite the channel names in a baseline file along a declared rename map\n  baseline:update           Tighten an existing baseline against the current findings\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

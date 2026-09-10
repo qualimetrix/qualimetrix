@@ -23,6 +23,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * `architecture.layer-violation`, per use-site, one finding per forbidden
  * dependency edge.
  *
+ * A second channel comes out of the other half of the same walk.
+ * `architecture.unmatched-exclude` reports an `exclude:` clause that removed
+ * nothing from a layer that did catch classes: the layer is then larger than
+ * its author wrote it to be, and every verdict drawn from it is drawn from a
+ * wider set than intended. It is built by
+ * {@see UnmatchedExcludeDiagnostic}, which is also where the reasoning for it
+ * being this rule's channel rather than {@see LayerDeclarationValidator}'s
+ * lives.
+ *
  * How much of the analysed code no layer claims is a fact about the run
  * rather than about one edge, and belongs to {@see UnassignedClassRule}. It
  * reads the same {@see LayerEvidenceCollector}, so the two rules still share
@@ -49,6 +58,8 @@ final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
     public const string DOCS_PAGE = 'rules/architecture.md';
+
+    public const string UNMATCHED_EXCLUDE_NAME = LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
 
     public const int REMEDIATION_MINUTES = 15;
 
@@ -99,6 +110,7 @@ final class LayerViolationRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
         ];
     }
 
@@ -122,7 +134,21 @@ final class LayerViolationRule extends AbstractRule
 
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
 
-        return $this->buildFindings($evidence, $ownedTargets);
+        return [
+            ...$this->buildFindings($evidence, $ownedTargets),
+            // The forbidden edges are about what the run did look at and are
+            // reported whatever its scope. The exclude diagnostic is the other
+            // shape: "this clause removed nothing" is a fact about the pair
+            // (configuration, run scope), and a run narrowed below the
+            // project's autoload roots — or one whose manifest declares no
+            // readable production autoload — cannot tell an inert clause from
+            // one whose classes are simply outside the slice. The gate is the
+            // round's one predicate, the same one
+            // UnmatchedFrameworkNamespaceRule asks.
+            ...($context->coversProjectScope
+                ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
+                : []),
+        ];
     }
 
     /**

@@ -123,16 +123,17 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
+    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it, and reports the stage results
     ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
     ├── ResultPresenter.php            # Output presentation
+    ├── DrillDownBinding.php           # How many analyzed namespaces/classes a `--namespace`/`--class` value selects; zero is refused instead of emptying the report
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Warns when analysis paths don't cover all composer.json autoload entries
+    ├── ScopeWarningChecker.php        # Renders the incomplete-scope warning from Run's ProjectScopeCoverage answer
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── CheckCommandDefinition.php     # Command option definitions

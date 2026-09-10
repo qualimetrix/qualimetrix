@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:generate|rules|rule-suppress-pattern",
+    "fingerprint": "708994ec4944dc42a6633539ef601628b18e8b4e9ebd0aacd2903acb122e70af",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "{\n    \"error\": \"Configuration error: Unknown health dimension(s) in --exclude-health: health.NoSuchDir. Valid dimensions: health.complexity, health.cohesion, health.coupling, health.typing, health.maintainability\",\n    \"exit_code\": 3\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

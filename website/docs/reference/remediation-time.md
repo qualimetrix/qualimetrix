@@ -15,12 +15,13 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Coupling Rules
 
-| Rule        | ID                     | Minutes |
-| ----------- | ---------------------- | ------- |
-| CBO         | `coupling.cbo`         | 45      |
-| ClassRank   | `coupling.class-rank`  | 30      |
-| Instability | `coupling.instability` | 30      |
-| Distance    | `coupling.distance`    | 30      |
+| Rule                          | ID                                       | Minutes |
+| ----------------------------- | ---------------------------------------- | ------- |
+| CBO                           | `coupling.cbo`                           | 45      |
+| ClassRank                     | `coupling.class-rank`                    | 30      |
+| Instability                   | `coupling.instability`                   | 30      |
+| Distance                      | `coupling.distance`                      | 30      |
+| Unmatched framework namespace | `coupling.unmatched-framework-namespace` | 10      |
 
 ## Cohesion Rules
 
@@ -96,6 +97,18 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 | Circular Dependencies | `architecture.circular-dependency` | 120     |
 | Layer Violations      | `architecture.layer-violation`     | 15      |
 | Unassigned Classes    | `architecture.unassigned-class`    | 15      |
+
+## Discovery Rules
+
+| Rule              | ID                            | Minutes |
+| ----------------- | ----------------------------- | ------- |
+| Unmatched exclude | `discovery.unmatched-exclude` | 10      |
+
+## Suppression Rules
+
+| Rule                      | ID                          | Minutes |
+| ------------------------- | --------------------------- | ------- |
+| Suppression configuration | `suppression.configuration` | 10      |
 
 ## Annotation Rules
 

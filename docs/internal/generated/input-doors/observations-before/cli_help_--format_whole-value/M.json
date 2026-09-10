@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Unsupported format \"nosuchformat\".\n",
+    "file": false,
+    "dir": false
+}

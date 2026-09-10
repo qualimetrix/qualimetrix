@@ -1,0 +1,5 @@
+{
+    "key": "config|check|architecture|unknown-subkey",
+    "fingerprint": "9e2229912e4f6748390934d93b028743acbcfe599b7be174585814df78157aa7",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

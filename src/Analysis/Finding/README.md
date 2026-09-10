@@ -11,9 +11,10 @@ Finding/
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
 │   └── Threshold/        # threshold override value
-├── Exclusion/            # Private namespace and path exclusion stores
+├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # Option parsing, key recognition, normalization, and per-run state
+├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page
 ```
@@ -27,6 +28,26 @@ to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
 `SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
 `--format=suppressed`; every other caller keeps reading `$published`. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md`.
+
+`SuppressionBinding/` answers a question no rule can: whether a `suppress_paths`
+or `suppress_namespaces` value — global or under `rules.<name>` — named any file
+this run analysed or any namespace it declared. That is a different zero from
+the one `--format=suppressed` publishes: `neverMatched` is built from removals,
+so it says "this suppressor removed nothing", which an honest, paid-down
+suppression also reaches; binding-zero says "this suppressor named nothing",
+which no repaired code can cause. `UnboundSuppressionRule` gives the three
+`suppression.unmatched-*` channels their identity, options and place in
+`qmx rules`; `UnboundSuppressionAudit` — the namespace's only published type —
+builds the findings and passes them through `publishable()` itself, and is
+called by `FindingFilterOrchestrator` at the reporting seam, the one place the
+configured values and the run's universes are both in hand. The coverage
+precondition is asked at that call site, so a run narrowed below the project's
+production autoload roots — or one whose manifest declares no readable
+production autoload — produces nothing here. `ValueScopeJudgement` asks the
+second half of that question, per value: it places a value's subject through
+the run's paths and the manifest's PSR-4 map, and a value naming a place this
+run never analysed is not judged at all. It is built at the same call site from
+the run's shape, so this namespace does not read `composer.json` itself.
 
 `LevelActivity` records which producer/level pairs this configuration let run,
 asked of the rules themselves during execution and published beside the

@@ -691,6 +691,47 @@ final class LayerDefinitionTest extends TestCase
         MembershipResult::match([]);
     }
 
+    /**
+     * The third variant is a non-match for every membership consumer and
+     * differs only in the one question `architecture.unmatched-exclude` asks.
+     */
+    #[Test]
+    public function itReportsAnExcludedResultAsANonMatchThatKnowsItsCause(): void
+    {
+        $excluded = MembershipResult::excluded();
+
+        self::assertFalse($excluded->matched);
+        self::assertSame([], $excluded->matchedCriteria);
+        self::assertTrue($excluded->isExcluded());
+
+        self::assertFalse(MembershipResult::noMatch()->isExcluded());
+        self::assertFalse(
+            MembershipResult::match([new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\**')])->isExcluded(),
+        );
+    }
+
+    /** The clause firing is what produces the excluded variant, not the factory alone. */
+    #[Test]
+    public function itDowngradesAMatchToTheExcludedVariantWhenTheClauseFires(): void
+    {
+        $definition = new LayerDefinition('service', new MembershipSpec(
+            ['App\\Service\\**'],
+            exclude: new ExcludeSpec(['App\\Service\\Legacy\\**']),
+        ));
+
+        $excluded = $definition->matches(new ClassContext('App\\Service\\Legacy\\OldService', 'OldService'));
+        self::assertFalse($excluded->matched);
+        self::assertTrue($excluded->isExcluded());
+
+        $kept = $definition->matches(new ClassContext('App\\Service\\UserService', 'UserService'));
+        self::assertTrue($kept->matched);
+        self::assertFalse($kept->isExcluded());
+
+        $never = $definition->matches(new ClassContext('Other\\Place\\Foo', 'Foo'));
+        self::assertFalse($never->matched);
+        self::assertFalse($never->isExcluded());
+    }
+
     #[Test]
     public function itLeavesTheCriteriaListEmptyOnANoMatchResult(): void
     {

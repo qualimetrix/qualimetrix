@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "No entry of the 13 in this baseline matched the map; the file is unchanged.\nDeclared rename of \"nosuch.rule\" matched no entry.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

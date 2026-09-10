@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
@@ -141,8 +139,7 @@ final class ComputedMetricsConfigResolver
     private static function assertEntryIsMap(string $name, mixed $overrides): void
     {
         if (!\is_array($overrides)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
                 ComputedMetricShapeRefusalWording::entryNotAMap($name, $overrides),
             );
@@ -160,8 +157,7 @@ final class ComputedMetricsConfigResolver
     private static function assertEnabledIsBoolean(string $name, array $overrides): void
     {
         if (\array_key_exists(RuleOptionKey::ENABLED, $overrides) && !\is_bool($overrides[RuleOptionKey::ENABLED])) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'enabled'], 'enabled'),
                 ComputedMetricShapeRefusalWording::mustBeABoolean($name, 'enabled', $overrides[RuleOptionKey::ENABLED]),
             );
@@ -210,8 +206,7 @@ final class ComputedMetricsConfigResolver
      */
     private function refuseUnknownHealthDimension(string $name): never
     {
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::closed(
                 ComputedMetricEntryKeys::nameSegments($name),
                 substr($name, \strlen('health.')),

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -90,10 +91,13 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * a declared channel name is either an emitting name verbatim, or such a
      * name with one `.suffix` appended.
      *
-     * An "emitting name" is a real rule's `NAME` constant, one of
-     * {@see LayerViolationRule}'s five `*_DIAGNOSTIC_NAME` constants, or one of
-     * the four inline-directive diagnostic names — the layer policy and the
-     * directive rule both emit under names other than their own `NAME`. A
+     * An "emitting name" is a real rule's `NAME` constant, one of the five
+     * `*_DIAGNOSTIC_NAME` constants {@see LayerDeclarationValidator} emits
+     * under, {@see LayerViolationRule::UNMATCHED_EXCLUDE_NAME}, one of the
+     * three {@see UnboundSuppressionOptions} channel constants, or one of
+     * the four inline-directive diagnostic names — the layer policy, the
+     * suppression producer and the directive rule all emit under names other
+     * than their own `NAME`. A
      * declared name that is neither addresses a channel no producer can ever
      * emit, and the drift guard above cannot see it: that one only compares
      * declarations against the fixture, so a typo consistent between the two
@@ -276,6 +280,11 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::UNMATCHED_EXCLUDE_NAME;
+
+        $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
+        $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;
+        $names[] = UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER;
 
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;

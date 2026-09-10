@@ -37,10 +37,18 @@ use Symfony\Component\Console\Output\OutputInterface;
  * performed by the shared {@see LayerAssignmentResolver} so the
  * matching algorithm has a single source of truth.
  *
- * Exits 0 for any informational result (including "no layer matches"), 3
- * for malformed input or a configuration-load error recognised as the
- * user's to fix (`ConsoleExitCode::Refusal`), and 1 (`Command::FAILURE`) for
- * anything else the configuration step throws.
+ * Exits 0 for any informational result about an analysed class (including
+ * "no layer matches"), 3 for malformed input, an FQN naming no analysed
+ * class, or a configuration-load error recognised as the user's to fix
+ * (`ConsoleExitCode::Refusal`), and 1 (`Command::FAILURE`) for anything else
+ * the configuration step throws.
+ *
+ * "No analysed class" and "analysed, but no layer matched" are two facts, so
+ * they get two answers: the first is a refusal raised by
+ * {@see LayerAssignmentResolver}, the second the `(no layer)` report. A class
+ * that exists on disk but was kept out of the run by `paths`, `exclude` or
+ * the generated-file filter takes the first branch — the command answers for
+ * the set it analysed, not for the filesystem.
  *
  * `--format=json` renders the same {@see LayerAssignmentResolver::resolve()}
  * result as a machine-readable document instead of the human-readable
@@ -83,6 +91,10 @@ final class LayerAssignmentCommand extends Command
                 . 'Layer evaluation follows declaration order: the first layer whose'
                 . "\n" . 'criteria match wins. Reorder layers in qmx.yaml or tighten broad'
                 . "\n" . 'patterns to resolve unwanted shadowing.' . "\n\n"
+                . 'The class must be one the run analysed. An FQN that names no analysed'
+                . "\n" . 'declaration — a typo, or a class kept out by <info>paths</info>, <info>exclude</info> or the'
+                . "\n" . 'generated-file filter — is refused with exit code 3 rather than reported'
+                . "\n" . 'as unclassified.' . "\n\n"
                 . 'The command runs full Discovery + Collection internally so the answer'
                 . "\n" . 'matches `qmx check` byte-for-byte for template-layer and'
                 . "\n" . 'graph-based configurations. Expect roughly 50–70% of `qmx check`'

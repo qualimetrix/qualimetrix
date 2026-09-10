@@ -1,0 +1,242 @@
+surface	command	door	site	kind	referential	non_referential_reason	shadowed_by
+cli	(global)	--working-dir	whole-value	option	yes		
+cli	(global)	command	whole-value	argument	yes		
+cli	_complete	--api-version	whole-value	option	no	Symfony completion internals	
+cli	_complete	--current	whole-value	option	no	Symfony completion internals	
+cli	_complete	--input	whole-value	option[]	no	Symfony completion internals	
+cli	_complete	--shell	whole-value	option	no	Symfony completion internals	
+cli	_complete	--symfony	whole-value	option	no	Symfony completion internals	
+cli	baseline:cleanup	--config	whole-value	option	yes		invariant:config
+cli	baseline:cleanup	--disable-rule	whole-value	option[]	yes		
+cli	baseline:cleanup	--only-rule	whole-value	option[]	yes		
+cli	baseline:cleanup	--preset	whole-value	option[]	yes		
+cli	baseline:cleanup	--remove	whole-value	option[]	yes		
+cli	baseline:cleanup	--rule-opt	missing-equals-value	option[]	yes		
+cli	baseline:cleanup	--rule-opt	rule-option-name	option[]	yes		
+cli	baseline:cleanup	baseline	whole-value	argument	yes		
+cli	baseline:cleanup	paths	whole-value	argument[]	yes		invariant:target
+cli	baseline:explain	--baseline	whole-value	option	yes		
+cli	baseline:explain	--channel	whole-value	option	yes		
+cli	baseline:explain	--config	whole-value	option	yes		invariant:config
+cli	baseline:explain	--disable-rule	whole-value	option[]	yes		
+cli	baseline:explain	--only-rule	whole-value	option[]	yes		
+cli	baseline:explain	--preset	whole-value	option[]	yes		
+cli	baseline:explain	--rule-opt	missing-equals-value	option[]	yes		
+cli	baseline:explain	--rule-opt	rule-option-name	option[]	yes		
+cli	baseline:explain	paths	whole-value	argument[]	yes		invariant:target
+cli	baseline:explain	subject	whole-value	argument	yes		
+cli	baseline:generate	--config	whole-value	option	yes		invariant:config
+cli	baseline:generate	--disable-rule	whole-value	option[]	yes		
+cli	baseline:generate	--mode	whole-value	option	yes		
+cli	baseline:generate	--only-rule	whole-value	option[]	yes		
+cli	baseline:generate	--preset	whole-value	option[]	yes		
+cli	baseline:generate	--rule-opt	missing-equals-value	option[]	yes		
+cli	baseline:generate	--rule-opt	rule-option-name	option[]	yes		
+cli	baseline:generate	baseline	whole-value	argument	yes		
+cli	baseline:generate	paths	whole-value	argument[]	yes		invariant:target
+cli	baseline:rename-channels	--format	whole-value	option	yes		invariant:format
+cli	baseline:rename-channels	baseline	whole-value	argument	yes		
+cli	baseline:rename-channels	map	map-file	argument	yes		
+cli	baseline:rename-channels	map	map-row	argument	yes		
+cli	baseline:update	--config	whole-value	option	yes		invariant:config
+cli	baseline:update	--disable-rule	whole-value	option[]	yes		
+cli	baseline:update	--only-rule	whole-value	option[]	yes		
+cli	baseline:update	--preset	whole-value	option[]	yes		
+cli	baseline:update	--rule-opt	missing-equals-value	option[]	yes		
+cli	baseline:update	--rule-opt	rule-option-name	option[]	yes		
+cli	baseline:update	baseline	whole-value	argument	yes		
+cli	baseline:update	paths	whole-value	argument[]	yes		invariant:target
+cli	check	--baseline	whole-value	option	yes		
+cli	check	--cache-dir	whole-value	option	yes		invariant:no-cache
+cli	check	--class	whole-value	option	yes		
+cli	check	--config	whole-value	option	yes		invariant:config
+cli	check	--detail	whole-value	option	no	integer count or the literal 'all'; nothing to point at	
+cli	check	--disable-rule	whole-value	option[]	yes		
+cli	check	--exclude	whole-value	option[]	yes		
+cli	check	--exclude-health	whole-value	option[]	yes		
+cli	check	--fail-on	whole-value	option	yes		invariant:fail-on
+cli	check	--format	whole-value	option	yes		invariant:format
+cli	check	--format-opt	pair-key	option[]	yes		invariant:format
+cli	check	--group-by	whole-value	option	yes		
+cli	check	--log-file	whole-value	option	yes		
+cli	check	--log-level	whole-value	option	yes		
+cli	check	--memory-limit	whole-value	option	yes		
+cli	check	--namespace	whole-value	option	yes		
+cli	check	--only-rule	whole-value	option[]	yes		
+cli	check	--output	whole-value	option	yes		
+cli	check	--preset	whole-value	option[]	yes		
+cli	check	--profile	whole-value	option	yes		
+cli	check	--profile-format	whole-value	option	yes		
+cli	check	--report	empty-range	option	yes		
+cli	check	--report	ref-and-scheme	option	yes		
+cli	check	--rule-opt	missing-equals-value	option[]	yes		
+cli	check	--rule-opt	rule-option-name	option[]	yes		
+cli	check	--suppress-namespace	whole-value	option[]	yes		
+cli	check	--suppress-path	whole-value	option[]	yes		
+cli	check	--top	whole-value	option	no	integer count; nothing to point at	
+cli	check	--workers	whole-value	option	no	integer count; nothing to point at	invariant:workers
+cli	check	paths	whole-value	argument[]	yes		invariant:target
+cli	completion	shell	whole-value	argument	yes		
+cli	debug:layer-assignment	--config	whole-value	option	yes		invariant:config
+cli	debug:layer-assignment	--format	whole-value	option	yes		invariant:format
+cli	debug:layer-assignment	fqn	whole-value	argument	yes		
+cli	directives	--config	whole-value	option	yes		invariant:config
+cli	directives	--disable-rule	whole-value	option[]	yes		
+cli	directives	--format	whole-value	option	yes		invariant:format
+cli	directives	--only-rule	whole-value	option[]	yes		
+cli	directives	--preset	whole-value	option[]	yes		
+cli	directives	--rule-opt	missing-equals-value	option[]	yes		
+cli	directives	--rule-opt	rule-option-name	option[]	yes		
+cli	directives	--sweep	whole-value	option	yes		
+cli	directives	paths	whole-value	argument[]	yes		invariant:target
+cli	graph:export	--direction	whole-value	option	yes		
+cli	graph:export	--exclude-namespace	whole-value	option[]	yes		
+cli	graph:export	--format	whole-value	option	yes		invariant:format
+cli	graph:export	--namespace	whole-value	option[]	yes		
+cli	graph:export	--output	whole-value	option	yes		
+cli	graph:export	paths	whole-value	argument[]	yes		invariant:target
+cli	help	--format	whole-value	option	yes		invariant:format
+cli	help	command_name	whole-value	argument	yes		
+cli	list	--format	whole-value	option	yes		invariant:format
+cli	list	namespace	whole-value	argument	yes		
+cli	rules	--group	whole-value	option	yes		
+config	baseline:cleanup	architecture	layer-exclude-patterns	config-key	yes		
+config	baseline:cleanup	architecture	layer-patterns	config-key	yes		
+config	baseline:cleanup	architecture	unknown-subkey	config-key	yes		
+config	baseline:cleanup	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	baseline:cleanup	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	baseline:cleanup	computedMetrics	whole-value	config-key	yes		
+config	baseline:cleanup	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	baseline:cleanup	disabledRules	whole-value	config-key	yes		
+config	baseline:cleanup	exclude	whole-value	config-key	yes		
+config	baseline:cleanup	excludeHealth	whole-value	config-key	yes		
+config	baseline:cleanup	failOn	whole-value	config-key	yes		invariant:fail-on
+config	baseline:cleanup	format	whole-value	config-key	yes		invariant:format
+config	baseline:cleanup	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	baseline:cleanup	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	baseline:cleanup	onlyRules	whole-value	config-key	yes		
+config	baseline:cleanup	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	baseline:cleanup	paths	whole-value	config-key	yes		invariant:target
+config	baseline:cleanup	rules	rule-suppress-pattern	config-key	yes		
+config	baseline:cleanup	suppressNamespaces	whole-value	config-key	yes		
+config	baseline:cleanup	suppressPaths	whole-value	config-key	yes		
+config	baseline:explain	architecture	layer-exclude-patterns	config-key	yes		
+config	baseline:explain	architecture	layer-patterns	config-key	yes		
+config	baseline:explain	architecture	unknown-subkey	config-key	yes		
+config	baseline:explain	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	baseline:explain	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	baseline:explain	computedMetrics	whole-value	config-key	yes		
+config	baseline:explain	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	baseline:explain	disabledRules	whole-value	config-key	yes		
+config	baseline:explain	exclude	whole-value	config-key	yes		
+config	baseline:explain	excludeHealth	whole-value	config-key	yes		
+config	baseline:explain	failOn	whole-value	config-key	yes		invariant:fail-on
+config	baseline:explain	format	whole-value	config-key	yes		invariant:format
+config	baseline:explain	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	baseline:explain	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	baseline:explain	onlyRules	whole-value	config-key	yes		
+config	baseline:explain	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	baseline:explain	paths	whole-value	config-key	yes		invariant:target
+config	baseline:explain	rules	rule-suppress-pattern	config-key	yes		
+config	baseline:explain	suppressNamespaces	whole-value	config-key	yes		
+config	baseline:explain	suppressPaths	whole-value	config-key	yes		
+config	baseline:generate	architecture	layer-exclude-patterns	config-key	yes		
+config	baseline:generate	architecture	layer-patterns	config-key	yes		
+config	baseline:generate	architecture	unknown-subkey	config-key	yes		
+config	baseline:generate	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	baseline:generate	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	baseline:generate	computedMetrics	whole-value	config-key	yes		
+config	baseline:generate	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	baseline:generate	disabledRules	whole-value	config-key	yes		
+config	baseline:generate	exclude	whole-value	config-key	yes		
+config	baseline:generate	excludeHealth	whole-value	config-key	yes		
+config	baseline:generate	failOn	whole-value	config-key	yes		invariant:fail-on
+config	baseline:generate	format	whole-value	config-key	yes		invariant:format
+config	baseline:generate	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	baseline:generate	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	baseline:generate	onlyRules	whole-value	config-key	yes		
+config	baseline:generate	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	baseline:generate	paths	whole-value	config-key	yes		invariant:target
+config	baseline:generate	rules	rule-suppress-pattern	config-key	yes		
+config	baseline:generate	suppressNamespaces	whole-value	config-key	yes		
+config	baseline:generate	suppressPaths	whole-value	config-key	yes		
+config	baseline:update	architecture	layer-exclude-patterns	config-key	yes		
+config	baseline:update	architecture	layer-patterns	config-key	yes		
+config	baseline:update	architecture	unknown-subkey	config-key	yes		
+config	baseline:update	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	baseline:update	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	baseline:update	computedMetrics	whole-value	config-key	yes		
+config	baseline:update	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	baseline:update	disabledRules	whole-value	config-key	yes		
+config	baseline:update	exclude	whole-value	config-key	yes		
+config	baseline:update	excludeHealth	whole-value	config-key	yes		
+config	baseline:update	failOn	whole-value	config-key	yes		invariant:fail-on
+config	baseline:update	format	whole-value	config-key	yes		invariant:format
+config	baseline:update	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	baseline:update	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	baseline:update	onlyRules	whole-value	config-key	yes		
+config	baseline:update	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	baseline:update	paths	whole-value	config-key	yes		invariant:target
+config	baseline:update	rules	rule-suppress-pattern	config-key	yes		
+config	baseline:update	suppressNamespaces	whole-value	config-key	yes		
+config	baseline:update	suppressPaths	whole-value	config-key	yes		
+config	check	architecture	layer-exclude-patterns	config-key	yes		
+config	check	architecture	layer-patterns	config-key	yes		
+config	check	architecture	unknown-subkey	config-key	yes		
+config	check	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	check	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	check	computedMetrics	whole-value	config-key	yes		
+config	check	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	check	disabledRules	whole-value	config-key	yes		
+config	check	exclude	whole-value	config-key	yes		
+config	check	excludeHealth	whole-value	config-key	yes		
+config	check	failOn	whole-value	config-key	yes		invariant:fail-on
+config	check	format	whole-value	config-key	yes		invariant:format
+config	check	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	check	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	check	onlyRules	whole-value	config-key	yes		
+config	check	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	check	paths	whole-value	config-key	yes		invariant:target
+config	check	rules	rule-suppress-pattern	config-key	yes		
+config	check	suppressNamespaces	whole-value	config-key	yes		
+config	check	suppressPaths	whole-value	config-key	yes		
+config	debug:layer-assignment	architecture	layer-exclude-patterns	config-key	yes		
+config	debug:layer-assignment	architecture	layer-patterns	config-key	yes		
+config	debug:layer-assignment	architecture	unknown-subkey	config-key	yes		
+config	debug:layer-assignment	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	debug:layer-assignment	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	debug:layer-assignment	computedMetrics	whole-value	config-key	yes		
+config	debug:layer-assignment	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	debug:layer-assignment	disabledRules	whole-value	config-key	yes		
+config	debug:layer-assignment	exclude	whole-value	config-key	yes		
+config	debug:layer-assignment	excludeHealth	whole-value	config-key	yes		
+config	debug:layer-assignment	failOn	whole-value	config-key	yes		invariant:fail-on
+config	debug:layer-assignment	format	whole-value	config-key	yes		invariant:format
+config	debug:layer-assignment	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	debug:layer-assignment	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	debug:layer-assignment	onlyRules	whole-value	config-key	yes		
+config	debug:layer-assignment	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	debug:layer-assignment	paths	whole-value	config-key	yes		invariant:target
+config	debug:layer-assignment	rules	rule-suppress-pattern	config-key	yes		
+config	debug:layer-assignment	suppressNamespaces	whole-value	config-key	yes		
+config	debug:layer-assignment	suppressPaths	whole-value	config-key	yes		
+config	directives	architecture	layer-exclude-patterns	config-key	yes		
+config	directives	architecture	layer-patterns	config-key	yes		
+config	directives	architecture	unknown-subkey	config-key	yes		
+config	directives	cache.dir	whole-value	config-key	yes		invariant:no-cache
+config	directives	cache.enabled	whole-value	config-key	no	boolean; nothing to point at	invariant:no-cache
+config	directives	computedMetrics	whole-value	config-key	yes		
+config	directives	coupling.frameworkNamespaces	whole-value	config-key	yes		
+config	directives	disabledRules	whole-value	config-key	yes		
+config	directives	exclude	whole-value	config-key	yes		
+config	directives	excludeHealth	whole-value	config-key	yes		
+config	directives	failOn	whole-value	config-key	yes		invariant:fail-on
+config	directives	format	whole-value	config-key	yes		invariant:format
+config	directives	includeGenerated	whole-value	config-key	no	boolean; nothing to point at	
+config	directives	memoryLimit	whole-value	config-key	no	PHP size string; nothing to point at	
+config	directives	onlyRules	whole-value	config-key	yes		
+config	directives	parallel.workers	whole-value	config-key	no	integer count; nothing to point at	invariant:workers
+config	directives	paths	whole-value	config-key	yes		invariant:target
+config	directives	rules	rule-suppress-pattern	config-key	yes		
+config	directives	suppressNamespaces	whole-value	config-key	yes		
+config	directives	suppressPaths	whole-value	config-key	yes		

@@ -1,0 +1,19 @@
+command	observable	positional	fixture
+(global)	stdout	command=list	main
+_complete	stdout		main
+baseline:cleanup	stdout	baseline=baseline.json,paths=src	main
+baseline:explain	stdout	subject=declaration:callable:Fixture\Alpha\AlphaService::branch@src/Alpha/AlphaService.php,paths=src	main
+baseline:generate	stdout	baseline=generated.json,paths=src	main
+baseline:rename-channels	stdout	baseline=baseline.json,map=map.txt	main
+baseline:update	stdout	baseline=baseline.json,paths=src	main
+check	format:json	paths=src	main
+completion	stdout	shell=bash	main
+debug:layer-assignment	stdout	fqn=Layered\Domain\Order	layers
+directives	stdout	paths=src	main
+graph:export	stdout	paths=src	main
+help	stdout	command_name=check	main
+hook:install	stdout		main
+hook:status	stdout		main
+hook:uninstall	stdout		main
+list	stdout	namespace=	main
+rules	stdout		main

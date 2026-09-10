@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
@@ -58,7 +59,7 @@ final class FullPipelineIntegrationTest extends TestCase
 
         $document = $this->resolve(['paths' => ['app'], 'format' => 'json'], ['strict']);
 
-        $run = (new RunConfigurationResolver())->resolve($document);
+        $run = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
         $finding = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
 
         self::assertSame([$this->directory . '/app'], array_map(

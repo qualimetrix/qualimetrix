@@ -69,8 +69,16 @@ final class RuntimeConfiguratorTest extends TestCase
     private SwitchableProgressReporter $progress;
     private RuntimeConfigurator $configurator;
 
+    /**
+     * A real directory, not `/project`: resolving an enabled cache now refuses
+     * a root it cannot write into, and these cases are about the stores.
+     */
+    private string $projectRoot;
+
     protected function setUp(): void
     {
+        $this->projectRoot = sys_get_temp_dir() . '/qmx-runtime-configurator-' . bin2hex(random_bytes(6));
+        mkdir($this->projectRoot, 0o755, true);
         $this->cacheStore = new CacheConfigurationStore();
         $this->cacheFactory = new CacheFactory($this->cacheStore);
         $this->parallelStore = new ParallelConfigurationStore();
@@ -80,6 +88,11 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->progress = new SwitchableProgressReporter();
 
         $this->configurator = $this->createConfigurator();
+    }
+
+    protected function tearDown(): void
+    {
+        exec(\sprintf('rm -rf %s', escapeshellarg($this->projectRoot)));
     }
 
     private function createConfigurator(
@@ -166,12 +179,12 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->configurator->resetRunState();
         $this->configure(
             $document,
-            AbsolutePath::fromString('/project'),
+            AbsolutePath::fromString($this->projectRoot),
             $this->input(['--show-suppressed' => true, '--profile' => null]),
             new BufferedOutput(),
         );
 
-        self::assertSame('/project/cache', $this->cacheStore->current()->directory->value());
+        self::assertSame($this->projectRoot . '/cache', $this->cacheStore->current()->directory->value());
         self::assertFalse($this->cacheStore->current()->enabled);
         self::assertSame(3, $this->parallelStore->current()->workers);
         self::assertSame(['getName'], $this->lcomStore->current()->excludedMethods);
@@ -205,8 +218,8 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->resetRunState();
         $this->configure(
-            new ConfigurationDocument([], AbsolutePath::fromString('/project')),
-            AbsolutePath::fromString('/project'),
+            new ConfigurationDocument([], AbsolutePath::fromString($this->projectRoot)),
+            AbsolutePath::fromString($this->projectRoot),
             $this->input(),
             new BufferedOutput(),
         );
@@ -219,7 +232,7 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itLeavesStaticChannelsAndAllStoresAtDefaultsWhenSelectorValidationFails(): void
     {
-        $root = AbsolutePath::fromString('/project');
+        $root = AbsolutePath::fromString($this->projectRoot);
         $this->configurator->resetRunState();
 
         try {
@@ -249,7 +262,7 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itResetsACustomRunBeforeApplyingDefaultValuesInTheSameProcess(): void
     {
-        $root = AbsolutePath::fromString('/project');
+        $root = AbsolutePath::fromString($this->projectRoot);
         $this->configurator->resetRunState();
         $this->configure(
             $this->customDocument(),
@@ -269,7 +282,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $secondCache = $this->cacheFactory->create();
 
         self::assertNotSame($firstCache, $secondCache);
-        self::assertSame('/project/.qmx-cache', $this->cacheStore->current()->directory->value());
+        self::assertSame($this->projectRoot . '/.qmx-cache', $this->cacheStore->current()->directory->value());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
         self::assertSame([], $this->rules->all());
@@ -309,7 +322,7 @@ final class RuntimeConfiguratorTest extends TestCase
     #[DataProvider('lateFailureOwners')]
     public function itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails(string $owner): void
     {
-        $root = AbsolutePath::fromString('/project');
+        $root = AbsolutePath::fromString($this->projectRoot);
         $this->configurator = $this->createConfigurator($owner);
         $this->configurator->resetRunState();
 
@@ -348,7 +361,7 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects(): void
     {
-        $root = AbsolutePath::fromString('/project');
+        $root = AbsolutePath::fromString($this->projectRoot);
         $document = new ConfigurationDocument([
             ['source' => 'custom', 'values' => [
                 'cache.enabled' => false,
@@ -522,7 +535,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->configurator->configure(
             $document,
             (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
-            (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString('/project')),
+            (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)),
             (new ParallelConfigurationResolver())->resolve($document),
             $input,
             $output,
@@ -555,7 +568,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 'rules' => ['cohesion.lcom' => ['exclude_methods' => ['getName']]],
                 'only_rules' => ['cohesion.lcom'],
             ]],
-        ], AbsolutePath::fromString('/project'));
+        ], AbsolutePath::fromString($this->projectRoot));
     }
 
     /** @param array<string, mixed> $options */

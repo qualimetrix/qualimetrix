@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
@@ -44,11 +42,10 @@ final class AllowValidator
     /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
     private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
     {
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(explode('.', $position), $position),
             $summary,
-            $previous,
+            previous: $previous,
         );
     }
 

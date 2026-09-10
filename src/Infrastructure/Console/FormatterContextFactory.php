@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Symfony\Component\Console\Input\InputInterface;
@@ -21,6 +20,15 @@ use ValueError;
 final class FormatterContextFactory
 {
     private const int DEFAULT_DETAIL_LIMIT = 200;
+
+    /**
+     * Takes the registry rather than reading the one formatter passed to create():
+     * the set of real keys is the union over every formatter, and a key another
+     * format reads is a real key typed at the wrong run, not a typo.
+     */
+    public function __construct(
+        private readonly FormatterRegistryInterface $formatterRegistry,
+    ) {}
 
     public function create(
         InputInterface $input,
@@ -39,8 +47,8 @@ final class FormatterContextFactory
                 : $formatter->getDefaultGroupBy();
         } catch (ValueError) {
             $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group-by'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--group-by',
                 \sprintf('Invalid --group-by value "%s". Valid values: %s', $groupByValue, $valid),
             );
         }
@@ -52,8 +60,8 @@ final class FormatterContextFactory
         foreach ($formatOpts as $opt) {
             $eqPos = strpos($opt, '=');
             if ($eqPos === false) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format-opt'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--format-opt',
                     \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
                 );
             }
@@ -65,14 +73,19 @@ final class FormatterContextFactory
         if ($allFlag) {
             $existingFindings = $options['violations'] ?? '';
             if ($existingFindings !== '' && $existingFindings !== 'all') {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--all'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--all',
                     'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
                     . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
                 );
             }
             $options['violations'] = 'all';
         }
+
+        // After --all, not before: the key this factory writes itself is held to
+        // the same declaration as one the user typed, so a formatter dropping
+        // `violations` cannot leave --all writing into a void.
+        $this->refuseUnknownFormatOptionKeys($options);
 
         // Parse --namespace and --class (mutually exclusive)
         /** @var string|null $namespaceFilter */
@@ -81,8 +94,8 @@ final class FormatterContextFactory
         $classFilter = $input->getOption('class');
 
         if ($namespaceFilter !== null && $classFilter !== null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--namespace/--class'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--namespace/--class',
                 'Options --namespace and --class are mutually exclusive',
             );
         }
@@ -109,6 +122,35 @@ final class FormatterContextFactory
             detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
             topIssuesLimit: $topIssuesLimit,
+        );
+    }
+
+    /**
+     * Refuses keys no registered formatter reads.
+     *
+     * A key belonging to another formatter passes: scripts run one option set
+     * through several formats, and only a key nobody reads is a miss.
+     *
+     * @param array<string, string> $options
+     */
+    private function refuseUnknownFormatOptionKeys(array $options): void
+    {
+        $known = $this->formatterRegistry->declaredFormatOptionKeys();
+        $unknown = array_values(array_diff(array_keys($options), $known));
+
+        if ($unknown === []) {
+            return;
+        }
+
+        throw ConfigurationRefusal::aboutCommandLineInput(
+            '--format-opt',
+            \sprintf(
+                'Unknown --format-opt %s %s. No formatter reads %s. Known keys: %s.',
+                \count($unknown) === 1 ? 'key' : 'keys',
+                implode(', ', array_map(static fn(string $key): string => \sprintf('"%s"', $key), $unknown)),
+                \count($unknown) === 1 ? 'it' : 'them',
+                $known !== [] ? implode(', ', $known) : 'none',
+            ),
         );
     }
 

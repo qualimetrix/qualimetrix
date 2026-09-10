@@ -1,0 +1,5 @@
+{
+    "key": "cli|baseline:generate|--only-rule|whole-value",
+    "fingerprint": "ae3d891f91b6cf870f39b11c88bfd39274af0ae1d1976193ff1e7ca97b2876be",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

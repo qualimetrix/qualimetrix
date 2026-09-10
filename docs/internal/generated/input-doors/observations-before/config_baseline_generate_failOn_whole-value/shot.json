@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:generate|failOn|whole-value",
+    "fingerprint": "b7bffa7e2295c1210425023ffe1e3329228e8651a43e18e5269c4cd1614dd924",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

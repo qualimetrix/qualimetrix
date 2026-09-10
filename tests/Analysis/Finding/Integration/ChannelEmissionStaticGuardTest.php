@@ -321,11 +321,23 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'LayerViolationRule delegates to this value object.',
             'src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php' =>
                 'UnassignedClassRule delegates to this summary.',
+            'src/Analysis/Policy/Architecture/LayerViolation/UnmatchedExcludeDiagnostic.php' =>
+                'LayerViolationRule delegates its second channel here, and the channel name arrives as an'
+                . ' argument rather than a constant on this class, so the resolver has nothing to read even'
+                . ' if it followed the call.',
             'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
+            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
+                'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
+                . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
+                . ' class chain leads to this construction.',
+            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
+                'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
+                . ' value bound to anything is known only after the run, at the reporting seam, so the findings'
+                . ' are assembled here and no rule class chain leads to this construction.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'

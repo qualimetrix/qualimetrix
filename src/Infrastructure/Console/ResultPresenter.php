@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -23,6 +21,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Reporting\ReportCoverage;
@@ -99,6 +98,8 @@ final class ResultPresenter
             $reportScope !== null,
         );
 
+        $this->assertDrillDownBinds($context, $analysisResult);
+
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
         $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
 
@@ -139,6 +140,45 @@ final class ResultPresenter
         $profiler->stop('reporting');
 
         return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
+    }
+
+    /**
+     * Refuses a `--namespace` or `--class` value that selects nothing.
+     *
+     * These are presentation filters, so a value naming a subtree the run never
+     * saw does not make the analysis incomplete — it empties the report, which
+     * reads exactly like a clean subtree. The check runs before the report is
+     * built, and the refusal travels the same route every other one does
+     * (`02-cure.md` Б7, Б8): {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::execute()}
+     * wraps the whole run, so a refusal raised after the analysis still exits 3.
+     *
+     * The mutually-exclusive pair is settled earlier, by
+     * {@see FormatterContextFactory}, which is why at most one branch can fire.
+     */
+    private function assertDrillDownBinds(FormatterContext $context, AnalysisResult $analysisResult): void
+    {
+        $binding = new DrillDownBinding();
+        $metrics = $analysisResult->metrics;
+
+        if ($context->namespace !== null
+            && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->namespaceTree) === 0
+        ) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--namespace', \sprintf(
+                'Namespace "%s" matched none of the %d analyzed namespaces and symbol names it is compared against. '
+                . 'The report would be empty because nothing was selected, not because nothing was found.',
+                $context->namespace,
+                $binding->namespaceUniverseSize($metrics, $analysisResult->namespaceTree),
+            ));
+        }
+
+        if ($context->class !== null && $binding->classBindings($context->class, $metrics) === 0) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--class', \sprintf(
+                'Class "%s" matched none of the %d classes in the analyzed code. '
+                . 'The report would be empty because nothing was selected, not because nothing was found.',
+                $context->class,
+                $binding->classUniverseSize($metrics),
+            ));
+        }
     }
 
     private function reportCoverage(AnalysisCoverage $coverage, AbsolutePath $projectRoot): ReportCoverage
@@ -237,8 +277,8 @@ final class ResultPresenter
 
     private static function outputRefusal(string $summary): ConfigurationRefusal
     {
-        return ConfigurationRefusal::aboutInput(
-            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+        return ConfigurationRefusal::aboutCommandLineInput(
+            '--output',
             $summary,
         );
     }

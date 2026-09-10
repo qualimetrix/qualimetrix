@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--cache-dir|whole-value",
+    "fingerprint": "13babbf4c639e026c7b7a9558c8d47942f3df917c78f4d5e539f68c9792599a5",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

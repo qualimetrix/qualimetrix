@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
@@ -21,13 +22,15 @@ final class ScopeWarningCheckerTest extends TestCase
     private string $tempDir;
     private AbsolutePath $projectRoot;
     private ScopeWarningChecker $checker;
+    private ProjectScopeCoverage $coverage;
 
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx_scope_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
         $this->projectRoot = AbsolutePath::fromString($this->tempDir);
-        $this->checker = new ScopeWarningChecker(new ComposerReader());
+        $this->checker = new ScopeWarningChecker();
+        $this->coverage = new ProjectScopeCoverage(new ComposerReader());
     }
 
     protected function tearDown(): void
@@ -39,7 +42,7 @@ final class ScopeWarningCheckerTest extends TestCase
     public function itReturnsNoWarningsWhenComposerJsonIsMissing(): void
     {
         // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
-        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')]));
 
         self::assertSame([], $warnings);
     }
@@ -56,7 +59,7 @@ final class ScopeWarningCheckerTest extends TestCase
         ]);
         mkdir($this->tempDir . '/src', 0o755, true);
 
-        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')]));
 
         self::assertSame([], $warnings);
     }
@@ -75,7 +78,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
         mkdir($this->tempDir . '/lib', 0o755, true);
 
-        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')]));
 
         self::assertCount(1, $warnings);
         self::assertSame(
@@ -103,7 +106,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Analyzing only src/ should NOT warn about missing tests/ (autoload-dev)
-        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')]));
 
         self::assertSame([], $warnings);
     }
@@ -127,7 +130,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Passing the project root itself models the `qmx check .` invocation
-        $warnings = $this->checker->check($this->projectRoot, [$this->projectRoot]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->projectRoot]));
 
         self::assertSame([], $warnings);
     }
@@ -146,7 +149,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
 
         // Analyzing src covers src; lib doesn't exist so it's skipped — no warning
-        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
+        $warnings = $this->checker->describe($this->coverage->uncoveredAutoloadRoots($this->projectRoot, [$this->subPath('src')]));
 
         self::assertSame([], $warnings);
     }

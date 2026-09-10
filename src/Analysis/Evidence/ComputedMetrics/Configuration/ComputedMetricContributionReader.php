@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 final class ComputedMetricContributionReader
@@ -35,8 +33,7 @@ final class ComputedMetricContributionReader
         $computedMetrics = [];
         foreach ($document->contributions('computedMetrics') as $contribution) {
             if (!\is_array($contribution) || ($contribution !== [] && array_is_list($contribution))) {
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(['computed_metrics'], 'computed_metrics'),
                     ComputedMetricShapeRefusalWording::computedMetricsSectionNotAMap(),
                 );
@@ -58,8 +55,7 @@ final class ComputedMetricContributionReader
         $excludeHealth = [];
         foreach ($document->contributions('excludeHealth') as $contribution) {
             if (!\is_array($contribution) || !array_is_list($contribution)) {
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(['exclude_health'], 'exclude_health'),
                     ComputedMetricShapeRefusalWording::excludeHealthNotAList(),
                 );
@@ -67,8 +63,7 @@ final class ComputedMetricContributionReader
 
             foreach ($contribution as $dimension) {
                 if (!\is_string($dimension)) {
-                    throw ConfigurationRefusal::at(
-                        ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                    throw ConfigurationRefusal::atResolvedKey(
                         RefusedPosition::open(['exclude_health'], 'exclude_health'),
                         ComputedMetricShapeRefusalWording::excludeHealthEntryNotAString(),
                     );

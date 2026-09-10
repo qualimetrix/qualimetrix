@@ -51,6 +51,10 @@ final readonly class HealthSummaryBuilder
         array $findings,
     ): HealthSummary {
         $healthScores = $this->buildHealthScores($metrics);
+        // The levels ranked here are published as
+        // RankedOffenderLevels::LEVELS: a caller asking what a `--namespace`
+        // value can select has to know which symbols get a canonical name into
+        // a comparison, and a second enumeration of that would drift.
         $worstNamespaces = $this->buildWorstOffenders($metrics, $findings, SymbolLevel::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
         $worstClasses = $this->buildWorstOffenders($metrics, $findings, SymbolLevel::Class_, self::DEFAULT_TOP_CLASSES, $tree);
 

@@ -94,11 +94,13 @@ final class RulesCommandWiringTest extends TestCase
         'computed',
         'coupling',
         'design',
+        'discovery',
         'duplication',
         'health',
         'maintainability',
         'security',
         'size',
+        'suppression',
     ];
 
     /**

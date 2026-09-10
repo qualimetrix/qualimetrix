@@ -1,0 +1,2 @@
+old	new	reason
+nosuch.rule	nosuch.renamed	a row whose old channel matches nothing in the baseline

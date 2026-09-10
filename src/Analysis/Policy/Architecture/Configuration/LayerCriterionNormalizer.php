@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
@@ -151,8 +149,7 @@ final class LayerCriterionNormalizer
      */
     private function entryError(int $index, string $layerName, string $message): ConfigurationRefusal
     {
-        return ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        return ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(['architecture', 'layers', (string) $index], $layerName),
             \sprintf('architecture.layers[%d] ("%s"): %s', $index, $layerName, $message),
         );
@@ -223,8 +220,7 @@ final class LayerCriterionNormalizer
         $entries = \is_string($value) ? [$value] : $value;
 
         if (!\is_array($entries)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got %s.',
@@ -240,8 +236,7 @@ final class LayerCriterionNormalizer
             // Associative map where an ordered list is required — the
             // typical mistake is using YAML mapping syntax ({@code key: val})
             // for what should be a sequence ({@code - val}).
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got an associative map (keys: %s). Use sequence syntax (a "-" prefix per entry) or omit the key to leave the criterion undeclared.',
@@ -254,8 +249,7 @@ final class LayerCriterionNormalizer
         }
 
         if ($entries === []) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers', (string) $index, $kind], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" must contain at least one entry; omit the key to leave the criterion undeclared.',
@@ -298,8 +292,7 @@ final class LayerCriterionNormalizer
         callable $semanticCheck,
     ): string {
         if (!\is_string($entry) || $entry === '') {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $layerName),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d must be a non-empty string (got %s).',
@@ -314,8 +307,7 @@ final class LayerCriterionNormalizer
 
         $semanticError = $semanticCheck($entry);
         if ($semanticError !== null) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers', (string) $index, $kind, (string) $entryIndex], $entry),
                 \sprintf(
                     'architecture.layers[%d] ("%s"): "%s" entry at index %d %s',

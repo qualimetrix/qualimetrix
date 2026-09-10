@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -79,7 +78,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     {
         $startTime = microtime(true);
         $prepared = $this->preparedRun($configuration, $discovery);
-        $findings = $this->reportedFindings($prepared->ruleExecution);
+        $findings = $this->reportedFindings($prepared);
         $duration = microtime(true) - $startTime;
 
         $this->logger->info('Analysis complete', [
@@ -178,12 +177,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
-        $discoveredFiles = $this->analysisFileDiscovery->discover(
-            $pathList,
-            $configuration->projectRoot,
-            $configuration->generatedFilePolicy,
-            $discovery,
-        );
+        $discoveredFiles = $this->analysisFileDiscovery->discover($configuration, $discovery);
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
 
@@ -268,6 +262,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
+            coversProjectScope: $configuration->coversProjectScope,
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
         $profiler->stop('rules');
@@ -294,6 +289,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             context: $context,
             ruleExecution: $ruleExecution,
             coverage: self::buildCoverage($eligiblePaths, $generatedExcludedFiles, $collectionResult),
+            unmatchedExcludeFindings: $discoveredFiles->unmatchedExcludeFindings,
         );
     }
 
@@ -340,14 +336,25 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      *
      * @return list<Finding>
      */
-    private function reportedFindings(RuleExecutionResult $ruleExecution): array
+    private function reportedFindings(PreparedRun $prepared): array
     {
-        $unused = $this->ruleExecutor->publishable($this->ruleProducerPreparation->auditInlineDirectives(
-            $ruleExecution->produced,
-            $ruleExecution->levelActivity,
-        ));
+        $ruleExecution = $prepared->ruleExecution;
 
-        return $unused === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $unused);
+        $late = $this->ruleExecutor->publishable([
+            ...$this->ruleProducerPreparation->auditInlineDirectives(
+                $ruleExecution->produced,
+                $ruleExecution->levelActivity,
+            ),
+            // The second channel assembled outside `execute()`, and through
+            // the same `publishable()` for the same reason: an exclude pattern
+            // that removed nothing is a fact about this run's own input, which
+            // no rule can see, but the report it lands in obeys
+            // `--disable-rule`, `--only-rule`, the baseline and `--fail-on`
+            // like every other finding.
+            ...$prepared->unmatchedExcludeFindings,
+        ]);
+
+        return $late === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $late);
     }
 
     /** @return list<LogicalClassPath> */

@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistry;
 use Qualimetrix\Reporting\FormatterContext;
@@ -116,6 +117,67 @@ final class FormatterRegistryTest extends TestCase
         $report = new Report([], 0, 0, 0.0, 0, 0);
 
         self::assertSame('second', $formatter->format($report, new FormatterContext()));
+    }
+
+    #[Test]
+    public function itDeclaresNoFormatOptionKeysWhenNoFormatterReadsAny(): void
+    {
+        $registry = new FormatterRegistry([$this->createMockFormatter('text')]);
+
+        self::assertSame([], $registry->declaredFormatOptionKeys());
+    }
+
+    #[Test]
+    public function itUnitesFormatOptionKeysAcrossFormattersWithoutRepeatingASharedOne(): void
+    {
+        $registry = new FormatterRegistry([
+            $this->createKeyDeclaringFormatter('json', ['top', 'violations']),
+            $this->createKeyDeclaringFormatter('summary', ['top', 'rank-by']),
+            $this->createMockFormatter('checkstyle'),
+        ]);
+
+        self::assertSame(['rank-by', 'top', 'violations'], $registry->declaredFormatOptionKeys());
+    }
+
+    #[Test]
+    public function itDeclaresKeysOfFormattersHiddenFromListings(): void
+    {
+        $registry = new FormatterRegistry([$this->createKeyDeclaringFormatter('text-verbose', ['top'])]);
+
+        self::assertSame([], $registry->getAvailableNames());
+        self::assertSame(['top'], $registry->declaredFormatOptionKeys());
+    }
+
+    /** @param list<string> $keys */
+    private function createKeyDeclaringFormatter(string $name, array $keys): FormatterInterface
+    {
+        return new class ($name, $keys) implements FormatterInterface, FormatOptionKeysInterface {
+            /** @param list<string> $keys */
+            public function __construct(
+                private readonly string $name,
+                private readonly array $keys,
+            ) {}
+
+            public function format(Report $report, FormatterContext $context): string
+            {
+                return '';
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+
+            public function getDefaultGroupBy(): GroupBy
+            {
+                return GroupBy::None;
+            }
+
+            public function formatOptionKeys(): array
+            {
+                return $this->keys;
+            }
+        };
     }
 
     private function createMockFormatter(string $name, string $output = ''): FormatterInterface

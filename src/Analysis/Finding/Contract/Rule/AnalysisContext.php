@@ -15,12 +15,38 @@ final readonly class AnalysisContext
 {
     /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
+     * @param bool $coversProjectScope Whether the run analysed the whole project rather than a slice of it
+     *
+     * `$coversProjectScope` is the answer
+     * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
+     * gave for this run's paths, carried here because a rule cannot see them.
+     * A rule that reports a configured value as binding to nothing must read
+     * it first: "bound nothing" is a fact about the pair (configuration, run
+     * scope), and on a narrowed run the same configuration binds perfectly
+     * well outside the slice. Every other rule ignores it — a measured
+     * threshold is about the declarations the run did analyse, whatever else
+     * exists.
+     *
+     * The default is `true` so that a context built by hand — a unit test, a
+     * fixture — reads as a whole-project run and the channels above stay
+     * audible. {@see \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration}
+     * refuses a default for the same field, and the reason it gives —
+     * a construction site silently inheriting the wider run's answer — applies
+     * here too. What differs is the population: every construction site of that
+     * class is production, while nearly all of this one's are hand-built test
+     * contexts. So the rule is kept and the enforcement moved to where the
+     * population is: `AnalysisContextScopeArgumentGuardTest` fails on any
+     * production `new AnalysisContext(` that leaves this argument out, which is
+     * the silent inheritance the rule exists to prevent. Today production
+     * builds it twice, both times from a measurement: the pipeline, and the
+     * threshold audit re-executing rules against the pipeline's own context.
      */
     public function __construct(
         public MetricRepositoryInterface $metrics,
         public ?DependencyGraphInterface $dependencyGraph = null,
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
+        public bool $coversProjectScope = true,
     ) {}
 
     /**

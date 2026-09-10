@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Preset;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
@@ -35,8 +33,8 @@ final class PresetResolver
         }
 
         if (!$this->isBuiltIn($name)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Preset, $name),
+            throw ConfigurationRefusal::atPresetKey(
+                $name,
                 RefusedPosition::closed([$name], $name, self::getAvailableNames()),
                 \sprintf(
                     'Unknown preset "%s". Available presets: %s. To use a custom file, specify a path (e.g., --preset=./my-preset.yaml)',
@@ -80,8 +78,8 @@ final class PresetResolver
             : $workingDirectory . '/' . $path;
 
         if (!file_exists($resolvedPath)) {
-            throw ConfigurationRefusal::aboutDocument(
-                ConfigurationOrigin::of(ConfigurationSource::Preset, $resolvedPath),
+            throw ConfigurationRefusal::aboutPresetDocument(
+                $resolvedPath,
                 \sprintf('Configuration file not found: %s', $resolvedPath),
             );
         }

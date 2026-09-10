@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
@@ -150,8 +148,7 @@ final class ComputedMetricFormulaValidator
                 // already in $inStack — because a carrier has one position and
                 // the chain is a fact about the whole set, not one metric's
                 // entry; the full chain is named in the summary instead.
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($node), $node),
                     ComputedMetricRefusalWording::circularDependency($cycle),
                 );
@@ -196,8 +193,7 @@ final class ComputedMetricFormulaValidator
             foreach ($definition->formulas as $formula) {
                 foreach ($this->extractComputedMetricReferences($formula) as $ref) {
                     if (!isset($nameSet[$ref])) {
-                        throw ConfigurationRefusal::at(
-                            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                        throw ConfigurationRefusal::atResolvedKey(
                             RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definition->name), $definition->name),
                             ComputedMetricRefusalWording::referencesUnknownMetric($definition->name, $ref, $formula),
                         );
@@ -250,8 +246,7 @@ final class ComputedMetricFormulaValidator
             return;
         }
 
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
             ComputedMetricRefusalWording::referencesUnknownMetricKey($definitionName, $key, $formula),
         );
@@ -303,11 +298,10 @@ final class ComputedMetricFormulaValidator
 
     private function refuse(string $metricName, string $level, string $summary, ?Throwable $previous = null): ConfigurationRefusal
     {
-        return ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        return ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($metricName), 'formulas', $level], $level),
             $summary,
-            $previous,
+            previous: $previous,
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -16,7 +17,7 @@ use RuntimeException;
  *
  * The report embeds all CSS, JS, and data as a single HTML file for offline viewing.
  */
-final class HtmlFormatter implements FormatterInterface
+final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
     public function __construct(
         private readonly HtmlTreeBuilder $treeBuilder,
@@ -67,6 +68,12 @@ final class HtmlFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /** Read by {@see HtmlTreeBuilder} on this formatter's behalf. */
+    public function formatOptionKeys(): array
+    {
+        return ['project-name'];
     }
 
     private function readFile(string $path): string

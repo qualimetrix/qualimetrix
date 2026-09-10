@@ -206,6 +206,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor'
@@ -236,12 +237,15 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\DistanceRule'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\FrameworkClassificationSites'
         - 'Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule'
     - name: analysis-evidence-dependencymodel
       patterns:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency'
@@ -512,6 +516,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
+        - 'Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
@@ -527,6 +532,10 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Rule\RuleInterface'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement'
     - name: analysis-policy-architecture
       patterns:
         - 'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy'
@@ -574,6 +583,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory'
@@ -702,6 +712,8 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -735,6 +747,10 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory'
         - 'Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery'
         - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions'
+        - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
@@ -748,6 +764,7 @@ architecture:
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
+        - 'Qualimetrix\Core\Util\GlobSyntax'
         - 'Qualimetrix\Core\Util\NamespaceMatcher'
         - 'Qualimetrix\Core\Util\PathMatcher'
         - 'Qualimetrix\Core\Util\PatternMatch'
@@ -832,6 +849,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
+        - 'Qualimetrix\Infrastructure\Console\DrillDownBinding'
         - 'Qualimetrix\Infrastructure\Console\ErrorStream'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
@@ -989,6 +1007,7 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\SuppressionMechanism'
         - 'Qualimetrix\Reporting\FormatterContext'
         - 'Qualimetrix\Reporting\Formatter\CheckstyleFormatter'
+        - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
@@ -1042,6 +1061,7 @@ architecture:
         - 'Qualimetrix\Reporting\GraphProjection\DotExporter'
         - 'Qualimetrix\Reporting\GraphProjection\DotExporterOptions'
         - 'Qualimetrix\Reporting\GraphProjection\JsonGraphExporter'
+        - 'Qualimetrix\Reporting\GraphProjection\NamespaceFilter'
     - name: external
       patterns: ['**']
       exclude:
@@ -1223,6 +1243,7 @@ architecture:
       - analysis-configuration
       - analysis-evidence-cohesion
       - analysis-evidence-computedmetrics
+      - analysis-evidence-computedmetrics-health
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
@@ -1459,10 +1480,14 @@ rules:
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
-      # Same reason as the CBO channel above, narrowed to the leaf that earns
-      # it: ConfigurationSource sits at 0.0071 against 0.0066 because every
-      # refusal in the tree names one of its five cases.
-      - Qualimetrix\Analysis\Configuration\Contract\Refusal
+      # X15's entry for the refusal carrier's own namespace is gone. It was
+      # added on a measurement — ConfigurationSource at 0.0071 against 0.0066 —
+      # that X16 invalidated when the carrier grew one shortcut per form and
+      # source: a call site now names one type instead of three, ConfigurationSource
+      # lost the inbound edges its rank came from, and the entry suppressed
+      # nothing. `docs/internal/generated/suppression/inert.tsv` is the oracle
+      # that said so, and a suppressor under which nothing is suppressed is the
+      # very thing this round exists to report.
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1637,6 +1662,20 @@ rules:
       - src/Analysis/Evidence/Security/*Options.php
       - src/Analysis/Evidence/Size/*Options.php
       - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      # X16's two new rules live outside `Evidence/`, so the capability roots
+      # above do not reach them. Their options classes match each other over a
+      # 30-line window that is the mandatory `RuleOptionsInterface` shape and
+      # nothing else: a channel-name constant, the `enabled` promoted property,
+      # `fromArray()`, `isEnabled()`, `getSeverity()` and `acceptedOptionKeys()`.
+      # Everything that differs inside that window is a literal — the channel
+      # names — and literals are normalized before matching, which is the same
+      # mechanism that put the eight capability roots above on this list. There
+      # is no behaviour in the window to extract: a shared base class would hold
+      # the interface's own signatures.
+      # Only the reported side is listed, the same rule the CboRule entry below
+      # states: the detector reports the pair once, and an entry for
+      # `Run/ExcludeBinding` beside it was measured inert and left out.
+      - src/Analysis/Finding/SuppressionBinding/*Options.php
       # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
       # class line, the five metadata constants every rule must declare, and the
       # name/description/supported-levels accessors the rule interface mandates.
@@ -1852,3 +1891,30 @@ rules:
         # structurally inapplicable to this exact root, the same argument the
         # Expansion entry above makes.
         - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'
+        # X16's exclude-binding root: three classes (46.7). Measured, not
+        # argued: `cohesion.tcc.count` is 1 there, so the namespace TCC and LCC
+        # averages the score is built from are decided by a single class — the
+        # `*Options` one. The rule and the probe beside it each hold one field
+        # or none, which leaves them no pair of methods that could share a
+        # field, so they contribute no TCC at all. And that one options class
+        # measures TCC 0 by construction of the mandatory
+        # `RuleOptionsInterface` shape: `isEnabled()` reads the single
+        # `enabled` field and `getSeverity()` reads none, so the class has
+        # exactly one method pair and it shares nothing.
+        #
+        # The same shape inside a larger root is dissolved by its neighbours
+        # and never reaches the boundary: X16 added an options class of exactly
+        # this shape to `Evidence\Coupling` (TCC 0, class score 65.3) and that
+        # namespace does not report. So the finding is a property of how small
+        # the root is, not of its design, and splitting further only makes the
+        # roots smaller. The channel is excluded, not the rule: class-level
+        # cohesion inside the root stays measured, and every other channel of
+        # the namespace stays measured with it. Exact root — `[Q]` keeps a
+        # future child namespace judged on its own.
+        #
+        # `Finding\SuppressionBinding` sat here for the same reason and was
+        # removed in X16's F1: the scope-judgement class the round added is a
+        # second TCC contributor, the average is no longer one class's, and the
+        # namespace stopped reporting. The entry was measured inert, and an
+        # inert suppression is exactly what this round is about.
+        - '[Q]ualimetrix\Analysis\Run\ExcludeBinding'

@@ -90,3 +90,24 @@ uniformity accidental instead of enforced.
   is a distinct subject with its own owner, not a reason to move this
   carrier to `Core`. The condition for revisiting this decision is the
   arrival of that concern, not a rising import count on this one.
+
+## Amendment, 2026-09-10 (X16)
+
+The Decision above says "three named static factories", and that is what the
+carrier had when this record was written. It now has three forms plus nine
+shortcuts that delegate into them, one per form and configuration source
+(`atConfigFileKey()`, `aboutCommandLineInput()` and their siblings). The
+decision is not rewritten — an ADR is a journal, not a description of the
+current state — so this paragraph records what changed and why.
+
+The shortcuts were forced by measurement, not preference. Refusing from a new
+place cost coupling: assembling an origin at the call site names three types,
+and self-analysis crossed its project-level `health.coupling` floor at 49.7
+against 50.0. Rather than move the floor, the carrier now offers one shortcut per form and
+source, so a call site names one type instead of three; 116 of 119 call sites
+migrated, and the three that remain build an origin they need for their own
+sake. The forms themselves are unchanged, and the class still has no public
+constructor.
+
+The wider decision this sits under — what shape the product gives a value that
+binds to nothing — is [ADR 0052](0052-the-shape-of-a-signal-about-a-miss.md).

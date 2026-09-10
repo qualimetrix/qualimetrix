@@ -49,6 +49,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
@@ -87,6 +88,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
@@ -96,6 +98,7 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
@@ -830,6 +833,9 @@ PHP;
             ConstructorOverinjectionRule::class,
             DataClassRule::class,
             GodClassRule::class,
+            UnmatchedFrameworkNamespaceRule::class,
+            UnmatchedExcludeRule::class,
+            UnboundSuppressionRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

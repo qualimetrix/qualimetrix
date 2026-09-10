@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "{\n    \"meta\": {\n        \"version\": \"dev-main\",\n        \"package\": \"qmx\",\n        \"timestamp\": \"2026-09-10T18:39:25+00:00\"\n    },\n    \"summary\": {\n        \"filesAnalyzed\": 7,\n        \"filesSkipped\": 0,\n        \"duration\": 0.048,\n        \"violationCount\": 0,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"infoCount\": 0,\n        \"techDebtMinutes\": 0\n    },\n    \"coverage\": {\n        \"complete\": true,\n        \"discovered\": 7,\n        \"analyzed\": 7,\n        \"generatedExcluded\": 0,\n        \"failed\": 0,\n        \"failures\": []\n    },\n    \"health\": null,\n    \"worstNamespaces\": [],\n    \"worstClasses\": [],\n    \"topIssues\": [],\n    \"violations\": [],\n    \"violationsMeta\": {\n        \"total\": 0,\n        \"shown\": 0,\n        \"limit\": 200,\n        \"truncated\": false,\n        \"byRule\": []\n    }\n}",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

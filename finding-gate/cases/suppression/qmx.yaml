@@ -1,0 +1,21 @@
+# Three values that name nothing this tree holds, which is what the
+# suppression.unmatched-* channels are the fixture for: each hides nothing and
+# never will, and before the channels existed the report was identical to one
+# configured with no suppression at all. `src` is deliberately absent from the
+# global lists — a value that binds is not this fixture's subject.
+suppress_paths:
+  - src/NoSuchDir
+suppress_namespaces:
+  - Corpus\Suppression\Gone
+rules:
+  complexity.ccn:
+    suppress_paths: ['src/AlsoGone']
+only_rules:
+  - suppression.configuration
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }

@@ -1,0 +1,5 @@
+{
+    "key": "config|check|architecture|layer-exclude-patterns",
+    "fingerprint": "138daf4c48551acf179a6594838d808a32f46818d1d892e3f2bf4e173111eb3b",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

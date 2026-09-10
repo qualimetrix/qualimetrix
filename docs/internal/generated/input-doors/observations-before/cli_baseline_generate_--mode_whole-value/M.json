@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Unknown --mode value \"zzz\". Expected ratchet or suppress.\n",
+    "file": false,
+    "dir": false
+}

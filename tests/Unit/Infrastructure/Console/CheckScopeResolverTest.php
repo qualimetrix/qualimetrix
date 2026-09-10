@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
@@ -39,11 +40,11 @@ final class CheckScopeResolverTest extends TestCase
             },
         );
         $reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
-        $reader->expects(self::once())->method('extractAutoloadPaths')->willReturnCallback(
+        $reader->expects(self::once())->method('productionAutoloadTargets')->willReturnCallback(
             function () use (&$events): array {
                 $events[] = 'warnings';
 
-                return [];
+                return ['src'];
             },
         );
 
@@ -63,9 +64,8 @@ final class CheckScopeResolverTest extends TestCase
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $factory->expects(self::once())->method('create')->with(['vendor'])->willReturn($discovery);
         $reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
-        $reader->expects(self::once())->method('extractAutoloadPaths')->with(
+        $reader->expects(self::once())->method('productionAutoloadTargets')->with(
             self::callback(static fn(string $path): bool => str_ends_with($path, '/composer.json')),
-            false,
         )->willReturn(['src', 'lib']);
 
         try {
@@ -93,7 +93,7 @@ final class CheckScopeResolverTest extends TestCase
         $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
         $factory->expects(self::never())->method('create');
         $reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
-        $reader->expects(self::never())->method('extractAutoloadPaths');
+        $reader->expects(self::never())->method('productionAutoloadTargets');
 
         $this->expectException(InvalidArgumentException::class);
 
@@ -106,7 +106,8 @@ final class CheckScopeResolverTest extends TestCase
     ): CheckScopeResolver {
         return new CheckScopeResolver(
             new GitScopeResolver($factory),
-            new ScopeWarningChecker($reader),
+            new ScopeWarningChecker(),
+            new ProjectScopeCoverage($reader),
         );
     }
 
@@ -132,6 +133,8 @@ final class CheckScopeResolverTest extends TestCase
             pathExcludes: ['vendor'],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            coversProjectScope: true,
+            authoredPathExcludes: [],
         );
     }
 }

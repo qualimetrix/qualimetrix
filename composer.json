@@ -96,6 +96,25 @@
         "enumeration:directives:check": "php scripts/enumerate-inline-directives.php src --check",
         "suppression-snapshot": "php scripts/generate-suppression-snapshot.php",
         "suppression-snapshot:check": "php scripts/generate-suppression-snapshot.php --check",
+        "input-doors:grid": "php scripts/generate-input-door-table.php",
+        "input-doors:grid:check": "php scripts/generate-input-door-table.php --check",
+        "input-doors": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/input-doors.php"
+        ],
+        "input-doors:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/input-doors.php --check"
+        ],
+        "input-doors:before": "php scripts/input-doors.php --before",
+        "input-doors:stability": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/input-doors.php --stability"
+        ],
+        "input-doors:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/input-door-controls.php"
+        ],
         "selfcheck": [
             "@architecture:check",
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
@@ -146,7 +165,8 @@
             "@enumeration:renames:check",
             "@enumeration:runtime-channels:check",
             "@enumeration:directives:check",
-            "@suppression-snapshot:check"
+            "@suppression-snapshot:check",
+            "@input-doors:grid:check"
         ],
         "check:self": [
             "@gate:self-test",

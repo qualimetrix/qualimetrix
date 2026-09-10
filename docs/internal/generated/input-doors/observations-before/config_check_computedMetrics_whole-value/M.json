@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "{\n    \"error\": \"Configuration error: Option \\\"nosuchoption\\\" is not an option of computed metric \\\"computed.my-score\\\". Options here: description, enabled, error, formula, formulas, inverted, levels, threshold, warning.\",\n    \"exit_code\": 3\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

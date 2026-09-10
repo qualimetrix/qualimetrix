@@ -190,7 +190,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
+        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
     }
 
     /**

@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -16,7 +18,7 @@ final class RunConfigurationResolverTest extends TestCase
     #[Test]
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {
-        $configuration = (new RunConfigurationResolver())->resolve(new ConfigurationDocument([
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve(new ConfigurationDocument([
             ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => ['build']]],
             ['source' => 'cli', 'values' => ['paths' => ['src'], 'include_generated' => true]],
         ], AbsolutePath::fromString(sys_get_temp_dir())));
@@ -42,7 +44,7 @@ final class RunConfigurationResolverTest extends TestCase
             ], AbsolutePath::fromString($rootA));
             chdir($rootB);
 
-            $configuration = (new RunConfigurationResolver())->resolve($document);
+            $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
 
             self::assertSame($rootA, $configuration->projectRoot->value());
             self::assertSame([$rootA . '/src'], array_map(

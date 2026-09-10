@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "{\n    \"error\": \"Configuration error: Unknown preset \\\"nosuchpreset\\\". Available presets: ci, legacy, strict. To use a custom file, specify a path (e.g., --preset=./my-preset.yaml)\",\n    \"exit_code\": 3\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

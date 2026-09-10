@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
@@ -27,8 +25,7 @@ final class CoverageValidator
         }
 
         if (!\is_string($coverageRaw)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed(['architecture', 'coverage-gap'], get_debug_type($coverageRaw), self::ACCEPTED),
                 \sprintf(
                     "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got %s).",
@@ -40,14 +37,13 @@ final class CoverageValidator
         try {
             return CoverageMode::fromString($coverageRaw);
         } catch (InvalidArgumentException $e) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed(['architecture', 'coverage-gap'], $coverageRaw, self::ACCEPTED),
                 \sprintf(
                     "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got '%s').",
                     $coverageRaw,
                 ),
-                $e,
+                previous: $e,
             );
         }
     }

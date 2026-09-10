@@ -27,12 +27,24 @@ GraphProjection/
 ├── DependencyGraphProjector.php
 ├── DotExporter.php
 ├── DotExporterOptions.php
-└── JsonGraphExporter.php
+├── JsonGraphExporter.php
+└── NamespaceFilter.php
 ```
+
+`NamespaceFilter` is the module's only namespace comparison. Both exporters
+used to carry a private copy of it, and the binding answer the projector now
+owes the Console adapter would have made a third: `unboundIncludeNamespaces()`
+reports the `--namespace` values that match no class of the graph, so
+`graph:export` refuses them (exit 3) instead of printing a graph the caller
+cannot tell apart from a clean one. A value binds if it matches a class
+*before* exclusion; `--exclude-namespace` misses stay silent by design,
+because they leave the graph exactly as it would have been.
 
 ## Definition of Done
 
 - Only the four `Contract` types are imported by delivery adapters.
+- Exactly one namespace comparison exists in this module: exporters and the
+  binding report never disagree about what a `--namespace` value matches.
 - DOT and JSON output preserve the graph projection behaviour used by
   `graph:export`.
 - `GraphDirection` and `GraphExportFormat` remain the sole owners of their

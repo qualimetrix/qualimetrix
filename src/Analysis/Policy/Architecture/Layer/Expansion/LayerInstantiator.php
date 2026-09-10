@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
@@ -49,8 +47,7 @@ final class LayerInstantiator
         // name retains literal `{var}` placeholders).
         $missing = array_values(array_diff($template->variables(), array_keys($bindings)));
         if ($missing !== []) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers'], $template->nameTemplate()),
                 \sprintf(
                     'LayerExpansionStage: template "%s" produced an incomplete binding tuple %s — variable(s) "%s" '
@@ -70,10 +67,9 @@ final class LayerInstantiator
         $concreteMembership = self::substituteMembership($template->membership(), $bindings);
 
         try {
-            return LayerDefinition::expanded($concreteName, $concreteMembership);
+            return LayerDefinition::expanded($concreteName, $concreteMembership, $template->nameTemplate());
         } catch (InvalidLayerDefinitionException $e) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers'], $template->nameTemplate()),
                 \sprintf(
                     'LayerExpansionStage: template "%s" produced invalid concrete layer name "%s" for bindings %s — %s. '
@@ -83,7 +79,7 @@ final class LayerInstantiator
                     self::renderBindings($bindings),
                     $e->getMessage(),
                 ),
-                $e,
+                previous: $e,
             );
         }
     }

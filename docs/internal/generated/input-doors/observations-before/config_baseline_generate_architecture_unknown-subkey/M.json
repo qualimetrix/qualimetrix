@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: architecture: unknown key \"nosuchkey\". Allowed keys: \"layers\", \"allow\", \"coverage-gap\", \"max_expanded_layers\".\n",
+    "file": false,
+    "dir": false
+}

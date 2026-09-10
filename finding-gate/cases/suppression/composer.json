@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/suppression",
+    "description": "Corpus case: suppression values that name nothing the run holds",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Suppression\\": "src/"
+        }
+    }
+}

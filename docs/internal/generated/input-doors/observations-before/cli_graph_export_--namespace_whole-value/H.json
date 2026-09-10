@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "digraph Dependencies {\n    rankdir=LR;\n    node [shape=box, style=filled, fillcolor=lightblue, fontname=\"Arial\"];\n    edge [color=gray];\n\n    subgraph cluster_0 {\n        label=\"Fixture\\\\Alpha\";\n        style=filled;\n        fillcolor=lightyellow;\n\n        \"Fixture\\\\Alpha\\\\AlphaService\" [label=\"AlphaService\", fillcolor=\"lightblue\"];\n    }\n\n    // Edges\n}",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

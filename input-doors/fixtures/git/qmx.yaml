@@ -1,0 +1,13 @@
+# Base configuration of the stand's main fixture. Configuration-door probes
+# write a copy of this document with one snippet merged in; the A side is this
+# document alone.
+#
+# ClassRank and Distance are disabled because both are relative to the graph:
+# in a tree this small every class crosses the threshold, and without a symbol
+# that carries no finding at all there is no legitimately empty hit to compare
+# a miss against.
+paths:
+  - src
+disabledRules:
+  - coupling.class-rank
+  - coupling.distance

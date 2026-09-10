@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -78,8 +76,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
         // wrong here — the position names the key, the element and the
         // accepted names live in the summary, per the same rule
         // `02-computed-metric-keys.md` §2 gives every list-element refusal.
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(['exclude_health'], 'exclude_health'),
             \sprintf(
                 'Unknown health dimension(s) in --exclude-health: %s. Valid dimensions: %s',
@@ -176,8 +173,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
                 // by hand rather than through ComputedMetricEntryKeys::nameSegments()
                 // — that helper is Root-internal, and this class is Health-internal
                 // (see ComputedMetricsInternalTopologyTest's zone DAG).
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(['computed_metrics', 'health', 'overall', 'formulas', $level], $level),
                     \sprintf(
                         'Cannot auto-renormalize "health.overall" at level "%s" after excluding '

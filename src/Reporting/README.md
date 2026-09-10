@@ -63,6 +63,7 @@ Reporting/
 │   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
+    ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
     ├── TextFormatter.php                   # Compact text output (with colors)
@@ -234,12 +235,37 @@ interface FormatterRegistryInterface
      * @return list<string>
      */
     public function getAvailableNames(): array;
+
+    /**
+     * Every `--format-opt` key any registered formatter reads, sorted and deduplicated.
+     *
+     * @return list<string>
+     */
+    public function declaredFormatOptionKeys(): array;
 }
 ```
 
 ### FormatterRegistry
 
 Registry implementation — stores formatters by name, throws `InvalidArgumentException` when a non-existent formatter is requested.
+
+### FormatOptionKeysInterface
+
+Opt-in contract: a formatter that reads `--format-opt` keys declares them, and
+`FormatterRegistry::declaredFormatOptionKeys()` unites the declarations across
+every registered formatter (hidden ones included). `FormatterContextFactory`
+refuses a key outside that union with exit code 3 instead of dropping it into an
+options array nobody reads. A key belonging to *another* formatter is accepted:
+one option set is routinely run through several formats.
+
+The declaration sits on the formatter even when the key is read by one of its
+renderers (`rank-by`, `top`, `project-name`), so
+`tests/Unit/Reporting/Formatter/FormatOptionKeyDeclarationTest.php` enumerates
+the reading sites from the source and holds declaration and reader in agreement
+in both directions.
+
+Today's union: `contributors` (health), `limit`, `rank-by`, `top`, `violations`
+(json), `rank-by`, `top` (summary), `project-name` (html).
 
 ### Report (Value Object)
 
@@ -624,7 +650,9 @@ bin/qmx check src/ --format=suppressed > suppressed.json
 
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
 2. Implement `FormatterInterface` (methods: `format(Report, FormatterContext)`, `getName()`, `getDefaultGroupBy()`)
-3. Use it: `bin/qmx check src/ --format=myformat`
+3. Reading a `--format-opt` key? Also implement `FormatOptionKeysInterface` and
+   declare it — an undeclared key is refused before your formatter ever runs
+4. Use it: `bin/qmx check src/ --format=myformat`
 
 **Automatic registration:** the class will be registered via `FormatterCompilerPass` — no need to modify `ContainerFactory`.
 

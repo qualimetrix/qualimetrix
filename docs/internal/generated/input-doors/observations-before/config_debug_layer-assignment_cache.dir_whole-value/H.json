@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Class: Layered\\Domain\\Order\n\n  Assigned to: domain\n    Matched by: pattern \"Layered\\Domain\\*\"\n\n  Would also match (in declaration order):\n    (none — the assignment is unique)\n",
+    "stderr": "",
+    "file": false,
+    "dir": true
+}

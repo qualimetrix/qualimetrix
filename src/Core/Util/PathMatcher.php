@@ -85,10 +85,14 @@ final readonly class PathMatcher
     }
 
     /**
-     * Returns true if the pattern contains glob characters (*, ?, [).
+     * Returns true if the pattern contains glob characters.
+     *
+     * The alphabet is {@see GlobSyntax}'s, shared with the code that judges a
+     * configured value: applier and judge disagreeing about what a glob is is
+     * how a literal pattern came to be treated as unanchored.
      */
     private function isGlobPattern(string $pattern): bool
     {
-        return str_contains($pattern, '*') || str_contains($pattern, '?') || str_contains($pattern, '[');
+        return GlobSyntax::isGlob($pattern);
     }
 }
