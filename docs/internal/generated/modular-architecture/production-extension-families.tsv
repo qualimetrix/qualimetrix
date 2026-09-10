@@ -70,6 +70,7 @@ rule	Qualimetrix\Analysis\Evidence\Coupling\CboRule	src/Analysis/Evidence/Coupli
 rule	Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	src/Analysis/Evidence/Coupling/ClassRankRule.php	qmx.rule	"CouplingConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	qmx.rule	"CouplingConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php	qmx.rule	"CouplingConfigurator -> rule compiler passes"
+rule	Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php	qmx.rule	"CouplingConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule	src/Analysis/Evidence/Design/DataClass/DataClassRule.php	qmx.rule	"DesignConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule	src/Analysis/Evidence/Design/GodClass/GodClassRule.php	qmx.rule	"DesignConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	qmx.rule	"DesignConfigurator -> rule compiler passes"

@@ -15,12 +15,13 @@
 
 ## Правила связанности (Coupling)
 
-| Правило     | ID                     | Минуты |
-| ----------- | ---------------------- | ------ |
-| CBO         | `coupling.cbo`         | 45     |
-| ClassRank   | `coupling.class-rank`  | 30     |
-| Instability | `coupling.instability` | 30     |
-| Distance    | `coupling.distance`    | 30     |
+| Правило                            | ID                                       | Минуты |
+| ---------------------------------- | ---------------------------------------- | ------ |
+| CBO                                | `coupling.cbo`                           | 45     |
+| ClassRank                          | `coupling.class-rank`                    | 30     |
+| Instability                        | `coupling.instability`                   | 30     |
+| Distance                           | `coupling.distance`                      | 30     |
+| Непривязанный неймспейс фреймворка | `coupling.unmatched-framework-namespace` | 10     |
 
 ## Правила сцепления (Cohesion)
 

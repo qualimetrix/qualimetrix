@@ -242,6 +242,8 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule'
     - name: analysis-evidence-dependencymodel
       patterns:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency'

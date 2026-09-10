@@ -15,12 +15,13 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Coupling Rules
 
-| Rule        | ID                     | Minutes |
-| ----------- | ---------------------- | ------- |
-| CBO         | `coupling.cbo`         | 45      |
-| ClassRank   | `coupling.class-rank`  | 30      |
-| Instability | `coupling.instability` | 30      |
-| Distance    | `coupling.distance`    | 30      |
+| Rule                          | ID                                       | Minutes |
+| ----------------------------- | ---------------------------------------- | ------- |
+| CBO                           | `coupling.cbo`                           | 45      |
+| ClassRank                     | `coupling.class-rank`                    | 30      |
+| Instability                   | `coupling.instability`                   | 30      |
+| Distance                      | `coupling.distance`                      | 30      |
+| Unmatched framework namespace | `coupling.unmatched-framework-namespace` | 10      |
 
 ## Cohesion Rules
 

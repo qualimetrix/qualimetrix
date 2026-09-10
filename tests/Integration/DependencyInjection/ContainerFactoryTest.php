@@ -49,6 +49,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
@@ -830,6 +831,7 @@ PHP;
             ConstructorOverinjectionRule::class,
             DataClassRule::class,
             GodClassRule::class,
+            UnmatchedFrameworkNamespaceRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

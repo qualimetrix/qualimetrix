@@ -21,6 +21,7 @@ Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	method	getOptionsClass	Qual
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions	method	levelOptionsClasses	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions
+Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions
 Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions
 Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	method	getOptionsClass	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions

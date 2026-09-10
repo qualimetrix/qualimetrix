@@ -20,12 +20,12 @@
 #                      Only a magnitude channel may carry the token.
 #     acceptability := config-error     (omitted = acceptable as debt)
 #
-# Twenty-two of the fifty-three channels here carry a judges: token. The
-# thirty-one that do not split into twenty-seven occurrence channels, four
+# Twenty-two of the fifty-four channels here carry a judges: token. The
+# thirty-two that do not split into twenty-eight occurrence channels, four
 # magnitudes that
 # publish a number of their own making (architecture.circular-dependency,
 # architecture.unassigned-class, duplication.clone,
-# design.god-class), and -- inside the twenty-six -- coupling.class-rank,
+# design.god-class), and -- inside the twenty-eight -- coupling.class-rank,
 # which does read a catalog metric and stays occurrence anyway by ADR 0017
 # point 5.
 #
@@ -108,6 +108,7 @@ coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app
 coupling.class-rank - class
 coupling.distance higher namespace judges:coupling.distance
 coupling.instability higher class,namespace judges:coupling.instability
+coupling.unmatched-framework-namespace - project
 design.data-class lower class judges:design.woc
 design.dit higher class judges:design.dit
 design.god-class higher class

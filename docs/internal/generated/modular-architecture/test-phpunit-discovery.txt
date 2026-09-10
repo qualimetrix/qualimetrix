@@ -1745,6 +1745,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsAWeightedSumInEveryShapeTheLanguageAccepts
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumAtAllWhenOneTermIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itFailsTheRunUnderFailOnWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itIsSilencedByDisablingTheProducingRule
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itMovesTheApplicationScopeOnlyOnAHit
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itReportsAFrameworkPrefixThatMatchedNothing
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itReportsEveryUnboundPrefixSeparately
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itStaysSilentOnARunWhoseGraphCarriesNoDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itStaysSilentWhenNoFrameworkNamespacesAreDeclared
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itStaysSilentWhenTheFrameworkPrefixMatched
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCalculatesOneSixthFromExplicitNamespaceCountTotals
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itClampsTheResultToTheUnitRange
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsEnumsImplementingAnInterfaceAsConcrete
@@ -1871,8 +1880,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itSkipsClassesThatHaveNoClassRankMetric
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itStaysDisabledWhenExplicitlyDisabledInArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itUsesCustomThresholdsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itBindsOnTheSameBoundaryIsFrameworkMatchesOn
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsEmptyWhenNoFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsNotEmptyWhenFrameworkPrefixesAreConfigured
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itKeepsDeclarationOrderAmongTheUnboundPrefixes
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesASingleSegmentPrefixExactlyButNotAsASubstring
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkNamespaceStringsAndRejectsNullOrEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"App namespace"
@@ -1885,8 +1896,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"SymfonyBridge should not match Symfony"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"empty string"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"global class"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itNamesEveryPrefixNoNameFellUnder
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itNamesNoPrefixWhenNoneAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itNeverMatchesWhenNoFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itReplacesPrefixesWithAnEmptyContribution
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itReportsARepeatedPrefixOnce
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itRetainsThePreviousPrefixesWhenConfigurationIsInvalid
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itUsesTheLastFrameworkNamespaceContribution
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itAggregatesEfferentCouplingAtNamespaceLevel
@@ -2073,6 +2087,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDeduplicatesNullsafeAndRegularCalls
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDoesNotTreatCapturesOrCloneWithAsRfcExecution
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itTreatsNewSelfStaticParentAsInternal
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itNamesItselfAfterItsChannel
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itReportsOneFindingPerUnboundPrefix
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenNoPrefixesAreDeclared
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheGraphCarriesNoDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWithoutADependencyGraph
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itTreatsADependencySourceAsABinding
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itFiltersBuiltinCouplingButRetainsBuiltinInheritance
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets
@@ -3734,6 +3755,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions"

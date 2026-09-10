@@ -1071,7 +1071,7 @@ function currentSuite(string $path): string
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1) {
         return 'Unit';
     }
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1) {
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity|Coupling)/Integration/#', $path) === 1) {
         return 'Integration';
     }
     foreach (testSuitePrefixTable() as $entry) {

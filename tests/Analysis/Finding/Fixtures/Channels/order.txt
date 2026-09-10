@@ -40,6 +40,7 @@ coupling.cbo
 coupling.class-rank
 coupling.distance
 coupling.instability
+coupling.unmatched-framework-namespace
 design.data-class
 design.god-class
 design.dit

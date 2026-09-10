@@ -231,6 +231,67 @@ When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupli
 
 ---
 
+## Unmatched framework namespace { #unmatched-framework-namespace }
+
+**Rule ID:** `coupling.unmatched-framework-namespace`
+
+**Severity:** warning (fixed)
+
+### What it measures
+
+A `framework-namespaces` prefix that no name in the run falls under.
+
+The prefix was written to move classes out of `coupling.cbo-app` and into
+`coupling.ce-framework`. One that matches nothing moves neither, so every
+application-scope coupling verdict is drawn from a wider set than you asked
+for. Nothing else in the run says so: a missed prefix produces exactly the
+report a run with no prefix at all produces.
+
+```
+The framework namespace "Symfony\Bundle" matched no class the run analysed or
+depends on. Nothing was moved out of the application scope for it, so
+"coupling.cbo-app" still counts every class it was written to exclude and
+"coupling.ce-framework" counts none of them.
+```
+
+The usual causes are a renamed vendor namespace, a leading backslash
+(`\Symfony` never matches — write the namespace as it appears in an import),
+and a dependency dropped in a refactor while its prefix stayed in `qmx.yaml`.
+
+One finding per unbound prefix, reported on the project. A prefix is checked
+against both ends of every dependency edge — the targets, where external
+framework classes live, and the sources — because that is the set the metrics
+themselves classify.
+
+### When it stays silent
+
+- **No `framework-namespaces` configured.** Nothing was claimed, so nothing
+  failed.
+- **The prefix matched.** Including a prefix that only matches your own
+  analysed classes: that still moves them out of the application scope, which
+  is what the option does.
+- **The run's dependency graph is empty.** Check one file that depends on
+  nothing and there was nothing to classify at all, so a correct
+  project-wide `qmx.yaml` is not reported for that invocation.
+- **No dependency graph was built.** There is then no set of names to ask
+  about, and the run says nothing rather than accusing every prefix at once.
+
+### Configuration
+
+```yaml
+rules:
+  coupling.unmatched-framework-namespace:
+    enabled: true   # default
+```
+
+It is an ordinary rule finding rather than a configuration error: it answers to
+`fail_on`, `--disable-rule=coupling.unmatched-framework-namespace`,
+`@qmx-ignore coupling.unmatched-framework-namespace` and the baseline. A shared
+`qmx.yaml` that legitimately names a framework one repository does not use is
+the case that keeps it out of the refusal path.
+
+---
+
 ## Instability
 
 **Rule ID:** `coupling.instability`

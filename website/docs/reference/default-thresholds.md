@@ -59,14 +59,15 @@ Rules that check class design and inheritance structure.
 
 Rules that check how tightly classes and namespaces are connected to each other.
 
-| Rule        | ID                     | Warning | Error | Scope     |
-| ----------- | ---------------------- | ------- | ----- | --------- |
-| CBO         | `coupling.cbo`         | 14      | 20    | Class     |
-| CBO         | `coupling.cbo`         | 14      | 20    | Namespace |
-| Instability | `coupling.instability` | 0.8     | 0.95  | Class     |
-| Instability | `coupling.instability` | 0.8     | 0.95  | Namespace |
-| Distance    | `coupling.distance`    | 0.3     | 0.5   | Namespace |
-| ClassRank   | `coupling.class-rank`  | 0.02    | 0.05  | Class     |
+| Rule                          | ID                                       | Warning            | Error | Scope     |
+| ----------------------------- | ---------------------------------------- | ------------------ | ----- | --------- |
+| CBO                           | `coupling.cbo`                           | 14                 | 20    | Class     |
+| CBO                           | `coupling.cbo`                           | 14                 | 20    | Namespace |
+| Instability                   | `coupling.instability`                   | 0.8                | 0.95  | Class     |
+| Instability                   | `coupling.instability`                   | 0.8                | 0.95  | Namespace |
+| Distance                      | `coupling.distance`                      | 0.3                | 0.5   | Namespace |
+| ClassRank                     | `coupling.class-rank`                    | 0.02               | 0.05  | Class     |
+| Unmatched framework namespace | `coupling.unmatched-framework-namespace` | — (warning, fixed) | —     | Project   |
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
@@ -75,6 +76,8 @@ Rules that check how tightly classes and namespaces are connected to each other.
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 
 **ClassRank** uses the PageRank algorithm on the dependency graph to identify the most critical classes. Ranks sum to 1.0 across the project; a high rank means many (or important) classes depend on it. Thresholds are automatically adjusted by project size using sqrt scaling (calibrated for 100 classes).
+
+**Unmatched framework namespace** has no numeric threshold: it reports a `framework-namespaces` prefix that no name in the run falls under, once per prefix, at a fixed warning severity. It is an ordinary finding, so `--fail-on`, `--disable-rule` and the baseline all reach it. See [Coupling rules](../rules/coupling.md#unmatched-framework-namespace).
 
 ## Maintainability Rules
 

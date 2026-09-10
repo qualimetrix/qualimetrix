@@ -46,6 +46,7 @@ coupling.class-rank#coupling.class-rank	class	no	no	C1 C2 C3 C4	both
 coupling.distance#coupling.distance	namespace	no	no	C1	both
 coupling.instability#coupling.instability.class	class	no	yes	C1 C2	both
 coupling.instability#coupling.instability.namespace	namespace	no	yes	C1	both
+coupling.unmatched-framework-namespace#coupling.unmatched-framework-namespace	project	no	no	C7	x16-p9
 design.data-class#design.data-class	class	no	no	C1 C2	both
 design.god-class#design.god-class	class	no	no	C1 C2	both
 design.dit#design.dit	class	no	no	C1 C2	both
@@ -107,6 +108,10 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #       whose code exists, a template expanding to nothing, a class outside
 #       every layer, `coverage: error` and `--rule-opt=architecture.unassigned-class:mode=error`.
 #   C5  a three-class dependency cycle.
+#   C7  the gate corpus case `finding-gate/cases/coupling`, whose qmx.yaml
+#       names the framework namespace `NoSuchVendor\Framework` that nothing in
+#       it falls under. Re-runnable: it is the case
+#       ChannelLevelDeclarationDriftTest measures over.
 #   C6  src/ and C2 with every health threshold raised to 100, so all six
 #       health scores breach at every level they are computed at.
 #
@@ -116,6 +121,9 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 # findings below are the pass's own and are not restated for them.
 #   x16-p8  architecture.unmatched-exclude, project, over C4 extended with an
 #           `exclude:` clause on the `controller` layer that removes no class.
+#   x16-p9  coupling.unmatched-framework-namespace, project, over C7 — the
+#           corpus is named separately because no earlier one configures a
+#           framework namespace at all.
 #
 # FINDINGS OF THIS PASS:
 #  - `file` is a real reporting level after all: all four `annotation.*`
