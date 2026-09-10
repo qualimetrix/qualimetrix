@@ -40,12 +40,25 @@ use RuntimeException;
  *
  * **Three answers, not two, because "no denominator" is not "covered".**
  * A `composer.json` that declares production code through `classmap`,
- * `psr-0` or `files` and no `psr-4` leaves nothing to measure against, and
+ * `psr-0` or `files` leaves that code out of everything measurable here, and
  * answering "covers" there hands every scope-conditioned channel a licence to
  * accuse on a run nobody could judge — the error in the expensive direction.
  * Such a project is `Unknown`, and `Unknown` reads as "cannot judge": the
  * gate is closed and no scope warning is printed, because there is no
- * uncovered root to name. A *missing* `composer.json` stays "covers": there
+ * uncovered root to name.
+ *
+ * **An unread section beside a readable one is the same "no denominator", not
+ * a smaller one.** A manifest declaring both `psr-4` and `classmap` yields a
+ * non-empty root list, and measuring against it answers about the PSR-4 half
+ * while the classmap half — production code, never analysed, never counted —
+ * is silently absent from both numerator and denominator. Emptiness of the
+ * root list is therefore not the question; whether anything production was
+ * declared that this class cannot measure is. `autoload-dev` sections and
+ * `exclude-from-classmap` are not such declarations: the first is test code,
+ * outside the denominator by design, and the second removes code rather than
+ * declaring it.
+ *
+ * A *missing* `composer.json` stays "covers": there
  * is no project manifest to narrow against at all, the absence is already
  * reported by `CheckCommand::warnIfComposerJsonMissing()`, and treating it as
  * `Unknown` would silence these channels on every project that has none.
@@ -91,6 +104,13 @@ final readonly class ProjectScopeCoverage
         if (!$composerJsonPath->exists()) {
             // Missing composer.json is already reported by CheckCommand::warnIfComposerJsonMissing()
             return ProjectScopeMeasurement::covered();
+        }
+
+        // A section this product cannot read declares production code that
+        // would never enter the denominator, so the measurement is short by
+        // it whether or not a psr-4 section stands beside it.
+        if ($this->composerReader->declaresUnreadableProductionAutoload($composerJsonPath->value())) {
+            return ProjectScopeMeasurement::unreadable();
         }
 
         // Only check production autoload paths; autoload-dev (tests/) is not required for accurate coupling metrics

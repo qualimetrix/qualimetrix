@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
+use Qualimetrix\Core\Util\GlobSyntax;
+
 /**
  * Whether this run is wide enough to judge one configured value.
  *
@@ -55,14 +57,19 @@ namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
  * head — either is a prefix of the other on `\` boundaries — is served from a
  * directory this run did not analyse. `Acme\Tests\Unit` against
  * `"Acme\\Tests\\": "tests/"` on `qmx check src/` is therefore silent, while
- * `Acme\Gone`, compatible with no unanalysed root, is judged. A glob-headed
- * value is compatible with every prefix, so it too is only judged on a run
- * that analysed them all.
+ * `Acme\Gone`, compatible with no unanalysed root, is judged.
+ *
+ * **A glob-headed namespace value is never judged, exactly as a glob-headed
+ * path value is not.** `*\Gone` has no literal head, so there is no place to
+ * locate it and no root to compare the run against. Deriving the answer from
+ * the map instead — "compatible with every prefix, so judged once every root
+ * was analysed" — makes the same value judgeable or not depending on the
+ * caller's paths, and on a whole-project run it published an unmatched warning
+ * for a value this class cannot locate at all. One shape of value, one answer,
+ * on both branches.
  */
 final readonly class ValueScopeJudgement
 {
-    private const string GLOB_CHARACTERS = '*?[{';
-
     /**
      * @param string $projectRoot the tree the configured values are written against
      * @param array<string, list<string>> $psr4Roots the manifest's PSR-4 map, `autoload-dev` included:
@@ -109,6 +116,13 @@ final readonly class ValueScopeJudgement
     {
         $head = trim(self::literalHead($pattern, '\\'), '\\');
 
+        // Same answer as the path branch gives an unanchored value: with no
+        // literal head there is no place to locate, so there is nothing to
+        // compare the run's paths against.
+        if ($head === '') {
+            return false;
+        }
+
         // No map, no location: a project without a PSR-4 manifest is judged
         // by the project-wide predicate alone, which already closes the gate
         // when a manifest exists and cannot be read.
@@ -137,7 +151,7 @@ final readonly class ValueScopeJudgement
     private static function literalHead(string $value, string $separator): string
     {
         $trimmed = rtrim($value, $separator);
-        $glob = strcspn($trimmed, self::GLOB_CHARACTERS);
+        $glob = strcspn($trimmed, GlobSyntax::CHARACTERS);
 
         if ($glob === \strlen($trimmed)) {
             return $trimmed;
@@ -151,12 +165,17 @@ final readonly class ValueScopeJudgement
 
     /**
      * Whether two namespace names can name the same code: one is a prefix of
-     * the other on a `\` boundary, or they are equal. An empty head — a value
-     * that begins with a glob — is compatible with every prefix.
+     * the other on a `\` boundary, or they are equal. A PSR-4 map may serve
+     * the root namespace (`"": "src/"`), and that prefix can hold anything.
+     *
+     * There is deliberately no branch for an empty head: a value with no
+     * literal head is refused by {@see judgesNamespaceValue()} before it gets
+     * here, and a permissive branch left standing for it is how "no anchor"
+     * came to read as "compatible with everything, therefore judged".
      */
     private static function compatible(string $head, string $prefix): bool
     {
-        if ($head === '' || $prefix === '') {
+        if ($prefix === '') {
             return true;
         }
 

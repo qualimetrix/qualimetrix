@@ -62,7 +62,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/CapturePattern.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Util/NamespaceMatcher.php	Qualimetrix\Core\Util	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Util/GlobSyntax.php	Qualimetrix\Core\Util	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Version.php	Qualimetrix\Core	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Reporting/Formatter/Support/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter\Support	warning	1

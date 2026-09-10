@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
@@ -159,6 +160,53 @@ final class ExcludeBindingProbeTest extends TestCase
         ];
 
         self::assertSame(['NoSuchDir'], $probe->unboundPatterns($roots, ['NoSuchDir', 'NoSuchDir'], []));
+    }
+
+    /**
+     * The compatibility contract itself, as a table rather than a case.
+     *
+     * The probe restates Symfony's two-branch rule instead of calling it: the
+     * iterator that applies `Finder::exclude()` answers per node and never says
+     * which pattern pruned it, so attribution needs the rule in hand. The cost
+     * of restating it is a second implementation of somebody else's contract,
+     * and this is the sentinel over it — every shape either side can disagree
+     * on, asked of both. It reddens when `matches()` is edited and when a
+     * Symfony upgrade moves the semantics under it, which is the only thing
+     * that makes "synchronised by hand" a statement anyone can check.
+     *
+     * The equivalence is exact in both directions, so a probe that grew
+     * blanket (binding everything) fails it as loudly as one that grew blind.
+     */
+    #[Test]
+    #[DataProvider('providePatternShapes')]
+    public function itBindsExactlyWhenARealFinderRemovesSomething(string $pattern): void
+    {
+        self::assertSame(
+            $this->filesRemovedByFinder($pattern) > 0,
+            $this->unbound([$pattern]) === [],
+            \sprintf('probe and Finder disagree about %s', $pattern),
+        );
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function providePatternShapes(): iterable
+    {
+        // Basename branch: a hit at depth, a hit at the top, and a miss.
+        yield 'bare name deep in the tree' => ['Deep'];
+        yield 'bare name at the top' => ['Kept'];
+        yield 'bare name matching nothing' => ['NoSuchDir'];
+        yield 'bare name that is only a prefix of a directory' => ['Legac'];
+
+        // Slash branch: anchored to a segment boundary, not to the root.
+        yield 'rooted two-segment path' => ['Legacy/Deep'];
+        yield 'two-segment path that starts below the root' => ['Legacy/Inner'];
+        yield 'two-segment path naming the nested copy' => ['nested/Legacy'];
+        yield 'two-segment path matching nothing' => ['nested/NoSuchDir'];
+        yield 'slash pattern whose segments exist apart but not in order' => ['Kept/Legacy'];
+
+        // Shapes that are neither, and must not accidentally bind.
+        yield 'trailing slash is cosmetic' => ['Legacy/'];
+        yield 'the search root itself is never a candidate' => ['.'];
     }
 
     /**

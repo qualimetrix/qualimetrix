@@ -185,12 +185,15 @@ and why `-q` no longer hides which key or file was refused.
   layer `exclude:` clause that removed no class from a layer that did match
   something). Every one of the six is judged only on a run wide enough to
   judge it: paths covering the project's production autoload roots, and a
-  `composer.json` declaring them through `psr-4` — a narrower run, or a
-  project autoloading through `classmap`, `psr-0` or `files` alone, cannot
+  `composer.json` declaring every one of them through `psr-4` — a narrower run,
+  or a project declaring any production code through `classmap`, `psr-0` or
+  `files`, with or without a `psr-4` section beside it, cannot
   tell a stale value from one whose subject lies outside the slice. Each
   configured value is then judged against the place it names, so an entry
   written for `tests/` is not reported by `qmx check src/` while a stale entry
-  inside `src/` on the same run still is; a layer `exclude:` under a template
+  inside `src/` on the same run still is; a value that begins with a glob
+  names no place and is never reported, on the namespace side as on the path
+  side; a layer `exclude:` under a template
   is judged once across every layer the template expanded to. Each finding
   carries the value it is about in its identity, so accepting a stale value in a
   baseline accepts that value and not merely one more finding on the channel:

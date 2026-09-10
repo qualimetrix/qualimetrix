@@ -39,8 +39,9 @@ final readonly class ProjectScopeMeasurement
     }
 
     /**
-     * A manifest whose production autoload this product cannot read —
-     * `classmap`, `psr-0` or `files` and no `psr-4`.
+     * A manifest whose production autoload this product cannot read in full —
+     * a `classmap`, `psr-0` or `files` section, with or without a `psr-4` one
+     * beside it, or no readable production root at all.
      */
     public static function unreadable(): self
     {

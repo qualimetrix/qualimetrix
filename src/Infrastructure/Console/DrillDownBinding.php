@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -35,20 +36,33 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * report came out non-empty — a subtree with nothing wrong in it must still
  * produce the empty report rather than a refusal.
  *
+ * **The union is over the strings the filter really holds, not over every
+ * string a symbol has.** A canonical name reaches a comparison only as a worst
+ * offender's, and offenders are ranked for the levels
+ * {@see RankedOffenderLevels} names — never for a File or a Callable. Adding
+ * those canonical names too made a value that matches nothing else count as
+ * bound: the refusal this class exists to raise was withheld and the empty
+ * report went out unexplained, which is the same silent loss the other way
+ * round.
+ *
  * Stateless by construction — the run is an argument, not a collaborator — so a
  * caller that already holds the run needs no wiring to ask.
  */
 final readonly class DrillDownBinding
 {
     /**
-     * Levels whose subjects carry a source namespace. `Project` is excluded
-     * deliberately: its symbol path holds an internal sentinel where a
-     * namespace would be, which a glob value would otherwise bind to.
+     * Levels whose subjects carry a source namespace — the strings
+     * `FindingFilter::filterFindings()` compares a finding by.
+     *
+     * `Project` is excluded deliberately: its symbol path holds an internal
+     * sentinel where a namespace would be, which a glob value would otherwise
+     * bind to. `File` is absent because a File symbol path has no namespace at
+     * all, so the level contributes nothing to either half of the universe —
+     * listing it said the opposite of what the code did.
      */
     private const array NAMED_LEVELS = [
         SymbolLevel::Callable,
         SymbolLevel::Class_,
-        SymbolLevel::File,
         SymbolLevel::Namespace_,
     ];
 
@@ -97,7 +111,8 @@ final readonly class DrillDownBinding
     }
 
     /**
-     * Both strings the filter offers a `--namespace` value for one symbol.
+     * The strings the filter offers a `--namespace` value for one symbol of
+     * the given level.
      *
      * `FindingFilter::filterWorstOffenders()` asks `NamespaceMatcher` about
      * `symbolPath->toString()` — the whole canonical name, class and member
@@ -106,15 +121,24 @@ final readonly class DrillDownBinding
      * namespace `Demo\Alpha`, so a universe of namespaces alone refuses a
      * value that really does select offenders.
      *
+     * The canonical name is added only for a level that can become a worst
+     * offender. A File's canonical name is its path and a Callable's carries a
+     * member; neither is ever on the right-hand side of a comparison, so
+     * counting them would accept a value nothing downstream can use.
+     *
      * @return list<string>
      */
-    private static function comparedStringsOf(SymbolPath $symbolPath): array
+    private static function comparedStringsOf(SymbolPath $symbolPath, SymbolLevel $level): array
     {
         $compared = [];
         $namespace = $symbolPath->namespace;
 
         if ($namespace !== null && $namespace !== '') {
             $compared[] = $namespace;
+        }
+
+        if (!\in_array($level, RankedOffenderLevels::LEVELS, true)) {
+            return $compared;
         }
 
         $canonical = $symbolPath->toString();
@@ -135,7 +159,7 @@ final readonly class DrillDownBinding
 
         foreach (self::NAMED_LEVELS as $level) {
             foreach ($metrics->all($level) as $info) {
-                foreach (self::comparedStringsOf($info->symbolPath) as $compared) {
+                foreach (self::comparedStringsOf($info->symbolPath, $level) as $compared) {
                     $universe[$compared] = true;
                 }
             }

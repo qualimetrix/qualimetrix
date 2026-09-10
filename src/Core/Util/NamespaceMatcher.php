@@ -95,12 +95,14 @@ final readonly class NamespaceMatcher
     }
 
     /**
-     * Returns true if the pattern contains glob characters (`*`, `?`, `[`).
+     * Returns true if the pattern contains glob characters.
      *
-     * Used to decide between glob (`fnmatch`) and prefix matching modes.
+     * Used to decide between glob (`fnmatch`) and prefix matching modes. The
+     * alphabet is {@see GlobSyntax}'s, shared with the code that judges a
+     * configured value rather than restated here.
      */
     public static function isGlob(string $pattern): bool
     {
-        return str_contains($pattern, '*') || str_contains($pattern, '?') || str_contains($pattern, '[');
+        return GlobSyntax::isGlob($pattern);
     }
 }

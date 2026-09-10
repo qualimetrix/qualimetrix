@@ -9,6 +9,15 @@ use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathRe
 final class ComposerReader implements ComposerAutoloadPathReaderInterface
 {
     /**
+     * The production autoload sections this reader cannot turn into roots.
+     *
+     * `files` and classmap entries may be single files rather than
+     * directories, so they are not roots to be added to the denominator —
+     * their presence is reported instead, and the caller closes the gate.
+     */
+    private const array UNREADABLE_SECTIONS = ['classmap', 'psr-0', 'files'];
+
+    /**
      * Extracts paths from autoload.psr-4 and optionally autoload-dev.psr-4.
      *
      * Handles both single-path strings and multi-path arrays per PSR-4 spec:
@@ -63,6 +72,27 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
         $this->collectPsr4Roots($data, 'autoload-dev', $roots);
 
         return $roots;
+    }
+
+    public function declaresUnreadableProductionAutoload(string $composerJsonPath): bool
+    {
+        $data = $this->decode($composerJsonPath);
+
+        if ($data === null || !isset($data['autoload']) || !\is_array($data['autoload'])) {
+            return false;
+        }
+
+        foreach (self::UNREADABLE_SECTIONS as $section) {
+            $declared = $data['autoload'][$section] ?? null;
+
+            // An empty section declares no code; a scalar in that position is
+            // not a declaration this product should read as one either.
+            if (\is_array($declared) && $declared !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

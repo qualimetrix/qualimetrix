@@ -25,4 +25,22 @@ interface ComposerAutoloadPathReaderInterface
      * @return array<string, list<string>> prefix (trailing `\` as written) to paths relative to composer.json
      */
     public function extractPsr4Roots(string $composerJsonPath): array;
+
+    /**
+     * Whether the manifest declares production code through an autoload
+     * mechanism this product does not read.
+     *
+     * `extractAutoloadPaths()` returns PSR-4 roots and nothing else, so its
+     * result cannot distinguish "the manifest declares only these" from "the
+     * manifest declares these and a `classmap` besides". A caller measuring a
+     * run against the project needs the difference: in the second case its
+     * denominator is short by however much the unread section declares, and a
+     * verdict computed from it would call a partial run whole.
+     *
+     * Only production sections count. `autoload-dev` is test code, which is
+     * outside the denominator by design, and `exclude-from-classmap` removes
+     * code rather than declaring it. An empty or malformed section declares
+     * nothing and is not a declaration either.
+     */
+    public function declaresUnreadableProductionAutoload(string $composerJsonPath): bool;
 }

@@ -206,6 +206,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor'
@@ -763,6 +764,7 @@ architecture:
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
+        - 'Qualimetrix\Core\Util\GlobSyntax'
         - 'Qualimetrix\Core\Util\NamespaceMatcher'
         - 'Qualimetrix\Core\Util\PathMatcher'
         - 'Qualimetrix\Core\Util\PatternMatch'
@@ -1241,6 +1243,7 @@ architecture:
       - analysis-configuration
       - analysis-evidence-cohesion
       - analysis-evidence-computedmetrics
+      - analysis-evidence-computedmetrics-health
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement

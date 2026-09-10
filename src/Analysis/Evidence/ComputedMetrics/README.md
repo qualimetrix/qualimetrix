@@ -53,7 +53,7 @@ ComputedMetrics/
     ├── Contract/                     # exact Reporting-facing surface
     │   ├── DrillDown/                # score and worst-class queries
     │   ├── Metadata/                 # immutable metadata projection
-    │   ├── Offender/                 # offender value
+    │   ├── Offender/                 # offender value and the levels ranked for it
     │   ├── Score/                    # score and decomposition values
     │   └── Summary/                  # summary value and concrete builder
     ├── Configuration/                # formula exclusion

@@ -39,6 +39,15 @@ use SplFileInfo;
  *
  * A trailing slash is trimmed first, exactly as Finder trims it.
  *
+ * **This is a second implementation of somebody else's contract, and it is
+ * watched as one.** Calling the iterator instead is not available: it answers
+ * per node and never says *which* pattern pruned a directory, which is the
+ * whole question here. So the rule is restated, and
+ * `ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething()`
+ * asks both sides about every shape they could differ on — an edit to
+ * {@see matches()} and a Symfony upgrade that moves the semantics under it
+ * both redden it.
+ *
  * **What the walk costs and how that is bounded.** Only directories are
  * visited, never files; the caller does not walk at all unless the author
  * wrote an exclude ({@see UnmatchedExcludeAudit}); and the walk stops the

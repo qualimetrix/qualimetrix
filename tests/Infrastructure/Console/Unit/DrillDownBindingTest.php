@@ -7,10 +7,16 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\DrillDownBinding;
 
@@ -172,6 +178,88 @@ final class DrillDownBindingTest extends TestCase
     public function itCountsTheClassUniverseTheRefusalNames(): void
     {
         self::assertSame(2, (new DrillDownBinding())->classUniverseSize($this->repository()));
+    }
+
+    /**
+     * A canonical name that no filter ever compares must not count as a
+     * binding.
+     *
+     * A File's canonical name is its path, and `FindingFilter::filterFindings()`
+     * compares a File finding by its namespace — which a File symbol does not
+     * have. Worst offenders are the only thing compared by canonical name, and
+     * they are ranked for {@see RankedOffenderLevels::LEVELS} alone. So a value
+     * matching a File path and nothing else selected nothing anywhere while
+     * counting as bound: the refusal was withheld and the empty report went out
+     * as if the subtree were clean.
+     */
+    #[Test]
+    public function itDoesNotBindAValueToAFileCanonicalNameNoFilterCompares(): void
+    {
+        $repository = $this->repository();
+        $repository->add(
+            SymbolPath::forFile(RelativePath::fromString('src/Only.php')),
+            new MetricBag(),
+            RelativePath::fromString('src/Only.php'),
+            5,
+        );
+
+        $binding = new DrillDownBinding();
+
+        self::assertSame(0, $binding->namespaceBindings('src/*', $repository, null));
+        self::assertSame(6, $binding->namespaceUniverseSize($repository, null));
+    }
+
+    /** The same for a Callable, whose canonical name carries the member. */
+    #[Test]
+    public function itDoesNotBindAValueToACallableCanonicalNameNoFilterCompares(): void
+    {
+        $repository = $this->repository();
+        $repository->addCallable(new CallableWithMetrics(
+            declarationPath: DeclarationPath::of(
+                SymbolPath::forMethod('Demo\\Alpha', 'Widget', 'calculate'),
+                RelativePath::fromString('src/Alpha/Widget.php'),
+                DeclarationOrdinal::fromRank(0),
+            ),
+            startFilePos: 0,
+            kind: CallableKind::Method,
+            anonymousSyntax: null,
+            lexicalClassContext: null,
+            classAggregationOwner: null,
+            metrics: new MetricBag(),
+        ));
+
+        $binding = new DrillDownBinding();
+
+        self::assertSame(0, $binding->namespaceBindings('*::calculate', $repository, null));
+
+        // The opposite error the narrowing must not cause: the callable's
+        // namespace is what `filterFindings()` compares its findings by, so it
+        // stays in the universe and the enclosing namespace still binds.
+        self::assertSame(2, $binding->namespaceBindings('Demo\\Alpha', $repository, null));
+    }
+
+    /**
+     * The universe stays exactly the enumeration
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder}
+     * ranks offenders for. A level added to one side and not the other is the
+     * whole defect, in either direction: a missing level refuses a value whose
+     * report is not empty, an extra one accepts a value whose report cannot be
+     * anything else.
+     */
+    #[Test]
+    public function itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName(): void
+    {
+        $source = file_get_contents(\dirname(__DIR__, 4)
+            . '/src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php');
+        self::assertIsString($source);
+
+        preg_match_all('/buildWorstOffenders\\([^;]*?SymbolLevel::([A-Za-z_]+)/s', $source, $matches);
+
+        self::assertSame(
+            array_map(static fn(SymbolLevel $level): string => $level->name, RankedOffenderLevels::LEVELS),
+            $matches[1],
+            'HealthSummaryBuilder ranks a different set of levels than RankedOffenderLevels names.',
+        );
     }
 
     /**

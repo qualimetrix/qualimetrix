@@ -8,6 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
+use SplFileInfo;
 
 /**
  * The reader, and the property that makes it worth having.
@@ -21,11 +25,17 @@ use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 #[CoversClass(ConfiguredSuppression::class)]
 final class ConfiguredSuppressionTest extends TestCase
 {
-    /** The two files that must read every option through this class. */
-    private const array CONSUMERS = [
-        'src/Analysis/Finding/FindingExclusionLedger.php',
-        'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php',
-    ];
+    /** The only file in `src/` allowed to read a suppression option key. */
+    private const string READER = 'src/Analysis/Finding/Exclusion/ConfiguredSuppression.php';
+
+    /**
+     * A `suppress*` key — quoted, or reached through the config schema's
+     * constant — subscripted off an array: the shape of reading one producer's
+     * raw options. Declaring the option (the config schema) or
+     * validating it (the CLI validators) names the key without subscripting an
+     * array with it, and is a different act this guard leaves alone.
+     */
+    private const string RAW_READ = '/\\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z0-9_]+)*\\[\\s*(?:[\'"]suppress|ConfigSchema::SUPPRESS_)/';
 
     #[Test]
     public function itReadsEitherSpellingOfEachOption(): void
@@ -55,27 +65,39 @@ final class ConfiguredSuppressionTest extends TestCase
     }
 
     /**
-     * Neither consumer names a suppression option key itself.
+     * No file in `src/` but this one reads a suppression option key.
      *
-     * A quoted `suppress*` literal in either file is one side enumerating the
-     * options again — exactly the shape that let the ledger apply three and the
-     * audit judge two. Docblock prose is not a literal and does not trip this.
+     * The earlier form of this guard listed the two consumers it knew about,
+     * which is the enumeration-kept-separately this class exists to remove: a
+     * third copy of all six spellings sat in Reporting, agreeing by
+     * coincidence, while the docblock here claimed there was one reader. The
+     * guard searches the whole tree instead, so a fourth reader anywhere is
+     * caught without anyone updating a list.
      */
     #[Test]
-    public function itIsTheOnlyPlaceEitherConsumerNamesASuppressionOptionKey(): void
+    public function itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey(): void
     {
         $root = \dirname(__DIR__, 5);
+        $readers = [];
 
-        foreach (self::CONSUMERS as $relative) {
-            $source = file_get_contents($root . '/' . $relative);
-            self::assertIsString($source, $relative);
+        /** @var SplFileInfo $file */
+        foreach (new RegexIterator(
+            new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src')),
+            '/\\.php$/',
+        ) as $file) {
+            $source = file_get_contents($file->getPathname());
+            self::assertIsString($source, $file->getPathname());
 
-            preg_match_all('/[\'"](suppress[A-Za-z_]*)[\'"]/', $source, $matches);
-
-            self::assertSame([], $matches[1], \sprintf(
-                '%s names a suppression option key itself; read it through ConfiguredSuppression instead.',
-                $relative,
-            ));
+            if (preg_match(self::RAW_READ, $source) === 1) {
+                $readers[] = str_replace($root . '/', '', $file->getPathname());
+            }
         }
+
+        sort($readers);
+
+        self::assertSame([self::READER], $readers, \sprintf(
+            'A suppression option key is read outside %s; read it through ConfiguredSuppression instead.',
+            self::READER,
+        ));
     }
 }

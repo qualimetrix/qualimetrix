@@ -133,6 +133,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPathInAMultiPathMappingToTheProjectRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPsr4PathToTheProjectRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMergesAutoloadAndAutoloadDevPaths
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsNoUnreadableSectionWhenTheManifestIsAbsent
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"a dev classmap is not production"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"a scalar in that position is not a declaration"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"an empty classmap declares nothing"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"classmap alone"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"classmap beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"exclude-from-classmap removes rather than declares"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"files beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"no autoload section at all"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"psr-0 beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"psr-4 alone"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenTheComposerFileDoesNotExist
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itStripsTrailingSlashesFromExtractedPaths
@@ -3961,7 +3972,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itIsTheOnlyPlaceEitherConsumerNamesASuppressionOptionKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsEitherSpellingOfEachOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itAdvisesTheNameToWriteInsteadOfTheRetiredPair
@@ -4528,6 +4539,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheGlobAndPrefixModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceValueThatBeginsWithAGlobEvenOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueThatBeginsWithAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse
@@ -4535,6 +4547,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForAGlobHeadedPathValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itDoesNotJudgeAGlobHeadedNamespaceValueEvenOnAWholeProjectRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFloatThresholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesExact
@@ -6298,8 +6316,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenThereIsNoComposerManifest
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAReadableSectionStandsBesideAnUnreadableOne
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenTheManifestDeclaresNoReadableProductionAutoload
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"a dev classmap is test code, outside the denominator by design"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"an empty production section declares nothing"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"exclude-from-classmap removes code rather than declaring it"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itCarriesEveryFieldExceptTheScopeItIsGiven
@@ -6356,6 +6378,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsABareNameToADirectoryAtAnyDepth
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsAPatternNamingAPrunedDirectoryItself
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASlashedPatternAtAnySegmentBoundaryRatherThanOnlyAtTheRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name at the top"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name deep in the tree"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name matching nothing"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name that is only a prefix of a directory"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"rooted two-segment path"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"slash pattern whose segments exist apart but not in order"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"the search root itself is never a candidate"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"trailing slash is cosmetic"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path matching nothing"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path naming the nested copy"
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"two-segment path that starts below the root"
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsThatSamePatternWhenNothingPrunesTheWayToIt
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotDuplicateAnAnswerAcrossOverlappingRoots
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itIgnoresATrailingSlashTheWayFinderDoes
@@ -6795,7 +6828,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheClassUniverseTheRefusalNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheNamespaceUniverseTheRefusalNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotAcceptANamespaceInPlaceOfAClass
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotBindAValueToACallableCanonicalNameNoFilterCompares
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotBindAValueToAFileCanonicalNameNoFilterCompares
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itKeepsTheProjectSentinelOutOfTheNamespaceUniverse
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
@@ -7552,6 +7588,14 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"namespace"
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"namespaced function"
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"project"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itAgreesWithTheMatcherThatAppliesTheValue
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itIsTheOnlyPlaceInSourceThatEnumeratesTheGlobCharacters
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"brace"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"bracket"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"empty"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"plain literal"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"question mark"
+ - Qualimetrix\Tests\Unit\Core\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"star"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsEmptyReturnsFalseWhenPrefixesExist
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsEmptyReturnsTrueForEmptyPrefixes
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"empty string"

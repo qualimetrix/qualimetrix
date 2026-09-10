@@ -247,6 +247,48 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     /**
+     * The namespace twin of the case above, on the widest run there is.
+     *
+     * The path half answered "no place, no judgement" on any run; the
+     * namespace half derived its answer from the PSR-4 map instead, where a
+     * value with no head is compatible with every prefix — so on a run that
+     * analysed every root it fell through to "judged" and published an
+     * unmatched warning against a correct configuration. Both halves now give
+     * the same answer for the same shape of value.
+     */
+    #[Test]
+    public function itJudgesNoNamespaceValueThatBeginsWithAGlobEvenOnAWholeProjectRun(): void
+    {
+        $findings = $this->audit()->findings(
+            [],
+            ['*\\Gone'],
+            [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
+            ['Sample', 'Sample\\Tests'],
+            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+        );
+
+        self::assertSame([], $this->channelsOf($findings));
+    }
+
+    /**
+     * And the same whole-project run still names an anchored namespace value
+     * that bound to nothing — the report the case above must not have cost.
+     */
+    #[Test]
+    public function itStillNamesAnAnchoredNamespaceValueOnThatSameRun(): void
+    {
+        $findings = $this->audit()->findings(
+            [],
+            ['Sample\\Gone'],
+            [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
+            ['Sample', 'Sample\\Tests'],
+            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+        );
+
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
+    }
+
+    /**
      * @param list<Finding> $findings
      *
      * @return list<string>

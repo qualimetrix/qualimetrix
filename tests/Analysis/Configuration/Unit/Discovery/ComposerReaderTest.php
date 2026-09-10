@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
@@ -209,6 +210,54 @@ final class ComposerReaderTest extends TestCase
         $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
 
         self::assertSame(['src'], $paths);
+    }
+
+    /**
+     * Both directions of the question the coverage gate asks, in one table:
+     * a production section this reader cannot turn into roots is a
+     * declaration, and everything that merely looks like one is not.
+     *
+     * @param array<string, mixed> $manifest
+     */
+    #[Test]
+    #[DataProvider('provideManifests')]
+    public function itReportsOnlyProductionSectionsItCannotRead(array $manifest, bool $expected): void
+    {
+        $this->writeComposerJson($manifest);
+
+        self::assertSame(
+            $expected,
+            $this->reader->declaresUnreadableProductionAutoload($this->tempDir . '/composer.json'),
+        );
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, bool}> */
+    public static function provideManifests(): iterable
+    {
+        $psr4 = ['psr-4' => ['App\\' => 'src/']];
+
+        yield 'classmap alone' => [['autoload' => ['classmap' => ['legacy/']]], true];
+        yield 'classmap beside psr-4' => [['autoload' => $psr4 + ['classmap' => ['legacy/']]], true];
+        yield 'psr-0 beside psr-4' => [['autoload' => $psr4 + ['psr-0' => ['Legacy_' => 'legacy/']]], true];
+        yield 'files beside psr-4' => [['autoload' => $psr4 + ['files' => ['src/helpers.php']]], true];
+
+        yield 'psr-4 alone' => [['autoload' => $psr4], false];
+        yield 'an empty classmap declares nothing' => [['autoload' => $psr4 + ['classmap' => []]], false];
+        yield 'a scalar in that position is not a declaration' => [['autoload' => $psr4 + ['classmap' => 'legacy/']], false];
+        yield 'a dev classmap is not production' => [[
+            'autoload' => $psr4,
+            'autoload-dev' => ['classmap' => ['tests/Fixtures/']],
+        ], false];
+        yield 'exclude-from-classmap removes rather than declares' => [[
+            'autoload' => $psr4 + ['exclude-from-classmap' => ['src/Generated/']],
+        ], false];
+        yield 'no autoload section at all' => [['name' => 'acme/demo'], false];
+    }
+
+    #[Test]
+    public function itReportsNoUnreadableSectionWhenTheManifestIsAbsent(): void
+    {
+        self::assertFalse($this->reader->declaresUnreadableProductionAutoload($this->tempDir . '/nowhere.json'));
     }
 
     /**

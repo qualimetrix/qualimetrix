@@ -29,6 +29,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthSc
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown	Analysis.Evidence.ComputedMetrics.Health	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface	Analysis.Evidence.ComputedMetrics.Health	1	1
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	3	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	3	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor	Analysis.Evidence.ComputedMetrics.Health	1	1
@@ -142,6 +143,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analys
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	30	8
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	108	17
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	8	3
+Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
@@ -235,11 +237,12 @@ Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	46	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	111	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	112	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	70	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
+Qualimetrix\Core\Util\GlobSyntax	Core.Neutral	1	1
 Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	13	6
 Qualimetrix\Core\Util\PathMatcher	Core.Neutral	6	2
 Qualimetrix\Core\Util\StringSet	Core.Neutral	2	1

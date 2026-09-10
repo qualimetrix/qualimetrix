@@ -19,6 +19,18 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
  * it; asking one reader is what makes "applied" and "judged" the same set by
  * construction rather than by intention.
  *
+ * **"One reader" means every side that reads a producer's raw options — the
+ * report included.**
+ * {@see \Qualimetrix\Reporting\FindingProjection\RuleExclusionLedgerAttributor}
+ * held a third copy of all six spellings while the claim here already said
+ * there was one; the copy agreed by coincidence, and a guard listing the two
+ * consumers it knew about could not see it. The guard is written against the
+ * shape instead: a `suppress*` key subscripted off an options array anywhere
+ * in `src/` — quoted or reached through the schema constant — is a reader, and
+ * this is the only file allowed to be one.
+ * Naming an option to *declare* or *validate* it — the config schema, the
+ * parser, the CLI validators — is a different act and is untouched.
+ *
  * Each option accepts two spellings — the snake_case an author writes in
  * `qmx.yaml`, and the camelCase
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::all()}
@@ -32,8 +44,8 @@ final readonly class ConfiguredSuppression
 {
     /**
      * The options, spelled as an author writes them. These three names are the
-     * enumeration both consumers share: a fourth option is added here, and
-     * both sides gain it in the same edit.
+     * enumeration every consumer shares: a fourth option is added here, and
+     * the applying, judging and reporting sides gain it in the same edit.
      */
     public const string PATHS = 'suppress_paths';
     public const string NAMESPACES = 'suppress_namespaces';

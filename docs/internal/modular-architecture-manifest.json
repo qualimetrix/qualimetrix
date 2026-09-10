@@ -2116,6 +2116,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\RankedOffenderLevels": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Contract/Offender/RankedOffenderLevels.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "contract",
+      "closure_package": "P5",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Contract/Offender/WorstOffender.php",
       "kind": "class",
@@ -11072,9 +11086,15 @@
       "path": "src/Analysis/Finding/Exclusion/ConfiguredSuppression.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P6-A",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Exclusion\\RuleNamespaceExclusionProvider": {
       "path": "src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php",
@@ -15914,6 +15934,11 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\RankedOffenderLevels",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder",
           "closes_in": null
         },
@@ -16223,6 +16248,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionRule",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator",
           "closes_in": null
@@ -16305,11 +16335,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionRule",
           "closes_in": null
         }
       ]
@@ -16916,6 +16941,20 @@
             "service_alias",
             "service_registration"
           ]
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Util\\GlobSyntax": {
+      "path": "src/Core/Util/GlobSyntax.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\ValueScopeJudgement",
+          "closes_in": null
         }
       ]
     },

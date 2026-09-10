@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\FindingProjection;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 
 /**
  * The two per-rule exclusion ledger halves — {@see SuppressionMechanism::RuleNamespaceSuppression}
@@ -123,8 +124,8 @@ final readonly class RuleExclusionLedgerAttributor
 
             $inert = [
                 ...$inert,
-                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, $this->configuredPathPatterns($ruleOptions), $pathHitsByRule),
-                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, $this->configuredNamespacePatterns($ruleOptions), $namespaceHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, ConfiguredSuppression::paths($ruleOptions), $pathHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, ConfiguredSuppression::namespaces($ruleOptions), $namespaceHitsByRule),
                 ...$this->inertForChannels($ruleName, $this->configuredChannelPatterns($ruleOptions), $channelHitsByRule),
             ];
         }
@@ -176,73 +177,18 @@ final readonly class RuleExclusionLedgerAttributor
     }
 
     /**
-     * Reads `suppress_paths` off one rule's raw options, accepting both the
-     * key an author writes in `qmx.yaml` and the camelCase form
-     * {@see RuleConfigurationInterface::all()} actually returns once the
-     * configuration pipeline's section-normalization policy has run.
-     *
-     * @param array<string, mixed> $ruleOptions
-     *
-     * @return list<string>
-     */
-    private function configuredPathPatterns(array $ruleOptions): array
-    {
-        return $this->stringList($ruleOptions['suppressPaths'] ?? $ruleOptions['suppress_paths'] ?? []);
-    }
-
-    /**
-     * @param array<string, mixed> $ruleOptions
-     *
-     * @return list<string>
-     */
-    private function configuredNamespacePatterns(array $ruleOptions): array
-    {
-        return $this->stringList($ruleOptions['suppressNamespaces'] ?? $ruleOptions['suppress_namespaces'] ?? []);
-    }
-
-    /**
      * @param array<string, mixed> $ruleOptions
      *
      * @return array<string, list<string>> selector => patterns
      */
     private function configuredChannelPatterns(array $ruleOptions): array
     {
-        $channels = $ruleOptions['suppressNamespaceChannels'] ?? $ruleOptions['suppress_namespace_channels'] ?? [];
-
-        if (!\is_array($channels)) {
-            return [];
-        }
-
         $result = [];
-        foreach ($channels as $selector => $patterns) {
-            if (\is_string($selector)) {
-                $result[$selector] = $this->stringList($patterns);
-            }
+
+        foreach (ConfiguredSuppression::rawNamespaceChannels($ruleOptions) as $selector => $patterns) {
+            $result[$selector] = ConfiguredSuppression::patternsOf($patterns);
         }
 
         return $result;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $value): array
-    {
-        if (\is_string($value)) {
-            return [$value];
-        }
-
-        if (!\is_array($value)) {
-            return [];
-        }
-
-        $list = [];
-        foreach ($value as $item) {
-            if (\is_string($item)) {
-                $list[] = $item;
-            }
-        }
-
-        return $list;
     }
 }

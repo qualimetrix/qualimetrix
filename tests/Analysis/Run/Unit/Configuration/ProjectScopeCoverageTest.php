@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
@@ -103,6 +104,77 @@ final class ProjectScopeCoverageTest extends TestCase
         self::assertSame(
             [],
             $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths),
+        );
+    }
+
+    /**
+     * The narrower half of the same defect: a `psr-4` section beside the
+     * unread one makes the root list non-empty, so emptiness cannot be the
+     * question. `src/` is measured, `legacy/` is production code that never
+     * enters either side of the fraction, and a verdict computed from that
+     * fraction calls a partial run whole.
+     */
+    #[Test]
+    public function itDoesNotCoverTheProjectWhenAReadableSectionStandsBesideAnUnreadableOne(): void
+    {
+        $this->writeManifest([
+            'autoload' => [
+                'psr-4' => ['Fixture\\' => 'src/'],
+                'classmap' => ['legacy/'],
+            ],
+        ]);
+
+        $configuration = $this->configuration(['src']);
+
+        self::assertFalse($this->covers($configuration));
+        self::assertSame(
+            [],
+            $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths),
+        );
+    }
+
+    /**
+     * The opposite error the fix must not introduce, in the three shapes that
+     * would produce it. Closing the gate on any of these silences every
+     * scope-conditioned channel on an ordinary project — including this
+     * repository, whose own manifest carries an `autoload-dev.classmap`.
+     *
+     * @param array<string, mixed> $autoload the whole manifest
+     */
+    #[Test]
+    #[DataProvider('provideManifestsThatDeclareNoUnreadableProductionCode')]
+    public function itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode(array $autoload): void
+    {
+        $this->writeManifest($autoload);
+
+        self::assertTrue($this->covers($this->configuration(['src', 'lib'])));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function provideManifestsThatDeclareNoUnreadableProductionCode(): iterable
+    {
+        $psr4 = ['psr-4' => ['Fixture\\N0\\' => 'src/', 'Fixture\\N1\\' => 'lib/']];
+
+        yield 'a dev classmap is test code, outside the denominator by design' => [[
+            'autoload' => $psr4,
+            'autoload-dev' => ['psr-4' => ['Fixture\\Tests\\' => 'tests/'], 'classmap' => ['tests/Fixtures/']],
+        ]];
+
+        yield 'an empty production section declares nothing' => [[
+            'autoload' => $psr4 + ['classmap' => [], 'files' => []],
+        ]];
+
+        yield 'exclude-from-classmap removes code rather than declaring it' => [[
+            'autoload' => $psr4 + ['exclude-from-classmap' => ['src/Generated/']],
+        ]];
+    }
+
+    /** @param array<string, mixed> $manifest */
+    private function writeManifest(array $manifest): void
+    {
+        file_put_contents(
+            $this->tempDir . '/composer.json',
+            json_encode($manifest, \JSON_THROW_ON_ERROR),
         );
     }
 

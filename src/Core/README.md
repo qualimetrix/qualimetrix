@@ -46,6 +46,7 @@ Core/
 │   ├── ClockInterface.php                 # "What time is it?" contract
 │   └── SystemClock.php                    # Wall-clock reading of ClockInterface
 ├── Util/
+│   ├── GlobSyntax.php                     # The one alphabet that makes a pattern a glob
 │   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
 │   ├── PathMatcher.php                    # Glob pattern matching for file paths
 │   ├── PatternMatch.php                   # The pattern a matcher's matches() fired on
@@ -725,6 +726,15 @@ An immutable set of unique strings with O(1) lookups. Implements `Countable` and
 - `intersect(self $other): self` — set intersection
 - `diff(self $other): self` — set difference
 - `fromArray(array $values): self` — create from array (static)
+
+### GlobSyntax
+
+The characters (`*`, `?`, `[`) that make a pattern a glob, in one place. `PathMatcher` and `NamespaceMatcher` read it to choose between `fnmatch()` and prefix matching; `ValueScopeJudgement` reads it to find a value's literal head. A brace is deliberately not among them — `fnmatch()` with `FNM_NOESCAPE` expands no braces, so a matcher applies `{legacy}` literally, and a judge calling it a glob would disagree with what the run did.
+
+**Constants:** `CHARACTERS: string` — the `strcspn()` mask, public because the position of the first glob character cannot be recovered from a boolean
+
+**Methods:**
+- `isGlob(string $pattern): bool`
 
 ### PatternMatch
 
