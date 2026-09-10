@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**A filter value that used to be discarded in silence now exits 3.** Each of
+these accepted anything, dropped what it could not use and reported success;
+each now refuses and says what did not bind. `--rule-opt` (a pair written
+without `=VALUE`, an unregistered rule name, or an option the rule does not
+accept — previously the pair was dropped); `--log-level` (a level outside
+`debug`/`info`/`warning`/`error` — previously it fell back to `info`);
+`--cache-dir` (a path that cannot be created or written — previously the cache
+switched itself off), on every command that resolves one and not only on
+`check`; `--namespace` and `--class` on `check`, and `--namespace` on
+`graph:export` (a value selecting nothing — previously an empty report or an
+empty graph, indistinguishable from a clean subtree); `--format-opt` (a key no
+formatter reads — previously accepted and ignored). `graph:export
+--exclude-namespace` deliberately keeps its silence: a missed exclusion leaves
+the picture whole.
+
+**`debug:layer-assignment` refuses a class the run never analysed** (exit 3)
+instead of answering "(no layer)" — the same words it uses for a real class
+that no layer matched.
+
 **An unrecognised rule option key now stops the run with exit 3, at every depth
 it can be written at.** It used to warn at the top level of a rule's options and
 to be dropped in silence inside a level slot — so `callable: {warnign: 1,
@@ -153,6 +172,21 @@ and why `-q` no longer hides which key or file was refused.
 
 ### Changed
 
+- Configuration that binds to nothing is now reported instead of passing
+  unnoticed, through six new channels, all `warning` at project level:
+  `discovery.unmatched-exclude` (an `--exclude` value or `exclude:` entry that
+  removed no directory), `suppression.unmatched-path`,
+  `suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger` (a
+  `suppress_paths` / `suppress_namespaces` value, global or under
+  `rules.<name>`, that names no analysed file and no declared namespace),
+  `coupling.unmatched-framework-namespace` (a `coupling.frameworkNamespaces`
+  prefix under which no name fell) and `architecture.unmatched-exclude` (a
+  layer `exclude:` clause that removed no class from a layer that did match
+  something). They are judged only on a run whose paths cover the project's
+  production autoload roots: a narrower run cannot tell a stale value from one
+  whose subject lies outside the slice. The suppression channels answer a
+  different question from `--format=suppressed`, which reports suppressors that
+  removed nothing — a state an honest, paid-down suppression also reaches.
 - The refusal for an unknown `health.<x>` name now lists all six built-in
   dimensions (`health.complexity`, `health.cohesion`, `health.coupling`,
   `health.typing`, `health.maintainability`, `health.overall`) instead of

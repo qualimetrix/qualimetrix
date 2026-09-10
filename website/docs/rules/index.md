@@ -168,51 +168,23 @@ This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in 
 
 ### Discovery Rules
 
-This rule reports on the run's own file selection rather than on the code: an
-`--exclude` value or an `exclude:` entry that matched no directory. The report
-then covers files the author meant to leave out, and without this channel a
-missed exclusion and no exclusion at all produce byte-identical output.
+This rule reports on the run's own file selection rather than on the code: an `--exclude` value or an `exclude:` entry that matched no directory. The report then covers files the author meant to leave out, and without this channel a missed exclusion and no exclusion at all produce byte-identical output.
 
-**Rule ID:** `discovery.unmatched-exclude`
+| Rule                              | ID                            | What it detects                              |
+| --------------------------------- | ----------------------------- | -------------------------------------------- |
+| [Unmatched exclude](discovery.md) | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
 
-It is reported at project level, at severity `warning`, only on a run whose
-paths cover the project's production autoload roots — on a narrower run a
-pattern binds nothing simply because the code it names is outside the slice,
-which is the caller's choice and not the author's mistake.
-
-| Rule              | ID                            | What it detects                              |
-| ----------------- | ----------------------------- | -------------------------------------------- |
-| Unmatched exclude | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+[Read more about Discovery rules --&gt;](discovery.md)
 
 ### Suppression Rules
 
-This rule reports on the run's own suppression configuration rather than on the
-code: a `suppress_paths` or `suppress_namespaces` value — global or under
-`rules.<name>` — that names no file this run analysed and no namespace it
-declared. Such a value hides nothing and never will, while the author believes
-it is hiding something.
+This rule reports on the run's own suppression configuration rather than on the code: a `suppress_paths` or `suppress_namespaces` value — global or under `rules.<name>` — that names no file this run analysed and no namespace it declared. Such a value hides nothing and never will, while the author believes it is hiding something.
 
-**Rule ID:** `suppression.configuration`
+| Rule                                        | ID                          | What it detects                                         |
+| ------------------------------------------- | --------------------------- | ------------------------------------------------------- |
+| [Suppression configuration](suppression.md) | `suppression.configuration` | A suppression value that names nothing the run measured |
 
-This is a different zero from the one `--format=suppressed` already reports.
-Its `neverMatched` list is built from removals, so it answers "this suppressor
-removed nothing" — which an honest, paid-down suppression also reaches. The
-three channels here answer "this suppressor named nothing", which no amount of
-repaired code can cause.
-
-All three are reported at project level, at severity `warning`, only on a run
-whose paths cover the project's production autoload roots — on a narrower run a
-value binds nothing simply because the code it names is outside the slice,
-which is the caller's choice and not the author's mistake. They are not written
-into a generated baseline: `baseline:generate` measures findings on a different
-seam, and a warning about the author's own configuration should not become
-accepted debt in the file that author generates with one command.
-
-| Channel                             | What it detects                                                     |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `suppression.unmatched-path`        | A global `suppress_paths` value matching no analysed file           |
-| `suppression.unmatched-namespace`   | A global `suppress_namespaces` value matching no declared namespace |
-| `suppression.unmatched-rule-ledger` | The same, for a value configured under `rules.<name>`               |
+[Read more about Suppression rules --&gt;](suppression.md)
 
 ## Disabling Rules
 
@@ -281,8 +253,8 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))
-- **Discovery:** `discovery.unmatched-exclude`
-- **Suppression:** `suppression.configuration` (see the Suppression Rules section above for its channels)
+- **Discovery:** `discovery.unmatched-exclude` (see [Discovery rules](discovery.md))
+- **Suppression:** `suppression.configuration` (its channels are listed on [Suppression rules](suppression.md))
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->

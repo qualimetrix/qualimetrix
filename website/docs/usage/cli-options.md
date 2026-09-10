@@ -42,6 +42,12 @@ Exclude directories from analysis. Can be repeated:
 bin/qmx check src/ --exclude=src/Generated --exclude=src/Legacy
 ```
 
+A value that removes no directory is reported as
+[`discovery.unmatched-exclude`](../rules/discovery.md) — a `warning` at project
+level, not a refusal, and only on a run whose paths cover the project's
+production autoload roots. On a narrower run the pattern may bind nothing
+simply because the code it names lies outside the slice.
+
 ### `--include-generated`
 
 By default, Qualimetrix automatically skips files that contain a `@generated` annotation in the first 2 KB. This flag overrides that behavior and includes generated files in the analysis:
@@ -145,6 +151,10 @@ Pass formatter-specific options as key=value pairs. Can be repeated:
 ```bash
 bin/qmx check src/ --format-opt=key=value
 ```
+
+A key no formatter reads is refused with exit 3. A key some other formatter
+reads stays accepted, so a script that sweeps one option set across formats
+still works.
 
 **JSON format options:**
 
@@ -254,6 +264,11 @@ Project-wide findings (`architecture.coverage-gap` and the other diagnostics tha
 
 The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
+A pattern that selects no analysed namespace is refused with exit 3, and the
+refusal says how many namespaces the run did have. A pattern that does select
+something and still reports nothing prints the ordinary empty result — that is
+the half of the pair worth telling apart.
+
 Mutually exclusive with `--class`.
 
 ### `--class`
@@ -265,6 +280,9 @@ bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
 Filters violations to the specified class. Auto-enables `--detail`.
+
+An FQCN matching no analysed class is refused with exit 3, for the same reason
+`--namespace` is: an empty report otherwise reads as a clean class.
 
 Mutually exclusive with `--namespace`.
 
@@ -289,6 +307,11 @@ Set a custom cache directory. Default: `.qmx-cache`.
 ```bash
 bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
+
+The directory is created when missing. A path that cannot be created or is not
+writable is refused with exit 3 rather than silently disabling the cache, and
+the door closes the same way on every command that resolves a cache directory,
+not only on `check`.
 
 ### `--clear-cache`
 
@@ -489,7 +512,8 @@ Set the minimum log level. Default: `info`.
 bin/qmx check src/ --log-file=qmx.log --log-level=debug
 ```
 
-Available levels: `debug`, `info`, `warning`, `error`.
+Available levels: `debug`, `info`, `warning`, `error`. A value outside them is
+refused with exit 3 instead of falling back to `info`.
 
 ### `--no-progress`
 
@@ -635,6 +659,12 @@ wildcard. This is the same constraint that governs the owner before `:` in
 bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
 bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
 ```
+
+All three ways of getting it wrong are refused with exit 3, where the option
+pair used to be dropped without a word: a value written without `=VALUE`, a
+rule name no registered producer answers to, and an option name that rule does
+not accept. The refusal for the last one lists the options the rule does
+accept.
 
 `suppress_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
 requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
@@ -895,6 +925,10 @@ bin/qmx graph:export src/ --no-clusters
 | `--no-clusters`          | Do not group nodes by namespace                         |
 | `--namespace=NS`         | Include only these namespaces (repeatable)              |
 | `--exclude-namespace=NS` | Exclude these namespaces (repeatable)                   |
+
+A `--namespace` value matching no vertex is refused with exit 3 rather than
+exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
+missed exclusion leaves the picture whole, so the viewer loses nothing.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

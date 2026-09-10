@@ -2528,8 +2528,10 @@ function documentationDisposition(string $path): array
         'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
         'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
         'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
+        'website/docs/rules/discovery' => ['Analysis.Run', 'X16'],
         'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
         'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
+        'website/docs/rules/suppression' => ['Analysis.Finding', 'X16'],
         'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
     ];
     foreach ($prefixes as $prefix => [$owner, $closure]) {
@@ -2572,6 +2574,8 @@ function documentationDisposition(string $path): array
         'docs/adr/0044-identifier-keyed-configuration-options.md',
         'docs/adr/0045-one-owner-for-the-error-stream.md',
         'docs/adr/0051-refusal-is-not-routed-by-command.md',
+        'docs/adr/0052-the-shape-of-a-signal-about-a-miss.md',
+        'docs/adr/0053-door-enumeration-as-an-oracle.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

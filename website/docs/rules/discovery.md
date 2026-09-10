@@ -1,0 +1,61 @@
+# Discovery Rules
+
+Discovery rules report on the run's own file selection rather than on the code it analysed. A filter that removes nothing looks exactly like no filter at all: the report covers files their author meant to leave out, and every number in it is computed over a set nobody asked for.
+
+---
+
+## Unmatched Exclude
+
+**Rule ID:** `discovery.unmatched-exclude`
+
+### What it measures
+
+Every `--exclude` value and every `exclude:` entry in `qmx.yaml` is checked against the directories the run actually walked. A value that removed no directory is reported.
+
+### Why it matters
+
+Without this channel, a missed exclusion and no exclusion at all produce byte-identical output. There is nothing in a report to tell an author that `--exclude=vendor` never fired because the run was rooted below `vendor/` already, or that `exclude: [tests]` stopped matching when the directory was renamed to `test/`. The excluded files are analysed, they contribute findings, and the exclusion sits in the configuration looking like it works.
+
+### Scope and severity
+
+The channel reports at **project level**, at severity `warning`.
+
+It is only judged on a run whose paths cover the project's production autoload roots. On a narrower run — a single subdirectory, a git-scoped run — a pattern binds nothing simply because the code it names lies outside the slice. That is the caller's choice, not the author's mistake, so the rule stays silent rather than reporting the caller's own narrowing back at them.
+
+| Rule              | ID                            | What it detects                              |
+| ----------------- | ----------------------------- | -------------------------------------------- |
+| Unmatched exclude | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+
+### Example
+
+```bash
+bin/qmx check src/ --exclude=Generated
+```
+
+When no directory named `Generated` exists anywhere under `src/`:
+
+```
+[project] discovery.unmatched-exclude
+  The exclude pattern "Generated" matched no directory in the analysed paths,
+  so nothing was left out for it. Every file it was written to skip was
+  measured, and this report covers them.
+```
+
+### Options
+
+| Option    | Default | Description                 |
+| --------- | ------- | --------------------------- |
+| `enabled` | `true`  | Enable or disable the rule. |
+
+### Configuration
+
+```yaml
+# qmx.yaml
+rules:
+  discovery.unmatched-exclude:
+    enabled: true
+```
+
+```bash
+bin/qmx check src/ --disable-rule=discovery.unmatched-exclude
+```

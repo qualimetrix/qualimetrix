@@ -2,15 +2,16 @@ old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	find
 annotation.invalid-threshold	channel	?		2	6	0	0	0	19	0	1	0	0	0	0
 annotation.unresolved-directive	channel	?		12	23	0	0	0	44	0	1	0	0	0	0
 annotation.unsupported-threshold	channel	?		6	6	0	0	0	19	0	1	0	0	0	0
-annotation.unused-directive	channel	?		22	27	0	0	0	45	0	2	0	0	0	0
-architecture.circular-dependency	channel	?		12	36	0	2	0	39	0	1	1	1	0	0
-architecture.coverage-gap	channel	?		18	71	0	0	0	37	0	1	0	0	0	0
-architecture.empty-template	channel	?		9	11	0	0	0	27	0	1	0	0	0	0
-architecture.layer-violation	channel	?		28	111	0	3	0	79	0	1	1	1	0	0
-architecture.pending-layer-matched	channel	?		8	11	0	0	0	25	0	1	0	0	0	0
-architecture.potential-shadow	channel	?		13	9	0	0	0	32	0	1	0	0	0	0
+annotation.unused-directive	channel	?		24	27	0	0	0	45	0	2	0	0	0	0
+architecture.circular-dependency	channel	?		14	36	0	2	0	39	0	1	1	1	0	0
+architecture.coverage-gap	channel	?		18	72	0	0	0	37	0	1	0	0	0	0
+architecture.empty-template	channel	?		9	12	0	0	0	27	0	1	0	0	0	0
+architecture.layer-violation	channel	?		29	111	0	3	0	79	0	1	1	1	0	0
+architecture.pending-layer-matched	channel	?		8	12	0	0	0	25	0	1	0	0	0	0
+architecture.potential-shadow	channel	?		13	10	0	0	0	32	0	1	0	0	0	0
 architecture.unassigned-class	channel	?		26	27	0	0	0	21	0	2	0	0	0	0
-architecture.unreachable-layer	channel	?		15	22	0	0	0	41	0	1	0	0	0	0
+architecture.unmatched-exclude	channel	?		9	7	0	0	0	13	0	2	0	0	0	0
+architecture.unreachable-layer	channel	?		19	24	0	0	0	43	0	1	0	0	0	0
 code-smell.boolean-argument	channel	?		4	28	1	2	28	35	0	1	0	0	1	1
 code-smell.constructor-overinjection	channel	?		13	10	2	2	6	27	0	1	0	0	0	0
 code-smell.count-in-loop	channel	?		1	6	0	0	0	12	0	1	0	0	1	1
@@ -19,28 +20,30 @@ code-smell.empty-catch	channel	?		4	6	0	0	0	16	0	1	0	0	1	1
 code-smell.error-suppression	channel	?		1	10	1	2	2	17	0	1	0	0	1	1
 code-smell.eval	channel	?		1	23	0	0	0	16	0	8	0	0	1	1
 code-smell.exit	channel	?		1	7	0	0	0	16	0	1	0	0	1	1
-code-smell.goto	channel	?		2	115	0	0	0	12	0	3	0	0	1	1
+code-smell.goto	channel	?		2	118	0	0	0	12	0	3	0	0	1	1
 code-smell.identical-subexpression	channel	?		3	8	0	0	0	13	0	1	1	1	0	0
 code-smell.long-parameter-list	channel	?		18	91	2	2	3	33	0	15	0	0	0	0
 code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1	0	0	1	1
 code-smell.unreachable-code	channel	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3	0	0	0	0
 cohesion.lcom	channel	?		39	160	2	2	0	34	0	5	0	0	0	0
-complexity.ccn	channel	?		74	1044	2	3	48	163	0	11	0	0	0	0
+complexity.ccn	channel	?		74	1049	2	3	49	163	0	12	0	0	0	0
 complexity.cognitive	channel	?		22	93	2	2	29	57	0	12	0	0	0	0
 complexity.npath	channel	?		19	103	2	2	10	47	0	8	0	0	0	0
 complexity.wmc	channel	?		19	86	2	2	9	33	0	4	0	0	0	0
-coupling.cbo	channel	?		64	337	2	4	4	119	0	6	0	0	0	0
+coupling.cbo	channel	?		65	337	2	4	4	119	0	6	0	0	0	0
 coupling.class-rank	channel	?		22	106	0	2	2	26	0	30	0	0	0	0
 coupling.distance	channel	?		28	76	2	2	1	37	0	31	0	0	0	0
 coupling.instability	channel	?		33	101	2	4	7	55	0	8	0	0	0	0
-design.data-class	channel	?		15	16	1	1	10	33	0	3	0	0	0	0
-design.dit	channel	?		12	102	2	2	0	23	0	3	0	0	0	0
-design.god-class	channel	?		18	23	1	2	2	36	0	7	0	0	0	0
+coupling.unmatched-framework-namespace	channel	?		3	4	0	0	0	15	0	2	0	0	0	0
+design.data-class	channel	?		15	16	1	1	9	33	0	3	0	0	0	0
+design.dit	channel	?		12	104	2	2	0	23	0	3	0	0	0	0
+design.god-class	channel	?		18	23	1	2	3	36	0	7	0	0	0	0
 design.noc	channel	?		12	35	2	2	0	22	0	3	0	0	0	0
 design.type-coverage.param	channel	?		8	57	2	1	1	25	0	3	0	0	0	0
 design.type-coverage.property	channel	?		8	28	2	1	1	24	0	4	0	0	0	0
 design.type-coverage.return	channel	?		8	35	2	1	0	24	0	4	0	0	0	0
+discovery.unmatched-exclude	channel	?		6	4	0	0	0	23	0	3	0	0	0	0
 duplication.clone	channel	?		21	71	0	2	12	39	0	4	0	0	0	0
 maintainability.mi	channel	?		20	182	2	2	0	29	0	3	0	0	0	0
 security.command-injection	channel	?		3	5	0	0	0	13	0	1	0	0	1	1
@@ -51,6 +54,9 @@ security.xss	channel	?		4	17	0	0	0	13	0	1	0	0	1	1
 size.class-count	channel	?		28	122	2	1	4	31	0	4	0	0	0	0
 size.method-count	channel	?		23	153	2	2	0	52	0	3	0	0	0	0
 size.property-count	channel	?		18	38	2	2	0	26	0	3	0	0	0	0
+suppression.unmatched-namespace	channel	?		1	2	0	0	0	7	0	1	0	0	0	0
+suppression.unmatched-path	channel	?		1	2	0	0	0	5	0	1	0	0	0	0
+suppression.unmatched-rule-ledger	channel	?		1	2	0	0	0	5	0	1	0	0	0	0
 code-smell.is-vo-constructor	metric-key	?		2	23	0	0	0	0	0	1	0	0	0	0
 code-smell.parameter-count	metric-key	?		6	57	0	0	0	4	0	0	0	0	0	0
 code-smell.unreachable-code	metric-key	?		8	39	0	1	0	25	0	1	0	0	0	0
@@ -63,16 +69,16 @@ cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	0	0	0	0	0
 cohesion.lcom	metric-key	?		39	160	2	2	0	34	0	5	0	0	0	0
 cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	0	0	0	0	0
 cohesion.tcc	metric-key	?		23	84	0	0	0	12	0	0	0	0	0	0
-complexity.ccn	metric-key	?		74	1044	2	3	48	163	0	11	0	0	0	0
+complexity.ccn	metric-key	?		74	1049	2	3	49	163	0	12	0	0	0	0
 complexity.cognitive	metric-key	?		22	93	2	2	29	57	0	12	0	0	0	0
 complexity.npath	metric-key	?		19	103	2	2	10	47	0	8	0	0	0	0
 complexity.wmc	metric-key	?		19	86	2	2	9	33	0	4	0	0	0	0
 coupling.abstractness	metric-key	?		17	38	0	0	0	0	0	0	0	0	0	0
 coupling.ca	metric-key	?		10	65	0	0	0	2	0	0	0	0	0	0
-coupling.cbo	metric-key	?		64	337	2	4	4	119	0	6	0	0	0	0
-coupling.cbo-app	metric-key	?		9	14	0	0	0	14	0	0	0	0	0	0
+coupling.cbo	metric-key	?		65	337	2	4	4	119	0	6	0	0	0	0
+coupling.cbo-app	metric-key	?		16	19	0	0	0	18	0	1	0	0	0	0
 coupling.ce	metric-key	?		14	79	0	0	0	8	0	0	0	0	0	0
-coupling.ce-framework	metric-key	?		7	10	0	0	0	6	0	0	0	0	0	0
+coupling.ce-framework	metric-key	?		11	14	0	0	0	10	0	0	0	0	0	0
 coupling.ce-packages	metric-key	?		7	8	0	0	0	4	0	0	0	0	0	0
 coupling.class-rank	metric-key	?		22	106	0	2	2	26	0	30	0	0	0	0
 coupling.distance	metric-key	?		28	76	2	2	1	37	0	31	0	0	0	0
@@ -80,7 +86,7 @@ coupling.instability	metric-key	?		33	101	2	4	7	55	0	8	0	0	0	0
 coupling.rfc	metric-key	?		6	44	0	0	0	0	0	0	0	0	0	0
 coupling.rfc-external	metric-key	?		1	15	0	0	0	0	0	0	0	0	0	0
 coupling.rfc-own	metric-key	?		1	15	0	0	0	0	0	0	0	0	0	0
-design.dit	metric-key	?		12	102	2	2	0	23	0	3	0	0	0	0
+design.dit	metric-key	?		12	104	2	2	0	23	0	3	0	0	0	0
 design.is-abstract	metric-key	?		2	4	0	0	0	0	0	0	0	0	0	0
 design.is-data-class	metric-key	?		2	3	0	0	0	0	0	0	0	0	0	0
 design.is-exception	metric-key	?		2	5	0	0	0	0	0	0	0	0	0	0
@@ -133,9 +139,9 @@ size.setter-count	metric-key	?		5	11	0	0	0	0	0	0	0	0	0	0
 size.symbol-class-count	metric-key	?		1	0	0	0	0	0	0	0	0	0	0	0
 size.symbol-method-count	metric-key	?		6	3	0	0	0	2	0	0	0	0	0	0
 size.trait-count	metric-key	?		11	13	0	0	0	0	0	0	0	0	0	0
-annotation.directive	producer	?		4	6	0	0	0	29	0	1	0	0	0	0
-architecture.circular-dependency	producer	?		12	36	0	2	0	39	0	1	0	0	0	0
-architecture.layer-violation	producer	?		28	111	0	3	0	79	0	1	0	0	0	0
+annotation.directive	producer	?		5	6	0	0	0	29	0	1	0	0	0	0
+architecture.circular-dependency	producer	?		14	36	0	2	0	39	0	1	0	0	0	0
+architecture.layer-violation	producer	?		29	111	0	3	0	79	0	1	0	0	0	0
 architecture.unassigned-class	producer	?		26	27	0	0	0	21	0	2	0	0	0	0
 code-smell.boolean-argument	producer	?		4	28	1	2	28	35	0	1	0	0	0	0
 code-smell.constructor-overinjection	producer	?		13	10	2	2	6	27	0	1	0	0	0	0
@@ -145,36 +151,38 @@ code-smell.empty-catch	producer	?		4	6	0	0	0	16	0	1	0	0	0	0
 code-smell.error-suppression	producer	?		1	10	1	2	2	17	0	1	0	0	0	0
 code-smell.eval	producer	?		1	23	0	0	0	16	0	8	0	0	0	0
 code-smell.exit	producer	?		1	7	0	0	0	16	0	1	0	0	0	0
-code-smell.goto	producer	?		2	115	0	0	0	12	0	3	0	0	0	0
+code-smell.goto	producer	?		2	118	0	0	0	12	0	3	0	0	0	0
 code-smell.identical-subexpression	producer	?		3	8	0	0	0	13	0	1	0	0	0	0
 code-smell.long-parameter-list	producer	?		18	91	2	2	3	33	0	15	0	0	0	0
 code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1	0	0	0	0
 code-smell.unreachable-code	producer	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3	0	0	0	0
 cohesion.lcom	producer	?		39	160	2	2	0	34	0	5	0	0	0	0
-complexity.ccn	producer	?		74	1044	2	3	48	163	0	11	0	0	0	0
+complexity.ccn	producer	?		74	1049	2	3	49	163	0	12	0	0	0	0
 complexity.cognitive	producer	?		22	93	2	2	29	57	0	12	0	0	0	0
 complexity.npath	producer	?		19	103	2	2	10	47	0	8	0	0	0	0
 complexity.wmc	producer	?		19	86	2	2	9	33	0	4	0	0	0	0
-computed	producer	?		104	105	0	1	0	28	0	11	0	0	0	0
-coupling.cbo	producer	?		64	337	2	4	4	119	0	6	0	0	0	0
+computed	producer	?		104	105	0	1	0	29	0	11	0	0	0	0
+coupling.cbo	producer	?		65	337	2	4	4	119	0	6	0	0	0	0
 coupling.class-rank	producer	?		22	106	0	2	2	26	0	30	0	0	0	0
 coupling.distance	producer	?		28	76	2	2	1	37	0	31	0	0	0	0
 coupling.instability	producer	?		33	101	2	4	7	55	0	8	0	0	0	0
-design.data-class	producer	?		15	16	1	1	10	33	0	3	0	0	0	0
-design.dit	producer	?		12	102	2	2	0	23	0	3	0	0	0	0
-design.god-class	producer	?		18	23	1	2	2	36	0	7	0	0	0	0
+coupling.unmatched-framework-namespace	producer	?		3	4	0	0	0	15	0	2	0	0	0	0
+design.data-class	producer	?		15	16	1	1	9	33	0	3	0	0	0	0
+design.dit	producer	?		12	104	2	2	0	23	0	3	0	0	0	0
+design.god-class	producer	?		18	23	1	2	3	36	0	7	0	0	0	0
 design.noc	producer	?		12	35	2	2	0	22	0	3	0	0	0	0
 design.type-coverage.param	producer	?		8	57	2	1	1	25	0	3	0	0	0	0
 design.type-coverage.property	producer	?		8	28	2	1	1	24	0	4	0	0	0	0
 design.type-coverage.return	producer	?		8	35	2	1	0	24	0	4	0	0	0	0
+discovery.unmatched-exclude	producer	?		6	4	0	0	0	23	0	3	0	0	0	0
 duplication.clone	producer	?		21	71	0	2	12	39	0	4	0	0	0	0
-health.cohesion	producer	?		36	120	0	3	16	39	0	19	0	0	0	0
-health.complexity	producer	?		49	191	0	1	0	25	0	22	0	0	0	0
-health.coupling	producer	?		39	38	0	0	1	16	0	19	0	0	0	0
-health.maintainability	producer	?		16	28	0	0	0	16	0	19	0	0	0	0
-health.overall	producer	?		111	142	0	0	0	25	0	19	0	0	0	0
-health.typing	producer	?		21	57	0	1	1	19	0	19	0	0	0	0
+health.cohesion	producer	?		36	120	0	3	17	39	0	21	0	0	0	0
+health.complexity	producer	?		49	191	0	1	0	25	0	24	0	0	0	0
+health.coupling	producer	?		39	38	0	0	0	16	0	21	0	0	0	0
+health.maintainability	producer	?		16	28	0	0	0	16	0	21	0	0	0	0
+health.overall	producer	?		111	142	0	0	0	25	0	21	0	0	0	0
+health.typing	producer	?		21	57	0	1	1	19	0	21	0	0	0	0
 maintainability.mi	producer	?		20	182	2	2	0	29	0	3	0	0	0	0
 security.command-injection	producer	?		3	5	0	0	0	13	0	1	0	0	0	0
 security.hardcoded-credentials	producer	?		7	35	0	0	0	15	0	1	0	0	0	0
@@ -184,18 +192,19 @@ security.xss	producer	?		4	17	0	0	0	13	0	1	0	0	0	0
 size.class-count	producer	?		28	122	2	1	4	31	0	4	0	0	0	0
 size.method-count	producer	?		23	153	2	2	0	52	0	3	0	0	0	0
 size.property-count	producer	?		18	38	2	2	0	26	0	3	0	0	0	0
+suppression.configuration	producer	?		1	0	0	0	0	16	0	1	0	0	0	0
 #
-# ROW COUNTS: 52 channel, 51 producer, 82 metric-key,
+# ROW COUNTS: 58 channel, 54 producer, 82 metric-key,
 # 5 channel row(s) carrying a frozen occurrence discriminator (see `frozen_kind`/`frozen_pin` below),
 # 12 channel row(s) carrying a leaf occurrence discriminator (see `leaf_const`/`leaf_pin` below)
 #
 # HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
-# - `channel` rows: 52 keys from
+# - `channel` rows: 58 keys from
 #   `ChannelDeclarationRegistryInterface::staticDeclarations()` on the
 #   production container (the same oracle
 #   `ChannelDeclarationFixtureDriftTest` uses) — never regex over rule files,
 #   because a rule can name its own channel through an inherited constant.
-# - `producer` rows: 51 names from
+# - `producer` rows: 54 names from
 #   `RuleExecutionInterface::allRules()` (`RuleMetadata::name`).
 # - `metric-key` rows: 82 values, `ReflectionClass(MetricName::class)->getConstants()`.
 #   `MetricName` is a plain final class with `public const string` members,

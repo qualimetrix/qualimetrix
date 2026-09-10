@@ -70,7 +70,7 @@ final class UnboundSuppressionRule extends AbstractRule
      * "every rule's name is documented where its reports point" holds without
      * a gap.
      */
-    public const string DOCS_PAGE = 'rules/index.md';
+    public const string DOCS_PAGE = 'rules/suppression.md';
 
     /** Deleting one line of configuration, plus checking what the tree really contains. */
     public const int REMEDIATION_MINUTES = 10;

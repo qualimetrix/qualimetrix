@@ -1473,10 +1473,14 @@ rules:
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
-      # Same reason as the CBO channel above, narrowed to the leaf that earns
-      # it: ConfigurationSource sits at 0.0071 against 0.0066 because every
-      # refusal in the tree names one of its five cases.
-      - Qualimetrix\Analysis\Configuration\Contract\Refusal
+      # X15's entry for the refusal carrier's own namespace is gone. It was
+      # added on a measurement — ConfigurationSource at 0.0071 against 0.0066 —
+      # that X16 invalidated when the carrier grew one shortcut per form and
+      # source: a call site now names one type instead of three, ConfigurationSource
+      # lost the inbound edges its rank came from, and the entry suppressed
+      # nothing. `docs/internal/generated/suppression/inert.tsv` is the oracle
+      # that said so, and a suppressor under which nothing is suppressed is the
+      # very thing this round exists to report.
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
@@ -1651,6 +1655,20 @@ rules:
       - src/Analysis/Evidence/Security/*Options.php
       - src/Analysis/Evidence/Size/*Options.php
       - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      # X16's two new rules live outside `Evidence/`, so the capability roots
+      # above do not reach them. Their options classes match each other over a
+      # 30-line window that is the mandatory `RuleOptionsInterface` shape and
+      # nothing else: a channel-name constant, the `enabled` promoted property,
+      # `fromArray()`, `isEnabled()`, `getSeverity()` and `acceptedOptionKeys()`.
+      # Everything that differs inside that window is a literal — the channel
+      # names — and literals are normalized before matching, which is the same
+      # mechanism that put the eight capability roots above on this list. There
+      # is no behaviour in the window to extract: a shared base class would hold
+      # the interface's own signatures.
+      # Only the reported side is listed, the same rule the CboRule entry below
+      # states: the detector reports the pair once, and an entry for
+      # `Run/ExcludeBinding` beside it was measured inert and left out.
+      - src/Analysis/Finding/SuppressionBinding/*Options.php
       # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
       # class line, the five metadata constants every rule must declare, and the
       # name/description/supported-levels accessors the rule interface mandates.
@@ -1866,3 +1884,25 @@ rules:
         # structurally inapplicable to this exact root, the same argument the
         # Expansion entry above makes.
         - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'
+        # X16's two binding-audit roots: four classes (47.5) and three (46.7).
+        # Measured, not argued: in both roots `cohesion.tcc.count` is 1, so the
+        # namespace TCC and LCC averages the score is built from are decided by
+        # a single class — the `*Options` one. The rule, the audit and the
+        # probe beside it each hold one field or none, which leaves them no
+        # pair of methods that could share a field, so they contribute no TCC
+        # at all. And that one options class measures TCC 0 by construction of
+        # the mandatory `RuleOptionsInterface` shape: `isEnabled()` reads the
+        # single `enabled` field and `getSeverity()` reads none, so the class
+        # has exactly one method pair and it shares nothing.
+        #
+        # The same shape inside a larger root is dissolved by its neighbours
+        # and never reaches the boundary: X16 added an options class of exactly
+        # this shape to `Evidence\Coupling` (TCC 0, class score 65.3) and that
+        # namespace does not report. So the finding is a property of how small
+        # the root is, not of its design, and splitting further only makes the
+        # roots smaller. The channel is excluded, not the rule: class-level
+        # cohesion inside both roots stays measured, and every other channel of
+        # both namespaces stays measured with it. Exact roots — `[Q]` keeps a
+        # future child namespace judged on its own.
+        - '[Q]ualimetrix\Analysis\Run\ExcludeBinding'
+        - '[Q]ualimetrix\Analysis\Finding\SuppressionBinding'

@@ -73,7 +73,7 @@ final class CheckCommandDefinition
                 'exclude',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Directories to exclude (can be repeated)',
+                'Directories to exclude (can be repeated). A value that removes no directory is reported as discovery.unmatched-exclude',
                 [],
             )
             ->addOption(
@@ -129,13 +129,13 @@ final class CheckCommandDefinition
                 'namespace',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter results by namespace pattern: boundary-aware prefix, or glob when it contains * ? [',
+                'Filter results by namespace pattern: boundary-aware prefix, or glob when it contains * ? [. Refused when it selects no namespace',
             )
             ->addOption(
                 'class',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter results by class FQCN (exact match)',
+                'Filter results by class FQCN (exact match). Refused when it selects no class',
             );
     }
 
@@ -152,7 +152,7 @@ final class CheckCommandDefinition
                 'cache-dir',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Cache directory',
+                'Cache directory (created when missing). Refused when it cannot be created or is not writable',
             )
             ->addOption(
                 'clear-cache',
@@ -241,7 +241,7 @@ final class CheckCommandDefinition
                 'log-level',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum log level (debug, info, warning, error)',
+                'Minimum log level (debug, info, warning, error). Refused when the value is none of them',
                 'info',
             )
             ->addOption(
@@ -414,7 +414,7 @@ final class CheckCommandDefinition
                 'rule-opt',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Rule-specific option (format: rule-name:option=value)',
+                'Rule-specific option (format: rule-name:option=value). Refused when the format, the rule or the option name is unknown',
             );
     }
 }
