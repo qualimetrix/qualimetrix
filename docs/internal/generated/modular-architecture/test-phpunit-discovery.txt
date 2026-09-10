@@ -6330,6 +6330,7 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\Command\HookUninstallCommandTest::itReportsNoBackupToRestore
  - Qualimetrix\Tests\Functional\Console\Command\HookUninstallCommandTest::itReportsNothingToUninstallWhenHookNotFound
  - Qualimetrix\Tests\Functional\Console\Command\HookUninstallCommandTest::itRestoresBackupWhenRequested
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itAcceptsAnAnalysedInterfaceTraitAndEnum
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itAgreesWithTheRuntimeLayerRegistryOnAnOverlappingAssignment
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itAppliesTheConfiguredMemoryLimitBeforeCollectionRuns
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itCoversEveryFactTheTextReportPrintsInTheJsonPayload
@@ -6340,18 +6341,23 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidForAnFqnWithAnEmbeddedSpace
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidForAnFqnWithAnInvalidIdentifierCharacter
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidWithoutRunningResolutionForAnUnknownFormat
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itFindsAnAnalysedClassSpelledInAnotherCase
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itHandlesAClassInTheGlobalNamespace
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itIsRegisteredAndDiscoverableOnAConsoleApplication
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheUnanalysedFqnRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itKeepsTheUnknownFormatRefusalVisibleUnderQuiet
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itNormalisesALeadingBackslashInTheFqnArgument
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itRefusesAnUnanalysedFqnIdenticallyWithAndWithoutALeadingBackslash
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itRefusesAnUnanalysedFqnWhileStillReportingNoLayerForAnAnalysedOne
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsAClassMatchingNoLayerAsUnclassifiedAndSuggestsACatchAllPattern
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsAUniqueAssignmentForAClassMatchingOneLayer
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsHasLayersFalseWhenNoLayersAreDeclared
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsNoLayerWithoutACatchAllSuggestionWhenNoLayersAreDeclared
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsTheAssignmentAndShadowedLayersForAClassMatchingMultipleLayers
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsAnErrorEnvelopeForAnInvalidFqnInJsonFormat
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsAnErrorEnvelopeForAnUnanalysedFqnInJsonFormat
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsAnErrorEnvelopeWithTheFailureExitCodeForAConfigErrorInJsonFormat
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsNullAssignedAndEmptyShadowedWhenNothingMatches
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap
@@ -6571,11 +6577,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsAKeyReadOnlyByAnotherFormatter
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsTheAllFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itNamesEveryKnownKeyInTheRefusal
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itRefusesAFormatOptKeyNoFormatterReads
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itStillAppliesAKeyTheSelectedFormatterReads
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsGraphToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itFailsWhenNoFilesFound
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itKeepsAMissedExcludeNamespaceSilentAndUnchanged"dot"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itKeepsAMissedExcludeNamespaceSilentAndUnchanged"json"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itNamesEveryUnboundIncludeNamespaceInAJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionOrFormatWithoutRunningAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesABogusDirectionWithAParseableJsonEnvelope
@@ -6583,6 +6597,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT stdout"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON output file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnIncludeNamespaceThatMatchesNoClass"dot"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnIncludeNamespaceThatMatchesNoClass"json"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnboundNamespaceWithoutCreatingAnOutputFile"dot"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnboundNamespaceWithoutCreatingAnOutputFile"json"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAnUnwritableOutputPathBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
@@ -6659,6 +6677,20 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAGlobNamespacePattern
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAnIntermediateNamespaceByGlobWithoutANamespaceTree
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsNothingForAClassNoAnalyzedSymbolCarries
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsNothingForANamespaceNoAnalyzedSymbolCarries
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheClassUniverseTheRefusalNames
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itCountsTheNamespaceUniverseTheRefusalNames
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itDoesNotAcceptANamespaceInPlaceOfAClass
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itKeepsTheProjectSentinelOutOfTheNamespaceUniverse
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itRefusesAConfigurationErrorReportedBelowWarning
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itStillHonoursFailOnForAnOrdinaryDebtFinding
@@ -6726,7 +6758,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAcceptsAWritableOutputTargetOrNoTargetAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itBindsANamespaceTheTreeKnowsAndTheMetricsDoNot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itKeepsTheMutuallyExclusivePairRefusedByItsOwnMessage
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itPresentsAClassThatExistsAndIsClean
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itPresentsANamespaceThatExistsAndIsClean
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itReachesBothVerdictsWithoutANamespaceTree
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesAClassThatSelectsNothingInTheRun
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesANamespaceThatSelectsNothingInTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesAnUnwritableOutputTargetBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
@@ -7072,6 +7111,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
+ - Qualimetrix\Tests\Reporting\Formatter\Unit\FormatOptionKeyDeclarationTest::itDeclaresEveryFormatOptionKeyItsOwnFormatterTreeReads
+ - Qualimetrix\Tests\Reporting\Formatter\Unit\FormatOptionKeyDeclarationTest::itDeclaresNoFormatOptionKeyItsOwnFormatterTreeNeverReads
+ - Qualimetrix\Tests\Reporting\Formatter\Unit\FormatOptionKeyDeclarationTest::itPlacesEveryFormatOptionReaderUnderAFormatterDirectory
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
@@ -7102,6 +7144,20 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itIgnoresExcludeNamespacesThatMatchNothing
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"a partial namespace name is not a binding"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"a value emptied by an exclude still binds"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"both values miss, order preserved"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"every value binds"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"no include values"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itReportsOnlyIncludeValuesThatMatchNoClass"one value of two misses"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"a miss selects nothing"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"exclude alone"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"exclude wins over include"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"include by exact namespace"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"include by parent namespace"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"no filters keeps every class"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"prefix stops at a namespace separator"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itFindsNoClockDerivedIdentifierInTheTree
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itReadsTheWholeTreeItJudges
@@ -7569,10 +7625,14 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FilteredInputDefinitionTest::itKeepsHiddenOptionsAccessibleViaHasOption
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FilteredInputDefinitionTest::itKeepsHiddenOptionsAccessibleViaTheirShortcut
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FilteredInputDefinitionTest::itReturnsEveryOptionWhenNoneAreHidden
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itAcceptsAKeyReadByAnotherFormatterThanTheOneSelected
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itAcceptsAllFlagTogetherWithAnEquivalentFormatOptViolationsAll
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itAcceptsFormatOptViolationsAllWithoutTheAllFlag
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itLeavesDefaultsUnchangedWhenAllFlagIsAbsent
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itLetsAllFlagOverrideAnExplicitDetailLimit
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itNamesEveryUnknownKeyAtOnce
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itRefusesAFormatOptKeyNoFormatterReads
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itRefusesTheViolationsKeyTheAllFlagWritesWhenNoFormatterDeclaresIt
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itSetsTheViolationsOptionToAllWhenAllFlagIsPassed
  - Qualimetrix\Tests\Unit\Infrastructure\Console\FormatterContextFactoryTest::itThrowsWhenAllFlagConflictsWithANumericViolationsFormatOpt
@@ -7891,6 +7951,8 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\CheckstyleFormatterTest::itUsesCodeAsSource
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itAcceptsIterableOfFormattersInConstructor
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itAddsFormatterOnRegister
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itDeclaresKeysOfFormattersHiddenFromListings
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itDeclaresNoFormatOptionKeysWhenNoFormatterReadsAny
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itHasNoFormattersWhenEmpty
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itIncludesAvailableFormattersInExceptionMessage
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itOverwritesExistingFormatterOnRegister
@@ -7898,6 +7960,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itReturnsRegisteredFormatterOnGet
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itReturnsSortedListOfAvailableNames
  - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itThrowsExceptionForUnknownFormatterOnGet
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\FormatterRegistryTest::itUnitesFormatOptionKeysAcrossFormattersWithoutRepeatingASharedOne
  - Qualimetrix\Tests\Unit\Reporting\Formatter\GitLabCodeQualityFormatterTest::itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects
  - Qualimetrix\Tests\Unit\Reporting\Formatter\GitLabCodeQualityFormatterTest::itFormatsEmptyReport
  - Qualimetrix\Tests\Unit\Reporting\Formatter\GitLabCodeQualityFormatterTest::itFormatsNamespaceLevelFinding

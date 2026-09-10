@@ -330,7 +330,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ProfileSummaryRenderer::class),
             ]);
 
-        $container->register(FormatterContextFactory::class);
+        $container->register(FormatterContextFactory::class)
+            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
 
         $container->register(ExitCodeResolver::class)
             ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);

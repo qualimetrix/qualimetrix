@@ -90,7 +90,7 @@ final class GraphExportCommand extends Command
                 'namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Include only these namespaces',
+                'Include only these namespaces (a value matching no analyzed class is refused with exit code 3)',
             )
             ->addOption(
                 'exclude-namespace',
@@ -185,6 +185,7 @@ final class GraphExportCommand extends Command
         ]);
 
         $request = self::buildProjectionRequest($input, $format, $direction);
+        $this->assertIncludeNamespacesBind($result, $request);
         $content = $this->projection->project($result->graph, $request);
 
         if ($outputFile !== null) {
@@ -194,6 +195,33 @@ final class GraphExportCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * An include namespace matching nothing renders a graph the caller cannot
+     * tell apart from a genuinely empty one, so it is refused rather than
+     * drawn (`docs/internal/plans/silent-acceptance/02-cure.md` §2). The
+     * excluding sibling `--exclude-namespace` deliberately keeps its silence:
+     * a miss there leaves the graph exactly as it would have been, and the
+     * caller loses nothing.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private function assertIncludeNamespacesBind(DependencyGraphAnalysisResult $result, GraphProjectionRequest $request): void
+    {
+        $unbound = $this->projection->unboundIncludeNamespaces($result->graph, $request);
+        if ($unbound === []) {
+            return;
+        }
+
+        throw ConfigurationRefusal::aboutCommandLineInput(
+            '--namespace',
+            \sprintf(
+                'No analyzed class belongs to %s: %s.',
+                \count($unbound) === 1 ? 'namespace' : 'namespaces',
+                implode(', ', array_map(static fn(string $namespace): string => '"' . $namespace . '"', $unbound)),
+            ),
+        );
     }
 
     /** @throws ConfigurationRefusal */

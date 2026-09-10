@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
@@ -19,7 +20,7 @@ use Qualimetrix\Reporting\Report;
  * Shows health overview, worst offenders, and contextual hints in one screen.
  * For detailed finding listing, use --format=text.
  */
-final class SummaryFormatter implements FormatterInterface
+final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
     private const int DEFAULT_TERMINAL_WIDTH = 80;
 
@@ -88,6 +89,12 @@ final class SummaryFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /** Both keys are read by {@see OffenderListRenderer} on this formatter's behalf. */
+    public function formatOptionKeys(): array
+    {
+        return ['rank-by', 'top'];
     }
 
     /**

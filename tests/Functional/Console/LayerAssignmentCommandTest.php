@@ -26,8 +26,9 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * Tests cover the exit-code contract documented in `docs/internal/plans/architecture-rules-followup.md`
  * (Step 6) as narrowed by `docs/internal/plans/configuration-refusal/01-refusal-verdicts.md`
- * §4: SUCCESS for any informational outcome (including "no layer matches"),
- * `ConsoleExitCode::Refusal` (3) for malformed input or a configuration-load
+ * §4: SUCCESS for any informational outcome about an analysed class
+ * (including "no layer matches"), `ConsoleExitCode::Refusal` (3) for
+ * malformed input, an FQN naming no analysed class, or a configuration-load
  * error recognised as the user's to fix, FAILURE for anything else the
  * configuration step throws.
  *
@@ -72,6 +73,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['controller', ['App\\Controller\\**']],
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['App\\Service\\UserService']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -97,6 +99,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['any-foo', ['App\\**\\Foo']],
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['App\\Service\\Foo']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -124,6 +127,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['controller', ['App\\Controller\\**']],
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -139,12 +143,192 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('catch-all', $output);
     }
 
+    /**
+     * The pair the cure is about: two facts that used to share one form.
+     *
+     * `Other\Place\Thing` was analysed and matched no layer — an informational
+     * answer, exit 0, and the report is the one it always was.
+     * `Zzz\Nope\Missing` was never analysed — nothing can be said about its
+     * layer, so it is refused with exit 3. Both run against one configuration
+     * inside one test, because the defect was that the two were
+     * indistinguishable, not that either one was wrong on its own.
+     */
+    #[Test]
+    public function itRefusesAnUnanalysedFqnWhileStillReportingNoLayerForAnAnalysedOne(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
+
+        $analysed = $this->newTester();
+        $analysedExit = $analysed->execute([
+            'fqn' => 'Other\\Place\\Thing',
+            '--config' => $configPath,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(Command::SUCCESS, $analysedExit);
+        self::assertStringContainsString('Assigned to: (no layer)', $analysed->getDisplay());
+        self::assertSame('', $analysed->getErrorOutput());
+
+        $unanalysed = $this->newTester();
+        $unanalysedExit = $unanalysed->execute([
+            'fqn' => 'Zzz\\Nope\\Missing',
+            '--config' => $configPath,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $unanalysedExit);
+        self::assertSame('', $unanalysed->getDisplay());
+        self::assertStringContainsString('Configuration error:', $unanalysed->getErrorOutput());
+        self::assertStringContainsString('Zzz\\Nope\\Missing', $unanalysed->getErrorOutput());
+        self::assertStringContainsString('is not among the', $unanalysed->getErrorOutput());
+        // The refusal must not be reported as the informational answer it
+        // replaces — that spelling is exactly what made the two facts one.
+        self::assertStringNotContainsString('(no layer)', $unanalysed->getErrorOutput());
+    }
+
+    /**
+     * Same mechanism as {@see self::itKeepsTheEmptyFqnRefusalVisibleUnderQuiet()},
+     * for the new unanalysed-class route: it is raised deep in the resolver
+     * rather than at the command's front door, so its survival under `-q` is
+     * worth its own probe.
+     */
+    #[Test]
+    public function itKeepsTheUnanalysedFqnRefusalVisibleUnderQuiet(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute(
+            ['fqn' => 'Zzz\\Nope\\Missing', '--config' => $configPath],
+            ['verbosity' => OutputInterface::VERBOSITY_QUIET, 'capture_stderr_separately' => true],
+        );
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('is not among the', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itReturnsAnErrorEnvelopeForAnUnanalysedFqnInJsonFormat(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Zzz\\Nope\\Missing',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('error', $decoded);
+        self::assertStringContainsString('Zzz\\Nope\\Missing', $decoded['error']);
+        self::assertSame(ConsoleExitCode::Refusal->value, $decoded['exit_code']);
+        // An agent reading `--format=json` must not find an assignment
+        // document for a class the run never analysed.
+        self::assertArrayNotHasKey('assigned', $decoded);
+    }
+
+    /**
+     * A leading backslash is normalised before anything else, so the refusal
+     * is no more sensitive to the spelling than the report was: the same FQN
+     * written both ways gets the same verdict and the same normalised name in
+     * the message.
+     */
+    #[Test]
+    public function itRefusesAnUnanalysedFqnIdenticallyWithAndWithoutALeadingBackslash(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
+
+        $bare = $this->newTester();
+        $bareExit = $bare->execute(
+            ['fqn' => 'Zzz\\Nope\\Missing', '--config' => $configPath],
+            ['capture_stderr_separately' => true],
+        );
+        $prefixed = $this->newTester();
+        $prefixedExit = $prefixed->execute(
+            ['fqn' => '\\Zzz\\Nope\\Missing', '--config' => $configPath],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $bareExit);
+        self::assertSame($bareExit, $prefixedExit);
+        self::assertSame($bare->getErrorOutput(), $prefixed->getErrorOutput());
+        self::assertStringNotContainsString('"\\Zzz', $prefixed->getErrorOutput());
+    }
+
+    /**
+     * Membership folds ASCII case the way PHP folds class names, so a real
+     * class spelled in another case is still found — and keeps the answer it
+     * had before the refusal existed. Layer *matching* stays case-sensitive:
+     * the lower-cased spelling matches no pattern, so the answer is the
+     * informational `(no layer)`, not a refusal and not an assignment.
+     */
+    #[Test]
+    public function itFindsAnAnalysedClassSpelledInAnotherCase(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        $this->declareClasses(['App\\Service\\UserService']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'app\\service\\userservice',
+            '--config' => $configPath,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
+        self::assertSame('', $tester->getErrorOutput());
+    }
+
+    /**
+     * The analysed set is class-level in the metric sense — interfaces, traits
+     * and enums included. Pinned because narrowing it to `class` declarations
+     * would turn every interface, trait and enum the user asks about into a
+     * refusal.
+     */
+    #[Test]
+    public function itAcceptsAnAnalysedInterfaceTraitAndEnum(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        file_put_contents(
+            $this->sourcePath() . '/Kinds.php',
+            "<?php\n\nnamespace App\\Service;\n\ninterface Contract {}\ntrait Helper {}\nenum Mode { case On; }\n",
+        );
+
+        foreach (['App\\Service\\Contract', 'App\\Service\\Helper', 'App\\Service\\Mode'] as $fqn) {
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => $fqn,
+                '--config' => $configPath,
+            ], ['capture_stderr_separately' => true]);
+
+            self::assertSame(Command::SUCCESS, $exit, $tester->getErrorOutput());
+            self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
+        }
+    }
+
     #[Test]
     public function itNormalisesALeadingBackslashInTheFqnArgument(): void
     {
         $configPath = $this->writeConfig([
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['App\\Service\\Foo']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -271,6 +455,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $configPath = $this->writeConfig([
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['GlobalClass']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -287,13 +472,11 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function itReportsNoLayerWithoutACatchAllSuggestionWhenNoLayersAreDeclared(): void
     {
-        // Config file exists but has no architecture section. Use an empty
-        // source path so the command's full Discovery + Collection phases
-        // run in milliseconds.
-        $emptyPath = $this->tempDir . '/empty-source';
-        if (!is_dir($emptyPath)) {
-            mkdir($emptyPath, 0o755, true);
-        }
+        // Config file exists but has no architecture section. The source tree
+        // holds only the class under test, so the command's full Discovery +
+        // Collection phases run in milliseconds.
+        $emptyPath = $this->sourcePath();
+        $this->declareClasses(['Anything\\At\\All']);
         $configPath = $this->tempDir . '/qmx-empty.yaml';
         file_put_contents($configPath, "paths: ['{$emptyPath}']\n");
 
@@ -373,6 +556,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['any-foo', ['App\\**\\Foo']],
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses([$fqn]);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -403,7 +587,9 @@ final class LayerAssignmentCommandTest extends TestCase
      * `pattern: 'App\\{module}\\**'`) so layer existence is observable per
      * input class: a class is only assigned a layer when its module was
      * present in the discovered class set. Excluded and generated files MUST
-     * NOT contribute to that set.
+     * NOT contribute to that set — and, since they contribute nothing, asking
+     * about one of them is asking about a class the run never analysed, which
+     * the command refuses rather than reports as unclassified.
      */
     #[Test]
     public function itExcludesConfiguredAndGeneratedFilesFromDiscoveryBeforeAssignment(): void
@@ -459,27 +645,28 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('Assigned to: mod-Service', $tester->getDisplay());
 
         // 2. Class inside an excluded directory — file MUST NOT have entered
-        //    the class set, so no `mod-Excluded` layer was expanded.
+        //    the class set. The file exists on disk, so the answer is about
+        //    the analysed set and not about the filesystem: a refusal, with
+        //    no `mod-Excluded` layer expanded anywhere in it.
         $tester = $this->newTester();
         $exit = $tester->execute([
             'fqn' => 'App\\Excluded\\Bar',
             '--config' => $configPath,
-        ]);
-        self::assertSame(Command::SUCCESS, $exit);
-        self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
-        self::assertStringNotContainsString('mod-Excluded', $tester->getDisplay());
+        ], ['capture_stderr_separately' => true]);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('is not among the', $tester->getErrorOutput());
+        self::assertStringNotContainsString('mod-Excluded', $tester->getErrorOutput());
 
-        // 3. Class in a file with `@generated` annotation — file MUST NOT
-        //    have entered the class set, so no `mod-Generated` layer was
-        //    expanded.
+        // 3. Class in a file with `@generated` annotation — same: MUST NOT
+        //    have entered the class set, so the FQN names nothing analysed.
         $tester = $this->newTester();
         $exit = $tester->execute([
             'fqn' => 'App\\Generated\\Gen',
             '--config' => $configPath,
-        ]);
-        self::assertSame(Command::SUCCESS, $exit);
-        self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
-        self::assertStringNotContainsString('mod-Generated', $tester->getDisplay());
+        ], ['capture_stderr_separately' => true]);
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('is not among the', $tester->getErrorOutput());
+        self::assertStringNotContainsString('mod-Generated', $tester->getErrorOutput());
 
         file_put_contents(
             $configPath,
@@ -531,11 +718,13 @@ final class LayerAssignmentCommandTest extends TestCase
             'Pre-condition: chosen memory_limit must differ from current ini value to prove the configurator ran.',
         );
 
-        // Empty source tree so the command's Discovery + Collection pass is
-        // a no-op — we are exercising the configurator hook, not the
-        // collector machinery.
-        $emptyPath = $this->tempDir . '/empty-source';
-        mkdir($emptyPath, 0o755, true);
+        // A source tree of one class, so the command's Discovery + Collection
+        // pass is all but a no-op — we are exercising the configurator hook,
+        // not the collector machinery. The class has to be there: the command
+        // refuses an FQN it never analysed, and the refusal returns before the
+        // assertion below could observe the ini value.
+        $emptyPath = $this->sourcePath();
+        $this->declareClasses(['Anything\\At\\All']);
         $configPath = $this->tempDir . '/qmx-memory.yaml';
         file_put_contents(
             $configPath,
@@ -561,6 +750,7 @@ final class LayerAssignmentCommandTest extends TestCase
     {
         foreach (['computed', 'health.complexity', 'health.*'] as $selector) {
             $configPath = $this->writeConfigWithComputedSelector($selector);
+            $this->declareClasses(['App\\Service\\UserService']);
             $tester = $this->newTester();
             $exit = $tester->execute([
                 'fqn' => 'App\\Service\\UserService',
@@ -599,6 +789,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['any-foo', ['App\\**\\Foo']],
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['App\\Service\\Foo']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -644,6 +835,7 @@ final class LayerAssignmentCommandTest extends TestCase
             ['service', ['App\\Service\\**']],
         ]);
         $fqn = 'App\\Service\\Foo';
+        $this->declareClasses([$fqn]);
 
         $textTester = $this->newTester();
         $textTester->execute(['fqn' => $fqn, '--config' => $configPath]);
@@ -673,6 +865,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $configPath = $this->writeConfig([
             ['controller', ['App\\Controller\\**']],
         ]);
+        $this->declareClasses(['Other\\Place\\Thing']);
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -695,10 +888,8 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function itReportsHasLayersFalseWhenNoLayersAreDeclared(): void
     {
-        $emptyPath = $this->tempDir . '/empty-source';
-        if (!is_dir($emptyPath)) {
-            mkdir($emptyPath, 0o755, true);
-        }
+        $emptyPath = $this->sourcePath();
+        $this->declareClasses(['Anything\\At\\All']);
         $configPath = $this->tempDir . '/qmx-empty-json.yaml';
         file_put_contents($configPath, "paths: ['{$emptyPath}']\n");
 
@@ -722,6 +913,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $configPath = $this->writeConfig([
             ['service', ['App\\Service\\**']],
         ]);
+        $this->declareClasses(['App\\Service\\Foo']);
 
         $default = $this->newTester();
         $default->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath]);
@@ -817,19 +1009,54 @@ final class LayerAssignmentCommandTest extends TestCase
             $allowYaml .= \sprintf("    %s: []\n", $name);
         }
 
-        // Use a non-existent path so file discovery yields zero project files
-        // — the per-class match is independent of the file set, and this
-        // avoids walking the full repository tree during functional tests.
-        $emptyPath = $this->tempDir . '/empty-source';
-        if (!is_dir($emptyPath)) {
-            mkdir($emptyPath, 0o755, true);
-        }
-        $yaml = "paths: ['{$emptyPath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage-gap: ignore\n";
+        // A dedicated tiny source tree, not the repository: the per-class match
+        // is independent of the file set, so the tree holds only the classes a
+        // test declares through `declareClasses()` and discovery stays fast.
+        $sourcePath = $this->sourcePath();
+        $yaml = "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage-gap: ignore\n";
 
         $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
         return $path;
+    }
+
+    /**
+     * The source tree every config in this class points `paths` at.
+     */
+    private function sourcePath(): string
+    {
+        $sourcePath = $this->tempDir . '/source';
+        if (!is_dir($sourcePath)) {
+            mkdir($sourcePath, 0o755, true);
+        }
+
+        return $sourcePath;
+    }
+
+    /**
+     * Materialises one PHP file per FQN in the source tree.
+     *
+     * The command answers for the set it analysed, so a test asking about a
+     * class must first make that class exist — an FQN naming no analysed
+     * declaration is refused, not reported (`refuseUnknownClass()`).
+     *
+     * @param list<string> $fqns
+     */
+    private function declareClasses(array $fqns): void
+    {
+        foreach ($fqns as $fqn) {
+            $position = strrpos($fqn, '\\');
+            $namespace = $position === false ? null : substr($fqn, 0, $position);
+            $shortName = $position === false ? $fqn : substr($fqn, $position + 1);
+            $body = "<?php\n"
+                . ($namespace === null ? '' : "\nnamespace {$namespace};\n")
+                . "\nfinal class {$shortName} {}\n";
+            file_put_contents(
+                $this->sourcePath() . '/' . str_replace('\\', '_', $fqn) . '.php',
+                $body,
+            );
+        }
     }
 
     private function writeConfigWithComputedSelector(string $selector): string

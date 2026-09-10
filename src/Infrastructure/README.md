@@ -129,6 +129,7 @@ Infrastructure/
     ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
     ├── ResultPresenter.php            # Output presentation
+    ├── DrillDownBinding.php           # How many analyzed namespaces/classes a `--namespace`/`--class` value selects; zero is refused instead of emptying the report
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections

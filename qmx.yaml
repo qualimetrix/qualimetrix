@@ -832,6 +832,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
+        - 'Qualimetrix\Infrastructure\Console\DrillDownBinding'
         - 'Qualimetrix\Infrastructure\Console\ErrorStream'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
@@ -989,6 +990,7 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\SuppressionMechanism'
         - 'Qualimetrix\Reporting\FormatterContext'
         - 'Qualimetrix\Reporting\Formatter\CheckstyleFormatter'
+        - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
@@ -1042,6 +1044,7 @@ architecture:
         - 'Qualimetrix\Reporting\GraphProjection\DotExporter'
         - 'Qualimetrix\Reporting\GraphProjection\DotExporterOptions'
         - 'Qualimetrix\Reporting\GraphProjection\JsonGraphExporter'
+        - 'Qualimetrix\Reporting\GraphProjection\NamespaceFilter'
     - name: external
       patterns: ['**']
       exclude:

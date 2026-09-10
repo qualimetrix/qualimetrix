@@ -14,7 +14,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - Grouping by namespace (subgraph clusters)
  * - Short labels (class name only, not FQN)
  * - Color by instability (green=stable, red=unstable)
- * - Namespace filtering (include/exclude)
+ * - Namespace filtering (include/exclude) via the shared {@see NamespaceFilter}
  * - Proper escaping of special characters
  */
 final class DotExporter
@@ -25,7 +25,7 @@ final class DotExporter
 
     public function export(DependencyGraphInterface $graph): string
     {
-        $classes = $this->filterClasses($graph->getAllClasses());
+        $classes = $this->namespaceFilter()->apply($graph->getAllClasses());
 
         if ($classes === []) {
             return $this->exportEmpty();
@@ -215,66 +215,9 @@ final class DotExporter
         return $grouped;
     }
 
-    /**
-     * Filters classes based on include/exclude namespaces.
-     *
-     * @param array<SymbolPath> $classes
-     *
-     * @return array<SymbolPath>
-     */
-    private function filterClasses(array $classes): array
+    private function namespaceFilter(): NamespaceFilter
     {
-        $filtered = [];
-
-        foreach ($classes as $classPath) {
-            if (!$this->shouldIncludeClass($classPath)) {
-                continue;
-            }
-
-            $filtered[] = $classPath;
-        }
-
-        return $filtered;
-    }
-
-    private function shouldIncludeClass(SymbolPath $classPath): bool
-    {
-        $namespace = $classPath->namespace ?? '';
-
-        // Check exclude list first
-        foreach ($this->options->excludeNamespaces as $excludeNs) {
-            if ($this->namespaceMatches($namespace, $excludeNs)) {
-                return false;
-            }
-        }
-
-        // Check include list (if specified)
-        if ($this->options->includeNamespaces !== null) {
-            foreach ($this->options->includeNamespaces as $includeNs) {
-                if ($this->namespaceMatches($namespace, $includeNs)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if a class namespace matches a filter namespace.
-     * Supports exact match and prefix match (e.g., 'App\Service' matches 'App\Service\User').
-     */
-    private function namespaceMatches(string $classNamespace, string $filterNamespace): bool
-    {
-        // Exact match
-        if ($classNamespace === $filterNamespace) {
-            return true;
-        }
-
-        // Prefix match (e.g., 'App\Service' matches 'App\Service\User')
-        return str_starts_with($classNamespace, $filterNamespace . '\\');
+        return new NamespaceFilter($this->options->includeNamespaces, $this->options->excludeNamespaces);
     }
 
     /**

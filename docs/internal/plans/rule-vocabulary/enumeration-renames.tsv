@@ -25,7 +25,7 @@ code-smell.long-parameter-list	channel	?		18	91	2	2	3	33	0	15	0	0	0	0
 code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1	0	0	1	1
 code-smell.unreachable-code	channel	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3	0	0	0	0
-cohesion.lcom	channel	?		39	156	2	2	0	34	0	5	0	0	0	0
+cohesion.lcom	channel	?		39	160	2	2	0	34	0	5	0	0	0	0
 complexity.ccn	channel	?		74	1044	2	3	48	163	0	11	0	0	0	0
 complexity.cognitive	channel	?		22	93	2	2	29	57	0	12	0	0	0	0
 complexity.npath	channel	?		19	103	2	2	10	47	0	8	0	0	0	0
@@ -60,7 +60,7 @@ code-smell.unused-private.method	metric-key	?		1	42	0	0	0	0	0	0	0	0	0	0
 code-smell.unused-private.property	metric-key	?		1	20	0	0	0	0	0	0	0	0	0	0
 code-smell.unused-private.total	metric-key	?		1	21	0	0	0	2	0	0	0	0	0	0
 cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	0	0	0	0	0
-cohesion.lcom	metric-key	?		39	156	2	2	0	34	0	5	0	0	0	0
+cohesion.lcom	metric-key	?		39	160	2	2	0	34	0	5	0	0	0	0
 cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	0	0	0	0	0
 cohesion.tcc	metric-key	?		23	84	0	0	0	12	0	0	0	0	0	0
 complexity.ccn	metric-key	?		74	1044	2	3	48	163	0	11	0	0	0	0
@@ -151,7 +151,7 @@ code-smell.long-parameter-list	producer	?		18	91	2	2	3	33	0	15	0	0	0	0
 code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1	0	0	0	0
 code-smell.unreachable-code	producer	?		8	39	0	1	0	25	0	1	0	0	0	0
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3	0	0	0	0
-cohesion.lcom	producer	?		39	156	2	2	0	34	0	5	0	0	0	0
+cohesion.lcom	producer	?		39	160	2	2	0	34	0	5	0	0	0	0
 complexity.ccn	producer	?		74	1044	2	3	48	163	0	11	0	0	0	0
 complexity.cognitive	producer	?		22	93	2	2	29	57	0	12	0	0	0	0
 complexity.npath	producer	?		19	103	2	2	10	47	0	8	0	0	0	0

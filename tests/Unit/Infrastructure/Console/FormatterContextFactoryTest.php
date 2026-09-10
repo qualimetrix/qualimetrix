@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -26,7 +27,9 @@ final class FormatterContextFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->factory = new FormatterContextFactory();
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('declaredFormatOptionKeys')->willReturn(['contributors', 'violations']);
+        $this->factory = new FormatterContextFactory($registry);
         $this->formatter = self::createStub(FormatterInterface::class);
         $this->formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
         $this->output = new NullOutput();
@@ -117,6 +120,61 @@ final class FormatterContextFactoryTest extends TestCase
         $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         self::assertSame('all', $context->getOption('violations'));
+    }
+
+    #[Test]
+    public function itRefusesAFormatOptKeyNoFormatterReads(): void
+    {
+        $input = $this->createInput(['--format-opt' => ['zzz=1']]);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown --format-opt key "zzz". No formatter reads it. Known keys: contributors, violations.');
+
+        $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
+    }
+
+    #[Test]
+    public function itAcceptsAKeyReadByAnotherFormatterThanTheOneSelected(): void
+    {
+        $input = $this->createInput(['--format-opt' => ['contributors=3']]);
+
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
+
+        self::assertSame('3', $context->getOption('contributors'));
+    }
+
+    #[Test]
+    public function itNamesEveryUnknownKeyAtOnce(): void
+    {
+        $input = $this->createInput(['--format-opt' => ['zzz=1', 'yyy=2']]);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown --format-opt keys "zzz", "yyy". No formatter reads them.');
+
+        $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
+    }
+
+    /**
+     * The key --all writes is checked like any other, so a formatter that stopped
+     * declaring `violations` would be caught here rather than leaving --all
+     * writing into an array nobody reads.
+     */
+    #[Test]
+    public function itRefusesTheViolationsKeyTheAllFlagWritesWhenNoFormatterDeclaresIt(): void
+    {
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('declaredFormatOptionKeys')->willReturn(['contributors']);
+        $factory = new FormatterContextFactory($registry);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown --format-opt key "violations"');
+
+        $factory->create(
+            $this->createInput(['--all' => true]),
+            $this->output,
+            $this->formatter,
+            $this->projectRoot(),
+        );
     }
 
     /**

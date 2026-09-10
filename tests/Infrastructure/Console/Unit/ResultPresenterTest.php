@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
@@ -229,6 +231,102 @@ final class ResultPresenterTest extends TestCase
         );
     }
 
+    /**
+     * `02-cure.md` Б7: `--namespace` selects what the report shows, so a value
+     * naming nothing empties the report instead of failing the run — the same
+     * `No violations found.` a genuinely clean subtree produces. The pair below
+     * is the discriminator: one exit code each, and the refusal says which.
+     */
+    #[Test]
+    public function itRefusesANamespaceThatSelectsNothingInTheRun(): void
+    {
+        try {
+            $this->drillDownExit('--namespace', 'Zzz\\Nope');
+            self::fail('A --namespace matching nothing must be refused, not silently emptied.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('Zzz\\Nope', $refusal->summary());
+            self::assertStringContainsString('matched none of the', $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itPresentsANamespaceThatExistsAndIsClean(): void
+    {
+        self::assertSame(0, $this->drillDownExit('--namespace', 'Demo\\Alpha'));
+    }
+
+    /** `02-cure.md` Б8, the same pair for the class door. */
+    #[Test]
+    public function itRefusesAClassThatSelectsNothingInTheRun(): void
+    {
+        try {
+            $this->drillDownExit('--class', 'Zzz\\Nope\\Thing');
+            self::fail('A --class matching nothing must be refused, not silently emptied.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('Zzz\\Nope\\Thing', $refusal->summary());
+            self::assertStringContainsString('matched none of the', $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itPresentsAClassThatExistsAndIsClean(): void
+    {
+        self::assertSame(0, $this->drillDownExit('--class', 'Demo\\Alpha\\Widget'));
+    }
+
+    /**
+     * The namespace tree is optional on {@see AnalysisResult}, so the check has
+     * to reach its verdict from the metric repository alone. Both verdicts are
+     * pinned, because "no tree" must not become "refuse everything" any more
+     * than it becomes "accept everything".
+     */
+    #[Test]
+    public function itReachesBothVerdictsWithoutANamespaceTree(): void
+    {
+        self::assertSame(0, $this->drillDownExit('--namespace', 'Demo\\Alpha', null));
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->drillDownExit('--namespace', 'Zzz\\Nope', null);
+    }
+
+    #[Test]
+    public function itBindsANamespaceTheTreeKnowsAndTheMetricsDoNot(): void
+    {
+        self::assertSame(
+            0,
+            $this->drillDownExit('--namespace', 'Demo\\Gamma', new NamespaceTree(['Demo\\Gamma'])),
+        );
+    }
+
+    /**
+     * The mutually exclusive pair is settled by {@see FormatterContextFactory}
+     * before either binding is looked up, so the earlier, more specific refusal
+     * is the one the user sees.
+     */
+    #[Test]
+    public function itKeepsTheMutuallyExclusivePairRefusedByItsOwnMessage(): void
+    {
+        $formatter = self::createStub(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+
+        try {
+            $this->presenter($registry)->presentResults(
+                [],
+                $this->analysisResult(metrics: $this->analyzedRepository()),
+                $this->input(['--namespace' => 'Zzz\\Nope', '--class' => 'Zzz\\Nope\\Thing']),
+                new BufferedOutput(),
+                AbsolutePath::fromString('/project'),
+                new OutputFormat(),
+                new ExitPolicy(),
+            );
+            self::fail('Passing both --namespace and --class must stay refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('mutually exclusive', $refusal->summary());
+        }
+    }
+
     private function presenter(FormatterRegistryInterface $registry): ResultPresenter
     {
         $session = new ProfileSession();
@@ -247,7 +345,7 @@ final class ResultPresenterTest extends TestCase
             new ProfilePresenter($session, new ErrorStream()),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new FindingFilter(),
-            new FormatterContextFactory(),
+            new FormatterContextFactory($registry),
             self::createStub(RuleConfigurationInterface::class),
             new ErrorStream(),
         );
@@ -274,13 +372,51 @@ final class ResultPresenterTest extends TestCase
     }
 
     /** @param list<Finding> $findings */
-    private function analysisResult(array $findings = [], ?AnalysisCoverage $coverage = null): AnalysisResult
-    {
+    private function analysisResult(
+        array $findings = [],
+        ?AnalysisCoverage $coverage = null,
+        ?InMemoryMetricRepository $metrics = null,
+        ?NamespaceTree $namespaceTree = null,
+    ): AnalysisResult {
         return new AnalysisResult(
             $findings,
             0.1,
-            new InMemoryMetricRepository(),
+            $metrics ?? new InMemoryMetricRepository(),
             $coverage ?? new AnalysisCoverage([], [], []),
+            namespaceTree: $namespaceTree,
+        );
+    }
+
+    /** A run that measured one class, so a drill-down value has something to bind to. */
+    private function analyzedRepository(): InMemoryMetricRepository
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add(
+            SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+            new MetricBag(),
+            RelativePath::fromString('src/Alpha/Widget.php'),
+            5,
+        );
+
+        return $repository;
+    }
+
+    private function drillDownExit(string $option, string $value, ?NamespaceTree $namespaceTree = null): int
+    {
+        $formatter = self::createStub(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('format')->willReturn('No violations found.');
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+
+        return $this->presenter($registry)->presentResults(
+            [],
+            $this->analysisResult(metrics: $this->analyzedRepository(), namespaceTree: $namespaceTree),
+            $this->input([$option => $value]),
+            new BufferedOutput(),
+            AbsolutePath::fromString('/project'),
+            new OutputFormat(),
+            new ExitPolicy(),
         );
     }
 

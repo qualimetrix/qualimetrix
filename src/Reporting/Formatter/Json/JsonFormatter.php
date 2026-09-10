@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\FindingSorter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -20,7 +21,7 @@ use Qualimetrix\Reporting\Report;
  * Outputs health scores, worst offenders, and findings in a machine-readable
  * format suitable for AI agents, CI pipelines, and programmatic consumption.
  */
-final class JsonFormatter implements FormatterInterface
+final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
     private const PACKAGE = 'qmx';
     private const ?int DEFAULT_VIOLATION_LIMIT = null;
@@ -95,6 +96,15 @@ final class JsonFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /**
+     * `violations` and `limit` bound the finding list here; `top` and `rank-by`
+     * are read by {@see JsonOffenderSection} on this formatter's behalf.
+     */
+    public function formatOptionKeys(): array
+    {
+        return ['limit', 'rank-by', 'top', 'violations'];
     }
 
     /**

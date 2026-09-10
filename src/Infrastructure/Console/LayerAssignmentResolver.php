@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -18,7 +19,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
-/** Resolves a debug layer assignment from the same collected project state as analysis. */
+/**
+ * Resolves a debug layer assignment from the same collected project state as analysis.
+ *
+ * An FQN naming no analysed declaration is refused rather than answered — see
+ * {@see self::refuseUnknownClass()}.
+ */
 final readonly class LayerAssignmentResolver
 {
     public function __construct(
@@ -73,6 +79,8 @@ final readonly class LayerAssignmentResolver
     {
         $repository = $this->repositoryFactory->create();
         $collection = $this->collectFiles($files, $repository, $projectRoot);
+        $classPaths = $this->classPaths($repository);
+        $this->refuseUnknownClass($symbol, $classPaths);
         $logicalClassUniverse = [];
         foreach ($repository->allLogicalClasses() as $info) {
             $logicalClass = $info->subject?->logicalClassPath();
@@ -82,7 +90,7 @@ final readonly class LayerAssignmentResolver
         }
         $graph = $this->graphBuilder->build($collection->dependencies, array_values($logicalClassUniverse));
 
-        $assignment = $this->layerAssignmentInspector->inspect($graph, $this->classPaths($repository), $symbol);
+        $assignment = $this->layerAssignmentInspector->inspect($graph, $classPaths, $symbol);
 
         return [
             'matches' => $assignment->matches,
@@ -106,6 +114,44 @@ final readonly class LayerAssignmentResolver
         );
 
         return array_values(iterator_to_array($fileDiscovery->discover($absolutePaths), false));
+    }
+
+    /**
+     * Refuses an FQN that names no analysed declaration.
+     *
+     * Without this, a class the run never saw and a class the run saw but no
+     * layer matched produce the identical `Assigned to: (no layer)` report —
+     * two different facts under one form. The class set is already in hand
+     * here (it is the same universe the inspector expands template layers
+     * from), so the miss is knowable and is answered as a refusal.
+     *
+     * Membership is compared case-insensitively over ASCII, the way PHP folds
+     * class names itself: layer *matching* is case-sensitive, but making the
+     * refusal case-sensitive too would turn a differently-spelled real class
+     * from an informational `(no layer)` answer into an error.
+     *
+     * @param list<SymbolPath> $classPaths
+     *
+     * @throws ConfigurationRefusal
+     */
+    private function refuseUnknownClass(SymbolPath $symbol, array $classPaths): void
+    {
+        $known = [];
+        foreach ($classPaths as $classPath) {
+            $known[strtolower($classPath->toCanonical())] = true;
+        }
+
+        if (isset($known[strtolower($symbol->toCanonical())])) {
+            return;
+        }
+
+        throw ConfigurationRefusal::aboutCommandLineInput('fqn', \sprintf(
+            'Class "%s" is not among the %d classes analysed under this configuration, '
+            . 'so no layer assignment can be reported for it. A class outside `paths`, '
+            . 'removed by `exclude`, or skipped as generated is not analysed.',
+            $symbol->toString(),
+            \count($classPaths),
+        ));
     }
 
     /** @return list<SymbolPath> */

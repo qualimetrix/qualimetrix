@@ -7,7 +7,7 @@ Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Anal
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	45	7
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	46	7
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	19	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
@@ -63,9 +63,9 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Anal
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	68	13
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	24	11
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	25	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2
-Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	9	5
+Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	10	6
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis.Evidence.Measurement	2	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface	Analysis.Evidence.Measurement	2	2
@@ -232,12 +232,12 @@ Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	42	15
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	107	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	108	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
-Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	11	5
+Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	12	6
 Qualimetrix\Core\Util\PathMatcher	Core.Neutral	5	2
 Qualimetrix\Core\Util\StringSet	Core.Neutral	2	1
 Qualimetrix\Core\Version	Core.Neutral	9	2
@@ -282,9 +282,9 @@ Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	Reporting	4	1
 Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	Reporting	2	1
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	2	1
 Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder	Reporting	1	1
-Qualimetrix\Reporting\FormatterContext	Reporting	1	1
+Qualimetrix\Reporting\FormatterContext	Reporting	2	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
-Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	2	2
+Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	3	2
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	1	1

@@ -57,6 +57,7 @@
             <directory>tests/Reporting/Unit</directory>
             <directory>tests/Reporting/FindingProjection/Unit</directory>
             <directory>tests/Reporting/Formatter/Suppressed/Unit</directory>
+            <directory>tests/Reporting/Formatter/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory>tests/Integration</directory>

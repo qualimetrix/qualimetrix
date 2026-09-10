@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
@@ -23,7 +24,7 @@ use Qualimetrix\Reporting\Report;
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
  */
-final class HealthTextFormatter implements FormatterInterface
+final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
     private const int DEFAULT_TERMINAL_WIDTH = 80;
     private const int NARROW_TERMINAL_THRESHOLD = 60;
@@ -84,6 +85,11 @@ final class HealthTextFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    public function formatOptionKeys(): array
+    {
+        return ['contributors'];
     }
 
     /**

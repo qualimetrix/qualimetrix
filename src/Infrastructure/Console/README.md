@@ -97,6 +97,12 @@ query `LayerAssignmentInspectorInterface`; the command retains input validation,
 configuration, error mapping and rendering. This keeps both declarations below
 their constructor-dependency thresholds without introducing a public port.
 
+The resolver also owns the answer to "was this class analysed at all": an FQN
+that names no analysed declaration raises `ConfigurationRefusal` (exit 3)
+instead of reaching the inspector, so "never analysed" and "analysed, no layer
+matched" stop sharing the `(no layer)` report. Membership folds ASCII case the
+way PHP folds class names; layer matching itself stays case-sensitive.
+
 **Arguments:**
 - `paths` (required, array) — paths for analysis
 

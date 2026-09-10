@@ -1039,6 +1039,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/FindingProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/Formatter/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],

@@ -788,7 +788,7 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 | `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
 | `--format=FORMAT`     | `text` (default) or `json`                                        |
 
-`--format=json` serializes the same resolution the text report renders — it does not introduce a separate check, so it never reports a class as "not found"; any syntactically valid FQN is classified. Schema:
+`--format=json` serializes the same resolution the text report renders. The command answers only for classes the run analysed: an FQN naming no analysed declaration — a typo, or a class kept out of the run by `paths`, `exclude` or the generated-file filter — exits with code 3 and the error envelope instead of being classified. Schema:
 
 ```json
 {

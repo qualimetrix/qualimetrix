@@ -480,6 +480,11 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter",
           "closes_in": null
         },
@@ -4953,6 +4958,11 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "closes_in": null
         },
@@ -5052,6 +5062,11 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
           "closes_in": null
         }
       ]
@@ -15775,6 +15790,11 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "closes_in": null
         },
@@ -16153,7 +16173,7 @@
         },
         {
           "owner": "Reporting.GraphProjection",
-          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter",
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter",
           "closes_in": null
         }
       ]
@@ -16425,6 +16445,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
           "closes_in": null
         }
       ]
@@ -19160,6 +19185,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
         }
       ]
     },
@@ -19205,6 +19235,11 @@
       "visibility": "contract",
       "closure_package": "P6",
       "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "closes_in": null
+        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
@@ -19938,6 +19973,30 @@
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
       "closure_package": "P5",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding": {
+      "path": "src/Infrastructure/Console/DrillDownBinding.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\FormatOptionKeysInterface": {
+      "path": "src/Reporting/Formatter/FormatOptionKeysInterface.php",
+      "kind": "interface",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter": {
+      "path": "src/Reporting/GraphProjection/NamespaceFilter.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "closure_package": "P2",
       "consumers": []
     }
   },
