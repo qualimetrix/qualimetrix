@@ -23,6 +23,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contra
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/ThresholdAwareOptionsInterface.php	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/ThresholdParser.php	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/RuleConfigurationInterface.php	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Inline/Contract/AnnotationSuppressionInterface.php	Qualimetrix\Analysis\Policy\Inline\Contract	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
@@ -183,7 +184,7 @@ rule-path-suppression	design.noc	design.noc	src/Analysis/Finding/Contract/Rule/A
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php	(project)	warning	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	(project)	error	5
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	(project)	warning	2
-rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	(project)	warning	4
+rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	(project)	warning	3
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Cohesion/LcomOptions.php	(project)	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	(project)	warning	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	(project)	error	2

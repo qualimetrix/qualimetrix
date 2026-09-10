@@ -104,6 +104,12 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 | ----------------- | ----------------------------- | ------- |
 | Unmatched exclude | `discovery.unmatched-exclude` | 10      |
 
+## Suppression Rules
+
+| Rule                      | ID                          | Minutes |
+| ------------------------- | --------------------------- | ------- |
+| Suppression configuration | `suppression.configuration` | 10      |
+
 ## Annotation Rules
 
 | Rule      | ID                     | Minutes |

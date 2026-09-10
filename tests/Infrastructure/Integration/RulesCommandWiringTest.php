@@ -100,6 +100,7 @@ final class RulesCommandWiringTest extends TestCase
         'maintainability',
         'security',
         'size',
+        'suppression',
     ];
 
     /**

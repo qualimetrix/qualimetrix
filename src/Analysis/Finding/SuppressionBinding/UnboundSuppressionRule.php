@@ -1,0 +1,134 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
+
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
+/**
+ * Reports a `suppress_paths` or `suppress_namespaces` value — global or
+ * per-rule — that names nothing this run contains.
+ *
+ * **This is a different zero from the one `--format=suppressed` already
+ * reports.** That format's `neverMatched` list is built from the findings a
+ * suppressor removed, so it answers "this suppressor removed nothing" —
+ * effect-zero. A suppressor can reach effect-zero honestly: it names a real
+ * directory that simply has no findings left in it, which is what a paid-down
+ * suppression looks like. The zero reported here is binding-zero: the value
+ * names no analysed file and no declared namespace at all, so it could not
+ * have suppressed anything whatever the code contained, and it will go on
+ * doing nothing after the debt it was written for is repaid. Binding-zero is a
+ * subset of effect-zero, and the run counts the two separately — see
+ * {@see UnboundSuppressionAudit}.
+ *
+ * **The rule emits nothing itself, and cannot.** Which files a run analysed
+ * and which namespaces it declared are facts about the whole run, known only
+ * after every rule has finished; `suppress_*` does not enter rule execution at
+ * all, and {@see AnalysisContext} carries neither the run's file list nor its
+ * configuration — nor may it, since ADR 0022 forbids a new port into rule
+ * execution for it. So the findings are assembled by
+ * {@see UnboundSuppressionAudit} at the one seam where the configured values
+ * and the run's universes meet, and passed through
+ * `RuleExecutionInterface::publishable()`, exactly as
+ * `annotation.unused-directive` and `discovery.unmatched-exclude` are. This
+ * class is what makes those assembled findings *channels*: without a
+ * registered rule there is no entry in `qmx rules`, no `--disable-rule`, no
+ * severity and no baseline identity.
+ *
+ * **Not a configuration validator, and that is a decision.** A channel
+ * declared through `ConfigurationValidatorInterface` bypasses `fail_on` and
+ * exits 2 unconditionally. A stale suppression does not deserve that: a
+ * `qmx.yaml` shared across repositories may legitimately name a path or a
+ * namespace one of them does not have, and the same configuration is correct
+ * on `qmx check .` and unbound on a slice. An ordinary warning is visible in
+ * the report, answers to `--fail-on`, and can be accepted as debt.
+ *
+ * **Statelessness:** trivially — `analyze()` does nothing at all.
+ */
+final class UnboundSuppressionRule extends AbstractRule
+{
+    /**
+     * The producer's name is not one of its channels, the way
+     * `annotation.directive` is not: three channels answer one question about
+     * one subject — the run's suppression configuration — and a rule named
+     * after any one of them would make the other two read as its subordinates.
+     */
+    public const string NAME = 'suppression.configuration';
+
+    /**
+     * Interim, and the interim is the point: the channels' own group page
+     * (`rules/suppression.md`) cannot be created here, because a new group
+     * page also needs an inventory prefix and a nav entry, and those three
+     * must land in one change owned by the round's consolidating package. The
+     * catalog page carries these channels' anchor until then, so the guarantee
+     * "every rule's name is documented where its reports point" holds without
+     * a gap.
+     */
+    public const string DOCS_PAGE = 'rules/index.md';
+
+    /** Deleting one line of configuration, plus checking what the tree really contains. */
+    public const int REMEDIATION_MINUTES = 10;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
+
+    /** There is no measured quantity here to retune. */
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Reports a suppress_paths or suppress_namespaces value that names nothing the run contains';
+    }
+
+    /**
+     * @return class-string<UnboundSuppressionOptions>
+     */
+    public static function getOptionsClass(): string
+    {
+        return UnboundSuppressionOptions::class;
+    }
+
+    /**
+     * Three occurrences reported on the project: each finding counts nothing
+     * and belongs to no declaration — it is a fact about the run's
+     * configuration, the way `discovery.unmatched-exclude` is.
+     *
+     * Project level is also what keeps a finding about `suppress_paths` from
+     * being removed by the very pattern it reports: the global path and
+     * namespace filters exempt channels their owner declared project-scoped
+     * (`ChannelFileScope`), which is a declared property rather than a
+     * spelling.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project),
+        ];
+    }
+
+    /**
+     * Nothing: the findings are assembled where the answer is known, and this
+     * rule exists to give them a channel identity, an options object and a
+     * place in `qmx rules`.
+     *
+     * @return list<Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+}

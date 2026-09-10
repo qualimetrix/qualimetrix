@@ -12881,6 +12881,11 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "closes_in": null
         }
       ]
     },
@@ -15271,6 +15276,11 @@
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
+          "closes_in": null
         }
       ]
     },
@@ -16047,6 +16057,11 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionRule",
+          "closes_in": null
         }
       ]
     },
@@ -16430,6 +16445,11 @@
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
+          "closes_in": null
         }
       ]
     },
@@ -16706,6 +16726,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
+          "closes_in": null
         }
       ]
     },
@@ -16739,6 +16764,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
           "closes_in": null
         }
       ]
@@ -20252,6 +20282,36 @@
       "owner": "Reporting.GraphProjection",
       "visibility": "internal",
       "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit": {
+      "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionOptions": {
+      "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionRule": {
+      "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionRule.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
       "consumers": []
     }
   },

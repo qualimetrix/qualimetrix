@@ -29,13 +29,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  *
  * The number of rule **classes** is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement. It is 47 and counts `RuleRegistryInterface::getClasses()`;
- * `bin/qmx rules` reports 53, because it counts producers.
+ * agreement. It is 48 and counts `RuleRegistryInterface::getClasses()`;
+ * `bin/qmx rules` reports 54, because it counts producers.
  */
 #[CoversClass(RuleRemediationMinutesReader::class)]
 final class RuleRemediationMinutesCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 47;
+    private const int REGISTERED_RULE_COUNT = 48;
 
     #[Test]
     public function itRequiresEveryRegisteredRuleToDeclareItsOwnRemediationMinutes(): void

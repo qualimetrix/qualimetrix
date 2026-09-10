@@ -71,8 +71,8 @@ cli	check	--report	empty-range	SILENT	declared none	none
 cli	check	--report	ref-and-scheme	SILENT	declared, not fired	dictionary	
 cli	check	--rule-opt	missing-equals-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
 cli	check	--rule-opt	rule-option-name	REFUSES	exit codes plus the product refusal framing	dictionary	
-cli	check	--suppress-namespace	whole-value	SILENT	declared none	none	
-cli	check	--suppress-path	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+cli	check	--suppress-namespace	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+cli	check	--suppress-path	whole-value	SPEAKS	declared signal fired on M	cure:P7	
 cli	check	--top	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 cli	check	--workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 cli	check	paths	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
@@ -117,9 +117,9 @@ config	baseline:cleanup	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	
 config	baseline:cleanup	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	baseline:cleanup	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 config	baseline:cleanup	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
-config	baseline:cleanup	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	rules	rule-suppress-pattern	SILENT	declared none	none	
 config	baseline:cleanup	suppressNamespaces	whole-value	SILENT	declared none	none	
-config	baseline:cleanup	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:cleanup	suppressPaths	whole-value	SILENT	declared none	none	
 config	baseline:explain	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	baseline:explain	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	baseline:explain	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
@@ -157,9 +157,9 @@ config	baseline:generate	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none
 config	baseline:generate	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	baseline:generate	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 config	baseline:generate	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
-config	baseline:generate	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	rules	rule-suppress-pattern	SILENT	declared none	none	
 config	baseline:generate	suppressNamespaces	whole-value	SILENT	declared none	none	
-config	baseline:generate	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:generate	suppressPaths	whole-value	SILENT	declared none	none	
 config	baseline:update	architecture	layer-exclude-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	baseline:update	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	baseline:update	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
@@ -177,9 +177,9 @@ config	baseline:update	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	P
 config	baseline:update	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	baseline:update	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 config	baseline:update	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
-config	baseline:update	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	rules	rule-suppress-pattern	SILENT	declared none	none	
 config	baseline:update	suppressNamespaces	whole-value	SILENT	declared none	none	
-config	baseline:update	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	baseline:update	suppressPaths	whole-value	SILENT	declared none	none	
 config	check	architecture	layer-exclude-patterns	SPEAKS	declared signal fired on M	cure:P8	
 config	check	architecture	layer-patterns	NOT OBSERVABLE	text	observation	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	check	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	
@@ -197,9 +197,9 @@ config	check	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size st
 config	check	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	check	parallel.workers	whole-value	NOT REFERENTIAL	annotation	none	integer count; nothing to point at
 config	check	paths	whole-value	NOT OBSERVABLE	text	dictionary	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
-config	check	rules	rule-suppress-pattern	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
-config	check	suppressNamespaces	whole-value	SILENT	declared none	none	
-config	check	suppressPaths	whole-value	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
+config	check	rules	rule-suppress-pattern	SPEAKS	declared signal fired on M	cure:P7	
+config	check	suppressNamespaces	whole-value	SPEAKS	declared signal fired on M	cure:P7	
+config	check	suppressPaths	whole-value	SPEAKS	declared signal fired on M	cure:P7	
 config	debug:layer-assignment	architecture	layer-exclude-patterns	SILENT	declared none	none	
 config	debug:layer-assignment	architecture	layer-patterns	NOT OBSERVABLE	text	none	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	debug:layer-assignment	architecture	unknown-subkey	REFUSES	exit codes plus the product refusal framing	dictionary	

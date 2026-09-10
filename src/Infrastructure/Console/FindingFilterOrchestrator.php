@@ -8,7 +8,9 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
@@ -34,6 +36,8 @@ final readonly class FindingFilterOrchestrator
     public function __construct(
         private FindingProjector $findingProjector,
         private ErrorStream $errorStream,
+        private UnboundSuppressionAudit $unboundSuppressionAudit,
+        private ProjectScopeCoverage $projectScopeCoverage,
     ) {}
 
     public function projectionOptions(
@@ -79,7 +83,7 @@ final readonly class FindingFilterOrchestrator
     ): FindingProjectionResult {
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            $result->findings,
+            [...$result->findings, ...$this->unboundSuppressions($result, $scopeResolution, $options)],
             $result->suppressions,
             $options,
         );
@@ -92,6 +96,56 @@ final readonly class FindingFilterOrchestrator
         $this->reportRuleExclusions($result, $input, $output);
 
         return $filterResult;
+    }
+
+    /**
+     * The one seam where a configured `suppress_*` value and the universe it
+     * claims to name are both in hand.
+     *
+     * `suppress_*` never enters the pipeline — it filters the pipeline's
+     * output — so no rule can be asked whether a pattern named anything, and
+     * the values arrive here already carrying `--suppress-path` and
+     * `--suppress-namespace` beside the configured ones, which is exactly the
+     * set the projection below is about to apply.
+     *
+     * The findings are handed to {@see FindingProjector::project()} with the
+     * run's own, so a report, a baseline decision and an exit code treat them
+     * like any other finding. Being declared project-scoped, they are exempt
+     * from the path and namespace filters, and a finding about
+     * `suppress_paths: [Gone]` cannot be removed by that very pattern.
+     *
+     * **The coverage precondition is asked here, and it is asked of the one
+     * predicate the round uses.** A value that names nothing binds nothing on a
+     * run narrowed below the project's production autoload roots for a reason
+     * its author did not choose, so on such a run there is nothing to judge and
+     * the audit is not called at all.
+     *
+     * **Coverage is re-measured rather than carried, and the measurement says
+     * the two answers cannot differ:** {@see CheckScopeResolver} asks
+     * {@see ProjectScopeCoverage} with `$scope->projectRoot` and
+     * `$scope->paths`, and this call passes the same two fields of the same
+     * resolution object. Carrying the answer instead would mean a parameter on
+     * this method and a value at its call site in `CheckCommand`, a file this
+     * change does not own. The cost is one extra read of `composer.json` per
+     * run.
+     *
+     * @return list<Finding>
+     */
+    private function unboundSuppressions(
+        AnalysisResult $result,
+        GitScopeResolution $scopeResolution,
+        FindingProjectionOptions $options,
+    ): array {
+        if (!$this->projectScopeCoverage->pathsCoverProjectScope($scopeResolution->projectRoot, $scopeResolution->paths)) {
+            return [];
+        }
+
+        return $this->unboundSuppressionAudit->findings(
+            $options->suppressPaths,
+            $options->suppressNamespaces,
+            $result->coverage->analyzedFiles,
+            $result->namespaceTree?->getAllNamespaces(),
+        );
     }
 
     /**

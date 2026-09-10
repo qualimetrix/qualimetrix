@@ -112,6 +112,16 @@ The built-in `discovery.unmatched-exclude` rule reports on the run's own file se
 | ----------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `discovery.unmatched-exclude` | Warning (fixed, not configurable) | enabled | Ordinary finding, not a configuration error: a shared configuration may legitimately name a path one repository does not have. Reported at project level, and only on a run whose paths cover the project's production autoload roots. |
 
+## Suppression Rules
+
+The built-in `suppression.configuration` rule reports on the run's own suppression configuration: a `suppress_paths` or `suppress_namespaces` value, global or per-rule, that names nothing this run holds. It has no numeric thresholds.
+
+| Channel                             | Severity                          | Default | Notes                                                                                                                                                                          |
+| ----------------------------------- | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `suppression.unmatched-path`        | Warning (fixed, not configurable) | enabled | A global `suppress_paths` value matching no analysed file. Reported at project level, only on a run covering the production autoload roots, and never written into a baseline. |
+| `suppression.unmatched-namespace`   | Warning (fixed, not configurable) | enabled | The same for `suppress_namespaces` against the namespaces the run declared.                                                                                                    |
+| `suppression.unmatched-rule-ledger` | Warning (fixed, not configurable) | enabled | The same for either key configured under `rules.<name>`.                                                                                                                       |
+
 ## Annotation Rules
 
 The built-in `annotation.directive` rule reports inline `@qmx-*` directives that address nothing, cannot apply, or no longer do anything. It has no numeric thresholds and reports through four channels, each its own diagnostic. See [Annotation rules](../rules/annotation.md) for the full reference and [Baseline](../usage/baseline.md#when-a-directive-is-wrong) for how directives interact with suppression and baselines.

@@ -184,6 +184,36 @@ which is the caller's choice and not the author's mistake.
 | ----------------- | ----------------------------- | -------------------------------------------- |
 | Unmatched exclude | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
 
+### Suppression Rules
+
+This rule reports on the run's own suppression configuration rather than on the
+code: a `suppress_paths` or `suppress_namespaces` value — global or under
+`rules.<name>` — that names no file this run analysed and no namespace it
+declared. Such a value hides nothing and never will, while the author believes
+it is hiding something.
+
+**Rule ID:** `suppression.configuration`
+
+This is a different zero from the one `--format=suppressed` already reports.
+Its `neverMatched` list is built from removals, so it answers "this suppressor
+removed nothing" — which an honest, paid-down suppression also reaches. The
+three channels here answer "this suppressor named nothing", which no amount of
+repaired code can cause.
+
+All three are reported at project level, at severity `warning`, only on a run
+whose paths cover the project's production autoload roots — on a narrower run a
+value binds nothing simply because the code it names is outside the slice,
+which is the caller's choice and not the author's mistake. They are not written
+into a generated baseline: `baseline:generate` measures findings on a different
+seam, and a warning about the author's own configuration should not become
+accepted debt in the file that author generates with one command.
+
+| Channel                             | What it detects                                                     |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `suppression.unmatched-path`        | A global `suppress_paths` value matching no analysed file           |
+| `suppression.unmatched-namespace`   | A global `suppress_namespaces` value matching no declared namespace |
+| `suppression.unmatched-rule-ledger` | The same, for a value configured under `rules.<name>`               |
+
 ## Disabling Rules
 
 You can disable individual rules or entire groups:
@@ -252,6 +282,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))
 - **Discovery:** `discovery.unmatched-exclude`
+- **Suppression:** `suppression.configuration` (see the Suppression Rules section above for its channels)
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->

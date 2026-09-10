@@ -65,8 +65,11 @@ security.xss#security.xss	callable	no	no	C2	both
 size.class-count#size.class-count	namespace	no	no	C1 C2	both
 size.method-count#size.method-count	class	no	no	C1 C2	both
 size.property-count#size.property-count	class	no	no	C1 C2	both
+suppression.unmatched-namespace#suppression.unmatched-namespace	project	no	no	C8	x16-p7
+suppression.unmatched-path#suppression.unmatched-path	project	no	no	C8	x16-p7
+suppression.unmatched-rule-ledger#suppression.unmatched-rule-ledger	project	no	no	C8	x16-p7
 #
-# 63 of 63 channels. The channel set is not hand-listed: it is the 57 lines of
+# 66 of 66 channels. The channel set is not hand-listed: it is the 60 lines of
 # tests/Analysis/Finding/Fixtures/Channels/declared.txt (a fixture the container
 # guards in both directions) plus the 6 cases of HealthDimension.
 #
@@ -127,6 +130,10 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #   x16-p9  coupling.unmatched-framework-namespace, project, over C7 — the
 #           corpus is named separately because no earlier one configures a
 #           framework namespace at all.
+#   x16-p7  the three suppression.unmatched-* channels, project, over C8 — a
+#           corpus named separately for the same reason: no earlier one
+#           configures suppress_paths or suppress_namespaces at all, and a
+#           value that binds is not what the channels report.
 #
 # FINDINGS OF THIS PASS:
 #  - `file` is a real reporting level after all: all four `annotation.*`
@@ -153,7 +160,7 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #    level here may be capable of another on code these corpora do not contain.
 #    The claim "no static channel is multi-level" is a claim about this corpus;
 #    for the health family the declaration backs it independently, for the
-#    static 57 nothing does.
+#    static 60 nothing does.
 #  - a user-defined `computed.*` metric declares its own `levels:` in
 #    `qmx.yaml` and is outside any fixed enumeration by construction.
 #  - `duplication.clone` and `architecture.circular-dependency`

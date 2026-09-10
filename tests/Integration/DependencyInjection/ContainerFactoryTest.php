@@ -88,6 +88,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
@@ -834,6 +835,7 @@ PHP;
             GodClassRule::class,
             UnmatchedFrameworkNamespaceRule::class,
             UnmatchedExcludeRule::class,
+            UnboundSuppressionRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

@@ -88,6 +88,7 @@ rule	Qualimetrix\Analysis\Evidence\Security\XssRule	src/Analysis/Evidence/Securi
 rule	Qualimetrix\Analysis\Evidence\Size\ClassCountRule	src/Analysis/Evidence/Size/ClassCountRule.php	qmx.rule	"SizeConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Size\MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php	qmx.rule	"SizeConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php	qmx.rule	"SizeConfigurator -> rule compiler passes"
+rule	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionRule.php	qmx.rule	"capability configurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	qmx.rule	"ArchitectureConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	qmx.rule	"ArchitectureConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	qmx.rule	"capability configurator -> rule compiler passes"

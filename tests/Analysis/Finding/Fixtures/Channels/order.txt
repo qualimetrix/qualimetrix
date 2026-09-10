@@ -57,6 +57,9 @@ security.xss
 size.class-count
 size.method-count
 size.property-count
+suppression.unmatched-path
+suppression.unmatched-namespace
+suppression.unmatched-rule-ledger
 architecture.layer-violation
 architecture.unmatched-exclude
 architecture.coverage-gap

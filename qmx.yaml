@@ -529,6 +529,9 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Rule\RuleInterface'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule'
     - name: analysis-policy-architecture
       patterns:
         - 'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy'

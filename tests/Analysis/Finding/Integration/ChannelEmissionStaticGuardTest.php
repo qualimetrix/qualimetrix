@@ -334,6 +334,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
                 . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
                 . ' class chain leads to this construction.',
+            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
+                'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
+                . ' value bound to anything is known only after the run, at the reporting seam, so the findings'
+                . ' are assembled here and no rule class chain leads to this construction.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'
