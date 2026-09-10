@@ -1,0 +1,18 @@
+command	options
+_complete	--api-version,--current,--input,--shell,--symfony
+baseline:cleanup	--config,--disable-rule,--force,--no-progress,--only-rule,--preset,--remove,--rule-opt
+baseline:explain	--baseline,--channel,--config,--disable-rule,--no-progress,--only-rule,--preset,--rule-opt
+baseline:generate	--config,--disable-rule,--force,--mode,--no-progress,--only-rule,--preset,--rule-opt
+baseline:rename-channels	--format
+baseline:update	--config,--disable-rule,--force,--no-progress,--only-rule,--preset,--rule-opt
+check	--all,--baseline,--cache-dir,--class,--clear-cache,--config,--detail,--disable-rule,--exclude,--exclude-health,--fail-on,--format,--format-opt,--group-by,--include-generated,--log-file,--log-level,--memory-limit,--namespace,--no-cache,--no-progress,--no-suppression-annotations,--only-rule,--output,--preset,--profile,--profile-format,--report,--report-strict,--rule-opt,--show-resolved,--show-suppressed,--suppress-namespace,--suppress-path,--top,--workers
+completion	--debug
+debug:layer-assignment	--config,--format,--no-progress
+directives	--config,--disable-rule,--format,--no-progress,--only-rule,--preset,--rule-opt,--sweep
+graph:export	--direction,--exclude-namespace,--format,--namespace,--no-clusters,--output
+help	--format,--raw
+hook:install	--force
+hook:status	
+hook:uninstall	--restore-backup
+list	--format,--raw,--short
+rules	--group

@@ -1,0 +1,20 @@
+# Base configuration of the layered fixture. The architecture doors and
+# `debug:layer-assignment` need a declared layer graph and a real FQCN to
+# resolve; the main fixture deliberately has neither.
+paths:
+  - src
+disabledRules:
+  - coupling.class-rank
+  - coupling.distance
+architecture:
+  coverage-gap: ignore
+  layers:
+    - name: domain
+      patterns:
+        - Layered\Domain\*
+    - name: infra
+      patterns:
+        - Layered\Infra\*
+  allow:
+    domain:
+      - infra

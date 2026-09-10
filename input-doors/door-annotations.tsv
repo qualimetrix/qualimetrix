@@ -1,0 +1,28 @@
+surface	command	door	referential	reason	sites	site_reason	shadowed_by
+cli	*	--config	yes		whole-value	the path is matched as a whole; no inner matching site is known	invariant:config
+cli	*	--format	yes		whole-value	the format name is matched as a whole	invariant:format
+cli	*	--rule-opt	yes		rule-option-name,missing-equals-value		
+cli	*	--detail	no	integer count or the literal 'all'; nothing to point at			
+cli	*	--top	no	integer count; nothing to point at			
+cli	*	--workers	no	integer count; nothing to point at			invariant:workers
+cli	*	paths	yes		whole-value	each path is matched as a whole against the filesystem	invariant:target
+cli	_complete	--api-version	no	Symfony completion internals			
+cli	_complete	--current	no	Symfony completion internals			
+cli	_complete	--input	no	Symfony completion internals			
+cli	_complete	--shell	no	Symfony completion internals			
+cli	_complete	--symfony	no	Symfony completion internals			
+cli	baseline:rename-channels	map	yes		map-file,map-row		
+cli	check	--cache-dir	yes		whole-value	the directory path is matched as a whole	invariant:no-cache
+cli	check	--fail-on	yes		whole-value	the severity name is matched as a whole	invariant:fail-on
+cli	check	--format-opt	yes		pair-key	the value half of the pair is a site the round leaves out (00-overview.md); only the key half is declared	invariant:format
+cli	check	--report	yes		ref-and-scheme,empty-range		
+config	*	architecture	yes		unknown-subkey,layer-patterns,layer-exclude-patterns		
+config	*	cache.dir	yes		whole-value	the directory path is matched as a whole	invariant:no-cache
+config	*	cache.enabled	no	boolean; nothing to point at			invariant:no-cache
+config	*	failOn	yes		whole-value	the severity name is matched as a whole	invariant:fail-on
+config	*	format	yes		whole-value	the format name is matched as a whole	invariant:format
+config	*	includeGenerated	no	boolean; nothing to point at			
+config	*	memoryLimit	no	PHP size string; nothing to point at			
+config	*	parallel.workers	no	integer count; nothing to point at			invariant:workers
+config	*	paths	yes		whole-value	each path is matched as a whole against the filesystem	invariant:target
+config	*	rules	yes		rule-suppress-pattern	the rule and option names are already the sites of --rule-opt, and an unknown option key was measured to refuse before this round; the pattern inside a suppress-* option is the one site this root adds	
