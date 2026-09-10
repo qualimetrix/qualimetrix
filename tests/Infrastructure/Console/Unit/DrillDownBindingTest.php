@@ -20,9 +20,29 @@ final class DrillDownBindingTest extends TestCase
     #[Test]
     public function itBindsANamespaceThatNamesAnAnalyzedOne(): void
     {
+        // The namespace itself and the one class canonical name under it: the
+        // filter compares a `--namespace` value against both.
+        self::assertSame(
+            2,
+            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha', $this->repository(), null),
+        );
+    }
+
+    /**
+     * The comparison the worst-offender half of the filter makes.
+     *
+     * `FindingFilter::filterWorstOffenders()` offers a `--namespace` value the
+     * offender's whole canonical name, so `Demo\Alpha\*` selects the class
+     * `Demo\Alpha\Widget` while matching no namespace at all. Counting only
+     * namespaces refused this value and printed an empty report's refusal over
+     * a selection that was not empty.
+     */
+    #[Test]
+    public function itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies(): void
+    {
         self::assertSame(
             1,
-            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha', $this->repository(), null),
+            (new DrillDownBinding())->namespaceBindings('Demo\\Alpha\\*', $this->repository(), null),
         );
     }
 
@@ -38,10 +58,11 @@ final class DrillDownBindingTest extends TestCase
     #[Test]
     public function itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt(): void
     {
-        // `Demo` binds itself plus every namespace beneath it: the same
-        // prefix semantics FindingFilter applies to a finding's namespace.
+        // `Demo` binds itself, every namespace beneath it and every canonical
+        // symbol name under those: the same prefix semantics FindingFilter
+        // applies to a finding's namespace and to an offender's whole name.
         self::assertSame(
-            4,
+            6,
             (new DrillDownBinding())->namespaceBindings('Demo', $this->repository(), null),
         );
     }
@@ -91,7 +112,7 @@ final class DrillDownBindingTest extends TestCase
     public function itTreatsATrailingBackslashAsCosmetic(): void
     {
         self::assertSame(
-            1,
+            2,
             (new DrillDownBinding())->namespaceBindings('Demo\\Alpha\\', $this->repository(), null),
         );
     }
@@ -105,7 +126,7 @@ final class DrillDownBindingTest extends TestCase
         $binding = new DrillDownBinding();
 
         self::assertSame(0, $binding->namespaceBindings('__PROJECT__', $repository, null));
-        self::assertSame(4, $binding->namespaceUniverseSize($repository, null));
+        self::assertSame(6, $binding->namespaceUniverseSize($repository, null));
     }
 
     #[Test]
@@ -113,9 +134,9 @@ final class DrillDownBindingTest extends TestCase
     {
         $binding = new DrillDownBinding();
 
-        self::assertSame(4, $binding->namespaceUniverseSize($this->repository(), null));
+        self::assertSame(6, $binding->namespaceUniverseSize($this->repository(), null));
         self::assertSame(
-            5,
+            7,
             $binding->namespaceUniverseSize($this->repository(), new NamespaceTree(['Demo\\Gamma'])),
         );
     }

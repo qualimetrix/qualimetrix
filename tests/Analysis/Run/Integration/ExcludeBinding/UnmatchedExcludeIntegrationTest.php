@@ -334,8 +334,17 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
         $messages = array_map(static fn(array $finding): string => (string) ($finding['message'] ?? ''), $findings);
 
         self::assertCount(2, $findings, 'The bound pattern must not be reported: ' . implode(' | ', $messages));
-        self::assertStringContainsString('NoSuchDir', $messages[0]);
-        self::assertStringContainsString('AlsoMissing', $messages[1]);
+
+        // Order is the report's, not the author's: findings on one channel and
+        // one subject sort by occurrence key, and each pattern now has one, so
+        // two stale patterns are two identities rather than a count of two.
+        $named = array_filter($messages, static fn(string $m): bool => str_contains($m, 'NoSuchDir'));
+        self::assertCount(1, $named, implode(' | ', $messages));
+        self::assertCount(
+            1,
+            array_filter($messages, static fn(string $m): bool => str_contains($m, 'AlsoMissing')),
+            implode(' | ', $messages),
+        );
     }
 
     /**

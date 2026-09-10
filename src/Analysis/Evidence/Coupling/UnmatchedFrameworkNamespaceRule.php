@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -53,6 +53,13 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class UnmatchedFrameworkNamespaceRule extends AbstractRule
 {
     public const string NAME = 'coupling.unmatched-framework-namespace';
+
+    /**
+     * What one finding here is about: the prefix. Without it every finding on
+     * this channel shared one baseline identity, so an accepted entry bounded
+     * their number and a replaced prefix passed under it unnoticed.
+     */
+    private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     /** Editing one line of `qmx.yaml`, plus reading what the code really imports. */
@@ -111,12 +118,15 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
     /**
      * One finding per declared prefix that bound nothing.
      *
-     * **The universe is the names the collector actually classifies**, not the
-     * analysed declarations: `CouplingCollector::isFrameworkSymbol()` is asked
-     * about both ends of every edge — dependency targets, which is where
-     * external framework classes live, and dependency sources. A prefix
-     * matching either end changes `coupling.cbo-app`, so a prefix matching
-     * neither is exactly the prefix that changed nothing.
+     * **The universe is the names the collector actually classifies**, and it
+     * is asked of {@see FrameworkClassificationSites} rather than re-derived
+     * here: a prefix matching
+     * a name it classifies changes `coupling.cbo-app` or
+     * `coupling.ce-framework`, and a prefix matching none of them is exactly
+     * the prefix that changed nothing. Enumerating both ends of every edge
+     * instead — the shape this started as — counted names the collector never
+     * offers its predicate, so a prefix over one of them read as bound while
+     * it moved no metric at all.
      *
      * **Three preconditions. The first is the scope of the run itself**
      * ({@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext::$coversProjectScope}):
@@ -162,7 +172,10 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
             return [];
         }
 
-        $classified = self::classifiedNames($graph);
+        $classified = FrameworkClassificationSites::names(
+            $graph,
+            static fn(SymbolPath $class): bool => $context->metrics->has($class),
+        );
         if ($classified === []) {
             return [];
         }
@@ -197,38 +210,8 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
                 . ' entry if the dependency is gone.',
                 $prefix,
             ),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['prefix' => $prefix]),
         );
     }
 
-    /**
-     * Every name the coupling walk classifies, source and target alike, in the
-     * FQCN spelling `CouplingCollector::isFrameworkSymbol()` builds. Empty
-     * when the graph carries no edge, which is the run this channel has
-     * nothing to say about.
-     *
-     * The conversion is repeated rather than shared with that collector: the
-     * collector's walk belongs to the Collection phase and this to the
-     * parent's rule pass.
-     *
-     * @return list<string>
-     */
-    private static function classifiedNames(DependencyGraphInterface $graph): array
-    {
-        $names = [];
-
-        foreach ($graph->getAllDependencies() as $dependency) {
-            foreach ([$dependency->sourceLogical(), $dependency->targetLogical()] as $symbolPath) {
-                $namespace = $symbolPath->namespace ?? '';
-                $type = $symbolPath->type ?? '';
-
-                if ($namespace === '' && $type === '') {
-                    continue;
-                }
-
-                $names[] = $namespace !== '' ? $namespace . '\\' . $type : $type;
-            }
-        }
-
-        return $names;
-    }
 }

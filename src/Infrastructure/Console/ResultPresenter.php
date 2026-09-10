@@ -164,7 +164,7 @@ final class ResultPresenter
             && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->namespaceTree) === 0
         ) {
             throw ConfigurationRefusal::aboutCommandLineInput('--namespace', \sprintf(
-                'Namespace "%s" matched none of the %d namespaces in the analyzed code. '
+                'Namespace "%s" matched none of the %d analyzed namespaces and symbol names it is compared against. '
                 . 'The report would be empty because nothing was selected, not because nothing was found.',
                 $context->namespace,
                 $binding->namespaceUniverseSize($metrics, $analysisResult->namespaceTree),

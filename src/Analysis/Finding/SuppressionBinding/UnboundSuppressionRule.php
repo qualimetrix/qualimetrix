@@ -12,8 +12,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
- * Reports a `suppress_paths` or `suppress_namespaces` value — global or
- * per-rule — that names nothing this run contains.
+ * Reports a configured suppression value — `suppress_paths`,
+ * `suppress_namespaces` or `suppress_namespace_channels`, global or per-rule —
+ * that names nothing this run contains.
  *
  * **This is a different zero from the one `--format=suppressed` already
  * reports.** That format's `neverMatched` list is built from the findings a
@@ -45,9 +46,29 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * declared through `ConfigurationValidatorInterface` bypasses `fail_on` and
  * exits 2 unconditionally. A stale suppression does not deserve that: a
  * `qmx.yaml` shared across repositories may legitimately name a path or a
- * namespace one of them does not have, and the same configuration is correct
- * on `qmx check .` and unbound on a slice. An ordinary warning is visible in
- * the report, answers to `--fail-on`, and can be accepted as debt.
+ * namespace one of them does not have. An ordinary warning is visible in the
+ * report and answers to `--fail-on`.
+ *
+ * **What that leaves an author who cannot correct the value, measured rather
+ * than assumed.** Two routes, and they are not the same route:
+ *
+ * - A baseline entry accepts one of these findings like any other — measured
+ *   on a fixture: an entry under `project:` naming the channel and the
+ *   finding's `occurrence` removes it from the report. Since the value is part
+ *   of that occurrence, the acceptance names *this* value, and replacing it
+ *   with another unbound one is reported rather than passing under the
+ *   accepted entry.
+ * - `baseline:generate` does **not** write them, deliberately and by test
+ *   ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest}):
+ *   a warning about the author's own configuration should not become accepted
+ *   debt in the file that author produces with one command. So acceptance here
+ *   is a written decision, never a generated one — which is the point, not an
+ *   oversight.
+ *
+ * For the shared-`qmx.yaml` case the answer is usually neither: the channel is
+ * switched off where the shared configuration lives, by name and without a CLI
+ * flag — `disabled_rules: ['suppression.unmatched-path']` silences that one
+ * channel, measured, while the other two keep speaking.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
  */
@@ -87,7 +108,7 @@ final class UnboundSuppressionRule extends AbstractRule
 
     public function getDescription(): string
     {
-        return 'Reports a suppress_paths or suppress_namespaces value that names nothing the run contains';
+        return 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
     }
 
     /**

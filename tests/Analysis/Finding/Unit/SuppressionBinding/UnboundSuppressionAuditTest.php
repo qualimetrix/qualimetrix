@@ -147,6 +147,46 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     /**
+     * The third option the ledger applies.
+     *
+     * `suppress_namespace_channels` was applied by
+     * {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} and judged by
+     * nobody while each side enumerated the options for itself, so a pattern
+     * under it kept its silence. Both sides now read
+     * {@see \Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression},
+     * and the report names the selector because that is the line to find.
+     */
+    #[Test]
+    public function itJudgesAChannelSuppressionPatternTheLedgerApplies(): void
+    {
+        $audit = $this->audit(ledger: [
+            'coupling.cbo' => ['suppress_namespace_channels' => ['coupling.cbo:namespace' => ['Sample\\Gone']]],
+        ]);
+
+        $findings = $audit->findings([], [], [], ['Sample'], $this->scope());
+
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER], $this->channelsOf($findings));
+        self::assertStringContainsString(
+            'suppress_namespace_channels.coupling.cbo:namespace',
+            $findings[0]->message . ' ' . ($findings[0]->recommendation ?? ''),
+        );
+    }
+
+    /**
+     * The same option, bound: the channel speaks about a pattern that names
+     * nothing, never about one that names a namespace the run declared.
+     */
+    #[Test]
+    public function itStaysSilentOnAChannelSuppressionPatternThatBinds(): void
+    {
+        $audit = $this->audit(ledger: [
+            'coupling.cbo' => ['suppressNamespaceChannels' => ['coupling.cbo:namespace' => ['Sample']]],
+        ]);
+
+        self::assertSame([], $this->channelsOf($audit->findings([], [], [], ['Sample'], $this->scope())));
+    }
+
+    /**
      * The defect this gate was added for: a legitimate entry written for
      * `qmx check .` reported as unbound by `qmx check src/`, which never
      * looked where the entry points. Both halves fire at once, so both are

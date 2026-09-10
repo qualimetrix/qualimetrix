@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -22,6 +23,17 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * accepted here and filter nothing there: namespaces go through
  * {@see NamespaceMatcher::matchesSingle()}, classes are compared as the exact
  * `Namespace\Class` string the filter builds from a finding's symbol path.
+ *
+ * **A `--namespace` value is offered to that matcher twice, against two
+ * different strings, so the universe here holds both.** The filter compares a
+ * finding by its namespace and a worst offender by its whole canonical name;
+ * `Demo\Alpha\*` misses the namespace `Demo\Alpha` and hits the offender
+ * `Demo\Alpha\Widget`. Counting only namespaces refused such a value while the
+ * report it produced was not empty. The universe is therefore the union, which
+ * is a superset of the offenders any one run happens to rank: the question this
+ * class answers is whether the value names anything analysed, not whether the
+ * report came out non-empty — a subtree with nothing wrong in it must still
+ * produce the empty report rather than a refusal.
  *
  * Stateless by construction — the run is an argument, not a collaborator — so a
  * caller that already holds the run needs no wiring to ask.
@@ -85,6 +97,36 @@ final readonly class DrillDownBinding
     }
 
     /**
+     * Both strings the filter offers a `--namespace` value for one symbol.
+     *
+     * `FindingFilter::filterWorstOffenders()` asks `NamespaceMatcher` about
+     * `symbolPath->toString()` — the whole canonical name, class and member
+     * included — while `filterFindings()` asks about the namespace alone. A
+     * glob such as `Demo\Alpha\*` matches `Demo\Alpha\Widget` and not the
+     * namespace `Demo\Alpha`, so a universe of namespaces alone refuses a
+     * value that really does select offenders.
+     *
+     * @return list<string>
+     */
+    private static function comparedStringsOf(SymbolPath $symbolPath): array
+    {
+        $compared = [];
+        $namespace = $symbolPath->namespace;
+
+        if ($namespace !== null && $namespace !== '') {
+            $compared[] = $namespace;
+        }
+
+        $canonical = $symbolPath->toString();
+
+        if ($canonical !== '') {
+            $compared[] = $canonical;
+        }
+
+        return $compared;
+    }
+
+    /**
      * @return array<string, true>
      */
     private function namespaceUniverse(MetricRepositoryInterface $metrics, ?NamespaceTree $namespaceTree): array
@@ -93,9 +135,8 @@ final readonly class DrillDownBinding
 
         foreach (self::NAMED_LEVELS as $level) {
             foreach ($metrics->all($level) as $info) {
-                $namespace = $info->symbolPath->namespace;
-                if ($namespace !== null && $namespace !== '') {
-                    $universe[$namespace] = true;
+                foreach (self::comparedStringsOf($info->symbolPath) as $compared) {
+                    $universe[$compared] = true;
                 }
             }
         }

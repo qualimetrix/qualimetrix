@@ -154,13 +154,33 @@ the subject measurement above, and independently by a survey of the YAML halves:
 
 ## Price, named as a price
 
-A row-two finding is an ordinary finding. It enters the ratchet and it enters a
-baseline, which means **"my `suppress_paths` entry is stale" becomes acceptable
-debt** the moment someone regenerates one. That is the cost of choosing the
-shape that survives `-q` and the machine formats, and it is not an incidental
-discovery: the project already does exactly this with
-`architecture.unreachable-layer`, whose acceptance has the same shape and the
-same consequence.
+A row-two finding is an ordinary finding. It enters the ratchet and a baseline
+entry accepts it, which means **"my `suppress_paths` entry is stale" can become
+accepted debt**. That is the cost of choosing the shape that survives `-q` and
+the machine formats, and it is not an incidental discovery: the project already
+does exactly this with `architecture.unreachable-layer`, whose acceptance has
+the same shape and the same consequence.
+
+Two corrections to how that price was first written, both measured on fixtures
+after the fact, both narrowing it:
+
+- **Regenerating does not accept the three `suppression.*` channels.**
+  `baseline:generate` measures on a seam those findings are not on, and a test
+  pins that they are never written there. A hand-written entry does accept one.
+  So acceptance of a stale suppression is a decision someone writes, not a
+  side-effect of a command someone runs, and the earlier phrasing "the moment
+  someone regenerates one" was wrong about half of this ADR's own channels. The
+  route that remains for a shared configuration is narrower still and better:
+  `disabled_rules` names one channel, in the file the shared configuration
+  already lives in.
+- **The accepted unit is the value, not the count.** Every row-two finding now
+  carries an `OccurrenceKey` built from the value it is about — the pattern, the
+  prefix, the suppression value, the `exclude:` declaration. Without it these
+  findings shared one identity per channel on the project subject, so an entry
+  bounded how many of them there were: accepting two stale patterns accepted any
+  two, including one introduced by the next edit. A signal about a miss whose
+  acceptance does not name the value that missed is itself a silent acceptance,
+  which is the defect this ADR's row two exists to remove.
 
 Two smaller prices are named with it. The signal does not reach every machine
 format: `health` and `metrics` print their own projections and carry no

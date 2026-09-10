@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
@@ -86,7 +87,7 @@ final class FindingExclusionLedger
             $this->record($finding, new RuleExclusionAttribution(
                 $producerRuleName,
                 isPathExclusion: true,
-                matchedPatterns: $this->matchingPathPatterns($this->configuredPatterns($producerRuleName, 'suppressPaths', 'suppress_paths'), $file),
+                matchedPatterns: $this->matchingPathPatterns(ConfiguredSuppression::paths($this->rawOptions($producerRuleName)), $file),
             ));
 
             return false;
@@ -135,7 +136,7 @@ final class FindingExclusionLedger
 
         if ($this->ruleOptionsRegistry->isNamespaceExcluded($producerRuleName, $namespace)) {
             $patterns = $this->matchingNamespacePatterns(
-                $this->configuredPatterns($producerRuleName, 'suppressNamespaces', 'suppress_namespaces'),
+                ConfiguredSuppression::namespaces($this->rawOptions($producerRuleName)),
                 $namespace,
             );
 
@@ -155,38 +156,20 @@ final class FindingExclusionLedger
     }
 
     /**
-     * Reads one raw option off a producer's own `rules:` section, accepting
-     * both the key an author writes in `qmx.yaml` and the camelCase form
-     * {@see RuleConfigurationInterface::all()} returns once the configuration
-     * pipeline's section-normalization policy has run.
+     * One producer's raw options, for {@see ConfiguredSuppression} to read.
      *
-     * @return list<string>
+     * The option names and their two spellings live there and only there: the
+     * channel that reports a value binding to nothing reads the same options
+     * off the same reader, so "applied here" and "judged there" cannot become
+     * two different sets. Reading a key inline here is what let the two drift.
+     *
+     * @return array<mixed>
      */
-    private function configuredPatterns(string $producerRuleName, string $camelKey, string $snakeKey): array
+    private function rawOptions(string $producerRuleName): array
     {
         $options = $this->ruleOptionsRegistry->all()[$producerRuleName] ?? null;
 
-        if (!\is_array($options)) {
-            return [];
-        }
-
-        return $this->stringList($options[$camelKey] ?? $options[$snakeKey] ?? []);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function rawChannelOptions(string $producerRuleName): array
-    {
-        $options = $this->ruleOptionsRegistry->all()[$producerRuleName] ?? null;
-
-        if (!\is_array($options)) {
-            return [];
-        }
-
-        $channels = $options['suppressNamespaceChannels'] ?? $options['suppress_namespace_channels'] ?? [];
-
-        return \is_array($channels) ? $channels : [];
+        return \is_array($options) ? $options : [];
     }
 
     /**
@@ -235,12 +218,12 @@ final class FindingExclusionLedger
     {
         $hits = [];
 
-        foreach ($this->rawChannelOptions($producerRuleName) as $selector => $patterns) {
-            if (!\is_string($selector) || ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) !== true) {
+        foreach (ConfiguredSuppression::rawNamespaceChannels($this->rawOptions($producerRuleName)) as $selector => $patterns) {
+            if (ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) !== true) {
                 continue;
             }
 
-            foreach ($this->matchingNamespacePatterns($this->stringList($patterns), $namespace) as $pattern) {
+            foreach ($this->matchingNamespacePatterns(ConfiguredSuppression::patternsOf($patterns), $namespace) as $pattern) {
                 $hits[] = ['selector' => $selector, 'pattern' => $pattern];
             }
         }
@@ -248,26 +231,4 @@ final class FindingExclusionLedger
         return $hits;
     }
 
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $value): array
-    {
-        if (\is_string($value)) {
-            return [$value];
-        }
-
-        if (!\is_array($value)) {
-            return [];
-        }
-
-        $list = [];
-        foreach ($value as $item) {
-            if (\is_string($item)) {
-                $list[] = $item;
-            }
-        }
-
-        return $list;
-    }
 }

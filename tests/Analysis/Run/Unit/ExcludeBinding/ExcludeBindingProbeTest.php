@@ -29,7 +29,7 @@ final class ExcludeBindingProbeTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/qmx-exclude-probe-' . bin2hex(random_bytes(6));
 
-        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy', '/vendor/acme'] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme'] as $dir) {
             mkdir($this->root . $dir, 0o755, true);
             file_put_contents($this->root . $dir . '/File.php', "<?php\n");
         }
@@ -37,11 +37,11 @@ final class ExcludeBindingProbeTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy', '/vendor/acme'] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme'] as $dir) {
             @unlink($this->root . $dir . '/File.php');
         }
 
-        foreach (['/Kept', '/Legacy/Deep', '/Legacy', '/nested/Legacy', '/nested', '/vendor/acme', '/vendor', ''] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/Legacy', '/nested/Legacy/Inner', '/nested/Legacy', '/nested', '/vendor/acme', '/vendor', ''] as $dir) {
             @rmdir($this->root . $dir);
         }
     }
@@ -111,6 +111,33 @@ final class ExcludeBindingProbeTest extends TestCase
         self::assertSame(['acme'], $this->unbound(['acme'], pruned: ['vendor']));
     }
 
+    /**
+     * Pruning honours a slash-anchored pattern, because Finder does.
+     *
+     * `ExcludeDirectoryFilterIterator::accept()` rejects a directory on the
+     * slash branch exactly as it does on the basename branch, and a rejected
+     * directory is never descended into. A probe that pruned only on basenames
+     * walked into `nested/Legacy` anyway and called `Inner` bound — a
+     * directory no run with these exclusions could ever have removed.
+     */
+    #[Test]
+    public function itPrunesOnASlashAnchoredPatternTheWayFinderDoes(): void
+    {
+        self::assertSame(['Inner'], $this->unbound(['Inner'], pruned: ['nested/Legacy']));
+        self::assertSame(0, $this->filesRemovedBesides('Inner', 'nested/Legacy'));
+    }
+
+    /**
+     * The same directory, reachable because nothing prunes the way to it: the
+     * case above reports it unbound for the pruning, not for the spelling.
+     */
+    #[Test]
+    public function itBindsThatSamePatternWhenNothingPrunesTheWayToIt(): void
+    {
+        self::assertSame([], $this->unbound(['Inner']));
+        self::assertSame(1, $this->filesRemovedByFinder('Inner'));
+    }
+
     /** A file among the roots contributes no directory, and no root at all means no question. */
     #[Test]
     public function itStaysSilentWhenNoRootIsADirectory(): void
@@ -150,6 +177,12 @@ final class ExcludeBindingProbeTest extends TestCase
     private function filesRemovedByFinder(string $pattern): int
     {
         return $this->finderCount([]) - $this->finderCount([$pattern]);
+    }
+
+    /** How many further PHP files a Finder drops for `$pattern` once `$already` is excluded. */
+    private function filesRemovedBesides(string $pattern, string $already): int
+    {
+        return $this->finderCount([$already]) - $this->finderCount([$already, $pattern]);
     }
 
     /** @param list<string> $excluded */

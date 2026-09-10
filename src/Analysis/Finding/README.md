@@ -11,7 +11,7 @@ Finding/
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
 │   └── Threshold/        # threshold override value
-├── Exclusion/            # Private namespace and path exclusion stores
+├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # Option parsing, key recognition, normalization, and per-run state
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds

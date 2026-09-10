@@ -2087,14 +2087,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDeduplicatesNullsafeAndRegularCalls
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDoesNotTreatCapturesOrCloneWithAsRfcExecution
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itTreatsNewSelfStaticParentAsInternal
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itCountsASourceOnceTheTargetIsMeasuredToo
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itDoesNotCountASourceTheCollectorNeverClassifies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itNamesItselfAfterItsChannel
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itPinsTheNumberOfClassificationSitesTheUniverseMirrors
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itReportsOneFindingPerUnboundPrefix
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenNoPrefixesAreDeclared
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheGraphCarriesNoDependency
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRunIsNarrowerThanTheProject
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWithoutADependencyGraph
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itTreatsADependencySourceAsABinding
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itFiltersBuiltinCouplingButRetainsBuiltinInheritance
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets
@@ -3959,6 +3961,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itIsTheOnlyPlaceEitherConsumerNamesASuppressionOptionKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsEitherSpellingOfEachOption
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itAdvisesTheNameToWriteInsteadOfTheRetiredPair
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itDistinguishesTwoChannelsOfOneRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itIsEqualToAnIdenticallyAddressedChannel
@@ -4521,6 +4526,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itDoesNotTreatAPrefixOfANameAsABinding
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheGlobAndPrefixModesTheSuppressionFiltersUse
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueThatBeginsWithAGlob
@@ -4528,6 +4534,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNothingWhenTheProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFloatThresholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesExact
@@ -6349,9 +6356,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsABareNameToADirectoryAtAnyDepth
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsAPatternNamingAPrunedDirectoryItself
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASlashedPatternAtAnySegmentBoundaryRatherThanOnlyAtTheRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsThatSamePatternWhenNothingPrunesTheWayToIt
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotDuplicateAnAnswerAcrossOverlappingRoots
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itIgnoresATrailingSlashTheWayFinderDoes
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsEachPatternsAnswerSeparate
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itPrunesOnASlashAnchoredPatternTheWayFinderDoes
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternNoDirectoryMatches
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternPointingInsideAPrunedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStaysSilentWhenNoRootIsADirectory
@@ -6776,6 +6785,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAClassByItsFullyQualifiedName
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAGlobNamespacePattern
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsAGlobThatOnlyTheCanonicalSymbolNameSatisfies
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatNamesAnAnalyzedOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsANamespaceThatOnlyTheNamespaceTreeKnows
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itBindsASubtreeByItsPrefixTheWayTheFilterMatchesIt

@@ -104,9 +104,16 @@ Two facts about the shape, both measured rather than chosen:
   case pins exit 0 under `--fail-on=none` against exit 2 under
   `--fail-on=warning`.
 
-The binding universe is both ends of every dependency edge, which is the same
-set `CouplingCollector::isFrameworkSymbol()` classifies; `CouplingAnalysis` owns
-the predicate for both answers, so the rule cannot disagree with the metric.
+The binding universe is `FrameworkClassificationSites::names()` — the two
+positions where the collector's own walk calls `isFrameworkSymbol()`: the target
+of a measured class's outgoing edge, and the source of its incoming one.
+`CouplingAnalysis` owns the predicate for both answers, so the rule cannot
+disagree with the metric, and the universe is asked of the collector rather than
+re-derived, so it cannot be wider than the classification. It was wider once:
+enumerating both ends of every edge counted a measured class whose only edge
+points at unmeasured code, which the collector never classifies, so a prefix over
+it read as bound while it moved no metric. A test pins the number of call sites
+the enumeration mirrors.
 Two preconditions keep it quiet where a prefix is inert for a reason other
 than its spelling: no dependency graph at all, and a graph with no edge in
 it — the collector then had nothing to classify, and a correct project-wide

@@ -9,10 +9,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -20,10 +24,14 @@ use RuntimeException;
 
 /**
  * X10 (`01-freeze-kind.md`) froze `OccurrenceKey`'s discriminator away from
- * the channel code in six families: each carries a private `OCCURRENCE_KIND`
- * constant, pinned to the channel spelling **at freeze time** and **not**
+ * the channel code in six families, and X16 added four more: each carries a
+ * private `OCCURRENCE_KIND` constant, pinned as a **literal** and **not**
  * reading `NAME`/`code`, so that a future rename of the channel does not move
- * `occurrence` for every already-accepted baseline entry on it. `NAME` moving
+ * `occurrence` for every already-accepted baseline entry on it. The first six
+ * pinned the channel spelling as it stood at freeze time; the four added later
+ * pin a description of what one finding is about, because one of them serves
+ * three channels at once and no single channel code could name it. What is
+ * frozen is the literal, not which words it uses. `NAME` moving
  * out from under a pinned `OCCURRENCE_KIND` — as the X12 rename already did
  * for `duplication.code-duplication` — is the freeze working as designed, not
  * a drift to correct.
@@ -52,7 +60,7 @@ use RuntimeException;
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
-    private const int EXPECTED_FROZEN_COUNT = 6;
+    private const int EXPECTED_FROZEN_COUNT = 10;
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
@@ -77,6 +85,17 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         IdenticalSubExpressionRule::class => 'code-smell.identical-subexpression',
         CodeDuplicationRule::class => 'duplication.code-duplication',
         LayerViolationFinding::class => 'architecture.layer-violation',
+        // X16 froze four more, and these four do not spell a channel code.
+        // Three of them belong to producers whose finding carries the value
+        // that makes it distinct — an exclude pattern, a suppression value, a
+        // framework prefix — and one of those producers publishes three
+        // channels through one constructor, so no single channel spelling
+        // could name it. The pin is a literal either way, which is the whole
+        // requirement: it must not follow a rename of the channel.
+        UnmatchedExcludeAudit::class => 'unmatched-exclude-pattern',
+        UnboundSuppressionAudit::class => 'unbound-suppression-value',
+        UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',
+        UnmatchedExcludeDiagnostic::class => 'inert-layer-exclude-clause',
     ];
 
     #[Test]
@@ -90,7 +109,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
             $declarations,
             \sprintf(
                 "Expected exactly %d declarations shaped `private const string OCCURRENCE_KIND = '<literal>';` under"
-                . ' src/ — the six families 01-freeze-kind.md names. Found %d: %s. A class that rewrites the'
+                . ' src/ — the families 01-freeze-kind.md names. Found %d: %s. A class that rewrites the'
                 . ' constant as an expression (e.g. `self::NAME`) drops out of this count instead of failing loudly'
                 . ' elsewhere, which is exactly what this assertion exists to catch. If a new family was'
                 . ' deliberately frozen, update this expectation and 01-freeze-kind.md\'s table together.',

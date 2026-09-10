@@ -6,10 +6,12 @@ namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -56,6 +58,17 @@ use Qualimetrix\Core\Util\PathMatcher;
  */
 final readonly class UnboundSuppressionAudit
 {
+    /**
+     * What one finding on these channels is about: the value, and — for a
+     * per-rule entry — the rule and option it sits under.
+     *
+     * Without it every finding of a channel shared one baseline identity, and
+     * an accepted entry bounded their *number* rather than naming them.
+     * Accepting `src/Gone` then accepted `src/AlsoGone` in its place, silently,
+     * which is the acceptance these channels exist to end.
+     */
+    private const string OCCURRENCE_KIND = 'unbound-suppression-value';
+
     public function __construct(
         private RuleOptionsInterface $options,
         private RuleExecutionInterface $ruleExecution,
@@ -113,11 +126,21 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
-     * Per-rule `suppress_paths` and `suppress_namespaces` entries that bound to
-     * nothing, read from the same registry — and by the same two option
-     * spellings — that {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger}
-     * reads when it applies them, so "bound" here and "applied" there cannot
-     * mean two different pattern sets.
+     * Per-rule suppression entries that bound to nothing, read through
+     * {@see ConfiguredSuppression} — the one reader
+     * {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also uses
+     * when it applies them, so "bound" here and "applied" there cannot mean two
+     * different pattern sets.
+     *
+     * **All three options, including `suppress_namespace_channels`.** That one
+     * was applied and not judged while each side enumerated the options for
+     * itself, and a pattern under it sat in exactly the silence this channel
+     * exists to end. A channel pattern is reported under the selector it was
+     * written beneath, because that is the line an author has to find. Its
+     * universe is the run's declared namespaces, the same one
+     * `suppress_namespaces` is judged against: the ledger matches a channel
+     * pattern with {@see NamespaceMatcher} against a namespace-level finding's
+     * declared namespace.
      *
      * A rule name the registry does not know is not this channel's business:
      * an unknown `rules:` key is refused at configuration time, and an entry
@@ -141,14 +164,22 @@ final readonly class UnboundSuppressionAudit
                 continue;
             }
 
-            $paths = self::stringList($options['suppressPaths'] ?? $options['suppress_paths'] ?? []);
-            foreach ($this->unboundPaths($paths, $analyzedFiles, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, 'suppress_paths', $pattern];
+            foreach ($this->unboundPaths(ConfiguredSuppression::paths($options), $analyzedFiles, $scope) as $pattern) {
+                $entries[] = [(string) $ruleName, ConfiguredSuppression::PATHS, $pattern];
             }
 
-            $namespaces = self::stringList($options['suppressNamespaces'] ?? $options['suppress_namespaces'] ?? []);
-            foreach ($this->unboundNamespaces($namespaces, $declaredNamespaces, $scope) as $pattern) {
-                $entries[] = [(string) $ruleName, 'suppress_namespaces', $pattern];
+            foreach ($this->unboundNamespaces(ConfiguredSuppression::namespaces($options), $declaredNamespaces, $scope) as $pattern) {
+                $entries[] = [(string) $ruleName, ConfiguredSuppression::NAMESPACES, $pattern];
+            }
+
+            foreach (ConfiguredSuppression::namespaceChannelPatterns($options) as ['selector' => $selector, 'pattern' => $pattern]) {
+                foreach ($this->unboundNamespaces([$pattern], $declaredNamespaces, $scope) as $unbound) {
+                    $entries[] = [
+                        (string) $ruleName,
+                        ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector,
+                        $unbound,
+                    ];
+                }
             }
         }
 
@@ -227,33 +258,11 @@ final readonly class UnboundSuppressionAudit
         return $unbound;
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function stringList(mixed $value): array
-    {
-        if (\is_string($value)) {
-            return [$value];
-        }
-
-        if (!\is_array($value)) {
-            return [];
-        }
-
-        $strings = [];
-        foreach ($value as $entry) {
-            if (\is_string($entry)) {
-                $strings[] = $entry;
-            }
-        }
-
-        return $strings;
-    }
-
     private static function pathFinding(string $pattern): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_PATH,
+            ['option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern],
             \sprintf(
                 'The suppress_paths pattern "%s" matched no file analysed by this run, so it suppressed nothing'
                 . ' and could not have. If the code it was written for still exists under another spelling, its'
@@ -272,6 +281,7 @@ final readonly class UnboundSuppressionAudit
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
+            ['option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern],
             \sprintf(
                 'The suppress_namespaces pattern "%s" matched no namespace declared in this run, so it suppressed'
                 . ' nothing and could not have. If the code it was written for still exists under another'
@@ -290,6 +300,7 @@ final readonly class UnboundSuppressionAudit
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
+            ['rule' => $ruleName, 'option' => $option, 'pattern' => $pattern],
             \sprintf(
                 'The %s pattern "%s" configured under rule "%s" matched nothing this run analysed, so it suppressed'
                 . ' nothing and could not have.',
@@ -306,7 +317,10 @@ final readonly class UnboundSuppressionAudit
         );
     }
 
-    private static function finding(string $channel, string $message, string $recommendation): Finding
+    /**
+     * @param array<string, string> $occurrence what this finding is about, for its identity
+     */
+    private static function finding(string $channel, array $occurrence, string $message, string $recommendation): Finding
     {
         return new Finding(
             location: Location::none(),
@@ -317,6 +331,7 @@ final readonly class UnboundSuppressionAudit
             message: $message,
             severity: Severity::Warning,
             recommendation: $recommendation,
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, $occurrence),
         );
     }
 }

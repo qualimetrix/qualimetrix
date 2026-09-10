@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -47,6 +48,18 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final readonly class UnmatchedExcludeAudit
 {
+    /**
+     * What one finding here is about: the pattern.
+     *
+     * Without it every finding on this channel shared one baseline identity —
+     * project subject, one channel, no occurrence — and the entry bounded
+     * their *number*. Accepting two stale patterns then accepted any two,
+     * including one introduced by the next edit. A value that points at
+     * nothing is the whole content of the finding, so it is the whole content
+     * of the identity too.
+     */
+    private const string OCCURRENCE_KIND = 'unmatched-exclude-pattern';
+
     public function __construct(
         private RuleOptionsInterface $options,
         private ExcludeBindingProbe $probe,
@@ -110,6 +123,7 @@ final readonly class UnmatchedExcludeAudit
                 . ' gone.',
                 $pattern,
             ),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['pattern' => $pattern]),
         );
     }
 }

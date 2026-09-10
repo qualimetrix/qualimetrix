@@ -103,7 +103,7 @@ Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	16	6
 Qualimetrix\Analysis\Finding\Contract\JudgedMetrics	Analysis.Finding	20	7
 Qualimetrix\Analysis\Finding\Contract\LevelActivity	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	41	15
-Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
+Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	11	7
 Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	12	6
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution	Analysis.Finding	1	1
@@ -237,7 +237,7 @@ Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	111	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	68	20
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	70	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	13	6

@@ -166,8 +166,18 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
         $messages = array_map(static fn(array $finding): string => (string) ($finding['message'] ?? ''), $findings);
 
         self::assertCount(2, $findings, 'The bound prefix must not be reported: ' . implode(' | ', $messages));
-        self::assertStringContainsString('Nope\Missing', $messages[0]);
-        self::assertStringContainsString('Doctrine\ORM', $messages[1]);
+
+        // Order is the report's, not the configuration's: findings on one
+        // channel and one subject sort by occurrence key, and each prefix now
+        // has one, so two unbound prefixes are two identities rather than a
+        // count of two.
+        foreach (['Nope\Missing', 'Doctrine\ORM'] as $prefix) {
+            self::assertCount(
+                1,
+                array_filter($messages, static fn(string $m): bool => str_contains($m, $prefix)),
+                implode(' | ', $messages),
+            );
+        }
     }
 
     /**

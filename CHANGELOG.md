@@ -178,7 +178,8 @@ and why `-q` no longer hides which key or file was refused.
   removed no directory), `suppression.unmatched-path`,
   `suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger` (a
   `suppress_paths` / `suppress_namespaces` value, global or under
-  `rules.<name>`, that names no analysed file and no declared namespace),
+  `rules.<name>` — `suppress_namespace_channels` included — that names no
+  analysed file and no declared namespace),
   `coupling.unmatched-framework-namespace` (a `coupling.frameworkNamespaces`
   prefix under which no name fell) and `architecture.unmatched-exclude` (a
   layer `exclude:` clause that removed no class from a layer that did match
@@ -190,9 +191,16 @@ and why `-q` no longer hides which key or file was refused.
   configured value is then judged against the place it names, so an entry
   written for `tests/` is not reported by `qmx check src/` while a stale entry
   inside `src/` on the same run still is; a layer `exclude:` under a template
-  is judged once across every layer the template expanded to. The suppression channels answer a
+  is judged once across every layer the template expanded to. Each finding
+  carries the value it is about in its identity, so accepting a stale value in a
+  baseline accepts that value and not merely one more finding on the channel:
+  replacing it with a different unbound value is reported rather than passing
+  under the accepted entry. The suppression channels answer a
   different question from `--format=suppressed`, which reports suppressors that
-  removed nothing — a state an honest, paid-down suppression also reaches.
+  removed nothing — a state an honest, paid-down suppression also reaches; they
+  are not written by `baseline:generate`, so accepting one is a decision written
+  by hand, and a shared configuration silences a single channel by name with
+  `disabled_rules: ['suppression.unmatched-path']`.
 - The refusal for an unknown `health.<x>` name now lists all six built-in
   dimensions (`health.complexity`, `health.cohesion`, `health.coupling`,
   `health.typing`, `health.maintainability`, `health.overall`) instead of

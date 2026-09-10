@@ -206,7 +206,6 @@ if (isset($arguments['before'])) {
 
 $rows = $stand->run();
 $rendered = renderVerdicts($rows);
-$cure = array_flip($declarations->cureSites);
 $unguarded = [];
 $configurationRows = 0;
 $configurationUnobservable = 0;
@@ -220,11 +219,20 @@ foreach ($rows as $row) {
         }
     }
 
-    // A SPEAKS with no empty hit and no place in the cure list is guarded by
-    // neither the H0 side of guard 1 nor guard 2. The plan expects none; the
-    // expectation is printed and checked rather than assumed, because a rising
-    // count means a third axis has appeared.
-    if ($row->verdict->outcome === Verdict::SPEAKS && !$row->hasEmptyHit && !isset($cure[$row->row->key()])) {
+    // A SPEAKS with no empty hit is guarded by nothing against the opposite
+    // error: the stand can see that the signal fires where it should, never
+    // that it stays quiet where it should. Guard 2 does not cover this - it
+    // recomputes the *pre-cure* verdicts and says a signal that already fired
+    // before the cure is not a signal, which is a claim about the miss side and
+    // says nothing about a cure that also fires on a correct value.
+    //
+    // A cured row used to be exempt from this count, which made the exemption
+    // exactly cover the doors where the risk lives: every cure of the
+    // "narrowed less than intended" class accepts values naming a place the run
+    // may not have reached, and a cure that reported those was invisible here
+    // while the stand stayed green. The exemption is gone; a cured door with no
+    // legitimately empty hit has to say so in its own reason.
+    if ($row->verdict->outcome === Verdict::SPEAKS && !$row->hasEmptyHit) {
         $unguarded[] = $row->row->key();
     }
 }

@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -39,6 +40,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final class UnmatchedExcludeDiagnostic
 {
+    /**
+     * What one finding here is about: the `exclude:` declaration. Without it
+     * every finding on this channel shared one baseline identity, so an
+     * accepted entry bounded their number and a clause replaced by another
+     * inert one passed under it unnoticed.
+     */
+    private const string OCCURRENCE_KIND = 'inert-layer-exclude-clause';
+
     /**
      * The severity the channel reports at, and deliberately not
      * {@see LayerViolationOptions::$severity}: that option is documented as
@@ -148,6 +157,7 @@ final class UnmatchedExcludeDiagnostic
                 'Check the exclude criteria against the classes layer "%s" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.',
                 $declaration,
             ),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['declaration' => $declaration]),
         );
     }
 

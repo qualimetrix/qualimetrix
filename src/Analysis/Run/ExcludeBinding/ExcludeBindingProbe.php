@@ -132,13 +132,14 @@ final readonly class ExcludeBindingProbe
      */
     private function walk(AbsolutePath $root, array &$patterns, array $pruned): void
     {
-        $prunedNames = [];
+        $prunedPatterns = [];
         foreach ($pruned as $pattern) {
             $trimmed = rtrim($pattern, '/');
-            if ($trimmed !== '' && !str_contains($trimmed, '/')) {
-                $prunedNames[$trimmed] = true;
+            if ($trimmed !== '') {
+                $prunedPatterns[$trimmed] = true;
             }
         }
+        $prunedPatterns = array_keys($prunedPatterns);
 
         $rootPrefix = rtrim(str_replace('\\', '/', $root->value()), '/') . '/';
 
@@ -147,12 +148,19 @@ final readonly class ExcludeBindingProbe
         // there, which is how Finder itself declines to descend. Testing first
         // and pruning second is deliberate — an authored `vendor` binds to the
         // directory it names even though nothing below it is ever read.
+        //
+        // Pruning asks `matches()`, the same two-branch predicate the authored
+        // patterns are asked: `ExcludeDirectoryFilterIterator::accept()` rejects
+        // a directory on either branch, and a rejected directory is one the
+        // recursion never enters. Pruning on the basename branch alone let the
+        // probe walk into a subtree discovery never reads, where a pattern
+        // could bind to a directory no run could ever have removed.
         $filter = new RecursiveCallbackFilterIterator(
             new RecursiveDirectoryIterator(
                 $root->value(),
                 FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS | FilesystemIterator::CURRENT_AS_FILEINFO,
             ),
-            static function (SplFileInfo $entry) use (&$patterns, $prunedNames, $rootPrefix): bool {
+            static function (SplFileInfo $entry) use (&$patterns, $prunedPatterns, $rootPrefix): bool {
                 if (!$entry->isDir()) {
                     return false;
                 }
@@ -169,7 +177,13 @@ final readonly class ExcludeBindingProbe
                     }
                 }
 
-                return !isset($prunedNames[$name]);
+                foreach ($prunedPatterns as $prunedPattern) {
+                    if (self::matches($prunedPattern, $name, $relative)) {
+                        return false;
+                    }
+                }
+
+                return true;
             },
         );
 

@@ -30,13 +30,18 @@ Each value is then judged separately, against the place it names. `suppress_path
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 
+If a value is correct and cannot be corrected — a `qmx.yaml` shared across repositories, naming a path one of them does not have — there are two ways out, and they are not the same:
+
+- Switch the channel off where that shared configuration lives: `disabled_rules: ['suppression.unmatched-path']` silences that one channel and leaves the other two speaking. `--disable-rule` does the same for one run.
+- Accept it in a baseline you write by hand. A written entry naming the channel and the finding's `occurrence` under `project:` is honoured like any other. Because the value is part of that occurrence, the acceptance names *that* value: replacing it with a different unbound one is reported rather than passing under the accepted entry.
+
 ### The channels
 
-| Channel                             | What it detects                                                     |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `suppression.unmatched-path`        | A global `suppress_paths` value matching no analysed file           |
-| `suppression.unmatched-namespace`   | A global `suppress_namespaces` value matching no declared namespace |
-| `suppression.unmatched-rule-ledger` | The same, for a value configured under `rules.<name>`               |
+| Channel                             | What it detects                                                                                                                                    |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `suppression.unmatched-path`        | A global `suppress_paths` value matching no analysed file                                                                                          |
+| `suppression.unmatched-namespace`   | A global `suppress_namespaces` value matching no declared namespace                                                                                |
+| `suppression.unmatched-rule-ledger` | The same, for a value configured under `rules.<name>` — `suppress_namespace_channels` included, reported under the selector it was written beneath |
 
 The rule-ledger channel is separate because the mistake it catches has its own shape: a per-rule suppressor is written next to the rule it belongs to, so a value that outlived its subject stays legible in context long after it stopped naming anything.
 

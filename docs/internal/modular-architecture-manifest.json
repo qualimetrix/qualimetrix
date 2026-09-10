@@ -2417,6 +2417,14 @@
       "closure_package": "P7",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites": {
+      "path": "src/Analysis/Evidence/Coupling/FrameworkClassificationSites.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityOptions": {
       "path": "src/Analysis/Evidence/Coupling/InstabilityOptions.php",
       "kind": "class",
@@ -2583,7 +2591,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites",
           "closes_in": null
         },
         {
@@ -7852,6 +7860,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Evidence.Duplication",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule",
           "closes_in": null
@@ -7874,6 +7887,16 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationFinding",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnmatchedExcludeDiagnostic",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
           "closes_in": null
         }
       ]
@@ -11044,6 +11067,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Exclusion\\ConfiguredSuppression": {
+      "path": "src/Analysis/Finding/Exclusion/ConfiguredSuppression.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Exclusion\\RuleNamespaceExclusionProvider": {
       "path": "src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php",
@@ -16406,6 +16437,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector",
           "closes_in": null
         },
@@ -16545,6 +16581,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy",
           "closes_in": null
@@ -16626,6 +16667,11 @@
         },
         {
           "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DrillDownBinding",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "closes_in": null
         },
@@ -16662,11 +16708,6 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit",
           "closes_in": null
         }
       ]
