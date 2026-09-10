@@ -118,12 +118,12 @@ final class LayerEvidenceCollector
         // Graph binding already happened inside ArchitecturePolicy::prepare()
         // per ADR 0008 §2. The registry's ClassContextFactory therefore sees
         // the current run's graph; no rebind needed here.
-        [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations] = $this->collectClassEvidence(
+        [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations] = $this->collectClassEvidence(
             $architecture,
             $context,
         );
 
-        [$forbiddenEdges, $coverageState, $edgeAssignedHits, $edgeMatchedSymbols] = $this->collectEdgeEvidence($architecture, $context);
+        [$forbiddenEdges, $coverageState, $edgeAssignedHits, $edgeMatchedSymbols, $edgeExcludedSymbols] = $this->collectEdgeEvidence($architecture, $context);
         $coverageState['classes'] += $uncoveredClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
@@ -133,12 +133,13 @@ final class LayerEvidenceCollector
         // `architecture.layer-violation` about the very same layer.
         $assignedHits = self::mergeHits($assignedHits, $edgeAssignedHits);
         $matchedSymbols = self::mergeMatchedSymbols($matchedSymbols, $edgeMatchedSymbols);
+        $excludedSymbols = self::mergeMatchedSymbols($excludedSymbols, $edgeExcludedSymbols);
 
         return new LayerEvidence(
             architecture: $architecture,
             forbiddenEdges: $forbiddenEdges,
             assignedHits: $assignedHits,
-            matchedSymbols: $matchedSymbols,
+            symbolSets: ['matched' => $matchedSymbols, 'excluded' => $excludedSymbols],
             shadowEvidence: $shadowEvidence,
             unassigned: ['classes' => $uncoveredClasses, 'analysed' => $analysedDeclarations],
             coverageState: $coverageState,
@@ -209,7 +210,7 @@ final class LayerEvidenceCollector
      * collector recorded any class-level metric for: it is absent here and
      * counts as assigned.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, true>>, 2: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 3: array<string, string>, 4: int}
+     * @return array{0: array<string, int>, 1: array<string, array<string, true>>, 2: array<string, array<string, true>>, 3: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 4: array<string, string>, 5: int}
      */
     private function collectClassEvidence(
         ArchitectureConfiguration $architecture,
@@ -220,9 +221,11 @@ final class LayerEvidenceCollector
 
         $assignedHits = [];
         $matchedSymbols = [];
+        $excludedSymbols = [];
         foreach ($registry->layerNames() as $layerName) {
             $assignedHits[$layerName] = 0;
             $matchedSymbols[$layerName] = [];
+            $excludedSymbols[$layerName] = [];
         }
 
         /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence */
@@ -233,6 +236,18 @@ final class LayerEvidenceCollector
         foreach ($context->metrics->all(SymbolLevel::Class_) as $classSymbol) {
             $analysedDeclarations++;
             $matches = $registry->resolveAll($classSymbol->symbolPath);
+
+            // Booked before the no-match early return, not after: the class an
+            // `exclude:` clause removed usually matches NO layer at all, which
+            // is the branch below. Tallying after it would leave every such
+            // clause looking like it removed nothing — the exact false finding
+            // this evidence exists to avoid.
+            $excludedSymbols = self::tallyExcludedEnd(
+                $excludedSymbols,
+                $registry->excludedLayers($classSymbol->symbolPath),
+                $classSymbol->symbolPath->toCanonical(),
+            );
+
             if ($matches === []) {
                 if ($materializeUncovered) {
                     $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
@@ -261,7 +276,7 @@ final class LayerEvidenceCollector
             }
         }
 
-        return [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations];
+        return [$assignedHits, $matchedSymbols, $excludedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations];
     }
 
     /**
@@ -282,7 +297,7 @@ final class LayerEvidenceCollector
      * fixes that without weakening unreachable-layer's typo-detection case:
      * a layer matching neither a class nor an edge end still gets zero hits.
      *
-     * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>, 3: array<string, array<string, true>>}
+     * @return array{0: list<array{dependency: \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency, fromMatch: LayerMatch, toMatch: LayerMatch}>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>, 3: array<string, array<string, true>>, 4: array<string, array<string, true>>}
      */
     private function collectEdgeEvidence(ArchitectureConfiguration $architecture, AnalysisContext $context): array
     {
@@ -292,10 +307,11 @@ final class LayerEvidenceCollector
         $classes = [];
         $assignedHits = [];
         $matchedSymbols = [];
+        $excludedSymbols = [];
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return [$forbidden, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $assignedHits, $matchedSymbols];
+            return [$forbidden, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $assignedHits, $matchedSymbols, $excludedSymbols];
         }
 
         $registry = $architecture->registry();
@@ -305,6 +321,11 @@ final class LayerEvidenceCollector
 
             $matchedSymbols = self::tallyMatchedEnd($matchedSymbols, $fromMatches, $dependency->sourceLogical()->toCanonical());
             $matchedSymbols = self::tallyMatchedEnd($matchedSymbols, $toMatches, $dependency->targetLogical()->toCanonical());
+
+            // Both ends, and before the unmatched-end early return below for
+            // the same reason the class walk books before its own.
+            $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->sourceLogical()), $dependency->sourceLogical()->toCanonical());
+            $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->targetLogical()), $dependency->targetLogical()->toCanonical());
 
             $fromMatch = self::tallyEnd($fromMatches, $dependency->sourceLogical()->toCanonical(), $dependency->sourceLogical()->toString(), $assignedHits, $classes, $sourceEdges);
             $toMatch = self::tallyEnd($toMatches, $dependency->targetLogical()->toCanonical(), $dependency->targetLogical()->toString(), $assignedHits, $classes, $targetEdges);
@@ -325,6 +346,7 @@ final class LayerEvidenceCollector
             ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes],
             $assignedHits,
             $matchedSymbols,
+            $excludedSymbols,
         ];
     }
 
@@ -385,6 +407,28 @@ final class LayerEvidenceCollector
         }
 
         return $matchedSymbols;
+    }
+
+    /**
+     * Records the symbol under every layer whose `exclude:` clause removed it.
+     *
+     * A set for the same reason {@see tallyMatchedEnd()} keeps one: the same
+     * symbol is seen once by the class walk and once per dependency edge it
+     * sits at an end of, and `architecture.unmatched-exclude` asks whether the
+     * set is empty, not how often it was refilled.
+     *
+     * @param array<string, array<string, true>> $excludedSymbols layer name => set of canonical symbols
+     * @param list<string> $layerNames
+     *
+     * @return array<string, array<string, true>>
+     */
+    private static function tallyExcludedEnd(array $excludedSymbols, array $layerNames, string $symbolKey): array
+    {
+        foreach ($layerNames as $layerName) {
+            $excludedSymbols[$layerName][$symbolKey] = true;
+        }
+
+        return $excludedSymbols;
     }
 
     /**

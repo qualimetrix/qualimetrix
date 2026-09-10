@@ -57,6 +57,7 @@ size.class-count
 size.method-count
 size.property-count
 architecture.layer-violation
+architecture.unmatched-exclude
 architecture.coverage-gap
 architecture.unreachable-layer
 architecture.potential-shadow

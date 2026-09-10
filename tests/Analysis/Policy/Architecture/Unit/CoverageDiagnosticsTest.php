@@ -336,7 +336,7 @@ final class CoverageDiagnosticsTest extends TestCase
         );
 
         $collectClassEvidence = new ReflectionMethod($collector, 'collectClassEvidence');
-        [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
+        [$assignedHits, $matchedSymbols, , $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
             $collector,
             $arch,
             $context,

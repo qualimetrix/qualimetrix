@@ -12,8 +12,9 @@ interface LayerPolicyPreparationInterface
 
     /**
      * The five diagnostics the layer-policy producer's configuration validator
-     * emits under rule names other than its own, plus the rule name of the
-     * second producer that reads the same prepared policy. They are
+     * emits under rule names other than its own, the producer's own second
+     * channel, plus the rule name of the second producer that reads the same
+     * prepared policy. They are
      * `ruleName`s in their own right — nothing else declares them — so they
      * live beside {@see PRODUCER_RULE_NAME} for the same reason it does: one
      * literal, readable by a cross-owner consumer without importing either
@@ -32,6 +33,16 @@ interface LayerPolicyPreparationInterface
     public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = 'architecture.pending-layer-matched';
 
     /**
+     * The layer-policy producer's SECOND channel — a statement about the code
+     * the way {@see PRODUCER_RULE_NAME} is, not about the declaration the way
+     * the five above are. An `exclude:` clause that removed nothing makes the
+     * layer larger than its author wrote it to be, and the run says so at
+     * warning level instead of failing unconditionally, which is why it is a
+     * channel of the rule and not of the configuration validator.
+     */
+    public const string UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME = 'architecture.unmatched-exclude';
+
+    /**
      * This capability's channels that are **not** file-scoped: a layer policy
      * is a statement about the project, so `suppress_paths` and
      * `suppress_namespaces` do not apply to its findings. Declared here rather
@@ -48,6 +59,7 @@ interface LayerPolicyPreparationInterface
         self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+        self::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
     ];
 
     /**

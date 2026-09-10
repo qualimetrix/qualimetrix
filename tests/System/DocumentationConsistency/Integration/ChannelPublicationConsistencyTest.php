@@ -179,7 +179,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
-            'pattern' => '/(?<count>\S+) of those six are configuration errors/su',
+            'pattern' => '/(?<count>\S+) of those seven are configuration errors/su',
             'set' => 'layer-policy-config-error',
         ],
         [
@@ -224,7 +224,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.ru.md',
-            'pattern' => '/(?<count>\S+) из этих шести суть ошибки конфигурации/su',
+            'pattern' => '/(?<count>\S+) из этих семи суть ошибки конфигурации/su',
             'set' => 'layer-policy-config-error',
         ],
         [

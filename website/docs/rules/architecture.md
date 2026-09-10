@@ -493,6 +493,41 @@ A layer can carry an `exclude:` block with the same shape as the membership crit
 
 Under declaration-order matching, the same effect is often achievable by declaring a narrower layer earlier. `exclude:` is the right tool when the excluded subtree should remain **genuinely unclassified** (so it falls through to a catch-all or to coverage diagnostics) or when the positive criteria mix `patterns` with `suffix`/`implements`/`extends` and a single early layer cannot cleanly express the carve-out.
 
+#### When the clause removes nothing { #unmatched-exclude }
+
+An `exclude:` clause that matches no class is silent damage: the layer holds
+everything its positive criteria caught, which is more than the declaration
+asks for, and every verdict about that layer — the forbidden edges it is
+allowed, the coverage it accounts for — is drawn from the wider set.
+`architecture.unmatched-exclude` reports it, at **warning** severity, once per
+layer:
+
+```
+The "exclude" clause of layer "service" (patterns: "App\Service\Legacy\**")
+removed no class from it, while the layer's own criteria (patterns:
+"App\Service\**") matched 12 symbol(s).
+```
+
+The usual causes are a renamed namespace the clause was never updated for, a
+typo in the pattern, and a carve-out whose classes were deleted in a refactor.
+
+Two things the channel deliberately does not do:
+
+- **It says nothing about a layer whose own criteria matched nothing.** The
+  clause is only evaluated after the positive criteria succeed, so there the
+  count is zero for an unrelated reason — and that layer is already reported by
+  [`architecture.unreachable-layer`](#unreachable-layer-diagnostic). A layer
+  declared [`pending: true`](#pending-layers) is skipped for the same reason
+  that diagnostic skips it.
+- **It reports the clause, not the individual criterion.** Under the default
+  `match: any`, a clause whose `suffix` fires while its `patterns` never do has
+  removed classes, and this channel stays silent about the pattern.
+
+Unlike the architecture *configuration* diagnostics, this one is an ordinary
+rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore
+architecture.unmatched-exclude` and the baseline. It is published by
+`architecture.layer-violation`, so disabling that rule silences it too.
+
 ### Reserving a layer for code not written yet (`pending:`) { #pending-layers }
 
 A layer that intentionally matches nothing — a module boundary declared before the module is written, or a layer temporarily emptied by a refactor in flight — would otherwise fire [`architecture.unreachable-layer`](#unreachable-layer-diagnostic) on every run. Declare the intent instead of relaxing the diagnostic:
@@ -751,7 +786,7 @@ Class: App\Service\Foo
     See architecture.potential-shadow diagnostic for the broader picture.
 ```
 
-Exit codes follow the standard convention: `0` for any informational result (including "class matches no declared layer"), `3` for a refusal — invalid input such as an empty or malformed FQN, or a configuration-load error — and `1` only for a defect the input could not have caused.
+Exit codes follow the standard convention, and `0` is a statement about a class the run analysed: `0` for any informational result about such a class (including "it matches no declared layer"), `3` for a refusal — an empty or malformed FQN, a configuration-load error, or an FQN that names none of the declarations this configuration parsed, which is what an unanalysed class looks like from here — and `1` only for a defect the input could not have caused.
 
 ### Options { #layer-violation-options }
 
@@ -773,6 +808,9 @@ The five architecture configuration diagnostics — `architecture.coverage-gap`,
 `architecture.empty-template` — have no severity options of their own; they
 gate the run unconditionally instead of going through `fail_on`. See the note
 under [Coverage modes](#coverage-modes).
+[`architecture.unmatched-exclude`](#unmatched-exclude) has none either, for the
+opposite reason: it is an ordinary finding at a fixed `warning`, and `fail_on`
+is what decides whether it stops the run.
 
 The CLI aliases are `--layer-violation` for the `enabled` option and
 `--layer-violation-severity` for the severity, matching the convention used by
@@ -860,7 +898,7 @@ final class LegacyAdminController
 }
 ```
 
-To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes seven channels, but the other six carry rule names of their own (`architecture.coverage-gap`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is a rule of its own reporting ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `mode: ignore` or accepted in the baseline.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and `architecture.layer-violation.*` matches nothing and errors — the rule's second channel is named `architecture.unmatched-exclude`, not something below the `architecture.layer-violation.` prefix, so no channel sits under it. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes eight channels, but the other seven carry rule names of their own (`architecture.coverage-gap`, `architecture.unassigned-class`, `architecture.unmatched-exclude`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those seven are configuration errors that no suppression can accept; `architecture.unassigned-class` and `architecture.unmatched-exclude` are ordinary debt, but both are per-run project-level statements, so no inline directive reaches them either — they are declined in configuration or accepted in the baseline.
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 

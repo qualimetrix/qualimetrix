@@ -1,6 +1,6 @@
 {
     "id": "layers",
-    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template and a class outside every layer.",
+    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template, a class outside every layer and an exclude clause that removes nothing.",
     "paths": [
         "src"
     ],
@@ -19,6 +19,7 @@
         "architecture.pending-layer-matched@project",
         "architecture.potential-shadow@project",
         "architecture.unassigned-class@project",
+        "architecture.unmatched-exclude@project",
         "architecture.unreachable-layer@project"
     ],
     "explainSubjects": [

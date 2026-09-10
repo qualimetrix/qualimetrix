@@ -574,6 +574,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory'

@@ -20,8 +20,9 @@
 #                      Only a magnitude channel may carry the token.
 #     acceptability := config-error     (omitted = acceptable as debt)
 #
-# Twenty-two of the fifty-two channels here carry a judges: token. The thirty
-# that do not split into twenty-six occurrence channels, four magnitudes that
+# Twenty-two of the fifty-three channels here carry a judges: token. The
+# thirty-one that do not split into twenty-seven occurrence channels, four
+# magnitudes that
 # publish a number of their own making (architecture.circular-dependency,
 # architecture.unassigned-class, duplication.clone,
 # design.god-class), and -- inside the twenty-six -- coupling.class-rank,
@@ -33,10 +34,12 @@
 # a baseline on any path, and it fails the run without consulting `fail_on`.
 # Eight channels carry it today: the five layer-policy diagnostics, and the
 # three inline-directive diagnostics that report a directive which can never
-# do what it says. The two channels that sit beside them and deliberately do
+# do what it says. The three channels that sit beside them and deliberately do
 # not are architecture.layer-violation (a forbidden dependency edge is real
-# code debt) and annotation.unused-directive (a leftover suppression is
-# ordinary cleanup, not a mistake).
+# code debt), architecture.unmatched-exclude (an inert exclude clause leaves
+# the run's conclusions wider than asked for, which is debt a project may
+# accept and pay down) and annotation.unused-directive (a leftover suppression
+# is ordinary cleanup, not a mistake).
 #
 # The drift guard
 # (tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php)
@@ -80,6 +83,7 @@ architecture.layer-violation - class
 architecture.pending-layer-matched - project config-error
 architecture.potential-shadow - project config-error
 architecture.unassigned-class higher project
+architecture.unmatched-exclude - project
 architecture.unreachable-layer - project config-error
 code-smell.boolean-argument - callable
 code-smell.constructor-overinjection higher callable judges:code-smell.parameter-count

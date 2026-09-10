@@ -35,7 +35,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The oracle for the observation is
  * `docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv` — 63
  * rows measured in Ш0 by two independent witnesses over six purpose-built
- * corpora, which is a stronger measurement than any single run here. A row
+ * corpora, which is a stronger measurement than any single run here, plus a
+ * row per channel added since, each naming the round that measured it. A row
  * that stops reproducing means the corpus lost a fixture, not that the row
  * was wrong.
  *

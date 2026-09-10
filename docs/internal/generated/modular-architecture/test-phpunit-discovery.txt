@@ -4570,6 +4570,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itDoesNotReportALayerWhosePositiveCriteriaMatchedNothing
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itLeavesTheDeclarationValidatorWithItsFiveChannels
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itReportsAnExcludeClauseThatRemovedNothingFromALayerThatMatched
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itSkipsALayerDeclaredPending
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentWhenTheExcludeClauseRemovedAClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itLeavesNoValidationNamespaceOrDirectoryInTheArchitectureLeaf
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itRejectsInjectedReverseAndUnknownCrossZoneEdgesWithoutWildcardWidening
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itValidatesEveryMaterializedP4ArchitectureDeclarationAgainstTheFrozenZoneDag
@@ -4952,6 +4959,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDefaultsToEmptyMetadataLists
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDescribesItselfWithItsKindAndValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDoesNotMatchASuffixThatAppearsInTheMiddleOfTheShortName
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itDowngradesAMatchToTheExcludedVariantWhenTheClauseFires
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itEchoesTheOriginalPatternStringIncludingATrailingBackslash
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itEvaluatesPositiveAllModeAndExcludeAllModeTogether
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itExcludesASubtreeMatchedByAPositivePattern
@@ -5004,6 +5012,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnInvalidName"starts with underscore"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnInvalidName"uppercase"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRejectsAnObjectPatternEntry
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itReportsAnExcludedResultAsANonMatchThatKnowsItsCause
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRequiresEveryDeclaredExclusionCriterionToFireInAllMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itRespectsTheNamespaceBoundaryOfAPureLiteralPattern
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itReturnsNoMatchForAnEmptyFqn
@@ -5044,6 +5053,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itStillAllowsSelfIdentityForAnUnknownSourceLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itUnionsRelationsAcrossSeparateAllowListEntriesNotJustWithinOne
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerPolicyTest::itUnionsTheRelationsOfOverlappingLongFormTargets
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itAnswersBothExitsOfTheWalkFromOneCacheEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itCachesTheResolveAllResult
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itCachesTheResultAcrossRepeatedInvocations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itDropsCachedMatchesOnClearCacheWithoutTouchingTheFactoryBinding
@@ -5052,6 +5062,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itHandlesUnicodeNamespacesAndTypesGracefully
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itLetsAFinalCatchAllLayerCaptureTheResidual
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itMatchesByBareTypeWhenTheNamespaceIsEmpty
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itNamesTheLayersAnExcludeClauseRemovedAClassFrom
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPopulatesTheSharedMatchCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPreservesDeclarationOrderInLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsEmptyForAnEmptyLayerList
@@ -5072,6 +5083,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheSameNegativeResultFromTheCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itRoutesANamespaceAndItsClassToTheSameLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itSharesTheSameCacheBetweenResolveAllAndResolveLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillResolvesAnExcludedClassToNoLayerAtAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itThrowsOnConstructionWithDuplicateLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsANameVariableBoundByOneOfMultiplePatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsExcludePatternsUsingADeclaredVariable

@@ -10,6 +10,11 @@ architecture:
   layers:
     - name: controller
       patterns: ['Corpus\Layers\Controller\**']
+      # Matches nothing: the layer catches UserController, the clause removes
+      # no class from it, and that is what architecture.unmatched-exclude is
+      # the fixture for.
+      exclude:
+        patterns: ['Corpus\Layers\Controller\NoSuch\**']
     - name: repository
       patterns: ['Corpus\Layers\Repository\**']
     - name: extra-broad

@@ -22,10 +22,16 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   layers that would have matched if they were declared earlier. Used by
  *   evidence-based shadow detection and the debug command.
  *
- * Both lookups share a single cache keyed by {@see SymbolPath::toCanonical()}:
- * the full {@see LayerMatch} list is computed once and stored, and
- * {@see resolveLayer()} reads the first entry off that list. A class queried
- * by both methods therefore walks the criteria at most once. The cache is the
+ * - {@see excludedLayers()} returns the layers whose positive criteria
+ *   matched and whose `exclude:` clause then removed the class. It is a
+ *   second exit of the very same walk, not a second walk, and it changes
+ *   nothing about assignment.
+ *
+ * All three lookups share a single cache keyed by
+ * {@see SymbolPath::toCanonical()}: both outputs of the walk are computed once
+ * and stored together, and {@see resolveLayer()} reads the first entry off the
+ * match list. A class queried by every method therefore walks the criteria at
+ * most once. The cache is the
  * only mutable state on the registry (which is therefore final but not
  * readonly).
  *
@@ -56,13 +62,19 @@ final class LayerRegistry
     private ClassContextFactory $contextFactory;
 
     /**
-     * Shared cache for {@see resolveLayer()} and {@see resolveAll()}. Keyed by
-     * {@see SymbolPath::toCanonical()}.
+     * Shared cache for {@see resolveLayer()}, {@see resolveAll()} and
+     * {@see excludedLayers()}. Keyed by {@see SymbolPath::toCanonical()}.
      *
-     * Each value is the complete list of {@see LayerMatch} entries in
-     * declaration order. Empty list means the class matches no layer.
+     * Each value carries BOTH outputs of the one walk over the layer list:
+     * `matches`, the complete list of {@see LayerMatch} entries in declaration
+     * order (empty means the class matches no layer), and `excluded`, the
+     * names of the layers whose positive criteria matched but whose
+     * `exclude:` clause then removed the class. One entry rather than two
+     * parallel arrays because two caches drift apart at every early return and
+     * at {@see clearCache()}: a lookup that found one populated and the other
+     * not would report an exclusion that never happened.
      *
-     * @var array<string, list<LayerMatch>>
+     * @var array<string, array{matches: list<LayerMatch>, excluded: list<string>}>
      */
     private array $matchCache = [];
 
@@ -151,6 +163,35 @@ final class LayerRegistry
      */
     public function resolveAll(SymbolPath $class): array
     {
+        return $this->walk($class)['matches'];
+    }
+
+    /**
+     * Returns the names of every layer whose positive criteria matched the
+     * class and whose `exclude:` clause then removed it, in declaration
+     * order.
+     *
+     * The second exit of the same cached walk {@see resolveAll()} reads, not a
+     * second walk: the two answers are produced by one pass over the layer
+     * list and stored together. Membership is unaffected — an excluded layer
+     * is absent from {@see resolveAll()} exactly as it always was.
+     *
+     * `architecture.unmatched-exclude` is the only consumer, and it needs this
+     * because a class the clause removed and a class the positive criteria
+     * never caught are the same "layer is not in the list" from the outside.
+     *
+     * @return list<string> layer names
+     */
+    public function excludedLayers(SymbolPath $class): array
+    {
+        return $this->walk($class)['excluded'];
+    }
+
+    /**
+     * @return array{matches: list<LayerMatch>, excluded: list<string>}
+     */
+    private function walk(SymbolPath $class): array
+    {
         $cacheKey = $class->toCanonical();
         if (\array_key_exists($cacheKey, $this->matchCache)) {
             return $this->matchCache[$cacheKey];
@@ -158,19 +199,25 @@ final class LayerRegistry
 
         $context = $this->contextFactory->build($class);
         if ($context->fqn === '') {
-            return $this->matchCache[$cacheKey] = [];
+            return $this->matchCache[$cacheKey] = ['matches' => [], 'excluded' => []];
         }
 
         $matches = [];
+        $excluded = [];
         foreach ($this->layers as $layer) {
             $result = $layer->matches($context);
+            if ($result->isExcluded()) {
+                $excluded[] = $layer->name();
+
+                continue;
+            }
             if (!$result->matched) {
                 continue;
             }
             $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
         }
 
-        return $this->matchCache[$cacheKey] = $matches;
+        return $this->matchCache[$cacheKey] = ['matches' => $matches, 'excluded' => $excluded];
     }
 
     /**

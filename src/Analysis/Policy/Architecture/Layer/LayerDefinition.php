@@ -21,10 +21,12 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * exclude clause is evaluated as a hard filter AFTER the positive match
  * succeeds. If the exclude criteria combine (per their own
  * {@see ExcludeSpec::$mode}) into a hit, {@see matches()} returns
- * {@see MembershipResult::noMatch()} — exclusion overrides positive match
- * regardless of either side's match mode. Excluded classes are
- * indistinguishable from non-matching classes at the rule layer; exclude
- * does not surface a separate descriptor.
+ * {@see MembershipResult::excluded()} — exclusion overrides positive match
+ * regardless of either side's match mode. Excluded classes are non-members
+ * exactly like non-matching ones, and exclude surfaces no criterion
+ * descriptor; the variant is separate only so
+ * {@see LayerRegistry::excludedLayers()} can answer whether the clause ever
+ * fired.
  *
  * Under declaration-order resolution ({@see LayerRegistry}), layer entries are
  * scanned in declared order and the first matching entry decides the class's
@@ -142,8 +144,11 @@ final readonly class LayerDefinition
      * When {@see MembershipSpec::$exclude} is declared, the exclude clause
      * is evaluated AFTER positive criteria succeed and acts as a hard
      * filter — if exclusion fires (per its own {@see MatchMode}), the
-     * result downgrades to {@see MembershipResult::noMatch()} regardless of
-     * the positive match.
+     * result downgrades to {@see MembershipResult::excluded()} regardless of
+     * the positive match. That variant is a non-match like any other for
+     * every membership consumer; it is distinguishable only so that
+     * `architecture.unmatched-exclude` can tell a clause that removed
+     * something from one that removed nothing.
      *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
      * five positive criterion lists empty cannot exist (constructor invariant).
@@ -181,7 +186,7 @@ final readonly class LayerDefinition
         }
 
         if ($this->exclusionFires($context)) {
-            return MembershipResult::noMatch();
+            return MembershipResult::excluded();
         }
 
         return MembershipResult::match($matched);

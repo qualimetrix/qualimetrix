@@ -16,7 +16,7 @@ External owners use only the contracts in `Contract/`:
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
   boundary. Disabling the rule clears state and does no class-universe or
   template-expansion work. It also carries the literal names of the diagnostic
-  channels the producer emits under rule names other than its own — one from
+  channels the producer emits under rule names other than its own — two from
   the rule, five from its configuration validator — and the project-scoped
   subset of them.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
@@ -66,16 +66,31 @@ AST or constructs lifecycle state.
 analysed classes and the dependency graph **once per run** — memoised weakly by
 the run's `AnalysisContext`, so nothing survives into the next run — and returns
 one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
-each layer was ASSIGNED and what it MATCHED at all, the shadow evidence, the
-classes outside every layer, and the coverage state. It short-circuits to `null`
+each layer was ASSIGNED, what it MATCHED at all and what its `exclude:` clause
+REMOVED, the shadow evidence, the classes outside every layer, and the coverage
+state. The exclusion tally exists because membership collapses "the clause
+removed it" and "no criterion caught it" into the same absence:
+`MembershipResult::excluded()` keeps the two apart and `LayerRegistry::excludedLayers()`
+is the second exit of the one cached walk `resolveAll()` already performs.
+Assignment is untouched by that — `resolveAll()` still returns no layer for an
+excluded class, so `debug:layer-assignment` and the shadow evidence read
+exactly what they read before. It short-circuits to `null`
 when the producer is disabled or no layers are declared, so "report nothing" has
 one answer rather than two. It answers to both consumer gates — the rule's
 `enabled` and `UnassignedClassOptions::$mode` — and materialises the
 outside-every-layer set when either of them, or the coverage mode, has a use
 for it.
 
-Two rules report on the **code**, one finding each, over that one walk.
-`LayerViolationRule` emits `architecture.layer-violation` per forbidden edge.
+Two rules report on the **code** over that one walk. `LayerViolationRule` emits
+`architecture.layer-violation` per forbidden edge and
+`architecture.unmatched-exclude` per layer whose `exclude:` clause removed
+nothing while the layer's own criteria caught something — a layer wider than
+its declaration asks for, which is debt rather than a broken configuration, so
+it is the rule's channel at a fixed `warning` and not the validator's. The
+"caught something" half of the predicate is what keeps it from restating
+`architecture.unreachable-layer`: the clause is evaluated only after the
+positive criteria succeed, so a layer that matched nothing never offered it
+anything to remove.
 `UnassignedClassRule` emits the magnitude channel
 `architecture.unassigned-class`, gated by its own single `mode` option and built
 by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being
