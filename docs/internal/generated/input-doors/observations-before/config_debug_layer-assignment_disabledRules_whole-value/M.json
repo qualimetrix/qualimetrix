@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Rule selector \"nosuch.rule\" does not match any registered producer, group, or channel.\n",
+    "file": false,
+    "dir": false
+}

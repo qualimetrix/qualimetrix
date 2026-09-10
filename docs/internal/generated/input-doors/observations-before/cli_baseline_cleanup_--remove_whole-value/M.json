@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "1 entry could be removed:\n  9180f8f882bd  declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php stand.retired-channel  (cannot be applied: channel is not declared by any rule)\nNo entry with selector ffffffffffff; nothing removed for it.\nNothing removed; the baseline is unchanged.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Invalid value \"zzz\" for \"fail_on\". Allowed values: none, warning, error. Severity \"info\" is report-only and can no longer be a \"fail_on\" threshold: raise the severity of the rule you want to gate on instead.\n",
+    "file": false,
+    "dir": false
+}

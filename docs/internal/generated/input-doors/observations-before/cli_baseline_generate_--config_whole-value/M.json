@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Configuration file not found: nosuch.yaml\n",
+    "file": false,
+    "dir": false
+}

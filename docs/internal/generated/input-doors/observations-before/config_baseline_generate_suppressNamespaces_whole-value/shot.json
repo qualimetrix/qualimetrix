@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:generate|suppressNamespaces|whole-value",
+    "fingerprint": "d23c5badf1f3f3270c0b2633f18fbe26b254b46076cadcee826c968d9f1db058",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

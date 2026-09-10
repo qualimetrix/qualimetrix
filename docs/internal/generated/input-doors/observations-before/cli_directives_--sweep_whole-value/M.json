@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Unknown sweep \"zzz\". Supported scopes: narrow, full.\n",
+    "file": false,
+    "dir": false
+}

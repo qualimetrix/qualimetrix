@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Graph exported to report.json\nRender with: dot -Tpng report.json -o graph.png\n",
+    "stderr": "",
+    "file": true,
+    "dir": false
+}

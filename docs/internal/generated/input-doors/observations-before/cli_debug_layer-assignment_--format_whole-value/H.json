@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "{\n    \"fqn\": \"Layered\\\\Domain\\\\Order\",\n    \"assigned\": {\n        \"layer\": \"domain\",\n        \"criteria\": [\n            \"pattern \\\"Layered\\\\Domain\\\\*\\\"\"\n        ]\n    },\n    \"shadowed\": [],\n    \"hasLayers\": true\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

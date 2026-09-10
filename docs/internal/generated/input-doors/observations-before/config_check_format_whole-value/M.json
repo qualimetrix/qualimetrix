@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Formatter \"nosuchformat\" not found. Available formatters: checkstyle, gitlab, github, health, html, json, metrics, sarif, summary, suppressed, text, text-verbose\n",
+    "file": false,
+    "dir": false
+}

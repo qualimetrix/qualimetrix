@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Baseline file not found: nosuch-dir/baseline.json\n",
+    "file": false,
+    "dir": false
+}

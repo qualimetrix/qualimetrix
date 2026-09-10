@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: No rule group \"nosuchgroup\". Groups: annotation, architecture, code-smell, cohesion, complexity, computed, coupling, design, duplication, health, maintainability, security, size\n",
+    "file": false,
+    "dir": false
+}

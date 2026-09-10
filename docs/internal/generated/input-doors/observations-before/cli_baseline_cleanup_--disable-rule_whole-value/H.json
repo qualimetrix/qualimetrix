@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "3 entries could be removed:\n  2020d3ea3a16  declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php complexity.ccn  (nothing reported for this identity)\n  3c23ca7691d3  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php complexity.ccn  (nothing reported for this identity)\n  9180f8f882bd  declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php stand.retired-channel  (cannot be applied: channel is not declared by any rule)\nNothing removed: pass --remove=SELECTOR for each entry you want gone.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

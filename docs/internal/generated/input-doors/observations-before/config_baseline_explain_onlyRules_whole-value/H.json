@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Subject: declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php\n\n  Channel: complexity.ccn\n    baseline:      (none)\n    qmx.yaml:      10\n    annotation:    (none)\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

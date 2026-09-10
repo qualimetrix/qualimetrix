@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:cleanup|coupling.frameworkNamespaces|whole-value",
+    "fingerprint": "37aed4244fc417d89043318d707bedce7dcf8086a1bf00780e39d89fad76a9f6",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

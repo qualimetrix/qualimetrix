@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Not enough arguments (missing: \"paths\").\n",
+    "file": false,
+    "dir": false
+}

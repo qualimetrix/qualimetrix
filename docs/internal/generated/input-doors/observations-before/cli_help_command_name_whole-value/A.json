@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Description:\n  Display help for a command\n\nUsage:\n  help [options] [--] [<command_name>]\n\nArguments:\n  command_name                   The command name [default: \"help\"]\n\nOptions:\n      --format=FORMAT            The output format (txt, xml, json, or md) [default: \"txt\"]\n      --raw                      To output raw command help\n  -h, --help                     Display help for the given command. When no command is given display help for the list command\n      --silent                   Do not output any message\n  -q, --quiet                    Only errors are displayed. All other output is suppressed\n  -V, --version                  Display this application version\n      --ansi|--no-ansi           Force (or disable --no-ansi) ANSI output\n  -n, --no-interaction           Do not ask any interactive question\n  -d, --working-dir=WORKING-DIR  Use the given directory as working directory\n  -v|vv|vvv, --verbose           Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug\n\nHelp:\n  The help command displays help for a given command:\n  \n    <PRODUCT>/bin/qmx help list\n  \n  You can also output the help in other formats by using the --format option:\n  \n    <PRODUCT>/bin/qmx help --format=xml list\n  \n  To display the list of available commands, please use the list command.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

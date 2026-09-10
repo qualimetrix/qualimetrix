@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "{\n    \"scope\": {\n        \"analyzed_files\": 7,\n        \"generated_excluded_files\": 0,\n        \"failed_files\": 0,\n        \"complete\": true,\n        \"produced_findings\": 12\n    },\n    \"selection\": {\n        \"only\": [],\n        \"disabled\": [\n            \"coupling.class-rank\",\n            \"coupling.distance\"\n        ]\n    },\n    \"sweep\": \"narrow\",\n    \"directives\": [],\n    \"summary\": {\n        \"total\": 0,\n        \"effective\": 0,\n        \"overrun\": 0,\n        \"inert\": 0,\n        \"unmeasured\": 0\n    },\n    \"exit_code\": 0\n}\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

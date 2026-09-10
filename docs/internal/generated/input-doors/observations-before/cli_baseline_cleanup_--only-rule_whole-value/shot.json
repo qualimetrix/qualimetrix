@@ -1,0 +1,5 @@
+{
+    "key": "cli|baseline:cleanup|--only-rule|whole-value",
+    "fingerprint": "751bc7cea047c7dacf1066638a956f3f7844124ed0b9d40fc8fe4152a2936396",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

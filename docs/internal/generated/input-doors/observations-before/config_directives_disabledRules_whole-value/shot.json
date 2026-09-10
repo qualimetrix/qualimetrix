@@ -1,0 +1,5 @@
+{
+    "key": "config|directives|disabledRules|whole-value",
+    "fingerprint": "c87e37f07e7dca32364c6ba2ce9bb09491be4fe497272c03bbabe48f0bef19f0",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

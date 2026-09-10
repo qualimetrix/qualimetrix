@@ -1,0 +1,5 @@
+{
+    "key": "cli|graph:export|--output|whole-value",
+    "fingerprint": "1a20d7bb608760e8219105c4b47b7bc73dfbf714baf78c5c533668c74d6a76d5",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

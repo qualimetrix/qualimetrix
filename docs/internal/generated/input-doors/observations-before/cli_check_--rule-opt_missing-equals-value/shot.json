@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--rule-opt|missing-equals-value",
+    "fingerprint": "edd9938a09c949d64c4c30a14105932b5acc184b7d513effe6344407ae6dc637",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "No entry is a removal candidate.\nNothing removed: pass --remove=SELECTOR for each entry you want gone.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

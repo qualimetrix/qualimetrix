@@ -1,0 +1,5 @@
+{
+    "key": "config|directives|architecture|layer-patterns",
+    "fingerprint": "479734288546d5c079f50c9098ef332766f48b45a62d1fcc06402b8e207e456c",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

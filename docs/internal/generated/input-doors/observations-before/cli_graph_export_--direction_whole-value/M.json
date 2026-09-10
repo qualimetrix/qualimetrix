@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Unknown direction \"sideways\". Supported directions: LR, TB, RL, BT.\n",
+    "file": false,
+    "dir": false
+}

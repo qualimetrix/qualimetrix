@@ -1,0 +1,5 @@
+{
+    "key": "cli|check|--format-opt|pair-key",
+    "fingerprint": "ff4a12fb4cca89169ee44cf9f5db8d02168f5576943f6167e6799a522e89cc3f",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

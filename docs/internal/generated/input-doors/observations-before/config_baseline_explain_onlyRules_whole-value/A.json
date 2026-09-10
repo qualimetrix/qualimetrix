@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Subject: declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php\n\n  Channel: code-smell.boolean-argument\n    baseline:      (none)\n    qmx.yaml:      (not resolvable from configuration)\n    annotation:    (none)\n\n  Channel: code-smell.boolean-argument\n    baseline:      (none)\n    qmx.yaml:      (not resolvable from configuration)\n    annotation:    (none)\n\n  Channel: code-smell.long-parameter-list\n    baseline:      (none)\n    qmx.yaml:      (not resolvable from configuration)\n    annotation:    (none)\n\n  Channel: complexity.cognitive\n    baseline:      (none)\n    qmx.yaml:      15\n    annotation:    (none)\n\n  Channel: complexity.ccn\n    baseline:      (none)\n    qmx.yaml:      10\n    annotation:    (none)\n\n  Channel: complexity.npath\n    baseline:      (none)\n    qmx.yaml:      200\n    annotation:    (none)\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

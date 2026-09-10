@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Baseline with 12 entries written to nosuch-dir/generated.json\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

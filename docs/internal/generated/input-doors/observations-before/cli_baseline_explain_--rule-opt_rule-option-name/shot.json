@@ -1,0 +1,5 @@
+{
+    "key": "cli|baseline:explain|--rule-opt|rule-option-name",
+    "fingerprint": "9c44348c2f019915fb53452801ee6b022b89af18ac5a6c25a233ae818e7fd1f2",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

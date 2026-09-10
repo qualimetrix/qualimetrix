@@ -1,0 +1,5 @@
+{
+    "key": "cli|baseline:rename-channels|map|map-file",
+    "fingerprint": "fca9371ae9f67d8d0f9faf2eb5171c6bd09d54683ab71066bc9d8d7f6eff3636",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

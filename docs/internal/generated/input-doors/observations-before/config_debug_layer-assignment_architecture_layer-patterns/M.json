@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "Class: Layered\\Domain\\Order\n\n  Assigned to: (no layer)\n\n  Suggestion: declare a catch-all layer with pattern '**' at the\n  end of the layers list to capture unclassified classes.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

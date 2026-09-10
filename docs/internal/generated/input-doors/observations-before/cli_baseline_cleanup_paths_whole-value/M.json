@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Path(s) do not exist: <FIXTURE>/nosuch-dir\n",
+    "file": false,
+    "dir": false
+}

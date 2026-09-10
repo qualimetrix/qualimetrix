@@ -1,0 +1,7 @@
+{
+    "exit": 3,
+    "stdout": "",
+    "stderr": "Configuration error: Output path \"/nonexistent-root/report.json\" is not writable\n",
+    "file": false,
+    "dir": false
+}

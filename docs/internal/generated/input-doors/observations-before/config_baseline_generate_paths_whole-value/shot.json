@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:generate|paths|whole-value",
+    "fingerprint": "a145a703c7e5dca0e5cb5222c4e2dda3b0e00e07bc0f20a0b9d73612cc5e02fe",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}

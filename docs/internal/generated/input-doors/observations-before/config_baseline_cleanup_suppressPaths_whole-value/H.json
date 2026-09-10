@@ -1,0 +1,7 @@
+{
+    "exit": 0,
+    "stdout": "6 entries could be removed:\n  3735f6b4dc3e  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php code-smell.boolean-argument [15feada3baadd4c4]  (nothing reported for this identity)\n  edb704cb183f  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php code-smell.boolean-argument [a7f6953caf4d4b5e]  (nothing reported for this identity)\n  08e86003f9ec  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php code-smell.boolean-argument [db215f7b8527105d]  (nothing reported for this identity)\n  59e0be1e9d1f  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php code-smell.long-parameter-list  (nothing reported for this identity)\n  3c23ca7691d3  declaration:callable:Fixture\\Beta\\BetaService::decide@src/Beta/BetaService.php complexity.ccn  (nothing reported for this identity)\n  9180f8f882bd  declaration:callable:Fixture\\Alpha\\AlphaService::branch@src/Alpha/AlphaService.php stand.retired-channel  (cannot be applied: channel is not declared by any rule)\nNothing removed: pass --remove=SELECTOR for each entry you want gone.\n",
+    "stderr": "",
+    "file": false,
+    "dir": false
+}

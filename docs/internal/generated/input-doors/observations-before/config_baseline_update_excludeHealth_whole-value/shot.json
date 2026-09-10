@@ -1,0 +1,5 @@
+{
+    "key": "config|baseline:update|excludeHealth|whole-value",
+    "fingerprint": "414084b365b7cad7f5672f7f604189e794fccfa214cf6cc3a4ad992334f87333",
+    "reason": "X16 F1/F2 changed probe inputs: miss values gained path prefixes, hit_empty was declared, and the main fixture gained tests/ with autoload-dev"
+}
