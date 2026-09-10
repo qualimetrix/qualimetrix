@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
@@ -39,8 +37,8 @@ final class FormatterContextFactory
                 : $formatter->getDefaultGroupBy();
         } catch (ValueError) {
             $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group-by'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--group-by',
                 \sprintf('Invalid --group-by value "%s". Valid values: %s', $groupByValue, $valid),
             );
         }
@@ -52,8 +50,8 @@ final class FormatterContextFactory
         foreach ($formatOpts as $opt) {
             $eqPos = strpos($opt, '=');
             if ($eqPos === false) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format-opt'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--format-opt',
                     \sprintf('Invalid --format-opt value "%s": expected format key=value', $opt),
                 );
             }
@@ -65,8 +63,8 @@ final class FormatterContextFactory
         if ($allFlag) {
             $existingFindings = $options['violations'] ?? '';
             if ($existingFindings !== '' && $existingFindings !== 'all') {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--all'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--all',
                     'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
                     . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
                 );
@@ -81,8 +79,8 @@ final class FormatterContextFactory
         $classFilter = $input->getOption('class');
 
         if ($namespaceFilter !== null && $classFilter !== null) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--namespace/--class'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--namespace/--class',
                 'Options --namespace and --class are mutually exclusive',
             );
         }

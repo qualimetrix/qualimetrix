@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -127,8 +125,8 @@ final class CheckCommand extends Command
                 return $this->refusalPresenter->refusal(
                     $output,
                     self::formatOption($input),
-                    ConfigurationRefusal::aboutInput(
-                        ConfigurationOrigin::of(ConfigurationSource::CommandLine, $retired),
+                    ConfigurationRefusal::aboutCommandLineInput(
+                        $retired,
                         RetiredSuppressionOptions::refusalText($retired, $current),
                     ),
                 );
@@ -232,8 +230,8 @@ final class CheckCommand extends Command
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'paths'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                'paths',
                 implode(' ', $pathErrors),
             );
         }

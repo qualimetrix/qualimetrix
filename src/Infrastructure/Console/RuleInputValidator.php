@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
@@ -98,8 +96,7 @@ final readonly class RuleInputValidator
 
         foreach ($selectors as $selector) {
             if (FindingChannel::isRetiredPairSpelling($selector)) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::aboutResolvedInput(
                     \sprintf(
                         'Rule selector "%s" is written in the retired channel-pair form. %s',
                         $selector,
@@ -114,12 +111,11 @@ final readonly class RuleInputValidator
             $pairProblem = $levels->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
 
             if ($pairProblem !== null) {
-                throw ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved), $pairProblem);
+                throw ConfigurationRefusal::aboutResolvedInput($pairProblem);
             }
 
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::aboutResolvedInput(
                     \sprintf(
                         'Rule selector "%s" does not match any registered producer, group, or channel%s.',
                         $selector,
@@ -145,14 +141,7 @@ final readonly class RuleInputValidator
         /** @var list<string> $cliOptions */
         $cliOptions = $input->hasOption('rule-opt') ? $input->getOption('rule-opt') : [];
         foreach ($cliOptions as $option) {
-            $colon = strpos($option, ':');
-            if ($colon === false || $colon === 0) {
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--rule-opt'),
-                    \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $option),
-                );
-            }
-            $owners[] = substr($option, 0, $colon);
+            $owners[] = self::ownerOfWellFormedPair($option);
         }
 
         foreach (array_unique($owners) as $owner) {
@@ -161,12 +150,31 @@ final readonly class RuleInputValidator
                 // (`array_unique` above), so which source named this one is no
                 // longer recoverable — the same reasoning as
                 // `RuleOptionsFactory:367-369` for the sibling "unknown owner" refusal.
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::aboutResolvedInput(
                     \sprintf('Rule option owner "%s" does not match any registered producer rule.', $owner),
                 );
             }
         }
+    }
+
+    /**
+     * The owner half of one `--rule-opt` pair, refusing anything that is not a
+     * pair. The value half is as much part of the form as the owner half: a
+     * pair without `=` names an option and assigns it nothing, and the parser
+     * has no value to apply, so accepting it silently drops the whole flag.
+     */
+    private static function ownerOfWellFormedPair(string $option): string
+    {
+        $colon = strpos($option, ':');
+
+        if ($colon === false || $colon === 0 || strpos($option, '=', $colon) === false) {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--rule-opt',
+                \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $option),
+            );
+        }
+
+        return substr($option, 0, $colon);
     }
 
     /**
@@ -240,8 +248,8 @@ final readonly class RuleInputValidator
         }
 
         if (filter_var($workers, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--workers'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--workers',
                 \sprintf('Invalid value "%s" for --workers. Expected a non-negative integer.', $workers),
             );
         }

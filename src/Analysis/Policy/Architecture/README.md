@@ -23,9 +23,10 @@ External owners use only the contracts in `Contract/`:
   `LayerAssignmentMatch` form the Console debug projection.
 - Configuration and preparation failures are surfaced as
   `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`,
-  addressed to `ConfigurationSource::Resolved` because Architecture validates
-  the already-merged document and cannot attribute a rejected value back to
-  one file or CLI option. The two capability-owned exception classes this
+  built through its `atResolvedKey()`/`aboutResolvedInput()` shorthands, which
+  address `ConfigurationSource::Resolved` because Architecture validates the
+  already-merged document and cannot attribute a rejected value back to one
+  file or CLI option. The two capability-owned exception classes this
   replaced are retired and kept only until a later cleanup removes them and
   their remaining Console-side callers.
 

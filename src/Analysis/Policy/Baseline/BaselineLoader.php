@@ -6,9 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use DateTimeImmutable;
 use JsonException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Throwable;
 
 /**
@@ -135,12 +133,12 @@ final readonly class BaselineLoader
     /**
      * The one place a {@see ConfigurationRefusal} is built for this file: the
      * envelope is refused wholesale, never at a single key's position, so
-     * every case uses {@see ConfigurationRefusal::aboutDocument()}.
+     * every case uses {@see ConfigurationRefusal::aboutBaselineFileDocument()}.
      */
     private static function refusal(string $path, string $summary, ?Throwable $previous = null): ConfigurationRefusal
     {
-        return ConfigurationRefusal::aboutDocument(
-            ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $path),
+        return ConfigurationRefusal::aboutBaselineFileDocument(
+            $path,
             $summary,
             $previous,
         );

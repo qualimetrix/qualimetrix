@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
@@ -67,8 +65,7 @@ final class LongFormAllowEntryNormalizer
         self::rejectUnsupportedKeys($source, $index, $entry);
 
         if (!isset($entry['target']) || !\is_string($entry['target']) || $entry['target'] === '') {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), 'target'], 'target'),
                 \sprintf(
                     "architecture.allow.%s[%d]: long-form entry must include a non-empty 'target' key.",
@@ -134,8 +131,7 @@ final class LongFormAllowEntryNormalizer
         }
 
         if (\count($presentKeys) > 1) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index)], implode(', ', $presentKeys)),
                 \sprintf(
                     "architecture.allow.%s[%d]: specify either 'allow_cross_instance' or 'allowCrossInstance', not both.",
@@ -148,8 +144,7 @@ final class LongFormAllowEntryNormalizer
         $key = $presentKeys[0];
         $value = $entry[$key];
         if (!\is_bool($value)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), $key], $key),
                 \sprintf(
                     "architecture.allow.%s[%d]: '%s' must be a boolean, got %s.",
@@ -183,8 +178,7 @@ final class LongFormAllowEntryNormalizer
                 continue;
             }
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed(
                     ['architecture', 'allow', \sprintf('%s[%d]', $source, $index)],
                     (string) $key,

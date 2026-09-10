@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
@@ -97,16 +95,14 @@ final class AllowAliasExpander
         }
 
         if (!\is_array($raw) || !array_is_list($raw)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
                 \sprintf('%s.relations: must be a list of relation kinds or aliases.', $context),
             );
         }
 
         if ($raw === []) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
                 \sprintf(
                     "%s.relations: must list at least one relation kind. " .
@@ -142,8 +138,7 @@ final class AllowAliasExpander
 
         foreach ($tokens as $index => $token) {
             if (!\is_string($token) || $token === '') {
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open([...explode('.', $context), 'relations', (string) $index], (string) $index),
                     \sprintf(
                         '%s.relations[%d]: each entry must be a non-empty string.',
@@ -187,8 +182,7 @@ final class AllowAliasExpander
         $accepted = [...self::acceptedDirectValues(), ...array_keys(self::ALIASES)];
         sort($accepted);
 
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::closed([...explode('.', $context), 'relations'], $token, $accepted),
             \sprintf(
                 "%s.relations: unknown relation kind '%s'. Known direct values: %s. Known aliases: %s.",

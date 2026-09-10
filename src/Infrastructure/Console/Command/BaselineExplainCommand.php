@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -116,8 +114,8 @@ final class BaselineExplainCommand extends BaselineCommand
         // §5.3).
         if ($channel !== null && $this->declarations->declarationFor($channel) === null
             && !self::channelInBaseline($channel, $baseline)) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--channel'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--channel',
                 \sprintf(
                     'Channel "%s" is declared by no rule and appears in no entry of the loaded baseline.',
                     $channel->code,
@@ -136,8 +134,8 @@ final class BaselineExplainCommand extends BaselineCommand
         );
 
         if ($explanation->status === BoundaryExplanationStatus::Unknown) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'subject'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                'subject',
                 \sprintf(
                     'Unknown subject "%s": it is absent from both the current analysis and the baseline.',
                     $subjectKey,
@@ -169,8 +167,8 @@ final class BaselineExplainCommand extends BaselineCommand
         try {
             return new FindingChannel($raw);
         } catch (InvalidArgumentException $e) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--channel'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--channel',
                 $e->getMessage(),
                 $e,
             );

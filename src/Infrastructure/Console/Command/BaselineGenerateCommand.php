@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -106,8 +104,8 @@ final class BaselineGenerateCommand extends BaselineCommand
         $destinationExists = self::destinationExists($baselinePath);
 
         if ($destinationExists && !$force) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'baseline'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                'baseline',
                 \sprintf(
                     '%s already exists. Regenerating discards every acceptance it records — '
                     . 'pass --force if that is intended, or use `baseline:update` to tighten it in place.',
@@ -201,8 +199,8 @@ final class BaselineGenerateCommand extends BaselineCommand
             return BaselineEntryMode::Suppress;
         }
 
-        throw ConfigurationRefusal::aboutInput(
-            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--mode'),
+        throw ConfigurationRefusal::aboutCommandLineInput(
+            '--mode',
             \sprintf(
                 'Unknown --mode value "%s". Expected %s or %s.',
                 \is_scalar($raw) ? (string) $raw : \gettype($raw),

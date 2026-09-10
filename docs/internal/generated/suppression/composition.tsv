@@ -1,9 +1,7 @@
 mechanism	suppressor	channel	file	symbol	severity	count
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal	warning	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	error	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	Qualimetrix\Analysis\Evidence\Measurement\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/AcceptedLevel.php	Qualimetrix\Analysis\Finding\Contract	error	1
@@ -36,7 +34,6 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolInfo.
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolLevel.php	Qualimetrix\Core\Symbol\SymbolLevel	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	error	1
-rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
@@ -59,6 +56,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/AcceptedLevel.php	Qualimetrix\Analysis\Finding\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/CapturePattern.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Util/NamespaceMatcher.php	Qualimetrix\Core\Util	error	1

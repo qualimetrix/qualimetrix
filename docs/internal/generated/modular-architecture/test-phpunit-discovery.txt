@@ -100,11 +100,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"config file"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"preset"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"resolved with a diagnostic key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itAddressesAPositionedShorthandToItsOwnSource"resolved without a key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsADocumentRefusalWithoutAPosition
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAPositionedRefusalFromAt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itBuildsAnInputRefusalWithoutAPosition
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCanBeCaughtAsARuntimeException
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCarriesThePreviousExceptionForDiagnostics
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itCarriesThePreviousExceptionThroughAShorthand
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"baseline document"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"command-line input"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"config file document"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"document named by an argument"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"preset document"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"resolved input with a diagnostic key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationRefusalTest::itLeavesAPositionlessShorthandWithoutAPosition"resolved input without a key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationSourceTest::itHasExactlyFiveCases
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAClosedPositionWithItsAcceptedSpellings
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\RefusedPositionTest::itBuildsAnOpenPositionWithoutAnAcceptedList
@@ -6404,7 +6416,10 @@ Available tests:
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::itEmitsThePathAsAStringInTheGitlabFormatter
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::itOmitsLocationsForProjectLevelFindingsInTheSarifFormatter
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::itPreservesATargetOnlyEdgeThroughTheJsonFormatter
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAcceptsAnUnusableDirectoryWhenTheCacheIsDisabled
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAppliesOwnerDefaultsAndLastOverrides
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itCreatesAMissingCacheDirectory
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itRefusesAnEnabledCacheDirectoryThatCannotBeCreated
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationStoreTest::itDoesNotRetainAReplacedConfigurationAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itMemoizesTheCacheInstanceAcrossCalls
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itRebuildsTheCacheOnTheNextCreateAfterReset
@@ -6717,10 +6732,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsARuleOptionPairThatCarriesAValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itIgnoresAnAbsentWorkersOption
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAChannelExclusionKeyInTheRetiredPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyAddressingAnotherRulesChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyNamingAComputedChannelNoLongerDefined
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesARuleOptionPairThatAssignsNoValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesTheRetiredPairBeforeJudgingTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyNamingALevelItsChannelDoesNotReportAt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyNarrowedToALevelTheOptionNeverAsksAbout
@@ -7571,6 +7588,8 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itHandlesAdvanceBeforeStart
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForFewFiles
  - Qualimetrix\Tests\Unit\Infrastructure\Console\RuntimeLoggerConfiguratorTest::itCreatesPublishesAndReturnsTheSameLogger
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\RuntimeLoggerConfiguratorTest::itPassesADeclaredLogLevelToTheFactory
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\RuntimeLoggerConfiguratorTest::itRefusesALogLevelItCannotBuild
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itDoesNotCheckAutoloadDev
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itReturnsNoWarningsForFullCoverage
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itReturnsNoWarningsWhenComposerJsonIsMissing

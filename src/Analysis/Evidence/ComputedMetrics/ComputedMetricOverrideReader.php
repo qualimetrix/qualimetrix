@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
@@ -135,8 +133,7 @@ final class ComputedMetricOverrideReader
 
         foreach ($config['formulas'] as $levelKey => $formula) {
             if (!\is_string($formula)) {
-                throw ConfigurationRefusal::at(
-                    ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                throw ConfigurationRefusal::atResolvedKey(
                     RefusedPosition::open(
                         [...ComputedMetricEntryKeys::nameSegments($name), 'formulas', (string) $levelKey],
                         (string) $levelKey,
@@ -172,8 +169,7 @@ final class ComputedMetricOverrideReader
         }
 
         if (!\is_array($config['levels']) || !array_is_list($config['levels'])) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
                 ComputedMetricShapeRefusalWording::levelListNotAList($name, $config['levels']),
             );
@@ -248,8 +244,7 @@ final class ComputedMetricOverrideReader
         $lastSegment = $lastDot === false ? $name : substr($name, $lastDot + 1);
 
         if (SymbolLevel::tryFrom($lastSegment) !== null) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
                 ComputedMetricRefusalWording::nameEndsInALevelWord($name, $lastSegment, FindingChannel::LEVEL_SEPARATOR),
             );
@@ -269,8 +264,7 @@ final class ComputedMetricOverrideReader
             return;
         }
 
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
             ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE),
         );
@@ -292,8 +286,7 @@ final class ComputedMetricOverrideReader
             return;
         }
 
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
             ComputedMetricRefusalWording::duplicateLevel($name),
         );
@@ -315,16 +308,14 @@ final class ComputedMetricOverrideReader
         $symbolLevel = \is_string($level) ? SymbolLevel::tryFrom($level) : null;
 
         if ($symbolLevel === null) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
                 ComputedMetricRefusalWording::levelWordNotALevelAtAll($written),
             );
         }
 
         if (!\in_array($symbolLevel, ComputedMetricEntryKeys::REPORTING_LEVELS, true)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'levels'], 'levels'),
                 ComputedMetricRefusalWording::levelWordNotAReportingLevel($written, self::reportingLevelWords()),
             );
@@ -359,8 +350,7 @@ final class ComputedMetricOverrideReader
         $hasError = \array_key_exists('error', $config);
 
         if ($hasThreshold && ($hasWarning || $hasError)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'threshold'], 'threshold'),
                 ComputedMetricRefusalWording::thresholdMixedWithGraduated(),
             );
@@ -407,8 +397,7 @@ final class ComputedMetricOverrideReader
 
     private static function leafRefusal(string $name, string $key, string $summary): ConfigurationRefusal
     {
-        return ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        return ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), $key], $key),
             $summary,
         );

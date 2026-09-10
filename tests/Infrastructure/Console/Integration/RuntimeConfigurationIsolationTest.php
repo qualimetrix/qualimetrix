@@ -42,7 +42,9 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
     protected function tearDown(): void
     {
-        rmdir($this->temporaryDirectory);
+        // Resolving an enabled cache creates its directory, so the run leaves
+        // more here than the empty root `rmdir` alone can take back.
+        exec(\sprintf('rm -rf %s', escapeshellarg($this->temporaryDirectory)));
     }
 
     #[Test]

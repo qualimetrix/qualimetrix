@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -237,8 +235,8 @@ final class ResultPresenter
 
     private static function outputRefusal(string $summary): ConfigurationRefusal
     {
-        return ConfigurationRefusal::aboutInput(
-            ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--output'),
+        return ConfigurationRefusal::aboutCommandLineInput(
+            '--output',
             $summary,
         );
     }

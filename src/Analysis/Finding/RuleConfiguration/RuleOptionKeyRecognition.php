@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -85,8 +83,7 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed([$ruleName], $key, self::optionsHere($acceptedHere)),
                 RuleOptionRefusalWording::notAnOptionOfRule(
                     $key,
@@ -119,8 +116,7 @@ final class RuleOptionKeyRecognition
         }
 
         if (!\is_array($value)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([$ruleName, $level], $level),
                 RuleOptionRefusalWording::levelTakesAMapOfOptions($level, $ruleName, $value),
             );
@@ -135,8 +131,7 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed([$ruleName, $level], $key, $acceptedThere->acceptedForDisplay()),
                 RuleOptionRefusalWording::notAnOptionAtLevel(
                     $key,

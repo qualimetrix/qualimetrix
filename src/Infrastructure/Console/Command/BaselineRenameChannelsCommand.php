@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
@@ -122,8 +120,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     private static function assertKnownFormat(mixed $format): void
     {
         if ($format !== 'text' && $format !== 'json') {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--format',
                 'Unknown --format; expected text or json.',
             );
         }
@@ -133,8 +131,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     private static function assertBaselineReadable(string $baselinePath): void
     {
         if (!is_file($baselinePath) || !is_readable($baselinePath)) {
-            throw ConfigurationRefusal::aboutDocument(
-                ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
+            throw ConfigurationRefusal::aboutBaselineFileDocument(
+                $baselinePath,
                 \sprintf('Not a readable file: %s', $baselinePath),
             );
         }
@@ -144,8 +142,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     private static function assertMapReadable(string $mapPath): void
     {
         if (!is_file($mapPath) || !is_readable($mapPath)) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                'map',
                 \sprintf('Not a readable file: %s', $mapPath),
             );
         }
@@ -157,8 +155,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         try {
             return ChannelRenameMap::fromFile($mapPath);
         } catch (ChannelRenameRefusal $e) {
-            throw ConfigurationRefusal::aboutDocument(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'map'),
+            throw ConfigurationRefusal::aboutCommandLineDocument(
+                'map',
                 $e->getMessage(),
                 $e,
             );
@@ -179,8 +177,8 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         try {
             return $this->renamer->carry($baselinePath, $map);
         } catch (ChannelRenameRefusal $e) {
-            throw ConfigurationRefusal::aboutDocument(
-                ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $baselinePath),
+            throw ConfigurationRefusal::aboutBaselineFileDocument(
+                $baselinePath,
                 $e->getMessage(),
                 $e,
             );

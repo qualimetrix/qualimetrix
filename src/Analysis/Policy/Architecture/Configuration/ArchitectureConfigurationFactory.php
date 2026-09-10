@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
@@ -67,11 +65,10 @@ final class ArchitectureConfigurationFactory
     /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
     private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
     {
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::open(explode('.', $position), $position),
             $summary,
-            $previous,
+            previous: $previous,
         );
     }
 
@@ -315,8 +312,7 @@ final class ArchitectureConfigurationFactory
         $accepted = self::ALLOWED_TOP_LEVEL_KEYS;
         sort($accepted);
 
-        throw ConfigurationRefusal::at(
-            ConfigurationOrigin::of(ConfigurationSource::Resolved),
+        throw ConfigurationRefusal::atResolvedKey(
             RefusedPosition::closed(['architecture'], implode(', ', $unknown), $accepted),
             \sprintf(
                 'architecture: unknown %s %s. Allowed keys: %s.',

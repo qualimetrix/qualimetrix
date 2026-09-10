@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -49,8 +47,7 @@ final class ComputedMetricEntryKeyRecognition
                 continue;
             }
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed([...$segments, $key], $key, $accepted->acceptedForDisplay()),
                 ComputedMetricRefusalWording::notAnEntryKey($key, $metricName, $accepted->acceptedForDisplay()),
             );
@@ -75,8 +72,7 @@ final class ComputedMetricEntryKeyRecognition
         }
 
         if (!\is_array($value)) {
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([...$segments, 'formulas'], 'formulas'),
                 ComputedMetricShapeRefusalWording::formulasNotAMap($metricName, $value),
             );
@@ -92,8 +88,7 @@ final class ComputedMetricEntryKeyRecognition
                 continue;
             }
 
-            throw ConfigurationRefusal::at(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::closed([...$segments, 'formulas', $key], $key, $accepted->acceptedForDisplay()),
                 self::formulaKeyWording($key, $metricName),
             );

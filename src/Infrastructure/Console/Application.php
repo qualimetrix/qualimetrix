@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
@@ -149,15 +147,15 @@ final class Application extends BaseApplication
         // Warning that would land on stdout and stderr both,
         // contradicting the DoD's "no PHP Warning, 0 bytes of stdout".
         if ($resolved === false || !is_dir($resolved) || !is_readable($resolved)) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--working-dir',
                 \sprintf('Invalid working directory: %s', $workingDir),
             );
         }
 
         if (!chdir($resolved)) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--working-dir'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--working-dir',
                 \sprintf('Failed to change working directory to: %s', $resolved),
             );
         }

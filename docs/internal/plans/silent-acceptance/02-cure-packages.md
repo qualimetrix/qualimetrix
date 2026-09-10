@@ -15,6 +15,10 @@
 `FindingFilterOrchestrator.php` и `LayerViolationRule.php` в первом раунде и
 `OutputConfigurator.php`, `PreparedRun.php`, `RuleProducerPreparation.php`,
 `LayerEvidence.php` — во втором, когда каждое звено было прочитано по коду.
+Третий раунд добавил к этому вопросу второй: **какую обязанность пакет
+порождает** — генерируемый артефакт, который от его изменения устаревает или
+жёстко отказывает. У каждой такой обязанности ниже назван владелец; «как-нибудь
+подхватится» третьим случаем не является.
 
 | пакет   | набор файлов (производственный)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,48 +27,127 @@
 | **P3**  | `src/Infrastructure/Console/ResultPresenter.php` (пересечение с P10) · `src/Infrastructure/Console/DrillDownBinding.php` (новый)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **P4**  | `src/Reporting/GraphProjection/DotExporter.php` · `JsonGraphExporter.php` · `DependencyGraphProjector.php` · `GraphProjection/Contract/**` · общий матчер неймспейсов `GraphProjection` (новый) · `src/Infrastructure/Console/Command/GraphExportCommand.php`                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **P5**  | `src/Infrastructure/Console/LayerAssignmentResolver.php` · `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **P6**  | `src/Analysis/Run/Contract/Configuration/RunConfiguration.php` · `src/Analysis/Run/Configuration/RunConfigurationResolver.php` · `src/Analysis/Run/Discovery/**` (включая новый счётчик привязки exclude) · `src/Analysis/Run/Pipeline/AnalysisPipeline.php` · **`src/Analysis/Run/Pipeline/PreparedRun.php`** · **`src/Analysis/Run/RuleProducerPreparation.php`** · **`src/Infrastructure/Console/Command/CheckCommand.php`** · новый продюсер `discovery.configuration` под `src/Analysis/Run/` · `src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php` · `finding-gate/cases/<discovery>/**` · `website/docs/rules/*.md` (строки своего канала) |
-| **P7**  | новый продюсер `suppression.configuration` (класс правила + Options + коллаборатор) под `src/Analysis/Finding/` · **`src/Infrastructure/Console/FindingFilterOrchestrator.php`** · **`src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php`** (`:355`, пересечение с P2) · `src/Infrastructure/DependencyInjection/Configurator/FindingConfigurator.php` · `finding-gate/cases/<suppression>/**` · `website/docs/rules/*.md` (строки своих каналов)                                                                                                                                                                                                    |
-| **P8**  | `src/Analysis/Policy/Architecture/Layer/MembershipResult.php` · `LayerDefinition.php` · `LayerRegistry.php` · `src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php` · **`LayerEvidence.php`** · **`LayerViolationRule.php`** · `LayerViolationOptions.php` · `DeclaredLayerReachability.php` · `LayerDeclarationValidator.php` · `src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php` · `finding-gate/cases/<architecture>/**` · `website/docs/rules/architecture*.md`                                                                                                                                                     |
-| **P9**  | `src/Analysis/Evidence/Coupling/CouplingAnalysis.php` · `src/Analysis/Evidence/Coupling/*Rule.php` и его Options · `Coupling/Contract/**` · `src/Infrastructure/DependencyInjection/Configurator/CouplingConfigurator.php` · `finding-gate/cases/<coupling>/**` · `website/docs/rules/coupling*.md`                                                                                                                                                                                                                                                                                                                                                                          |
+| **P6**  | `src/Analysis/Run/Contract/Configuration/RunConfiguration.php` · `src/Analysis/Run/Configuration/RunConfigurationResolver.php` · `src/Analysis/Run/Discovery/**` (включая новый счётчик привязки exclude) · `src/Analysis/Run/Pipeline/AnalysisPipeline.php` · **`src/Analysis/Run/Pipeline/PreparedRun.php`** · **`src/Analysis/Run/RuleProducerPreparation.php`** · **`src/Infrastructure/Console/Command/CheckCommand.php`** · новый продюсер `discovery.configuration` под `src/Analysis/Run/` · `src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php` · `finding-gate/cases/<discovery>/**` · свои строки в общих артефактах канала (см. ниже) |
+| **P7**  | новый продюсер `suppression.configuration` (класс правила + Options + коллаборатор) под `src/Analysis/Finding/` · **`src/Infrastructure/Console/FindingFilterOrchestrator.php`** · **`src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php`** (`:355`, пересечение с P2) · `src/Infrastructure/DependencyInjection/Configurator/FindingConfigurator.php` · `finding-gate/cases/<suppression>/**` · свои строки в общих артефактах канала                                                                                                                                                                                                               |
+| **P8**  | `src/Analysis/Policy/Architecture/Layer/MembershipResult.php` · `LayerDefinition.php` · `LayerRegistry.php` · `src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php` · **`LayerEvidence.php`** · **`LayerViolationRule.php`** · `LayerViolationOptions.php` · `DeclaredLayerReachability.php` · `LayerDeclarationValidator.php` · `src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php` · `finding-gate/cases/<architecture>/**` · `website/docs/rules/architecture*.md` · свои строки в общих артефактах канала                                                                                                             |
+| **P9**  | `src/Analysis/Evidence/Coupling/CouplingAnalysis.php` · `src/Analysis/Evidence/Coupling/*Rule.php` и его Options · `Coupling/Contract/**` · `src/Infrastructure/DependencyInjection/Configurator/CouplingConfigurator.php` · `finding-gate/cases/<coupling>/**` · `website/docs/rules/coupling*.md` · свои строки в общих артефактах канала                                                                                                                                                                                                                                                                                                                                  |
 | **P10** | `src/Infrastructure/Git/ReportingGitScopeQuery.php` · `src/Reporting/FindingProjection/Contract/GitScopeResult.php` · `src/Reporting/FindingProjection/FindingProjector.php` · `FindingProjectionResult.php` · `src/Reporting/FormatterContext.php` · `src/Reporting/Formatter/Summary/HintRenderer.php` · плюс два файла в общем владении (см. ниже)                                                                                                                                                                                                                                                                                                                        |
-| **P11** | `docs/internal/architecture-manifest*` и всё, что генерируют `composer architecture:generate` / `check:artifacts` · `scripts/generate-modular-architecture-production-inventory.php` · `qmx.yaml` · `qmx-baseline.json` · `mkdocs.yml` · `src/Infrastructure/Console/CheckCommandDefinition.php` · `finding-gate/declared-delta.tsv` · `finding-gate/declared-delta/**` · `CHANGELOG.md`                                                                                                                                                                                                                                                                                     |
+| **P11** | `docs/internal/architecture-manifest*` · `docs/internal/generated/modular-architecture/**` · `docs/internal/plans/rule-vocabulary/enumeration-renames.tsv` · `docs/internal/generated/suppression/**` · `docs/internal/generated/input-doors/verdicts.tsv` · `scripts/generate-modular-architecture-production-inventory.php` · `qmx.yaml` · `qmx-baseline.json` · `website/mkdocs.yml` · новые страницы групп `website/docs/rules/discovery*.md` и `website/docs/rules/suppression*.md` · `src/Infrastructure/Console/CheckCommandDefinition.php` · `finding-gate/declared-delta.tsv` · `finding-gate/declared-delta/**` · `CHANGELOG.md`                                   |
 
 ### Поимённые пересечения
 
-Непоимённое пересечение — дефект, а не третий случай. Их ровно семь, и каждое
-**упорядочено**: одновременная правка одного файла двумя ветками — это и есть
-непоимённое пересечение, поэтому у общего файла всегда есть первый и второй.
+Непоимённое пересечение — дефект, а не третий случай. Каждое **упорядочено**:
+одновременная правка одного файла двумя ветками — это и есть непоимённое
+пересечение, поэтому у общего файла всегда есть первый и второй.
 
-| файл                                                        | пакеты                                                                               | причина, названная в обоих                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CheckCommandDefinition.php`                                | **P11** единолично                                                                   | Тексты `--help` пяти дверей меняются одним изменением; пакеты формулируют строку помощи в отчёте, P11 вносит                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `DependencyInjection/Configurator/OutputConfigurator.php`   | P2 (`:333`), затем **P7** (`:355`)                                                   | Оба добавляют аргумент в существующую регистрацию: P2 даёт `FormatterContextFactory` реестр форматтеров (сегодня она зарегистрирована **без аргументов**), P7 — оркестратору продюсера. Без этой строки ни одна из двух новых зависимостей до объекта не доезжает (`02-cure.md` §4.2, §4.3). Отсюда **P7 идёт после P2**; цена — P7 покидает тир P6–P9. **Отвергнуто:** «правки в разных блоках одного файла можно вести параллельно» — прецедента в этой таблице нет, а разрешение сделало бы порядок необязательным для всех восьми строк |
-| `Infrastructure/Console/FormatterContextFactory.php`        | P2, затем **P10**                                                                    | P2 добавляет отказ по реестру ключей, P10 проводит через тот же `create()` число привязок git-области (`02-cure.md` §2, маршрут Б13). Файл один, поэтому **P10 идёт после P2**                                                                                                                                                                                                                                                                                                                                                              |
-| `Infrastructure/Console/ResultPresenter.php`                | P3, затем **P10**                                                                    | P3 сажает отказ Б7/Б8 до построения отчёта, P10 добавляет одну передачу числа в фабрику контекста. **P10 идёт после P3**. `DrillDownBinding` — сравнитель без состояния, конструируется presenter'ом на месте: строки DI он не требует, и P3 в `OutputConfigurator.php` не заходит                                                                                                                                                                                                                                                          |
-| `DependencyInjection/Configurator/*.php` (прочие)           | P6 (`AnalysisConfigurator`), P7 (`FindingConfigurator`), P9 (`CouplingConfigurator`) | Разные файлы одного каталога; каталог целиком никому не принадлежит                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `website/docs/rules/*.md`, `CHANGELOG.md`                   | P6–P9 пишут только строки своего канала; сведение и вычитка — **P11**                | Документация одного канала — часть его пакета; общая структура и changelog — сведение                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `mkdocs.yml`, `qmx.yaml`, `finding-gate/declared-delta.tsv` | **P11** единолично                                                                   | Новая группа правил требует страницы в nav, иначе `docs:check --strict` красный; новый класс требует строки в своём слое, иначе `architecture.coverage-gap` красит `check:self`; строка декларации требует рукописной причины. Пять пакетов, правящих три общих файла, — то самое непоимённое пересечение; пакеты отдают строки в отчёте                                                                                                                                                                                                    |
+| файл                                                                                                                        | пакеты                                                                               | причина, названная в обоих                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CheckCommandDefinition.php`                                                                                                | **P11** единолично                                                                   | Тексты `--help` шести дверей меняются одним изменением: `--rule-opt`, `--log-level`, `--cache-dir` (P1), `--namespace`, `--class` (P3), `--exclude` (P6) — все шесть объявлены в этом файле, `graph:export --namespace` живёт в своей команде и сюда не входит; пакеты формулируют строку помощи в отчёте, P11 вносит                                                                                                                                                                                                                |
+| `DependencyInjection/Configurator/OutputConfigurator.php`                                                                   | P2 (`:333`), затем **P7** (`:355`)                                                   | Оба добавляют аргумент в существующую регистрацию: P2 даёт `FormatterContextFactory` реестр форматтеров (сегодня она зарегистрирована **без аргументов**), P7 — оркестратору продюсера. Без этой строки ни одна из двух новых зависимостей до объекта не доезжает (`02-cure.md` §4.2, §4.3). Отсюда **P7 идёт после P2**; цена — P7 покидает тир P6–P9. **Отвергнуто:** «правки в разных блоках одного файла можно вести параллельно» — прецедента в этой таблице нет, а разрешение сделало бы порядок необязательным для всех строк |
+| `Infrastructure/Console/FormatterContextFactory.php`                                                                        | P2, затем **P10**                                                                    | P2 добавляет отказ по реестру ключей, P10 проводит через тот же `create()` число привязок git-области (`02-cure.md` §2, маршрут Б13). Файл один, поэтому **P10 идёт после P2**                                                                                                                                                                                                                                                                                                                                                       |
+| `Infrastructure/Console/ResultPresenter.php`                                                                                | P3, затем **P10**                                                                    | P3 сажает отказ Б7/Б8 до построения отчёта, P10 добавляет одну передачу числа в фабрику контекста. **P10 идёт после P3**. `DrillDownBinding` — сравнитель без состояния, конструируется presenter'ом на месте: строки DI он не требует, и P3 в `OutputConfigurator.php` не заходит                                                                                                                                                                                                                                                   |
+| `DependencyInjection/Configurator/*.php` (прочие)                                                                           | P6 (`AnalysisConfigurator`), P7 (`FindingConfigurator`), P9 (`CouplingConfigurator`) | Разные файлы одного каталога; каталог целиком никому не принадлежит                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Общие артефакты канала** (`declared.txt`, `order.txt`, `ChannelUniverseCoverageTest.php`, `website/docs/rules/index.md`)  | P8 → P9 → P6 → P7, в этом порядке слияния                                            | Разбор ниже: файлы общие для всех четырёх пакетов с каналом, красят `check:code` немедленно и отложены быть не могут                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `website/docs/rules/<существующая группа>.md`                                                                               | P8 (`architecture*`), P9 (`coupling*`)                                               | Страница группы уже существует и уже классифицирована инвентарём: правка — часть пакета. Прозаические счётчики каналов на этих страницах проверяются `ChannelPublicationConsistencyTest`, то есть красят `check:code` того же пакета                                                                                                                                                                                                                                                                                                 |
+| `website/docs/rules/<новая группа>.md`, `website/mkdocs.yml`, `qmx.yaml`, `finding-gate/declared-delta.tsv`, `CHANGELOG.md` | **P11** единолично                                                                   | **Заведение** страницы новой группы (`discovery`, `suppression`) роняет инвентарь жёстким отказом `unclassified committable documentation path` — обход берёт `git ls-files --cached --others`, поэтому даже неотслеженный файл роняет генератор. Файл, строка префикса в инвентаре и строка nav обязаны появиться одним изменением, поэтому все три отданы сводящему; P6 и P7 отдают текст страницы в отчёте. Туда же: новый класс требует строки в своём слое `qmx.yaml`, строка декларации гейта требует рукописной причины       |
+| генерируемые артефакты, устаревающие от лечения                                                                             | **P11** единолично                                                                   | `enumeration-renames.tsv`, `docs/internal/generated/suppression/**`, `verdicts.tsv`, манифест и его порождения. Разбор ниже                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 **Прежней зависимости P7 → P6 больше нет.** Она держалась на общем
 `AnalysisPipeline.php`; после разбора маршрутов (`02-cure.md` §4.3) P7 работает
 на шве `FindingFilterOrchestrator`, а `AnalysisPipeline.php` целиком принадлежит
 P6. Появилась другая — **P7 после P2**, по строке DI (см. таблицу выше).
 
+### Общие артефакты канала — что пакет обязан закрыть сам
+
+Четыре файла ниже — не отложимое красное: их проверяют тесты, а `composer
+check:code` зелёный на своём наборе стоит в общем DoD каждого пакета. Отдать их
+сводящему нельзя — пакет тогда не может доказать собственный DoD.
+
+| артефакт                                                             | чем проверяется                                                      | что вносит пакет с каналом                                                      |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `tests/Analysis/Finding/Fixtures/Channels/declared.txt`              | `ChannelDeclarationFixtureDriftTest` — сверка с точками объявления   | строку канала: направление, уровни, `judges:`, приемлемость                     |
+| `tests/Analysis/Finding/Fixtures/Channels/order.txt`                 | тот же свод; порядок публикуется в подсказке «did you mean»          | строку **на её месте в порядке регистрации продюсеров**, не в конец             |
+| `tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php` | константа `DECLARED_CHANNEL_COUNT` (сегодня 52)                      | новое число; оно **получается** `grep -vc '^#\|^$' declared.txt`, а не помнится |
+| `website/docs/rules/index.md` (блок `llms-only`)                     | `DocumentationConsistencyTest::itListsAllRulesInLlmsOnlyRuleCatalog` | слаг нового правила (P6 и P7; у P8 и P9 правило существующее)                   |
+
+Порядок слияния **P8 → P9 → P6 → P7**: каждый следующий перебазируется на
+слитого предшественника и заново гоняет `check:code`. Пакеты остаются
+параллельными в разработке — упорядочено только слияние. Порядок выбран
+обратным номерам осознанно: P7 и так ждёт P2 по строке DI, и обратный порядок
+снял бы с P8 и P9 транзитивное ожидание P2, которого их предмет не касается. Их
+деревья остаются без единого непокрытого класса, и утверждение «манифест не
+краснит» для них остаётся верным. **Отвергнуто:** порядок P6→P9 (ставит P8 и P9
+в очередь за чужой строкой DI) и передача этих файлов P11 (пакет тогда не может
+предъявить зелёный `check:code`).
+
+Эти четыре ребра слияния в DAG `02-cure-packages-verification.md` §4 не
+нарисованы — они добавлены здесь и подлежат сведению с §4.
+
+Пятый артефакт того же класса — прозаические счётчики каналов на страницах
+`website/docs/rules/architecture*.md`: `ChannelPublicationConsistencyTest`
+связывает их с `LayerViolationRule::channelDeclarations()`. Канал P8 входит в
+набор `layer-policy-channels`, поэтому страницы правит сам P8; страница уже в
+его наборе.
+
+### Генерируемые артефакты, устаревающие от лечения — у сводящего
+
+Пять артефактов ниже правит **только P11**. Причина одна и та же: параллельные
+пакеты, переписывающие один генерируемый файл, — это и есть непоимённое
+пересечение, ради которого манифест отдан единственному сводящему. Пакет вместо
+правки **называет свою дельту в отчёте**; это и есть материал ревью.
+
+| артефакт                                                      | чем краснеет                                          | чем пакет измеряет свою дельту                                                                                  | чем P11 приводит в порядок         |
+| ------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| манифест и `docs/internal/generated/modular-architecture/**`  | `architecture:check`, `check:artifacts`, `check:self` | список новых production-деклараций                                                                              | `composer architecture:generate`   |
+| `docs/internal/plans/rule-vocabulary/enumeration-renames.tsv` | `enumeration:renames:check` (сравнение **побайтно**)  | `php scripts/generate-rename-enumeration.php --check`, код возврата в отчёте                                    | `composer enumeration:renames`     |
+| `docs/internal/generated/suppression/**`                      | `suppression-snapshot:check`                          | перегон `scripts/generate-suppression-snapshot.php` **дважды**: нулевой точкой до написания продюсера и в конце | перегон и вычитка диффа            |
+| `docs/internal/generated/input-doors/verdicts.tsv`            | `input-doors:check` — дрейф против снапшота           | прогон стенда: какая дверь из какого вердикта в какой перешла                                                   | `composer input-doors`             |
+| `qmx-baseline.json`                                           | ратчет                                                | фактическая дельта находок числом                                                                               | правка только при ненулевой дельте |
+
+Два уточнения, без которых эти строки читаются неверно.
+
+**`enumeration-renames.tsv` краснеет двумя разными способами.** Генератор строит
+строку на **каждый** ключ `staticDeclarations()`, значит новый канал добавляет
+строку (P6, P7×3, P8, P9). Но он же приписывает к каждой строке счётчики
+вхождений имени по `src`, `tests`, `presets`, `qmx.yaml`, `qmx-baseline.json`,
+`website/docs`, `benchmarks`, `finding-gate` — значит новый тест, новая фикстура
+гейта или правка страницы правил двигают счётчики **существующих** каналов, и
+это касается пакетов без канала тоже. «Вероятно» здесь не годится: прогон
+`--check` стоит секунды, поэтому он в общем DoD, и каждый пакет называет его код
+возврата числом.
+
+**`verdicts.tsv` наследуется по DAG.** Файл не перегенерируется до P11, поэтому
+пакет, ветвящийся от уже слитого предшественника, видит на своём дереве и его
+дельту вердиктов. Формула та же, что и для непокрытых классов ниже: пакет
+называет **свои двери и двери предшественников по DAG**, и чужая строка — не
+регрессия. `01-oracle-mechanics.md` §9 требует ревью дельты `verdicts.tsv`;
+исполняет это требование пакет своим отчётом, запись файла — сводящий.
+
 ### Тестовые наборы
 
 Тест следует своему предмету (ADR 0022). Каждый пакет владеет
 `tests/**`-зеркалом своего производственного набора. Свип по чужим фикстурам,
-которые лечение может покрасить, распределён поимённо:
+которые лечение может покрасить, распределён поимённо. **Вхождения и файлы —
+разные величины**, и в отчёте пакета они не взаимозаменяемы: «просмотрено 16
+файлов» там, где файлов восемь, — отчёт о том, чего нет.
 
-| пакет | свип                                                   | знаменатель                                                                      |
-| ----- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| P7    | фикстуры с `suppress_paths`/`suppress_namespaces`      | 28 файлов                                                                        |
-| P8    | тесты `LayerRegistry`/`LayerEvidence`/назначения слоёв | снимается пакетом тем же `grep -rln`; знаменатель прошлой редакцией не измерялся |
-Знаменатель снят `grep -rln` по `tests/`; это число файлов к просмотру, а не
-число падений. 16 файлов у P6 — тестовые вызовы `new RunConfiguration(`: поле
-добавляется в конструктор, и позиционные вызовы в тестах ломаются по арности.
-Это ожидаемое красное, а не регрессия.
+| пакет | свип                                         | вхождения (`grep -rn`) | файлы (`grep -rln`) |
+| ----- | -------------------------------------------- | ---------------------- | ------------------- |
+| P2    | `format-opt\|formatOptions`                  | 7                      | 3                   |
+| P6    | `new RunConfiguration(`                      | 16                     | 8                   |
+| P7    | `suppress_paths\|suppress_namespaces`        | 108                    | 25                  |
+| P8    | `LayerRegistry\|LayerEvidence` (объединение) | 107                    | 19                  |
+
+**Чем снято и чего способ не видит.** Обе колонки сняты одной парой команд
+`grep -rn` / `grep -rln` по `tests/` в дереве, где параллельно исполнялся P1;
+файлы P1 ни под один шаблон не попадают. Способ не видит фикстуру, где значение
+собирается в коде теста, а не написано литералом, и вызов через фабрику или
+рефлексию (таких для `RunConfiguration` нет — `02-cure-packages-verification.md`
+§5). Число — знаменатель к просмотру, а не предсказание числа падений: у P6
+поле добавляется в конструктор, и позиционные вызовы ломаются по арности — это
+ожидаемое красное, а не регрессия. Прежняя редакция называла у P6 «свипы 1 и 16
+файлов»: 16 было числом вхождений, подписанным как файлы, а единица источника не
+имела и снята.
 
 ### Гейт и `declared-delta.tsv` — DoD пакетов P6–P10
 
@@ -95,33 +178,85 @@ P10 попадает в этот же режим, хотя канала не в�
 
 ## 2. Пакеты
 
-Общий DoD, обязательный для всех: `composer check:code` зелёный на своём наборе;
-прогоны с `--fail-on=none` и кодом возврата без пайпа; отчёт называет дельту
-манифеста, строки `declared-delta.tsv` и фактическое число новых находок.
+Общий DoD, обязательный для всех:
 
-**Красное дерево — общая строка пяти пакетов.** Новый production-класс вводят
-**P2, P3, P4, P6, P7**; P8 и P9 нового класса не вводят (канал живёт на
-существующем продюсере, severity — в существующих Options), поэтому их эта строка
-не касается и N для них равно нулю. До P11 у каждого из пяти дерево красное по
-`composer architecture:check`, `check:artifacts` и `check:self`, потому что класс
-не внесён ни в манифест, ни в поимённые паттерны слоёв `qmx.yaml`, а
-`architecture.coverage-gap` объявлен конфигурационной ошибкой и даёт **exit 2
-безусловно, даже под `--fail-on=none`** (`02-cure.md` §7). Отсюда два следствия,
-обязательных для DoD каждого из пяти:
+- `composer check:code` зелёный **на своём наборе** — сюда входят общие
+  артефакты канала выше: они не откладываются;
+- прогоны с `--fail-on=none` и кодом возврата без пайпа;
+- отчёт называет **дельту манифеста**, строки `declared-delta.tsv`, фактическое
+  число новых находок;
+- отчёт называет **дельту вердиктов дверей** — свои двери и двери
+  предшественников по DAG, из какого вердикта в какой; файл `verdicts.tsv`
+  пакет не правит;
+- отчёт называет **код возврата** `php scripts/generate-rename-enumeration.php
+  --check`; ненулевой — не провал, а строка, отдаваемая P11;
+- пакет с каналом дополнительно: перегон `scripts/generate-suppression-snapshot.php`
+  **нулевой точкой до написания продюсера** и повторно в конце — пустой дифф
+  либо названные строки дельты в отчёт.
+
+Последние три пункта заменяют прежнюю формулу «ратчет, гейт и дерево не
+двигаются»: она была утверждением о трёх механизмах из шести.
+
+### Лента состояний ствола
+
+Состояние = ствол после того, как пакет слит, в порядке DAG
+(`02-cure-packages-verification.md` §4). Строка ленты обязана иметь отражение в
+разделе своего пакета (в `DoD` или в `Некомпенсировано`) и владельца в колонке
+«компенсирует». Пустого места в последней колонке быть не может: обязанность без
+владельца — это и есть тот дефект, из-за которого пакет, корректный по своему
+DoD, оставлял ствол хуже, чем до и после.
+
+**Чтение таблицы: строка называет то, что пакет ДОБАВЛЯЕТ к красному множеству
+ствола.** Что его перебазированное дерево при этом НЕСЁТ от предшественников —
+названо в `Некомпенсировано` его раздела, по формуле M1 и по правилу
+наследования `verdicts.tsv` (§1). Две величины не совпадают, и путать их дорого:
+исполнитель, увидевший чужую строку, ищет регрессию там, где её нет.
+
+| после   | что красное на стволе                                                                                                                                                                                                                                                                                                                                                                   | механизм                    | компенсирует |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------ |
+| **P1**  | `input-doors:check` (Б2, Н1, Н2); `enumeration:renames:check` — по коду возврата прогона; `--help` трёх дверей                                                                                                                                                                                                                                                                          | M3, M2, M5h                 | P11          |
+| **P2**  | манифест/`qmx.yaml` (свой класс); `input-doors:check` (Б1); `enumeration:renames:check`                                                                                                                                                                                                                                                                                                 | M1, M3, M2                  | P11          |
+| **P3**  | манифест/`qmx.yaml` (`DrillDownBinding`); `input-doors:check` (Б7, Б8); `--help`                                                                                                                                                                                                                                                                                                        | M1, M3, M5h                 | P11          |
+| **P4**  | манифест/`qmx.yaml` (общий матчер); `input-doors:check` (Б9)                                                                                                                                                                                                                                                                                                                            | M1, M3                      | P11          |
+| **P5**  | `input-doors:check` (Н3); `enumeration:renames:check`                                                                                                                                                                                                                                                                                                                                   | M3, M2                      | P11          |
+| **P6**  | манифест/`qmx.yaml` (свои классы; чужих не несёт — P8 и P9 классов не вводят); `enumeration:renames:check` — строка канала `discovery.unmatched-exclude` плюс сдвиг счётчиков; `input-doors:check`; гейт по объявленной поверхности; снапшот подавлений — если находка попала под существующий суппрессор; `--help` двери; **канал не документирован**: страницы группы `discovery` нет | M1, M2, M3, M4, M5, M5h, M6 | P11          |
+| **P7**  | манифест/`qmx.yaml` — свои классы **плюс непокрытые классы P2**; `enumeration:renames:check` — три строки каналов плюс сдвиг счётчиков; `input-doors:check`; гейт; снапшот подавлений при том же условии; **страницы группы `suppression` нет**                                                                                                                                         | M1, M2, M3, M4, M5, M6      | P11          |
+| **P8**  | `enumeration:renames:check` — строка канала плюс сдвиг счётчиков от фикстур гейта и правки `architecture*.md`; `input-doors:check`; гейт; снапшот подавлений при том же условии. **Манифест не краснит**: ни своего класса, ни чужого — сливается первым в тире                                                                                                                         | M2, M3, M4, M5              | P11          |
+| **P9**  | `enumeration:renames:check` — строка канала `coupling.*` плюс сдвиг счётчиков; `input-doors:check`; гейт; снапшот подавлений при том же условии. **Манифест не краснит**: своего класса нет, чужих не несёт — предшественник по слиянию только P8                                                                                                                                       | M2, M3, M4, M5              | P11          |
+| **P10** | манифест/`qmx.yaml` — **несёт непокрытые классы P2 и P3**, своих не вводит; гейт (`format:summary`); `input-doors:check`                                                                                                                                                                                                                                                                | M1, M3, M4                  | P11          |
+| **P11** | ничего: `composer check` зелёный целиком                                                                                                                                                                                                                                                                                                                                                | —                           | —            |
+
+Механизмы, названные буквами: **M1** — новый production-класс вне манифеста и
+поимённых паттернов `qmx.yaml`; **M2** — устаревание `enumeration-renames.tsv`;
+**M3** — дрейф `verdicts.tsv`; **M4** — гейт до внесения `declared-delta.tsv`;
+**M5** — снапшот подавлений; **M5h** — тексты `--help`; **M6** — страница
+правил новой группы и её строки в инвентаре и nav. Все шесть разобраны в §1.
+
+**M6 — это не устаревание, а жёсткий отказ**, и потому он единственный, который
+раунд обязан не допустить, а не отложить: генератор инвентаря падает на
+неклассифицированном пути документации, включая неотслеженный файл. Отсюда
+решение §1: файл страницы новой группы заводит P11 вместе с префиксом инвентаря
+и строкой nav, одним изменением. Цена решения названа: между P6/P7 и P11 канал
+существует недокументированным.
+
+**M1 — не только свои классы.** Пакет, ветвящийся от уже слитого
+предшественника, несёт и его непокрытые классы, потому что `qmx.yaml` правит
+только P11. Сегодня это **P7** (свои классы + классы P2, от которого он
+ветвится по строке DI) и **P10** (классы P2 и P3; своих у него нет). P8 и P9
+чужих классов не несут — в порядке слияния тира они идут первыми и от P2 не
+ветвятся; P6 не несёт чужих по той же причине. Формулировка «N = число новых классов пакета» для них
+невыполнима по чужой причине — ровно ловушка «пакет корректен по своему DoD, а
+дерево хуже». Отсюда два следствия для DoD каждого пакета с M1:
 
 - проверка «`--fail-on=none` даёт exit 0, а не 2» ставится **на фикстуре**, а не
-  на `src/`;
+  на `src/`: `architecture.coverage-gap` объявлен конфигурационной ошибкой и даёт
+  exit 2 безусловно, даже под `--fail-on=none` (`02-cure.md` §7);
 - на `src/` пакет гоняет `bin/qmx check src/ --baseline=qmx-baseline.json
   --fail-on=warning`, а не `composer selfcheck` (первая половина которого —
   `architecture:check` — заведомо красная и до второй не доходит), и называет
   результат так: **ровно N находок `architecture.coverage-gap`, называющих новые
-  классы пакета и его предшественников, и ничего больше**. **N — не только свои
-  классы:** пакет, ветвящийся от уже слитого предшественника, несёт и его
-  непокрытые классы, потому что `qmx.yaml` правит только P11. Сегодня это P7
-  (свои классы + классы P2) и P10 (классы P2 и P3; своих у него нет).
-  Формулировка «N = число новых классов пакета» для них невыполнима по чужой
-  причине — ровно ловушка «пакет корректен по своему DoD, а дерево хуже».
-  «Ноль» на красном по манифесту дереве недостижимо и критерием не является.
+  классы пакета и его предшественников, и ничего больше**. «Ноль» на красном по
+  манифесту дереве недостижимо и критерием не является.
 
 ### P1 — три отказа в консольном адаптере (Б2, Н1, Н2)
 
@@ -142,8 +277,12 @@ P10 попадает в этот же режим, хотя канала не в�
 `baseline:*` (`BaselineRun`), `directives` и `debug:layer-assignment` (оба через
 `AnalysisPreflight:62`). Это единственная дверь раунда, закрывающаяся сразу на
 нескольких командах.
-**Некомпенсировано:** тексты `--help` трёх дверей (P11). Ратчет, гейт и дерево не
-двигаются — отказ не порождает находки и нового класса.
+**Некомпенсировано (строка ленты P1, всё — до P11):** тексты `--help` трёх
+дверей; `input-doors:check` красный — вердикты Б2, Н1 и Н2 уходят из `SILENT` в
+`REFUSES`, и это **первая** дельта `verdicts.tsv` раунда, которую наследуют все
+последующие пакеты; `enumeration:renames:check` — код возврата `--check` назван
+в отчёте. Манифест, `qmx.yaml`, гейт и ратчет пакет не двигает: находки и нового
+класса он не порождает.
 
 ### P2 — реестр ключей `--format-opt` (Б1)
 
@@ -161,10 +300,13 @@ P10 попадает в этот же режим, хотя канала не в�
 чужой-но-настоящий ключ не отказывает; `--all` не отказывает на своём
 `violations`; **отказ проверен полным прогоном `bin/qmx check --format-opt=zzz=1`,
 а не только юнит-тестом фабрики** — иначе пропуск строки DI невидим; свип
-3 тестовых файлов; общая строка красного дерева.
-**Некомпенсировано:** значения ключей по-прежнему не проверяются (позиция 107,
-`00-overview.md` останавливается на ключах осознанно); дерево красное по
-`architecture:check`, `check:artifacts` и `check:self` до P11.
+7 вхождений в 3 файлах (§1); следствия M1 из §2.
+**Некомпенсировано (строка ленты P2, всё — до P11):** значения ключей
+по-прежнему не проверяются (позиция 107, `00-overview.md` останавливается на
+ключах осознанно); манифест и слой `qmx.yaml` для нового класса — дерево красное
+по `architecture:check`, `check:artifacts` и `check:self`; `input-doors:check` —
+вердикт Б1 плюс унаследованные три двери P1; `enumeration:renames:check` — по
+коду возврата.
 
 ### P3 — привязка `--namespace` / `--class` в `check` (Б7, Б8)
 
@@ -183,9 +325,11 @@ P10 попадает в этот же режим, хотя канала не в�
 **DoD:** «нет такого» и «есть и чист» перестали быть одной строкой;
 `FindingFilter` не изменён (фильтр — не место проверки существования); glob-форма
 `--namespace` проверяется тем же матчером; отказ проверен полным прогоном
-`bin/qmx check --namespace=...`; общая строка красного дерева.
-**Некомпенсировано:** `--help` (P11); дерево красное до P11 — новый
-`DrillDownBinding` не внесён ни в манифест, ни в слой `qmx.yaml`.
+`bin/qmx check --namespace=...`; следствия M1 из §2.
+**Некомпенсировано (строка ленты P3, всё — до P11):** `--help`; манифест и слой
+`qmx.yaml` — новый `DrillDownBinding` не внесён ни туда, ни туда;
+`input-doors:check` — вердикты Б7 и Б8 плюс унаследованные двери P1;
+`enumeration:renames:check` — по коду возврата.
 
 ### P4 — привязка `graph:export --namespace` (Б9)
 
@@ -200,9 +344,11 @@ P10 попадает в этот же режим, хотя канала не в�
 
 **DoD:** обе копии сравнения удалены, тест ловит расхождение отрисовки и
 проверки; несуществующий неймспейс → exit 3; существующий → прежний граф
-байт-в-байт; общая строка красного дерева.
-**Некомпенсировано:** `--exclude-namespace` (Б10) осознанно не лечится; дерево
-красное до P11 — новый матчер не внесён ни в манифест, ни в слой `qmx.yaml`.
+байт-в-байт; следствия M1 из §2.
+**Некомпенсировано (строка ленты P4, всё — до P11):** `--exclude-namespace`
+(Б10) осознанно не лечится; манифест и слой `qmx.yaml` — новый матчер не внесён
+ни туда, ни туда; `input-doors:check` — вердикт Б9 плюс унаследованные двери P1;
+`enumeration:renames:check` — по коду возврата.
 
 ### P5 — `debug:layer-assignment <FQCN>` (Н3)
 
@@ -212,8 +358,16 @@ P10 попадает в этот же режим, хотя канала не в�
 аргумента в нём даёт `ConfigurationRefusal`. Реальный класс вне слоёв сохраняет
 прежний вывод `(no layer)` + совет — команда перестаёт склеивать два ответа.
 
-**DoD:** пара «несуществующий FQCN → 3 / реальный вне слоёв → 0» прогонами.
-**Некомпенсировано:** промахнувшийся `exclude:` в общем `qmx.yaml` под этой
-командой **молчит и после раунда** — одна из четырёх клеток остатка покрытия
-(`02-cure.md` §5). Это не дефект пакета: у команды нет отчёта о находках.
+**DoD:** пара «несуществующий FQCN → 3 / реальный вне слоёв → 0» прогонами;
+**вывод команды для реального FQCN байт-в-байт прежний** — дифф прогона до и
+после, не проза. Это критерий, а не намерение: на этом выводе стоит страж P8
+(`02-cure-packages-producers.md`), пакеты параллельны, и порядок их слияния не
+задан — безусловный дифф делает страж P8 безопасным при любом порядке. Меняется
+только ветка несуществующего FQCN.
+**Некомпенсировано (строка ленты P5, всё — до P11):** `input-doors:check` —
+вердикт Н3 плюс унаследованные двери P1; `enumeration:renames:check` — по коду
+возврата. Промахнувшийся `exclude:` в общем `qmx.yaml` под этой командой
+**молчит и после раунда** — одна из четырёх клеток остатка покрытия
+(`02-cure.md` §5); это не дефект пакета: у команды нет отчёта о находках.
+Манифест и гейт пакет не двигает.
 

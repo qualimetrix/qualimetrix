@@ -6,9 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Exception;
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
@@ -135,8 +133,8 @@ final class DirectivesCommand extends Command
                 // `catch` clause own presentation instead of every check
                 // duplicating the json/text branch inline
                 // (`01-refusal-envelope.md` §2.1).
-                throw ConfigurationRefusal::aboutInput(
-                    ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--format'),
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--format',
                     \sprintf(
                         'Unknown format "%s". Supported formats: %s.',
                         $format,
@@ -192,8 +190,8 @@ final class DirectivesCommand extends Command
             // unrecognised value is a caller who asked for a measurement this
             // command cannot make, and answering with the other one would put
             // a scope in the report's header that nobody requested.
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--sweep'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--sweep',
                 \sprintf(
                     'Unknown sweep "%s". Supported scopes: %s.',
                     $requestedSweep,
@@ -211,8 +209,8 @@ final class DirectivesCommand extends Command
         if ($missing !== []) {
             // Every one of them, as `check` reports them: a user who mistyped
             // two paths should learn both from one run.
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::CommandLine, 'paths'),
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                'paths',
                 implode("\n", $missing),
             );
         }
@@ -235,8 +233,7 @@ final class DirectivesCommand extends Command
             // the run then skipped was not read either. A run that failed to
             // parse everything it found is a different answer, and the code
             // below already gives it.
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+            throw ConfigurationRefusal::aboutResolvedInput(
                 'the configured scope analysed no PHP files, so no directive could be judged',
             );
         }
