@@ -268,6 +268,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
+            coversProjectScope: $configuration->coversProjectScope,
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
         $profiler->stop('rules');

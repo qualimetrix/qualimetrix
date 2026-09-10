@@ -705,6 +705,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'

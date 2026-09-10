@@ -24,6 +24,8 @@ Run/
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # orchestration and per-file processing
+├── Configuration/              # run configuration resolution and project
+│                               # scope coverage
 ├── Discovery/                  # discovery coordination and implementations
 ├── FileSetInspection/          # rule-selected composite
 ├── Pipeline/                   # ordered analysis pipeline, plus the prepared
@@ -38,6 +40,23 @@ Discovery -> Collection -> DependencyModel build -> Architecture policy ->
 Measurement aggregation -> ComputedMetrics evaluation -> CircularDependency
 preparation -> FileSet inspection -> Rule execution -> result projection
 ```
+
+`ProjectScopeCoverage` answers whether a run looked at the whole project or at
+a slice of it: its denominator is the production autoload roots of
+`composer.json`, so `check src/` on a project autoloading `src/` covers the
+project while `check src/Foo/` does not. The answer travels on
+`RunConfiguration::$coversProjectScope` because it is a fact about that
+configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
+refills it from `CheckScopeResolver` when a Git report scope narrows the run
+after resolution, and `AnalysisPipeline` copies it onto
+`AnalysisContext::$coversProjectScope` for the rules. The console's
+incomplete-scope warning is rendered from the same single measurement, so the
+warning and the findings cannot disagree about whether the run was a slice. The
+field has no default: every site that narrows a run states its own answer. A rule that reports a configured value as
+having bound to nothing must read it first: "bound nothing" is a fact about the
+pair (configuration, run scope), and a slice cannot carry the configuration's
+denominator. The predicate sees narrowing by path only, and answers "covers"
+when there is no composer manifest to be a denominator.
 
 `AnalysisFileDiscovery` coordinates the default or explicit discovery strategy,
 deduplicates overlapping roots by project-relative path, and applies

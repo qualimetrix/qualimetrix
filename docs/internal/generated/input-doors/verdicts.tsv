@@ -186,7 +186,7 @@ config	check	architecture	unknown-subkey	REFUSES	exit codes plus the product ref
 config	check	cache.dir	whole-value	REFUSES	exit codes plus the product refusal framing	cure:989e8f22	
 config	check	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
 config	check	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
-config	check	coupling.frameworkNamespaces	whole-value	SILENT	declared none	none	
+config	check	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	cure:R2	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	check	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	check	exclude	whole-value	SILENT	declared none	none	
 config	check	excludeHealth	whole-value	SILENT	declared none	none	

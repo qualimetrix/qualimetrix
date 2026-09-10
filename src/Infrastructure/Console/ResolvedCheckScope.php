@@ -9,9 +9,13 @@ use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 /** Resolved analysis scope plus diagnostics computed for that exact scope. */
 final readonly class ResolvedCheckScope
 {
-    /** @param list<string> $warnings */
+    /**
+     * @param list<string> $warnings
+     * @param bool $coversProjectScope Whether the resolved paths cover the project's production autoload roots
+     */
     public function __construct(
         public GitScopeResolution $scope,
         public array $warnings,
+        public bool $coversProjectScope,
     ) {}
 }

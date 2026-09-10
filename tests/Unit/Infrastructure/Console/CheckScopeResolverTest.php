@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
@@ -106,7 +107,8 @@ final class CheckScopeResolverTest extends TestCase
     ): CheckScopeResolver {
         return new CheckScopeResolver(
             new GitScopeResolver($factory),
-            new ScopeWarningChecker($reader),
+            new ScopeWarningChecker(),
+            new ProjectScopeCoverage($reader),
         );
     }
 
@@ -132,6 +134,7 @@ final class CheckScopeResolverTest extends TestCase
             pathExcludes: ['vendor'],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            coversProjectScope: true,
         );
     }
 }

@@ -247,6 +247,7 @@ final class CheckCommand extends Command
             $runConfiguration->pathExcludes,
             $runConfiguration->projectRoot,
             $runConfiguration->generatedFilePolicy,
+            $resolvedScope->coversProjectScope,
         );
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 

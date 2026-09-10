@@ -14,6 +14,8 @@ use Qualimetrix\Core\Path\PathFactory;
 
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
+    public function __construct(private readonly ProjectScopeCoverage $projectScopeCoverage) {}
+
     public function resolve(ConfigurationDocument $document): RunConfiguration
     {
         $root = $document->workingDirectory();
@@ -24,6 +26,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         );
 
         return new RunConfiguration(
+            coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList),
             paths: $pathList,
             pathExcludes: self::accumulatedStrings(
                 $document->contributions(ConfigSchema::EXCLUDES),

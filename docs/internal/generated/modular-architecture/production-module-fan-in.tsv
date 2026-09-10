@@ -7,7 +7,7 @@ Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Anal
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	46	7
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	46	8
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	19	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
@@ -189,6 +189,7 @@ Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory	Analysis.Pol
 Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	3	2
+Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind	Analysis.Run	1	1

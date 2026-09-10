@@ -2092,6 +2092,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenNoPrefixesAreDeclared
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheGraphCarriesNoDependency
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRunIsNarrowerThanTheProject
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWithoutADependencyGraph
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itTreatsADependencySourceAsABinding
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
@@ -6241,6 +6242,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itProcessesFileSuccessfully
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itReturnsFailureOnParseException
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenThereIsNoComposerManifest
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itCalculatesTotalFiles

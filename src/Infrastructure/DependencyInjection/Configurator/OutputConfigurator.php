@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
@@ -30,6 +29,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
@@ -218,7 +218,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(ConfigurationPipelineInterface::class),
             ]);
-        $container->register(RunConfigurationResolver::class);
+        $container->register(RunConfigurationResolver::class)
+            ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
         $container->register(OutputFormatResolver::class);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
@@ -372,8 +373,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(
             'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
             'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
-        )
-            ->setArgument('$composerReader', new Reference(ComposerAutoloadPathReaderInterface::class));
+        );
         $container->register(
             'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
             'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
@@ -381,6 +381,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
                 new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
+                new Reference(ProjectScopeCoverage::class),
             ]);
         $container->register(CheckConfigurationResolvers::class)
             ->setArguments([

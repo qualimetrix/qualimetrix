@@ -514,8 +514,8 @@
           "closes_in": null
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
           "closes_in": null
         }
       ]
@@ -646,18 +646,18 @@
       "closure_package": "P3",
       "consumers": [
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
-          "closes_in": null
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator",
           "closes_in": null
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "closes_in": null
+        },
+        {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
           "closes_in": null
         }
       ]
@@ -12805,6 +12805,30 @@
       "closure_package": "P3",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage": {
+      "path": "src/Analysis/Run/Configuration/ProjectScopeCoverage.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver": {
       "path": "src/Analysis/Run/Configuration/RunConfigurationResolver.php",
       "kind": "class",
@@ -13944,11 +13968,6 @@
           "closes_in": null
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
-          "closes_in": null
-        },
-        {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\ChangedFile",
           "closes_in": null
@@ -14006,6 +14025,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Contract\\GitScopeRequest",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
           "closes_in": null
         }
       ]
@@ -14088,11 +14112,6 @@
           "closes_in": null
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
-          "closes_in": null
-        },
-        {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\ChangedFile",
           "closes_in": null
@@ -14100,6 +14119,11 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
           "closes_in": null
         }
       ]
@@ -14522,11 +14546,6 @@
           "closes_in": null
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker",
-          "closes_in": null
-        },
-        {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\ChangedFile",
           "closes_in": null
@@ -14539,6 +14558,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FormatterContext",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
           "closes_in": null
         }
       ]

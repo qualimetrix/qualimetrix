@@ -171,7 +171,7 @@ final class DirectiveAuditUniverseTest extends TestCase
             ->withProfiler($profiler)
             ->build();
 
-        return $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include))->findings;
+        return $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true))->findings;
     }
 
     /**

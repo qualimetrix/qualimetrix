@@ -78,7 +78,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $analysis = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
+        $analysis = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true));
         $actual = ArchitectureViolationProjector::project($analysis->findings);
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
@@ -221,6 +223,13 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
     private function registerAnalysisPipeline(ContainerBuilder $container): void
     {
+        // One instance answers the scope question: the run configuration
+        // resolver stamps its answer onto every RunConfiguration, and the
+        // console derives its incomplete-scope warning from the same answer.
+        $container->register(ProjectScopeCoverage::class)
+            ->setArgument('$composerReader', new Reference(ComposerAutoloadPathReaderInterface::class))
+            ->setPublic(true);
+
         $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
 
         // AnalysisPipeline owns the complete phase order while every capability

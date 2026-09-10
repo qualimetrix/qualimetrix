@@ -67,6 +67,7 @@ final class AnalysisPipelineTest extends TestCase
             ['vendor'],
             $root,
             GeneratedFilePolicy::Include,
+            coversProjectScope: true,
         );
 
         $result = $pipeline->analyze($configuration);
@@ -88,7 +89,7 @@ final class AnalysisPipelineTest extends TestCase
         $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
         $result = $this->pipeline($default, $collection)->analyze(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include),
+            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true),
             $override,
         );
 
@@ -114,8 +115,8 @@ final class AnalysisPipelineTest extends TestCase
         );
         $pipeline = $this->pipeline($discovery, $collection);
 
-        $pipeline->analyze(new RunConfiguration([$firstRoot], [], $firstRoot, GeneratedFilePolicy::Include));
-        $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include));
+        $pipeline->analyze(new RunConfiguration([$firstRoot], [], $firstRoot, GeneratedFilePolicy::Include, coversProjectScope: true));
+        $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include, coversProjectScope: true));
 
         self::assertSame([$firstRoot->value(), $secondRoot->value()], $seenRoots);
     }

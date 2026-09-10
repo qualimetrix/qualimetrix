@@ -118,26 +118,42 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
      * matching either end changes `coupling.cbo-app`, so a prefix matching
      * neither is exactly the prefix that changed nothing.
      *
-     * **Two preconditions, and the second is what keeps the channel quiet on a
-     * degenerate run.** Without a dependency graph there is no universe to ask
-     * about at all. And a run whose graph carries no dependency edge — one
-     * self-contained file, checked with the project's own `qmx.yaml` — gave
-     * the collector nothing to classify, so every prefix is inert there for a
-     * reason that has nothing to do with its spelling. That is the same
-     * predicate `architecture.unmatched-exclude` uses when it declines to
-     * report a layer whose own criteria matched nothing.
+     * **Three preconditions. The first is the scope of the run itself**
+     * ({@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext::$coversProjectScope}):
+     * "this prefix bound nothing" is a fact about the pair (configuration, run
+     * scope), never about the configuration alone. Measured on this tree:
+     * `qmx check src/Analysis/Evidence/Cohesion/` under the project's own
+     * `qmx.yaml` leaves three of its four prefixes unbound, and the author's
+     * configuration is faultless — the framework code is outside the slice.
+     * On a narrowed run the honest answer is that there is nothing here to
+     * check, so the channel is silent; the cost is that a genuinely stale
+     * prefix waits for a whole-project run to be reported, which is the run
+     * that can tell the two apart.
      *
-     * The precondition is deliberately *not* "the run depends on code it did
-     * not analyse". A prefix naming the project's own namespaces classifies
-     * analysed classes and moves `coupling.cbo-app` just as well, so a run
-     * whose edges all stay inside the analysed set is one where prefixes bind
-     * and this channel must still speak.
+     * **The other two keep the channel quiet on a degenerate run.** Without a
+     * dependency graph there is no universe to ask about at all. And a run
+     * whose graph carries no dependency edge — one self-contained file,
+     * checked with the project's own `qmx.yaml` — gave the collector nothing
+     * to classify, so every prefix is inert there for a reason that has
+     * nothing to do with its spelling. That is the same predicate
+     * `architecture.unmatched-exclude` uses when it declines to report a layer
+     * whose own criteria matched nothing.
+     *
+     * The graph preconditions are deliberately *not* "the run depends on code
+     * it did not analyse". A prefix naming the project's own namespaces
+     * classifies analysed classes and moves `coupling.cbo-app` just as well,
+     * so a run whose edges all stay inside the analysed set is one where
+     * prefixes bind and this channel must still speak.
      *
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
         if (!$this->options instanceof UnmatchedFrameworkNamespaceOptions || !$this->options->isEnabled()) {
+            return [];
+        }
+
+        if (!$context->coversProjectScope) {
             return [];
         }
 

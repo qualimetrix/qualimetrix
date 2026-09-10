@@ -62,9 +62,14 @@ has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 
 `CheckScopeResolver` owns the narrow scope seam. It resolves
 `GitScopeResolution` first, so invalid Git references fail before warnings or a
-payload are produced, and only then computes partial-autoload warnings for the
-resolved project root and paths. `ResolvedCheckScope` returns that unchanged
-scope with its warning messages. `CheckCommand` validates the resolved paths
+payload are produced, and only then asks Run's `ProjectScopeCoverage` which
+production autoload roots the resolved paths leave uncovered. That one answer
+feeds both outputs of `ResolvedCheckScope`: `ScopeWarningChecker` renders it as
+the partial-autoload warning, and its emptiness is the `coversProjectScope`
+boolean `CheckCommand` puts on the scoped `RunConfiguration`, so a rule that
+must stay quiet on a slice and the warning about that slice cannot disagree.
+The coverage is taken for the resolved paths, not the configured ones: a Git
+report scope narrows the run after the configuration was resolved. `CheckCommand` validates the resolved paths
 before emitting the messages through its stderr-only warning route; structured
 stdout remains a clean report payload.
 

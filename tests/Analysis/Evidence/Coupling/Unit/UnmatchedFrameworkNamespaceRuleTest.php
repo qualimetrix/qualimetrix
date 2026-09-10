@@ -103,6 +103,24 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
         self::assertSame([], $this->rule(['Nope\\Missing'])->analyze($this->context($empty)));
     }
 
+    /**
+     * Measured on this tree before the precondition existed: `qmx check
+     * src/Analysis/Evidence/Cohesion/` under the project's own `qmx.yaml`
+     * reported three of its four prefixes as unmatched, and every one of them
+     * binds on `qmx check src/`. "Bound nothing" is a fact about the pair
+     * (configuration, run scope); a slice cannot carry the configuration's
+     * denominator, so the channel says nothing rather than blaming the author
+     * for the caller's choice of path.
+     */
+    #[Test]
+    public function itSaysNothingWhenTheRunIsNarrowerThanTheProject(): void
+    {
+        self::assertSame(
+            [],
+            $this->rule(['Nope\\Missing'])->analyze($this->context($this->graph(), coversProjectScope: false)),
+        );
+    }
+
     #[Test]
     public function itReportsOneFindingPerUnboundPrefix(): void
     {
@@ -128,9 +146,13 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
         );
     }
 
-    private function context(?DependencyGraphInterface $graph): AnalysisContext
+    private function context(?DependencyGraphInterface $graph, bool $coversProjectScope = true): AnalysisContext
     {
-        return new AnalysisContext(self::createStub(MetricRepositoryInterface::class), $graph);
+        return new AnalysisContext(
+            self::createStub(MetricRepositoryInterface::class),
+            $graph,
+            coversProjectScope: $coversProjectScope,
+        );
     }
 
     /** One edge: `Sample\Service` depends on `Symfony\Component\Console\Command\Command`. */

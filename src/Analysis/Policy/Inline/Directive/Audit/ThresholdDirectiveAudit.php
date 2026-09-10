@@ -215,6 +215,10 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             dependencyGraph: $input->baseline->dependencyGraph,
             namespaceTree: $input->baseline->namespaceTree,
             thresholdOverrides: $overrides,
+            // The counterfactual must be the same run with one directive
+            // removed. A scope-conditioned channel that spoke in the baseline
+            // and fell silent here would read as the directive's doing.
+            coversProjectScope: $input->baseline->coversProjectScope,
         ), $restrictToProducer)->produced;
     }
 
