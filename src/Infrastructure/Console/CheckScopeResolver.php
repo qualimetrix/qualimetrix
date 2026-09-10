@@ -30,8 +30,8 @@ final readonly class CheckScopeResolver
         // makes a scope-conditioned channel speak.
         //
         // One measurement, two answers, and they are not the same answer: a
-        // project whose production autoload this product cannot read has no
-        // uncovered root to warn about and no licence to judge either, so
+        // project that declares no readable production autoload at all has no
+        // uncovered target to warn about and no licence to judge either, so
         // reading the verdict off the empty warning list would silently call
         // it a whole-project run.
         $measurement = $this->projectScopeCoverage->measure($scope->projectRoot, $scope->paths);

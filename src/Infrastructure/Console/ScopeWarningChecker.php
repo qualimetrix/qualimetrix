@@ -21,7 +21,7 @@ namespace Qualimetrix\Infrastructure\Console;
 final class ScopeWarningChecker
 {
     /**
-     * @param list<string> $uncoveredAutoloadRoots Production autoload roots no analyzed path contains
+     * @param list<string> $uncoveredAutoloadRoots Production autoload targets (roots, classmap and files entries) no analyzed path contains
      *
      * @return list<string> Warning messages (empty when the scope is complete)
      */

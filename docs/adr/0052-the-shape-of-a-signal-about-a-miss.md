@@ -81,9 +81,9 @@ result as a whole-project run. A project declaring its production code through
 any run at all. The measurement now has three answers, carried together on
 `ProjectScopeMeasurement`: covered, narrowed, and unreadable — and unreadable
 reads as "cannot judge", so the gate closes and no scope warning is printed,
-because there is no uncovered root to name. A *missing* `composer.json` still
-reads as covered: there is no manifest to narrow against, and treating it as
-unreadable would silence the row on every project without one.
+because there is no uncovered target to name. *Which manifests are unreadable
+is settled by the F4 amendment below, which supersedes the answer this
+paragraph first gave.*
 
 **The precondition binds every channel of the row, and one shipped without
 it.** `architecture.unmatched-exclude` was added a round later and published
@@ -91,8 +91,9 @@ unconditionally. It now asks the same predicate, and
 `ScopeConditionedChannelGuardTest` is what keeps the next one honest: it reads
 the row's population from the channel registry — **every declared channel whose
 name contains `unmatched` belongs to this row**, which is the naming convention
-this ADR now fixes — and runs the same fixture twice, under a PSR-4 manifest
-where all six must speak and under a `classmap` one where all six must be
+this ADR now fixes — and runs the same fixture under a manifest whose
+production declarations the run covers, where all six must speak, and under
+one declaring production code the run never looked at, where all six must be
 silent.
 
 **A run wide enough to judge the project is not wide enough to judge every
@@ -123,6 +124,56 @@ to.** Per instance, a clause carving classes out of one module was reported
 against every module with nothing to carve, and its recommendation — drop the
 clause — would have broken the module where it works. The counts are summed
 over the instances one declaration produced.
+
+## Amended (X16 F4): only genuine illegibility closes the gate
+
+F1's answer to "no denominator" was right about the direction and wrong about
+which manifests have none. Treating `classmap`, `psr-0` and `files` as unread
+production declarations closed the gate on any manifest carrying one. Measured
+on `benchmarks/vendor`: **51 of 125 packages** declare production code that
+way, most often a `files` section of polyfills or helpers standing beside an
+ordinary `psr-4` one. On such a project all six channels of the row are silent
+on every run — the cure for silent acceptance itself silently inert on roughly
+half of real projects, which is worse than the defect it treats, because the
+defect is visible in the report and the inertness is not.
+
+`classmap`, `psr-0` and `files` are therefore ordinary path targets in the
+coverage comparison. `files` names files, `classmap` names files and
+directories, and the question asked of a target — does an analysed path
+contain it — answers the same way for a file as for a directory. The
+denominator is the union of every production section, so a mixed manifest is
+measured whole rather than by its PSR-4 half: the false accusation F1 removed
+stays removed, now because the run is measured against the `files` entry too
+and comes up short, rather than because nothing could be measured. After the
+change every one of the 125 packages yields a readable denominator.
+
+"Cannot judge" survives, narrowed to the honest case: the manifest declares no
+production autoload this product can read **at all** — it is absent, it does
+not parse, it has no `autoload` section, or every production section in it is
+empty or malformed. This reverses F1's second half as well: a *missing*
+`composer.json` used to read as covered on the ground that its absence is
+warned about separately. That warning is a stderr line, and this ADR already
+rejected stderr as a signal: it survives neither `-q` nor the machine formats,
+so on a project without a manifest the row is simply silent in CI. The price
+is paid anyway, because a project that never said which of its directories
+hold production code cannot distinguish a slice from a whole, and guessing
+"whole" is the guess that accuses an author of a correct configuration. Unlike
+the `classmap` reversal, this one has no price measured on a corpus:
+`benchmarks/vendor` cannot price it, since every package there carries a
+`composer.json` by construction.
+
+Two boundaries of the new comparison, stated rather than left to be
+rediscovered. A declared target that does not resolve on disk is skipped,
+which opens the gate rather than closing it; that covers a stale entry and a
+`classmap` glob alike, since Composer accepts `*` in a `classmap` entry and
+this product does not expand it (no manifest of the 125 uses one). And
+`ComposerDiscoveryStage` still derives *default* analysis paths from
+`autoload.psr-4` only, so on a mixed manifest whose non-PSR-4 targets lie
+outside its PSR-4 roots, `qmx check` with no paths now reports an incomplete
+scope naming that target and silences the row — correctly, since that code
+genuinely was not analysed, but it is a behaviour the default invocation did
+not have before. Measured on the same corpus: **1 package of 125**
+(`marc-mabe/php-enum`, a `files` stub outside `src/`) is in that shape.
 
 ## Rejected alternatives
 

@@ -27,20 +27,29 @@ interface ComposerAutoloadPathReaderInterface
     public function extractPsr4Roots(string $composerJsonPath): array;
 
     /**
-     * Whether the manifest declares production code through an autoload
-     * mechanism this product does not read.
+     * Every path the manifest's **production** autoload declares, in the
+     * spelling `composer.json` uses — `psr-4` and `psr-0` roots, `classmap`
+     * entries and `files` entries alike.
      *
-     * `extractAutoloadPaths()` returns PSR-4 roots and nothing else, so its
-     * result cannot distinguish "the manifest declares only these" from "the
-     * manifest declares these and a `classmap` besides". A caller measuring a
-     * run against the project needs the difference: in the second case its
-     * denominator is short by however much the unread section declares, and a
-     * verdict computed from it would call a partial run whole.
+     * `extractAutoloadPaths()` answers with PSR-4 roots only, which is the
+     * right answer for choosing default analysis paths and the wrong one for
+     * measuring a run against the project: a manifest declaring production
+     * code through `classmap`, `psr-0` or `files` would yield a denominator
+     * short by however much those sections hold.
      *
-     * Only production sections count. `autoload-dev` is test code, which is
-     * outside the denominator by design, and `exclude-from-classmap` removes
-     * code rather than declaring it. An empty or malformed section declares
-     * nothing and is not a declaration either.
+     * A `classmap` entry may name a file and a `files` entry always does.
+     * That is no obstacle to the comparison this feeds — a caller asks
+     * whether the analysed paths contain the target, and containment answers
+     * the same way for a file as for a directory.
+     *
+     * `null` means the manifest declares no production autoload this product
+     * can read at all: it is absent, it does not parse, it has no `autoload`
+     * section, or every production section in it is empty or malformed.
+     * Only production sections count — `autoload-dev` is test code, outside
+     * the denominator by design, and `exclude-from-classmap` removes code
+     * rather than declaring it.
+     *
+     * @return ?list<string> paths relative to composer.json, or null when nothing production was declared
      */
-    public function declaresUnreadableProductionAutoload(string $composerJsonPath): bool;
+    public function productionAutoloadTargets(string $composerJsonPath): ?array;
 }

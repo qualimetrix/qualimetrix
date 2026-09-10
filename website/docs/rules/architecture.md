@@ -530,10 +530,11 @@ Two things the channel deliberately does not do:
   the counts are summed: the clause is reported only when it removed nothing
   anywhere while the template matched something somewhere.
 - **It is only judged on a run that can judge it.** Like the other channels
-  about a configured value that bound to nothing, it needs paths covering the
-  project's production autoload roots and a `composer.json` declaring them
-  through `psr-4`; a narrower run, or a `classmap`-only project, leaves the
-  channel silent.
+  about a configured value that bound to nothing, it needs paths covering
+  everything `composer.json` declares as production code — `psr-4` and `psr-0`
+  roots, `classmap` and `files` entries alike. A narrower run, or a project
+  whose manifest declares no production autoload at all, leaves the channel
+  silent.
 
 Unlike the architecture *configuration* diagnostics, this one is an ordinary
 rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore

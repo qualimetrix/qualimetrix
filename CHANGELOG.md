@@ -184,11 +184,12 @@ and why `-q` no longer hides which key or file was refused.
   prefix under which no name fell) and `architecture.unmatched-exclude` (a
   layer `exclude:` clause that removed no class from a layer that did match
   something). Every one of the six is judged only on a run wide enough to
-  judge it: paths covering the project's production autoload roots, and a
-  `composer.json` declaring every one of them through `psr-4` — a narrower run,
-  or a project declaring any production code through `classmap`, `psr-0` or
-  `files`, with or without a `psr-4` section beside it, cannot
-  tell a stale value from one whose subject lies outside the slice. Each
+  judge it: paths covering everything `composer.json` declares as production
+  code — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike. A
+  narrower run, or a project whose manifest declares no production autoload at
+  all (no `composer.json`, one that does not parse, or one without a production
+  section), cannot tell a stale value from one whose subject lies outside the
+  slice, and every channel stays silent there. Each
   configured value is then judged against the place it names, so an entry
   written for `tests/` is not reported by `qmx check src/` while a stale entry
   inside `src/` on the same run still is; a value that begins with a glob

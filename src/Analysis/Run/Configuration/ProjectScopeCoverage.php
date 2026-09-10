@@ -38,30 +38,34 @@ use RuntimeException;
  * is judged by the per-value question its own channel asks instead, and this answer is the
  * project-wide half of that pair.
  *
- * **Three answers, not two, because "no denominator" is not "covered".**
- * A `composer.json` that declares production code through `classmap`,
- * `psr-0` or `files` leaves that code out of everything measurable here, and
- * answering "covers" there hands every scope-conditioned channel a licence to
- * accuse on a run nobody could judge — the error in the expensive direction.
- * Such a project is `Unknown`, and `Unknown` reads as "cannot judge": the
- * gate is closed and no scope warning is printed, because there is no
- * uncovered root to name.
+ * **Two answers, and the second is "cannot judge".** A run is measured
+ * against every production path the manifest declares — `psr-4` and `psr-0`
+ * roots, `classmap` entries and `files` entries alike. A `classmap` or
+ * `files` entry may name a single file rather than a directory, which is no
+ * obstacle: the question asked of each target is whether an analysed path
+ * contains it, and containment answers the same way for a file. The other
+ * answer, "cannot judge", is reached only when the manifest declares nothing
+ * readable *at all* — it is absent, it does not parse, it has no `autoload`
+ * section, or every production section in it is empty or malformed. Then
+ * there is no denominator, the gate closes, and no scope warning is printed
+ * because there is no uncovered target to name.
  *
- * **An unread section beside a readable one is the same "no denominator", not
- * a smaller one.** A manifest declaring both `psr-4` and `classmap` yields a
- * non-empty root list, and measuring against it answers about the PSR-4 half
- * while the classmap half — production code, never analysed, never counted —
- * is silently absent from both numerator and denominator. Emptiness of the
- * root list is therefore not the question; whether anything production was
- * declared that this class cannot measure is. `autoload-dev` sections and
- * `exclude-from-classmap` are not such declarations: the first is test code,
- * outside the denominator by design, and the second removes code rather than
- * declaring it.
+ * **Superseded (X16 F4): `classmap`, `psr-0` and `files` used to close the
+ * gate.** Treating a manifest that declares production code through any of
+ * them as unjudgeable was measured to silence every scope-conditioned channel
+ * on 51 of the 125 packages in `benchmarks/vendor` — most often a `files`
+ * section of polyfills or helpers standing beside an ordinary `psr-4` one.
+ * A cure that is itself inert on half of real projects is worse than the
+ * defect it treats, because the defect is visible and the inertness is not.
+ * Those sections are ordinary path targets here, and only genuine
+ * illegibility closes the gate.
  *
- * A *missing* `composer.json` stays "covers": there
- * is no project manifest to narrow against at all, the absence is already
- * reported by `CheckCommand::warnIfComposerJsonMissing()`, and treating it as
- * `Unknown` would silence these channels on every project that has none.
+ * **A target that does not exist on disk is skipped**, and skipping opens the
+ * gate rather than closing it. That covers a stale entry and a `classmap`
+ * glob alike — Composer accepts `*` in a `classmap` entry, this class does not
+ * expand it, and such an entry therefore contributes nothing to the
+ * denominator. Measured on `benchmarks/vendor`: no manifest of the 125 uses
+ * one.
  */
 final readonly class ProjectScopeCoverage
 {
@@ -74,11 +78,11 @@ final readonly class ProjectScopeCoverage
     }
 
     /**
-     * The production autoload roots no analysed path contains, in the spelling
-     * `composer.json` uses.
+     * The production autoload targets no analysed path contains, in the
+     * spelling `composer.json` uses.
      *
      * Empty on a project whose production autoload this class cannot read:
-     * there is no root to name, which is why the verdict and this list are
+     * there is no target to name, which is why the verdict and this list are
      * taken from one measurement — a caller reading emptiness here as "covers"
      * would reintroduce exactly the answer {@see ProjectScopeMeasurement}
      * separates.
@@ -101,22 +105,20 @@ final readonly class ProjectScopeCoverage
     {
         $composerJsonPath = $projectRoot->joinRelative(RelativePath::fromString('composer.json'));
 
-        if (!$composerJsonPath->exists()) {
-            // Missing composer.json is already reported by CheckCommand::warnIfComposerJsonMissing()
-            return ProjectScopeMeasurement::covered();
-        }
+        // One question, one branch: either the manifest declares production
+        // paths this product can compare a run against, or it declares none
+        // and no channel may judge anything on this run. A missing manifest
+        // is that second case. Its absence does produce a stderr line from
+        // CheckCommand::warnIfComposerJsonMissing(), but that line survives
+        // neither `-q` nor the machine formats, so on such a project this
+        // silence is what a CI pipeline sees — the price of not guessing
+        // "whole project" for a project that never said what its code is.
+        $autoloadPaths = $this->composerReader->productionAutoloadTargets($composerJsonPath->value());
 
-        // A section this product cannot read declares production code that
-        // would never enter the denominator, so the measurement is short by
-        // it whether or not a psr-4 section stands beside it.
-        if ($this->composerReader->declaresUnreadableProductionAutoload($composerJsonPath->value())) {
-            return ProjectScopeMeasurement::unreadable();
-        }
-
-        // Only check production autoload paths; autoload-dev (tests/) is not required for accurate coupling metrics
-        $autoloadPaths = $this->composerReader->extractAutoloadPaths($composerJsonPath->value(), includeDev: false);
-
-        if ($autoloadPaths === []) {
+        // `[]` is the same answer as `null` and is spelled out rather than
+        // trusted away: reading an empty denominator as "covers" is precisely
+        // the defect this measurement was amended to remove.
+        if ($autoloadPaths === null || $autoloadPaths === []) {
             return ProjectScopeMeasurement::unreadable();
         }
 
@@ -134,7 +136,8 @@ final readonly class ProjectScopeCoverage
 
         $uncoveredPaths = [];
         foreach ($autoloadPaths as $autoloadPath) {
-            // Autoload directory doesn't exist on disk — skip
+            // The declared target does not exist on disk — skip it. See the
+            // class docblock: this opens the gate rather than closing it.
             $resolvedAutoload = $this->tryResolve(
                 static fn(): AbsolutePath => PathFactory::fromCliArgument($autoloadPath, $projectRoot)->canonicalize(),
             );
@@ -148,7 +151,8 @@ final readonly class ProjectScopeCoverage
     }
 
     /**
-     * Checks if the autoload path is covered by any of the analyzed paths.
+     * Checks if the declared autoload target — a directory or a single file —
+     * is covered by any of the analyzed paths.
      *
      * @param list<AbsolutePath> $analyzedPaths Canonicalized analyzed paths
      */

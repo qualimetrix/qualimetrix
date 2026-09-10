@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
@@ -37,13 +38,23 @@ use Symfony\Component\Console\Tester\CommandTester;
  * {@see itJudgesOnlyTheValuesWhoseSubjectTheRunAnalysed} deliberately covers
  * only the four that can place a subject.
  *
- * **The pair is the proof.** One fixture, two `composer.json` files. Under
- * PSR-4 the run can judge and every one of the six channels speaks; the same
- * tree and the same configuration under a `classmap`-only manifest give the
- * product nothing to measure coverage against, and every one of the six must
+ * **The pair is the proof.** One fixture, several `composer.json` files. On a
+ * run whose paths cover everything the manifest declares production — through
+ * `psr-4`, `classmap` or `files` alike — the product can judge and every one
+ * of the six channels speaks; on the same tree and the same configuration
+ * under a manifest declaring a production target the run never looked at, or
+ * under one declaring no production autoload at all, every one of the six must
  * be silent. Without the speaking half, silence would not distinguish a
  * working gate from a fixture that cannot produce the channel at all; without
  * the silent half, a channel with no gate passes.
+ *
+ * **Superseded (X16 F4): the silent half used to be a `classmap`-only
+ * manifest.** Refusing to judge any project that declares production code
+ * through `classmap`, `psr-0` or `files` was measured to silence all six
+ * channels on 51 of the 125 packages in `benchmarks/vendor` — the cure inert,
+ * invisibly, on half of real projects. Such a manifest now judges like any
+ * other, and silence has to be earned by a target outside the run or by a
+ * manifest that declares nothing readable.
  */
 final class ScopeConditionedChannelGuardTest extends TestCase
 {
@@ -68,6 +79,13 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         $this->fixture = sys_get_temp_dir() . '/qmx-scope-conditioned-' . bin2hex(random_bytes(6));
         mkdir($this->fixture . '/src', 0o755, true);
         mkdir($this->fixture . '/tests', 0o755, true);
+        mkdir($this->fixture . '/bootstrap', 0o755, true);
+
+        // Production code the run over `src` never looks at. It exists on
+        // disk on purpose: a declared target that does not resolve is skipped
+        // by the measurement, so a phantom one would leave the gate open and
+        // the silent half would pass without proving anything.
+        file_put_contents($this->fixture . '/bootstrap/helpers.php', "<?php\n\nfunction sample_helper(): int\n{\n    return 1;\n}\n");
 
         file_put_contents($this->fixture . '/src/Service.php', <<<'PHP'
             <?php
@@ -172,11 +190,19 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         );
     }
 
-    /** The speaking half: on a run that can judge, every one of the six fires. */
+    /**
+     * The speaking half: on a run that can judge, every one of the six fires —
+     * whichever autoload mechanism the manifest used to declare what the run
+     * covered.
+     *
+     * @param array<string, mixed> $autoload
+     * @param list<string> $paths the run's paths
+     */
     #[Test]
-    public function itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge(): void
+    #[DataProvider('provideManifestsTheRunCovers')]
+    public function itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge(array $autoload, array $paths = ['src']): void
     {
-        $spoke = $this->channelsOf($this->check(['autoload' => ['psr-4' => ['Sample\\' => 'src/']]]));
+        $spoke = $this->channelsOf($this->check($autoload, $paths));
 
         self::assertSame(
             self::SCOPE_CONDITIONED,
@@ -185,18 +211,89 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         );
     }
 
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function provideManifestsTheRunCovers(): iterable
+    {
+        yield 'psr-4' => [['autoload' => ['psr-4' => ['Sample\\' => 'src/']]]];
+
+        yield 'classmap alone, which used to silence the row' => [['autoload' => ['classmap' => ['src/']]]];
+
+        yield 'a files entry inside the analysed directory, beside psr-4' => [[
+            'autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'files' => ['src/Service.php']],
+        ]];
+
+        yield 'psr-0 alone' => [['autoload' => ['psr-0' => ['Sample_' => 'src/']]]];
+
+        // The discriminating shape: the gate opens because the run names the
+        // directory holding the declared file, not because the run happens to
+        // be the project root or to equal the declared target.
+        yield 'a files entry outside src, with a run that reaches it' => [
+            ['autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'files' => ['bootstrap/helpers.php']]],
+            ['src', 'bootstrap'],
+        ];
+    }
+
     /**
-     * The silent half: the same tree and the same configuration under a
-     * manifest whose production autoload this product cannot read. There is no
-     * denominator, so there is no coverage verdict, so no channel of the round
-     * may accuse anyone.
+     * The silent half, first shape: the same tree and the same configuration
+     * under a manifest declaring production code the run never analysed. The
+     * run is a slice, so no channel of the round may accuse anyone — and it
+     * makes no difference which section declared the part left out.
+     *
+     * @param array<string, mixed> $autoload
      */
     #[Test]
-    public function itStaysSilentOnEveryScopeConditionedChannelWhenTheRunCannotJudge(): void
+    #[DataProvider('provideManifestsWithProductionOutsideTheRun')]
+    public function itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice(array $autoload): void
     {
-        $spoke = $this->channelsOf($this->check(['autoload' => ['classmap' => ['src/']]]));
+        $spoke = $this->channelsOf($this->check($autoload));
+
+        self::assertSame([], $spoke, 'A run that did not cover the declared production code may judge no value.');
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function provideManifestsWithProductionOutsideTheRun(): iterable
+    {
+        yield 'a files entry outside the analysed directory' => [[
+            'autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'files' => ['bootstrap/helpers.php']],
+        ]];
+
+        yield 'a classmap entry outside the analysed directory' => [[
+            'autoload' => ['psr-4' => ['Sample\\' => 'src/'], 'classmap' => ['bootstrap/']],
+        ]];
+
+        yield 'a psr-4 root outside the analysed directory' => [[
+            'autoload' => ['psr-4' => ['Sample\\' => 'src/', 'Sample\\Bootstrap\\' => 'bootstrap/']],
+        ]];
+
+        yield 'a classmap-only project checked by one of its two entries' => [[
+            'autoload' => ['classmap' => ['src/', 'bootstrap/']],
+        ]];
+    }
+
+    /**
+     * The silent half, second shape and the only remaining "cannot judge":
+     * the manifest declares no production autoload this product can read at
+     * all. There is no denominator, so there is no coverage verdict, so no
+     * channel of the round may accuse anyone.
+     *
+     * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
+     */
+    #[Test]
+    #[DataProvider('provideManifestsThatDeclareNoProductionAutoload')]
+    public function itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction(?string $manifest): void
+    {
+        $spoke = $this->channelsOf($this->checkWithRawManifest($manifest));
 
         self::assertSame([], $spoke, 'A run with nothing to measure coverage against may judge no configured value.');
+    }
+
+    /** @return iterable<string, array{?string}> */
+    public static function provideManifestsThatDeclareNoProductionAutoload(): iterable
+    {
+        yield 'no composer.json at all' => [null];
+        yield 'a composer.json that does not parse' => ['{ "autoload": { "psr-4": '];
+        yield 'a manifest with no autoload section' => ['{"name":"acme/demo"}'];
+        yield 'only a dev section' => ['{"autoload-dev":{"psr-4":{"Sample\\\\Tests\\\\":"tests/"}}}'];
     }
 
     /**
@@ -278,10 +375,22 @@ final class ScopeConditionedChannelGuardTest extends TestCase
 
     /**
      * @param array<string, mixed> $autoload
+     * @param list<string> $paths
      */
-    private function check(array $autoload): CommandTester
+    private function check(array $autoload, array $paths = ['src']): CommandTester
     {
-        file_put_contents($this->fixture . '/composer.json', json_encode($autoload, \JSON_THROW_ON_ERROR));
+        return $this->checkWithRawManifest(json_encode($autoload, \JSON_THROW_ON_ERROR), $paths);
+    }
+
+    /**
+     * @param ?string $manifest raw manifest content, or null to leave the fixture without one
+     * @param list<string> $paths
+     */
+    private function checkWithRawManifest(?string $manifest, array $paths = ['src']): CommandTester
+    {
+        if ($manifest !== null) {
+            file_put_contents($this->fixture . '/composer.json', $manifest);
+        }
 
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
@@ -293,7 +402,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         try {
             $tester->execute(
                 [
-                    'paths' => ['src'],
+                    'paths' => $paths,
                     '--workers' => '0',
                     '--format' => 'json',
                     '--fail-on' => 'none',

@@ -125,6 +125,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"aggregation prefixes"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"namespace composer json"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DeadConfigurationKeysTest::itRejectsRemovedConfigurationKeys"namespace strategy"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeclaresNoProductionTargetsWhenTheManifestDoesNotParse
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeclaresNoProductionTargetsWhenTheManifestIsAbsent
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeduplicatesPathsSharedAcrossAutoloadAndAutoloadDev
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itDeduplicatesRepeatedPathsWithinAutoload
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itExtractsAllPathsFromAMultiPathPsr4Mapping
@@ -133,17 +135,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPathInAMultiPathMappingToTheProjectRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMapsAnEmptyPsr4PathToTheProjectRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itMergesAutoloadAndAutoloadDevPaths
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsNoUnreadableSectionWhenTheManifestIsAbsent
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"a dev classmap is not production"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"a scalar in that position is not a declaration"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"an empty classmap declares nothing"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"classmap alone"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"classmap beside psr-4"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"exclude-from-classmap removes rather than declares"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"files beside psr-4"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"no autoload section at all"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"psr-0 beside psr-4"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReportsOnlyProductionSectionsItCannotRead"psr-4 alone"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a dev section is not production"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a multi-path prefix contributes each of its paths"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"a scalar in that position is not a declaration"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"an empty classmap declares nothing"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"an empty path means the project root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"classmap alone"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"classmap beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"exclude-from-classmap removes rather than declares"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"files beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"no autoload section at all"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"psr-0 beside psr-4"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"psr-4 alone"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReadsEveryProductionAutoloadSectionAsPaths"the same path declared twice is one target"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenTheComposerFileDoesNotExist
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itStripsTrailingSlashesFromExtractedPaths
@@ -3713,8 +3717,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryRulesRemediationMinutesToMatchTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itDeclaresTheScopeConditionedPopulation
  - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itJudgesOnlyTheValuesWhoseSubjectTheRunAnalysed
- - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge
- - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunCannotJudge
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge"a files entry inside the analysed directory, beside psr-4"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge"a files entry outside src, with a run that reaches it"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge"classmap alone, which used to silence the row"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge"psr-0 alone"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge"psr-4"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction"a composer.json that does not parse"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction"a manifest with no autoload section"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction"no composer.json at all"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenNothingDeclaresProduction"only a dev section"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a classmap entry outside the analysed directory"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a classmap-only project checked by one of its two entries"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a files entry outside the analysed directory"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a psr-4 root outside the analysed directory"
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsNotWrittenIntoAGeneratedBaseline
@@ -6314,14 +6329,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itProcessesFileSuccessfully
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itReturnsFailureOnParseException
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"a composer.json that does not parse"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"a manifest with no autoload section"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"no composer.json at all"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"only a dev section"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"production sections that are all empty"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenThereIsNoComposerManifest
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAReadableSectionStandsBesideAnUnreadableOne
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenTheManifestDeclaresNoReadableProductionAutoload
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"a dev classmap is test code, outside the denominator by design"
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"an empty production section declares nothing"
- - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionDeclaresNoProductionCode"exclude-from-classmap removes code rather than declaring it"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a classmap-only project is measured, not refused"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a files entry inside an analysed directory is covered"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a files entry named by the run itself is covered"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itMeasuresEveryProductionSectionAgainstTheRun"a psr-0 root is a root like any other"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itNamesTheProductionTargetTheRunDidNotAnalyse"a classmap directory beside an analysed psr-4 root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itNamesTheProductionTargetTheRunDidNotAnalyse"a classmap-only project checked by one of its two entries"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itNamesTheProductionTargetTheRunDidNotAnalyse"a files entry outside the analysed paths"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itNamesTheProductionTargetTheRunDidNotAnalyse"a psr-0 root beside an analysed psr-4 root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionAddsNoProductionTarget"a dev classmap is test code, outside the denominator by design"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionAddsNoProductionTarget"an empty production section declares nothing"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itStillCoversTheProjectWhenTheExtraSectionAddsNoProductionTarget"exclude-from-classmap removes code rather than declaring it"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itCarriesEveryFieldExceptTheScopeItIsGiven

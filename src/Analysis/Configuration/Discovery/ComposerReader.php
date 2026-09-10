@@ -9,15 +9,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathRe
 final class ComposerReader implements ComposerAutoloadPathReaderInterface
 {
     /**
-     * The production autoload sections this reader cannot turn into roots.
-     *
-     * `files` and classmap entries may be single files rather than
-     * directories, so they are not roots to be added to the denominator —
-     * their presence is reported instead, and the caller closes the gate.
-     */
-    private const array UNREADABLE_SECTIONS = ['classmap', 'psr-0', 'files'];
-
-    /**
      * Extracts paths from autoload.psr-4 and optionally autoload-dev.psr-4.
      *
      * Handles both single-path strings and multi-path arrays per PSR-4 spec:
@@ -74,25 +65,84 @@ final class ComposerReader implements ComposerAutoloadPathReaderInterface
         return $roots;
     }
 
-    public function declaresUnreadableProductionAutoload(string $composerJsonPath): bool
+    /**
+     * The production autoload targets, every section of it.
+     *
+     * Sections are read in the order `composer.json` writes them and merged
+     * into one list, because the comparison downstream is about containment
+     * and not about which mechanism served a path.
+     *
+     * @return ?list<string>
+     */
+    public function productionAutoloadTargets(string $composerJsonPath): ?array
     {
         $data = $this->decode($composerJsonPath);
 
-        if ($data === null || !isset($data['autoload']) || !\is_array($data['autoload'])) {
-            return false;
+        if (!\is_array($data['autoload'] ?? null)) {
+            return null;
         }
 
-        foreach (self::UNREADABLE_SECTIONS as $section) {
-            $declared = $data['autoload'][$section] ?? null;
+        /** @var array<string, mixed> $autoload */
+        $autoload = $data['autoload'];
 
-            // An empty section declares no code; a scalar in that position is
-            // not a declaration this product should read as one either.
-            if (\is_array($declared) && $declared !== []) {
-                return true;
+        // Every section merged into one list: the comparison downstream is
+        // about containment, not about which mechanism served a path.
+        $targets = array_values(array_unique([
+            ...$this->prefixMapPaths($autoload['psr-4'] ?? null),
+            ...$this->prefixMapPaths($autoload['psr-0'] ?? null),
+            ...$this->pathListPaths($autoload['classmap'] ?? null),
+            ...$this->pathListPaths($autoload['files'] ?? null),
+        ]));
+
+        // Empty is not "declares nothing to compare against but is otherwise
+        // fine": a manifest whose every production section is empty or
+        // malformed declared no production code this product can see, which
+        // is the same answer as having no section at all.
+        return $targets === [] ? null : $targets;
+    }
+
+    /**
+     * The paths of a prefix-keyed section — `psr-4` or `psr-0`. The prefix
+     * names no path; the value is a path or a list of them.
+     *
+     * @return list<string>
+     */
+    private function prefixMapPaths(mixed $map): array
+    {
+        if (!\is_array($map)) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($map as $pathOrPaths) {
+            foreach ($this->normalizePaths($pathOrPaths) as $normalized) {
+                $paths[] = $normalized;
             }
         }
 
-        return false;
+        return $paths;
+    }
+
+    /**
+     * The paths of a plain list section — `classmap` or `files`. Each entry
+     * may name a single file rather than a directory.
+     *
+     * @return list<string>
+     */
+    private function pathListPaths(mixed $list): array
+    {
+        if (!\is_array($list)) {
+            return [];
+        }
+
+        $paths = [];
+        foreach ($list as $path) {
+            foreach ($this->normalizePaths($path) as $normalized) {
+                $paths[] = $normalized;
+            }
+        }
+
+        return $paths;
     }
 
     /**

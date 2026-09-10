@@ -24,7 +24,7 @@ The two questions look alike in a report and lead to opposite actions, which is 
 
 All the channels report at **project level**, at severity `warning`.
 
-They are only judged on a run whose paths cover the project's production autoload roots, and only on a project whose `composer.json` declares those roots through `psr-4`. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake; on a project autoloading through `classmap`, `psr-0` or `files` alone there is nothing to measure the run against, and the channels stay silent.
+They are only judged on a run whose paths cover everything the project's `composer.json` declares as production code — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake; on a project whose manifest declares no production autoload at all — no `composer.json`, one that does not parse, or one with no production section — there is nothing to measure the run against, and the channels stay silent.
 
 Each value is then judged separately, against the place it names. `suppress_paths: [tests/Legacy]` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `suppress_paths: [src/Legacy]` on the same run is. A namespace value is placed through the PSR-4 map, `autoload-dev` included: `Acme\Tests\Legacy` is served from `tests/` and judged only by a run that analysed it. A value beginning with a glob (`*Legacy.php`) names no single place and is never judged.
 
