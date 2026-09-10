@@ -182,9 +182,15 @@ and why `-q` no longer hides which key or file was refused.
   `coupling.unmatched-framework-namespace` (a `coupling.frameworkNamespaces`
   prefix under which no name fell) and `architecture.unmatched-exclude` (a
   layer `exclude:` clause that removed no class from a layer that did match
-  something). They are judged only on a run whose paths cover the project's
-  production autoload roots: a narrower run cannot tell a stale value from one
-  whose subject lies outside the slice. The suppression channels answer a
+  something). Every one of the six is judged only on a run wide enough to
+  judge it: paths covering the project's production autoload roots, and a
+  `composer.json` declaring them through `psr-4` — a narrower run, or a
+  project autoloading through `classmap`, `psr-0` or `files` alone, cannot
+  tell a stale value from one whose subject lies outside the slice. Each
+  configured value is then judged against the place it names, so an entry
+  written for `tests/` is not reported by `qmx check src/` while a stale entry
+  inside `src/` on the same run still is; a layer `exclude:` under a template
+  is judged once across every layer the template expanded to. The suppression channels answer a
   different question from `--format=suppressed`, which reports suppressors that
   removed nothing — a state an honest, paid-down suppression also reaches.
 - The refusal for an unknown `health.<x>` name now lists all six built-in

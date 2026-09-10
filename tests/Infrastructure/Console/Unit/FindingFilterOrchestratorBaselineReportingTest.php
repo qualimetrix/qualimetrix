@@ -331,6 +331,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             new ErrorStream(),
             self::silentSuppressionAudit(),
             new ProjectScopeCoverage(self::createStub(ComposerAutoloadPathReaderInterface::class)),
+            self::createStub(ComposerAutoloadPathReaderInterface::class),
         );
     }
 

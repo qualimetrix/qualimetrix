@@ -500,7 +500,7 @@ everything its positive criteria caught, which is more than the declaration
 asks for, and every verdict about that layer — the forbidden edges it is
 allowed, the coverage it accounts for — is drawn from the wider set.
 `architecture.unmatched-exclude` reports it, at **warning** severity, once per
-layer:
+declaration:
 
 ```
 The "exclude" clause of layer "service" (patterns: "App\Service\Legacy\**")
@@ -522,6 +522,18 @@ Two things the channel deliberately does not do:
 - **It reports the clause, not the individual criterion.** Under the default
   `match: any`, a clause whose `suffix` fires while its `patterns` never do has
   removed classes, and this channel stays silent about the pattern.
+- **It judges a template's clause once, across every layer it expanded to.**
+  One `exclude:` under [`domain-{module}`](#template-layers) becomes one layer
+  per module, and a clause that carves classes out of one module is doing its
+  job even where another module has nothing to carve. Dropping it, as a
+  per-module finding would advise, would break the module where it works. So
+  the counts are summed: the clause is reported only when it removed nothing
+  anywhere while the template matched something somewhere.
+- **It is only judged on a run that can judge it.** Like the other channels
+  about a configured value that bound to nothing, it needs paths covering the
+  project's production autoload roots and a `composer.json` declaring them
+  through `psr-4`; a narrower run, or a `classmap`-only project, leaves the
+  channel silent.
 
 Unlike the architecture *configuration* diagnostics, this one is an ordinary
 rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore

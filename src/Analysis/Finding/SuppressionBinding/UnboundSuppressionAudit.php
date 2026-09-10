@@ -44,12 +44,15 @@ use Qualimetrix\Core\Util\PathMatcher;
  * `enabled: true` after the configuration said otherwise. Declared lazy, the
  * audit is constructed at its first call, which is after the run.
  *
- * **The gate that keeps this quiet on a narrowed run** is the round's one
- * coverage predicate, asked by the caller. "This value bound to nothing" is a
- * fact about the pair (configuration, run scope): `suppress_paths:
- * [src/Legacy]` binds nothing when the run was pointed at `src/Domain/`, and
- * the author of the configuration did not choose that path — the caller did.
- * On a narrowed run the honest answer is that there is nothing here to judge.
+ * **Two gates keep this quiet where it cannot judge, and both are the
+ * round's own.** The caller asks the project-wide one
+ * ({@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}) before
+ * calling at all: on a run narrowed below the project's production autoload
+ * roots, or on one whose manifest declares no readable production autoload,
+ * there is nothing here to judge. Every surviving value is then asked about
+ * individually ({@see ValueScopeJudgement}): `suppress_paths: [tests/Legacy]`
+ * is correct configuration that `qmx check src/` cannot judge, and reporting
+ * it there accused the author of the caller's choice of path.
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -77,6 +80,7 @@ final readonly class UnboundSuppressionAudit
      * @param list<string> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
      * @param list<RelativePath> $analyzedFiles the run's own file universe
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
+     * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
      * @return list<Finding>
      */
@@ -85,6 +89,7 @@ final readonly class UnboundSuppressionAudit
         array $suppressNamespaces,
         array $analyzedFiles,
         ?array $declaredNamespaces,
+        ValueScopeJudgement $scope,
     ): array {
         if (!$this->options->isEnabled()) {
             return [];
@@ -92,15 +97,15 @@ final readonly class UnboundSuppressionAudit
 
         $findings = [];
 
-        foreach ($this->unboundPaths($suppressPaths, $analyzedFiles) as $pattern) {
+        foreach ($this->unboundPaths($suppressPaths, $analyzedFiles, $scope) as $pattern) {
             $findings[] = self::pathFinding($pattern);
         }
 
-        foreach ($this->unboundNamespaces($suppressNamespaces, $declaredNamespaces) as $pattern) {
+        foreach ($this->unboundNamespaces($suppressNamespaces, $declaredNamespaces, $scope) as $pattern) {
             $findings[] = self::namespaceFinding($pattern);
         }
 
-        foreach ($this->unboundLedgerEntries($analyzedFiles, $declaredNamespaces) as [$ruleName, $option, $pattern]) {
+        foreach ($this->unboundLedgerEntries($analyzedFiles, $declaredNamespaces, $scope) as [$ruleName, $option, $pattern]) {
             $findings[] = self::ledgerFinding($ruleName, $option, $pattern);
         }
 
@@ -124,8 +129,11 @@ final readonly class UnboundSuppressionAudit
      *
      * @return list<array{string, string, string}> rule name, option key, pattern
      */
-    private function unboundLedgerEntries(array $analyzedFiles, ?array $declaredNamespaces): array
-    {
+    private function unboundLedgerEntries(
+        array $analyzedFiles,
+        ?array $declaredNamespaces,
+        ValueScopeJudgement $scope,
+    ): array {
         $entries = [];
 
         foreach ($this->ruleConfiguration->all() as $ruleName => $options) {
@@ -134,12 +142,12 @@ final readonly class UnboundSuppressionAudit
             }
 
             $paths = self::stringList($options['suppressPaths'] ?? $options['suppress_paths'] ?? []);
-            foreach ($this->unboundPaths($paths, $analyzedFiles) as $pattern) {
+            foreach ($this->unboundPaths($paths, $analyzedFiles, $scope) as $pattern) {
                 $entries[] = [(string) $ruleName, 'suppress_paths', $pattern];
             }
 
             $namespaces = self::stringList($options['suppressNamespaces'] ?? $options['suppress_namespaces'] ?? []);
-            foreach ($this->unboundNamespaces($namespaces, $declaredNamespaces) as $pattern) {
+            foreach ($this->unboundNamespaces($namespaces, $declaredNamespaces, $scope) as $pattern) {
                 $entries[] = [(string) $ruleName, 'suppress_namespaces', $pattern];
             }
         }
@@ -153,12 +161,12 @@ final readonly class UnboundSuppressionAudit
      *
      * @return list<string>
      */
-    private function unboundPaths(array $patterns, array $analyzedFiles): array
+    private function unboundPaths(array $patterns, array $analyzedFiles, ValueScopeJudgement $scope): array
     {
         $unbound = [];
 
         foreach ($patterns as $pattern) {
-            if ($pattern === '') {
+            if ($pattern === '' || !$scope->judgesPathValue($pattern)) {
                 continue;
             }
 
@@ -187,7 +195,7 @@ final readonly class UnboundSuppressionAudit
      *
      * @return list<string>
      */
-    private function unboundNamespaces(array $patterns, ?array $declaredNamespaces): array
+    private function unboundNamespaces(array $patterns, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
     {
         if ($declaredNamespaces === null) {
             return [];
@@ -196,7 +204,7 @@ final readonly class UnboundSuppressionAudit
         $unbound = [];
 
         foreach ($patterns as $pattern) {
-            if (trim($pattern, '\\') === '') {
+            if (trim($pattern, '\\') === '' || !$scope->judgesNamespaceValue($pattern)) {
                 continue;
             }
 
@@ -248,7 +256,8 @@ final readonly class UnboundSuppressionAudit
             UnboundSuppressionOptions::UNMATCHED_PATH,
             \sprintf(
                 'The suppress_paths pattern "%s" matched no file analysed by this run, so it suppressed nothing'
-                . ' and could not have. Findings the author meant to hide are being reported.',
+                . ' and could not have. If the code it was written for still exists under another spelling, its'
+                . ' findings are being reported.',
                 $pattern,
             ),
             \sprintf(
@@ -265,7 +274,8 @@ final readonly class UnboundSuppressionAudit
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
             \sprintf(
                 'The suppress_namespaces pattern "%s" matched no namespace declared in this run, so it suppressed'
-                . ' nothing and could not have. Findings the author meant to hide are being reported.',
+                . ' nothing and could not have. If the code it was written for still exists under another'
+                . ' spelling, its findings are being reported.',
                 $pattern,
             ),
             \sprintf(

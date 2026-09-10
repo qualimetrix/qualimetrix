@@ -69,6 +69,13 @@ final readonly class LayerDefinition
      * @param bool $expanded Internal flag toggling the regex variant used
      *                       for name validation. Not exposed as a property —
      *                       no downstream code reads it after construction.
+     * @param ?string $declaredAs The template this layer was expanded from,
+     *                            or `null` for a layer written out in full.
+     *                            A diagnostic about the *declaration* — an
+     *                            `exclude:` clause the author wrote once —
+     *                            must judge every instance the template
+     *                            produced together, and after expansion the
+     *                            instances are the only objects left.
      *
      * @throws InvalidLayerDefinitionException If the name is invalid.
      */
@@ -77,6 +84,7 @@ final readonly class LayerDefinition
         public MembershipSpec $membership,
         public LayerLifecycle $lifecycle = LayerLifecycle::Active,
         bool $expanded = false,
+        private ?string $declaredAs = null,
     ) {
         $this->validateName($name, $expanded);
     }
@@ -97,9 +105,24 @@ final readonly class LayerDefinition
      *                                         backslash, dot, or starts
      *                                         with a digit).
      */
-    public static function expanded(string $name, MembershipSpec $membership): self
+    public static function expanded(string $name, MembershipSpec $membership, ?string $declaredAs = null): self
     {
-        return new self($name, $membership, expanded: true);
+        return new self($name, $membership, expanded: true, declaredAs: $declaredAs);
+    }
+
+    /**
+     * The declaration this layer came from: the template's name for an
+     * expanded instance, the layer's own name otherwise.
+     *
+     * A judgement about what the author wrote — that an `exclude:` clause
+     * removed nothing — is a judgement about this, not about the name. One
+     * clause under `domain-{module}` becomes one instance per module, and
+     * asking each instance separately accuses the author once per module that
+     * happens to hold nothing to exclude.
+     */
+    public function declarationName(): string
+    {
+        return $this->declaredAs ?? $this->name;
     }
 
     /**

@@ -209,6 +209,84 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
         );
     }
 
+    /**
+     * A template layer is one `exclude:` clause in the file and one layer per
+     * observed module after expansion. Judged instance by instance, a clause
+     * doing its work in one module was reported against every module with
+     * nothing to exclude — and its recommendation, "drop the clause", would
+     * have broken the module where it works. The pair: the same template with
+     * a clause that fires somewhere is silent, and one that fires nowhere is
+     * reported once, against the declaration.
+     */
+    #[Test]
+    public function itJudgesATemplateExcludeClauseOnceAcrossEveryInstance(): void
+    {
+        mkdir($this->fixture . '/src/Module/Alpha/Domain', 0o755, true);
+        mkdir($this->fixture . '/src/Module/Beta/Domain', 0o755, true);
+        $this->writeClass('Module/Alpha/Domain/Order.php', 'Sample\\Module\\Alpha\\Domain', 'Order');
+        $this->writeClass('Module/Alpha/Domain/OrderGenerated.php', 'Sample\\Module\\Alpha\\Domain', 'OrderGenerated');
+        $this->writeClass('Module/Beta/Domain/Thing.php', 'Sample\\Module\\Beta\\Domain', 'Thing');
+
+        $working = $this->template('Generated');
+        $inert = $this->template('NothingLikeThis');
+
+        self::assertSame(
+            [],
+            $this->findingsOn($this->check($working), LayerViolationRule::UNMATCHED_EXCLUDE_NAME),
+            'Beta holds nothing to exclude, but the clause is not the author\'s mistake — it works in Alpha.',
+        );
+
+        $reported = $this->findingsOn($this->check($inert), LayerViolationRule::UNMATCHED_EXCLUDE_NAME);
+
+        self::assertCount(1, $reported, 'One clause, one finding, however many layers it expanded to.');
+        self::assertStringContainsString('domain-{module}', (string) ($reported[0]['message'] ?? ''));
+
+        foreach (['/src/Module/Alpha/Domain/Order.php', '/src/Module/Alpha/Domain/OrderGenerated.php', '/src/Module/Beta/Domain/Thing.php'] as $file) {
+            @unlink($this->fixture . $file);
+        }
+
+        foreach (['/src/Module/Alpha/Domain', '/src/Module/Alpha', '/src/Module/Beta/Domain', '/src/Module/Beta', '/src/Module'] as $dir) {
+            @rmdir($this->fixture . $dir);
+        }
+    }
+
+    /**
+     * The precondition ADR 0052 states for every channel of this row, which
+     * this one shipped without: on a run narrowed below the project's
+     * production autoload roots the layer's positive criteria can match inside
+     * the slice while the classes the clause was written for sit outside it.
+     * Paired with {@see itReportsAnExcludeClauseThatRemovedNothingFromALayerThatMatched()},
+     * the same clause on a run that covers those roots.
+     */
+    #[Test]
+    public function itStaysSilentOnARunNarrowedBelowTheAutoloadRoots(): void
+    {
+        $yaml = $this->config("        patterns: ['Sample\\Controller\\NoSuchSubtree\\**']");
+
+        self::assertSame(
+            [],
+            $this->findingsOn(
+                $this->check($yaml, paths: ['src/Controller']),
+                LayerViolationRule::UNMATCHED_EXCLUDE_NAME,
+            ),
+        );
+    }
+
+    private function template(string $suffix): string
+    {
+        return <<<YAML
+            architecture:
+              layers:
+                - name: 'domain-{module}'
+                  patterns: ['Sample\\Module\\{module}\\Domain\\**']
+                  exclude:
+                    suffix: ['{$suffix}']
+                - name: controller
+                  patterns: ['Sample\\Controller\\**']
+              coverage-gap: ignore
+            YAML;
+    }
+
     private function config(string $excludePatternsLine): string
     {
         return <<<YAML
@@ -246,8 +324,11 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
         return $matched;
     }
 
-    /** @param array<string, mixed> $options */
-    private function check(string $yaml, array $options = []): CommandTester
+    /**
+     * @param array<string, mixed> $options
+     * @param list<string> $paths
+     */
+    private function check(string $yaml, array $options = [], array $paths = ['src']): CommandTester
     {
         file_put_contents($this->fixture . '/qmx.yaml', $yaml . "\n");
 
@@ -264,7 +345,7 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
         try {
             $tester->execute(
                 [
-                    'paths' => ['src'],
+                    'paths' => $paths,
                     '--workers' => '0',
                     '--format' => 'json',
                     '--fail-on' => 'none',

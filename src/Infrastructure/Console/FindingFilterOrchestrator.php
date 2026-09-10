@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -38,6 +42,7 @@ final readonly class FindingFilterOrchestrator
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
         private ProjectScopeCoverage $projectScopeCoverage,
+        private ComposerAutoloadPathReaderInterface $composerReader,
     ) {}
 
     public function projectionOptions(
@@ -129,6 +134,12 @@ final readonly class FindingFilterOrchestrator
      * change does not own. The cost is one extra read of `composer.json` per
      * run.
      *
+     * The second, per-value question is built here from the same two fields
+     * and the manifest's PSR-4 map: a run wide enough to judge the project is
+     * not automatically wide enough to judge every value written for it, and
+     * `suppress_paths: [tests/Legacy]` under `qmx check src/` is correct
+     * configuration this run never looked at.
+     *
      * @return list<Finding>
      */
     private function unboundSuppressions(
@@ -145,6 +156,17 @@ final readonly class FindingFilterOrchestrator
             $options->suppressNamespaces,
             $result->coverage->analyzedFiles,
             $result->namespaceTree?->getAllNamespaces(),
+            new ValueScopeJudgement(
+                $scopeResolution->projectRoot->value(),
+                // `autoload-dev` included, unlike the coverage denominator:
+                // this map is asked where a namespace lives, not which roots a
+                // whole-project run must reach, and a value naming test code
+                // is judged exactly by a run that analysed it.
+                $this->composerReader->extractPsr4Roots(
+                    $scopeResolution->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
+                ),
+                array_map(static fn(AbsolutePath $path): string => $path->value(), $scopeResolution->paths),
+            ),
         );
     }
 

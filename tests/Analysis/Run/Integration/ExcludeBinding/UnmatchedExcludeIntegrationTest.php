@@ -133,6 +133,29 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
     }
 
     /**
+     * The subject question, which the coverage precondition above cannot
+     * answer: `qmx check src/` covers this project's production autoload
+     * roots, so an `exclude:` entry naming a directory outside them — the
+     * repository's own `tests/`, written for `qmx check .` — used to be
+     * reported as stale on every CI run. It names a directory that exists,
+     * and existing is the whole difference: the twin below names one that
+     * exists nowhere in the tree and is still reported by the same run.
+     */
+    #[Test]
+    public function itJudgesAnExcludePatternAgainstTheWholeTreeAndNotTheAnalysedPaths(): void
+    {
+        mkdir($this->fixture . '/tests', 0o755, true);
+
+        $findings = $this->findingsOnChannel($this->check("exclude:\n  - tests\n  - NoSuchDir\n"));
+        $messages = implode(' | ', array_map(static fn(array $f): string => (string) ($f['message'] ?? ''), $findings));
+
+        self::assertCount(1, $findings, $messages);
+        self::assertStringContainsString('NoSuchDir', $messages);
+
+        @rmdir($this->fixture . '/tests');
+    }
+
+    /**
      * The precondition, from the side that could hide a broken cure: the same
      * missed pattern on a run narrowed below the autoload roots must be
      * silent, because there the pattern binds nothing for a reason the author

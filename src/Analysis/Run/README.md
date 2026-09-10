@@ -46,7 +46,11 @@ preparation -> FileSet inspection -> Rule execution -> result projection
 `ProjectScopeCoverage` answers whether a run looked at the whole project or at
 a slice of it: its denominator is the production autoload roots of
 `composer.json`, so `check src/` on a project autoloading `src/` covers the
-project while `check src/Foo/` does not. The answer travels on
+project while `check src/Foo/` does not. `ProjectScopeMeasurement` carries both
+halves of one measurement — the uncovered roots the console warns about, and
+the verdict a channel reads — because a manifest whose production autoload the
+product cannot read (`classmap`, `psr-0` or `files` and no `psr-4`) names no
+uncovered root and still may not be judged. The answer travels on
 `RunConfiguration::$coversProjectScope` because it is a fact about that
 configuration's paths: `RunConfigurationResolver` fills it, `CheckCommand`
 refills it from `CheckScopeResolver` when a Git report scope narrows the run

@@ -20,7 +20,9 @@ Without this channel, a missed exclusion and no exclusion at all produce byte-id
 
 The channel reports at **project level**, at severity `warning`.
 
-It is only judged on a run whose paths cover the project's production autoload roots. On a narrower run — a single subdirectory, a git-scoped run — a pattern binds nothing simply because the code it names lies outside the slice. That is the caller's choice, not the author's mistake, so the rule stays silent rather than reporting the caller's own narrowing back at them.
+It is only judged on a run whose paths cover the project's production autoload roots — and on a project whose `composer.json` declares those roots through `psr-4`. On a narrower run — a single subdirectory, a git-scoped run — a pattern binds nothing simply because the code it names lies outside the slice. That is the caller's choice, not the author's mistake, so the rule stays silent rather than reporting the caller's own narrowing back at them. A project autoloading production code only through `classmap`, `psr-0` or `files` gives the check nothing to measure the run against, and the rule stays silent there too.
+
+A pattern is judged against the **whole project tree**, not against the analysed paths. `exclude: [tests]` written for `qmx check .` removes nothing under `qmx check src/`, but the directory it names is right there, so the rule says nothing. Only a pattern that would remove no directory anywhere in the project is reported.
 
 | Rule              | ID                            | What it detects                              |
 | ----------------- | ----------------------------- | -------------------------------------------- |
@@ -32,11 +34,11 @@ It is only judged on a run whose paths cover the project's production autoload r
 bin/qmx check src/ --exclude=Generated
 ```
 
-When no directory named `Generated` exists anywhere under `src/`:
+When no directory named `Generated` exists anywhere in the project:
 
 ```
 [project] discovery.unmatched-exclude
-  The exclude pattern "Generated" matched no directory in the analysed paths,
+  The exclude pattern "Generated" matched no directory anywhere in the project,
   so nothing was left out for it. Every file it was written to skip was
   measured, and this report covers them.
 ```

@@ -66,6 +66,64 @@ measurement answers for every channel of the row —
 incomplete-coverage warning renders that same answer, so the warning and the
 findings cannot come to differ about whether a run was a slice.
 
+## Amended (X16 F1): the precondition was necessary and not sufficient
+
+Execution review of the round that landed the row found the precondition wrong
+in three ways at once, each in the expensive direction — a channel accusing an
+author of a correct configuration, which fails a `--fail-on=warning` pipeline.
+All three are now closed, and the amendment is recorded here rather than left
+to be rediscovered from the code.
+
+**"No denominator" is not "covered".** `ProjectScopeCoverage` read the
+production autoload roots from `autoload.psr-4` alone and treated an empty
+result as a whole-project run. A project declaring its production code through
+`classmap`, `psr-0` or `files` therefore licensed every channel of the row on
+any run at all. The measurement now has three answers, carried together on
+`ProjectScopeMeasurement`: covered, narrowed, and unreadable — and unreadable
+reads as "cannot judge", so the gate closes and no scope warning is printed,
+because there is no uncovered root to name. A *missing* `composer.json` still
+reads as covered: there is no manifest to narrow against, and treating it as
+unreadable would silence the row on every project without one.
+
+**The precondition binds every channel of the row, and one shipped without
+it.** `architecture.unmatched-exclude` was added a round later and published
+unconditionally. It now asks the same predicate, and
+`ScopeConditionedChannelGuardTest` is what keeps the next one honest: it reads
+the row's population from the channel registry — **every declared channel whose
+name contains `unmatched` belongs to this row**, which is the naming convention
+this ADR now fixes — and runs the same fixture twice, under a PSR-4 manifest
+where all six must speak and under a `classmap` one where all six must be
+silent.
+
+**A run wide enough to judge the project is not wide enough to judge every
+value written for it.** `qmx check src/` covers the production autoload roots
+of an ordinary repository, so the precondition passes — while an entry naming
+`tests/`, written for `qmx check .`, binds nothing there through no fault of
+its author. Three channels reported it at once. A second question is therefore
+asked of each value separately: where does the value's own subject live, and
+did this run analyse that place? A path value is placed by its literal anchor's
+deepest existing ancestor, a namespace value through the PSR-4 map with
+`autoload-dev` included, and an `--exclude` / `exclude:` pattern by re-probing
+the whole project tree — a pattern that removes a directory somewhere the run
+did not look is not stale. A value that names no single place (one beginning
+with a glob) is never judged: the cost of the safe direction is a stale entry
+left unreported until a run whose paths reach it.
+
+Two channels of the row keep the project-wide question alone, and this is a
+named residual rather than a decision. `coupling.unmatched-framework-namespace`
+names code outside the project by construction, so it has no subject to place.
+`architecture.unmatched-exclude` has one for `patterns:` but not for
+`suffix:`/`implements:`/`extends:`, and a rule cannot see the run's paths at
+all — `AnalysisContext` carries the verdict, not the scope. Both therefore
+still report a clause whose classes live under `autoload-dev` when the run
+covers only the production roots.
+
+**A template's `exclude:` clause is judged once, across every layer it expanded
+to.** Per instance, a clause carving classes out of one module was reported
+against every module with nothing to carve, and its recommendation — drop the
+clause — would have broken the module where it works. The counts are summed
+over the instances one declaration produced.
+
 ## Rejected alternatives
 
 **The axis "configuration versus view of the report", which the round started

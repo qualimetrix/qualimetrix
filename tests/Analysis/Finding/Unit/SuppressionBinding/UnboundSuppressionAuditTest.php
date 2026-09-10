@@ -7,11 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
@@ -41,6 +43,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             ['Sample\\Gone'],
             [RelativePath::fromString('src/Service.php')],
             null,
+            $this->scope(),
         ));
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $channels);
@@ -53,7 +56,13 @@ final class UnboundSuppressionAuditTest extends TestCase
     #[Test]
     public function itJudgesNamespacesAgainstAnEmptyTree(): void
     {
-        $channels = $this->channelsOf($this->audit()->findings([], ['Sample\\Gone'], [], []));
+        $channels = $this->channelsOf($this->audit()->findings(
+            [],
+            ['Sample\\Gone'],
+            [],
+            [],
+            $this->scope(),
+        ));
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $channels);
     }
@@ -72,6 +81,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             ['Sample\\*', 'Sample'],
             [RelativePath::fromString('src/UserService.php')],
             ['Sample\\Deep'],
+            $this->scope(),
         );
 
         self::assertSame([], $this->channelsOf($bound));
@@ -86,6 +96,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service/User.php')],
             [],
+            $this->scope(),
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->channelsOf($findings));
@@ -97,7 +108,13 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         $audit = $this->audit(enabled: false);
 
-        self::assertSame([], $audit->findings(['src/Gone'], ['Sample\\Gone'], [], []));
+        self::assertSame([], $audit->findings(
+            ['src/Gone'],
+            ['Sample\\Gone'],
+            [],
+            [],
+            $this->scope(),
+        ));
     }
 
     /**
@@ -115,12 +132,78 @@ final class UnboundSuppressionAuditTest extends TestCase
             'code-smell.goto' => ['suppressPaths' => 'src/Service.php'],
         ]);
 
-        $findings = $audit->findings([], [], [RelativePath::fromString('src/Service.php')], []);
+        $findings = $audit->findings(
+            [],
+            [],
+            [RelativePath::fromString('src/Service.php')],
+            [],
+            $this->scope(),
+        );
         $messages = array_map(static fn(Finding $finding): string => $finding->message, $findings);
 
         self::assertCount(2, $findings, implode(' | ', $messages));
         self::assertStringContainsString('complexity.ccn', $messages[0]);
         self::assertStringContainsString('design.dit', $messages[1]);
+    }
+
+    /**
+     * The defect this gate was added for: a legitimate entry written for
+     * `qmx check .` reported as unbound by `qmx check src/`, which never
+     * looked where the entry points. Both halves fire at once, so both are
+     * asserted here.
+     */
+    #[Test]
+    public function itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse(): void
+    {
+        $findings = $this->audit()->findings(
+            ['tests/Gone'],
+            ['Sample\\Tests\\Gone'],
+            [RelativePath::fromString('src/Service.php')],
+            ['Sample'],
+            $this->scope(),
+        );
+
+        self::assertSame([], $this->channelsOf($findings));
+    }
+
+    /**
+     * The same two entries on a run that does reach them: unjudgeable is a
+     * fact about the pair, not a permanent exemption, and a stale entry is
+     * still named the moment a run can tell.
+     */
+    #[Test]
+    public function itJudgesTheSameValuesOnARunThatReachesTheirSubject(): void
+    {
+        $findings = $this->audit()->findings(
+            ['tests/Gone'],
+            ['Sample\\Tests\\Gone'],
+            [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
+            ['Sample', 'Sample\\Tests'],
+            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+        );
+
+        self::assertSame(
+            [UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_NAMESPACE],
+            $this->channelsOf($findings),
+        );
+    }
+
+    /**
+     * A value beginning with a glob names no place, so no run can be shown to
+     * reach it. The named cost of the safe direction: it is never reported.
+     */
+    #[Test]
+    public function itJudgesNoValueThatBeginsWithAGlob(): void
+    {
+        $findings = $this->audit()->findings(
+            ['*Gone.php'],
+            [],
+            [RelativePath::fromString('src/Service.php')],
+            [],
+            $this->scope(),
+        );
+
+        self::assertSame([], $this->channelsOf($findings));
     }
 
     /**
@@ -150,6 +233,43 @@ final class UnboundSuppressionAuditTest extends TestCase
             new UnboundSuppressionOptions($enabled),
             $execution,
             $configuration,
+        );
+    }
+
+    /**
+     * A real tree, because the per-value gate answers by looking at one: the
+     * project autoloads `Sample\` from `src/` for production and
+     * `Sample\Tests\` from `tests/` for development, and the run below
+     * analyses `src/` alone — the exact shape that reported three channels at
+     * once before this gate existed.
+     */
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/qmx-unbound-audit-' . bin2hex(random_bytes(8));
+        mkdir($this->tempDir . '/src', 0777, true);
+        mkdir($this->tempDir . '/tests', 0777, true);
+        file_put_contents($this->tempDir . '/composer.json', json_encode([
+            'autoload' => ['psr-4' => ['Sample\\' => 'src/']],
+            'autoload-dev' => ['psr-4' => ['Sample\\Tests\\' => 'tests/']],
+        ]));
+    }
+
+    protected function tearDown(): void
+    {
+        exec('rm -rf ' . escapeshellarg($this->tempDir));
+    }
+
+    private string $tempDir = '';
+
+    /**
+     * @param ?list<string> $analyzedPaths
+     */
+    private function scope(?array $analyzedPaths = null): ValueScopeJudgement
+    {
+        return new ValueScopeJudgement(
+            $this->tempDir,
+            (new ComposerReader())->extractPsr4Roots($this->tempDir . '/composer.json'),
+            $analyzedPaths ?? [$this->tempDir . '/src'],
         );
     }
 }

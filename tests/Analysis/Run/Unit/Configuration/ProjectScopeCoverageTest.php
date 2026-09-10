@@ -80,6 +80,32 @@ final class ProjectScopeCoverageTest extends TestCase
         self::assertTrue($this->covers($this->configuration(['src'])));
     }
 
+    /**
+     * A manifest this product cannot read is the third answer, and it is not
+     * "covers". A project autoloading its production code through `classmap`,
+     * `psr-0` or `files` gives the measurement no denominator at all — and
+     * answering "covers" there let every channel of the row accuse the author
+     * on a run nobody could judge. No uncovered root is named either: there is
+     * none to name, which is why the warning list and the verdict are taken
+     * from one measurement rather than from each other.
+     */
+    #[Test]
+    public function itDoesNotCoverTheProjectWhenTheManifestDeclaresNoReadableProductionAutoload(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/composer.json',
+            json_encode(['autoload' => ['classmap' => ['src/', 'lib/']]], \JSON_THROW_ON_ERROR),
+        );
+
+        $configuration = $this->configuration(['src', 'lib']);
+
+        self::assertFalse($this->covers($configuration));
+        self::assertSame(
+            [],
+            $this->coverage()->uncoveredAutoloadRoots($configuration->projectRoot, $configuration->paths),
+        );
+    }
+
     /** @param list<string> $autoloadRoots */
     private function writeComposerJson(array $autoloadRoots): void
     {

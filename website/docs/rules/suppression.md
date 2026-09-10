@@ -24,7 +24,9 @@ The two questions look alike in a report and lead to opposite actions, which is 
 
 All the channels report at **project level**, at severity `warning`.
 
-They are only judged on a run whose paths cover the project's production autoload roots. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake.
+They are only judged on a run whose paths cover the project's production autoload roots, and only on a project whose `composer.json` declares those roots through `psr-4`. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake; on a project autoloading through `classmap`, `psr-0` or `files` alone there is nothing to measure the run against, and the channels stay silent.
+
+Each value is then judged separately, against the place it names. `suppress_paths: [tests/Legacy]` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `suppress_paths: [src/Legacy]` on the same run is. A namespace value is placed through the PSR-4 map, `autoload-dev` included: `Acme\Tests\Legacy` is served from `tests/` and judged only by a run that analysed it. A value beginning with a glob (`*Legacy.php`) names no single place and is never judged.
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 
@@ -49,8 +51,9 @@ suppress_namespaces:
 ```
 [project] suppression.unmatched-namespace
   The suppress_namespaces pattern "App\Legacy\Importer" matched no namespace
-  declared in this run, so it suppressed nothing and could not have. Findings
-  the author meant to hide are being reported.
+  declared in this run, so it suppressed nothing and could not have. If the
+  code it was written for still exists under another spelling, its findings
+  are being reported.
 ```
 
 ### Options

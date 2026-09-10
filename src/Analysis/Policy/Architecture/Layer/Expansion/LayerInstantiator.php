@@ -67,7 +67,7 @@ final class LayerInstantiator
         $concreteMembership = self::substituteMembership($template->membership(), $bindings);
 
         try {
-            return LayerDefinition::expanded($concreteName, $concreteMembership);
+            return LayerDefinition::expanded($concreteName, $concreteMembership, $template->nameTemplate());
         } catch (InvalidLayerDefinitionException $e) {
             throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open(['architecture', 'layers'], $template->nameTemplate()),

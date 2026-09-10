@@ -532,6 +532,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement'
     - name: analysis-policy-architecture
       patterns:
         - 'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy'
@@ -709,6 +710,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
         - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage'
+        - 'Qualimetrix\Analysis\Run\Configuration\ProjectScopeMeasurement'
         - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
@@ -1884,16 +1886,16 @@ rules:
         # structurally inapplicable to this exact root, the same argument the
         # Expansion entry above makes.
         - '[Q]ualimetrix\Analysis\Configuration\Contract\Refusal'
-        # X16's two binding-audit roots: four classes (47.5) and three (46.7).
-        # Measured, not argued: in both roots `cohesion.tcc.count` is 1, so the
-        # namespace TCC and LCC averages the score is built from are decided by
-        # a single class — the `*Options` one. The rule, the audit and the
-        # probe beside it each hold one field or none, which leaves them no
-        # pair of methods that could share a field, so they contribute no TCC
-        # at all. And that one options class measures TCC 0 by construction of
-        # the mandatory `RuleOptionsInterface` shape: `isEnabled()` reads the
-        # single `enabled` field and `getSeverity()` reads none, so the class
-        # has exactly one method pair and it shares nothing.
+        # X16's exclude-binding root: three classes (46.7). Measured, not
+        # argued: `cohesion.tcc.count` is 1 there, so the namespace TCC and LCC
+        # averages the score is built from are decided by a single class — the
+        # `*Options` one. The rule and the probe beside it each hold one field
+        # or none, which leaves them no pair of methods that could share a
+        # field, so they contribute no TCC at all. And that one options class
+        # measures TCC 0 by construction of the mandatory
+        # `RuleOptionsInterface` shape: `isEnabled()` reads the single
+        # `enabled` field and `getSeverity()` reads none, so the class has
+        # exactly one method pair and it shares nothing.
         #
         # The same shape inside a larger root is dissolved by its neighbours
         # and never reaches the boundary: X16 added an options class of exactly
@@ -1901,8 +1903,13 @@ rules:
         # namespace does not report. So the finding is a property of how small
         # the root is, not of its design, and splitting further only makes the
         # roots smaller. The channel is excluded, not the rule: class-level
-        # cohesion inside both roots stays measured, and every other channel of
-        # both namespaces stays measured with it. Exact roots — `[Q]` keeps a
+        # cohesion inside the root stays measured, and every other channel of
+        # the namespace stays measured with it. Exact root — `[Q]` keeps a
         # future child namespace judged on its own.
+        #
+        # `Finding\SuppressionBinding` sat here for the same reason and was
+        # removed in X16's F1: the scope-judgement class the round added is a
+        # second TCC contributor, the average is no longer one class's, and the
+        # namespace stopped reporting. The entry was measured inert, and an
+        # inert suppression is exactly what this round is about.
         - '[Q]ualimetrix\Analysis\Run\ExcludeBinding'
-        - '[Q]ualimetrix\Analysis\Finding\SuppressionBinding'

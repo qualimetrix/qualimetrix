@@ -42,7 +42,12 @@ builds the findings and passes them through `publishable()` itself, and is
 called by `FindingFilterOrchestrator` at the reporting seam, the one place the
 configured values and the run's universes are both in hand. The coverage
 precondition is asked at that call site, so a run narrowed below the project's
-production autoload roots produces nothing here.
+production autoload roots — or one whose manifest declares no readable
+production autoload — produces nothing here. `ValueScopeJudgement` asks the
+second half of that question, per value: it places a value's subject through
+the run's paths and the manifest's PSR-4 map, and a value naming a place this
+run never analysed is not judged at all. It is built at the same call site from
+the run's shape, so this namespace does not read `composer.json` itself.
 
 `LevelActivity` records which producer/level pairs this configuration let run,
 asked of the rules themselves during execution and published beside the

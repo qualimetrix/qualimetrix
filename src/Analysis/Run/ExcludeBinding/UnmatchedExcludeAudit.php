@@ -30,15 +30,20 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * the runtime configuration is settled. `InlineDirectiveValidator` answers to
  * its producer's Options through the same pairing.
  *
- * **The gate that keeps this quiet on a narrowed run** is
- * {@see RunConfiguration::$coversProjectScope}, the one predicate the round
- * uses. "This pattern matched nothing" is a fact about the pair
- * (configuration, run scope): `--exclude=Legacy` binds nothing when the run
- * was pointed at `src/Domain/`, and the author of the configuration did not
- * choose that path — the caller did. On a narrowed run the honest answer is
- * that there is nothing here to judge, so the channel says nothing. The cost
- * is that a genuinely stale exclusion waits for a whole-project run, which is
- * the only run that can tell the two apart.
+ * **Two gates keep this quiet where it cannot judge.** The project-wide one
+ * is {@see RunConfiguration::$coversProjectScope}: "this pattern matched
+ * nothing" is a fact about the pair (configuration, run scope), and
+ * `--exclude=Legacy` binds nothing when the run was pointed at `src/Domain/`
+ * — a path the author of the configuration did not choose. The second is
+ * about the pattern itself: before a pattern is reported, the same probe is
+ * asked whether it would have removed a directory anywhere in the project
+ * tree. `exclude: [tests]` written for `qmx check .` binds nothing under
+ * `qmx check src/`, and accusing it there reports the caller's choice as the
+ * author's mistake. Only a pattern that removes nothing *in the project* is
+ * stale, and that is the one this channel names.
+ *
+ * The second probe is paid for only by a run that would otherwise have
+ * reported: it walks at all only when the first walk left a pattern unbound.
  */
 final readonly class UnmatchedExcludeAudit
 {
@@ -50,9 +55,9 @@ final readonly class UnmatchedExcludeAudit
     /**
      * One finding per authored pattern this run's paths hold no directory for.
      *
-     * Every gate is asked before the walk, so a run that cannot report pays
-     * nothing for the measurement: the rule switched off, no authored pattern,
-     * or a run narrowed below the project's autoload roots.
+     * Every project-wide gate is asked before the walk, so a run that cannot
+     * report pays nothing for the measurement: the rule switched off, no
+     * authored pattern, or a run narrowed below the project's autoload roots.
      *
      * @return list<Finding>
      */
@@ -65,9 +70,22 @@ final readonly class UnmatchedExcludeAudit
             return [];
         }
 
-        return array_map(self::finding(...), $this->probe->unboundPatterns(
+        $unboundInRun = $this->probe->unboundPatterns(
             $configuration->paths,
             $configuration->authoredPathExcludes,
+            $configuration->pathExcludes,
+        );
+
+        if ($unboundInRun === []) {
+            return [];
+        }
+
+        // The same question against the whole tree: a pattern that binds
+        // somewhere the run did not look names code that exists, and this run
+        // cannot tell that from a pattern whose directory is gone.
+        return array_map(self::finding(...), $this->probe->unboundPatterns(
+            [$configuration->projectRoot],
+            $unboundInRun,
             $configuration->pathExcludes,
         ));
     }
@@ -81,7 +99,7 @@ final readonly class UnmatchedExcludeAudit
             ruleName: UnmatchedExcludeOptions::CHANNEL,
             code: UnmatchedExcludeOptions::CHANNEL,
             message: \sprintf(
-                'The exclude pattern "%s" matched no directory in the analysed paths, so nothing was left out'
+                'The exclude pattern "%s" matched no directory anywhere in the project, so nothing was left out'
                 . ' for it. Every file it was written to skip was measured, and this report covers them.',
                 $pattern,
             ),

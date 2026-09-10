@@ -34,10 +34,21 @@ use RuntimeException;
  * **The boundary of the claim, stated rather than discovered later.** This
  * class sees narrowing by *path* only. It does not see `--exclude`,
  * `exclude:` or `suppress_*` removing files from a run whose paths do cover
- * the project, and it answers "covers" when `composer.json` is absent or
- * declares no production autoload — there is no denominator then, and an
- * oracle that guessed would silence the channel on every project without a
- * composer manifest.
+ * the project; a value whose own subject may lie outside the analysed paths
+ * is judged by the per-value question its own channel asks instead, and this answer is the
+ * project-wide half of that pair.
+ *
+ * **Three answers, not two, because "no denominator" is not "covered".**
+ * A `composer.json` that declares production code through `classmap`,
+ * `psr-0` or `files` and no `psr-4` leaves nothing to measure against, and
+ * answering "covers" there hands every scope-conditioned channel a licence to
+ * accuse on a run nobody could judge — the error in the expensive direction.
+ * Such a project is `Unknown`, and `Unknown` reads as "cannot judge": the
+ * gate is closed and no scope warning is printed, because there is no
+ * uncovered root to name. A *missing* `composer.json` stays "covers": there
+ * is no project manifest to narrow against at all, the absence is already
+ * reported by `CheckCommand::warnIfComposerJsonMissing()`, and treating it as
+ * `Unknown` would silence these channels on every project that has none.
  */
 final readonly class ProjectScopeCoverage
 {
@@ -46,12 +57,18 @@ final readonly class ProjectScopeCoverage
     /** @param list<AbsolutePath> $analyzedPaths */
     public function pathsCoverProjectScope(AbsolutePath $projectRoot, array $analyzedPaths): bool
     {
-        return $this->uncoveredAutoloadRoots($projectRoot, $analyzedPaths) === [];
+        return $this->measure($projectRoot, $analyzedPaths)->covers();
     }
 
     /**
      * The production autoload roots no analysed path contains, in the spelling
      * `composer.json` uses.
+     *
+     * Empty on a project whose production autoload this class cannot read:
+     * there is no root to name, which is why the verdict and this list are
+     * taken from one measurement — a caller reading emptiness here as "covers"
+     * would reintroduce exactly the answer {@see ProjectScopeMeasurement}
+     * separates.
      *
      * @param list<AbsolutePath> $analyzedPaths
      *
@@ -59,18 +76,28 @@ final readonly class ProjectScopeCoverage
      */
     public function uncoveredAutoloadRoots(AbsolutePath $projectRoot, array $analyzedPaths): array
     {
+        return $this->measure($projectRoot, $analyzedPaths)->uncoveredRoots;
+    }
+
+    /**
+     * The one measurement both answers above are read from.
+     *
+     * @param list<AbsolutePath> $analyzedPaths
+     */
+    public function measure(AbsolutePath $projectRoot, array $analyzedPaths): ProjectScopeMeasurement
+    {
         $composerJsonPath = $projectRoot->joinRelative(RelativePath::fromString('composer.json'));
 
         if (!$composerJsonPath->exists()) {
             // Missing composer.json is already reported by CheckCommand::warnIfComposerJsonMissing()
-            return [];
+            return ProjectScopeMeasurement::covered();
         }
 
         // Only check production autoload paths; autoload-dev (tests/) is not required for accurate coupling metrics
         $autoloadPaths = $this->composerReader->extractAutoloadPaths($composerJsonPath->value(), includeDev: false);
 
         if ($autoloadPaths === []) {
-            return [];
+            return ProjectScopeMeasurement::unreadable();
         }
 
         $resolvedAnalyzed = [];
@@ -97,7 +124,7 @@ final readonly class ProjectScopeCoverage
             }
         }
 
-        return $uncoveredPaths;
+        return ProjectScopeMeasurement::against($uncoveredPaths);
     }
 
     /**

@@ -28,12 +28,18 @@ final readonly class CheckScopeResolver
         // `--report=git:...` narrows the run after the configuration was
         // resolved, and the wider answer would be wrong in the direction that
         // makes a scope-conditioned channel speak.
-        $uncovered = $this->projectScopeCoverage->uncoveredAutoloadRoots($scope->projectRoot, $scope->paths);
+        //
+        // One measurement, two answers, and they are not the same answer: a
+        // project whose production autoload this product cannot read has no
+        // uncovered root to warn about and no licence to judge either, so
+        // reading the verdict off the empty warning list would silently call
+        // it a whole-project run.
+        $measurement = $this->projectScopeCoverage->measure($scope->projectRoot, $scope->paths);
 
         return new ResolvedCheckScope(
             $scope,
-            $this->scopeWarningChecker->describe($uncovered),
-            $uncovered === [],
+            $this->scopeWarningChecker->describe($measurement->uncoveredRoots),
+            $measurement->covers(),
         );
     }
 

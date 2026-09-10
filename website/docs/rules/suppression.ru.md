@@ -24,7 +24,9 @@
 
 Все каналы сообщаются на **уровне проекта**, severity `warning`.
 
-Они судятся только на прогоне, чьи пути покрывают production-корни автозагрузки проекта. На более узком прогоне значение не привязывается просто потому, что названный им код лежит вне среза, — это выбор вызывающего, а не ошибка автора.
+Они судятся только на прогоне, чьи пути покрывают production-корни автозагрузки проекта, и только на проекте, чей `composer.json` объявляет эти корни через `psr-4`. На более узком прогоне значение не привязывается просто потому, что названный им код лежит вне среза, — это выбор вызывающего, а не ошибка автора; на проекте с автозагрузкой только через `classmap`, `psr-0` или `files` знаменателя нет, и каналы молчат.
+
+Дальше каждое значение судится отдельно — по месту, которое оно называет. `suppress_paths: [tests/Legacy]` указывает в `tests/`, куда `qmx check src/` не заглядывал, поэтому на таком прогоне запись не судится, а `suppress_paths: [src/Legacy]` на том же прогоне — судится. Значение-неймспейс размещается по карте PSR-4, включая `autoload-dev`: `Acme\Tests\Legacy` живёт в `tests/` и судится только прогоном, который его проанализировал. Значение, начинающееся с glob-символа (`*Legacy.php`), не называет одного места и не судится никогда.
 
 В генерируемый baseline они не попадают: `baseline:generate` измеряет находки другим швом, и предупреждение о собственной конфигурации автора не должно становиться принятым долгом в файле, который автор генерирует одной командой.
 
@@ -49,8 +51,9 @@ suppress_namespaces:
 ```
 [project] suppression.unmatched-namespace
   The suppress_namespaces pattern "App\Legacy\Importer" matched no namespace
-  declared in this run, so it suppressed nothing and could not have. Findings
-  the author meant to hide are being reported.
+  declared in this run, so it suppressed nothing and could not have. If the
+  code it was written for still exists under another spelling, its findings
+  are being reported.
 ```
 
 ### Опции

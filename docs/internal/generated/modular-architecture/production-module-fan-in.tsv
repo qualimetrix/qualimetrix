@@ -2,7 +2,7 @@ target_contract_fqcn	target_owner	distinct_consumer_fqcns	distinct_consumer_owne
 Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	5	2
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	11	6
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	24	9
-Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	3	2
+Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
@@ -146,6 +146,7 @@ Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Findi
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	1	1
 Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface	Analysis.Policy.Architecture	3	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface	Analysis.Policy.Architecture	2	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	1	1
@@ -220,9 +221,9 @@ Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Ru
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	8	3
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	52	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	86	23
+Qualimetrix\Core\Path\RelativePath	Core.Path	87	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2

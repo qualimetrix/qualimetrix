@@ -136,7 +136,18 @@ final class LayerViolationRule extends AbstractRule
 
         return [
             ...$this->buildFindings($evidence, $ownedTargets),
-            ...UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME),
+            // The forbidden edges are about what the run did look at and are
+            // reported whatever its scope. The exclude diagnostic is the other
+            // shape: "this clause removed nothing" is a fact about the pair
+            // (configuration, run scope), and a run narrowed below the
+            // project's autoload roots — or one whose manifest declares no
+            // readable production autoload — cannot tell an inert clause from
+            // one whose classes are simply outside the slice. The gate is the
+            // round's one predicate, the same one
+            // UnmatchedFrameworkNamespaceRule asks.
+            ...($context->coversProjectScope
+                ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
+                : []),
         ];
     }
 

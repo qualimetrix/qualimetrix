@@ -3576,6 +3576,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itRespectsCustomThresholds
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itSetsCorrectSymbolPathOnFinding
+ - Qualimetrix\Tests\Analysis\Finding\Integration\AnalysisContextScopeArgumentGuardTest::itFindsNoProductionContextBuiltWithoutAMeasuredScopeAnswer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheCircularDependencyMagnitudeChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheClassCountMagnitudeChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::itDeclaresTheClassRankOccurrenceDespiteNumberChannel
@@ -3697,6 +3698,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryRegisteredRuleToDeclareItsOwnRemediationMinutes
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::itRequiresEveryRulesRemediationMinutesToMatchTheReferencePage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itDeclaresTheScopeConditionedPopulation
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itJudgesOnlyTheValuesWhoseSubjectTheRunAnalysed
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itSpeaksOnEveryScopeConditionedChannelWhenTheRunCanJudge
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunCannotJudge
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsNotWrittenIntoAGeneratedBaseline
@@ -4518,7 +4523,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheGlobAndPrefixModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueThatBeginsWithAGlob
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNothingWhenTheProducerIsDisabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFloatThresholds
@@ -4618,10 +4626,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itDoesNotReportALayerWhosePositiveCriteriaMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itJudgesATemplateExcludeClauseOnceAcrossEveryInstance
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itLeavesTheDeclarationValidatorWithItsFiveChannels
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itReportsAnExcludeClauseThatRemovedNothingFromALayerThatMatched
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itSkipsALayerDeclaredPending
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentOnARunNarrowedBelowTheAutoloadRoots
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentWhenTheExcludeClauseRemovedAClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itLeavesNoValidationNamespaceOrDirectoryInTheArchitectureLeaf
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itRejectsInjectedReverseAndUnknownCrossZoneEdgesWithoutWildcardWidening
@@ -6182,6 +6192,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itHonoursBothFormsOfTheFinderExcludePattern
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itIsSilencedByDisablingTheProducingRule
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itIsSilencedByDisablingTheRuleThroughItsOptions
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itJudgesAnExcludePatternAgainstTheWholeTreeAndNotTheAnalysedPaths
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itNeverReportsTheProductsOwnBuiltInExcludes
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itReportsACommandLineExcludeThatMatchedNothing
@@ -6281,6 +6292,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCoversTheProjectWhenThereIsNoComposerManifest
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenTheManifestDeclaresNoReadableProductionAutoload
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itCarriesEveryFieldExceptTheScopeItIsGiven

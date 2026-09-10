@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
@@ -361,6 +362,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ErrorStream::class),
                 new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
                 new Reference(ProjectScopeCoverage::class),
+                new Reference(ComposerAutoloadPathReaderInterface::class),
             ]);
 
         // CheckCommand with all dependencies injected
