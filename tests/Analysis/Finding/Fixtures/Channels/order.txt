@@ -67,6 +67,7 @@ architecture.pending-layer-matched
 architecture.unassigned-class
 architecture.circular-dependency
 duplication.clone
+discovery.unmatched-exclude
 annotation.unresolved-directive
 annotation.unsupported-threshold
 annotation.invalid-threshold

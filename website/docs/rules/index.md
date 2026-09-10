@@ -166,6 +166,24 @@ This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in 
 
 [Read more about Annotation rules --&gt;](annotation.md)
 
+### Discovery Rules
+
+This rule reports on the run's own file selection rather than on the code: an
+`--exclude` value or an `exclude:` entry that matched no directory. The report
+then covers files the author meant to leave out, and without this channel a
+missed exclusion and no exclusion at all produce byte-identical output.
+
+**Rule ID:** `discovery.unmatched-exclude`
+
+It is reported at project level, at severity `warning`, only on a run whose
+paths cover the project's production autoload roots — on a narrower run a
+pattern binds nothing simply because the code it names is outside the slice,
+which is the caller's choice and not the author's mistake.
+
+| Rule              | ID                            | What it detects                              |
+| ----------------- | ----------------------------- | -------------------------------------------- |
+| Unmatched exclude | `discovery.unmatched-exclude` | An exclude pattern that removed no directory |
+
 ## Disabling Rules
 
 You can disable individual rules or entire groups:
@@ -233,6 +251,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))
+- **Discovery:** `discovery.unmatched-exclude`
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->

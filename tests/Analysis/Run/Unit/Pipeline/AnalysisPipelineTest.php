@@ -33,6 +33,9 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -68,6 +71,7 @@ final class AnalysisPipelineTest extends TestCase
             $root,
             GeneratedFilePolicy::Include,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
 
         $result = $pipeline->analyze($configuration);
@@ -89,7 +93,7 @@ final class AnalysisPipelineTest extends TestCase
         $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
         $result = $this->pipeline($default, $collection)->analyze(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true),
+            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
             $override,
         );
 
@@ -115,8 +119,8 @@ final class AnalysisPipelineTest extends TestCase
         );
         $pipeline = $this->pipeline($discovery, $collection);
 
-        $pipeline->analyze(new RunConfiguration([$firstRoot], [], $firstRoot, GeneratedFilePolicy::Include, coversProjectScope: true));
-        $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include, coversProjectScope: true));
+        $pipeline->analyze(new RunConfiguration([$firstRoot], [], $firstRoot, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        $pipeline->analyze(new RunConfiguration([$secondRoot], [], $secondRoot, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
 
         self::assertSame([$firstRoot->value(), $secondRoot->value()], $seenRoots);
     }
@@ -164,7 +168,7 @@ final class AnalysisPipelineTest extends TestCase
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(
-            new AnalysisFileDiscovery($discovery, new GeneratedFileFilter()),
+            new AnalysisFileDiscovery($discovery, new GeneratedFileFilter(), new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe())),
             $collection,
             $rules,
             $preparation,

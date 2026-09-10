@@ -14,6 +14,9 @@ use Qualimetrix\Core\Path\PathFactory;
 
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
+    /** The directories the product excludes whether or not the author says so. */
+    private const array BUILT_IN_EXCLUDES = ['vendor', 'node_modules', '.git'];
+
     public function __construct(private readonly ProjectScopeCoverage $projectScopeCoverage) {}
 
     public function resolve(ConfigurationDocument $document): RunConfiguration
@@ -25,13 +28,16 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             $paths,
         );
 
+        $excludeContributions = $document->contributions(ConfigSchema::EXCLUDES);
+
         return new RunConfiguration(
             coversProjectScope: $this->projectScopeCoverage->pathsCoverProjectScope($root, $pathList),
             paths: $pathList,
-            pathExcludes: self::accumulatedStrings(
-                $document->contributions(ConfigSchema::EXCLUDES),
-                ['vendor', 'node_modules', '.git'],
-            ),
+            pathExcludes: self::accumulatedStrings($excludeContributions, self::BUILT_IN_EXCLUDES),
+            // The same contributions without the built-in floor: what the
+            // author actually asked to exclude, which is the only part of the
+            // merged list a miss can be reported about.
+            authoredPathExcludes: self::accumulatedStrings($excludeContributions, []),
             projectRoot: $root,
             generatedFilePolicy: self::generatedFilePolicy(
                 $document->contributions(ConfigSchema::INCLUDE_GENERATED),

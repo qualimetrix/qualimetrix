@@ -91,3 +91,4 @@ rule	Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	src/Analysis/Evidence/
 rule	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	qmx.rule	"ArchitectureConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	qmx.rule	"ArchitectureConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	qmx.rule	"capability configurator -> rule compiler passes"
+rule	Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule	src/Analysis/Run/ExcludeBinding/UnmatchedExcludeRule.php	qmx.rule	"capability configurator -> rule compiler passes"

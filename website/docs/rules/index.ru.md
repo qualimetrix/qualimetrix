@@ -166,6 +166,24 @@ Qualimetrix содержит набор встроенных правил для
 
 [Подробнее о правилах аннотаций --&gt;](annotation.ru.md)
 
+### Правила обнаружения файлов (Discovery)
+
+Это правило сообщает о выборе файлов самим прогоном, а не о коде: значение
+`--exclude` или запись `exclude:`, не совпавшая ни с одним каталогом. Отчёт
+тогда покрывает файлы, которые автор собирался исключить, а без этого канала
+промахнувшееся исключение и его отсутствие давали побайтно одинаковый вывод.
+
+**Rule ID:** `discovery.unmatched-exclude`
+
+Сообщается на уровне проекта, severity `warning`, и только на прогоне, чьи пути
+покрывают production-корни автозагрузки проекта: на более узком прогоне паттерн
+не привязывается просто потому, что названный им код лежит вне среза, — это
+выбор вызывающего, а не ошибка автора.
+
+| Правило                  | ID                            | Что обнаруживает                                   |
+| ------------------------ | ----------------------------- | -------------------------------------------------- |
+| Непривязанное исключение | `discovery.unmatched-exclude` | Паттерн исключения, не убравший ни одного каталога |
+
 ## Отключение правил
 
 Можно отключить отдельные правила или целые группы:
@@ -233,6 +251,7 @@ rules:
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - **Annotation:** `annotation.directive` (публикуется через четыре канала — см. [Правила аннотаций](annotation.ru.md))
+- **Discovery:** `discovery.unmatched-exclude`
 
 Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell.*` (по wildcard; захватывает только потомков, не сам `code-smell`).
 -->

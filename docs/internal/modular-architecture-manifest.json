@@ -6235,6 +6235,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
+          "closes_in": null
+        },
+        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
           "closes_in": null
@@ -6776,6 +6781,11 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
           "closes_in": null
         },
         {
@@ -7349,6 +7359,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
+          "closes_in": null
+        },
+        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
@@ -7761,6 +7776,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
+          "closes_in": null
+        },
+        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter",
           "closes_in": null
@@ -7983,11 +8003,6 @@
       "visibility": "contract",
       "closure_package": "P6-A",
       "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-          "closes_in": null
-        },
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
@@ -8220,6 +8235,11 @@
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
+          "closes_in": null
         }
       ]
     },
@@ -8423,6 +8443,11 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
           "closes_in": null
         },
         {
@@ -9469,6 +9494,11 @@
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions",
+          "closes_in": null
         }
       ]
     },
@@ -9713,6 +9743,11 @@
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions",
+          "closes_in": null
         }
       ]
     },
@@ -9924,6 +9959,16 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions",
           "closes_in": null
         },
         {
@@ -10825,6 +10870,16 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions",
           "closes_in": null
         },
         {
@@ -13476,6 +13531,14 @@
       "closure_package": "P3",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe": {
+      "path": "src/Analysis/Run/ExcludeBinding/ExcludeBindingProbe.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory": {
       "path": "src/Analysis/Run/Discovery/FileDiscoveryFactory.php",
       "kind": "class",
@@ -13494,6 +13557,30 @@
     },
     "Qualimetrix\\Analysis\\Run\\Discovery\\GeneratedFileFilter": {
       "path": "src/Analysis/Run/Discovery/GeneratedFileFilter.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit": {
+      "path": "src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions": {
+      "path": "src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule": {
+      "path": "src/Analysis/Run/ExcludeBinding/UnmatchedExcludeRule.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -13824,6 +13911,11 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver",
           "closes_in": null
         },
@@ -13864,7 +13956,7 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe",
           "closes_in": null
         },
         {
@@ -14025,11 +14117,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Contract\\GitScopeRequest",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage",
           "closes_in": null
         }
       ]
@@ -15179,6 +15266,11 @@
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
+          "closes_in": null
         }
       ]
     },
@@ -15918,6 +16010,11 @@
         },
         {
           "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
           "closes_in": null
         },
@@ -16277,6 +16374,11 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit",
           "closes_in": null
         },
         {

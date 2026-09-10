@@ -52,7 +52,7 @@ cli	check	--class	whole-value	REFUSES	exit codes plus the product refusal framin
 cli	check	--config	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 cli	check	--detail	whole-value	NOT REFERENTIAL	annotation	none	integer count or the literal 'all'; nothing to point at
 cli	check	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
-cli	check	--exclude	whole-value	SILENT	declared none	none	
+cli	check	--exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
 cli	check	--exclude-health	whole-value	SILENT	declared none	none	
 cli	check	--fail-on	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 cli	check	--format	whole-value	SILENT	declared, not fired	dictionary	
@@ -188,7 +188,7 @@ config	check	cache.enabled	whole-value	NOT REFERENTIAL	annotation	none	boolean; 
 config	check	computedMetrics	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	check	coupling.frameworkNamespaces	whole-value	NOT OBSERVABLE	text	cure:R2	H and A are indistinguishable on this observable, so a miss cannot be told from a hit
 config	check	disabledRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
-config	check	exclude	whole-value	SILENT	declared none	none	
+config	check	exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
 config	check	excludeHealth	whole-value	SILENT	declared none	none	
 config	check	failOn	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	check	format	whole-value	SILENT	declared, not fired	dictionary	

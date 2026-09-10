@@ -111,7 +111,7 @@ final class OverrideMapKeyNormalizationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE);
 
         return $pipeline->analyze(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true),
+            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
         )->thresholdOverrides;
     }
 }

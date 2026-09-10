@@ -1,0 +1,16 @@
+# Matches no directory under src/, which is what discovery.unmatched-exclude is
+# the fixture for: the pattern removes nothing, the run measures every file the
+# author meant to skip, and before the channel existed the report was identical
+# to one configured with no exclusion at all.
+exclude:
+  - NoSuchDir
+suppress_paths: []
+only_rules:
+  - discovery.unmatched-exclude
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }

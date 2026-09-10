@@ -470,6 +470,7 @@ final class DocumentationConsistencyTest extends TestCase
             self::$projectRoot . '/src/Analysis/Evidence/Maintainability',
             self::$projectRoot . '/src/Analysis/Evidence/Security',
             self::$projectRoot . '/src/Analysis/Evidence/Size',
+            self::$projectRoot . '/src/Analysis/Run/ExcludeBinding',
         ];
 
         foreach ($rulesDirs as $rulesDir) {

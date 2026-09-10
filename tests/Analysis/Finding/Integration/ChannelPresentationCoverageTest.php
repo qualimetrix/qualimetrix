@@ -29,7 +29,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * read the same real container's static declarations, so a divergence
      * between the two counts would itself be a regression.
      */
-    private const int DECLARED_CHANNEL_COUNT = 54;
+    private const int DECLARED_CHANNEL_COUNT = 55;
 
     #[Test]
     public function itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel(): void

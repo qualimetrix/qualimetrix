@@ -27,6 +27,8 @@ Run/
 ├── Configuration/              # run configuration resolution and project
 │                               # scope coverage
 ├── Discovery/                  # discovery coordination and implementations
+├── ExcludeBinding/             # what the run's exclude patterns bound to, and
+│                               # the `discovery.unmatched-exclude` producer
 ├── FileSetInspection/          # rule-selected composite
 ├── Pipeline/                   # ordered analysis pipeline, plus the prepared
 │                               # run both of its entry points share
@@ -100,6 +102,42 @@ and stores no computed-metric state or result payload.
   which suppressions silenced nothing, and what each `@qmx-threshold` did —
   through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`.
+
+## `discovery.unmatched-exclude`
+
+Run's own channel, and the only one it produces. An `--exclude` value or an
+`exclude:` entry that matches no directory keeps nothing out of the analysis,
+and before the channel existed that run's report was byte-identical to one
+configured with no exclusion at all.
+
+Three pieces, in the order the run reaches them:
+
+- `RunConfigurationResolver` records the author's entries separately, in
+  `RunConfiguration::$authoredPathExcludes`. The merged `pathExcludes` cannot
+  answer for them: it also carries the built-in `vendor`, `node_modules` and
+  `.git`, and `node_modules` is legitimately absent from most PHP trees.
+- `ExcludeBindingProbe` walks the run's roots and answers, per pattern, whether
+  any directory matched — by Symfony's own two-branch rule, read from
+  `ExcludeDirectoryFilterIterator`. It has to be asked *during* discovery:
+  `Finder::exclude()` removes the matching directories before anything
+  downstream can count them, so a pattern that worked and one that matched
+  nothing are indistinguishable from the output.
+- `UnmatchedExcludeAudit` turns that answer into findings, and
+  `AnalysisFileDiscovery` asks it, so they ride out of discovery with the
+  files (`DiscoveredAnalysisFiles::$unmatchedExcludeFindings`) and are
+  published through `RuleExecutionInterface::publishable()` after rule
+  execution, like every other finding. The audit is registered **lazy**: built
+  eagerly it would capture its rule's Options before the console had applied
+  `rules.<name>.enabled` or `--rule-opt`.
+- `UnmatchedExcludeRule` gives the channel its identity — `qmx rules`,
+  `--disable-rule`, severity, baseline. It emits nothing; the channel's name
+  lives on `UnmatchedExcludeOptions`, which is what keeps the rule and the
+  audit from naming each other and forming a cycle.
+
+The channel is silent on a run narrowed below the project's production
+autoload roots (`RunConfiguration::$coversProjectScope`): there a pattern binds
+nothing because of the path the caller chose, not because of anything the
+author wrote.
 
 ## The two entry points
 

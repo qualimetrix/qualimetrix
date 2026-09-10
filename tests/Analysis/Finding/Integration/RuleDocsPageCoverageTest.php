@@ -31,13 +31,13 @@ use ReflectionClass;
  *
  * The number of rule **classes** is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement. It is 46 and is a count of `RuleRegistryInterface::getClasses()`;
- * `bin/qmx rules` now reports 52, because it counts producers.
+ * agreement. It is 47 and is a count of `RuleRegistryInterface::getClasses()`;
+ * `bin/qmx rules` now reports 53, because it counts producers.
  */
 #[CoversClass(RuleDocsPageReader::class)]
 final class RuleDocsPageCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 46;
+    private const int REGISTERED_RULE_COUNT = 47;
 
     #[Test]
     public function itRequiresEveryRegisteredRuleToDeclareItsOwnDocsPage(): void

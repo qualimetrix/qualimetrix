@@ -3773,6 +3773,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions"
+ - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions"
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itDoesNotCarryOneClassesLocalsIntoTheNext
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itKeepsTheReplacedDeclarationInterfacesDead
  - Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\DeclaredOptionKeysCoverReadKeysTest::itReadsOnlyFilesHoldingASingleClass
@@ -6154,6 +6155,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itJudgesASuppressionByTheFindingsRulesProducedRatherThanThosePublished
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itStillReportsASuppressionThatCoveredNothingProduced
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itDoesNotDoubleReportAcrossOverlappingRoots
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itHonoursBothFormsOfTheFinderExcludePattern
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itIsSilencedByDisablingTheProducingRule
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itIsSilencedByDisablingTheRuleThroughItsOptions
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itNeverReportsTheProductsOwnBuiltInExcludes
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itReportsACommandLineExcludeThatMatchedNothing
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itReportsAConfiguredExcludeThatMatchedNothingAndNotOneThatMatched
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itReportsEveryUnboundPatternSeparately
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itStaysSilentOnARunNarrowedBelowTheAutoloadRoots
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itStaysSilentWhenEveryAnalysedPathIsAFile
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedExcludeIntegrationTest::itStaysSilentWhenTheCommandLineExcludeMatched
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itAggregatesGlobalCollectorMetricsToNamespaceLevel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPassesTheDependencyGraphToAnalysisContext
@@ -6247,6 +6261,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itDoesNotCoverTheProjectWhenAnAutoloadRootIsOutsideTheRun
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itCarriesEveryFieldExceptTheScopeItIsGiven
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationScopeTest::itTakesTheCoverageAnswerFromTheCallerRatherThanInheritingIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itCalculatesTotalFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itDetectsErrorsWhenFilesSkipped
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itHandlesZeroFiles
@@ -6296,6 +6312,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itKeepsAllFilesWhenNoneAreGenerated
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itOnlyChecksFirst2KbOfFile
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itReturnsReindexedArray
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsABareNameToADirectoryAtAnyDepth
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsAPatternNamingAPrunedDirectoryItself
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASlashedPatternAtAnySegmentBoundaryRatherThanOnlyAtTheRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itDoesNotDuplicateAnAnswerAcrossOverlappingRoots
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itIgnoresATrailingSlashTheWayFinderDoes
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itKeepsEachPatternsAnswerSeparate
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternNoDirectoryMatches
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternPointingInsideAPrunedDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStaysSilentWhenNoRootIsADirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder

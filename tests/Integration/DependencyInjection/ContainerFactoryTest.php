@@ -97,6 +97,7 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
@@ -832,6 +833,7 @@ PHP;
             DataClassRule::class,
             GodClassRule::class,
             UnmatchedFrameworkNamespaceRule::class,
+            UnmatchedExcludeRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

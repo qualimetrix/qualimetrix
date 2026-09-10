@@ -242,13 +242,13 @@ final class CheckCommand extends Command
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
 
-        $scopedRunConfiguration = new RunConfiguration(
-            $scopeResolution->paths,
-            $runConfiguration->pathExcludes,
-            $runConfiguration->projectRoot,
-            $runConfiguration->generatedFilePolicy,
-            $resolvedScope->coversProjectScope,
-        );
+        // Named, and carrying the coverage answer with the paths it is about:
+        // rebuilding this positionally lost every field added to the run
+        // configuration after the call site was written, silently and once per
+        // field.
+        $scopedRunConfiguration = $resolvedScope->coversProjectScope
+            ? $runConfiguration->coveringProjectScope($scopeResolution->paths)
+            : $runConfiguration->narrowedTo($scopeResolution->paths);
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
         $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(

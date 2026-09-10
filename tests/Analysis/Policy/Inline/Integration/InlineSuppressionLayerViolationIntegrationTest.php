@@ -68,7 +68,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $analysisResult = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true));
+        $analysisResult = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
 
         // Sanity: AnalysisPipeline must surface BOTH controllers as raw
         // findings — suppression is applied downstream, not inside the

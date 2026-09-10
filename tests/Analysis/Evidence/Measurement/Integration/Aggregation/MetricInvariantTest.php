@@ -53,7 +53,7 @@ final class MetricInvariantTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $root = AbsolutePath::fromString((string) getcwd());
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true));
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
 
         self::$repository = $result->metrics;
         self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');

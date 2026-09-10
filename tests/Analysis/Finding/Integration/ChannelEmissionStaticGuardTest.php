@@ -330,6 +330,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 . ' rule class chain leads here at all.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
+            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
+                'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
+                . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
+                . ' class chain leads to this construction.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'

@@ -54,6 +54,7 @@ design.noc#design.noc	class	no	no	C2	both
 design.type-coverage.param#design.type-coverage.param	class	no	no	C2	both
 design.type-coverage.property#design.type-coverage.property	class	no	no	C2	both
 design.type-coverage.return#design.type-coverage.return	class	no	no	C2	both
+discovery.unmatched-exclude#discovery.unmatched-exclude	project	no	no	C4	x16-p6
 duplication.clone#duplication.clone	project	no	no	C1	both
 maintainability.mi#maintainability.mi	callable	no	no	C1 C2	both
 security.command-injection#security.command-injection	callable	no	no	C2	both
@@ -121,6 +122,8 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 # findings below are the pass's own and are not restated for them.
 #   x16-p8  architecture.unmatched-exclude, project, over C4 extended with an
 #           `exclude:` clause on the `controller` layer that removes no class.
+#   x16-p6  discovery.unmatched-exclude, project, over C4 run with
+#           `--exclude=NoSuchDir`, a directory the corpus does not contain.
 #   x16-p9  coupling.unmatched-framework-namespace, project, over C7 — the
 #           corpus is named separately because no earlier one configures a
 #           framework namespace at all.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
@@ -30,11 +31,21 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
  */
 final readonly class PreparedRun
 {
+    /**
+     * @param list<Finding> $unmatchedExcludeFindings What the run's own exclude patterns failed to remove
+     *
+     * `$unmatchedExcludeFindings` is built beside file discovery, where the
+     * patterns are still being applied, and read after rule execution, where a
+     * finding can be published. Nothing between the two moments carries it:
+     * the rule execution result is about rules, and the analysis context does
+     * not describe the run.
+     */
     public function __construct(
         public NamespaceTree $namespaceTree,
         public CollectionPhaseOutput $collection,
         public AnalysisContext $context,
         public RuleExecutionResult $ruleExecution,
         public AnalysisCoverage $coverage,
+        public array $unmatchedExcludeFindings,
     ) {}
 }

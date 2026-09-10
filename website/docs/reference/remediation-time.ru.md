@@ -98,6 +98,12 @@
 | Layer Violations      | `architecture.layer-violation`     | 15     |
 | Unassigned Classes    | `architecture.unassigned-class`    | 15     |
 
+## Правила обнаружения файлов (Discovery)
+
+| Правило                  | ID                            | Минуты |
+| ------------------------ | ----------------------------- | ------ |
+| Непривязанное исключение | `discovery.unmatched-exclude` | 10     |
+
 ## Правила аннотаций
 
 | Правило   | ID                     | Минуты |

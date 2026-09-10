@@ -32,6 +32,7 @@ final class GitScopeResolverTest extends TestCase
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
 
         $definition = new InputDefinition([
@@ -63,6 +64,7 @@ final class GitScopeResolverTest extends TestCase
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
 
         $definition = new InputDefinition([
@@ -88,6 +90,7 @@ final class GitScopeResolverTest extends TestCase
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
 
         $definition = new InputDefinition([
@@ -118,6 +121,7 @@ final class GitScopeResolverTest extends TestCase
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
 
         $definition = new InputDefinition([

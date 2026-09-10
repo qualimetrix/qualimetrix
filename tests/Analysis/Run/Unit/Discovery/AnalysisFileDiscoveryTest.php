@@ -9,10 +9,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\DiscoveredAnalysisFiles;
+use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
 use SplFileInfo;
 
@@ -29,9 +33,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $default->expects(self::once())->method('discover')->willReturn(new ArrayIterator([$file]));
 
         $result = $this->discovery($default)->discover(
-            [AbsolutePath::fromString('/project/src')],
-            AbsolutePath::fromString('/project'),
-            GeneratedFilePolicy::Include,
+            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$file], $result->eligibleFiles);
@@ -47,9 +49,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $override->expects(self::once())->method('discover')->willReturn(new ArrayIterator([]));
 
         $this->discovery($default)->discover(
-            [AbsolutePath::fromString('/project/src')],
-            AbsolutePath::fromString('/project'),
-            GeneratedFilePolicy::Include,
+            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
             $override,
         );
     }
@@ -63,9 +63,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $default->method('discover')->willReturn(new ArrayIterator([$first, $duplicate]));
 
         $result = $this->discovery($default)->discover(
-            [AbsolutePath::fromString('/project'), AbsolutePath::fromString('/project/src')],
-            AbsolutePath::fromString('/project'),
-            GeneratedFilePolicy::Include,
+            self::configuration(['/project', '/project/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$first], $result->eligibleFiles);
@@ -82,10 +80,8 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $filter = self::createStub(GeneratedFileFilterInterface::class);
         $filter->method('filter')->willReturn([$eligible]);
 
-        $result = (new AnalysisFileDiscovery($default, $filter))->discover(
-            [AbsolutePath::fromString('/project/src')],
-            AbsolutePath::fromString('/project'),
-            GeneratedFilePolicy::Exclude,
+        $result = (new AnalysisFileDiscovery($default, $filter, self::audit()))->discover(
+            self::configuration(['/project/src'], GeneratedFilePolicy::Exclude),
         );
 
         self::assertSame([$eligible], $result->eligibleFiles);
@@ -102,10 +98,8 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $filter = $this->createMock(GeneratedFileFilterInterface::class);
         $filter->expects(self::never())->method('filter');
 
-        $result = (new AnalysisFileDiscovery($default, $filter))->discover(
-            [AbsolutePath::fromString('/project/src')],
-            AbsolutePath::fromString('/project'),
-            GeneratedFilePolicy::Include,
+        $result = (new AnalysisFileDiscovery($default, $filter, self::audit()))->discover(
+            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$file], $result->eligibleFiles);
@@ -117,6 +111,24 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $filter = self::createStub(GeneratedFileFilterInterface::class);
         $filter->method('filter')->willReturnCallback(static fn(array $files): array => $files);
 
-        return new AnalysisFileDiscovery($default, $filter);
+        return new AnalysisFileDiscovery($default, $filter, self::audit());
+    }
+
+    /** @param list<string> $paths */
+    private static function configuration(array $paths, GeneratedFilePolicy $policy): RunConfiguration
+    {
+        return new RunConfiguration(
+            paths: array_map(AbsolutePath::fromString(...), $paths),
+            pathExcludes: [],
+            projectRoot: AbsolutePath::fromString('/project'),
+            generatedFilePolicy: $policy,
+            coversProjectScope: true,
+            authoredPathExcludes: [],
+        );
+    }
+
+    private static function audit(): UnmatchedExcludeAudit
+    {
+        return new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe());
     }
 }

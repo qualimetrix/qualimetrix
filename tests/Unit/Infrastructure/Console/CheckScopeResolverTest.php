@@ -135,6 +135,7 @@ final class CheckScopeResolverTest extends TestCase
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
             coversProjectScope: true,
+            authoredPathExcludes: [],
         );
     }
 }

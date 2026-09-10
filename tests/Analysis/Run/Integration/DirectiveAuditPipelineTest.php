@@ -95,7 +95,7 @@ final class DirectiveAuditPipelineTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE);
 
         return $pipeline->auditDirectives(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true),
+            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
         );
     }
 
