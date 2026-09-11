@@ -271,6 +271,16 @@ final class Cases
                 'the logfile observable carries the worker decision and nothing of the run that took it',
             ),
             new ProbeCase(
+                'N1',
+                'limit consumed',
+                'a cell the observability limit covers is judged anyway — the stand reporting its own spelling as the product\'s behaviour',
+            ),
+            new ProbeCase(
+                'N2',
+                'limit over an effect',
+                'a limit declared where the door DOES express the form, over a cell whose effect the stand observes',
+            ),
+            new ProbeCase(
                 'F1',
                 'floor, frozen half',
                 'a classifier that stops calling a floor row defective on the PRE-CURE half reddens, and names that row',

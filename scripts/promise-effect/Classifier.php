@@ -66,7 +66,20 @@ final class Classifier
         bool $promised,
         string $nullMeans,
         bool $witnessed,
+        ?string $limit = null,
     ): Judgement {
+        // The observability limit comes FIRST, before even a crash, because it
+        // says the question was never put to the product: a CLI door has no
+        // spelling for this form, or the canonical magnitude names nothing
+        // this key could act on. Judging such a cell on what came back would
+        // report the stand's own spelling as the product's behaviour — 238
+        // cells of axis A did exactly that. Declared in
+        // `promise-effect/observability-limits.tsv` and read here, so both
+        // halves of the pair are judged by one rule.
+        if ($limit !== null) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, $limit);
+        }
+
         if ($value->outcome === Observation::CRASHED) {
             return new Judgement(Verdict::MALFORMED, 'crashed', true);
         }

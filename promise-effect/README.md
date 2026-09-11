@@ -329,6 +329,12 @@ says nothing about the product.
   is closed on **166 rows before and 165 after, and 165 of them are the same
   rows**.
 - **Element forms inside a list.** The row's axis is the form of the container.
+- **Anything about a form its door cannot spell, or a key the canonical
+  magnitude does not name.** Those cells read `NOT OBSERVABLE` by declaration,
+  in `observability-limits.tsv`, and the reason travels with each one. The
+  limit is the stand admitting it never asked; it is not evidence that the
+  product is right there, and a later round that gives those forms a spelling
+  a door can carry would have to measure them afresh.
 - **That the `map` form is written in a way every consumer can fail on.** The
   canonical write is `{a: 7331}`, whose value is a number, and a string
   consumer filters a non-string out before it can break on it. The fourth
@@ -442,6 +448,71 @@ today's rule would no longer produce the published verdicts. The product is
 deliberately **not** in the stamp: `src/` moves every day, and hashing it would
 redden the aggregate on every commit while saying nothing about the verdicts.
 
+## The observability limit: where the question was never put
+
+A verdict is about the product only if the probe asked the product's own
+question. 473 cells of the last measurement did not, and they had been counted
+as product defects for two rounds. Two mechanisms, both measured:
+
+**A CLI door has no syntax for three of the eight forms.** In a document the
+quotes around `"7331"` are the language's own syntax and produce the string
+7331; in `argv` they are six literal characters. Measured:
+
+```
+--rule-opt=complexity.ccn:callable.warning=7331    -> exit 0
+--rule-opt=complexity.ccn:callable.warning="7331"  -> exit 3
+```
+
+So `int` and `string-number` are ONE spelling on a CLI door — which the
+registry says in its own words, by promising both names of one write — and the
+stand was distinguishing them by adding quotes, which measures a third thing.
+`list` and `map` have no CLI spelling either: the brackets arrive as
+characters. 174 cells of axis A read `REFUSES`-with-a-defect for this reason
+alone, and 19 more read `COLLAPSED`.
+
+**A generic magnitude answers about the domain, not about the form.**
+`suppress-paths: 7331` excludes nothing because 7331 is not a file, and
+`suppress_namespace_channels: {a: 7331}` is refused because `a` is not a
+channel selector — not because a map is the wrong form there. This is the
+discipline `axis-a-hits.tsv` already carries for the reference form, never
+extended to the other seven. 216 `INERT` and 64 `REFUSES` defects are this.
+
+`null` is deliberately **not** declared a limit on CLI doors: `--flag=` with
+nothing after it is a write a user makes and the registry answers for it per
+door, so the empty value is a distinct spelling, not an inexpressible form.
+
+### Why a declaration and not a re-spelling
+
+Re-spelling the probe is a change of INPUT. The frozen half is nailed to
+`6a833ab8` and can never be re-measured, so the 238 cells under argument would
+stop comparing across the pair — which is the one thing the before/after
+acceptance rests on. A rule read by the CLASSIFIER applies to both halves by
+construction, and the share moves in both together.
+
+### The guard that keeps it from being a silencer
+
+A limit covering a cell whose unrestricted verdict is `OK` is **refused**, on
+both halves: `OK` means the effect was distinguishable and the producer
+reachable, and a door that cannot express a form cannot have carried a lawful
+effect through it. The stand computes both verdicts for every covered cell and
+prints how many of them the limit would have deleted. It stands at **0**.
+
+### What it cost, in both halves at once
+
+On the frozen half the limit covers **1507 cells**. `NOT OBSERVABLE` rises from
+**1297 of 6289 (20.6%) to 2549 of 6289 (40.5%)**, and the defect count falls
+from **2632 to 1793**. That is not the stand getting blinder — it is the same
+blindness, named where it was previously being reported as the product's
+behaviour. On the cured grid the same table covers 1513 cells, 473 of which
+were counted as defects.
+
+Held against the round's own reading of the remainder: of the 454 axis-A
+defects called stand properties, **all 454 are**, and none is a product defect
+in disguise — with one correction of attribution. The 64 `map` refusals are
+54 `suppress-namespace-channels` and 10 level-slot rows (`complexity.ccn`
+`.callable|map` and its siblings), where `{a: 7331}` names no option OF THAT
+LEVEL; the family is the same, the count is not.
+
 ## The floor is two claims, not one
 
 `floor.tsv` is a statement about the CLASSIFIER reading a known pre-cure tree:
@@ -472,7 +543,7 @@ are printed by name with the commit whose own subject covers them.
 
 ## The controls
 
-`composer promise-effect:controls` runs twenty cases in four groups: one
+`composer promise-effect:controls` runs twenty-four cases in four groups: one
 planting per verdict — all seven of the form and both of the pair — plus one
 that edits the ledger rather than an observation, plus one that plants an exit
 code back into the shape the stand used to read it as; two probe cases; three
@@ -493,8 +564,13 @@ verdict.
 
 Two further groups exist because that rule is not the whole stand:
 
-- **probe controls** (`B1`, `B2`) address what happens *before* an observation
-  is stored, which the frozen half is blind to by construction. `B1` takes the
+- **stand controls** (`B1`, `B2`, `N1`, `N2`, `F1`, `F2`) address what the
+  verdict cases cannot reach. `N1` and `N2` are the two directions of the
+  observability limit: a covered cell that gets judged anyway reddens, and a
+  limit planted on the YAML door over a cell whose effect the stand observes
+  reddens too. `F1` and `F2` are the two halves of the floor. `B1` and `B2`
+  address what happens *before* an observation is stored, which the frozen half
+  is blind to by construction. `B1` takes the
   real framing pair — the only way to say "the fixture still answers unframed
   today" — and then plants an outcome into the pure judgement, so the control
   can go red without the product being broken. `B2` addresses the worker

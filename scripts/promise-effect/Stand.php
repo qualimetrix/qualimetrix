@@ -52,13 +52,39 @@ final class Stand
     /** @var list<string> */
     private array $failures = [];
 
+    /**
+     * Cells a declared observability limit covered, and the verdict they would
+     * carry without it.
+     *
+     * @var list<array{string, string}>
+     */
+    private array $unrestricted = [];
+
     public function __construct(
         private readonly string $root,
         private readonly Ledger $ledger,
         private readonly Declarations $declarations,
         private readonly InProcess $inProcess,
         private readonly ProcessProbe $process,
+        private readonly ?Limits $limits = null,
     ) {}
+
+    /**
+     * What the cells under a declared limit would read without it — the input
+     * to {@see Limits::conflicts()}, which refuses a limit declared over an
+     * observation the stand actually makes.
+     *
+     * @return list<array{string, string}>
+     */
+    public function unrestricted(): array
+    {
+        return $this->unrestricted;
+    }
+
+    private function limits(): Limits
+    {
+        return $this->limits ?? Limits::load($this->root);
+    }
 
     /** @return list<string> */
     public function failures(): array
@@ -251,15 +277,15 @@ final class Stand
                     continue;
                 }
 
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted,
                     $value,
                     $equivalent,
                     $sides[$axis . "\0" . $cellKey . "\0" . 'collapse'] ?? null,
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     $axis === 'A' ? ($witnesses[$rule] ?? false) : true,
+                    $cellKey,
                 );
 
                 $cells[] = new Cell($axis, $cellKey, $form, $axis === 'A' ? 'optionsObject' : 'report', $judgement->verdict, $judgement->decidedBy, $row->status, $judgement->defect);
@@ -401,15 +427,15 @@ final class Stand
                 // still `true` at the door and `1` only after the factory —
                 // that asymmetry is the reason the stand keeps four points and
                 // the reason only one of them votes.
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted['object'],
                     $value['object'],
                     $equivalent['object'],
                     $collapse === null ? null : $collapse['object'],
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     $this->witnesses[$rule] ?? false,
+                    $row->key() . '|' . $form,
                 );
 
                 $cells[] = new Cell(
@@ -563,15 +589,15 @@ final class Stand
                     ? null
                     : $this->rootProbe($row, $writePath, $base, $spelling->comparand(), $flag, $cacheOwned, $observable, $withdraw);
 
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted,
                     $value,
                     $equivalent,
                     $collapse,
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     true,
+                    $row->key() . '|' . $form,
                 );
 
                 $cells[] = new Cell('D', $row->key() . '|' . $form, $form, 'report', $judgement->verdict, $judgement->decidedBy, $row->status, $judgement->defect);
@@ -648,6 +674,38 @@ final class Stand
                 $rule,
             ),
         };
+    }
+
+    /**
+     * One cell, judged through the declared observability limit.
+     *
+     * The limit is asked here rather than inside the classifier's signature at
+     * three call sites, and the verdict the cell WOULD have carried without it
+     * is recorded beside it: a limit that covers a working observation is
+     * refused by {@see Limits::conflicts()}, and that refusal needs the
+     * unrestricted verdict to exist.
+     */
+    private function judge(
+        Observation $omitted,
+        Observation $value,
+        Observation $equivalent,
+        ?Observation $collapse,
+        string $form,
+        FormRow $row,
+        bool $witnessed,
+        string $cellKey,
+    ): Judgement {
+        $promised = \in_array($form, $row->promisedForms, true);
+        $limit = $this->limits()->reasonFor($row->door, $row->path, $form);
+
+        if ($limit !== null) {
+            $this->unrestricted[] = [
+                $cellKey,
+                Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed)->verdict,
+            ];
+        }
+
+        return Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed, $limit);
     }
 
     /**

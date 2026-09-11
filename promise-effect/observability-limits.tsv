@@ -1,0 +1,72 @@
+# Where this stand cannot put a question to the product at all.
+#
+# A verdict is only about the product when the probe asked the product's own
+# question. Two ways it stops being one, both measured in this round and both
+# declared here rather than left inside a number:
+#
+#   door-cannot-express   the DOOR has no syntax for this form, so the stand's
+#                         spelling of it is a third thing — neither the form
+#                         the row is about nor a write a user could make;
+#   generic-write-names-nothing
+#                         the door carries the form fine, but the canonical
+#                         MAGNITUDE names nothing this key could act on, so
+#                         what comes back is an answer about the value's
+#                         domain and not about its form.
+#
+# A cell a row here covers reads NOT OBSERVABLE with the reason below, on BOTH
+# halves of the before/after pair — which is the whole reason this is a
+# declaration and not a change of spelling. Re-spelling a probe is a change of
+# INPUT, the frozen half is nailed to `6a833ab8` and cannot be re-measured, and
+# the two halves would stop comparing on exactly the cells being argued about.
+#
+# WHY THIS IS NOT A LICENCE TO SILENCE A CELL
+# A limit that covers a cell whose unrestricted verdict is `OK` is REFUSED by
+# the stand, on both halves: `OK` means the effect was distinguishable and the
+# producer reachable, and a door that cannot express a form cannot have carried
+# a lawful effect through it. A limit declared over a working observation is a
+# deleted measurement, and that is the one mistake this table could make.
+#
+# MEASURED, NOT ASSUMED — the two commands behind the first block:
+#   --rule-opt=complexity.ccn:callable.warning=7331    -> exit 0
+#   --rule-opt=complexity.ccn:callable.warning="7331"  -> exit 3
+# In a document the quotes are the language's syntax and produce the string
+# 7331; in argv they are six literal characters. `int` and `string-number`
+# therefore have ONE spelling on a CLI door, which is what the registry says in
+# its own words ("the CLI door carries scalar text only") by promising both
+# names of one write. `list` and `map` have no CLI spelling at all for the same
+# reason: the brackets arrive as characters.
+#
+# `null` is deliberately NOT here. `--flag=` with nothing after it is a write a
+# user makes and the registry answers for it per door, so the empty value is a
+# distinct spelling — not an inexpressible form.
+#
+# COLUMNS
+#   kind    door-cannot-express | generic-write-names-nothing
+#   door    the door this applies to, or `*`
+#   key     the option LEAF the path ends with, or `*`
+#   form    one of the eight forms of `forms.tsv`
+#   reason  what the cell reads in `decided_by`
+kind	door	key	form	reason
+door-cannot-express	rule-opt	*	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
+door-cannot-express	cli-alias	*	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
+door-cannot-express	cli-root	*	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
+door-cannot-express	rule-opt	*	list	a CLI door has no list syntax: the brackets arrive as characters
+door-cannot-express	cli-alias	*	list	a CLI door has no list syntax: the brackets arrive as characters
+door-cannot-express	cli-root	*	list	a CLI door has no list syntax: the brackets arrive as characters
+door-cannot-express	rule-opt	*	map	a CLI door has no map syntax: the braces arrive as characters
+door-cannot-express	cli-alias	*	map	a CLI door has no map syntax: the braces arrive as characters
+door-cannot-express	cli-root	*	map	a CLI door has no map syntax: the braces arrive as characters
+generic-write-names-nothing	*	suppress-namespace-channels	map	the key is a map of channel selectors: `{a: 7331}` names no channel and no namespace list, so the refusal is about the domain
+generic-write-names-nothing	*	suppress-paths	int	the declared hit is a path list; every other form still writes 7331, which names no file
+generic-write-names-nothing	*	suppress-paths	float	the declared hit is a path list; every other form still writes 7331, which names no file
+generic-write-names-nothing	*	suppress-paths	string-number	the declared hit is a path list; every other form still writes 7331, which names no file
+generic-write-names-nothing	*	suppress-paths	string-nonnumber	the declared hit is a path list; `abc` names no file in the fixture
+generic-write-names-nothing	*	suppress-paths	map	the declared hit is a path list; `{a: 7331}` names no file
+generic-write-names-nothing	*	suppress-namespaces	int	the declared hit is a namespace list; every other form still writes 7331, which names no namespace
+generic-write-names-nothing	*	suppress-namespaces	float	the declared hit is a namespace list; every other form still writes 7331, which names no namespace
+generic-write-names-nothing	*	suppress-namespaces	string-number	the declared hit is a namespace list; every other form still writes 7331, which names no namespace
+generic-write-names-nothing	*	suppress-namespaces	string-nonnumber	the declared hit is a namespace list; `abc` names no namespace in the fixture
+generic-write-names-nothing	*	suppress-namespaces	map	the declared hit is a namespace list; `{a: 7331}` names no namespace
+generic-write-names-nothing	*	callable	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
+generic-write-names-nothing	*	class	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
+generic-write-names-nothing	*	namespace	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block

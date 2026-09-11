@@ -39,6 +39,7 @@ require __DIR__ . '/promise-effect/Declarations.php';
 require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
+require __DIR__ . '/promise-effect/Limits.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
@@ -189,6 +190,22 @@ if (isset($arguments['before'])) {
 
     printf("\n  %-22s %d\n", 'defects', \count(array_filter($frozen, static fn(Cell $cell): bool => $cell->defect)));
 
+    // A limit declared over a working observation is a deleted measurement,
+    // and the refusal is the same on both halves — which is why the
+    // unrestricted verdict is computed beside every limited one.
+    $limitConflicts = Limits::load($root)->conflicts($stand->unrestricted());
+
+    foreach ($limitConflicts as $conflict) {
+        fwrite(\STDERR, 'LIMIT: ' . $conflict . "\n");
+    }
+
+    printf(
+        "  %-22s %d cell(s) covered, %d of them over a lawful effect\n",
+        'observability limit',
+        \count($stand->unrestricted()),
+        \count($limitConflicts),
+    );
+
     // The floor belongs HERE. It is a claim about the classifier reading a
     // known pre-cure tree — `01-promise.md` states it of the snapshot BEFORE —
     // and on this half it is meaningful whether or not the product was since
@@ -206,7 +223,7 @@ if (isset($arguments['before'])) {
         fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
     }
 
-    exit($floorMisses === [] ? 0 : 1);
+    exit($floorMisses === [] && $limitConflicts === [] ? 0 : 1);
 }
 
 if (isset($arguments['stability'])) {
@@ -473,6 +490,19 @@ foreach ($cured as $row) {
     printf("    cured  %s — %s\n", $row->row, $row->cure);
 }
 
+$limitConflicts = Limits::load($root)->conflicts($stand->unrestricted());
+
+printf(
+    "  %-22s %d cell(s) covered, %d of them over a lawful effect\n",
+    'observability limit',
+    \count($stand->unrestricted()),
+    \count($limitConflicts),
+);
+
+foreach ($limitConflicts as $conflict) {
+    fwrite(\STDERR, 'LIMIT: ' . $conflict . "\n");
+}
+
 foreach ($misses as $miss) {
     fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
 }
@@ -485,7 +515,7 @@ if ($stand->failures() !== []) {
     exit(3);
 }
 
-if ($misses !== [] || $spanProblems !== 0) {
+if ($misses !== [] || $spanProblems !== 0 || $limitConflicts !== []) {
     exit(1);
 }
 
