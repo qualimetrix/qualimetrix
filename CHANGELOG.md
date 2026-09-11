@@ -170,6 +170,52 @@ counted rather than converted. See
 for why the exit code no longer depends on which command caught the failure,
 and why `-q` no longer hides which key or file was refused.
 
+**Every rule option now declares the shape its value may take, and a value of
+another shape exits 3 instead of being coerced.** Until now the form of a value
+was decided by whichever cast or guard reached it first, and the only check in
+the tree fired on a *string* whose key **name** contained one of thirteen
+substrings (`threshold`, `warning`, `error`, `min`, `max`, …). Four shapes that
+used to run now stop:
+
+| Written                                                                                       | Was                                                                         | Write instead                                          |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `warning: "15"` — a quoted number where a whole number is declared                            | accepted, cast to `15`                                                      | `warning: 15`                                          |
+| `warning: 10.5` — a fraction where a whole number is declared                                 | accepted, cast to a whole number                                            | `warning: 10`                                          |
+| `enabled: [7331]`, `enabled: "false"`                                                         | accepted; a non-empty list or string is truthy, so the rule stayed **on**   | `enabled: false`                                       |
+| `suppress_paths: 7331` — a scalar where a list is declared                                    | accepted and silently ignored: nothing was suppressed                       | `suppress_paths: [src/Sub]`                            |
+| `exclude_methods: {a: getName}`, `allowed_prefixes: {a: is}` — a map where a list is declared | accepted and **applied**: the map's keys were discarded and its values used | `exclude_methods: [getName]`, `allowed_prefixes: [is]` |
+
+The refusal names the rule, the key, the level where there is one, the expected
+form and the written one. **Values written on the command line are unaffected:**
+they are text by construction and are converted before the shape is judged, so
+`--rule-opt="size.method-count:threshold=25"` and
+`--rule-opt="complexity.ccn:enabled=false"` work exactly as before. Only YAML
+distinguishes `15` from `"15"`. See
+[ADR 0055](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md).
+
+**A configuration root written in the wrong container now refuses instead of
+being dropped.** A section written as a list (`cache: [dir]`, `parallel: [3]`,
+`coupling: [x]`) used to crash the loader with `Internal error: ... int given`
+and exit 1; a list root written as a map (`only_rules: {a: complexity.ccn}`,
+`paths: {a: src/Domain}`, `exclude: {a: Sub}`, `disabled_rules: {a: ...}`) used
+to fall through to the default while the run reported success — so a document
+that looked like it narrowed the run to one rule silently analysed everything.
+Both now exit 3 and name the container expected: `cache: {dir: …}`,
+`only_rules: [complexity.ccn]`. `suppress_paths` and `suppress_namespaces`
+written as a map used to exit 1 with `Internal error: array_push() does not
+accept unknown named parameters`; they now refuse the same way.
+
+**`format` and `cache.dir` now refuse a value of the wrong type.** `format:
+true` and `format: [json]` were accepted and ignored — the run produced the
+default `summary` report and said nothing; `cache: {dir: true}` and `cache:
+{dir: [probe-cache]}` were dropped and the cache went to `.qmx-cache` as if the
+key were never written. Each now exits 3 naming what it expected.
+
+**An empty string is refused on four command-line options.** `--fail-on=`,
+`--format=`, `--cache-dir=` and `--memory-limit=` used to be accepted and take
+the default. Each now exits 3 and lists what it accepts. Omit the option to get
+the default.
+
 ### Changed
 
 - Configuration that binds to nothing is now reported instead of passing
@@ -215,6 +261,24 @@ and why `-q` no longer hides which key or file was refused.
 
 ### Fixed
 
+- **`~` now means the same thing everywhere.** Writing a key and leaving it
+  empty — `key:` or the explicit YAML null `key: ~` — means the key was not
+  written, at every depth and in every section. It used to depend on which
+  branch of normalization a root fell into: `cache: ~` took the default, while
+  `coupling: ~`, `computed_metrics: ~`, `architecture: ~` and `exclude_health:
+  ~` refused, contradicting the documentation's own statement that `~` is
+  always valid. A `~` **element of a list** is unchanged and still refused
+  where the list holds non-empty strings: an element is a value, not an
+  unwritten key.
+- **`--exclude=7` no longer crashes the run.** A directory whose name is a bare
+  number arrived as an integer and reached code expecting a string; the value is
+  now converted rather than refused, because such a directory name is lawful.
+- **Three refusals now carry the `Configuration error:` frame.** A malformed
+  `coupling:` section — `coupling: ~`, `coupling: {framework_namespaces: true}`
+  and the rest — used to answer with a bare `coupling.framework_namespaces must
+  be a list.` on standard error, with no frame around it, so a caller
+  distinguishing a configuration refusal from a crash by that frame could not
+  see it. It was the only configuration root that answered without the frame.
 - `qmx.yaml.example` no longer ships three examples that fail: the rule
   selectors under `disabled_rules:` / `only_rules:` needed the `X.*` wildcard
   form, and the custom computed-metric example still used the retired

@@ -746,8 +746,87 @@ same message.
     typo gets wrong — are unchanged. The allowed keys are always listed in the
     canonical kebab spelling.
 
-!!! tip
-    Set a value to `~` (YAML null) or leave it empty to explicitly use the default — this is always valid.
+### The shape of a value
+
+The two rules below hold for **every** key in this document — the roots, the
+sections, the `rules:` subtree and the level slots inside it alike. They are not
+a property of rule options; rule options are simply where you meet them most
+often.
+
+Every key declares the shape its value may take. A value of another shape ends
+the run with exit code 3. It is never converted into something usable, and it is
+never dropped in favour of the default while the run reports success:
+
+```
+Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.
+Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
+Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
+```
+
+The shapes a key can ask for, in the words the refusal uses:
+
+| Shape              | Accepts                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| a boolean          | `true` / `false`                                            |
+| a whole number     | `15` — not `10.5`, not `"15"`                               |
+| a number           | `15` or `10.5`                                              |
+| a string           | any string, the empty one included                          |
+| a non-empty string | a string with at least one non-blank character              |
+| a list of X        | a YAML sequence, every element of shape X                   |
+| a map of X         | a YAML mapping you name the keys of, every value of shape X |
+| a block of options | a mapping whose own keys another declaration answers for    |
+
+Four consequences are worth spelling out, because each of them used to pass
+unnoticed:
+
+- **A quoted number is a string.** `warning: "15"` is refused where a whole
+  number is declared; write `warning: 15`. This is a YAML-only distinction —
+  values that arrive on the command line are text by construction and are
+  converted before their shape is judged, so
+  `--rule-opt="size.method-count:threshold=25"` and
+  `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
+- **A whole number is not a fraction.** `warning: 10.5` is refused where a whole
+  number is declared. Where a key genuinely takes a fraction, the refusal says
+  "a number" instead.
+- **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
+  and `exclude_methods: {a: getName}` are refused; write
+  `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in
+  the other direction: `cache: [dir]` is refused, because `cache:` is a section
+  of named keys.
+- **The empty string is a shape of its own.** It is refused wherever a non-empty
+  value is required, on the command line as well: `--fail-on=`, `--format=`,
+  `--cache-dir=` and `--memory-limit=` each name what they expected instead of
+  quietly taking the default.
+
+### A key written with no value
+
+Writing a key and leaving it empty — `key:` or the explicit YAML null `key: ~` —
+means exactly what leaving the key out means: take the default. This holds at
+every depth and in every section:
+
+```yaml
+cache: ~                 # same as not writing cache:
+coupling: ~              # same as not writing coupling:
+cache:
+  dir: ~                 # same as not writing dir:
+rules:
+  complexity.ccn:
+    enabled: ~           # same as not writing enabled:
+    callable: ~          # same as not writing callable:
+```
+
+An **element of a list** is the one place this does not apply, and for a reason:
+an element is a value, not a key that was left unwritten, so there is nothing for
+it to mean. Where the list is declared to hold non-empty strings, a `~` element
+is refused:
+
+```yaml
+rules:
+  complexity.ccn:
+    suppress_namespaces:
+      - App\Legacy
+      - ~              # refused: exit 3
+```
 
 ---
 
