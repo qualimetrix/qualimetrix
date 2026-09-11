@@ -33,6 +33,7 @@ second list is started here), raw observations stored rather than verdicts, and
 | `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                              | a person           |
 | `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist  | a person           |
 | `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                        | a person           |
+| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                   | a person           |
 | `floor.tsv`                                                            | the rows the stand is required to call defective                                                                         | a person           |
 | `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak | a person           |
 | `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                     | the stand          |
@@ -233,6 +234,69 @@ either changes shape the stand exits 3 rather than reporting. Measured on
 from a rule-option type check is **not** — exit 3 with no frame, which is the
 `MALFORMED` class.
 
+**The unframed half is mortal, and it has already died once.** It stood on
+`--layer-violation-severity=true`, a rule-option alias, until the first cure
+package framed that refusal — after which the stand exited 3 instead of
+reporting, which is the control working. Its replacement is `--workers=-5`:
+`ParallelConfigurationResolver` refuses a negative worker count with a bare
+`InvalidArgumentException`, the console catches it as its **fallback** refusal,
+and the run ends 3 with no frame. The subject was chosen to outlive the same
+fate rather than to be merely different — it is a root flag judged by an
+infrastructure resolver, so no rule-option key, spelling or registry, which is
+the whole material of axis C, can reach it. When it is framed too, the stand
+will say so the same way, and
+`php scripts/enumerate-refusal-fallback.php` (130 bare throws today) is where
+the next subject is found.
+
+The probe withdraws this stand's own `--workers=0` invariant for that run: a
+probe handing the product two values for one flag measures the parser, not the
+resolver.
+
+## Exit 2 is a value, not a refusal
+
+In this product exit 2 means "findings at or above the gate". Reading it as an
+unframed refusal made `fail_on|null` a `MALFORMED` defect on both doors — the
+stand reporting its own reading of an exit code as a product defect.
+
+The rule now lives in exactly one place, `Observation::ofMeasured()`, which both
+the frozen half and every fresh measurement are read through: exit 2 is an
+**accepted** observation whose comparable text is the exit code alone. The body
+is dropped because the raw snapshot holds only a 400-byte head of the report,
+and that head carries a timestamp — comparing bodies would make two runs of one
+configuration differ for a reason that has nothing to do with the door.
+
+Nothing is lost where it matters: exit 2 is reachable only where this stand
+withdraws its own `--fail-on=none`, which is the two `fail_on` rows, and their
+declared observable **is** the exit code. Anywhere else the row would lose
+sensitivity and read `NOT OBSERVABLE`, which is the worse verdict, deliberately.
+
+What the two cells say now, on the frozen half: `yaml|fail_on|null` is `OK`
+(`~` behaves as an omitted key, both runs ending above the gate), and
+`cli-root|fail_on|null` is the `INERT` defect — an empty `--fail-on=` accepted
+and doing nothing where the ledger promised a refusal. That defect was
+previously wearing the stand's own `MALFORMED` label.
+
+## The worker decision, and what the observation used to carry
+
+`parallel.workers` is observed in the debug log, and the whole JSON record used
+to travel into the observation. Two of its fields move on their own:
+`timestamp` is second-granular, and `projectRoot` is the probe's run directory —
+which is keyed on the document the probe writes. So **every** logfile probe
+produced a text unique by construction, `~` differed from an omitted key for a
+reason that was the stand's, and `parallel.workers|null` read `COLLAPSED`
+against a product that defaults correctly. The extraction now keeps the message
+and the worker fields and nothing else, matched on the decoded record rather
+than on the raw line, and it is kept as readable text: the defect lived inside
+an md5 for a whole round.
+
+**This one could not be applied to both halves, and the consequence is a
+property of the snapshot.** The frozen half stores the digest, md5 is not
+invertible, and no re-judging can reach what it ate. So the pre-cure half keeps
+`yaml|parallel.workers|null = COLLAPSED` — one overstated defect — and its two
+`int` cells read `OK` for the wrong reason. Sixteen cells of the frozen half,
+the two `parallel.workers` rows, are the stand's; a before/after delta on them
+says nothing about the product.
+
 ## What the oracle does not prove
 
 - **That the ledger is right.** The stand judges the tree against the ledger. A
@@ -251,6 +315,17 @@ from a rule-option type check is **not** — exit 3 with no frame, which is the
   (23.8%), axis B none by construction, axis D 43 of 544 (7.9%) — and every one
   of them is accounted for below.
 - **Element forms inside a list.** The row's axis is the form of the container.
+- **That the `map` form is written in a way every consumer can fail on.** The
+  canonical write is `{a: 7331}`, whose value is a number, and a string
+  consumer filters a non-string out before it can break on it. The fourth
+  package found by hand a real failure the stand was blind to for exactly this
+  reason. The write is frozen input and cannot be changed without breaking the
+  before/after pair, so it stays named: the 120 frozen axis-D defects
+  **understate** the count by at least two, and that is a property of the
+  snapshot, not of the product.
+- **The two `parallel.workers` rows of the frozen half.** See the section on the
+  worker decision above: sixteen cells there are the stand's own contamination,
+  fixed for every future measurement and unreachable in the frozen one.
 
 ## Where the remaining `NOT OBSERVABLE` share comes from
 
@@ -295,7 +370,7 @@ composer promise-effect:check      # 0 fresh, 1 drift or a red outcome on A or D
 composer promise-effect:before     # re-judge the frozen raw observations (<1 s)
 composer promise-effect:grid       # declarations, grid span, populations, fifth set (<1 s)
 composer promise-effect:grid:check # the same, exit 1 on drift — this one is in `check:artifacts`
-composer promise-effect:controls   # the stand's own controls (<1 s)
+composer promise-effect:controls   # the stand's own controls (~4 s: two of them take process runs)
 composer promise-effect:stability  # measure twice, demand the same text
 php scripts/promise-effect.php --freeze-before --reason='…'   # retake the pre-cure shot (only on 6a833ab8)
 php scripts/promise-effect.php --axis=A          # narrow a run; never evidence on its own
@@ -331,7 +406,10 @@ What does go into `check:artifacts` is `composer promise-effect:grid:check`,
 which takes no probe at all. It answers three narrower questions in under a
 second: does the grid still span exactly the cells the ledger owes, does it
 still carry every member of every population the code knows about, and was it
-measured from the inputs now on disk. The boundary is a statement, not a hedge
+measured from the inputs now on disk. The four sets and the fifth set are
+printed by the same command and judge nothing — they compare two declarations
+and take no measurement, so a disagreement there is a finding to read, not an
+exit code. The boundary is a statement, not a hedge
 — a green grid check means the grid matches its declarations, never that it
 matches the product's behaviour today. Only the expensive run says that.
 
@@ -344,30 +422,63 @@ redden the aggregate on every commit while saying nothing about the verdicts.
 
 ## The controls
 
-`composer promise-effect:controls` plants one breakage per verdict — all seven
-of the form and both of the pair — plus one that edits the ledger rather than
-an observation, plus one per population against the guard. Every case must
-redden **its own** cell and no other: the run diffs the whole outcome map
-against the unplanted baseline, so a blanket breakage fails as loudly as one
-that does not bite.
+`composer promise-effect:controls` runs twenty cases in four groups: one
+planting per verdict — all seven of the form and both of the pair — plus one
+that edits the ledger rather than an observation, plus one that plants an exit
+code back into the shape the stand used to read it as; two probe cases; three
+cross-check cases over the two sides of the four sets; and one per population
+against the guard. Every planting case must redden **its own** cell and no
+other: the run diffs the whole outcome map against the unplanted baseline, so a
+blanket breakage fails as loudly as one that does not bite.
 
 The outcome compared is `VERDICT|defect`, never the label alone. The round
 exists because a framed refusal of a promised form is a defect wearing an
 innocent label, and a control blind to the defect column would be blind to
 exactly the class being measured.
 
-Nine cases recompute over the frozen raw observations instead of measuring
-again — the snapshot holds every side the classifier reads — so the whole table
-costs under a second. What they prove is the rule from observation to verdict.
-They do **not** prove that the process probes measure the right thing; the
-floor of `floor.tsv` is what holds that side.
+Ten cases recompute over the frozen raw observations instead of measuring
+again — the snapshot holds every side the classifier reads — so that half of
+the table costs under a second. What they prove is the rule from observation to
+verdict.
 
-Before any planting the run checks two cheap things and refuses rather than
-reports: that every declared cell exists in the universe (exit 2, a stale
-declaration is a different failure from a case that does not bite), and that
-the frozen half still reproduces the published grid cell for cell (exit 3 — a
-baseline that no longer is the grid would prove something about a document
-nobody reads).
+Two further groups exist because that rule is not the whole stand:
+
+- **probe controls** (`B1`, `B2`) address what happens *before* an observation
+  is stored, which the frozen half is blind to by construction. `B1` takes the
+  real framing pair — the only way to say "the fixture still answers unframed
+  today" — and then plants an outcome into the pure judgement, so the control
+  can go red without the product being broken. `B2` addresses the worker
+  extraction directly, because the frozen half holds an md5 of the contaminated
+  line and nothing recomputed over it can reach what that digest ate. It asserts
+  three things, and the third is the one that matters: that the observation
+  still *carries the worker number*, or an extraction returning a constant would
+  pass the other two and observe nothing;
+- **cross-check controls** (`C1`, `C2`, `C3`) plant into each side of the four
+  sets, and `C3` is an absolute assertion rather than a differential one: a
+  comparison that ignored the door normalization would produce the same
+  before/after difference under any planting while being wrong everywhere, and
+  no planting can see that. The declaration side is planted **in memory**, not
+  into the copied tree: a copy resolves PSR-4 back through `vendor/` into the
+  original `src/`, a false green this repository has already been bitten by, so
+  the bound is stated — `C2` proves the comparison sees a changed declaration,
+  not that it would see one changed in `src/`.
+
+Before any planting the run checks two cheap things: that every declared cell
+exists in the universe (exit 2 — a stale declaration is a different failure from
+a case that does not bite), and that the frozen half still reproduces the
+published grid cell for cell (exit 3 — a baseline that no longer is the grid
+would prove something about a document nobody reads).
+
+**The second of those is suspended while the input stamp is stale**, and the
+reason is not convenience. The stamp covers the stand's own verdict-producing
+code, so editing the classifier stales the grid by construction, and the
+published verdicts were then produced by a rule that no longer exists. Refusing
+there would make the controls unusable during exactly the work they guard — a
+classifier cannot be fixed while its own controls demand the pre-fix grid. The
+run says so in as many words and keeps going; the refusal returns the moment
+`composer promise-effect` re-measures, which is the only thing that clears the
+stamp. While it is suspended the controls prove the rule from observation to
+verdict and say nothing about the published grid.
 
 ## The population guard
 
@@ -403,18 +514,127 @@ different reading of which kinds are two-coordinate would have moved the
 guard's population while the sum still added up. The declaration is checkable
 where the sum was not.
 
-## The fifth set, and why it is printed rather than counted
+## The four sets: the registry against the declaration
 
-`promise-effect:grid` prints `consumer \ declaration` — key literals a
-`fromArray()` body reads that the class's own `acceptedOptionKeys()` does not
-declare. The four sets of stage 01 cannot see such a key: it is absent from the
-declaration and therefore from the denominator of axis A as well.
+`promise-effect:grid` prints them, and they are the round's central evidence.
+Two authors were kept apart to make them evidence at all: the registry was
+written by a package forbidden to read the declaration, because two authors who
+consult each other agree by construction. The comparison consults both, after
+both were written.
 
-It is **not evidence**, and the print says so. 117 of the inventory's 455
-form-deciding sites are recorded as deciding the form of *any* key rather than
-a named one, so the set is computed over the remainder and stays silent about
-the rest by construction. Resolving those sites is the first action of the cure
-package (03 §P1).
+Since the first cure package the declaration carries a **form**
+(`RuleOptionShape`), not just a key, and the registry carries `promised_forms`
+in the eight names of 02 §5. Bridging the two vocabularies is
+`promise-effect/door-normalization.tsv` — a declared table, not code — which
+says what value each door hands the declaration for each form. The shape is
+then asked about that value in its own words, through `matches()`.
+
+**The formulation, and it is not the naive one:**
+
+> the declaration, composed with its door's declared normalization, must accept
+> exactly the `promised_forms` of **that door's** registry row.
+
+The naive comparison — "the declared form against `promised_forms`" — reports a
+disagreement on `string-number` for every CLI row and on `null` for every YAML
+row of the same key, 205 paths at once, and both halves would be the
+comparison's fault. `rules.design.dit.warning` is the worked example and the
+`C3` control: one declaration, `integer()->orNull()`, serves three doors;
+YAML `warning: "5"` is a string and is refused, while `5` on a CLI door is the
+only way to type a number at all and is folded back into one before the
+declaration ever sees it.
+
+Two more rules the walk forces, each stated because a comparison that skipped
+it would argue with a declaration the product does not consult:
+
+- **A level slot is not judged by a shape.** `RuleOptionKeyRecognition` branches
+  on the slot before asking the parent's declaration, accepts `null` outright,
+  refuses a non-array, and hands the keys inside to the slot's own declaration —
+  which the depth-2 registry rows are about. So a slot row's declaration is "a
+  block of that level's options, or null".
+- **The container, not the element.** A `listOf(nonEmptyText())` accepts the
+  `list` FORM even though it refuses the canonical list of the magnitude 7331.
+  The row's axis is the container, as this file says two sections above, so the
+  container is offered filled with each scalar of the same door and one
+  accepted filling is enough.
+
+The sets, and the split that carries the hazard:
+
+| set                                          | what it means                                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `ledger ∩ declaration`                       | a form both name                                                                                |
+| `declaration \ ledger`, **WIDER**            | the declaration accepts a form nothing promised — a false green that moved into the declaration |
+| `declaration \ ledger`, **WIDER, unopposed** | the same, on a row whose `promised_forms` is empty: the registry never made a claim there       |
+| `declaration \ ledger`, **DEEPER**           | a declared key the registry's denominator never reached — a number, not an argument             |
+| `ledger \ declaration`                       | promised and not accepted, listed row by row                                                    |
+
+Three kinds of row stand outside the comparison rather than being folded into
+agreement, because folding them would let a key with no declared form count as
+declared: a **framework key** whose form no declaration states (the two
+namespace keys — `suppress-paths` is compared, against
+`RuleOptionKeyRecognition`'s own shape, which is where the round's boundary puts
+the declaration side of the three), a key **answered by the class itself**, and
+a path **no registered producer owns**.
+
+`status` is printed as three counters and never netted out: a `DECIDED` row
+compares this round's decision with itself, so agreement there is not
+independent evidence, and which rows carry independent weight is the reader's
+question rather than this printer's. Only axis-A form rows have a declaration
+side at all, so the counters cover those and no others — the roots outside
+`rules:` are read by resolvers that declare no key set, and inventing one for
+them would be the comparison agreeing with itself.
+
+**A WIDER line is not by itself a product defect, and must not be read as one.**
+It says the declared FORM admits a value the registry does not promise. What the
+product does with that value afterwards is a different question, and the two
+come apart in both directions — measured, not assumed:
+`--rule-opt=maintainability.mi:threshold=7331.9` is accepted and analysed, so
+there the declaration and the behaviour agree with each other and disagree with
+the registry; `--layer-violation-severity=` is refused, framed, by a
+value-domain check that runs after the form was admitted. The grid is what
+measures behaviour. These sets measure two declarations against each other, and
+that is their whole claim.
+
+## The fifth set
+
+`consumer \ declaration` — key literals a reading body reads that the
+declaration behind it does not declare. The four sets cannot see such a key: it
+is absent from the declaration and therefore from the denominator of axis A as
+well.
+
+It used to be printed and **not** counted, for two reasons that are both gone.
+117 of the inventory's 455 form-deciding sites recorded the form of *any* key
+rather than a named one; those are now dispositioned one row each in
+`measurement/form-deciding-sites-resolution.tsv`, and the set reads that file —
+17 rows name keys against an `acceptedOptionKeys()` declaration, 5 name
+framework keys, 95 cannot produce a member at all and say why. And the set was
+narrower than its own definition in two independent places: a
+`method !== 'fromArray'` filter and a match against SHORT class names. Of 22
+comparable rows the stand reached 11, with three readers-on-behalf-of-a-rule
+(`LcomCollectionConfigurationResolver`, `RuleOptionsFactory`,
+`ChannelExclusionKeyValidator`) falling out as "unresolvable" even with the
+first filter widened. A site is now resolved through its FILE PATH, and every
+reading body counts, not only a factory's: `unresolvable` went 44 → 0 and the
+compared sites 107 → 185.
+
+Two things a reader of the inventory will meet and should not be caught by:
+
+- the filters `in_factory=yes` and `method=fromArray` select **different**
+  elevens whose intersection is empty. The line this printer used to carry,
+  "inside fromArray()", counted the second and never the factory; it is replaced
+  by a count in a unit the set uses — sites whose class carries a declaration;
+- the declaration side is a **union**: `acceptedOptionKeys()` plus the framework
+  keys of `RuleOptionKeyRecognition`. No options class declares `suppress-paths`
+  and none ever will, so comparing those against `acceptedOptionKeys()` alone
+  would manufacture members that name nothing wrong. That is a decision about
+  what the product promises, taken by the round, not a fact read off the code.
+
+The set holds **six** members, before the widening and after it: `warning` and
+`error` read at the top level of `ComplexityOptions`,
+`CognitiveComplexityOptions` and `NpathComplexityOptions`. They are `DEFERRED`
+rather than cured, and the price is stated: the flat branch lives in two
+incompatible semantics, and the ban on mixing `threshold` with `warning`/`error`
+is a dispute between carriers that this round does not settle. Declaring those
+keys would settle it by accident.
 
 Two kinds of inventory cell are resolved rather than guessed at, and a third is
 refused: an ALL-CAPS token is looked up as a constant on `RuleOptionKey` and

@@ -52,10 +52,51 @@ final readonly class Observation
     public const string REFUSED_UNFRAMED = 'refused-unframed';
     public const string CRASHED = 'crashed';
 
+    /**
+     * The comparable text of a run that exited 2. The prefix is the shape
+     * {@see ProcessObservation::text()} writes for a non-accepted run, which
+     * is how the frozen snapshot spells it too.
+     */
+    private const string FINDINGS_ABOVE_THE_GATE = 'exit=2';
+
     public function __construct(
         public string $outcome,
         public string $text,
     ) {}
+
+    /**
+     * One observation as the classifier is allowed to read it — the only place
+     * a process exit code is turned into an outcome for judging.
+     *
+     * **Exit 2 is not a refusal.** In this product it means "findings at or
+     * above the gate", which is an observed VALUE of the run: a `fail_on`
+     * probe that reaches it has been honoured, not rejected. Counting it as an
+     * unframed refusal made `fail_on|null` read MALFORMED on both doors — the
+     * stand reporting its own reading of an exit code as a product defect.
+     *
+     * The comparable text of such a run is the exit code ALONE. The body that
+     * travels beside it in the raw snapshot is a 400-byte head of the report
+     * carrying a timestamp, so comparing bodies would make two runs of the
+     * same configuration differ for a reason that has nothing to do with the
+     * door. Nothing is lost where it matters: exit 2 can only be reached where
+     * this stand withdraws its own `--fail-on=none`, which is the `fail_on`
+     * rows, and their declared observable IS the exit code. Where it is
+     * reached by anything else the row loses sensitivity and reads
+     * NOT OBSERVABLE — the worse verdict, deliberately.
+     *
+     * Applied to BOTH halves: the frozen raw snapshot is re-judged through
+     * this function, and so is every fresh measurement, so the two halves stay
+     * judged by one rule. It is idempotent, because a fresh observation
+     * normalized here is stored in the shape this function returns.
+     */
+    public static function ofMeasured(string $outcome, string $text): self
+    {
+        if ($text === self::FINDINGS_ABOVE_THE_GATE || str_starts_with($text, self::FINDINGS_ABOVE_THE_GATE . ' ')) {
+            return new self(self::ACCEPTED, self::FINDINGS_ABOVE_THE_GATE);
+        }
+
+        return new self($outcome, $text);
+    }
 
     public function accepted(): bool
     {

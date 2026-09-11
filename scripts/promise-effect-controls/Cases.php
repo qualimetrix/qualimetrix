@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 /**
- * The plantings, one per verdict and one per population.
+ * The plantings: one per verdict, one per side of the four sets, one per
+ * probe this package had to fix, and one per population.
  *
  * Every verdict case edits a RAW observation of the frozen half, which is to
  * say it simulates the product behaving differently at the boundary the
@@ -35,6 +36,57 @@ final readonly class ControlCase
         public array $raw,
         public array $ledger,
         public array $expected,
+    ) {}
+}
+
+/**
+ * A control on a PROBE rather than on the rule from observation to verdict.
+ *
+ * The nine verdict cases recompute over the frozen raw observations, which is
+ * why they are cheap — and why they are blind to everything that happens
+ * before an observation is stored. Two of this package's three fixes live
+ * exactly there: the refusal-framing pair is two process runs, and the worker
+ * decision is an extraction from a log file whose contaminated digest the
+ * frozen half cannot un-eat. Each case below states its own assertions; the
+ * runner holds them, because they are not a planting into a cell map.
+ */
+final readonly class ProbeCase
+{
+    public function __construct(
+        public string $id,
+        public string $subject,
+        public string $intent,
+    ) {}
+}
+
+/**
+ * A planting into one of the two sides the four sets compare.
+ *
+ * The declaration side is planted IN MEMORY, not into a copied tree: a copy
+ * resolves PSR-4 back through `vendor/` into the original `src/`, so a planted
+ * options class is loaded from the tree it was meant to replace. That false
+ * green has bitten this repository before, and the bound is stated rather than
+ * risked — this case proves the comparison sees a changed declaration, not
+ * that it would see one changed in `src/`.
+ */
+final readonly class CrossCase
+{
+    /**
+     * @param list<array{string, int, string}> $ledger a ledger line matched by its prefix, a column index, the new cell
+     * @param array{string, string, string}|null $shape rule, key, and the shape factory to plant instead
+     * @param list<string> $added bucket|cell keys the planting must introduce
+     * @param list<string> $removed bucket|cell keys it must take away
+     * @param list<string> $absent bucket|cell keys the UNPLANTED comparison must not carry
+     */
+    public function __construct(
+        public string $id,
+        public string $side,
+        public string $intent,
+        public array $ledger,
+        public ?array $shape,
+        public array $added,
+        public array $removed,
+        public array $absent = [],
     ) {}
 }
 
@@ -172,6 +224,23 @@ final class Cases
                 ['pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate' => 'MISCOMPOSED|yes'],
             ),
             new ControlCase(
+                'X1',
+                'MALFORMED',
+                'an exit code above the fail-on gate stops being read as an observed value',
+                // `fail_on` is the one row whose probe withdraws
+                // `--fail-on=none`, so it is the only place exit 2 is
+                // reachable. Unplanted it reads OK: `~` behaves as an omitted
+                // key, both runs ending above the gate. Planted back into an
+                // unframed refusal — which is how the stand read exit 2 before
+                // this package — the cell is a MALFORMED defect again.
+                [
+                    ['form|yaml|fail_on|null', 'value', 'outcome', 'refused-unframed'],
+                    ['form|yaml|fail_on|null', 'value', 'text', 'exit=3 {"error":"planted"}'],
+                ],
+                [],
+                ['form|yaml|fail_on|null' => 'MALFORMED|yes'],
+            ),
+            new ControlCase(
                 'L1',
                 'COLLAPSED',
                 'the ledger stops promising a form the product still accepts and moves',
@@ -182,6 +251,82 @@ final class Cases
                 // rather than the observations being judged on their own.
                 [['form	yaml	rules.coupling.class-rank.error	', 3, 'null,int']],
                 [self::FORM => 'COLLAPSED|yes'],
+            ),
+        ];
+    }
+
+    /** @return list<ProbeCase> */
+    public static function probes(): array
+    {
+        return [
+            new ProbeCase(
+                'B1',
+                'refusal framing',
+                'the two framing probes still answer as the REFUSES verdict is defined, and the judgement on them reddens when either changes',
+            ),
+            new ProbeCase(
+                'B2',
+                'worker decision',
+                'the logfile observable carries the worker decision and nothing of the run that took it',
+            ),
+        ];
+    }
+
+    /** @return list<CrossCase> */
+    public static function crossChecks(): array
+    {
+        return [
+            new CrossCase(
+                'C1',
+                'registry',
+                'a form the registry stops promising appears on the declaration side of the comparison',
+                // Column 3 of a `form` row is `promised_forms`. Dropping
+                // `float` there leaves the declaration (`number()->orNull()`)
+                // accepting a form nothing promises — the WIDER half, which is
+                // the half the four sets exist to show.
+                [['form	yaml	rules.coupling.class-rank.error	', 3, 'null,int']],
+                null,
+                ['WIDER|form|yaml|rules.coupling.class-rank.error|float'],
+                [],
+            ),
+            new CrossCase(
+                'C3',
+                'door',
+                'the comparison folds each form through its own door, and not through one door for all three',
+                [],
+                null,
+                [],
+                [],
+                // The round's worked example. `integer()->orNull()` is one
+                // declaration serving three doors: in YAML `warning: "5"` is a
+                // string and is refused, while on a CLI door `5` is the only
+                // way to type a number at all and is folded back to one. A
+                // comparison that read every door as YAML would put this cell
+                // in `ledger \ declaration` — on 205 paths at once, and with
+                // both halves its own fault rather than the product's.
+                [
+                    'LEDGER_ONLY|form|rule-opt|rules.design.dit.warning|string-number',
+                    'LEDGER_ONLY|form|cli-alias|rules.design.dit.warning|string-number',
+                    'WIDER|form|yaml|rules.design.dit.warning|string-number',
+                ],
+            ),
+            new CrossCase(
+                'C2',
+                'declaration',
+                'a declaration that narrows appears on the registry side of the comparison',
+                [],
+                // `number()->orNull()` narrowed to `integer()->orNull()`: the
+                // fractional form the registry promises at the two doors that
+                // promise it becomes unaccepted, and the third door — an alias
+                // whose row promises nothing — loses a WIDER line instead.
+                // One plant, three cells, each in a different bucket: a
+                // comparison blind to the door would move them together.
+                ['coupling.class-rank', 'error', 'integer'],
+                [
+                    'LEDGER_ONLY|form|yaml|rules.coupling.class-rank.error|float',
+                    'LEDGER_ONLY|form|rule-opt|rules.coupling.class-rank.error|float',
+                ],
+                ['WIDER_UNOPPOSED|form|cli-alias|rules.coupling.class-rank.error|float'],
             ),
         ];
     }

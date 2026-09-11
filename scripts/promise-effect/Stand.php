@@ -91,22 +91,59 @@ final class Stand
      */
     public function proveRefusalFraming(): array
     {
-        $problems = [];
-
         $framed = $this->process->observe(['rules' => ['complexity.ccn' => ['callable' => ['warning' => 'abc']]]]);
 
-        if ($framed->outcome() !== Observation::REFUSED_FRAMED) {
-            $problems[] = 'a ConfigurationRefusal no longer reaches the user framed: ' . $framed->text();
-        }
-
-        $unframed = $this->process->observe([], ['--layer-violation-severity=true']);
-
-        if ($unframed->outcome() !== Observation::REFUSED_UNFRAMED) {
-            $problems[] = 'the unframed refusal control changed shape: ' . $unframed->text();
-        }
+        // A negative worker count: refused by
+        // `ParallelConfigurationResolver` with a bare
+        // `InvalidArgumentException`, which the console catches as its
+        // FALLBACK refusal — exit 3 with no `Configuration error:` frame.
+        //
+        // The invariant `--workers=0` is withdrawn, or the probe would hand
+        // the product two values for one flag and measure the parser instead
+        // of the resolver.
+        //
+        // This control stood on `--layer-violation-severity=true` until the
+        // first cure package framed it, and the replacement is chosen to
+        // outlive the same fate rather than to be merely different: the
+        // subject is a ROOT flag whose value is judged by an infrastructure
+        // resolver, so no rule-option key, spelling or registry — the whole
+        // material of axis C — can reach it. Its predecessor was a rule-option
+        // alias, which is why it died. The control is still mortal, as it must
+        // be: when this refusal is framed too, the stand exits 3 instead of
+        // reporting, and `php scripts/enumerate-refusal-fallback.php` is where
+        // the next subject is found.
+        $unframed = $this->process->observe([], ['--workers=-5'], false, 'findings', ['--workers']);
 
         $this->raw[] = ['control', 'refusal-framing', 'framed', $framed->outcome(), $framed->text()];
         $this->raw[] = ['control', 'refusal-framing', 'unframed', $unframed->outcome(), $unframed->text()];
+
+        return self::framingProblems(
+            $framed->outcome(),
+            $framed->text(),
+            $unframed->outcome(),
+            $unframed->text(),
+        );
+    }
+
+    /**
+     * The judgement the two framing probes are put to, as a function of what
+     * they observed — separated from the probes so a control can plant an
+     * outcome into it. A control that could only run the real probes could
+     * never show this judgement going red without breaking the product.
+     *
+     * @return list<string>
+     */
+    public static function framingProblems(string $framedOutcome, string $framedText, string $unframedOutcome, string $unframedText): array
+    {
+        $problems = [];
+
+        if ($framedOutcome !== Observation::REFUSED_FRAMED) {
+            $problems[] = 'a ConfigurationRefusal no longer reaches the user framed: ' . $framedText;
+        }
+
+        if ($unframedOutcome !== Observation::REFUSED_UNFRAMED) {
+            $problems[] = 'the unframed refusal control changed shape: ' . $unframedText;
+        }
 
         return $problems;
     }
@@ -178,7 +215,11 @@ final class Stand
                 continue;
             }
 
-            $sides[$axis . "\0" . $key . "\0" . $side] = new Observation($outcome, $text);
+            // Read through the one normalization both halves share, never
+            // through the constructor: an exit code is turned into an outcome
+            // in exactly one place, or the frozen half and a fresh
+            // measurement are judged by two rules.
+            $sides[$axis . "\0" . $key . "\0" . $side] = Observation::ofMeasured($outcome, $text);
         }
 
         $cells = [];
@@ -583,7 +624,7 @@ final class Stand
             return new Observation(Observation::CRASHED, 'probe failed: ' . $failure->getMessage());
         }
 
-        return new Observation($observation->outcome(), $observation->text());
+        return Observation::ofMeasured($observation->outcome(), $observation->text());
     }
 
     /**

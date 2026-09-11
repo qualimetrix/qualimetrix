@@ -40,6 +40,7 @@ require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';
+require __DIR__ . '/promise-effect/CrossCheck.php';
 require __DIR__ . '/promise-effect/Stamp.php';
 
 /** @return array<string, string> producer name => options class, as the product wires them */
@@ -112,6 +113,11 @@ try {
     );
     $expected = $stand->expectedKeys();
     $actual = gridKeys($root . '/' . Stand::SNAPSHOT_DIR . '/verdicts.tsv');
+    $population = new Population($root, $rules);
+    // Inside the guard: a declaration that cannot be read is exit 2 with a
+    // sentence, never a fatal 255 with a stack trace.
+    $fifth = (new FifthSet($root, $population->optionsClassNames(), $rules))->compute();
+    $cross = (new CrossCheck($root, $rules, $ledger))->compute();
 } catch (LedgerError $error) {
     fwrite(\STDERR, 'promise-effect-grid: ' . $error->getMessage() . "\n");
 
@@ -137,7 +143,6 @@ foreach ($actual as $key => $count) {
     }
 }
 
-$population = new Population($root, $rules);
 $uncovered = $population->uncovered(array_keys($actual));
 // 02 §5 asks for the kind-to-coordinate mapping to be fixed before the stand
 // starts, "otherwise the guard's population moves with the interpretation".
@@ -146,7 +151,6 @@ $uncovered = $population->uncovered(array_keys($actual));
 // to the ledger here, row by row.
 $scopeProblems = $population->pairScopeProblems($ledger->pairs, $declarations->pairScopes);
 $drift = (new Stamp($root))->drift();
-$fifth = (new FifthSet($root, $population->optionsClassNames()))->compute();
 
 printf("grid            %d cell(s) over %d distinct key(s)\n", array_sum($actual), \count($actual));
 printf("ledger owes     %d cell(s) over %d distinct key(s)\n", array_sum($expected), \count($expected));
@@ -159,28 +163,91 @@ printf(
     $scopeProblems === [] ? 'the declared kind-to-coordinate mapping holds' : \count($scopeProblems) . ' disagreement(s)',
 );
 
+// The four sets of 02 §6 — the registry against the declaration, which is the
+// round's central evidence and the reason the two were written by authors
+// forbidden to read each other. The formulation held to is stated once, in
+// `promise-effect/door-normalization.tsv`, and the dictionary bridging the
+// registry's eight form names and `RuleOptionShape` is that table, not code.
 printf(
-    "\nfifth set (consumer \\ declaration) — NOT EVIDENCE\n"
-    . "  %-34s %d\n  %-34s %d\n  %-34s %d\n  %-34s %d\n  %-34s %d\n  %-34s %d\n",
+    "\nfour sets (registry x declaration), over %d row(s) and %d cell(s)\n"
+    . "  %-42s %d\n  %-42s %d\n  %-42s %d\n  %-42s %d\n  %-42s %d\n",
+    $cross->comparedRows,
+    $cross->comparedCells,
+    'ledger & declaration (a form in both)',
+    $cross->agreed,
+    'declaration \\ ledger, WIDER',
+    \count($cross->wider),
+    '  of which against a row promising nothing',
+    \count($cross->widerUnopposed),
+    'declaration \\ ledger, DEEPER (keys unnamed)',
+    \count($cross->deeper),
+    'ledger \\ declaration',
+    \count($cross->ledgerOnly),
+);
+
+printf(
+    "  %-42s %s\n  %-42s %d / %d / %d\n",
+    'rows outside the comparison',
+    \sprintf(
+        '%d framework-key (no declared form), %d answered by the class, %d unowned path, %d undeclared key',
+        \count($cross->formless),
+        \count($cross->answeredByTheClass),
+        \count($cross->unowned),
+        \count($cross->undeclaredKeys),
+    ),
+    'covered rows PROMISED / DECIDED / DEFERRED',
+    $cross->statuses['PROMISED'] ?? 0,
+    $cross->statuses['DECIDED'] ?? 0,
+    $cross->statuses['DEFERRED'] ?? 0,
+);
+
+// A DECIDED row compares the round's own decision with itself: the registry
+// cell was written by this round, so agreement there is not independent
+// evidence. The number is printed rather than netted out, because which rows
+// carry independent weight is the reader's question, not this printer's.
+printf(
+    "\nfifth set (consumer \\ declaration) — evidence, bounded by what it reads\n"
+    . "  %-42s %d\n  %-42s %d\n  %-42s %d\n  %-42s %d\n  %-42s %d\n  %-42s %d\n",
     'form-deciding sites',
     $fifth->sites,
-    'of them named-key (resolved)',
+    'of them named-key',
     $fifth->namedSites,
-    'of them any-key (UNRESOLVED)',
+    'of them any-key, dispositioned by file',
     $fifth->anyKeySites,
-    'inside fromArray()',
-    $fifth->factorySites,
+    'sites in a class carrying a declaration',
+    $fifth->declaringSites,
     'key literals actually compared',
     $fifth->comparedSites,
     'read and not declared',
     \count($fifth->undeclared),
 );
 
-printf("  %-34s %d\n", 'spellings not resolvable to a key', \count($fifth->unresolvedSpelling));
+// The arithmetic of the widening, printed rather than left to be reconstructed:
+// `unresolvable` fell from 44 to 0, and most of that is a RECLASSIFICATION, not
+// a resolution — a site in a class that declares no option keys is now skipped
+// as outside the question instead of being reported as a class nobody could
+// look up.
+printf(
+    "  %-42s %d\n",
+    'named-key sites in a non-declaring class',
+    $fifth->namedSites - $fifth->declaringSites - \count($fifth->unresolvable),
+);
 
 printf(
-    "  the %d unresolved site(s) are the reason this set is printed and not counted: 03 §P1 resolves them.\n",
-    $fifth->anyKeySites,
+    "  %-42s %d\n  %-42s %d yes + %d framework-key of %d row(s)\n",
+    'spellings not resolvable to a key',
+    \count($fifth->unresolvedSpelling),
+    'from the any-key disposition',
+    $fifth->resolutionCandidates,
+    $fifth->resolutionFrameworkKeys,
+    $fifth->resolutionRows,
+);
+
+printf(
+    "  %-42s %d\n  the declaration side is acceptedOptionKeys() UNION the framework keys: no options class\n"
+        . "  declares suppress-paths and none will, so comparing those against it alone would invent members.\n",
+    'sites whose class no file path resolved',
+    \count($fifth->unresolvable),
 );
 
 // Inside the aggregate only the counts are printed: the set is not evidence,
@@ -197,6 +264,23 @@ if (!$check) {
 
     foreach ($fifth->unresolvedSpelling as $line) {
         printf("  ? %s\n", $line);
+    }
+
+    printf("\nfour sets, listed\n");
+
+    foreach ([
+        'WIDER (declared, and the row promises other forms)' => $cross->wider,
+        'WIDER (declared, and the row promises nothing at all)' => $cross->widerUnopposed,
+        'ledger \\ declaration' => $cross->ledgerOnly,
+        'DEEPER (declared, and the registry never names the key)' => $cross->deeper,
+        'unowned paths' => $cross->unowned,
+        'undeclared keys' => $cross->undeclaredKeys,
+    ] as $title => $lines) {
+        printf("  %s: %d\n", $title, \count($lines));
+
+        foreach ($lines as $line) {
+            printf("    - %s\n", $line);
+        }
     }
 }
 

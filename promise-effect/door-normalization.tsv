@@ -1,0 +1,82 @@
+# What each door hands the DECLARATION for each of the eight forms.
+#
+# The registry row describes what a USER writes, and it is written per door.
+# The declaration (`RuleOptionShape`, since the first cure package) judges a PHP
+# value, after the door has had its way with it. Between the two stands a
+# normalization that is different on every door, and a cross-check that ignored
+# it would report a disagreement on every numeric key in the tree.
+#
+# The live example the round measured, and the one to check this table against:
+#
+#   rules.design.dit.warning
+#     door=yaml      promised_forms = null,int          declaration integer()->orNull()
+#     door=rule-opt  promised_forms = int,string-number
+#     product: YAML `warning: "5"` -> exit 3;  `--rule-opt=design.dit:warning=5` -> exit 0
+#
+# Both doors are right, and one declaration serves both — because a CLI door
+# carries text and folds it back into a number before the declaration sees it.
+#
+# FORMULATION HELD TO HERE
+#   The declaration, composed with its door's normalization below, must accept
+#   exactly the `promised_forms` of THAT door's registry row.
+#
+# WHERE THE VALUES COME FROM
+#   yaml      the document, parsed. The rule config is not coerced per key:
+#             `RuleOptionsFactory::normalizeScalarConfig()` only rewrites a
+#             WHOLE rule block written as a scalar, so the door is the identity
+#             on the value of a key.
+#   rule-opt  the text after `=`, through
+#             `RuleOptionsParser::normalizeValue()`: `true`/`false` to bool,
+#             digits (with an optional sign) to int, any other numeric to
+#             float, everything else left a string.
+#   cli-alias the text after `=`, through
+#             `CliOptionsParser::normalizeValue()`: the same three branches,
+#             the numeric one split on a `.` or an `e` instead of on
+#             `ctype_digit`.
+#
+# A CONSEQUENCE THAT IS NOT A DEFECT, AND IS NAMED SO NOBODY READS IT AS ONE
+#   On both CLI doors `int` and `string-number` are THE SAME WRITE: a command
+#   line carries text, and `7331` is the only way to type either. They are
+#   therefore accepted or refused together there, always, and a cross-check
+#   disagreement can never separate them. The registry says as much in its own
+#   words — "CLI door carries scalar text only" — and both names appear in
+#   `promised_forms` of every CLI row that admits a number.
+#
+# WHAT THIS TABLE IS NOT
+#   It is not a measurement. The three normalizations were read out of the
+#   product once and written here by hand, because a table derived by asking
+#   the product would make the cross-check a measurement of the thing it is
+#   checking. When one of them changes, this file is wrong until a person
+#   changes it, and the cross-check will say so in the only way it can: a
+#   disagreement on every row of that door at once.
+#
+# COLUMNS
+#   door    yaml | rule-opt | cli-alias — the three doors of axis A
+#   form    one of the eight forms of `forms.tsv`
+#   seen    the value the declaration judges, written as a YAML scalar and
+#           parsed as one
+door	form	seen	note
+yaml	null	~	`~` in the document is PHP null
+yaml	bool	true
+yaml	int	7331
+yaml	float	7331.9
+yaml	string-number	"7331"	a quoted number stays a string through the door
+yaml	string-nonnumber	abc
+yaml	list	[7331]
+yaml	map	{a: 7331}
+rule-opt	null	''	an empty value after `=`: the door hands over the empty string, never null
+rule-opt	bool	true	the literal `true` is folded to a boolean
+rule-opt	int	7331
+rule-opt	float	7331.9
+rule-opt	string-number	7331	the same bytes as `int` on this door — see the note above
+rule-opt	string-nonnumber	abc
+rule-opt	list	'[7331]'	no CLI door parses YAML: the brackets arrive as characters
+rule-opt	map	'{a: 7331}'	as above
+cli-alias	null	''	an empty value after `=`: the door hands over the empty string, never null
+cli-alias	bool	true	the literal `true` is folded to a boolean
+cli-alias	int	7331
+cli-alias	float	7331.9
+cli-alias	string-number	7331	the same bytes as `int` on this door — see the note above
+cli-alias	string-nonnumber	abc
+cli-alias	list	'[7331]'	no CLI door parses YAML: the brackets arrive as characters
+cli-alias	map	'{a: 7331}'	as above
