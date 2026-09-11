@@ -1,13 +1,20 @@
-# ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L).
-# Дерево 6a833ab8fcd5004e964e32a59bfeb9978c39739c. Дата: 2026-09-11.
+# ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L; перевывод L2).
+# Дерево 0cc78d4b5f758670561805976492f6503edc2daf. Дата: 2026-09-11.
 #
 # ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
 # проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
 # процитирован хотя бы одной строкой реестра, с sha256 его текста.
 #
-# ЧЕМ ПОЛУЧЕНО: <scratch>/freeze.py — регуляркой собирает все ссылки вида `путь:строка[-строка]`
-#   из тела promise-ledger.tsv, читает ровно эти строки файла на 6a833ab8 и считает sha256
-#   (первые 16 знаков). Колонка owner_package сверена с таблицей владения 03-cure.md.
+# ЧЕМ ПОЛУЧЕНО: scripts/promise-ledger-freeze.py — собирает все ссылки вида `путь:строка[-строка]`
+#   из тела promise-ledger.tsv (включая шапку и колонку note), читает ровно эти строки файла на
+#   текущем дереве и считает sha256 (первые 16 знаков) от строк, склеенных через \n БЕЗ
+#   завершающего перевода строки. Колонка owner_package выведена из пути: src/** — P1, website/** — P6.
+#
+# ПОЧЕМУ СКРИПТ ВООБЩЕ ЕСТЬ. Прошлый снимок делал одноразовый скрипт, который не сохранили, и его
+#   прогон пропустил ровно один процитированный диапазон — configuration.md:749-750, тот самый,
+#   который пакет документации потом и переписал. Сторож, не видящий носителя, молчит именно там,
+#   где нужен. Поэтому `--check` проверяет ПОКРЫТИЕ В ОБЕ СТОРОНЫ (каждая цитата заморожена, каждая
+#   заморозка ещё цитируется), а не только совпадение sha.
 #
 # ЧЕГО ЭТОТ СПОСОБ НЕ ВИДИТ: он проверяет ТЕКСТ диапазона, а не его смысл. Правка соседней
 #   строки, меняющая смысл абзаца, sha диапазона не тронет; и наоборот, сдвиг нумерации
@@ -15,19 +22,19 @@
 #   консервативная сторона.
 #
 # ПРОВЕРКА DoD-2, в доступной пакету части. Продуктовый набор P1 (03-cure.md) — семь поимённых
-#   файлов плюс классы опций. Из 349 замороженных диапазонов В НАБОР P1 ПОПАДАЮТ РОВНО ТРИ:
+#   файлов плюс классы опций. Из замороженных диапазонов В НАБОР P1 ПОПАДАЮТ РОВНО ТРИ:
 #     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:23-27   (три состояния ключа;
 #         носитель законности адресного ответа класса — C17)
 #     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34   (канонические написания)
 #     src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:33-39
-#   Все три — докблоки, все три вне сигнатур и тел. Остальные 346 лежат в website/docs/**, который
-#   принадлежит P6, а не P1: DoD-2 про P1, и по нему пересечение исчерпывается этими двумя
-#   диапазонами. Команда воспроизведения — в отчёте пакета.
+#   Все три — докблоки, все три вне сигнатур и тел. На дереве 0cc78d4b P1 изменил
+#   RuleOptionKeySet.php, но НЕ эти строки: все три sha совпали с прежним снимком побайтно.
+#   Остальные лежат в website/docs/**, который принадлежит P6, а не P1.
 #   Ни один класс опций (динамическая половина набора P1) носителем не является: реестр их не читал.
 #
-# ОЖИДАЕМЫЙ СЛУЧАЙ, А НЕ ПРОВАЛ (03-cure.md §P1.7): P1 меняет контракт RuleOptionKeySet, и его
-#   докблок после пакета либо лжёт, либо правится. Порядок — возврат к оркестратору, перевывод
-#   затронутых строк реестра, обновление этого файла. Провал — МОЛЧАЛИВАЯ правка.
+# ОЖИДАЕМЫЙ СЛУЧАЙ, А НЕ ПРОВАЛ (03-cure.md §P1.7): пакет меняет контракт или страницу, и носитель
+#   после него либо лжёт, либо правится. Порядок — возврат к оркестратору, перевывод затронутых
+#   строк реестра, обновление этого файла. Провал — МОЛЧАЛИВАЯ правка.
 file	first_line	last_line	sha256_16	owner_package	first_line_text
 src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	33	39	f84132545b7f7be1	P1 (03-cure.md ownership table)	/**
 src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	23	27	517d0ff3436edc4c	P1 (03-cure.md ownership table)	* - **answered by the class** — recognised only so that `fromArray()` 
@@ -73,6 +80,22 @@ website/docs/getting-started/configuration.md	564	564	cde6f93f55b9e849	P6 (websi
 website/docs/getting-started/configuration.md	570	570	0cdc3d0e369e8a3a	P6 (website)	coverage-gap: ignore                                # ignore | warn | 
 website/docs/getting-started/configuration.md	571	571	6c0ee8e39ccf104d	P6 (website)	max_expanded_layers: 500                            # cumulative cap o
 website/docs/getting-started/configuration.md	708	714	83880220a6df07a5	P6 (website)	### Type errors
+website/docs/getting-started/configuration.md	749	799	f92398805d4698f7	P6 (website)	### The shape of a value
+website/docs/getting-started/configuration.md	751	758	9f52c7186df705a0	P6 (website)	The two rules below hold for **every** key in this document — the root
+website/docs/getting-started/configuration.md	756	758	481bd741b69284b1	P6 (website)	Every key declares the shape its value may take. A value of another sh
+website/docs/getting-started/configuration.md	768	777	e64213c7d3179852	P6 (website)	| Shape              | Accepts                                        
+website/docs/getting-started/configuration.md	770	770	43cd583824543508	P6 (website)	| a boolean          | `true` / `false`                               
+website/docs/getting-started/configuration.md	771	771	0342a3eb8c44a4f5	P6 (website)	| a whole number     | `15` — not `10.5`, not `"15"`                  
+website/docs/getting-started/configuration.md	772	772	820a793f7c29ecad	P6 (website)	| a number           | `15` or `10.5`                                 
+website/docs/getting-started/configuration.md	773	774	35e9d7af91224b97	P6 (website)	| a string           | any string, the empty one included             
+website/docs/getting-started/configuration.md	779	799	f26d94607bdb6511	P6 (website)	Four consequences are worth spelling out, because each of them used to
+website/docs/getting-started/configuration.md	782	783	f12c377f900e01ce	P6 (website)	- **A quoted number is a string.** `warning: "15"` is refused where a 
+website/docs/getting-started/configuration.md	784	787	57a5a20643611a74	P6 (website)	values that arrive on the command line are text by construction and ar
+website/docs/getting-started/configuration.md	791	795	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
+website/docs/getting-started/configuration.md	796	799	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
+website/docs/getting-started/configuration.md	801	805	cf4b910f00d473ea	P6 (website)	### A key written with no value
+website/docs/getting-started/configuration.md	801	829	ea163678ce0acb09	P6 (website)	### A key written with no value
+website/docs/getting-started/configuration.md	818	828	a0fd9b85c3b17766	P6 (website)	An **element of a list** is the one place this does not apply, and for
 website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
 website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website)	| Potential Shadow          | `architecture.potential-shadow`      | E
