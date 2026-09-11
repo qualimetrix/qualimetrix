@@ -360,8 +360,19 @@ says nothing about the product.
   cells no longer measure the same write on the two halves. The price is
   bounded — **66 of the 96 already read `NOT OBSERVABLE`** on the frozen half,
   so what stops comparing is **30 cells, 4 of them defects**. Without the input
-  fix those rows could only ever read `NOT OBSERVABLE`, which measures
-  nothing.
+  fix those rows could only ever read `NOT OBSERVABLE`, which measures nothing.
+  One of the 30 is a floor row, `computed_metrics.<name>.enabled|null`, and it
+  is the reason `floor.tsv` now has a THIRD disposition: it left the floor
+  because the probe that produced it was wrong, not because the product was
+  shown repaired, and those two must not read alike. Measured through the
+  stand's own process probe: under the old name all three sides — omitted,
+  equivalent and `~` — were the SAME framed refusal of the name, so the
+  pre-cure defect stood on a question never put about the leaf; under the
+  corrected name the product accepts `~`, but `enabled: true` is the default,
+  so the canonical write equals an omitted key and the sensitivity gate is
+  blind. The row therefore says nothing about the product in either direction,
+  which is exactly what a `withdrawn` column claims and a `cure` column would
+  have falsified.
 
 ## Where the remaining `NOT OBSERVABLE` share comes from
 

@@ -317,6 +317,22 @@ function limitConflicts(string $tree, InProcess $inProcess, ProcessProbe $proces
     return Limits::load($tree)->conflicts($stand->unrestricted(), $judged);
 }
 
+/**
+ * A synthetic cell for one floor row, as the row itself declares it should
+ * read on the live grid: still defective when nothing claims otherwise, not a
+ * defect where a `cure` does, and NOT OBSERVABLE for the declared reason where
+ * a `withdrawn` does. The three dispositions have to be synthesized apart, or
+ * a case would be planting a breakage while calling it a baseline.
+ */
+function floorCellAsDeclared(\Qualimetrix\PromiseEffect\FloorRow $row): Cell
+{
+    if ($row->declaredWithdrawn()) {
+        return new Cell('A', $row->row, '-', 'optionsObject', 'NOT OBSERVABLE', $row->withdrawalEvidence(), 'DECIDED');
+    }
+
+    return new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', !$row->declaredCured());
+}
+
 /** The verdict a synthetic floor cell carries: the declared one, or any defect label. */
 function floorVerdict(string $declared): string
 {
@@ -511,6 +527,100 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         return $failures;
     }
 
+    if ($case->id === 'F3') {
+        // The third disposition of the live floor, planted four ways. Three of
+        // them are the ways a withdrawal can be false; the fourth is the hole
+        // the column would open if it were only ever asked about itself — a
+        // row leaving the floor with NO disposition must still redden.
+        $floor = Floor::load($root);
+        $failures = [];
+        $subject = null;
+        $undeclared = null;
+
+        foreach ($floor->rows as $row) {
+            if ($subject === null && $row->declaredWithdrawn()) {
+                $subject = $row;
+            }
+
+            if ($undeclared === null && !$row->declaredWithdrawn() && !$row->declaredCured()) {
+                $undeclared = $row;
+            }
+        }
+
+        if ($subject === null || $undeclared === null) {
+            return ['F3: the floor declares no withdrawn row, or no undeclared one, so this case has nothing to plant into'];
+        }
+
+        /** @param callable(\Qualimetrix\PromiseEffect\FloorRow): ?Cell $plant */
+        $missesWith = static function (callable $plant) use ($floor): array {
+            $cells = [];
+
+            foreach ($floor->rows as $row) {
+                $cells[] = $plant($row) ?? floorCellAsDeclared($row);
+            }
+
+            [$misses] = $floor->cureMisses($cells);
+
+            return $misses;
+        };
+
+        if ($missesWith(static fn(): ?Cell => null) !== []) {
+            $failures[] = 'F3: the floor as every row declares itself is not what the rule reads';
+        }
+
+        // Each planting breaks ONE of the three demands and satisfies the other
+        // two — the reason travels with the cell even where it is irrelevant.
+        // Planted any other way, a single rule would catch every case and the
+        // case would prove the guard has one rule rather than three.
+        $plantings = [
+            'still defective' => static fn(\Qualimetrix\PromiseEffect\FloorRow $row): ?Cell => $row === $subject
+                ? new Cell('A', $row->row, '-', 'optionsObject', 'NOT OBSERVABLE', $row->withdrawalEvidence(), 'DECIDED', true)
+                : null,
+            'observed after all' => static fn(\Qualimetrix\PromiseEffect\FloorRow $row): ?Cell => $row === $subject
+                ? new Cell('A', $row->row, '-', 'optionsObject', 'OK', $row->withdrawalEvidence(), 'DECIDED')
+                : null,
+            'blind for another reason' => static fn(\Qualimetrix\PromiseEffect\FloorRow $row): ?Cell => $row === $subject
+                ? new Cell('A', $row->row, '-', 'optionsObject', 'NOT OBSERVABLE', 'no reachability witness for the producer', 'DECIDED')
+                : null,
+            'undeclared row left the floor' => static fn(\Qualimetrix\PromiseEffect\FloorRow $row): ?Cell => $row === $undeclared
+                ? new Cell('A', $row->row, '-', 'optionsObject', 'NOT OBSERVABLE', 'planted', 'DECIDED')
+                : null,
+        ];
+
+        // The declaration itself: a row cannot be both repaired and unmeasured,
+        // and the file is refused rather than silently preferring one column.
+        $workspace = new Workspace($root);
+        $tree = $workspace->checkout();
+        file_put_contents(
+            $tree . '/promise-effect/floor.tsv',
+            "form|yaml|planted|bool\tany-defect\tplanted\tplanted cure\tplanted reason\n",
+            \FILE_APPEND,
+        );
+
+        try {
+            Floor::load($tree);
+            $failures[] = 'F3: a row declared both cured and withdrawn was read without complaint';
+        } catch (LedgerError $error) {
+            if (!str_contains($error->getMessage(), 'both cured and withdrawn')) {
+                $failures[] = 'F3: the refusal of a double declaration says something else: ' . $error->getMessage();
+            }
+        }
+
+        $workspace->cleanup();
+
+        foreach ($plantings as $what => $plant) {
+            $expected = $what === 'undeclared row left the floor' ? $undeclared->row : $subject->row;
+            $misses = $missesWith($plant);
+
+            if (\count($misses) !== 1 || !str_starts_with($misses[0], $expected . ':')) {
+                $failures[] = 'F3: planting "' . $what . '" should have left exactly one miss naming ' . $expected
+                    . '; it left ' . ($misses === [] ? 'none' : implode('; ', $misses));
+            }
+        }
+
+        return $failures;
+    }
+
     if ($case->id === 'N3' || $case->id === 'N4') {
         $workspace = new Workspace($root);
         $tree = $workspace->checkout();
@@ -688,7 +798,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             // A floor row that names its verdict is synthesized with THAT
             // verdict: one of them asks for MISCOMPOSED, and a case that gave
             // every row the same label would fail for its own reason.
-            $cells[] = new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', !$row->declaredCured());
+            $cells[] = floorCellAsDeclared($row);
         }
 
         [$misses] = $floor->cureMisses($cells);
@@ -702,7 +812,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             $moved = null;
 
             foreach ($floor->rows as $row) {
-                if ($moved === null && $row->declaredCured() === $cured) {
+                if ($moved === null && !$row->declaredWithdrawn() && $row->declaredCured() === $cured) {
                     $moved = $row->row;
                     // The two ways a floor row can be wrong on the live grid:
                     // one declared cured that never moved (still its declared
@@ -715,7 +825,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
                     continue;
                 }
 
-                $planted[] = new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', !$row->declaredCured());
+                $planted[] = floorCellAsDeclared($row);
             }
 
             [$plantedMisses] = $floor->cureMisses($planted);

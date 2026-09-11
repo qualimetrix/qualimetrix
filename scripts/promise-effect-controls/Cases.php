@@ -281,6 +281,11 @@ final class Cases
                 'a limit declared where the door DOES express the form, over a cell whose effect the stand observes',
             ),
             new ProbeCase(
+                'F3',
+                'floor, withdrawn',
+                'a row declared withdrawn reddens when it is still defective, when the grid observes it at all, and when the grid is blind for another reason — while a row that leaves the floor with no disposition reddens as it always did',
+            ),
+            new ProbeCase(
                 'N3',
                 'limit over a crash',
                 'a limit covering a crash no uncovered form of the same row publishes reddens, and one whose row does publish it does not',

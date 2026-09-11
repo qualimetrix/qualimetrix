@@ -5374,9 +5374,9 @@ B	pair|complexity.ccn|class.max-error|class.threshold|same-source|1-threshold-gr
 B	pair|complexity.ccn|class.max-error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.ccn|class.max-warning|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.ccn|class.max-warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.ccn|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	PROMISED	the effect of A is absent when both are written
+B	pair|complexity.ccn|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.ccn|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.ccn|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.ccn|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|complexity.cognitive|callable.enabled|callable.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5410,9 +5410,9 @@ B	pair|complexity.cognitive|class.max-error|class.threshold|same-source|1-thresh
 B	pair|complexity.cognitive|class.max-error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.cognitive|class.max-warning|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.cognitive|class.max-warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.cognitive|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	PROMISED	the effect of A is absent when both are written
+B	pair|complexity.cognitive|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.cognitive|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.cognitive|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.cognitive|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.cognitive|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.cognitive|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|complexity.npath|callable.enabled|callable.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5446,9 +5446,9 @@ B	pair|complexity.npath|class.max-error|class.threshold|same-source|1-threshold-
 B	pair|complexity.npath|class.max-error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.npath|class.max-warning|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.npath|class.max-warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.npath|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	PROMISED	the effect of A is absent when both are written
+B	pair|complexity.npath|class.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.npath|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|complexity.npath|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.npath|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.npath|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.npath|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|complexity.wmc|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5763,7 +5763,7 @@ D	form|cli-root|cache.enabled|string-number	string-number	report	NOT OBSERVABLE	
 D	form|cli-root|disabled_rules|bool	bool	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|disabled_rules|float	float	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|disabled_rules|int	int	report	REFUSES	no	DECIDED	refused
-D	form|cli-root|disabled_rules|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|disabled_rules|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|disabled_rules|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|disabled_rules|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|disabled_rules|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
@@ -5771,7 +5771,7 @@ D	form|cli-root|disabled_rules|string-number	string-number	report	NOT OBSERVABLE
 D	form|cli-root|exclude_health|bool	bool	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|exclude_health|float	float	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|exclude_health|int	int	report	REFUSES	no	DECIDED	refused
-D	form|cli-root|exclude_health|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|exclude_health|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|exclude_health|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|exclude_health|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|exclude_health|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
@@ -5779,7 +5779,7 @@ D	form|cli-root|exclude_health|string-number	string-number	report	NOT OBSERVABLE
 D	form|cli-root|exclude|bool	bool	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|exclude|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|exclude|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
-D	form|cli-root|exclude|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|exclude|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|exclude|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|exclude|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|exclude|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
@@ -5819,7 +5819,7 @@ D	form|cli-root|memory_limit|string-number	string-number	report	NOT OBSERVABLE	n
 D	form|cli-root|only_rules|bool	bool	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|only_rules|float	float	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|only_rules|int	int	report	REFUSES	no	DECIDED	refused
-D	form|cli-root|only_rules|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|only_rules|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|only_rules|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|only_rules|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|only_rules|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
@@ -5835,7 +5835,7 @@ D	form|cli-root|parallel.workers|string-number	string-number	report	NOT OBSERVAB
 D	form|cli-root|paths|bool	bool	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|paths|float	float	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|paths|int	int	report	REFUSES	no	DECIDED	refused
-D	form|cli-root|paths|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|paths|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|paths|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|paths|null	null	report	REFUSES	no	DECIDED	refused
 D	form|cli-root|paths|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
@@ -5843,7 +5843,7 @@ D	form|cli-root|paths|string-number	string-number	report	NOT OBSERVABLE	no	DECID
 D	form|cli-root|suppress_namespaces|bool	bool	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_namespaces|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_namespaces|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
-D	form|cli-root|suppress_namespaces|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|suppress_namespaces|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|suppress_namespaces|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|suppress_namespaces|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_namespaces|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
@@ -5851,43 +5851,43 @@ D	form|cli-root|suppress_namespaces|string-number	string-number	report	NOT OBSER
 D	form|cli-root|suppress_paths|bool	bool	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_paths|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_paths|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
-D	form|cli-root|suppress_paths|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
+D	form|cli-root|suppress_paths|list	list	report	NOT OBSERVABLE	no	DECIDED	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 D	form|cli-root|suppress_paths|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
 D	form|cli-root|suppress_paths|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_paths|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|cli-root|suppress_paths|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|bool	bool	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|float	float	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|list	list	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-number	string-number	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|bool	bool	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|float	float	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].relations|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].relations|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].relations|string-number	string-number	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|int	int	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|list	list	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>[*].target|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].target|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|architecture.allow.<layer>[*].target|string-number	string-number	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|int	int	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|list	list	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|null	null	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.allow.<layer>|string-number	string-number	report	REFUSES	no	DECIDED	refused
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|float	float	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|int	int	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|list	list	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|map	map	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].allow_cross_instance|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|float	float	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|int	int	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|list	list	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|map	map	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].relations|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>[*].target|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.allow.<layer>|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.allow|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.allow|int	int	report	REFUSES	no	PROMISED	refused
@@ -5909,7 +5909,7 @@ D	form|yaml|architecture.layers[*].attributes|float	float	report	REFUSES	no	PROM
 D	form|yaml|architecture.layers[*].attributes|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].attributes|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].attributes|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].attributes|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].attributes|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].attributes|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].attributes|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5950,22 +5950,22 @@ D	form|yaml|architecture.layers[*].exclude.patterns|int	int	report	REFUSES	no	PR
 D	form|yaml|architecture.layers[*].exclude.patterns|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.patterns|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].exclude.suffix|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.suffix|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].exclude|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|list	list	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|map	map	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.layers[*].exclude|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].exclude|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].extends|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5973,7 +5973,7 @@ D	form|yaml|architecture.layers[*].extends|float	float	report	REFUSES	no	PROMISE
 D	form|yaml|architecture.layers[*].extends|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].extends|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].extends|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].extends|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].extends|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].extends|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].extends|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].implements|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5981,7 +5981,7 @@ D	form|yaml|architecture.layers[*].implements|float	float	report	REFUSES	no	PROM
 D	form|yaml|architecture.layers[*].implements|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].implements|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].implements|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].implements|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].implements|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].implements|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].implements|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].match|bool	bool	report	REFUSES	no	DECIDED	refused
@@ -5989,15 +5989,15 @@ D	form|yaml|architecture.layers[*].match|float	float	report	REFUSES	no	DECIDED	r
 D	form|yaml|architecture.layers[*].match|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].match|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|architecture.layers[*].match|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].match|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
 D	form|yaml|architecture.layers[*].match|string-number	string-number	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|int	int	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|list	list	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].name|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|architecture.layers[*].name|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|int	int	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|list	list	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|map	map	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].name|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].name|string-nonnumber	string-nonnumber	report	OK	no	DECIDED	effect distinguishable and the producer reachable
 D	form|yaml|architecture.layers[*].name|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].patterns|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -6005,15 +6005,15 @@ D	form|yaml|architecture.layers[*].patterns|float	float	report	REFUSES	no	PROMIS
 D	form|yaml|architecture.layers[*].patterns|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].patterns|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].patterns|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].patterns|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].patterns|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].patterns|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].patterns|string-number	string-number	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].pending|bool	bool	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].pending|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].pending|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].pending|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].pending|list	list	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].pending|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].pending|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].pending|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].pending|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].pending|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].suffix|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -6021,7 +6021,7 @@ D	form|yaml|architecture.layers[*].suffix|float	float	report	REFUSES	no	PROMISED
 D	form|yaml|architecture.layers[*].suffix|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].suffix|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].suffix|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].suffix|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].suffix|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].suffix|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].suffix|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -6077,23 +6077,23 @@ D	form|yaml|computed_metrics.<name>.description|float	float	report	REFUSES	no	DE
 D	form|yaml|computed_metrics.<name>.description|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.description|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.description|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.description|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|computed_metrics.<name>.description|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|computed_metrics.<name>.description|string-number	string-number	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.enabled|bool	bool	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.description|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.description|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.description|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.enabled|bool	bool	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.enabled|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.enabled|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.enabled|list	list	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.enabled|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|computed_metrics.<name>.enabled|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.enabled|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.enabled|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.enabled|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.error|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.error|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.error|int	int	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.error|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.error|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.error|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.error|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.error|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.error|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.error|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.error|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formulas.<level>|bool	bool	report	REFUSES	no	DECIDED	refused
@@ -6101,15 +6101,15 @@ D	form|yaml|computed_metrics.<name>.formulas.<level>|float	float	report	REFUSES	
 D	form|yaml|computed_metrics.<name>.formulas.<level>|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formulas.<level>|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formulas.<level>|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.formulas.<level>|null	null	report	REFUSES	no	DECIDED	refused
+D	form|yaml|computed_metrics.<name>.formulas.<level>|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|computed_metrics.<name>.formulas.<level>|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.formulas.<level>|string-number	string-number	report	REFUSES	no	DECIDED	refused
+D	form|yaml|computed_metrics.<name>.formulas.<level>|string-number	string-number	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.formulas|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formulas|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formulas|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formulas|list	list	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formulas|map	map	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|computed_metrics.<name>.formulas|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.formulas|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|computed_metrics.<name>.formulas|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formulas|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.formula|bool	bool	report	REFUSES	no	DECIDED	refused
@@ -6117,15 +6117,15 @@ D	form|yaml|computed_metrics.<name>.formula|float	float	report	REFUSES	no	DECIDE
 D	form|yaml|computed_metrics.<name>.formula|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formula|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formula|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.formula|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.formula|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|computed_metrics.<name>.formula|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|computed_metrics.<name>.formula|string-number	string-number	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.inverted|bool	bool	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.formula|string-number	string-number	report	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed
+D	form|yaml|computed_metrics.<name>.inverted|bool	bool	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.inverted|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.inverted|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.inverted|list	list	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.inverted|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|computed_metrics.<name>.inverted|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.inverted|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.inverted|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.inverted|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.levels|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -6133,23 +6133,23 @@ D	form|yaml|computed_metrics.<name>.levels|float	float	report	REFUSES	no	PROMISE
 D	form|yaml|computed_metrics.<name>.levels|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.levels|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|computed_metrics.<name>.levels|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|computed_metrics.<name>.levels|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.levels|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|computed_metrics.<name>.levels|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.levels|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.threshold|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.threshold|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.threshold|int	int	report	REFUSES	no	DECIDED	refused
+D	form|yaml|computed_metrics.<name>.threshold|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.threshold|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.threshold|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.threshold|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.threshold|null	null	report	REFUSES	no	DECIDED	refused
+D	form|yaml|computed_metrics.<name>.threshold|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.threshold|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.threshold|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.warning|bool	bool	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.warning|float	float	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.warning|int	int	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.warning|float	float	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|computed_metrics.<name>.warning|int	int	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.warning|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.warning|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|computed_metrics.<name>.warning|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|computed_metrics.<name>.warning|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.warning|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.warning|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>|bool	bool	report	REFUSES	no	DECIDED	refused
