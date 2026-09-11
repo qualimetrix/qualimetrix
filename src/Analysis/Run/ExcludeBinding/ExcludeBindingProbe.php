@@ -148,7 +148,10 @@ final readonly class ExcludeBindingProbe
                 $prunedPatterns[$trimmed] = true;
             }
         }
-        $prunedPatterns = array_keys($prunedPatterns);
+        // Deduplication keys the patterns, and PHP silently turns a numeric-string
+        // array key into an int — so a directory legitimately named `7` came back
+        // from array_keys() as an int and broke the string contract below.
+        $prunedPatterns = array_map(strval(...), array_keys($prunedPatterns));
 
         $rootPrefix = rtrim(str_replace('\\', '/', $root->value()), '/') . '/';
 

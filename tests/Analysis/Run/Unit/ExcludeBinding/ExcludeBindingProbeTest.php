@@ -30,7 +30,7 @@ final class ExcludeBindingProbeTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/qmx-exclude-probe-' . bin2hex(random_bytes(6));
 
-        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme'] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme', '/7/Seven'] as $dir) {
             mkdir($this->root . $dir, 0o755, true);
             file_put_contents($this->root . $dir . '/File.php', "<?php\n");
         }
@@ -38,11 +38,11 @@ final class ExcludeBindingProbeTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme'] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/nested/Legacy/Inner', '/vendor/acme', '/7/Seven'] as $dir) {
             @unlink($this->root . $dir . '/File.php');
         }
 
-        foreach (['/Kept', '/Legacy/Deep', '/Legacy', '/nested/Legacy/Inner', '/nested/Legacy', '/nested', '/vendor/acme', '/vendor', ''] as $dir) {
+        foreach (['/Kept', '/Legacy/Deep', '/Legacy', '/nested/Legacy/Inner', '/nested/Legacy', '/nested', '/vendor/acme', '/vendor', '/7/Seven', '/7', ''] as $dir) {
             @rmdir($this->root . $dir);
         }
     }
@@ -100,6 +100,25 @@ final class ExcludeBindingProbeTest extends TestCase
     public function itBindsAPatternNamingAPrunedDirectoryItself(): void
     {
         self::assertSame([], $this->unbound(['vendor'], pruned: ['vendor']));
+    }
+
+    /**
+     * `7` is a legitimate directory name. Deduplicating pruned patterns through
+     * array keys turned it into an int, and the walk then died on its own string
+     * contract — a crash on an input no author got wrong.
+     */
+    #[Test]
+    public function itBindsANumericDirectoryNamePrunedByItsOwnPattern(): void
+    {
+        self::assertSame([], $this->unbound(['7'], pruned: ['7']));
+        self::assertSame(1, $this->filesRemovedByFinder('7'));
+    }
+
+    #[Test]
+    public function itStillReportsAnUnmatchedNumericPatternAsUnbound(): void
+    {
+        self::assertSame(['8'], $this->unbound(['8'], pruned: ['7']));
+        self::assertSame(0, $this->filesRemovedByFinder('8'));
     }
 
     /**

@@ -29,10 +29,11 @@ final class ConfigDataNormalizer
      */
     public static function normalize(array $data): array
     {
+        $document = self::omittingUnwrittenKeys($data);
         $result = [];
 
         foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey]) {
-            $value = self::resolve($data, $sourcePath);
+            $value = self::resolve($document, $sourcePath);
 
             if ($value !== null) {
                 $result[$resultKey] = $value;
@@ -40,9 +41,68 @@ final class ConfigDataNormalizer
         }
 
         foreach (ConfigSchema::DOCUMENT_ROOTS as $root) {
-            if (\array_key_exists($root, $data)) {
-                $result[$root] = $data[$root];
+            if (\array_key_exists($root, $document)) {
+                $result[$root] = $document[$root];
             }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Reads `key: ~` as a key the author never wrote, at every depth.
+     *
+     * One spelling of `~` used to mean two things: a key reached through
+     * ConfigSchema::ENTRIES fell back to its default, while a key reached
+     * through ConfigSchema::DOCUMENT_ROOTS kept its null and reached the root
+     * owner, which refuses a value that is not a map. Dropping such entries
+     * here gives both paths the same reading.
+     *
+     * Two deliberate exemptions:
+     *
+     *  - the `rules:` subtree is passed through untouched — a null rule body
+     *    there is an authored value meaning "enable with the defaults", not an
+     *    absent key;
+     *  - a null *list element* survives. An element is a value, not a key, so
+     *    "never written" says nothing about it, and silently dropping it would
+     *    turn a malformed list into an accepted one.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private static function omittingUnwrittenKeys(array $data): array
+    {
+        $result = [];
+
+        foreach ($data as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            $result[$key] = $key !== ConfigSchema::RULES && \is_array($value)
+                ? self::omittingUnwrittenEntries($value)
+                : $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string|int, mixed> $subtree
+     *
+     * @return array<string|int, mixed>
+     */
+    private static function omittingUnwrittenEntries(array $subtree): array
+    {
+        $result = [];
+
+        foreach ($subtree as $key => $value) {
+            if ($value === null && \is_string($key)) {
+                continue;
+            }
+
+            $result[$key] = \is_array($value) ? self::omittingUnwrittenEntries($value) : $value;
         }
 
         return $result;
