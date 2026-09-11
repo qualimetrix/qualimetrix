@@ -1,0 +1,275 @@
+# Чем получено: value-coercion sites in rule-option classes and in the option
+#   factory/parsers, on tree 6a833ab8fcd5004e964e32a59bfeb9978c39739c (x17-promise-effect).
+#   Scan: scratchpad script enum-sources/scan_coercions.py, whose scope and regexes are:
+#   scope = { every src/**/*Options.php whose text mentions RuleOptionsInterface or
+#             LevelOptionsInterface  (49 files) }
+#         + src/Analysis/Finding/RuleConfiguration/*.php  (7 files)
+#         + src/Analysis/Finding/Contract/Rule/ThresholdParser.php
+#         + src/Infrastructure/Console/CliOptionsParser.php
+#         = 58 files
+#   cast regex : \((int|bool|float|string|array)\)
+#   call regex : \b(intval|boolval|floatval|strval|settype|filter_var)\s*\(
+#   lines whose trimmed form starts with '*' or '//' are dropped (docblock/comment)
+#   class/method context = last matching `class X` / `function y` line above the site
+#   key column = literal string subscripts of $config/$options/$merged/$value/$raw/
+#                $thresholds/$userConfig on the same line, plus RuleOptionKey::* constants
+# Reproduce exactly:
+#   python3 <scratchpad>/enum-sources/scan_coercions.py /tmp/coercions.tsv
+#
+# Чего этот способ не видит:
+#   - Coercion by typed constructor/parameter signature. With declare(strict_types=1) those
+#     REJECT rather than coerce, so they are a different mechanism, not a missed site — but
+#     they are also not listed, so this file is not the inventory of "where a value's type
+#     is decided".
+#   - Defaulting written as `?? default` without a cast (that is substitution, not coercion;
+#     it IS counted whenever a cast wraps it, e.g. `(bool) ($config[X] ?? true)`).
+#   - Arithmetic coercion (`+ 0`, `* 1`), `is_numeric()`/`is_string()` gates,
+#     `match(true)` dispatch, and casts written inside a closure passed to array_map —
+#     the closure body is attributed to the enclosing method, and a cast split across two
+#     physical lines is missed entirely (line-oriented regex).
+#   - Type reshaping without a cast operator: RuleOptionsFactory::normalizeScalarConfig()
+#     (:252) turns a scalar `false` into an array, expandDotNotation() (:298) turns a flat
+#     dotted key into nesting, normalizeKeys() (:277) folds separators. None of these
+#     matches a cast regex, and all three change what fromArray() receives.
+#   - Anything outside the 58-file scope: collectors, rules themselves, the YAML loader
+#     (ConfigDataNormalizer), and Symfony's own option parsing.
+#   - The scope predicate is a text mention, not a resolved `implements`. A file mentioning
+#     an interface only in a docblock would be pulled in (none observed); a rule-option
+#     class named other than *Options.php would be missed.
+#
+# TOTALS
+#   sites                    214
+#   files with >=1 site       53
+#   distinct classes          53
+#   by kind:  (int) 112 | (bool) 59 | (float) 32 | (string) 12 | (array) 0
+#             intval/boolval/floatval/strval/settype/filter_var: 0
+#   by method: fromArray 135 | withOverride 53 | getSeverity 7 | validateNumericFields 4
+#              normalizeValue 3 | withVoOverride 2 | 10 further methods with 1 each
+#   (getSeverity sites coerce the measured METRIC value, not a config value — 7 of the 214)
+#
+#   5 of the 58 scope files carry no coercion site at all:
+#     src/Analysis/Evidence/ComputedMetrics/ComputedMetricProducerOptions.php
+#     src/Analysis/Finding/Contract/Rule/ThresholdParser.php
+#     src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php
+#     src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php
+#     src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php
+#   ThresholdParser being one of them is load-bearing: parse() returns the raw config value
+#   untouched (:77-82), so a `threshold` value is cast NOT once centrally but at each of
+#   its caller sites — e.g. `(int) $thresholds['warning']` / `(int) $thresholds['error']`,
+#   which is where most of the 112 (int) sites come from.
+#
+# Columns: file<TAB>line<TAB>class<TAB>method<TAB>key<TAB>kind<TAB>source_line
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	34	CircularDependencyOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	35	CircularDependencyOptions	fromArray	max_cycle_size,maxCycleSize	cast:(int)	maxCycleSize: (int) ($config['max_cycle_size'] ?? $config['maxCycleSize'] ?? 0),
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	36	CircularDependencyOptions	fromArray	direct_as_error,directAsError	cast:(bool)	directAsError: (bool) ($config['direct_as_error'] ?? $config['directAsError'] ?? true),
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	54	CircularDependencyOptions	getSeverity	-	cast:(int)	$cycleSize = (int) $value;
+src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php	54	BooleanArgumentOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php	56	BooleanArgumentOptions	fromArray	-	cast:(bool)	flagPromotedProperties: (bool) $flagPromotedProperties,
+src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php	29	CodeSmellOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	46	ConstructorOverinjectionOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	47	ConstructorOverinjectionOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	48	ConstructorOverinjectionOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	74	ConstructorOverinjectionOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	75	ConstructorOverinjectionOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/CodeSmell/ErrorSuppressionOptions.php	43	ErrorSuppressionOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	27	IdenticalSubExpressionOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	72	LongParameterListOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	73	LongParameterListOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	74	LongParameterListOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	75	LongParameterListOptions	fromArray	-	cast:(int)	voWarning: (int) $voThresholds['warning'],
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	76	LongParameterListOptions	fromArray	-	cast:(int)	voError: (int) $voThresholds['error'],
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	118	LongParameterListOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	119	LongParameterListOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	138	LongParameterListOptions	withVoOverride	-	cast:(int)	voWarning: $warning !== null ? (int) $warning : $this->voWarning,
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	139	LongParameterListOptions	withVoOverride	-	cast:(int)	voError: $error !== null ? (int) $error : $this->voError,
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	44	UnreachableCodeOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	45	UnreachableCodeOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	46	UnreachableCodeOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	72	UnreachableCodeOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	73	UnreachableCodeOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php	24	UnusedPrivateOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Cohesion/LcomOptions.php	65	LcomOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Cohesion/LcomOptions.php	66	LcomOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Cohesion/LcomOptions.php	67	LcomOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Cohesion/LcomOptions.php	68	LcomOptions	fromArray	exclude_readonly,excludeReadonly	cast:(bool)	excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
+src/Analysis/Evidence/Cohesion/LcomOptions.php	69	LcomOptions	fromArray	min_methods,minMethods	cast:(int)	minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
+src/Analysis/Evidence/Cohesion/LcomOptions.php	101	LcomOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Cohesion/LcomOptions.php	102	LcomOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	38	ClassCognitiveComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	39	ClassCognitiveComplexityOptions	fromArray	warning	cast:(int)	maxWarning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	40	ClassCognitiveComplexityOptions	fromArray	error	cast:(int)	maxError: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	66	ClassCognitiveComplexityOptions	withOverride	-	cast:(int)	maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	67	ClassCognitiveComplexityOptions	withOverride	-	cast:(int)	maxError: $error !== null ? (int) $error : $this->maxError,
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	43	ClassComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	44	ClassComplexityOptions	fromArray	warning	cast:(int)	maxWarning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	45	ClassComplexityOptions	fromArray	error	cast:(int)	maxError: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	71	ClassComplexityOptions	withOverride	-	cast:(int)	maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	72	ClassComplexityOptions	withOverride	-	cast:(int)	maxError: $error !== null ? (int) $error : $this->maxError,
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	36	ClassNpathComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? false),
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	37	ClassNpathComplexityOptions	fromArray	warning	cast:(int)	maxWarning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	38	ClassNpathComplexityOptions	fromArray	error	cast:(int)	maxError: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	64	ClassNpathComplexityOptions	withOverride	-	cast:(int)	maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	65	ClassNpathComplexityOptions	withOverride	-	cast:(int)	maxError: $error !== null ? (int) $error : $this->maxError,
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	48	CognitiveComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	49	CognitiveComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	50	CognitiveComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	48	ComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	49	ComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	50	ComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	36	MethodCognitiveComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	37	MethodCognitiveComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	38	MethodCognitiveComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	64	MethodCognitiveComplexityOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	65	MethodCognitiveComplexityOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	41	MethodComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	42	MethodComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	43	MethodComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	69	MethodComplexityOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	70	MethodComplexityOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	36	MethodNpathComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	37	MethodNpathComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	38	MethodNpathComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	64	MethodNpathComplexityOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	65	MethodNpathComplexityOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	48	NpathComplexityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	49	NpathComplexityOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	50	NpathComplexityOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/WmcOptions.php	49	WmcOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Complexity/WmcOptions.php	50	WmcOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Complexity/WmcOptions.php	51	WmcOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Complexity/WmcOptions.php	52	WmcOptions	fromArray	exclude_data_classes,excludeDataClasses	cast:(bool)	excludeDataClasses: (bool) ($config['exclude_data_classes'] ?? $config['excludeDataClasses'] ?? false),
+src/Analysis/Evidence/Complexity/WmcOptions.php	83	WmcOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Complexity/WmcOptions.php	84	WmcOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricRuleOptions.php	24	ComputedMetricRuleOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/CboOptions.php	64	CboOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	RuleOptionKey::ENABLED => (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	52	ClassCboOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	53	ClassCboOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	54	ClassCboOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	76	ClassCboOptions	getSeverity	-	cast:(int)	$cbo = (int) $value;
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	107	ClassCboOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	108	ClassCboOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	46	ClassInstabilityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	47	ClassInstabilityOptions	fromArray	warning	cast:(float)	maxWarning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	48	ClassInstabilityOptions	fromArray	error	cast:(float)	maxError: (float) $thresholds['error'],
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	49	ClassInstabilityOptions	fromArray	min_afferent,minAfferent	cast:(int)	minAfferent: (int) ($config['min_afferent'] ?? $config['minAfferent'] ?? 1),
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	70	ClassInstabilityOptions	getSeverity	-	cast:(float)	$instability = (float) $value;
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	87	ClassInstabilityOptions	withOverride	-	cast:(float)	maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	88	ClassInstabilityOptions	withOverride	-	cast:(float)	maxError: $error !== null ? (float) $error : $this->maxError,
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	47	ClassRankOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	48	ClassRankOptions	fromArray	warning	cast:(float)	warning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	49	ClassRankOptions	fromArray	error	cast:(float)	error: (float) $thresholds['error'],
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	70	ClassRankOptions	getSeverity	-	cast:(float)	$rank = (float) $value;
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	87	ClassRankOptions	withOverride	-	cast:(float)	warning: $warning !== null ? (float) $warning : $this->warning,
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	88	ClassRankOptions	withOverride	-	cast:(float)	error: $error !== null ? (float) $error : $this->error,
+src/Analysis/Evidence/Coupling/DistanceOptions.php	67	DistanceOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/DistanceOptions.php	68	DistanceOptions	fromArray	warning	cast:(float)	maxDistanceWarning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/DistanceOptions.php	69	DistanceOptions	fromArray	error	cast:(float)	maxDistanceError: (float) $thresholds['error'],
+src/Analysis/Evidence/Coupling/DistanceOptions.php	71	DistanceOptions	fromArray	min_class_count,minClassCount	cast:(int)	minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
+src/Analysis/Evidence/Coupling/DistanceOptions.php	94	DistanceOptions	getSeverity	-	cast:(float)	$distance = (float) $value;
+src/Analysis/Evidence/Coupling/DistanceOptions.php	111	DistanceOptions	withOverride	-	cast:(float)	maxDistanceWarning: $warning !== null ? (float) $warning : $this->maxDistanceWarning,
+src/Analysis/Evidence/Coupling/DistanceOptions.php	112	DistanceOptions	withOverride	-	cast:(float)	maxDistanceError: $error !== null ? (float) $error : $this->maxDistanceError,
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	61	InstabilityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	RuleOptionKey::ENABLED => (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	46	NamespaceCboOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	47	NamespaceCboOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	48	NamespaceCboOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	49	NamespaceCboOptions	fromArray	min_class_count,minClassCount	cast:(int)	minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	70	NamespaceCboOptions	getSeverity	-	cast:(int)	$cbo = (int) $value;
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	87	NamespaceCboOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	88	NamespaceCboOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	46	NamespaceInstabilityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	47	NamespaceInstabilityOptions	fromArray	warning	cast:(float)	maxWarning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	48	NamespaceInstabilityOptions	fromArray	error	cast:(float)	maxError: (float) $thresholds['error'],
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	49	NamespaceInstabilityOptions	fromArray	min_class_count,minClassCount	cast:(int)	minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	50	NamespaceInstabilityOptions	fromArray	min_afferent,minAfferent	cast:(int)	minAfferent: (int) ($config['min_afferent'] ?? $config['minAfferent'] ?? 1),
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	71	NamespaceInstabilityOptions	getSeverity	-	cast:(float)	$instability = (float) $value;
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	88	NamespaceInstabilityOptions	withOverride	-	cast:(float)	maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	89	NamespaceInstabilityOptions	withOverride	-	cast:(float)	maxError: $error !== null ? (float) $error : $this->maxError,
+src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	38	UnmatchedFrameworkNamespaceOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	48	DataClassOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	49	DataClassOptions	fromArray	woc_threshold,wocThreshold	cast:(int)	wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 33),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	50	DataClassOptions	fromArray	wmc_threshold,wmcThreshold	cast:(int)	wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 10),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	51	DataClassOptions	fromArray	min_members,minMembers	cast:(int)	minMembers: (int) ($config['min_members'] ?? $config['minMembers'] ?? 3),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	52	DataClassOptions	fromArray	exclude_readonly,excludeReadonly	cast:(bool)	excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	53	DataClassOptions	fromArray	exclude_promoted_only,excludePromotedOnly	cast:(bool)	excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	54	DataClassOptions	fromArray	exclude_exceptions,excludeExceptions	cast:(bool)	excludeExceptions: (bool) ($config['exclude_exceptions'] ?? $config['excludeExceptions'] ?? true),
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	82	DataClassOptions	withOverride	-	cast:(int)	wocThreshold: $warning !== null ? (int) $warning : $this->wocThreshold,
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	83	DataClassOptions	withOverride	-	cast:(int)	wmcThreshold: $error !== null ? (int) $error : $this->wmcThreshold,
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	57	GodClassOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	58	GodClassOptions	fromArray	wmc_threshold,wmcThreshold	cast:(int)	wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 47),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	59	GodClassOptions	fromArray	lcom_threshold,lcomThreshold	cast:(int)	lcomThreshold: (int) ($config['lcom_threshold'] ?? $config['lcomThreshold'] ?? 3),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	60	GodClassOptions	fromArray	tcc_threshold,tccThreshold	cast:(float)	tccThreshold: (float) ($config['tcc_threshold'] ?? $config['tccThreshold'] ?? 0.33),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	61	GodClassOptions	fromArray	class_loc_threshold,classLocThreshold	cast:(int)	classLocThreshold: (int) ($config['class_loc_threshold'] ?? $config['classLocThreshold'] ?? 300),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	62	GodClassOptions	fromArray	min_criteria,minCriteria	cast:(int)	minCriteria: (int) ($config['min_criteria'] ?? $config['minCriteria'] ?? 3),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	63	GodClassOptions	fromArray	min_methods,minMethods	cast:(int)	minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	64	GodClassOptions	fromArray	exclude_readonly,excludeReadonly	cast:(bool)	excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	95	GodClassOptions	withOverride	-	cast:(int)	minCriteria: $warning !== null ? (int) $warning : $this->minCriteria,
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	47	InheritanceOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	48	InheritanceOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	49	InheritanceOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	80	InheritanceOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	81	InheritanceOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	50	NocOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	51	NocOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	52	NocOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	83	NocOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	84	NocOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	52	TypeCoverageOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	53	TypeCoverageOptions	fromArray	warning	cast:(float)	warning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	54	TypeCoverageOptions	fromArray	error	cast:(float)	error: (float) $thresholds['error'],
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	80	TypeCoverageOptions	withOverride	-	cast:(float)	warning: $warning !== null ? (float) $warning : $this->warning,
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	81	TypeCoverageOptions	withOverride	-	cast:(float)	error: $error !== null ? (float) $error : $this->error,
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	35	CodeDuplicationOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	36	CodeDuplicationOptions	fromArray	min_lines,minLines	cast:(int)	min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	37	CodeDuplicationOptions	fromArray	min_tokens,minTokens	cast:(int)	min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	38	CodeDuplicationOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	39	CodeDuplicationOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	67	CodeDuplicationOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	68	CodeDuplicationOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	48	MaintainabilityOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	49	MaintainabilityOptions	fromArray	warning	cast:(float)	warning: (float) $thresholds['warning'],
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	50	MaintainabilityOptions	fromArray	error	cast:(float)	error: (float) $thresholds['error'],
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	51	MaintainabilityOptions	fromArray	exclude_tests,excludeTests	cast:(bool)	excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	52	MaintainabilityOptions	fromArray	min_statements,minStatements	cast:(int)	minStatements: (int) ($config['min_statements'] ?? $config['minStatements'] ?? 10),
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	86	MaintainabilityOptions	withOverride	-	cast:(float)	warning: $warning !== null ? (float) $warning : $this->warning,
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	87	MaintainabilityOptions	withOverride	-	cast:(float)	error: $error !== null ? (float) $error : $this->error,
+src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	27	HardcodedCredentialsOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Security/SecurityPatternOptions.php	30	SecurityPatternOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Security/SensitiveParameterOptions.php	27	SensitiveParameterOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Size/ClassCountOptions.php	46	ClassCountOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Size/ClassCountOptions.php	47	ClassCountOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Size/ClassCountOptions.php	48	ClassCountOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Size/ClassCountOptions.php	74	ClassCountOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Size/ClassCountOptions.php	75	ClassCountOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Size/MethodCountOptions.php	46	MethodCountOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Size/MethodCountOptions.php	47	MethodCountOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Size/MethodCountOptions.php	48	MethodCountOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Size/MethodCountOptions.php	74	MethodCountOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Size/MethodCountOptions.php	75	MethodCountOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Evidence/Size/PropertyCountOptions.php	42	PropertyCountOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Evidence/Size/PropertyCountOptions.php	43	PropertyCountOptions	fromArray	warning	cast:(int)	warning: (int) $thresholds['warning'],
+src/Analysis/Evidence/Size/PropertyCountOptions.php	44	PropertyCountOptions	fromArray	error	cast:(int)	error: (int) $thresholds['error'],
+src/Analysis/Evidence/Size/PropertyCountOptions.php	45	PropertyCountOptions	fromArray	exclude_readonly,excludeReadonly	cast:(bool)	excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
+src/Analysis/Evidence/Size/PropertyCountOptions.php	46	PropertyCountOptions	fromArray	exclude_promoted_only,excludePromotedOnly	cast:(bool)	excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
+src/Analysis/Evidence/Size/PropertyCountOptions.php	75	PropertyCountOptions	withOverride	-	cast:(int)	warning: $warning !== null ? (int) $warning : $this->warning,
+src/Analysis/Evidence/Size/PropertyCountOptions.php	76	PropertyCountOptions	withOverride	-	cast:(int)	error: $error !== null ? (int) $error : $this->error,
+src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php	73	RuleOptionKeyRecognition	refuseUnknownKeys	-	cast:(string)	$key = (string) $writtenKey;
+src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php	128	RuleOptionKeyRecognition	refuseUnknownKeysInsideLevel	-	cast:(string)	$key = (string) $writtenKey;
+src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php	131	RuleOptionThresholdModeResolver	containsAnyNormalized	-	cast:(string)	if (\in_array(self::normalize((string) $key), $normalizedCandidates, true)) {
+src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php	150	RuleOptionThresholdModeResolver	removeAnyNormalized	-	cast:(string)	if (\in_array(self::normalize((string) $key), $normalizedCandidates, true)) {
+src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php	178	RuleOptionThresholdModeResolver	evictUsingHeuristic	-	cast:(string)	$classified = self::heuristicClassify((string) $key);
+src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php	216	RuleOptionThresholdModeResolver	heuristicGroupsOf	-	cast:(string)	$classified = self::heuristicClassify((string) $key);
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	282	RuleOptionsFactory	normalizeKeys	-	cast:(string)	$normalizedKey = ConfigKeySpelling::normalize((string) $key);
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	303	RuleOptionsFactory	expandDotNotation	-	cast:(string)	$keys = explode('.', (string) $key);
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	345	RuleOptionsFactory	validateNumericFields	-	cast:(string)	$fullKey = $path !== '' ? "{$path}.{$key}" : (string) $key;
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	357	RuleOptionsFactory	validateNumericFields	-	cast:(string)	$lowerKey = strtolower((string) $key);
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	366	RuleOptionsFactory	validateNumericFields	-	cast:(float)	if ($isNumericField && (!is_numeric($value) || !is_finite((float) $value))) {
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	368	RuleOptionsFactory	validateNumericFields	-	cast:(string)	RefusedPosition::open(explode('.', $fullKey), (string) $key),
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	409	RuleOptionsFactory	deepMerge	-	cast:(string)	$childPath = $path === '' ? (string) $key : $path . '.' . $key;
+src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php	186	RuleOptionsParser	normalizeValue	-	cast:(int)	return (int) $value;
+src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php	191	RuleOptionsParser	normalizeValue	-	cast:(float)	return (float) $value;
+src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	49	UnboundSuppressionOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	96	LayerViolationOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	107	UnassignedClassOptions	assertNoContradictoryEnabled	RuleOptionKey::ENABLED	cast:(bool)	$enabled = (bool) $config[RuleOptionKey::ENABLED];
+src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	42	InlineDirectiveOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php	46	UnmatchedExcludeOptions	fromArray	RuleOptionKey::ENABLED	cast:(bool)	enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+src/Infrastructure/Console/CliOptionsParser.php	95	CliOptionsParser	normalizeValue	-	cast:(float);cast:(int)	return str_contains($value, '.') || stripos($value, 'e') !== false ? (float) $value : (int) $value;
