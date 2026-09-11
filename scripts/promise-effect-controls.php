@@ -57,6 +57,7 @@ use Qualimetrix\PromiseEffect\Floor;
 use Qualimetrix\PromiseEffect\InProcess;
 use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
+use Qualimetrix\PromiseEffect\Limits;
 use Qualimetrix\PromiseEffect\Population;
 use Qualimetrix\PromiseEffect\ProcessProbe;
 use Qualimetrix\PromiseEffect\Stand;
@@ -70,6 +71,7 @@ require __DIR__ . '/promise-effect/Declarations.php';
 require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
+require __DIR__ . '/promise-effect/Limits.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';
@@ -92,6 +94,7 @@ final class Workspace
         'promise-effect/witness-envelopes.tsv',
         'promise-effect/pair-kind-scope.tsv',
         'promise-effect/door-normalization.tsv',
+        'promise-effect/observability-limits.tsv',
         'promise-effect/floor.tsv',
         'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv',
         'docs/internal/plans/promise-effect/measurement/config-paths.tsv',
@@ -282,6 +285,18 @@ function outcomes(string $tree, InProcess $inProcess, ProcessProbe $process): ar
     return $map;
 }
 
+/**
+ * The stand the frozen half is read through, kept beside {@see frozenCells()}
+ * because a limit conflict is read off the STAND and not off its cells.
+ */
+function frozenStand(string $tree, InProcess $inProcess, ProcessProbe $process): Stand
+{
+    $stand = new Stand($tree, Ledger::load($tree), Declarations::load($tree), $inProcess, $process, Limits::load($tree));
+    $stand->before(frozenRaw($tree));
+
+    return $stand;
+}
+
 /** The verdict a synthetic floor cell carries: the declared one, or any defect label. */
 function floorVerdict(string $declared): string
 {
@@ -296,7 +311,14 @@ function floorVerdict(string $declared): string
  */
 function frozenCells(string $tree, InProcess $inProcess, ProcessProbe $process): array
 {
-    $stand = new Stand($tree, Ledger::load($tree), Declarations::load($tree), $inProcess, $process);
+    $stand = new Stand($tree, Ledger::load($tree), Declarations::load($tree), $inProcess, $process, Limits::load($tree));
+
+    return $stand->before(frozenRaw($tree));
+}
+
+/** @return list<array{string, string, string, string, string}> */
+function frozenRaw(string $tree): array
+{
     $raw = [];
 
     foreach (\array_slice((array) file($tree . '/docs/internal/generated/promise-effect/observations-before/raw.tsv', \FILE_IGNORE_NEW_LINES), 1) as $line) {
@@ -309,7 +331,7 @@ function frozenCells(string $tree, InProcess $inProcess, ProcessProbe $process):
         $raw[] = $cells;
     }
 
-    return $stand->before($raw);
+    return $raw;
 }
 
 /**
@@ -394,6 +416,77 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         if (\count($unframedBroken) !== 1 || !str_contains($unframedBroken[0], 'unframed refusal control')) {
             $failures[] = 'B1: breaking the unframed side did not produce exactly its own problem';
         }
+
+        return $failures;
+    }
+
+    if ($case->id === 'N1' || $case->id === 'N2') {
+        $workspace = new Workspace($root);
+        $tree = $workspace->checkout();
+        // A cell on a CLI door whose form that door has no spelling for: the
+        // measured pair is `warning=7331` (exit 0) against `warning="7331"`
+        // (exit 3), so a verdict here would be about the quoting and not about
+        // the form.
+        $covered = 'form|rule-opt|rules.complexity.ccn.callable.warning|string-number';
+        // A cell whose effect the stand DOES observe, and which therefore no
+        // limit may cover.
+        $lawful = 'form|yaml|rules.coupling.class-rank.error|float';
+        $cells = frozenCells($tree, $inProcess, $process);
+        $failures = [];
+        $verdicts = [];
+
+        foreach ($cells as $cell) {
+            $verdicts[$cell->key] = $cell->verdict;
+        }
+
+        if ($case->id === 'N1') {
+            if (($verdicts[$covered] ?? '(absent)') !== 'NOT OBSERVABLE') {
+                $failures[] = 'N1: ' . $covered . ' is covered by a declared limit and the run judged it anyway: '
+                    . ($verdicts[$covered] ?? '(absent)');
+            }
+
+            // The same cell without the limit must NOT be NOT OBSERVABLE, or
+            // the case would pass against a stand that never read the table.
+            $unrestricted = [];
+
+            foreach (frozenStand($tree, $inProcess, $process)->unrestricted() as [$key, $verdict]) {
+                $unrestricted[$key] = $verdict;
+            }
+
+            if (($unrestricted[$covered] ?? 'NOT OBSERVABLE') === 'NOT OBSERVABLE') {
+                $failures[] = 'N1: without the limit ' . $covered . ' would read NOT OBSERVABLE anyway, so the case proves nothing';
+            }
+
+            $workspace->cleanup();
+
+            return $failures;
+        }
+
+        if (Limits::load($tree)->conflicts(frozenStand($tree, $inProcess, $process)->unrestricted()) !== []) {
+            $failures[] = 'N2: the declared table already covers a cell whose effect the stand observes';
+        }
+
+        // Planted: a limit on the YAML door, which expresses every form, over
+        // a cell that reads OK.
+        file_put_contents(
+            $tree . '/promise-effect/observability-limits.tsv',
+            "door-cannot-express\tyaml\terror\tfloat\tplanted\n",
+            \FILE_APPEND,
+        );
+
+        $conflicts = Limits::load($tree)->conflicts(frozenStand($tree, $inProcess, $process)->unrestricted());
+        $named = false;
+
+        foreach ($conflicts as $conflict) {
+            $named = $named || str_starts_with($conflict, $lawful . ':');
+        }
+
+        if (!$named) {
+            $failures[] = 'N2: a limit planted over ' . $lawful . ' did not redden; the run said '
+                . ($conflicts === [] ? 'nothing' : implode('; ', $conflicts));
+        }
+
+        $workspace->cleanup();
 
         return $failures;
     }
