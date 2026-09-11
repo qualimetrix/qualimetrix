@@ -1,0 +1,204 @@
+# WRITER APPLICABILITY MATRIX — who can write which rule-option path, which ordered
+# pairs can therefore dispute one path, which triples the first merge can destroy,
+# and which of the two readers each consumer gets.
+#
+# Tree: 6a833ab8fcd5004e964e32a59bfeb9978c39739c (branch x17-promise-effect),
+# `git status --short` empty for src/ at measurement time. Every file:line below is
+# reproducible only against that commit.
+#
+# ЧЕМ ПОЛУЧЕНО (дословно)
+#   Serena (implementations / references — the type-aware witness):
+#     mcp__serena__find_referencing_symbols name_path=RuleConfigurationInterface/all
+#       relative_path=src/Analysis/Finding/Contract/RuleConfigurationInterface.php
+#     mcp__serena__find_referencing_symbols name_path=RuleOptionsFactory/create
+#       relative_path=src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php
+#   Reflection scripts (the machine counters). THEY LIVE IN THE SESSION SCRATCHPAD AND
+#   DISAPPEAR WITH IT — what is reproducible below is the ALGORITHM, not a file path.
+#   Each is a standalone script requiring vendor/autoload.php and doing exactly this:
+#     groups.php   — (new ReflectionClass(RuleThresholdKeyGroupRegistry::class))
+#                    ->getConstant('GROUPS'); emits
+#                    one row per (rule, path, group) with switchable=yes|no, then
+#                    RULES/GROUP_ENTRIES/SWITCHABLE
+#     aliases.php  — RecursiveDirectoryIterator over src/; for each file take the
+#                    `namespace`/`class` pair, class_exists(), keep non-abstract
+#                    implementors of RuleDefinitionInterface; then
+#                    RuleNameReader::read($fqcn) and CliAliasReader::read($fqcn);
+#                    ConfigKeySpelling::normalize($optionName); explode('.') into
+#                    (path, key); test $key case/separator-insensitively against
+#                    GROUPS[$ruleName][$path][*]['threshold']
+#     cover.php    — intersects the alias key set with the switchable groups
+#     counts.php   — counts non-abstract implementors of RuleInterface,
+#                    RuleDefinitionInterface, ThresholdAwareOptionsInterface,
+#                    LevelOptionsInterface
+#   grep (second witness / call-site enumeration):
+#     grep -rn "withOverride(" src/ --include=*.php
+#     grep -rn "withVoOverride" src/ --include=*.php
+#     grep -rn "getThresholdOverride(" src/ --include=*.php
+#     grep -rn "getEffectiveOptions(\|getEffectiveSeverity(" src/ --include=*.php
+#     grep -rn "CliAlias(" src/ --include=*.php
+#     grep -rn "class .*Stage implements\|PRIORITY\|new ConfigurationLayer" src/Analysis/Configuration/Pipeline/Stage/*.php
+#     grep -rn "RULES" src/Analysis/Configuration/Pipeline/Stage/*.php src/Infrastructure/Console/ConfigurationInputAdapter.php
+#     grep -rn "ruleOptionsRegistry->replace(" src/ --include=*.php
+#     grep -rn "new FindingCliOverrides(" src/ --include=*.php
+#     grep -rn "RuleOptionsFactory" src/ --include=*.php
+#     grep -rn -e "->all()" -e "configFileOptions()" -e "cliOptions()" src/ --include=*.php
+#
+# ЧЕГО ЭТОТ СПОСОБ НЕ ВИДИТ
+#   - tests/ is out of scope. Serena's reference lists do surface test call sites and
+#     they are reported separately below, but no test-only writer was enumerated.
+#   - The rule -> options wiring is a DI string route: RuleOptionsCompilerPass:72 and
+#     ComputedMetricsConfigurator:118 call setFactory([RuleOptionsFactory, 'create']).
+#     No static analysis of src/ sees a rule "calling" the factory. The figure 48 is the
+#     count of non-abstract implementors found by walking src/ — that all 48 are actually
+#     tagged with RuleCompilerPass::TAG and therefore reach the pass WAS NOT CHECKED, and
+#     the container was not built. A service registered by a container extension written
+#     elsewhere stays invisible.
+#   - Preset FILE CONTENTS were never read. "A preset can write an arbitrary path" is a
+#     statement about PresetStage handing a whole normalized document to the merge, not
+#     an observation of any shipped preset writing one.
+#   - CliAliasReader was not executed through the product's own registry
+#     (RuleOptionsParserFactory / RuleRegistry). aliases.php re-implements the same two
+#     reflection reads over a filesystem walk; a rule class the container excludes
+#     would still be counted here, and a rule registered only as a container string
+#     would be missed.
+#   - Capability, not observed behaviour: no pair and no triple below was executed.
+#     Every row states "this writer can address this path", proved by the code path,
+#     not "this conflict was seen".
+#   - The 30 switchable groups are the DECLARED registry. A rule with no registry entry
+#     falls back to RuleOptionThresholdModeResolver's prefix heuristic
+#     (RuleOptionThresholdModeResolver.php:88-90); the heuristic's own reach was not
+#     measured. 22 rules have entries; 48 rule classes exist.
+#   - RuleOptionKeyRecognition::refuseUnknownKeys bounds which arbitrary paths survive.
+#     That bound was not enumerated: "arbitrary depth" below is the merge's capability,
+#     not the set of paths the refusal admits.
+#   - Spelling symmetry was checked by reading ConfigKeySpelling::normalize and
+#     ConfigSchema::sectionPolicies (RULES => PRESERVE_IMMEDIATE_CHILDREN), not by
+#     executing the YAML loader on a fixture.
+#
+# СПОСОБ ОБНАРУЖИТЬ СЕДЬМОГО ПИСАТЕЛЯ (три независимых счётчика, у каждого свой оракул)
+#   C1 pipeline: count non-abstract implementors of
+#      Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface (now 5)
+#      and, for each, whether its ConfigurationLayer payload can carry ConfigSchema::RULES.
+#      Runtime guard: ConfigurationDocument::appliedSources() is the only place the source
+#      tag survives — a test asserting {sources with a non-empty contributions(RULES)} ==
+#      {preset*, config-file} reddens on a sixth stage that starts writing rules.
+#   C2 registry: count callers of each RuleOptionsRegistry mutator
+#      (replace/setConfigFileOptions/addCliOption/setCliOptions/configureCli) plus
+#      construction sites of FindingCliOverrides. Now 1 and 1 respectively.
+#   C3 object level: count call sites of ThresholdAwareOptionsInterface::withOverride
+#      (1 in src/) plus LongParameterListOptions::withVoOverride (1) plus
+#      AnalysisContext::getThresholdOverride (2). A new applier raises C3 without
+#      raising C1 or C2 — that is the shape a seventh writer at the object level takes.
+#   withVoOverride is NOT a seventh writer: same source (@qmx-threshold), second applier.
+#
+# ИТОГОВЫЕ ЧИСЛА
+#   writers=6 | stages=5 (rules-capable 2) | registry mutators declared=5, live callers=1
+#   CliAlias declarations=80 on 26 rule classes (depth1=60, depth2=20), writing a mode
+#   `threshold` key=0 | ThresholdAwareOptions classes=27 | LevelOptions=10 | rule classes=48
+#   declared threshold groups=33, switchable=30, alias-covered=27, alias-uncovered=3
+#   ordered pairs: naive 16 -> real 12, dropped 4 (all four are "defaults as a lower
+#            per-key layer"). Of the 12: 7 dispute a CONFIGURATION PATH (4 unrestricted,
+#            3 restricted to the 80 alias paths) and 5 dispute an OBJECT SLOT after every
+#            merge (@qmx-threshold as the higher party). The composition oracle runs on
+#            the 7; the 5 are a different mechanism with a different oracle.
+#   triples: layer-orders x 30 switchable groups. With a config file present the layers
+#            are preset#1..#N, qmx.yaml, CLI-bucket -> C(N+2,3) orders:
+#            N=0 -> 0 | N=1 -> 30 | N=2 -> 120 | N=3 -> 300
+#            With NO config file the layers are preset#1..#N, CLI-bucket -> C(N+1,3):
+#            N=1 -> 0 | N=2 -> 30 | N=3 -> 120
+#   readers: no-eviction path (RuleOptionsRegistry::all) = 4 consumers in src/;
+#            eviction path (RuleOptionsFactory::create) = 1 direct caller in src/ plus
+#            2 DI factory registrations covering 48 tagged rules + the computed-metric
+#            producers
+#
+# Columns:
+# section	id	party	capability	paths_or_count	evidence	note
+
+## ── 1. WRITERS ───────────────────────────────────────────────────────────────
+writer	W1	constructor defaults	no user-spelled path at all; whole-array fallback	n/a	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:63 (extractDefaults), :124 ($merged = $userConfig === [] ? $defaults : $userConfig)	Reaches Options::fromArray only when the user configured NOTHING for the rule after framework-key extraction. Never merged per key, so it can never be the lower party of a per-path dispute.
+writer	W2	preset document (one per --preset name)	arbitrary path, arbitrary depth	unbounded	src/Analysis/Configuration/Pipeline/Stage/PresetStage.php:25 (class), :27 (PRIORITY=15), :58 (ConfigurationLayer), :105-119 (one document per name)	Whole normalized YAML document. N documents, N = number of deduped --preset names; ConfigSchema declares no preset key, so a preset cannot be named from qmx.yaml.
+writer	W3	qmx.yaml (--config or discovered)	arbitrary path, arbitrary depth	unbounded	src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php:22, :24 (PRIORITY=20), :56	Whole normalized YAML document; same merge recursion as W2.
+writer	W4	#[CliAlias] short flags	ONLY the declared alias paths	80 declarations, 26 rule classes, depth1=60 depth2=20, distinct (rule,path,key) triples all listed by aliases.php	src/Analysis/Finding/Contract/Rule/Attribute/CliAlias.php:20-26; reader src/Analysis/Finding/Contract/Rule/CliAliasReader.php:23-32; registry build src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php:24-40; write src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php:88-92	Measured: 0 of the 80 normalized option names is a `threshold` key of any declared group. Max depth 2 (e.g. `class.max_warning`). W4 can therefore only ever write the GRADUATED side of a mode switch.
+writer	W5	--rule-opt RULE:OPTION=VALUE	arbitrary path, arbitrary depth (dot notation)	unbounded, bounded downstream by key recognition	parse src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php:123-156; bucket src/Infrastructure/Console/RuleInputValidator.php:38-43; expansion src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:298-326 (explode('.') with no depth limit)	Option name is folded by ConfigKeySpelling::normalize BEFORE the dot split, and the dot survives the fold — so `callable.max_warning` (CLI) and `callable: {max_warning:}` (YAML, PRESERVE_IMMEDIATE_CHILDREN then camelCase) converge on the same internal key. The two doors CAN address the same path.
+writer	W6	inline @qmx-threshold	NO path; one (warning,error) pair on one already-built options object, per subject	27 capable options classes; 25 rule files reach the applier; 2 appliers	directive src/Analysis/Finding/Contract/Threshold/ThresholdOverride.php:22-33 (ctor carries only warning/error), :51-54 (matches() is exact rule name, no level, no group); apply src/Analysis/Finding/Contract/Rule/AbstractRule.php:123-126; second applier src/Analysis/Evidence/CodeSmell/LongParameterListRule.php:179-182 -> src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php:132	Runs AFTER every configuration merge and sees no source identity. It cannot name a level (ThresholdOverride.php:51-54). INFERENCE, not observation: that for a hierarchical rule the level is decided by WHICH options object the rule hands the applier is read off the AbstractRule.php:118-121 signature (it accepts RuleOptionsInterface|LevelOptionsInterface) plus the fact that 10 of the 27 ThresholdAware classes are LevelOptions leaves; none of the 5 hierarchical rule classes was read.
+
+## ── 2. CAPABILITY MATRIX (writer x capability) ───────────────────────────────
+capability	M1	W1 constructor defaults	arbitrary-path=no ; top-level-only=no ; declared-paths-only=no ; shorthand-only=no ; object-slot=no	—	RuleOptionsFactory.php:124	Whole-array fallback. Out of the path algebra entirely.
+capability	M2	W2 preset	arbitrary-path=YES ; declared-paths-only=no ; object-slot=no	unbounded	PresetStage.php:105-119 + FindingConfigurationResolver.php:64-78 (unbounded recursion)	
+capability	M3	W3 qmx.yaml	arbitrary-path=YES ; declared-paths-only=no ; object-slot=no	unbounded	ConfigFileStage.php:56 + FindingConfigurationResolver.php:64-78	
+capability	M4	W4 #[CliAlias]	arbitrary-path=no ; declared-paths-only=YES ; object-slot=no	80	aliases.php output; CliAlias declaration sites listed by grep -rn "CliAlias(" src/	Additionally: writes a mode `threshold` key at 0 of 80.
+capability	M5	W5 --rule-opt	arbitrary-path=YES ; declared-paths-only=no ; object-slot=no	unbounded	RuleOptionsFactory.php:298-326	
+capability	M6	W6 @qmx-threshold	arbitrary-path=no ; declared-paths-only=no ; object-slot=YES	27 classes / 25 rule files	AbstractRule.php:123-126 ; counts.php	Disputes an EFFECT slot, never a configuration path.
+
+## ── 3. ORDERED PAIRS ─────────────────────────────────────────────────────────
+## Promised order, low -> high: defaults < preset#1..#N < qmx.yaml < #[CliAlias] < --rule-opt < @qmx-threshold
+## Naive product (sources.md §6) = 16. Real = 12. Dropped = 4.
+## CORRECTION (plan review round 3): this summary line first read "Real = 11. Dropped = 5",
+## which contradicted rows P5-P16 and note N1 below. The rows are authoritative: 12 real, 4 dropped.
+pair	P6	preset#i -> preset#j (i<j)	unrestricted path	any path	FindingConfigurationResolver.php:43-56 (mergeRules), :64-78 (mergeRuleOptions, evict at :66)	Exists only when N>=2.
+pair	P7	preset -> qmx.yaml	unrestricted path	any path	FindingConfigurationResolver.php:64-78	
+pair	P9	preset -> --rule-opt	unrestricted path	any path	RuleOptionsFactory.php:403-416 (deepMerge, evict at :405)	The pair the website names at configuration.md:168.
+pair	P12	qmx.yaml -> --rule-opt	unrestricted path	any path	RuleOptionsFactory.php:403-416	
+pair	P8	preset -> #[CliAlias]	RESTRICTED to the 80 declared alias paths	80	RuleOptionsParser.php:88-92 then RuleOptionsFactory.php:403-416	
+pair	P11	qmx.yaml -> #[CliAlias]	RESTRICTED to the 80 declared alias paths	80	same	
+pair	P14	#[CliAlias] -> --rule-opt	RESTRICTED to the 80 declared alias paths	80	src/Infrastructure/Console/CliOptionsParser.php:55-56 (??=)	Decided BEFORE either merge bucket exists and WITHOUT eviction: both keys can survive into one bucket. A CliAlias graduated key plus a --rule-opt `threshold` for the same group therefore reaches ThresholdParser mixed and is refused, rather than disputed.
+pair	P5	defaults -> @qmx-threshold	object slot, not a path	27 classes	AbstractRule.php:123-126	Counted as an object-slot pair only: the override overwrites a slot that carried a constructor default, but the two never meet in an array, so no configuration path can be named.
+pair	P10	preset -> @qmx-threshold	object slot, not a path	27 classes / 25 rule files	AbstractRule.php:123-126	
+pair	P13	qmx.yaml -> @qmx-threshold	object slot, not a path	27 classes / 25 rule files	AbstractRule.php:123-126	
+pair	P15	#[CliAlias] -> @qmx-threshold	object slot, not a path	intersection of the 80 alias paths with the 27 classes	AbstractRule.php:123-126	
+pair	P16	--rule-opt -> @qmx-threshold	object slot, not a path	27 classes / 25 rule files	AbstractRule.php:123-126	
+dropped	D1	defaults -> preset	DROPPED	—	RuleOptionsFactory.php:124	Any user key at all discards the whole defaults array; defaults is never the lower side of a per-key merge. Per-field defaulting happens later, inside each Options::fromArray / ThresholdParser::parse, which is a different mechanism with a different oracle.
+dropped	D2	defaults -> qmx.yaml	DROPPED	—	RuleOptionsFactory.php:124	same
+dropped	D3	defaults -> #[CliAlias]	DROPPED	—	RuleOptionsFactory.php:124	same
+dropped	D4	defaults -> --rule-opt	DROPPED	—	RuleOptionsFactory.php:124	same
+note	N1	arithmetic	naive 16 = 12 real + 4 dropped	12 / 4	—	Of the 12 real: 7 path-addressed (P6,P7,P9,P12 unrestricted; P8,P11,P14 restricted to 80 alias paths) and 5 object-slot (P5,P10,P13,P15,P16). P5's PATH reading is void — defaults and an inline override never meet in an array — it survives only as an object-slot pair.
+note	N2	pairs NOT in the naive 16 that the code admits	none found	0	—	Every real pair is a subset of the naive 16. The naive product's error was over-counting (defaults as a per-key layer, and unrestricted paths for W4), not under-counting.
+
+## ── 4. TRIPLES (the first merge destroys the lower layer's keys) ─────────────
+## Mechanism: RuleOptionThresholdModeResolver::evictOverriddenMode REMOVES the lower
+## layer's keys of the mode the higher layer switched away from
+## (src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php:84-91,
+## declared-group branch :104-118). After L1->L2 the L1 graduated keys are GONE, so the
+## L3 graduated write lands on an array that no longer carries L1's other slot, and the
+## missing slot falls through to the constructor default instead of L1's value.
+## Shape: L1 graduated -> L2 `threshold` -> L3 graduated. T->G->T needs no third layer
+## (L3 simply wins), so only G->T->G is counted.
+## Eviction-visible layers, in order: preset#1 .. preset#N, qmx.yaml, CLI-bucket.
+## The CLI bucket is ONE layer for eviction: #[CliAlias] and --rule-opt merge at
+## CliOptionsParser.php:55-56 with no eviction, so a mode conflict created there is a
+## same-layer mix and is refused by ThresholdParser instead of evicting anything.
+triple	T1	(preset#i, preset#j, qmx.yaml)	i<j ; middle writes `threshold`	needs N>=2	FindingConfigurationResolver.php:66	
+triple	T2	(preset#i, preset#j, CLI bucket)	i<j ; middle writes `threshold`	needs N>=2	FindingConfigurationResolver.php:66 then RuleOptionsFactory.php:405	
+triple	T3	(preset#i, preset#j, preset#k)	i<j<k ; middle writes `threshold`	needs N>=3	FindingConfigurationResolver.php:66	
+triple	T4	(preset#i, qmx.yaml, CLI bucket)	middle writes `threshold`	needs N>=1	FindingConfigurationResolver.php:66 then RuleOptionsFactory.php:405	The review's example: preset warning/error, qmx.yaml threshold, CLI warning.
+triple	T5	(qmx.yaml, CLI bucket, —)	IMPOSSIBLE	0	—	No layer above the CLI bucket. @qmx-threshold is not a fourth eviction layer: it never enters an array.
+triple-denominator	TD1	middle layer must be able to write a `threshold` key	preset YES, qmx.yaml YES, --rule-opt YES, #[CliAlias] NO (0/80), defaults NO, @qmx-threshold NO	—	aliases.php (ALIASES_WRITING_A_MODE_THRESHOLD_KEY=0)	The CLI bucket as a middle layer is impossible anyway (it is topmost); the CliAlias result matters for the L3 position.
+triple-denominator	TD2	switchable (rule, path) groups — both a `threshold` list and a warning|error list non-empty	30 of 33 declared groups over 22 rules	30	groups.php ; src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php:120-249 (GROUPS)	Not switchable (3): complexity.ccn|(top), complexity.cognitive|(top), complexity.npath|(top) — LONE_THRESHOLD, empty warning/error lists (registry :115).
+triple-denominator	TD3	of the 30, reachable by a #[CliAlias] graduated key in the L3 position	27 covered / 3 uncovered	27	cover.php	Uncovered: coupling.cbo|(top), coupling.instability|(top), duplication.clone|(top) — the L3 position there must be --rule-opt, preset or qmx.yaml.
+triple-count	TC1	layer-orders x switchable groups, config file PRESENT	C(N+2,3) x 30	N=0 -> 0 ; N=1 -> 30 ; N=2 -> 120 ; N=3 -> 300	PresetStage.php:74-93 (N = deduped --preset names) ; ConfigFileStage.php:56	With L3 = #[CliAlias] the per-N figure drops from 30 to 27 groups (TD3).
+triple-count	TC2	layer-orders x switchable groups, NO config file	C(N+1,3) x 30	N=1 -> 0 ; N=2 -> 30 ; N=3 -> 120	ConfigFileStage returns no layer when no file resolves	Without qmx.yaml the eviction-visible layers are preset#1..#N plus the CLI bucket.
+triple-count	TC3	slot caveat on the group denominator	a group is an UPPER BOUND, not a case	—	RuleOptionThresholdModeResolver.php:104-118	The observable loss needs L3 to write a STRICT SUBSET of the graduated pair (only `warning`, or only `error`). If L3 writes both slots, L1's values are unreachable to anyone and nothing is observably lost. So each group yields 2 partial-write patterns worth exercising, and a run where L3 writes the full pair is green by construction.
+
+## ── 5. THE SECOND READER ─────────────────────────────────────────────────────
+## Verified: RuleOptionsRegistry::all() merges with array_replace_recursive and calls
+## NO eviction, no dot expansion, no scalar normalization, no key folding; whereas
+## RuleOptionsFactory::create() folds keys, expands dots, normalizes scalars and calls
+## deepMerge, which evicts at every level.
+reader	R0	RuleOptionsRegistry::all()	array_replace_recursive(configFileOptions, cliOptions) — NO eviction	—	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:119-122	CLI keys are still in dot notation here (never expanded), and file keys carry whatever spelling the YAML loader produced. A `threshold` in the file bucket and a `warning` in the CLI bucket BOTH survive into this view. Stronger structural consequence: because CLI keys stay flat (`callable.maxWarning`) while file keys are nested (`callable => [maxWarning => ...]`), array_replace_recursive never lines them up — for ANY nested path this view shows BOTH values side by side and NO override at all. None of R1-R4 reads a nested key today, so it does not currently bite.
+reader	R1	DuplicationDetector::loadOptions	no-eviction path	1	src/Analysis/Evidence/Duplication/DuplicationDetector.php:117-123	Reads `min_tokens`/`minTokens`, `min_lines`/`minLines` — not a member of any threshold group, so the missing eviction does not currently reach a key it reads.
+reader	R2	FindingExclusionLedger::rawOptions	no-eviction path	1	src/Analysis/Finding/FindingExclusionLedger.php:168-173 (consumed at :90, :139, :221)	Reads only suppress_paths / suppress_namespaces / suppress_namespace_channels via ConfiguredSuppression.
+reader	R3	UnboundSuppressionAudit::unboundLedgerEntries	no-eviction path	1	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php:161-184	Same three framework keys.
+reader	R4	RuleExclusionLedgerAttributor::inertSuppressors	no-eviction path	1	src/Reporting/FindingProjection/RuleExclusionLedgerAttributor.php:67-68, :116-131	Same three framework keys.
+reader	R5	RuleOptionsFactory::create	eviction path (deepMerge at :403-416, evict at :405)	—	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:43-137	The only path that also folds spellings (:277-287), expands dots (:298-326) and normalizes scalar rule configs.
+reader	R6	BaselineConfiguredThresholds::optionsFor	eviction path, direct caller	1 in src/	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php:135 (wired at src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php:517-520)	The only src/ call site Serena finds for RuleOptionsFactory::create.
+reader	R7	every tagged rule's Options service	eviction path, via DI string route	48 rule classes implement RuleInterface / RuleDefinitionInterface (counts.php); one Options service per (ruleName, optionsClass)	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php:43-80, factory bound at :72, options injected at :78	Not visible to any call-site search: setFactory([RuleOptionsFactory, 'create']).
+reader	R8	computed-metric producer Options services	eviction path, via DI string route	per producer	src/Infrastructure/DependencyInjection/Configurator/ComputedMetricsConfigurator.php:118	Same string route.
+reader	R9	tests reaching create() directly	eviction path	~60 call sites across 7 test files (Serena)	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php, tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php, tests/Analysis/Finding/RuleConfiguration/Unit/UnknownRuleOptionKeyRefusalTest.php, tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php, tests/Analysis/Finding/Integration/WarningBoundaryDeclarationTest.php, tests/Analysis/Finding/Unit/Rule/LevelActivityReadsBothDisablingSpellingsTest.php, tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	Listed for completeness; tests are not consumers of a run's effective config.
+reader-count	RC1	consumers per path	no-eviction (all()) = 4 in src/ ; eviction (create()) = 1 direct + 2 DI routes covering 48 rules + producers	4 / 1+2	—	Serena reference list for RuleConfigurationInterface::all returns exactly these 4 src/ sites plus 5 test sites.
+
+## ── 6. SUPPORTING COUNTS ─────────────────────────────────────────────────────
+count	S1	ConfigurationStageInterface implementors	5	DefaultsStage(0), ComposerDiscoveryStage(10), PresetStage(15), ConfigFileStage(20), CliStage(30)	src/Analysis/Configuration/Pipeline/Stage/*.php	Of these, 2 can carry ConfigSchema::RULES (PresetStage, ConfigFileStage). CliStage's key list (src/Infrastructure/Console/ConfigurationInputAdapter.php:70-80) names DISABLED_RULES and ONLY_RULES but not RULES.
+count	S2	RuleOptionsRegistry mutators declared / with a live src/ caller	5 / 1	replace(:58-63) has the one caller	src/Infrastructure/Console/AnalysisRuntimeConfigurator.php:77	setConfigFileOptions, addCliOption, setCliOptions, configureCli have no src/ caller.
+count	S3	FindingCliOverrides construction sites	1	—	src/Infrastructure/Console/RuleInputValidator.php:43	
+count	S4	ThresholdAwareOptionsInterface implementors / LevelOptionsInterface implementors	27 / 10	—	counts.php	
+count	S5	rule files reaching getEffectiveOptions/getEffectiveSeverity	25 files, 30 call sites	—	grep -rn "getEffectiveOptions(\|getEffectiveSeverity(" src/ --include=*.php (minus AbstractRule.php)	A rule that calls $options->getSeverity() directly never sees an inline override, whatever its options class implements.

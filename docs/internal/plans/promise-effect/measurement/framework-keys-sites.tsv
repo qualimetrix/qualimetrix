@@ -1,0 +1,71 @@
+# Чем получено: the three RuleOptionKeyRecognition::FRAMEWORK_KEYS — where recognised,
+#   where applied. Tree 6a833ab8fcd5004e964e32a59bfeb9978c39739c (x17-promise-effect).
+#   sed -n '30,80p' src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php
+#   grep -rn "<spelling>" src/ --include='*.php'        # run once per spelling, see counts below
+#   grep -rn "configureNamespaceExclusions|configurePathExclusions|configureNamespaceChannelExclusions" src/ --include='*.php'
+#   grep -rn "isNamespaceExcluded|isPathExcluded|isNamespaceChannelExcluded" src/ --include='*.php'
+#   grep -n "keeps(" src/Analysis/Finding/RuleExecution.php
+#   grep -rn -- "->analyze(" src/ --include='*.php'   # only src/Analysis/Finding/RuleExecution.php:95
+#                                                     # calls a rule's analyze(); the other 3 hits are
+#                                                     # Analyzer::analyze() from CLI commands
+#   find src -name '*Rule.php' | xargs grep -ln "extends AbstractRule" | wc -l        -> 36
+#   find src -name '*Rule.php' | xargs grep -hn "const string NAME" | wc -l           -> 50
+#
+# Чего этот способ не видит:
+#   - Three spellings exist and they are NOT interchangeable at every seam: the dashed form
+#     lives only in FRAMEWORK_KEYS, the snake_case form is the config-file/constant form,
+#     the camelCase form is what a CLI key folds to. A fourth framing (e.g. a key inside a
+#     YAML anchor, or a title-case form in a doc table) would be missed — the greps search
+#     the three literal spellings only.
+#   - Counts below are raw grep hits over src/*.php: they include docblock mentions and
+#     constant declarations, not only live reads. They are a denominator, not an inventory
+#     of effects. tests/, website/ and qmx.yaml were not counted.
+#   - "How many rules execute them" is answered by tracing the registry getters to their
+#     single caller. If some other consumer read the raw options array directly and
+#     re-implemented the match, this trace would not show it. The one near-miss found —
+#     ConfiguredSuppression — is listed: it re-reads the raw options, but only to NAME the
+#     patterns that already fired, not to decide.
+#
+# COUNTS (grep -rn "<spelling>" src/ --include='*.php' | wc -l)
+#   suppress-paths 1                | suppress_paths 48              | suppressPaths 21
+#   suppress-namespaces 1           | suppress_namespaces 45         | suppressNamespaces 20
+#   suppress-namespace-channels 1   | suppress_namespace_channels 36 | suppressNamespaceChannels 5
+#   (each dashed form occurs exactly once: its entry in FRAMEWORK_KEYS)
+#
+# HOW MANY RULES EXECUTE THEM: 0.
+#   No *Rule.php class reads any of the three keys. The effect is applied post hoc, once,
+#   to every finding of every producer, in FindingExclusionLedger::keeps(), called from
+#   RuleExecution.php:193 inside the loop over all findings.
+#   Denominator of producers the filter therefore covers:
+#     36 rule classes extending AbstractRule
+#     50 `const string NAME` declarations across src/**/*Rule.php (one class may publish
+#        under several producer names — RuleExecution.php:191 `producerOf()` says so
+#        explicitly, and FindingExclusionLedger.php:67-70 repeats it)
+#   Neither number is "the number of rules that execute the key": the correct statement is
+#   0 executors and 1 applier for N producers.
+#   Verified that there is no second executor bypassing the ledger: the only call of a
+#   rule's analyze() in src/ is RuleExecution.php:95, and the ledger filter sits in the
+#   same class at :193.
+#
+# Columns: key<TAB>stage<TAB>file:line<TAB>what happens there
+suppress-paths	declared (framework key set)	src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php:49	listed in FRAMEWORK_KEYS so a MISSPELLED neighbour's refusal message can name it; a correctly spelled one never reaches this comparison
+suppress-namespaces	declared (framework key set)	src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php:48	same
+suppress-namespace-channels	declared (framework key set)	src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php:47	same
+(all three)	surfaced in refusal text	src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php:157	appended to the accepted-key list shown to the user
+(all three)	normalized for comparison	src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php:168	array_map(ConfigKeySpelling::normalize(...), FRAMEWORK_KEYS)
+suppress-paths	recognised + REMOVED from user config	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:97 -> :161-179	extractSuppressPaths(); takeAliasedOption('suppressPaths','suppress_paths') at :163, helper declared at :183; string is wrapped to a one-element list, non-string array members are dropped, empty list is a no-op
+suppress-namespaces	recognised + REMOVED from user config	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:96 -> :144-151	extractSuppressNamespaces(); takeAliasedOption('suppressNamespaces','suppress_namespaces') at :146
+suppress-namespace-channels	recognised + REMOVED from user config	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:96 -> :149	same method; takeAliasedOption('suppressNamespaceChannels','suppress_namespace_channels')
+(all three)	ordering constraint	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:79-95 (comment), :96-97 then :121	extraction runs BEFORE the "$userConfig === [] ? defaults" decision; a rule configured with only framework keys must still count as unconfigured
+suppress-namespace-channels	CLI-side pre-validation	src/Infrastructure/Console/RuleInputValidator.php:29, :179-196	CHANNEL_EXCLUSION_KEYS = both non-dashed spellings; each selector checked by ChannelExclusionKeyValidator before analysis starts
+suppress-paths	stored	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:197-200	-> RulePathExclusionProvider::setExclusions(ruleName, patterns)
+suppress-namespaces	stored	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:187-190	-> RuleNamespaceExclusionProvider::configureExclusions(ruleName, patterns)
+suppress-namespace-channels	stored	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:192-195	-> RuleNamespaceExclusionProvider::configureChannelExclusions(ruleName, patterns)
+suppress-paths	queried	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:212-215	isPathExcluded(ruleName, RelativePath)
+suppress-namespaces	queried	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:202-205	isNamespaceExcluded(ruleName, namespace)
+suppress-namespace-channels	queried	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php:207-210	isNamespaceChannelExcluded(ruleName, FindingChannel, namespace)
+suppress-namespaces	EFFECT APPLIED	src/Analysis/Finding/FindingExclusionLedger.php:137	first of the three to be tested; namespace read from finding->symbolPath->namespace, falling back to the subject (:127-130); empty/null namespace => key cannot fire
+suppress-namespace-channels	EFFECT APPLIED	src/Analysis/Finding/FindingExclusionLedger.php:146-148	tested only when symbolPath type is literally 'namespace' — a narrowing the other two keys do not have
+suppress-paths	EFFECT APPLIED	src/Analysis/Finding/FindingExclusionLedger.php:85	tested after the namespace half; requires finding->location->file !== null
+(all three)	single call site of the effect	src/Analysis/Finding/RuleExecution.php:193	`if (!$this->exclusions->keeps($producer, $finding)) { continue; }` inside the loop over every finding
+(all three)	re-read for attribution only	src/Analysis/Finding/Exclusion/ConfiguredSuppression.php:50-52, :61-63, :73-75, :91	constants PATHS/NAMESPACES/NAMESPACE_CHANNELS plus the camelCase alias; reads the raw options again to NAME which pattern matched — does not decide exclusion

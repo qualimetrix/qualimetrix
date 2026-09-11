@@ -1,0 +1,33 @@
+# The reachability witness of 02 §2 is one process run per producer name, with
+# only that producer enabled. Seven producers cannot speak under that run for a
+# reason that belongs to the EMPTY DOCUMENT rather than to the producer: they
+# report on a configuration section, and with no section there is nothing to
+# report on. `architecture.layer-violation` needs declared layers, `computed`
+# needs a defined metric, `discovery.unmatched-exclude` needs an `exclude:`
+# entry, and so on. Leaving them unwitnessed would state "this stand cannot see
+# them" where the truth is "this stand handed them an empty document".
+#
+# So each of the seven declares the smallest document that makes its subject
+# exist. The document is visible here, it is carried into the frozen raw
+# observations beside the outcome, and it never touches any probe but the
+# witness.
+#
+# `channel` closes the attribution hole the envelope would otherwise open. A
+# witness run is normally `--only-rule=<producer>` alone, so any finding at all
+# is that producer's. `annotation.directive` is the exception: a directive
+# addressing a DISABLED rule is not counted as unused, so its witness has to
+# enable `complexity.ccn` beside it — and then "the run said something" would
+# also be true of the other rule's findings. Where `channel` is given, the
+# witness counts only findings whose channel carries that prefix.
+#
+# A producer absent from this table is witnessed by the plain run. Presence
+# here is not a weaker witness: the producer still has to run and still has to
+# report, on the same fixture, in its own channel.
+producer	document	extra_args	channel	why the empty document is not the question
+annotation.directive	{}	--only-rule=complexity.ccn	annotation.	an unused directive is only counted against an ENABLED rule, and the fixture's directive addresses complexity.ccn
+architecture.layer-violation	{"architecture":{"layers":[{"name":"sub","patterns":["Probe\\Sub\\**"]},{"name":"infra","patterns":["Probe\\Infra\\**"]},{"name":"rest","patterns":["**"]}],"allow":{"sub":[],"infra":[],"rest":["sub","infra"]}}}			without declared layers the rule is a documented no-op
+architecture.unassigned-class	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\**"]}],"allow":{"domain":[]}},"rules":{"architecture.unassigned-class":{"mode":"warn"}}}			the rule ships disabled (`mode: ignore`) and reports against declared layers
+computed	{"computed_metrics":{"computed.probe-size":{"description":"a probe metric always above its own warning","formula":"9999","levels":["class"],"warning":1,"error":100000}}}			the producer reports on user-defined metrics, and the fixture defines none
+coupling.unmatched-framework-namespace	{"coupling":{"framework_namespaces":["Nope\\Zzz"]}}			the rule reports a declared prefix that matched nothing; with no prefix declared there is nothing to report
+discovery.unmatched-exclude	{"exclude":["no-such-directory"]}			the rule reports an `exclude:` entry that matched nothing
+suppression.configuration	{"suppress_paths":["src/NoSuchDirectory"]}			the rule reports a suppression that named nothing

@@ -1,0 +1,43 @@
+# Where a hit would be visible for a root outside `rules:`, which of the
+# stand's own invariants that probe has to withdraw, and — where the canonical
+# write cannot hit anything — what a hit actually looks like.
+#
+# The default observable is `findings`: the digest of the reported violation
+# population. It is wrong for every root whose effect is not a finding, and a
+# stand that used it everywhere would call those roots NOT OBSERVABLE and call
+# that a measurement.
+#
+# `withdraws` names an invariant of the stand that stands in the same place as
+# the probed door — a probe taken beside its own shadow measures the shadow,
+# which is the lesson the input-door stand paid for. `target` is the positional
+# `src` argument: it shadows both the `paths` key and the `paths` CLI door.
+#
+# `hit` exists because a probe without a hit is not a probe. The canonical list
+# write `[7331]` names nothing in the fixture, so on a root whose values are
+# paths, namespaces or rule names it changes nothing and the sensitivity probe
+# goes blind — and the row would then read NOT OBSERVABLE for a reason that
+# belongs to the stand. These hits are the control values of
+# `measurement/non-rules-roots.tsv`, reused deliberately: they are already
+# known to move this fixture.
+#
+#   findings  the sorted (file,line,channel,severity,message) digest plus the count
+#   stdout    the shape of what was printed, with digits normalized
+#   exitcode  the exit status alone
+#   cachedir  which cache directories exist after the run
+#   logfile   the resolved value echoed into the debug log
+ledger_path	observable	withdraws	hit
+paths	findings	target	[src/Domain]
+exclude	findings		[Sub]
+format	stdout	--format
+fail_on	exitcode	--fail-on
+disabled_rules	findings		[code-smell.long-parameter-list]
+only_rules	findings		[complexity.ccn]
+suppress_paths	findings		[src/Sub]
+suppress_namespaces	findings		[Probe\Sub]
+coupling.framework_namespaces	findings		[Zzz\Nope]
+exclude_health	findings		[complexity]
+cache	cachedir
+cache.dir	cachedir
+cache.enabled	cachedir
+parallel.workers	logfile	--workers
+memory_limit	exitcode

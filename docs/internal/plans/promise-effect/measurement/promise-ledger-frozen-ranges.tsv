@@ -1,0 +1,380 @@
+# ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L).
+# Дерево 6a833ab8fcd5004e964e32a59bfeb9978c39739c. Дата: 2026-09-11.
+#
+# ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
+# проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
+# процитирован хотя бы одной строкой реестра, с sha256 его текста.
+#
+# ЧЕМ ПОЛУЧЕНО: <scratch>/freeze.py — регуляркой собирает все ссылки вида `путь:строка[-строка]`
+#   из тела promise-ledger.tsv, читает ровно эти строки файла на 6a833ab8 и считает sha256
+#   (первые 16 знаков). Колонка owner_package сверена с таблицей владения 03-cure.md.
+#
+# ЧЕГО ЭТОТ СПОСОБ НЕ ВИДИТ: он проверяет ТЕКСТ диапазона, а не его смысл. Правка соседней
+#   строки, меняющая смысл абзаца, sha диапазона не тронет; и наоборот, сдвиг нумерации
+#   (вставка строки выше) покрасит диапазон, ничего в нём не изменив, — это осознанно
+#   консервативная сторона.
+#
+# ПРОВЕРКА DoD-2, в доступной пакету части. Продуктовый набор P1 (03-cure.md) — семь поимённых
+#   файлов плюс классы опций. Из 349 замороженных диапазонов В НАБОР P1 ПОПАДАЮТ РОВНО ТРИ:
+#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:23-27   (три состояния ключа;
+#         носитель законности адресного ответа класса — C17)
+#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34   (канонические написания)
+#     src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:33-39
+#   Все три — докблоки, все три вне сигнатур и тел. Остальные 346 лежат в website/docs/**, который
+#   принадлежит P6, а не P1: DoD-2 про P1, и по нему пересечение исчерпывается этими двумя
+#   диапазонами. Команда воспроизведения — в отчёте пакета.
+#   Ни один класс опций (динамическая половина набора P1) носителем не является: реестр их не читал.
+#
+# ОЖИДАЕМЫЙ СЛУЧАЙ, А НЕ ПРОВАЛ (03-cure.md §P1.7): P1 меняет контракт RuleOptionKeySet, и его
+#   докблок после пакета либо лжёт, либо правится. Порядок — возврат к оркестратору, перевывод
+#   затронутых строк реестра, обновление этого файла. Провал — МОЛЧАЛИВАЯ правка.
+file	first_line	last_line	sha256_16	owner_package	first_line_text
+src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	33	39	f84132545b7f7be1	P1 (03-cure.md ownership table)	/**
+src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	23	27	517d0ff3436edc4c	P1 (03-cure.md ownership table)	* - **answered by the class** — recognised only so that `fromArray()` 
+src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	28	34	fe5921582c172eb5	P1 (03-cure.md ownership table)	* - **unknown** — everything else.
+website/docs/getting-started/configuration.md	26	26	6a61c178688f5f0d	P6 (website)	paths:
+website/docs/getting-started/configuration.md	38	38	a7bd3458213029dc	P6 (website)	exclude:
+website/docs/getting-started/configuration.md	58	58	3122d60e43f70b33	P6 (website)	suppress_paths:
+website/docs/getting-started/configuration.md	94	94	c5ae903c48ee35a7	P6 (website)	suppress_namespaces:
+website/docs/getting-started/configuration.md	130	136	1f06a8606ddabfbc	P6 (website)	**Disable a rule entirely:**
+website/docs/getting-started/configuration.md	135	135	cd9df7cc053779ca	P6 (website)	enabled: false
+website/docs/getting-started/configuration.md	138	151	c843f97c2c4ab04b	P6 (website)	**Override thresholds:**
+website/docs/getting-started/configuration.md	152	166	b8e3c8ed35502ce5	P6 (website)	**Threshold shorthand:**
+website/docs/getting-started/configuration.md	160	160	01bb931b4cab2d6e	P6 (website)	threshold: 15    # warning=15, error=15 → all violations are errors
+website/docs/getting-started/configuration.md	163	163	320a9e8e028367ad	P6 (website)	threshold: 25      # same as warning: 25, error: 25
+website/docs/getting-started/configuration.md	170	170	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/getting-started/configuration.md	174	174	0fbe325e0d8565b3	P6 (website)	warning: 10
+website/docs/getting-started/configuration.md	175	175	8f93652565892666	P6 (website)	error: 20
+website/docs/getting-started/configuration.md	180	180	93936a5c342ee0d9	P6 (website)	bin/qmx check src/ --rule-opt=size.method-count:threshold=25
+website/docs/getting-started/configuration.md	183	191	09f209a7906e586e	P6 (website)	The same applies in the other direction (a lower layer's `threshold` o
+website/docs/getting-started/configuration.md	190	190	4ed6791e23b33efc	P6 (website)	threshold: 15   # class AND namespace: warning=error=15
+website/docs/getting-started/configuration.md	199	199	80dd174243a87feb	P6 (website)	threshold: 90
+website/docs/getting-started/configuration.md	201	201	80dd174243a87feb	P6 (website)	threshold: 90
+website/docs/getting-started/configuration.md	203	203	2d62953745155abb	P6 (website)	threshold: 80
+website/docs/getting-started/configuration.md	206	209	788fa29872f76f5b	P6 (website)	**Option key spellings are interchangeable, option keys themselves are
+website/docs/getting-started/configuration.md	216	237	2d9ab50fe5b1ccbf	P6 (website)	**Suppress namespaces for a rule:**
+website/docs/getting-started/configuration.md	239	258	9836dfde9397650f	P6 (website)	**Suppress selected namespace-aggregate channels for a rule:**
+website/docs/getting-started/configuration.md	301	309	a03f4c0b8fc83ef3	P6 (website)	!!! info "Works for every rule, including the architecture rules"
+website/docs/getting-started/configuration.md	311	320	fc9a231ca95ba9dd	P6 (website)	**Suppress paths for a rule:**
+website/docs/getting-started/configuration.md	400	400	da9818ae2374ff6a	P6 (website)	disabled_rules:
+website/docs/getting-started/configuration.md	449	449	36cf903442180509	P6 (website)	unused_directive_severity: warning
+website/docs/getting-started/configuration.md	480	480	b695797bb5b90154	P6 (website)	memory_limit: 1G    # 1 gigabyte
+website/docs/getting-started/configuration.md	491	491	4a4bd556dacc8147	P6 (website)	format: summary   # Default
+website/docs/getting-started/configuration.md	501	501	d9e87793541921be	P6 (website)	cache:
+website/docs/getting-started/configuration.md	502	502	799c89b0067078ae	P6 (website)	enabled: true         # Default: true
+website/docs/getting-started/configuration.md	503	503	72651452900d6cbb	P6 (website)	dir: .qmx-cache       # Default: .qmx-cache
+website/docs/getting-started/configuration.md	513	513	7d9ba68442c865cf	P6 (website)	parallel:
+website/docs/getting-started/configuration.md	514	514	079e1fefcdaf0793	P6 (website)	workers: 4     # Fixed number of workers
+website/docs/getting-started/configuration.md	536	536	65a7aa1e79a93d41	P6 (website)	coupling:
+website/docs/getting-started/configuration.md	537	537	ba8f53ef8d56fdca	P6 (website)	framework-namespaces:
+website/docs/getting-started/configuration.md	557	557	6f9c4036baa05436	P6 (website)	architecture:
+website/docs/getting-started/configuration.md	558	558	88f39b68d3c7f069	P6 (website)	layers:
+website/docs/getting-started/configuration.md	564	564	cde6f93f55b9e849	P6 (website)	allow:
+website/docs/getting-started/configuration.md	570	570	0cdc3d0e369e8a3a	P6 (website)	coverage-gap: ignore                                # ignore | warn | 
+website/docs/getting-started/configuration.md	571	571	6c0ee8e39ccf104d	P6 (website)	max_expanded_layers: 500                            # cumulative cap o
+website/docs/getting-started/configuration.md	708	714	83880220a6df07a5	P6 (website)	### Type errors
+website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
+website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
+website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website)	| Potential Shadow          | `architecture.potential-shadow`      | E
+website/docs/reference/default-thresholds.md	103	103	3685db36505d603c	P6 (website)	| Empty Template            | `architecture.empty-template`        | E
+website/docs/reference/default-thresholds.md	197	197	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/reference/default-thresholds.md	205	205	93aedcf0d9a72dbe	P6 (website)	max_error: 60
+website/docs/reference/default-thresholds.md	256	256	985826e7747d3991	P6 (website)	computed_metrics:
+website/docs/reference/health-scores.md	140	140	b2cc0d5205831730	P6 (website)	warning: 60    # Stricter than default 50
+website/docs/reference/health-scores.md	141	141	e95aa928aef5ce0b	P6 (website)	error: 30      # Stricter than default 25
+website/docs/reference/health-scores.md	149	149	cd9df7cc053779ca	P6 (website)	enabled: false
+website/docs/reference/health-scores.md	174	174	9cf34b329564bb00	P6 (website)	formula: "clamp(m['maintainability.mi.avg'], 0, 100)"
+website/docs/reference/health-scores.md	181	181	00c6a489277643fb	P6 (website)	formulas:
+website/docs/reference/health-scores.md	193	193	65c8a8109cf0de53	P6 (website)	description: "Ratio of logical to physical lines (higher = denser code
+website/docs/reference/health-scores.md	194	194	b01ff23fecf1ae5d	P6 (website)	levels: [class, namespace, project]
+website/docs/reference/health-scores.md	197	197	b37082f81e2b1ea9	P6 (website)	inverted: false   # Higher values trigger violations
+website/docs/rules/annotation.md	166	166	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/annotation.md	170	170	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/annotation.md	175	175	83b0b0c26e0efe24	P6 (website)	bin/qmx check src/ --rule-opt="annotation.directive:unused_directive_s
+website/docs/rules/architecture.md	104	104	8749a7f03604c241	P6 (website)	maxCycleSize: 5        # ignore very large cycles
+website/docs/rules/architecture.md	105	105	ef9d4ed8578569d4	P6 (website)	directAsError: true    # direct cycles are errors
+website/docs/rules/architecture.md	249	249	f4daef6be46ff5a8	P6 (website)	- name: controller
+website/docs/rules/architecture.md	250	250	4aa80518ce359c76	P6 (website)	patterns: ['App\Controller\**']
+website/docs/rules/architecture.md	340	340	3995e74357bd3a19	P6 (website)	suffix: ['Repository']
+website/docs/rules/architecture.md	341	341	2099c9b01ad7bf1a	P6 (website)	implements: ['Doctrine\Persistence\ObjectRepository']
+website/docs/rules/architecture.md	349	349	12924d8cf0ef8f3b	P6 (website)	match: all
+website/docs/rules/architecture.md	350	350	89097cc012493fef	P6 (website)	attributes: ['App\Messenger\AsCommandHandler']
+website/docs/rules/architecture.md	360	360	67d48b66da2041ed	P6 (website)	extends: ['App\Domain\AggregateRoot']
+website/docs/rules/architecture.md	418	418	04d4ce5466e2d88c	P6 (website)	- target: 'domain-*'
+website/docs/rules/architecture.md	419	419	4edc07535dd16755	P6 (website)	allow_cross_instance: true   # acknowledge — any domain-* may depend o
+website/docs/rules/architecture.md	486	486	f8e797675a694185	P6 (website)	exclude:
+website/docs/rules/architecture.md	551	551	1f0bd21ec42354f9	P6 (website)	pending: true
+website/docs/rules/architecture.md	566	566	192e79edd58f2cb7	P6 (website)	relations: [implements, extends]    # inheritance only — no method cal
+website/docs/rules/architecture.md	658	658	e10d5c9ed42d1bd2	P6 (website)	mode: warn   # ignore (default) | warn | error
+website/docs/rules/architecture.md	811	811	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/architecture.md	814	814	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/architecture.md	815	815	1a8eb43021eed760	P6 (website)	severity: error
+website/docs/rules/code-smell.md	74	74	d2730183858c5d4e	P6 (website)	allowed_prefixes: [is, has, can, should, will, did, was]  # defaults
+website/docs/rules/code-smell.md	75	75	7ef968312f193ea5	P6 (website)	flag_promoted_properties: false                          # default
+website/docs/rules/code-smell.md	83	83	376a31aab2953668	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_pre
+website/docs/rules/code-smell.md	84	84	413745ae8a001891	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.boolean-argument:flag_promot
+website/docs/rules/code-smell.md	286	286	274d13fce73fc14b	P6 (website)	allowed_functions:  # default: []
+website/docs/rules/code-smell.md	295	295	7c4ddcfd4aba78be	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_fu
+website/docs/rules/code-smell.md	567	567	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/code-smell.md	571	571	5f2e4183c0617b04	P6 (website)	warning: 8
+website/docs/rules/code-smell.md	572	572	f05c744182fe4732	P6 (website)	error: 12
+website/docs/rules/code-smell.md	576	576	774340569666c841	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:wa
+website/docs/rules/code-smell.md	688	688	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/code-smell.md	692	692	dbda73a05f7b4364	P6 (website)	warning: 4        # standard methods/functions
+website/docs/rules/code-smell.md	693	693	571c9d27a65ce119	P6 (website)	error: 6
+website/docs/rules/code-smell.md	694	694	c3bafef464f77c4b	P6 (website)	vo-warning: 8     # readonly VO constructors
+website/docs/rules/code-smell.md	695	695	a799732647acabca	P6 (website)	vo-error: 12
+website/docs/rules/code-smell.md	699	699	9b899de3439ae87c	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=
+website/docs/rules/code-smell.md	700	700	44fdcc92adee166e	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+website/docs/rules/code-smell.md	701	701	1c4fc2730b9d032e	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-warni
+website/docs/rules/code-smell.md	702	702	840e83898d27cdf2	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-error
+website/docs/rules/code-smell.md	916	916	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/code-smell.md	920	920	3e541a7bc9696e4c	P6 (website)	warning: 1
+website/docs/rules/code-smell.md	921	921	4297b4063f8d33d4	P6 (website)	error: 1
+website/docs/rules/code-smell.md	925	925	f57a245d410f5345	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.unreachable-code:warning=1"
+website/docs/rules/code-smell.md	926	926	665e698d6ea928c7	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
+website/docs/rules/code-smell.md	935	935	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/code-smell.md	943	943	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	945	945	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	947	947	599b13d37412a96f	P6 (website)	enabled: false    # disable if you have legitimate eval usage
+website/docs/rules/code-smell.md	949	949	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	951	951	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	953	953	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	958	958	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	960	960	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	969	969	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/code-smell.md	971	971	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/cohesion.md	26	26	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/cohesion.md	29	29	64301b54edc63a40	P6 (website)	warning: 3
+website/docs/rules/cohesion.md	30	30	5fab93396f81bb3b	P6 (website)	error: 5
+website/docs/rules/cohesion.md	31	31	d04a628b47d78158	P6 (website)	exclude_readonly: true
+website/docs/rules/cohesion.md	32	32	423d30cbd588b732	P6 (website)	min_methods: 3
+website/docs/rules/cohesion.md	33	33	923ce7ed79422f60	P6 (website)	exclude_methods: [getName, getDescription]
+website/docs/rules/complexity.md	108	108	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/complexity.md	115	115	bc7d6a12530bd298	P6 (website)	class:
+website/docs/rules/complexity.md	116	116	27be75756e013422	P6 (website)	max_warning: 40
+website/docs/rules/complexity.md	117	117	0a348b1d65100aec	P6 (website)	enabled: true   # set to false to disable class-level check
+website/docs/rules/complexity.md	133	133	29b8341f658e3849	P6 (website)	bin/qmx check src/ --rule-opt="complexity.ccn:class.max_warning=40"
+website/docs/rules/complexity.md	134	134	75705baeb3acce1e	P6 (website)	bin/qmx check src/ --rule-opt="complexity.ccn:class.enabled=false"
+website/docs/rules/complexity.md	228	228	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/complexity.md	232	232	b19015e7fa874b3f	P6 (website)	callable:
+website/docs/rules/complexity.md	233	233	8bc4f91cbe54eabb	P6 (website)	warning: 20
+website/docs/rules/complexity.md	234	234	073381f820706e27	P6 (website)	error: 40
+website/docs/rules/complexity.md	235	235	bc7d6a12530bd298	P6 (website)	class:
+website/docs/rules/complexity.md	236	236	27be75756e013422	P6 (website)	max_warning: 40
+website/docs/rules/complexity.md	245	245	70158cb54a11ff6a	P6 (website)	threshold: 20   # warning=20, error=20 → all violations are errors
+website/docs/rules/complexity.md	249	249	dd776a81b7dd2745	P6 (website)	bin/qmx check src/ --rule-opt="complexity.cognitive:callable.warning=2
+website/docs/rules/complexity.md	250	250	302de096485d0eaa	P6 (website)	bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
+website/docs/rules/complexity.md	370	370	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/complexity.md	374	374	b19015e7fa874b3f	P6 (website)	callable:
+website/docs/rules/complexity.md	375	375	5b58ad3259236dc3	P6 (website)	warning: 300
+website/docs/rules/complexity.md	376	376	bbda7f695a5e1d42	P6 (website)	error: 2000
+website/docs/rules/complexity.md	377	377	bc7d6a12530bd298	P6 (website)	class:
+website/docs/rules/complexity.md	378	378	3c9f9e28ad160c1a	P6 (website)	enabled: false   # disabled by default
+website/docs/rules/complexity.md	387	387	dde9584b6cb43632	P6 (website)	threshold: 300   # warning=300, error=300 → all violations are errors
+website/docs/rules/complexity.md	391	391	b10ccded3dbdd0f5	P6 (website)	bin/qmx check src/ --rule-opt="complexity.npath:callable.warning=300"
+website/docs/rules/complexity.md	392	392	f7826a44a5b96812	P6 (website)	bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
+website/docs/rules/complexity.md	474	474	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/complexity.md	478	478	2dbb58cec743fefa	P6 (website)	warning: 60
+website/docs/rules/complexity.md	479	479	9a129a70c6282f0b	P6 (website)	error: 100
+website/docs/rules/complexity.md	480	480	89c5ecd2a0a13d66	P6 (website)	exclude_data_classes: true
+website/docs/rules/complexity.md	488	488	1de1dc9b6d5b58d3	P6 (website)	threshold: 60     # warning=60, error=60 → all violations are errors
+website/docs/rules/complexity.md	492	492	0e8638a1d4d31034	P6 (website)	bin/qmx check src/ --rule-opt="complexity.wmc:warning=60"
+website/docs/rules/complexity.md	493	493	e0f1d58333d2eef6	P6 (website)	bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
+website/docs/rules/coupling.md	122	122	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	128	128	535693a5dde73636	P6 (website)	scope: application  # 'all' (default) or 'application' (uses CBO_APP)
+website/docs/rules/coupling.md	129	129	bc7d6a12530bd298	P6 (website)	class:
+website/docs/rules/coupling.md	130	130	1e3da9b1540f09ee	P6 (website)	warning: 18
+website/docs/rules/coupling.md	131	131	cd2bfae9a7808a81	P6 (website)	error: 25
+website/docs/rules/coupling.md	132	132	e0592f1297f930ec	P6 (website)	namespace:
+website/docs/rules/coupling.md	133	133	d54994da341f147c	P6 (website)	enabled: true
+website/docs/rules/coupling.md	134	134	0305e3642b354d2a	P6 (website)	min_class_count: 5
+website/docs/rules/coupling.md	143	143	5177d610af02348d	P6 (website)	threshold: 18   # warning=18, error=18 → all violations are errors
+website/docs/rules/coupling.md	147	147	98ac0eff2fe5e141	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:class.warning=18"
+website/docs/rules/coupling.md	148	148	31cba6890e8ce81e	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:class.error=25"
+website/docs/rules/coupling.md	149	149	a81501feae4dc700	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=
+website/docs/rules/coupling.md	150	150	eb5aa3fd7a1aded3	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+website/docs/rules/coupling.md	151	151	85b0f5218f908cb5	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
+website/docs/rules/coupling.md	169	169	2777a032958df552	P6 (website)	bin/qmx check src/ --rule-opt="coupling.cbo:threshold=15"
+website/docs/rules/coupling.md	185	185	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	188	188	d4474467bd47ed79	P6 (website)	warning: 12     # class AND namespace
+website/docs/rules/coupling.md	189	189	e79e757f38a29f8b	P6 (website)	error: 18
+website/docs/rules/coupling.md	284	284	7cefc3edb00644c8	P6 (website)	enabled: true   # default
+website/docs/rules/coupling.md	391	391	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	397	397	bc7d6a12530bd298	P6 (website)	class:
+website/docs/rules/coupling.md	398	398	03d576e7ca69e32a	P6 (website)	max_warning: 0.9
+website/docs/rules/coupling.md	399	399	bfc70f3f66a7d69e	P6 (website)	max_error: 1.0
+website/docs/rules/coupling.md	400	400	9d09df8b8077abc7	P6 (website)	min_afferent: 1    # default: 1
+website/docs/rules/coupling.md	401	401	e0592f1297f930ec	P6 (website)	namespace:
+website/docs/rules/coupling.md	402	402	0305e3642b354d2a	P6 (website)	min_class_count: 5
+website/docs/rules/coupling.md	403	403	9d09df8b8077abc7	P6 (website)	min_afferent: 1    # default: 1
+website/docs/rules/coupling.md	414	414	d460dec4e0163152	P6 (website)	threshold: 0.9   # warning=0.9, error=0.9
+website/docs/rules/coupling.md	418	418	6528cc59d8a2a559	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=
+website/docs/rules/coupling.md	419	419	8d8d48226e1d9637	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.
+website/docs/rules/coupling.md	420	420	ac9b7cde81f1c594	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent
+website/docs/rules/coupling.md	421	421	10f6b85c351cc266	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_clas
+website/docs/rules/coupling.md	422	422	b6e43907b85b4a17	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_affe
+website/docs/rules/coupling.md	433	433	ed36497bda2f8919	P6 (website)	threshold: 0.9   # class AND namespace: warning=0.9, error=0.9
+website/docs/rules/coupling.md	437	437	e077380c5652e992	P6 (website)	bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
+website/docs/rules/coupling.md	451	451	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	454	454	391be1db18cf6ec7	P6 (website)	max_warning: 0.85   # class AND namespace
+website/docs/rules/coupling.md	455	455	cf00a89803f845f9	P6 (website)	max_error: 0.95
+website/docs/rules/coupling.md	557	557	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	561	561	5d718010ad21758a	P6 (website)	max_distance_warning: 0.4
+website/docs/rules/coupling.md	562	562	62040b58ff709160	P6 (website)	max_distance_error: 0.6
+website/docs/rules/coupling.md	563	563	8e3d3573a4dabdbb	P6 (website)	min_class_count: 5
+website/docs/rules/coupling.md	564	564	40aaee5da0733ba8	P6 (website)	include_namespaces:
+website/docs/rules/coupling.md	576	576	0858b79273c8fcd9	P6 (website)	threshold: 0.4   # warning=0.4, error=0.4
+website/docs/rules/coupling.md	580	580	3a14817e399885a3	P6 (website)	bin/qmx check src/ --rule-opt="coupling.distance:max_distance_warning=
+website/docs/rules/coupling.md	581	581	d5dfe03cab01cb93	P6 (website)	bin/qmx check src/ --rule-opt="coupling.distance:max_distance_error=0.
+website/docs/rules/coupling.md	582	582	d93a3709a025e462	P6 (website)	bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
+website/docs/rules/coupling.md	679	679	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/coupling.md	683	683	e96bb34bf4c161f3	P6 (website)	warning: 0.03
+website/docs/rules/coupling.md	684	684	ba9c6b18ec5eb18d	P6 (website)	error: 0.08
+website/docs/rules/coupling.md	692	692	b61e17134cb8064d	P6 (website)	threshold: 0.03   # warning=0.03, error=0.03
+website/docs/rules/coupling.md	696	696	772dd8c776a2839f	P6 (website)	bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
+website/docs/rules/coupling.md	697	697	8f39a56a4d7eea4b	P6 (website)	bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
+website/docs/rules/design.md	84	84	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/design.md	88	88	2c7798509829e17b	P6 (website)	warning: 12
+website/docs/rules/design.md	89	89	8f93652565892666	P6 (website)	error: 20
+website/docs/rules/design.md	93	93	722d305435d89ed1	P6 (website)	bin/qmx check src/ --rule-opt="design.noc:warning=12"
+website/docs/rules/design.md	94	94	57c8bed07d3f48be	P6 (website)	bin/qmx check src/ --rule-opt="design.noc:error=20"
+website/docs/rules/design.md	194	194	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/design.md	198	198	ae127dce9c441ca0	P6 (website)	warning: 5
+website/docs/rules/design.md	199	199	69a95ef2b180a884	P6 (website)	error: 7
+website/docs/rules/design.md	203	203	cb1e3ad5552c9edc	P6 (website)	bin/qmx check src/ --rule-opt="design.dit:warning=5"
+website/docs/rules/design.md	204	204	11fc7935f07bd5f6	P6 (website)	bin/qmx check src/ --rule-opt="design.dit:error=7"
+website/docs/rules/design.md	284	284	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/design.md	288	288	a77398f2e37fa597	P6 (website)	warning: 80
+website/docs/rules/design.md	289	289	894fe532ca989a53	P6 (website)	error: 50
+website/docs/rules/design.md	293	293	e4ddd9cf914e39fc	P6 (website)	bin/qmx check src/ --rule-opt="design.type-coverage.param:warning=90"
+website/docs/rules/design.md	351	351	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/design.md	355	355	a77398f2e37fa597	P6 (website)	warning: 80
+website/docs/rules/design.md	356	356	894fe532ca989a53	P6 (website)	error: 50
+website/docs/rules/design.md	360	360	4049cef3f33fc1eb	P6 (website)	bin/qmx check src/ --rule-opt="design.type-coverage.return:warning=90"
+website/docs/rules/design.md	414	414	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/design.md	418	418	a77398f2e37fa597	P6 (website)	warning: 80
+website/docs/rules/design.md	419	419	894fe532ca989a53	P6 (website)	error: 50
+website/docs/rules/design.md	423	423	823eca6a84953362	P6 (website)	bin/qmx check src/ --rule-opt="design.type-coverage.property:warning=9
+website/docs/rules/design.md	508	508	6e93434d47ec56e8	P6 (website)	woc_threshold: 33
+website/docs/rules/design.md	509	509	108b30b8693c7dd2	P6 (website)	wmc_threshold: 10
+website/docs/rules/design.md	510	510	87c4e40c341522be	P6 (website)	min_members: 3
+website/docs/rules/design.md	511	511	d04a628b47d78158	P6 (website)	exclude_readonly: true
+website/docs/rules/design.md	512	512	5c81971137601fe9	P6 (website)	exclude_promoted_only: true
+website/docs/rules/design.md	575	575	df44aac3ee8007db	P6 (website)	wmc_threshold: 47
+website/docs/rules/design.md	576	576	54f96d0e8d7e519e	P6 (website)	lcom_threshold: 3
+website/docs/rules/design.md	577	577	446e1f13e7855eb2	P6 (website)	tcc_threshold: 0.33
+website/docs/rules/design.md	578	578	f86f4daf58ca9c4c	P6 (website)	class_loc_threshold: 300
+website/docs/rules/design.md	579	579	1cb9bc34daaa5d10	P6 (website)	min_criteria: 3
+website/docs/rules/design.md	580	580	d04a628b47d78158	P6 (website)	exclude_readonly: true
+website/docs/rules/discovery.md	58	58	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/duplication.md	167	167	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/duplication.md	171	171	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/duplication.md	172	172	d330731b526241e0	P6 (website)	min_lines: 5
+website/docs/rules/duplication.md	173	173	f11cab179b4949ef	P6 (website)	min_tokens: 70
+website/docs/rules/duplication.md	178	178	6f8899adad34d91e	P6 (website)	bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
+website/docs/rules/duplication.md	181	181	ad3cfeb2f719755a	P6 (website)	bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
+website/docs/rules/index.md	225	225	0db459e176671a76	P6 (website)	bin/qmx check src/ --rule-opt="size.method-count:warning=25"
+website/docs/rules/maintainability.md	187	187	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/maintainability.md	191	191	bc8a2327e43cfaab	P6 (website)	warning: 40
+website/docs/rules/maintainability.md	192	192	8f93652565892666	P6 (website)	error: 20
+website/docs/rules/maintainability.md	193	193	44edefb22b5b47bc	P6 (website)	exclude_tests: true
+website/docs/rules/maintainability.md	194	194	af7bc62a65ebdecd	P6 (website)	min_statements: 10
+website/docs/rules/maintainability.md	198	198	97c3947fde036327	P6 (website)	bin/qmx check src/ --rule-opt="maintainability.mi:warning=35"
+website/docs/rules/maintainability.md	199	199	5ec95e50792e6620	P6 (website)	bin/qmx check src/ --rule-opt="maintainability.mi:min_statements=15"
+website/docs/rules/security.md	398	398	4bf89b3743271701	P6 (website)	enabled: true  # or false to disable
+website/docs/rules/security.md	400	400	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/security.md	402	402	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/security.md	404	404	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/security.md	406	406	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/size.md	69	69	bd8771ca7f3b95aa	P6 (website)	bin/qmx check src/ --rule-opt="size.method-count:error=40"
+website/docs/rules/size.md	165	165	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/size.md	169	169	a35bad082c069f3a	P6 (website)	warning: 15
+website/docs/rules/size.md	170	170	927f2fa02a73580e	P6 (website)	error: 25
+website/docs/rules/size.md	178	178	5cecf6810f35c102	P6 (website)	threshold: 20     # warning=20, error=20 → all violations are errors
+website/docs/rules/size.md	182	182	f7bb167f133b973d	P6 (website)	bin/qmx check src/ --rule-opt="size.class-count:warning=20"
+website/docs/rules/size.md	183	183	fa48ef72211ae277	P6 (website)	bin/qmx check src/ --rule-opt="size.class-count:error=30"
+website/docs/rules/size.md	264	264	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/size.md	268	268	a35bad082c069f3a	P6 (website)	warning: 15
+website/docs/rules/size.md	269	269	8f93652565892666	P6 (website)	error: 20
+website/docs/rules/size.md	270	270	d04a628b47d78158	P6 (website)	exclude_readonly: true
+website/docs/rules/size.md	271	271	5c81971137601fe9	P6 (website)	exclude_promoted_only: true
+website/docs/rules/size.md	279	279	cc3b08cc687fb302	P6 (website)	threshold: 18     # warning=18, error=18 → all violations are errors
+website/docs/rules/size.md	283	283	56d7573c45b02498	P6 (website)	bin/qmx check src/ --rule-opt="size.property-count:warning=18"
+website/docs/rules/size.md	284	284	897ea8e42ffe9c92	P6 (website)	bin/qmx check src/ --rule-opt="size.property-count:error=25"
+website/docs/rules/suppression.md	76	76	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/usage/cli-options.md	62	62	765e500ae6113da7	P6 (website)	include_generated: true
+website/docs/usage/cli-options.md	192	192	a618a0372d47fc66	P6 (website)	fail_on: warning   # also fail on warnings
+website/docs/usage/cli-options.md	212	212	13e66efd443f2447	P6 (website)	exclude_health:
+website/docs/usage/cli-options.md	659	659	b358bdedfab123c9	P6 (website)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
+website/docs/usage/cli-options.md	660	660	178e9fe37d531eef	P6 (website)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
+website/docs/usage/cli-options.md	669	674	daba881bb652f862	P6 (website)	`suppress_namespace_channels` is configured in YAML, not through `--ru
+website/docs/usage/cli-options.md	685	685	28530dc97a25ba05	P6 (website)	| `--cyclomatic-warning=N`       | complexity.ccn       | callable.war
+website/docs/usage/cli-options.md	686	686	058effdd72387202	P6 (website)	| `--cyclomatic-error=N`         | complexity.ccn       | callable.err
+website/docs/usage/cli-options.md	687	687	ed9224c7edddb9eb	P6 (website)	| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_wa
+website/docs/usage/cli-options.md	688	688	f82bc003d7935b38	P6 (website)	| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_er
+website/docs/usage/cli-options.md	689	689	77757c7bcbdaad7b	P6 (website)	| `--cognitive-warning=N`        | complexity.cognitive | callable.war
+website/docs/usage/cli-options.md	690	690	dfbf59bdd48bfec7	P6 (website)	| `--cognitive-error=N`          | complexity.cognitive | callable.err
+website/docs/usage/cli-options.md	691	691	367629926ea58208	P6 (website)	| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_wa
+website/docs/usage/cli-options.md	692	692	1c29a2f7ae274dfa	P6 (website)	| `--cognitive-class-error=N`    | complexity.cognitive | class.max_er
+website/docs/usage/cli-options.md	693	693	4cdbeda0f4f22426	P6 (website)	| `--npath-warning=N`            | complexity.npath     | callable.war
+website/docs/usage/cli-options.md	694	694	23f6b4f6edb3eeed	P6 (website)	| `--npath-error=N`              | complexity.npath     | callable.err
+website/docs/usage/cli-options.md	695	695	bc68844a09656f10	P6 (website)	| `--npath-class-warning=N`      | complexity.npath     | class.max_wa
+website/docs/usage/cli-options.md	696	696	2e0d94f31121d982	P6 (website)	| `--npath-class-error=N`        | complexity.npath     | class.max_er
+website/docs/usage/cli-options.md	697	697	e86c686822960802	P6 (website)	| `--wmc-warning=N`              | complexity.wmc       | warning     
+website/docs/usage/cli-options.md	698	698	1154642044cc4089	P6 (website)	| `--wmc-error=N`                | complexity.wmc       | error       
+website/docs/usage/cli-options.md	704	704	41b42b3fe501908c	P6 (website)	| `--cbo-warning=N`               | coupling.cbo         | class.warni
+website/docs/usage/cli-options.md	705	705	49b50d6c86772016	P6 (website)	| `--cbo-error=N`                 | coupling.cbo         | class.error
+website/docs/usage/cli-options.md	706	706	2a14487f3f011650	P6 (website)	| `--cbo-ns-warning=N`            | coupling.cbo         | namespace.w
+website/docs/usage/cli-options.md	707	707	20d33636455ae1aa	P6 (website)	| `--cbo-ns-error=N`              | coupling.cbo         | namespace.e
+website/docs/usage/cli-options.md	708	708	6591991044f89078	P6 (website)	| `--distance-warning=N`          | coupling.distance    | max_distanc
+website/docs/usage/cli-options.md	709	709	d2b44d6f97174524	P6 (website)	| `--distance-error=N`            | coupling.distance    | max_distanc
+website/docs/usage/cli-options.md	710	710	fc3c7f87ff1a2733	P6 (website)	| `--instability-class-warning=N` | coupling.instability | class.max_w
+website/docs/usage/cli-options.md	711	711	b9578abbe25cc5f3	P6 (website)	| `--instability-class-error=N`   | coupling.instability | class.max_e
+website/docs/usage/cli-options.md	712	712	88f64ecc0e873834	P6 (website)	| `--instability-ns-warning=N`    | coupling.instability | namespace.m
+website/docs/usage/cli-options.md	713	713	662edd7bab8646c9	P6 (website)	| `--instability-ns-error=N`      | coupling.instability | namespace.m
+website/docs/usage/cli-options.md	719	719	ee00a5f0ce26f968	P6 (website)	| `--class-count-warning=N`  | size.class-count  | warning |
+website/docs/usage/cli-options.md	720	720	71d513b4335e3d74	P6 (website)	| `--class-count-error=N`    | size.class-count  | error   |
+website/docs/usage/cli-options.md	721	721	022d57c5b8769f35	P6 (website)	| `--method-count-warning=N` | size.method-count | warning |
+website/docs/usage/cli-options.md	722	722	d748eea7413a21e4	P6 (website)	| `--method-count-error=N`   | size.method-count | error   |
+website/docs/usage/cli-options.md	728	728	23caa7ac4633e5d2	P6 (website)	| `--dit-warning=N`                    | design.dit                   
+website/docs/usage/cli-options.md	729	729	88e05859a1875e52	P6 (website)	| `--dit-error=N`                      | design.dit                   
+website/docs/usage/cli-options.md	730	730	27420fc86508edd8	P6 (website)	| `--lcom-warning=N`                   | cohesion.lcom                
+website/docs/usage/cli-options.md	731	731	9c3b00c6b352c984	P6 (website)	| `--lcom-error=N`                     | cohesion.lcom                
+website/docs/usage/cli-options.md	732	732	09b762914100ea99	P6 (website)	| `--lcom-min-methods=N`               | cohesion.lcom                
+website/docs/usage/cli-options.md	734	734	31cf68ed0682459a	P6 (website)	| `--noc-warning=N`                    | design.noc                   
+website/docs/usage/cli-options.md	735	735	89346bd575591c39	P6 (website)	| `--noc-error=N`                      | design.noc                   
+website/docs/usage/cli-options.md	736	736	588d1d5589b6af1d	P6 (website)	| `--param-type-coverage-warning=N`    | design.type-coverage.param   
+website/docs/usage/cli-options.md	737	737	7e256ee280034eb6	P6 (website)	| `--param-type-coverage-error=N`      | design.type-coverage.param   
+website/docs/usage/cli-options.md	738	738	49a7edbe831d83d3	P6 (website)	| `--return-type-coverage-warning=N`   | design.type-coverage.return  
+website/docs/usage/cli-options.md	739	739	5cf3491dc785bc48	P6 (website)	| `--return-type-coverage-error=N`     | design.type-coverage.return  
+website/docs/usage/cli-options.md	740	740	39447a8a652719e8	P6 (website)	| `--property-type-coverage-warning=N` | design.type-coverage.property
+website/docs/usage/cli-options.md	741	741	5c73ca757c56652c	P6 (website)	| `--property-type-coverage-error=N`   | design.type-coverage.property
+website/docs/usage/cli-options.md	749	749	d1b6e70764d772a9	P6 (website)	| `--mi-warning=N`        | maintainability.mi | warning       |
+website/docs/usage/cli-options.md	750	750	c368e724d1dc27c0	P6 (website)	| `--mi-error=N`          | maintainability.mi | error         |
+website/docs/usage/cli-options.md	751	751	b1185faf01a9cb89	P6 (website)	| `--mi-min-statements=N` | maintainability.mi | minStatements |
+website/docs/usage/cli-options.md	758	758	01b903d98b81b16c	P6 (website)	| `--constructor-overinjection-warning=N` | code-smell.constructor-ove
+website/docs/usage/cli-options.md	759	759	ffd98adeea5803dd	P6 (website)	| `--constructor-overinjection-error=N`   | code-smell.constructor-ove
+website/docs/usage/cli-options.md	760	760	9c9a162076edb00c	P6 (website)	| `--data-class-woc-threshold=N`          | design.data-class         
+website/docs/usage/cli-options.md	761	761	07a54080da69ba00	P6 (website)	| `--data-class-wmc-threshold=N`          | design.data-class         
+website/docs/usage/cli-options.md	762	762	ad19297e52f546a4	P6 (website)	| `--data-class-min-members=N`            | design.data-class         
+website/docs/usage/cli-options.md	765	765	e64bf2cc6a546523	P6 (website)	| `--god-class-wmc-threshold=N`           | design.god-class          
+website/docs/usage/cli-options.md	766	766	8ad2d3a423661425	P6 (website)	| `--god-class-lcom-threshold=N`          | design.god-class          
+website/docs/usage/cli-options.md	767	767	aafc279287785593	P6 (website)	| `--god-class-tcc-threshold=N`           | design.god-class          
+website/docs/usage/cli-options.md	768	768	91036128176b4420	P6 (website)	| `--god-class-class-loc-threshold=N`     | design.god-class          
+website/docs/usage/cli-options.md	769	769	7295b63b10d915fe	P6 (website)	| `--god-class-min-criteria=N`            | design.god-class          
+website/docs/usage/cli-options.md	770	770	e691c2678c8b8361	P6 (website)	| `--god-class-min-methods=N`             | design.god-class          
+website/docs/usage/cli-options.md	772	772	b8e2bef2bfc648da	P6 (website)	| `--long-parameter-list-warning=N`       | code-smell.long-parameter-
+website/docs/usage/cli-options.md	773	773	9890e1344770595d	P6 (website)	| `--long-parameter-list-error=N`         | code-smell.long-parameter-
+website/docs/usage/cli-options.md	774	774	fabfe7c3e4dcc61f	P6 (website)	| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-
+website/docs/usage/cli-options.md	775	775	92604fa4c59c471a	P6 (website)	| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-
+website/docs/usage/cli-options.md	776	776	6a6718cb3ad0eec4	P6 (website)	| `--unreachable-code-warning=N`          | code-smell.unreachable-cod
+website/docs/usage/cli-options.md	777	777	5ea626be0812b09d	P6 (website)	| `--unreachable-code-error=N`            | code-smell.unreachable-cod
+website/docs/usage/cli-options.md	784	784	83fcd0eb753c9ab8	P6 (website)	| `--max-cycle-size=N`                  | architecture.circular-depend
+website/docs/usage/cli-options.md	786	786	2118641943932cf7	P6 (website)	| `--layer-violation-severity=SEVERITY` | architecture.layer-violation
+website/docs/usage/cli-options.md	787	787	bbd6a1528b8288e9	P6 (website)	| `--unassigned-class-mode=MODE`        | architecture.unassigned-clas
+website/docs/usage/usage-scenarios.md	20	20	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/usage/usage-scenarios.md	23	23	f67246882fa79a6e	P6 (website)	only_rules:
+website/docs/usage/usage-scenarios.md	30	30	b19015e7fa874b3f	P6 (website)	callable:
+website/docs/usage/usage-scenarios.md	31	31	b62e1b78d9d56a91	P6 (website)	warning: 10
+website/docs/usage/usage-scenarios.md	32	32	f1b238d66f17d1a6	P6 (website)	error: 20

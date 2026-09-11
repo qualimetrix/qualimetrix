@@ -1,0 +1,37 @@
+# The mapping 02 §5 says is fixed by a column of `key-pairs.tsv` that the
+# artifact does not carry: which source coordinates a row of each kind owes.
+#
+# `key-pairs.tsv` is the frozen product of stage 01 and is not edited here. The
+# mapping is instead written down in this table and CHECKED against the ledger
+# on every `promise-effect:grid` run, which is the difference between a
+# reconstruction and an assumption: before, the stand reconstructed the
+# coordinate inside `Population` from the identity 465 + 108 = 573, and a
+# changed interpretation would have moved the guard's population with it while
+# the arithmetic still added up.
+#
+# What is checked, per row of `key-pairs.tsv`, is exact: the ledger carries one
+# pair row for `(rule, key_a, key_b, kind)` at each scope named here, and no
+# pair row exists that this table does not account for. A kind the table does
+# not name is a refusal, not a default — a new kind must be classified by hand.
+#
+# `same-source`  both keys written in ONE document. Measured this round.
+# `cross-source` the two keys arriving from different layers. DEFERRED with
+#                axis C: 02 §5 routes it through the frozen
+#                RuleThresholdKeyGroupRegistry, so the round measures it not at
+#                all and the ledger rows exist to be counted, not probed.
+kind	scopes	why this kind owes these coordinates
+1-threshold-group-declared	same-source,cross-source	a declared threshold group is mutually exclusive within one source AND evicted across layers: two different promises, so two rows
+2-same-name-top-vs-level	same-source	the top-level shorthand and the level key stand in one document; nothing is said about layers
+3-shorthand-vs-level-block	same-source,cross-source	same shape as a declared group — a shorthand disputed within a document and evicted between layers
+4-cross-group-same-path	same-source	two groups at one path, a single-document question
+4-cross-level	same-source	two levels of one rule in one document
+6-contradiction-refused	same-source	one document contradicting itself
+6-criteria-count	same-source	criteria counted inside one block
+6-gate	same-source	a gate and the value it gates, written together
+6-gate-vs-severity	same-source	a gate and a severity selector, written together
+6-measurement-input	same-source	two inputs to one measurement
+6-precedence-fill-in	same-source	a value filled in where the other is absent, within a document
+6-subject-filter	same-source	a subject and the filter narrowing it
+6-subject-vs-filter	same-source	the same, with the filter contradicting the subject
+6-superseded-refused	same-source	one key superseding the other inside a document
+6-two-filters-one-subject	same-source	two filters over one subject

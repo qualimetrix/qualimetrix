@@ -1,0 +1,32 @@
+# Axis A: the option leaves whose canonical magnitude names nothing, and what
+# a hit looks like for them.
+#
+# This is the same mechanism `axis-d-observables.tsv` declares for a root
+# outside `rules:`, applied where the round measured it to be needed on axis A.
+# The three framework keys are not read through `fromArray()`: the factory
+# drains them into the registry's providers, and the stand observes them by
+# asking the predicates themselves — `isPathExcluded('src/Sub/Helper.php')` and
+# `isNamespaceExcluded('Probe\Sub')`. A canonical `[7331]` names neither, so
+# the probe changes nothing, so `omitted == equivalent` and every one of the
+# row's eight cells reads NOT OBSERVABLE for a reason that belongs to the
+# stand.
+#
+# The hit replaces the MAGNITUDE of the reference form's write; its shape is
+# unchanged. It is used for the `equivalent` side AND for the cell of that same
+# form — a hit on `equivalent` alone would leave the form's own cell writing a
+# magnitude that names nothing, and the stand would then read the correct
+# behaviour "accepted a list of a path that is not here, changed nothing" as
+# the INERT defect. That asymmetry is a measured defect of the axis-D code and
+# is corrected in the same place.
+#
+# WHAT THIS DOES NOT FIX, stated rather than left to be discovered: the other
+# seven forms of a hit-carrying row still write 7331. `suppress-paths: 7331`
+# reading INERT cannot be split by this stand into "the int form was accepted
+# and dropped" and "the int form was coerced into a path that names nothing".
+# The row is the form of the container (README, "What the oracle does not
+# prove"), and that limit is unchanged here.
+option_leaf	hit	why the canonical write cannot hit
+suppress-paths	[src/Sub]	the value is a path prefix; 7331 is not a path in this fixture
+suppress_paths	[src/Sub]	the same leaf in its snake spelling
+suppress-namespaces	[Probe\Sub]	the value is a namespace prefix
+suppress_namespaces	[Probe\Sub]	the same leaf in its snake spelling
