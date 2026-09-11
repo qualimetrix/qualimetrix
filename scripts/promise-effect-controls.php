@@ -38,8 +38,10 @@ declare(strict_types=1);
  *   php scripts/promise-effect-controls.php --only=V1,P2
  *
  * Exit codes: 0 every case bit exactly its own row, 1 a case did not,
- * 2 coverage arithmetic failed, 3 the baseline itself is not the grid — which
- * is suspended, loudly, while the input stamp says the grid is stale.
+ * 2 coverage arithmetic failed. Exit 3 was "the baseline itself is not the
+ * grid" and is retired: the published grid measures the cured tree and the
+ * frozen half the pre-cure one, so they are SUPPOSED to differ now. See the
+ * note where it stood.
  */
 
 namespace Qualimetrix\PromiseEffectControls;
@@ -51,12 +53,12 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\PromiseEffect\Cell;
 use Qualimetrix\PromiseEffect\CrossCheck;
 use Qualimetrix\PromiseEffect\Declarations;
+use Qualimetrix\PromiseEffect\Floor;
 use Qualimetrix\PromiseEffect\InProcess;
 use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
 use Qualimetrix\PromiseEffect\Population;
 use Qualimetrix\PromiseEffect\ProcessProbe;
-use Qualimetrix\PromiseEffect\Stamp;
 use Qualimetrix\PromiseEffect\Stand;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -72,7 +74,7 @@ require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';
 require __DIR__ . '/promise-effect/CrossCheck.php';
-require __DIR__ . '/promise-effect/Stamp.php';
+require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect-controls/Cases.php';
 
 /** A working copy of the declarations and the frozen observations, one per case. */
@@ -280,6 +282,36 @@ function outcomes(string $tree, InProcess $inProcess, ProcessProbe $process): ar
     return $map;
 }
 
+/** The verdict a synthetic floor cell carries: the declared one, or any defect label. */
+function floorVerdict(string $declared): string
+{
+    return $declared === 'any-defect' ? 'INERT' : $declared;
+}
+
+/**
+ * The cells the frozen half yields for a tree — the same reading the verdict
+ * cases compare, handed back as cells so the floor can be asked about them.
+ *
+ * @return list<Cell>
+ */
+function frozenCells(string $tree, InProcess $inProcess, ProcessProbe $process): array
+{
+    $stand = new Stand($tree, Ledger::load($tree), Declarations::load($tree), $inProcess, $process);
+    $raw = [];
+
+    foreach (\array_slice((array) file($tree . '/docs/internal/generated/promise-effect/observations-before/raw.tsv', \FILE_IGNORE_NEW_LINES), 1) as $line) {
+        if (!\is_string($line) || $line === '') {
+            continue;
+        }
+
+        /** @var array{string, string, string, string, string} $cells */
+        $cells = array_pad(explode("\t", $line, 5), 5, '');
+        $raw[] = $cells;
+    }
+
+    return $stand->before($raw);
+}
+
 /**
  * The four sets as a flat map, so a planting can be compared cell for cell
  * the way a verdict planting is: bucket and cell key, never the prose.
@@ -361,6 +393,93 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
 
         if (\count($unframedBroken) !== 1 || !str_contains($unframedBroken[0], 'unframed refusal control')) {
             $failures[] = 'B1: breaking the unframed side did not produce exactly its own problem';
+        }
+
+        return $failures;
+    }
+
+    if ($case->id === 'F1') {
+        // Planted into the RAW observations, so the classifier itself produces
+        // the change: `bool` is not a promised form on that row, and a framed
+        // refusal of an unpromised form is not a defect — which is exactly the
+        // shape of a classifier that has stopped recognising the floor.
+        $workspace = new Workspace($root);
+        $tree = $workspace->checkout();
+        $floorRow = 'form|yaml|rules.complexity.ccn.callable.warning|bool';
+        $floor = Floor::load($tree);
+        $failures = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process)) === []
+            ? []
+            : ['F1: the floor does not reproduce on the unplanted pre-cure half'];
+
+        (new Planter($tree))->apply(new ControlCase(
+            'plant',
+            '',
+            '',
+            [[$floorRow, 'value', 'outcome', 'refused-framed']],
+            [],
+            [],
+        ));
+
+        $misses = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process));
+
+        if (\count($misses) !== 1 || !str_starts_with($misses[0], $floorRow . ':')) {
+            $failures[] = 'F1: the planting should have left exactly one floor miss naming ' . $floorRow
+                . '; it left ' . ($misses === [] ? 'none' : implode('; ', $misses));
+        }
+
+        $workspace->cleanup();
+
+        return $failures;
+    }
+
+    if ($case->id === 'F2') {
+        // Synthetic cells, not the published grid: this case is about the
+        // RULE, and a control reading the grid would go red whenever the grid
+        // does, which is the run's job and not a control's.
+        $floor = Floor::load($root);
+        $failures = [];
+        $cells = [];
+
+        foreach ($floor->rows as $row) {
+            // A floor row that names its verdict is synthesized with THAT
+            // verdict: one of them asks for MISCOMPOSED, and a case that gave
+            // every row the same label would fail for its own reason.
+            $cells[] = new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', !$row->declaredCured());
+        }
+
+        [$misses] = $floor->cureMisses($cells);
+
+        if ($misses !== []) {
+            $failures[] = 'F2: the declared shape of the floor is not the one the rule reads: ' . implode('; ', $misses);
+        }
+
+        foreach (['declaredCured' => true, 'standing' => false] as $side => $cured) {
+            $planted = [];
+            $moved = null;
+
+            foreach ($floor->rows as $row) {
+                if ($moved === null && $row->declaredCured() === $cured) {
+                    $moved = $row->row;
+                    // The two ways a floor row can be wrong on the live grid:
+                    // one declared cured that never moved (still its declared
+                    // verdict, still a defect), and one standing row that left
+                    // the floor with nothing claiming a cure.
+                    $planted[] = $cured
+                        ? new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', true)
+                        : new Cell('A', $row->row, '-', 'optionsObject', 'OK', 'planted', 'DECIDED', false);
+
+                    continue;
+                }
+
+                $planted[] = new Cell('A', $row->row, '-', 'optionsObject', floorVerdict($row->verdict), 'planted', 'DECIDED', !$row->declaredCured());
+            }
+
+            [$plantedMisses] = $floor->cureMisses($planted);
+
+            if (\count($plantedMisses) !== 1 || $moved === null || !str_starts_with($plantedMisses[0], $moved . ':')) {
+                $failures[] = 'F2: flipping the ' . $side . ' side should have left exactly one miss naming ' . ($moved ?? '(no such row)')
+                    . '; it left ' . ($plantedMisses === [] ? 'none' : implode('; ', $plantedMisses));
+            }
         }
 
         return $failures;
@@ -476,7 +595,6 @@ $rules = runtimeRules();
 // declaration, and that is a different failure from a case that does not bite.
 $tree = $workspace->checkout();
 $baseline = outcomes($tree, $inProcess, $process);
-$drift = (new Stamp($root))->drift();
 $stale = [];
 $verdictsCovered = [];
 
@@ -514,77 +632,42 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
     }
 }
 
-// The baseline must BE the grid: controls recomputed over a half that no
-// longer reproduces the published verdicts would prove something about a
-// document nobody reads.
-$published = [];
-$lines = (array) file($root . '/docs/internal/generated/promise-effect/verdicts.tsv', \FILE_IGNORE_NEW_LINES);
-
-foreach (\array_slice($lines, 1) as $line) {
-    if (!\is_string($line) || $line === '') {
-        continue;
-    }
-
-    $cells = explode("\t", $line);
-    $published[$cells[1]] = $cells[4] . '|' . $cells[5];
-}
-
-$divergence = 0;
-
-foreach ($published as $key => $outcome) {
-    if (($baseline[$key] ?? '(absent)') !== $outcome) {
-        ++$divergence;
-    }
-}
-
-if ($stale !== []) {
-    foreach ($stale as $line) {
-        fwrite(\STDERR, 'STALE CASE DECLARATION: ' . $line . "\n");
-    }
-
-    $workspace->cleanup();
-
-    exit(2);
-}
-
-// The baseline must BE the grid — UNLESS the grid is known to be stale.
+// WHAT USED TO STAND HERE, and why it cannot stand any more.
 //
-// The stamp covers the stand's own verdict-producing code, so an edit to the
-// classifier stales the grid by construction, and the published verdicts were
-// then produced by a rule that no longer exists. Refusing there would make the
-// controls unusable during exactly the work they are meant to guard: a
-// classifier cannot be fixed while its own controls demand the pre-fix grid.
-// The refusal returns the moment the grid is re-measured, which is the only
-// thing that clears the stamp — nothing here can clear it, and nothing here
-// tries.
+// The run refused (exit 3) unless the frozen half reproduced the published
+// grid cell for cell. That held for one reason only: both were measured on
+// `6a833ab8`, the same tree. The round has since cured the product, so the
+// published grid is the CURED tree and the frozen half is the pre-cure one —
+// they now differ by thousands of cells, and they are supposed to. Demanding
+// equality would refuse for ever, on the very property the round was built to
+// produce; the first version of this package only postponed that by
+// suspending the demand while the input stamp was stale, which is not a fix
+// because the stamp goes fresh again on the next measurement.
 //
-// What is weakened, said plainly: while the stamp is stale, these controls
-// prove the rule from observation to verdict over the frozen half, and prove
-// nothing about the published grid.
-if ($divergence !== 0 && $drift === []) {
-    fwrite(\STDERR, 'the frozen half no longer reproduces the published grid: ' . $divergence . " cell(s) differ\n");
-    $workspace->cleanup();
-
-    exit(3);
-}
-
-if ($divergence !== 0) {
-    printf(
-        "The published grid is stale (%d input(s) moved) and the frozen half re-judges %d of its cell(s)\n"
-            . "differently. The cell-for-cell refusal is suspended until `composer promise-effect` re-measures.\n",
-        \count($drift),
-        $divergence,
-    );
-}
+// What the demand protected was "the cases plant into the document a reader
+// sees". Two things carry that now, and the loss between them is named rather
+// than papered over:
+//
+//   - every cell a case addresses must exist in the universe of the frozen
+//     half — the stale-declaration refusal above, exit 2;
+//   - the floor, judged on the frozen half (case F1), which is the claim
+//     `01-promise.md` actually makes about that document.
+//
+// What is lost: nothing here notices if the frozen half stops matching a
+// PUBLISHED rendering of itself, because no such rendering is published —
+// `composer promise-effect:before` recomputes it on demand.
+$publishedComparison = 'retired: the published grid measures the cured tree, the frozen half the pre-cure one';
 
 printf(
-    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d probe case(s), %d cross-check case(s) over both\n"
-        . "sides of the four sets, and %d guard case(s) over 4 populations, in a universe of %d cells.\n",
+    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d stand case(s), %d cross-check case(s) over both\n"
+        . "sides of the four sets, and %d guard case(s) over 4 populations, in a universe of %d cells.\n"
+        . "The frozen half against the published grid: %s.\n",
     \count(Cases::verdicts()),
     \count(Cases::probes()),
     \count(Cases::crossChecks()),
     \count(Cases::guards()),
     \count($baseline),
+    $publishedComparison,
 );
 
 $failures = [];
