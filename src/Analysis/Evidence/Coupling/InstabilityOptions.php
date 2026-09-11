@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -93,14 +94,14 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'class',
-            'enabled',
-            'max-error',
-            'max-warning',
-            'namespace',
-            'threshold',
-        );
+        return RuleOptionKeySet::of([
+            'class' => RuleOptionShape::block(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'max-error' => RuleOptionShape::number()->orNull(),
+            'max-warning' => RuleOptionShape::number()->orNull(),
+            'namespace' => RuleOptionShape::block(),
+            'threshold' => RuleOptionShape::number()->orNull(),
+        ]);
     }
 
     /**

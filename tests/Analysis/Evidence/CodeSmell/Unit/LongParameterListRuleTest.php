@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -90,7 +91,7 @@ final class LongParameterListRuleTest extends TestCase
 
             public static function acceptedOptionKeys(): RuleOptionKeySet
             {
-                return RuleOptionKeySet::of();
+                return RuleOptionKeySet::of([]);
             }
         });
     }
@@ -591,7 +592,7 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itThresholdShorthandCannotMixWithVoWarningAndVoThreshold(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         LongParameterListOptions::fromArray([
             'vo-threshold' => 10,

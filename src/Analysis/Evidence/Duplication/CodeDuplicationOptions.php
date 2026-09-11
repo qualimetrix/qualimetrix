@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Duplication;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -76,6 +77,13 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'error', 'min-lines', 'min-tokens', 'threshold', 'warning');
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::integer()->orNull(),
+            'min-lines' => RuleOptionShape::integer()->orNull(),
+            'min-tokens' => RuleOptionShape::integer()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+            'warning' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -110,7 +111,12 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('callable', 'class', 'enabled', 'threshold');
+        return RuleOptionKeySet::of([
+            'callable' => RuleOptionShape::block(),
+            'class' => RuleOptionShape::block(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 
     /**

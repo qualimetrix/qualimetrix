@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -74,14 +75,14 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'enabled',
-            'include-namespaces',
-            'max-distance-error',
-            'max-distance-warning',
-            'min-class-count',
-            'threshold',
-        );
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'include-namespaces' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
+            'max-distance-error' => RuleOptionShape::number()->orNull(),
+            'max-distance-warning' => RuleOptionShape::number()->orNull(),
+            'min-class-count' => RuleOptionShape::integer()->orNull(),
+            'threshold' => RuleOptionShape::number()->orNull(),
+        ]);
     }
 
     public function isEnabled(): bool

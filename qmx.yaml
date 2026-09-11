@@ -506,6 +506,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'
@@ -1200,6 +1201,7 @@ architecture:
       - core-symbol
       - external
     analysis-policy-inline:
+      - analysis-configuration
       - analysis-evidence-measurement
       - analysis-finding
       - core-path

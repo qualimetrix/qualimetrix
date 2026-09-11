@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -92,6 +93,11 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::integer()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+            'warning' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

@@ -36,20 +36,35 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 final readonly class RuleOptionKeySet
 {
     /**
+     * An accepted key carries its form; a key the class answers about itself
+     * does not, because the class — not the reader — decides what may stand
+     * there. The form is part of the accepted entry rather than a second
+     * declaration beside it: a key whose shape were stated somewhere else
+     * could go out of step with the key set that admits it.
+     *
      * @param array<string, string> $accepted normalized key => declared kebab spelling
+     * @param array<string, RuleOptionShape> $shapes normalized key => the form its value may take
      * @param array<string, string> $answeredByTheClass normalized key => declared kebab spelling
      */
     private function __construct(
         private array $accepted,
+        private array $shapes,
         private array $answeredByTheClass,
     ) {}
 
     /**
-     * @param string ...$accepted canonical kebab spellings
+     * @param array<string, RuleOptionShape> $accepted canonical kebab spelling => the form the value may take
      */
-    public static function of(string ...$accepted): self
+    public static function of(array $accepted): self
     {
-        return new self(self::index(array_values($accepted), []), []);
+        $indexed = self::index(array_map(strval(...), array_keys($accepted)), []);
+        $shapes = [];
+
+        foreach ($accepted as $key => $shape) {
+            $shapes[ConfigKeySpelling::normalize((string) $key)] = $shape;
+        }
+
+        return new self($indexed, $shapes, []);
     }
 
     /**
@@ -63,6 +78,7 @@ final readonly class RuleOptionKeySet
 
         return new self(
             $this->accepted,
+            $this->shapes,
             $this->answeredByTheClass + self::index(array_values($keys), $taken),
         );
     }
@@ -83,6 +99,16 @@ final readonly class RuleOptionKeySet
     public function accepts(string $key): bool
     {
         return isset($this->accepted[$key]);
+    }
+
+    /**
+     * The declared form of an accepted key — already folded through
+     * `ConfigKeySpelling::normalize()` — or null when nothing here accepts it.
+     * A key the class answers about itself has no form here by construction.
+     */
+    public function shapeOf(string $key): ?RuleOptionShape
+    {
+        return $this->shapes[$key] ?? null;
     }
 
     /**

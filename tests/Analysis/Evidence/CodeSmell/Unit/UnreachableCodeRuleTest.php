@@ -81,7 +81,7 @@ final class UnreachableCodeRuleTest extends TestCase
 
             public static function acceptedOptionKeys(): RuleOptionKeySet
             {
-                return RuleOptionKeySet::of();
+                return RuleOptionKeySet::of([]);
             }
         });
     }

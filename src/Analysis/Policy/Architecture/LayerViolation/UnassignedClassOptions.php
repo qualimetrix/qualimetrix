@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -44,8 +46,8 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
     /**
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException When `mode` is set to something no
-     *                                  {@see UnassignedClassMode} case spells.
+     * @throws ConfigurationRefusal When `mode` is set to something no
+     *                              {@see UnassignedClassMode} case spells.
      */
     public static function fromArray(array $config): self
     {
@@ -63,7 +65,9 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('mode')
+        return RuleOptionKeySet::of([
+            'mode' => RuleOptionShape::text()->orNull(),
+        ])
             ->alsoAnsweredByTheClass('enabled');
     }
 
@@ -96,7 +100,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
      *
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException
+     * @throws ConfigurationRefusal
      */
     private static function assertNoContradictoryEnabled(array $config, UnassignedClassMode $mode): void
     {
@@ -110,7 +114,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
             return;
         }
 
-        throw new InvalidArgumentException(\sprintf(
+        throw self::refusal('enabled', \sprintf(
             'Option "%s" for rule "%s" does not exist, and here it would %s. "mode" is the only switch: write'
             . ' "mode: ignore" to decline the rule and "mode: warn" or "mode: error" to turn it on. A second switch'
             . ' would be a second answer to one question, and the one that is off by default would win over the one'
@@ -143,7 +147,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
     }
 
     /**
-     * @throws InvalidArgumentException When $raw is set but not a recognized mode string.
+     * @throws ConfigurationRefusal When $raw is set but not a recognized mode string.
      */
     private static function resolveMode(mixed $raw): UnassignedClassMode
     {
@@ -156,7 +160,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
         }
 
         if (!\is_string($raw)) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal('mode', \sprintf(
                 'Option "mode" for rule "%s" must be a string, got %s.',
                 self::RULE_NAME,
                 get_debug_type($raw),
@@ -172,11 +176,24 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
 
         $allowed = implode(', ', array_map(static fn(UnassignedClassMode $c): string => "'{$c->value}'", UnassignedClassMode::cases()));
 
-        throw new InvalidArgumentException(\sprintf(
+        throw self::refusal('mode', \sprintf(
             'Option "mode" for rule "%s" has unknown value "%s"; expected one of %s.',
             self::RULE_NAME,
             $raw,
             $allowed,
         ));
+    }
+
+    /**
+     * This class answers about these keys in its own words rather than letting
+     * a general form check speak for it, so the answer has to carry the
+     * configuration frame itself.
+     */
+    private static function refusal(string $option, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open([self::RULE_NAME, $option], $option),
+            $summary,
+        );
     }
 }

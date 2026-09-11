@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterfa
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -116,15 +117,15 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'class-loc-threshold',
-            'enabled',
-            'exclude-readonly',
-            'lcom-threshold',
-            'min-criteria',
-            'min-methods',
-            'tcc-threshold',
-            'wmc-threshold',
-        );
+        return RuleOptionKeySet::of([
+            'class-loc-threshold' => RuleOptionShape::integer()->orNull(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
+            'lcom-threshold' => RuleOptionShape::integer()->orNull(),
+            'min-criteria' => RuleOptionShape::integer()->orNull(),
+            'min-methods' => RuleOptionShape::integer()->orNull(),
+            'tcc-threshold' => RuleOptionShape::number()->orNull(),
+            'wmc-threshold' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

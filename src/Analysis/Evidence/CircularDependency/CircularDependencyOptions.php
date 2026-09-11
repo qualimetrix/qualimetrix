@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -70,6 +71,10 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('direct-as-error', 'enabled', 'max-cycle-size');
+        return RuleOptionKeySet::of([
+            'direct-as-error' => RuleOptionShape::boolean()->orNull(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'max-cycle-size' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

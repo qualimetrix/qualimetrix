@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 
 #[CoversClass(RuleOptionKeySet::class)]
 final class RuleOptionKeySetTest extends TestCase
@@ -18,7 +19,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itPlacesAnAcceptedKeyInTheAcceptedStateOnly(): void
     {
-        $set = RuleOptionKeySet::of('threshold', 'max-warning');
+        $set = RuleOptionKeySet::of(['threshold' => RuleOptionShape::text()->orNull(), 'max-warning' => RuleOptionShape::text()->orNull()]);
 
         self::assertTrue($set->knows('threshold'));
         self::assertTrue($set->accepts('threshold'));
@@ -28,7 +29,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itKnowsAKeyTheClassAnswersAboutItselfWithoutAcceptingIt(): void
     {
-        $set = RuleOptionKeySet::of('mode')->alsoAnsweredByTheClass('enabled');
+        $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('enabled');
 
         self::assertTrue($set->knows('enabled'));
         self::assertFalse($set->accepts('enabled'));
@@ -38,7 +39,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itPlacesAnUndeclaredKeyInNeitherState(): void
     {
-        $set = RuleOptionKeySet::of('mode')->alsoAnsweredByTheClass('enabled');
+        $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('enabled');
 
         self::assertFalse($set->knows('warning'));
         self::assertFalse($set->accepts('warning'));
@@ -47,7 +48,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itAnswersAboutEveryKeyOfBothHalvesAndNoOther(): void
     {
-        $set = RuleOptionKeySet::of('threshold', 'vo-threshold')->alsoAnsweredByTheClass('enabled');
+        $set = RuleOptionKeySet::of(['threshold' => RuleOptionShape::text()->orNull(), 'vo-threshold' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('enabled');
 
         $known = array_filter(
             ['threshold', 'voThreshold', 'enabled', 'warning', 'error'],
@@ -61,7 +62,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[DataProvider('provideEquivalentSpellings')]
     public function itFoldsSnakeCamelAndKebabIntoOneKey(string $accepted, string $answered, string $unknown): void
     {
-        $set = RuleOptionKeySet::of('max-warning')->alsoAnsweredByTheClass('vo-threshold');
+        $set = RuleOptionKeySet::of(['max-warning' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('vo-threshold');
 
         self::assertTrue($set->accepts(ConfigKeySpelling::normalize($accepted)));
         self::assertTrue($set->knows(ConfigKeySpelling::normalize($answered)));
@@ -83,7 +84,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itDisplaysTheDeclaredKebabSpellingRatherThanTheFoldedOne(): void
     {
-        self::assertSame(['vo-threshold'], RuleOptionKeySet::of('vo-threshold')->acceptedForDisplay());
+        self::assertSame(['vo-threshold'], RuleOptionKeySet::of(['vo-threshold' => RuleOptionShape::text()->orNull()])->acceptedForDisplay());
     }
 
     #[Test]
@@ -92,7 +93,7 @@ final class RuleOptionKeySetTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('canonical kebab spelling ("max-warning")');
 
-        RuleOptionKeySet::of('maxWarning');
+        RuleOptionKeySet::of(['maxWarning' => RuleOptionShape::text()->orNull()]);
     }
 
     #[Test]
@@ -101,16 +102,18 @@ final class RuleOptionKeySetTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('declared twice');
 
-        RuleOptionKeySet::of('enabled')->alsoAnsweredByTheClass('enabled');
+        RuleOptionKeySet::of(['enabled' => RuleOptionShape::text()->orNull()])->alsoAnsweredByTheClass('enabled');
     }
 
     #[Test]
-    public function itRefusesTheSameKeySpelledTwoWaysInOneHalf(): void
+    public function itRefusesTheSameKeyDeclaredTwiceInTheAnsweredHalf(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('declared twice');
 
-        RuleOptionKeySet::of('max-warning', 'max-warning');
+        RuleOptionKeySet::of(['max-warning' => RuleOptionShape::integer()])
+            ->alsoAnsweredByTheClass('vo-threshold')
+            ->alsoAnsweredByTheClass('vo-threshold');
     }
 
     #[Test]
@@ -119,13 +122,13 @@ final class RuleOptionKeySetTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('blank key');
 
-        RuleOptionKeySet::of('   ');
+        RuleOptionKeySet::of(['   ' => RuleOptionShape::text()->orNull()]);
     }
 
     #[Test]
     public function itLetsASecondAnsweredHalfJoinTheFirst(): void
     {
-        $set = RuleOptionKeySet::of('mode')
+        $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()->orNull()])
             ->alsoAnsweredByTheClass('enabled')
             ->alsoAnsweredByTheClass('warning');
 
@@ -137,7 +140,7 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itAcceptsAnEmptyDeclaration(): void
     {
-        $set = RuleOptionKeySet::of();
+        $set = RuleOptionKeySet::of([]);
 
         self::assertSame([], $set->acceptedForDisplay());
         self::assertFalse($set->knows('enabled'));

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,8 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Symfony\Component\Yaml\Yaml;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -66,7 +69,7 @@ final class FullPipelineIntegrationTest extends TestCase
             static fn($path): string => $path->value(),
             $run->paths,
         ));
-        self::assertSame('json', (new OutputFormatResolver())->resolve($document)->value);
+        self::assertSame('json', (new OutputFormatResolver(self::formatterRegistry()))->resolve($document)->value);
         self::assertContains('complexity.npath', $finding->selection->disabled);
         self::assertSame(12, $finding->ruleOptions->rules['complexity.ccn']['callable']['warning']);
         self::assertSame(
@@ -92,5 +95,30 @@ final class FullPipelineIntegrationTest extends TestCase
         return $pipeline->resolve(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), null, $presets, $cliValues),
         );
+    }
+
+    private static function formatterRegistry(): FormatterRegistryInterface
+    {
+        return new class implements FormatterRegistryInterface {
+            public function get(string $name): FormatterInterface
+            {
+                throw new LogicException('not used');
+            }
+
+            public function has(string $name): bool
+            {
+                return \in_array($name, $this->getAvailableNames(), true);
+            }
+
+            public function getAvailableNames(): array
+            {
+                return ['json', 'summary', 'text'];
+            }
+
+            public function declaredFormatOptionKeys(): array
+            {
+                return [];
+            }
+        };
     }
 }

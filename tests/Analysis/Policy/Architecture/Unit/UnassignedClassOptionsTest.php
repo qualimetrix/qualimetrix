@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
@@ -38,7 +38,7 @@ final class UnassignedClassOptionsTest extends TestCase
     #[Test]
     public function itRejectsAnUnknownMode(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.unassigned-class');
 
         UnassignedClassOptions::fromArray(['mode' => 'fail']);
@@ -97,7 +97,7 @@ final class UnassignedClassOptionsTest extends TestCase
     #[TestWith([['enabled' => true, 'mode' => 'warn'], 'promise to turn the rule on'])]
     public function itRefusesAnEnabledThatWouldLie(array $config, string $expected): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage($expected);
 
         UnassignedClassOptions::fromArray($config);

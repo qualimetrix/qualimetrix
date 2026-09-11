@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -106,15 +107,15 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'class',
-            'enabled',
-            'error',
-            'namespace',
-            'scope',
-            'threshold',
-            'warning',
-        );
+        return RuleOptionKeySet::of([
+            'class' => RuleOptionShape::block(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::integer()->orNull(),
+            'namespace' => RuleOptionShape::block(),
+            'scope' => RuleOptionShape::text()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+            'warning' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 
     /**

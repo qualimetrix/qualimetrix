@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -57,7 +58,13 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface, Thres
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'error', 'min-class-count', 'threshold', 'warning');
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::integer()->orNull(),
+            'min-class-count' => RuleOptionShape::integer()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+            'warning' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 
     public function isEnabled(): bool

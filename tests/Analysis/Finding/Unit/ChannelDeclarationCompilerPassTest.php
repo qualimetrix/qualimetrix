@@ -670,7 +670,7 @@ final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterf
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of();
+        return RuleOptionKeySet::of([]);
     }
 }
 

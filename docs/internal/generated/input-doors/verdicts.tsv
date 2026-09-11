@@ -55,7 +55,7 @@ cli	check	--disable-rule	whole-value	REFUSES	exit codes plus the product refusal
 cli	check	--exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
 cli	check	--exclude-health	whole-value	SILENT	declared none	none	
 cli	check	--fail-on	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
-cli	check	--format	whole-value	SILENT	declared, not fired	dictionary	
+cli	check	--format	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 cli	check	--format-opt	pair-key	REFUSES	exit codes plus the product refusal framing	cure:f8a1065d	
 cli	check	--group-by	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 cli	check	--log-file	whole-value	SILENT	declared, not fired	dictionary	
@@ -191,7 +191,7 @@ config	check	disabledRules	whole-value	REFUSES	exit codes plus the product refus
 config	check	exclude	whole-value	SPEAKS	declared signal fired on M	cure:P6	
 config	check	excludeHealth	whole-value	SILENT	declared none	none	
 config	check	failOn	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
-config	check	format	whole-value	SILENT	declared, not fired	dictionary	
+config	check	format	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	
 config	check	includeGenerated	whole-value	NOT REFERENTIAL	annotation	none	boolean; nothing to point at
 config	check	memoryLimit	whole-value	NOT REFERENTIAL	annotation	none	PHP size string; nothing to point at
 config	check	onlyRules	whole-value	REFUSES	exit codes plus the product refusal framing	dictionary	

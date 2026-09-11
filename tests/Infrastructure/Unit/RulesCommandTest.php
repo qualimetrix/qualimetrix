@@ -335,7 +335,7 @@ final readonly class StubRuleOptions implements RuleOptionsInterface
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of();
+        return RuleOptionKeySet::of([]);
     }
 }
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -41,23 +42,27 @@ final class ComputedMetricEntryKeys
     /** The nine keys a `computed_metrics:` entry answers for at depth 1. */
     public static function acceptedEntryKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'formula',
-            'formulas',
-            'levels',
-            'description',
-            'inverted',
-            'threshold',
-            'warning',
-            'error',
-            'enabled',
-        );
+        return RuleOptionKeySet::of([
+            'description' => RuleOptionShape::text()->orNull(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::number()->orNull(),
+            'formula' => RuleOptionShape::text()->orNull(),
+            'formulas' => RuleOptionShape::block(),
+            'inverted' => RuleOptionShape::boolean()->orNull(),
+            'levels' => RuleOptionShape::listOf(RuleOptionShape::text())->orNull(),
+            'threshold' => RuleOptionShape::number()->orNull(),
+            'warning' => RuleOptionShape::number()->orNull(),
+        ]);
     }
 
     /** The three level words accepted as keys inside `formulas:`. */
     public static function acceptedFormulaKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('class', 'namespace', 'project');
+        return RuleOptionKeySet::of([
+            'class' => RuleOptionShape::text()->orNull(),
+            'namespace' => RuleOptionShape::text()->orNull(),
+            'project' => RuleOptionShape::text()->orNull(),
+        ]);
     }
 
     /**

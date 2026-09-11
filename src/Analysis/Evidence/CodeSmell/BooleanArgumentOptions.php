@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -116,6 +117,10 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('allowed-prefixes', 'enabled', 'flag-promoted-properties');
+        return RuleOptionKeySet::of([
+            'allowed-prefixes' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'flag-promoted-properties' => RuleOptionShape::boolean()->orNull(),
+        ]);
     }
 }

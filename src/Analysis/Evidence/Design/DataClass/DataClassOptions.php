@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -110,14 +111,14 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'enabled',
-            'exclude-exceptions',
-            'exclude-promoted-only',
-            'exclude-readonly',
-            'min-members',
-            'wmc-threshold',
-            'woc-threshold',
-        );
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'exclude-exceptions' => RuleOptionShape::boolean()->orNull(),
+            'exclude-promoted-only' => RuleOptionShape::boolean()->orNull(),
+            'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
+            'min-members' => RuleOptionShape::integer()->orNull(),
+            'wmc-threshold' => RuleOptionShape::integer()->orNull(),
+            'woc-threshold' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

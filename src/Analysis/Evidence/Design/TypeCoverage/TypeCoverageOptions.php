@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidato
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -94,6 +95,11 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'error', 'threshold', 'warning');
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::number()->orNull(),
+            'threshold' => RuleOptionShape::number()->orNull(),
+            'warning' => RuleOptionShape::number()->orNull(),
+        ]);
     }
 }
