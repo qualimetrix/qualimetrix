@@ -74,6 +74,10 @@ examples/
 !/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json
 !/benchmarks/composer.json
 !/finding-gate/**/*.json
+# The promise-effect probe fixture: the blanket `*.json` above would swallow
+# its composer.json, and a fixture that a fresh clone cannot reproduce makes
+# every digest in the frozen snapshot unverifiable.
+!/promise-effect/fixtures/**/*.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

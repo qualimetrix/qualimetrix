@@ -1,0 +1,43 @@
+# The defect floor: grid rows this stand is REQUIRED to call defective.
+#
+# It checks the classifier, not completeness. A ledger written to a known list
+# of defects passes that list and stays tautological outside it — that is said
+# in `01-promise.md` and is not softened here.
+#
+# The 21 rows outside `rules:` come from `measurement/non-rules-roots.tsv`, and
+# they are an INPUT, not evidence: that artifact was measured with the broken
+# `--no-cache`, so the floor is RE-TAKEN here under the isolation protocol of
+# 02 §4. A disagreement with the old count is a fact for the report, never a
+# reason to adjust this list.
+#
+# `verdict` names the one expected where the round can name it; `any-defect`
+# means the floor requires a defect without fixing which of the seven.
+#
+# A `pair` row is addressed by `pair|<rule>|<a>|<b>|<scope>|<kind>`. The kind
+# is the last segment because nineteen `same-source` pairs are a ledger row
+# twice under two kinds; without it this floor row would address one of two
+# cells and no one could say which.
+row	verdict	source
+form|yaml|rules.complexity.ccn.callable.warning|bool	any-defect	M11 position 64: `true` coerced to 1, silently
+pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block	MISCOMPOSED	M11 position 66: a top-level shorthand discards the written `class` block
+form|yaml|paths|map	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|exclude|map	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|format|bool	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|format|list	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|disabled_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|only_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|cache.dir|bool	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|cache.dir|list	any-defect	non-rules-roots: SILENT-AND-INERT
+form|yaml|suppress_paths|map	any-defect	non-rules-roots: CRASHES
+form|yaml|suppress_namespaces|map	any-defect	non-rules-roots: CRASHES
+form|yaml|cache|list	any-defect	non-rules-roots: CRASHES
+form|yaml|parallel|list	any-defect	non-rules-roots: CRASHES
+form|yaml|coupling|list	any-defect	non-rules-roots: CRASHES
+form|yaml|coupling|null	any-defect	non-rules-roots: a refusal on `~`, and unframed
+form|yaml|coupling.framework_namespaces|null	any-defect	non-rules-roots: a refusal on `~`, and unframed
+form|yaml|coupling.framework_namespaces|bool	any-defect	non-rules-roots: REFUSES-UNFRAMED
+form|yaml|coupling.framework_namespaces|map	any-defect	non-rules-roots: REFUSES-UNFRAMED
+form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`
+form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`
+form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`
+form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`

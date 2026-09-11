@@ -1,0 +1,26 @@
+# The `cli-root` door: which flag writes each configuration root, and what the
+# stand may still hold constant while probing it.
+#
+# A probe taken with its shadowing invariant still in place proves nothing —
+# that is the lesson the input-door stand paid for. `--format=json`,
+# `--fail-on=none` and `--workers=0` are this stand's invariants, so a probe on
+# the flag that carries one of them withdraws it and takes another observable.
+#
+# `valueless` marks a flag that carries no value at all (`VALUE_NONE`). Seven
+# of the eight forms are unwritable on such a door, and the stand says so
+# rather than inventing a spelling: the row is NOT OBSERVABLE on those forms.
+ledger_path	flag	valueless	withdraws_invariant	observable
+paths	(positional)	no		json
+exclude	--exclude	no		json
+format	--format	no	--format	exitcode
+disabled_rules	--disable-rule	no		json
+only_rules	--only-rule	no		json
+suppress_paths	--suppress-path	no		json
+suppress_namespaces	--suppress-namespace	no		json
+fail_on	--fail-on	no	--fail-on	exitcode
+cache.dir	--cache-dir	no		json
+cache.enabled	--no-cache	yes		json
+parallel.workers	--workers	no	--workers	json
+include_generated	--include-generated	yes		json
+memory_limit	--memory-limit	no		json
+exclude_health	--exclude-health	no		json

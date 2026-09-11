@@ -1,0 +1,25 @@
+# The eight forms of a value, and the literal each door is given for it.
+#
+# Named, not counted: the round's denominator says "forms are eight and they
+# are listed by name". `yaml_write` is the scalar as it stands in the document;
+# `cli_write` is the text after `=` on a CLI door, which is what the ledger's
+# closing block fixes.
+#
+# `collapse_yaml` / `collapse_cli` are the LITERAL this value would have to be
+# coerced into, written by hand per form: `true` collapses into `1`, and a
+# comparand borrowed from another probe's canonical magnitude would never
+# match. An observation equal to the comparand's is the COLLAPSED verdict; an
+# empty comparand means the form is a reference with no coercion target.
+#
+# The magnitude 7331 is not decoration: a canonical write that happens to equal
+# a rule's own default makes the sensitivity probe blind, and every threshold
+# default in this tree is far below it.
+form	yaml_write	cli_write	collapse_yaml	collapse_cli
+null	~
+bool	true	true	1	1
+int	7331	7331
+float	7331.9	7331.9	7331	7331
+string-number	"7331"	"7331"	7331	7331
+string-nonnumber	abc	abc	0	0
+list	[7331]	[7331]	7331	7331
+map	{a: 7331}	{a: 7331}	[7331]	[7331]

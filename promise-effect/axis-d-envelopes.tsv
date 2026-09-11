@@ -1,0 +1,51 @@
+# Axis D: how a path with a placeholder is actually written, and what has to
+# stand around it for the document to be about that path at all.
+#
+# The ledger names 68 rows outside `rules:`; sixteen of them carry a `<name>`,
+# a `<layer>` or a `[*]`. A placeholder is not writable, so each one is given
+# ONE concrete instantiation here, by hand, and the round's claim is about that
+# instantiation and no other. `base` is the smallest document that makes the
+# written path meaningful — without a layer's `name` an `architecture` document
+# is refused for a reason that has nothing to do with the probed leaf, and the
+# probe would measure the envelope.
+#
+# `cache_owned=yes` marks the three units that own the cache directory itself.
+# The isolation protocol of 02 §4 injects an explicit unique cache directory
+# into every other probe; it cannot inject one here without overwriting the
+# very value being probed. Those probes instead get a fresh unique run
+# directory and no injection, and the appearance of the default `.qmx-cache`
+# is recorded rather than failing the probe.
+ledger_path	write_path	base	cache_owned
+architecture.layers[*].name	architecture.layers.0.name	{"architecture":{"layers":[{"patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].patterns	architecture.layers.0.patterns	{"architecture":{"layers":[{"name":"Domain"}]}}	no
+architecture.layers[*].suffix	architecture.layers.0.suffix	{"architecture":{"layers":[{"name":"Domain"}]}}	no
+architecture.layers[*].attributes	architecture.layers.0.attributes	{"architecture":{"layers":[{"name":"Domain"}]}}	no
+architecture.layers[*].implements	architecture.layers.0.implements	{"architecture":{"layers":[{"name":"Domain"}]}}	no
+architecture.layers[*].extends	architecture.layers.0.extends	{"architecture":{"layers":[{"name":"Domain"}]}}	no
+architecture.layers[*].match	architecture.layers.0.match	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"],"suffix":["Order"]}]}}	no
+architecture.layers[*].exclude	architecture.layers.0.exclude	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].pending	architecture.layers.0.pending	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.patterns	architecture.layers.0.exclude.patterns	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.suffix	architecture.layers.0.exclude.suffix	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.attributes	architecture.layers.0.exclude.attributes	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.implements	architecture.layers.0.exclude.implements	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.extends	architecture.layers.0.exclude.extends	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.match	architecture.layers.0.exclude.match	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.allow.<layer>	architecture.allow.Domain	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}]}}	no
+architecture.allow.<layer>[*].target	architecture.allow.Infra.0.target	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}]}}	no
+architecture.allow.<layer>[*].relations	architecture.allow.Infra.0.relations	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}],"allow":{"Infra":[{"target":"Domain"}]}}}	no
+architecture.allow.<layer>[*].allow_cross_instance	architecture.allow.Infra.0.allow_cross_instance	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}],"allow":{"Infra":[{"target":"Domain"}]}}}	no
+computed_metrics.<name>	computed_metrics.probe_metric	{}	no
+computed_metrics.<name>.description	computed_metrics.probe_metric.description	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.enabled	computed_metrics.probe_metric.enabled	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.error	computed_metrics.probe_metric.error	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.formula	computed_metrics.probe_metric.formula	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.formulas	computed_metrics.probe_metric.formulas	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.formulas.<level>	computed_metrics.probe_metric.formulas.class	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.inverted	computed_metrics.probe_metric.inverted	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.levels	computed_metrics.probe_metric.levels	{"computed_metrics":{"probe_metric":{"formula":"1"}}}	no
+computed_metrics.<name>.threshold	computed_metrics.probe_metric.threshold	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.warning	computed_metrics.probe_metric.warning	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+cache	cache	{}	yes
+cache.dir	cache.dir	{}	yes
+cache.enabled	cache.enabled	{}	yes

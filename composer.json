@@ -111,6 +111,22 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-doors.php --stability"
         ],
+        "promise-effect": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/promise-effect.php"
+        ],
+        "promise-effect:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/promise-effect.php --check"
+        ],
+        "promise-effect:before": "php scripts/promise-effect.php --before",
+        "promise-effect:stability": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/promise-effect.php --stability"
+        ],
+        "promise-effect:controls": "php scripts/promise-effect-controls.php",
+        "promise-effect:grid": "php scripts/promise-effect-grid.php",
+        "promise-effect:grid:check": "php scripts/promise-effect-grid.php --check",
         "input-doors:controls": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-door-controls.php"
@@ -166,7 +182,8 @@
             "@enumeration:runtime-channels:check",
             "@enumeration:directives:check",
             "@suppression-snapshot:check",
-            "@input-doors:grid:check"
+            "@input-doors:grid:check",
+            "@promise-effect:grid:check"
         ],
         "check:self": [
             "@gate:self-test",
