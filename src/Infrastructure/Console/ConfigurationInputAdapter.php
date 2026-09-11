@@ -87,10 +87,17 @@ final class ConfigurationInputAdapter
         return $input->hasOption($name) ? $input->getOption($name) : null;
     }
 
-    /** @param array<string, mixed> $values */
+    /**
+     * An absent option is null and an option nobody repeated is `[]`; both mean
+     * "nothing was written here". The empty string does not: `--format=` is a
+     * value the author typed, and dropping it here made the CLI door accept
+     * silently what the YAML door refuses.
+     *
+     * @param array<string, mixed> $values
+     */
     private function put(array &$values, string $key, mixed $value): void
     {
-        if ($value !== null && $value !== [] && $value !== '') {
+        if ($value !== null && $value !== []) {
             $values[$key] = $value;
         }
     }

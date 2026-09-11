@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Core\Path\AbsolutePath;
 
@@ -130,7 +130,7 @@ final class CouplingAnalysisTest extends TestCase
                 ['coupling' => ['frameworkNamespaces' => ['Psr', 1]]],
             ]));
             self::fail('Invalid framework namespace configuration must fail.');
-        } catch (InvalidArgumentException) {
+        } catch (ConfigurationRefusal) {
         }
 
         self::assertTrue($analysis->isFramework('Symfony\\Component\\Console'));

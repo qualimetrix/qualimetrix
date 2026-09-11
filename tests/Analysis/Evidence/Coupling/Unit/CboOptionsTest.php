@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 
 #[CoversClass(CboOptions::class)]
@@ -66,7 +66,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         CboOptions::fromArray(['threshold' => 30, 'warning' => 10]);

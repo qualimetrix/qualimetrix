@@ -18,9 +18,7 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
     {
         $directory = '.qmx-cache';
         foreach ($document->contributions(ConfigSchema::CACHE_DIR) as $candidate) {
-            if (\is_string($candidate) && $candidate !== '') {
-                $directory = $candidate;
-            }
+            $directory = self::acceptedDirectory($candidate);
         }
 
         $enabled = true;
@@ -40,6 +38,37 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         }
 
         return $configuration;
+    }
+
+    /**
+     * A directory name is the one thing this value can be. Anything else was
+     * silently dropped here before, and the run then wrote into `.qmx-cache`
+     * while reporting as though it had honoured the configured path.
+     */
+    private static function acceptedDirectory(mixed $candidate): string
+    {
+        if (!\is_string($candidate)) {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf(
+                    'Invalid value for "%s": expected a directory path, got %s.',
+                    ConfigSchema::CACHE_DIR,
+                    get_debug_type($candidate),
+                ),
+                ConfigSchema::CACHE_DIR,
+            );
+        }
+
+        if ($candidate === '') {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf(
+                    'Invalid value for "%s": a directory path cannot be empty. Omit the key to use the default, or disable the cache with --no-cache.',
+                    ConfigSchema::CACHE_DIR,
+                ),
+                ConfigSchema::CACHE_DIR,
+            );
+        }
+
+        return $candidate;
     }
 
     /**

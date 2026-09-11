@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 
 #[CoversClass(InstabilityOptions::class)]
@@ -57,7 +57,7 @@ final class InstabilityOptionsTest extends TestCase
     #[Test]
     public function itThrowsWhenTheFlatThresholdIsMixedWithBareMaxWarningInTheSameConfigArray(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Cannot mix "threshold" with "max_warning"/"max_error"');
 
         InstabilityOptions::fromArray(['threshold' => 0.5, 'max_warning' => 0.6]);
