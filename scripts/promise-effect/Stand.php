@@ -53,10 +53,11 @@ final class Stand
     private array $failures = [];
 
     /**
-     * Cells a declared observability limit covered, and the verdict they would
-     * carry without it.
+     * Cells a declared observability limit covered, the verdict they would
+     * carry without it, and the kind of the row that covered them — the kind
+     * because the guard judges the two kinds by different rules.
      *
-     * @var list<array{string, string}>
+     * @var list<array{string, string, string}>
      */
     private array $unrestricted = [];
 
@@ -74,7 +75,7 @@ final class Stand
      * to {@see Limits::conflicts()}, which refuses a limit declared over an
      * observation the stand actually makes.
      *
-     * @return list<array{string, string}>
+     * @return list<array{string, string, string}>
      */
     public function unrestricted(): array
     {
@@ -638,7 +639,7 @@ final class Stand
                     default => $flag[1] . '=' . $spelling->cliWrite,
                 };
             } else {
-                $document = self::place($document, explode('.', $writePath), self::parse($spelling->yamlWrite));
+                $document = self::place($document, self::segments($writePath), self::parse($spelling->yamlWrite));
             }
         }
 
@@ -696,16 +697,40 @@ final class Stand
         string $cellKey,
     ): Judgement {
         $promised = \in_array($form, $row->promisedForms, true);
-        $limit = $this->limits()->reasonFor($row->door, $row->path, $form);
+        $limitRow = $this->limits()->rowFor($row->door, $row->path, $form);
 
-        if ($limit !== null) {
+        if ($limitRow !== null) {
             $this->unrestricted[] = [
                 $cellKey,
                 Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed)->verdict,
+                $limitRow->kind,
             ];
         }
 
-        return Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed, $limit);
+        return Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed, $limitRow?->reason);
+    }
+
+    /**
+     * A write path split into its segments, with `\.` meaning a dot INSIDE a
+     * key rather than a step down.
+     *
+     * A computed metric is named `computed.<something>` by the product's own
+     * template, so the one place a key legitimately carries a dot is also the
+     * one place axis D writes a placeholder. Splitting such a path naively
+     * builds a document two levels deep that the product has never been asked
+     * about.
+     *
+     * @return list<string>
+     */
+    private static function segments(string $path): array
+    {
+        $segments = preg_split('/(?<!\\\\)\./', $path);
+
+        if ($segments === false) {
+            return [$path];
+        }
+
+        return array_values(array_map(static fn(string $segment): string => str_replace('\\.', '.', $segment), $segments));
     }
 
     /**

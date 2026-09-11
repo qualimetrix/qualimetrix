@@ -1210,6 +1210,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itTracksIncrementsWithNestedStructures
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itDisablesEveryLevelWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itKeepsDefaultsWhenEnabledIsOmitted
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itLetsTheBareThresholdDiscardTheClassBlockAndSilenceTheClassLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itReadsTheClassBlockWhenNoBareThresholdIsWritten
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenHierarchicalLevelKeysArePresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenTheFlatThresholdShorthandIsPresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeCallsBothLevels
@@ -1811,7 +1813,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAppliesTheFlatThresholdShorthandUniformlyToBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itDisablesBothLevelsWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itFallsBackToSubDefaultsWhenEnabledIsNotSetToFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsTheFlatThresholdWinOverAPreExistingNestedClassAndNamespaceConfigInTheSameArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillHonorsTheTopLevelScopeAlongsideTheFlatThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillSupportsTheNestedClassAndNamespaceForm
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray
@@ -4226,6 +4230,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"kebab"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"padded"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"snake"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itGivesEveryLevelSlotTheSameFormTheWalkIntoItAccepts
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itKnowsAKeyTheClassAnswersAboutItselfWithoutAcceptingIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itLetsASecondAnsweredHalfJoinTheFirst
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnAcceptedKeyInTheAcceptedStateOnly
@@ -4233,6 +4238,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesABlankKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyDeclaredInAnythingButKebab
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyThatWouldSitInTwoStatesAtOnce
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesALevelSlotThatWasAlreadyDeclaredByHand
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesTheSameKeyDeclaredTwiceInTheAnsweredHalf
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"block"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"boolean"
@@ -4248,9 +4254,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"string"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"the empty string where text is named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"a nullable element keeps the singular, so the "or null" stays attached to one value"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"block"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"boolean"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"list names its element"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"list names its elements in the plural"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"map names its value"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"nullable whole number"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"union names both branches"
@@ -7357,6 +7364,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesNamespaceExclusion
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesPathExclusion
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itReadsABareNumberAsTheDirectoryNameItIs
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itRefusesAMapWhereAListOfEntriesBelongs
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itStillRefusesABareNumberWhereANamespaceBelongs
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itMarksEveryDeclaredChannelAsProjectScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itAcceptsAGroupItsEntryBounds
@@ -7479,8 +7489,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"include by parent namespace"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"no filters keeps every class"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"prefix stops at a namespace separator"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itReadsABareNumberAsAPathNameAndStillRefusesItAsANamespace
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a non-string namespace entry"
- - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a non-string path entry"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"
@@ -7498,6 +7509,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"json"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"text"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillDefaultsWhenNobodyNamedAFormat
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itFindsNoClockDerivedIdentifierInTheTree
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itReadsTheWholeTreeItJudges

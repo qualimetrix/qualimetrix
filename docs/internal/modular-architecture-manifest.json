@@ -810,6 +810,14 @@
       "closure_package": "P3",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\RootContainerShapes": {
+      "path": "src/Analysis/Configuration/Loader/RootContainerShapes.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\SectionNormalizationPolicy": {
       "path": "src/Analysis/Configuration/Loader/SectionNormalizationPolicy.php",
       "kind": "enum",
@@ -10151,6 +10159,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionValueForm": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionValueForm.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionsInterface": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php",

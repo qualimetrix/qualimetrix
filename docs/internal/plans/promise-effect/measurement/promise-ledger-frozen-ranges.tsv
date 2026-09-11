@@ -1,5 +1,5 @@
 # ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L; перевывод L2).
-# Дерево 0cc78d4b5f758670561805976492f6503edc2daf. Дата: 2026-09-11.
+# Дерево 4ecd3ee1a06ce9a03ae85e55b5ec4eec2cdfe3dd. Дата: 2026-09-11.
 #
 # ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
 # проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
@@ -21,15 +21,15 @@
 #   (вставка строки выше) покрасит диапазон, ничего в нём не изменив, — это осознанно
 #   консервативная сторона.
 #
-# ПРОВЕРКА DoD-2, в доступной пакету части. Продуктовый набор P1 (03-cure.md) — семь поимённых
-#   файлов плюс классы опций. Из замороженных диапазонов В НАБОР P1 ПОПАДАЮТ РОВНО ТРИ:
-#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:23-27   (три состояния ключа;
-#         носитель законности адресного ответа класса — C17)
-#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34   (канонические написания)
-#     src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:33-39
-#   Все три — докблоки, все три вне сигнатур и тел. На дереве 0cc78d4b P1 изменил
-#   RuleOptionKeySet.php, но НЕ эти строки: все три sha совпали с прежним снимком побайтно.
-#   Остальные лежат в website/docs/**, который принадлежит P6, а не P1.
+# ПРОВЕРКА DoD-2, в доступной пакету части. Пересечение «замороженные диапазоны × файлы набора P1»
+#   ВЫЧИСЛЯЕТСЯ здесь из p1-file-set.tsv при каждом выводе и сверяется при `--check`; строка ниже —
+#   не утверждение автора, а результат:
+#   P1 ∩ frozen: src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:33-39, src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:23-27, src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34
+#   Рукописная часть, проверенная ОДИН раз и на ОДНОМ дереве, названном явно: на `2682106a` все
+#   пересечённые диапазоны — докблоки вне сигнатур и тел, P1 изменил RuleOptionKeySet.php, но не
+#   эти строки, и их sha совпали с прежним снимком побайтно. Дерево здесь зафиксировано нарочно:
+#   подстановка текущего HEAD делала бы однажды проверенное утверждение вечно свежим.
+#   Остальные диапазоны лежат в website/docs/**, который принадлежит P6, а не P1.
 #   Ни один класс опций (динамическая половина набора P1) носителем не является: реестр их не читал.
 #
 # ОЖИДАЕМЫЙ СЛУЧАЙ, А НЕ ПРОВАЛ (03-cure.md §P1.7): пакет меняет контракт или страницу, и носитель
@@ -53,49 +53,57 @@ website/docs/getting-started/configuration.md	170	170	8f8e0b1e2de94ab6	P6 (websi
 website/docs/getting-started/configuration.md	174	174	0fbe325e0d8565b3	P6 (website)	warning: 10
 website/docs/getting-started/configuration.md	175	175	8f93652565892666	P6 (website)	error: 20
 website/docs/getting-started/configuration.md	180	180	93936a5c342ee0d9	P6 (website)	bin/qmx check src/ --rule-opt=size.method-count:threshold=25
-website/docs/getting-started/configuration.md	183	191	09f209a7906e586e	P6 (website)	The same applies in the other direction (a lower layer's `threshold` o
-website/docs/getting-started/configuration.md	190	190	4ed6791e23b33efc	P6 (website)	threshold: 15   # class AND namespace: warning=error=15
-website/docs/getting-started/configuration.md	199	199	80dd174243a87feb	P6 (website)	threshold: 90
-website/docs/getting-started/configuration.md	201	201	80dd174243a87feb	P6 (website)	threshold: 90
-website/docs/getting-started/configuration.md	203	203	2d62953745155abb	P6 (website)	threshold: 80
-website/docs/getting-started/configuration.md	206	209	788fa29872f76f5b	P6 (website)	**Option key spellings are interchangeable, option keys themselves are
-website/docs/getting-started/configuration.md	216	237	2d9ab50fe5b1ccbf	P6 (website)	**Suppress namespaces for a rule:**
-website/docs/getting-started/configuration.md	239	258	9836dfde9397650f	P6 (website)	**Suppress selected namespace-aggregate channels for a rule:**
-website/docs/getting-started/configuration.md	301	309	a03f4c0b8fc83ef3	P6 (website)	!!! info "Works for every rule, including the architecture rules"
-website/docs/getting-started/configuration.md	311	320	fc9a231ca95ba9dd	P6 (website)	**Suppress paths for a rule:**
-website/docs/getting-started/configuration.md	400	400	da9818ae2374ff6a	P6 (website)	disabled_rules:
-website/docs/getting-started/configuration.md	449	449	36cf903442180509	P6 (website)	unused_directive_severity: warning
-website/docs/getting-started/configuration.md	480	480	b695797bb5b90154	P6 (website)	memory_limit: 1G    # 1 gigabyte
-website/docs/getting-started/configuration.md	491	491	4a4bd556dacc8147	P6 (website)	format: summary   # Default
-website/docs/getting-started/configuration.md	501	501	d9e87793541921be	P6 (website)	cache:
-website/docs/getting-started/configuration.md	502	502	799c89b0067078ae	P6 (website)	enabled: true         # Default: true
-website/docs/getting-started/configuration.md	503	503	72651452900d6cbb	P6 (website)	dir: .qmx-cache       # Default: .qmx-cache
-website/docs/getting-started/configuration.md	513	513	7d9ba68442c865cf	P6 (website)	parallel:
-website/docs/getting-started/configuration.md	514	514	079e1fefcdaf0793	P6 (website)	workers: 4     # Fixed number of workers
-website/docs/getting-started/configuration.md	536	536	65a7aa1e79a93d41	P6 (website)	coupling:
-website/docs/getting-started/configuration.md	537	537	ba8f53ef8d56fdca	P6 (website)	framework-namespaces:
-website/docs/getting-started/configuration.md	557	557	6f9c4036baa05436	P6 (website)	architecture:
-website/docs/getting-started/configuration.md	558	558	88f39b68d3c7f069	P6 (website)	layers:
-website/docs/getting-started/configuration.md	564	564	cde6f93f55b9e849	P6 (website)	allow:
-website/docs/getting-started/configuration.md	570	570	0cdc3d0e369e8a3a	P6 (website)	coverage-gap: ignore                                # ignore | warn | 
-website/docs/getting-started/configuration.md	571	571	6c0ee8e39ccf104d	P6 (website)	max_expanded_layers: 500                            # cumulative cap o
-website/docs/getting-started/configuration.md	708	714	83880220a6df07a5	P6 (website)	### Type errors
-website/docs/getting-started/configuration.md	749	799	f92398805d4698f7	P6 (website)	### The shape of a value
-website/docs/getting-started/configuration.md	751	758	9f52c7186df705a0	P6 (website)	The two rules below hold for **every** key in this document — the root
-website/docs/getting-started/configuration.md	756	758	481bd741b69284b1	P6 (website)	Every key declares the shape its value may take. A value of another sh
-website/docs/getting-started/configuration.md	768	777	e64213c7d3179852	P6 (website)	| Shape              | Accepts                                        
-website/docs/getting-started/configuration.md	770	770	43cd583824543508	P6 (website)	| a boolean          | `true` / `false`                               
-website/docs/getting-started/configuration.md	771	771	0342a3eb8c44a4f5	P6 (website)	| a whole number     | `15` — not `10.5`, not `"15"`                  
-website/docs/getting-started/configuration.md	772	772	820a793f7c29ecad	P6 (website)	| a number           | `15` or `10.5`                                 
-website/docs/getting-started/configuration.md	773	774	35e9d7af91224b97	P6 (website)	| a string           | any string, the empty one included             
-website/docs/getting-started/configuration.md	779	799	f26d94607bdb6511	P6 (website)	Four consequences are worth spelling out, because each of them used to
-website/docs/getting-started/configuration.md	782	783	f12c377f900e01ce	P6 (website)	- **A quoted number is a string.** `warning: "15"` is refused where a 
-website/docs/getting-started/configuration.md	784	787	57a5a20643611a74	P6 (website)	values that arrive on the command line are text by construction and ar
-website/docs/getting-started/configuration.md	791	795	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
-website/docs/getting-started/configuration.md	796	799	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
-website/docs/getting-started/configuration.md	801	805	cf4b910f00d473ea	P6 (website)	### A key written with no value
-website/docs/getting-started/configuration.md	801	829	ea163678ce0acb09	P6 (website)	### A key written with no value
-website/docs/getting-started/configuration.md	818	828	a0fd9b85c3b17766	P6 (website)	An **element of a list** is the one place this does not apply, and for
+website/docs/getting-started/configuration.md	185	217	554a85c5d68b0f7c	P6 (website)	**A bare `threshold` at a hierarchical rule's own top level replaces t
+website/docs/getting-started/configuration.md	214	214	42c9a43b585590d8	P6 (website)	threshold: 15   # class AND namespace: warning=error=15
+website/docs/getting-started/configuration.md	225	225	80dd174243a87feb	P6 (website)	threshold: 90
+website/docs/getting-started/configuration.md	227	227	80dd174243a87feb	P6 (website)	threshold: 90
+website/docs/getting-started/configuration.md	229	229	2d62953745155abb	P6 (website)	threshold: 80
+website/docs/getting-started/configuration.md	232	235	788fa29872f76f5b	P6 (website)	**Option key spellings are interchangeable, option keys themselves are
+website/docs/getting-started/configuration.md	242	263	2d9ab50fe5b1ccbf	P6 (website)	**Suppress namespaces for a rule:**
+website/docs/getting-started/configuration.md	265	284	9836dfde9397650f	P6 (website)	**Suppress selected namespace-aggregate channels for a rule:**
+website/docs/getting-started/configuration.md	327	335	a03f4c0b8fc83ef3	P6 (website)	!!! info "Works for every rule, including the architecture rules"
+website/docs/getting-started/configuration.md	337	346	fc9a231ca95ba9dd	P6 (website)	**Suppress paths for a rule:**
+website/docs/getting-started/configuration.md	426	426	da9818ae2374ff6a	P6 (website)	disabled_rules:
+website/docs/getting-started/configuration.md	475	475	36cf903442180509	P6 (website)	unused_directive_severity: warning
+website/docs/getting-started/configuration.md	506	506	b695797bb5b90154	P6 (website)	memory_limit: 1G    # 1 gigabyte
+website/docs/getting-started/configuration.md	517	517	4a4bd556dacc8147	P6 (website)	format: summary   # Default
+website/docs/getting-started/configuration.md	527	527	d9e87793541921be	P6 (website)	cache:
+website/docs/getting-started/configuration.md	528	528	799c89b0067078ae	P6 (website)	enabled: true         # Default: true
+website/docs/getting-started/configuration.md	529	529	72651452900d6cbb	P6 (website)	dir: .qmx-cache       # Default: .qmx-cache
+website/docs/getting-started/configuration.md	539	539	7d9ba68442c865cf	P6 (website)	parallel:
+website/docs/getting-started/configuration.md	540	540	079e1fefcdaf0793	P6 (website)	workers: 4     # Fixed number of workers
+website/docs/getting-started/configuration.md	562	562	65a7aa1e79a93d41	P6 (website)	coupling:
+website/docs/getting-started/configuration.md	563	563	ba8f53ef8d56fdca	P6 (website)	framework-namespaces:
+website/docs/getting-started/configuration.md	583	583	6f9c4036baa05436	P6 (website)	architecture:
+website/docs/getting-started/configuration.md	584	584	88f39b68d3c7f069	P6 (website)	layers:
+website/docs/getting-started/configuration.md	590	590	cde6f93f55b9e849	P6 (website)	allow:
+website/docs/getting-started/configuration.md	596	596	0cdc3d0e369e8a3a	P6 (website)	coverage-gap: ignore                                # ignore | warn | 
+website/docs/getting-started/configuration.md	597	597	6c0ee8e39ccf104d	P6 (website)	max_expanded_layers: 500                            # cumulative cap o
+website/docs/getting-started/configuration.md	734	740	83880220a6df07a5	P6 (website)	### Type errors
+website/docs/getting-started/configuration.md	775	836	ea7e7a2070fa714d	P6 (website)	### The shape of a value
+website/docs/getting-started/configuration.md	777	787	ee61d6133b217451	P6 (website)	The two rules below hold for **every** key in this document — the root
+website/docs/getting-started/configuration.md	782	787	32693c9f3214c7ec	P6 (website)	Every key declares the shape its value may take. A value of another sh
+website/docs/getting-started/configuration.md	784	787	f43811b6d123d231	P6 (website)	never dropped in favour of the default while the run reports success. 
+website/docs/getting-started/configuration.md	797	806	e64213c7d3179852	P6 (website)	| Shape              | Accepts                                        
+website/docs/getting-started/configuration.md	799	799	43cd583824543508	P6 (website)	| a boolean          | `true` / `false`                               
+website/docs/getting-started/configuration.md	800	800	0342a3eb8c44a4f5	P6 (website)	| a whole number     | `15` — not `10.5`, not `"15"`                  
+website/docs/getting-started/configuration.md	801	801	820a793f7c29ecad	P6 (website)	| a number           | `15` or `10.5`                                 
+website/docs/getting-started/configuration.md	802	803	35e9d7af91224b97	P6 (website)	| a string           | any string, the empty one included             
+website/docs/getting-started/configuration.md	808	836	25645437d110aa8d	P6 (website)	Four consequences are worth spelling out, because each of them used to
+website/docs/getting-started/configuration.md	811	812	f12c377f900e01ce	P6 (website)	- **A quoted number is a string.** `warning: "15"` is refused where a 
+website/docs/getting-started/configuration.md	813	816	57a5a20643611a74	P6 (website)	values that arrive on the command line are text by construction and ar
+website/docs/getting-started/configuration.md	820	824	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
+website/docs/getting-started/configuration.md	825	832	ac6055aa24e9e403	P6 (website)	- **The root `suppress_paths:` is the exception to "a number is not a 
+website/docs/getting-started/configuration.md	833	836	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
+website/docs/getting-started/configuration.md	838	842	a21d1b3a2e3559ae	P6 (website)	### A key written with no value
+website/docs/getting-started/configuration.md	840	842	c8a56e2d6c1d4a47	P6 (website)	Writing a key and leaving it empty — `key:` or the explicit YAML null 
+website/docs/getting-started/configuration.md	845	846	cd23183ee0bb678d	P6 (website)	cache: ~                 # same as not writing cache:
+website/docs/getting-started/configuration.md	855	855	35e4e7288561939b	P6 (website)	Inside `rules:` that is where the equivalence stops. The entry itself 
+website/docs/getting-started/configuration.md	855	891	db380c75e32400a9	P6 (website)	Inside `rules:` that is where the equivalence stops. The entry itself 
+website/docs/getting-started/configuration.md	861	880	dcbf5f617e5d62cc	P6 (website)	- **A threshold key chooses the shorthand form of a hierarchical rule.
+website/docs/getting-started/configuration.md	865	868	0bcbb7778593bbd3	P6 (website)	Writing one at the rule's own top level selects the threshold shorthan
+website/docs/getting-started/configuration.md	882	891	4656799737b79cb3	P6 (website)	- **`threshold:` and `warning:` / `error:` are still two modes.** Writ
+website/docs/getting-started/configuration.md	893	903	31b1c6b46c7c70cd	P6 (website)	An **element of a list** is the other place this does not apply, and f
 website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
 website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website)	| Potential Shadow          | `architecture.potential-shadow`      | E

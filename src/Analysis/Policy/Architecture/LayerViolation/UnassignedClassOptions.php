@@ -28,6 +28,19 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * options. The walk now runs for either producer and every consumer checks its
  * own gate. `--disable-rule=architecture.layer-violation` never silenced this
  * rule — that is the selector, and it addresses the two producers separately.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- This one moved by three project edges, not
+ * one: it traded a bare `InvalidArgumentException` for `ConfigurationRefusal` and
+ * `RefusedPosition` (the P4 refusal framing X18 introduces) and gained `RuleOptionShape` with the rest. Measured
+ * against 72f18239, those three are the whole difference in its import list. Ca=2, Ce=8 puts this
+ * at exactly 0.800 against an inclusive 0.800 ceiling, so it is reported for reaching the limit
+ * rather than passing it. A rule options class is efferent by construction: it names the option
+ * vocabulary it accepts and almost nothing names it back. The sibling options classes that carry
+ * the same shape with a single afferent edge compute higher still -- Ca=1 with this Ce is 0.889 --
+ * and are not judged at all, because `min_afferent: 2` filters them out; this class is judged only
+ * because one extra consumer names it, which makes the ranking the wrong way round and is the
+ * metric mis-modelling the shape rather than a defect to refactor. 0.81 silences today's 0.800 and
+ * still reports the next efferent edge, which takes Ce to 9 and instability to 0.818.
  */
 final readonly class UnassignedClassOptions implements RuleOptionsInterface
 {

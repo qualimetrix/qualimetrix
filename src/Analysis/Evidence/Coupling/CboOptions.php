@@ -108,14 +108,12 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'class' => RuleOptionShape::block(),
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
-            'namespace' => RuleOptionShape::block(),
             'scope' => RuleOptionShape::text()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->withLevelSlots(self::levelOptionsClasses());
     }
 
     /**

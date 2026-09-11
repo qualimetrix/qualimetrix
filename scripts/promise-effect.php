@@ -33,6 +33,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\PromiseEffect;
 
+use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Symfony\Component\Console\Command\Command;
+
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/promise-effect/Ledger.php';
 require __DIR__ . '/promise-effect/Declarations.php';
@@ -100,6 +105,164 @@ function renderRaw(array $raw): string
     sort($lines, \SORT_STRING);
 
     return "axis\trow\tside\toutcome\tobservation\n" . implode("\n", $lines) . "\n";
+}
+
+/**
+ * The grid as a flat map, which is the second argument the limit guard needs:
+ * one of its rules asks whether a SIBLING form of the same row publishes the
+ * crash a limit covers.
+ *
+ * @param list<Cell> $cells
+ *
+ * @return array<string, string>
+ */
+function judgedMap(array $cells): array
+{
+    $map = [];
+
+    foreach ($cells as $cell) {
+        $map[$cell->key] = $cell->verdict;
+    }
+
+    return $map;
+}
+
+/**
+ * Which `(door, key)` the product itself writes by REPEATING a flag, read off
+ * the check command's own input definition.
+ *
+ * This is the machine basis under the two door kinds of
+ * `observability-limits.tsv`: a flag declared `VALUE_IS_ARRAY` (or an array
+ * argument) has a list spelling, so a row claiming the door cannot express one
+ * is false. Asked of the product rather than declared here, because a
+ * hand-written answer to "can this door carry a list" is the very claim under
+ * review.
+ *
+ * `null` marks a flag the definition does not know at all: that is a third
+ * state, not a `false`. A ledger row naming a door the command does not define
+ * is a broken reading, and answering `false` would let a
+ * `door-cannot-express` row pass on a door nobody looked at.
+ *
+ * @return array<string, bool|null>
+ */
+function repeatableDoors(Ledger $ledger, string $root): array
+{
+    $command = new Command('promise-effect-probe');
+    $container = (new ContainerFactory())->create();
+    $registry = $container->get(RuleRegistryInterface::class);
+
+    if (!$registry instanceof RuleRegistryInterface) {
+        throw new LedgerError('the container did not yield the rule registry the CLI door is built from');
+    }
+
+    CheckCommandDefinition::addOptions($command, $registry);
+    $definition = $command->getDefinition();
+    $flags = [];
+
+    foreach (rootFlagTable($root) as $path => $flag) {
+        $flags[$path] = $flag;
+    }
+
+    $repeatable = [];
+
+    foreach ($ledger->forms as $row) {
+        $name = match ($row->door) {
+            'cli-root' => $flags[$row->path] ?? null,
+            'cli-alias' => $row->alias === '' ? null : ltrim($row->alias, '-'),
+            default => null,
+        };
+
+        if ($name === null) {
+            continue;
+        }
+
+        if ($name === '(positional)') {
+            $argument = $definition->hasArgument('paths') ? $definition->getArgument('paths') : null;
+            $repeatable[$row->door . '|' . $row->path] = $argument?->isArray();
+
+            continue;
+        }
+
+        $option = ltrim($name, '-');
+        $repeatable[$row->door . '|' . $row->path] = $definition->hasOption($option)
+            ? $definition->getOption($option)->isArray()
+            : null;
+    }
+
+    return $repeatable;
+}
+
+/**
+ * The flag each configuration root is written with, from the same declaration
+ * the stand probes through.
+ *
+ * @return array<string, string>
+ */
+function rootFlagTable(string $root): array
+{
+    $lines = file($root . '/promise-effect/cli-root-flags.tsv', \FILE_IGNORE_NEW_LINES);
+
+    if ($lines === false) {
+        throw new LedgerError('cannot read promise-effect/cli-root-flags.tsv');
+    }
+
+    $flags = [];
+    $header = false;
+
+    foreach ($lines as $line) {
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        if (!$header) {
+            $header = true;
+
+            continue;
+        }
+
+        $cells = array_pad(explode("\t", $line), 5, '');
+        $flags[$cells[0]] = $cells[1];
+    }
+
+    return $flags;
+}
+
+/**
+ * @param list<Cell> $cells
+ *
+ * @return list<string>
+ */
+function limitProblems(Limits $limits, Stand $stand, array $cells, Ledger $ledger, string $root): array
+{
+    $problems = $limits->conflicts($stand->unrestricted(), judgedMap($cells));
+    $repeatable = repeatableDoors($ledger, $root);
+    $readPerDoor = [];
+
+    foreach ($repeatable as $cell => $repeats) {
+        $door = explode('|', $cell, 2)[0];
+        $readPerDoor[$door] = ($readPerDoor[$door] ?? 0) + ($repeats === null ? 0 : 1);
+
+        if ($repeats === null) {
+            $problems[] = $cell . ': the ledger names a CLI door the check command does not define, so nothing was read about it';
+        }
+    }
+
+    // A basis read off an empty definition would agree with anything, so it is
+    // asked PER DOOR: one door answering for all of them would leave the other
+    // unchecked while the total looked healthy. Beside that, the reading as a
+    // whole must distinguish — an answer of one value everywhere is not a
+    // reading either.
+    foreach ($readPerDoor as $door => $read) {
+        if ($read === 0) {
+            $problems[] = $door . ': no flag of this door was read against the input definition, so its kind rests on nothing';
+        }
+    }
+
+    if (!\in_array(true, $repeatable, true) || !\in_array(false, $repeatable, true)) {
+        $problems[] = 'the CLI doors yielded no repeatable/non-repeatable pair, so the basis of the door kinds never distinguished anything';
+    }
+
+    return [...$problems, ...$limits->basisProblems($repeatable)];
 }
 
 /** @return list<array{string, string, string, string, string}> */
@@ -193,7 +356,7 @@ if (isset($arguments['before'])) {
     // A limit declared over a working observation is a deleted measurement,
     // and the refusal is the same on both halves — which is why the
     // unrestricted verdict is computed beside every limited one.
-    $limitConflicts = Limits::load($root)->conflicts($stand->unrestricted());
+    $limitConflicts = limitProblems(Limits::load($root), $stand, $frozen, $ledger, $root);
 
     foreach ($limitConflicts as $conflict) {
         fwrite(\STDERR, 'LIMIT: ' . $conflict . "\n");
@@ -490,7 +653,7 @@ foreach ($cured as $row) {
     printf("    cured  %s — %s\n", $row->row, $row->cure);
 }
 
-$limitConflicts = Limits::load($root)->conflicts($stand->unrestricted());
+$limitConflicts = limitProblems(Limits::load($root), $stand, $cells, $ledger, $root);
 
 printf(
     "  %-22s %d cell(s) covered, %d of them over a lawful effect\n",

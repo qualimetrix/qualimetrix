@@ -202,7 +202,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     {
         $this->validateRootKeys($config, $path, $keyMap);
         $this->validateRulesSection($config, $path, $keyMap, $rawConfig);
-        $this->validateTypeConstraints($config, $path, $keyMap);
+        RootContainerShapes::refuseWrongContainer($config, $path, $keyMap);
         $this->validateSectionSubKeys($config, $path, $rawConfig);
         $this->validateScalarTypes($config, $path);
     }
@@ -286,88 +286,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         RetiredSuppressionOptions::refuseInRules($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
-    }
-
-    /**
-     * Validates the container shape of every root: a section or map root must
-     * not be a sequential list, a list root must not be a map.
-     *
-     * Shape is checked here rather than left to each root's owner because the
-     * owner receives merged contributions and can name neither the document nor
-     * the position, while a list under a section root used to reach
-     * {@see validateSectionSubKeys()} and crash it with an integer sub-key.
-     *
-     * `[]` passes both directions: an empty container is a legitimate way to
-     * write "nothing here" and its author has not chosen a shape.
-     *
-     * @param array<string, mixed> $config
-     * @param array<string, string> $keyMap
-     */
-    private function validateTypeConstraints(array $config, string $path, array $keyMap): void
-    {
-        foreach (ConfigSchema::associativeRootKeys() as $section) {
-            if (!isset($config[$section])) {
-                continue;
-            }
-
-            if (!\is_array($config[$section])) {
-                $originalSection = $this->originalKey($section, $keyMap);
-
-                throw ConfigurationRefusal::atConfigFileKey(
-                    $path,
-                    RefusedPosition::open([$originalSection], $originalSection),
-                    \sprintf('"%s" must be an associative array', $originalSection),
-                );
-            }
-        }
-
-        foreach (ConfigSchema::allowedSectionSubKeys() as $section => $allowedSubKeys) {
-            $value = $config[$section] ?? null;
-
-            if (!\is_array($value) || $value === [] || !array_is_list($value)) {
-                continue;
-            }
-
-            $originalSection = $this->originalKey($section, $keyMap);
-            $originalSubKeys = array_map(
-                static fn(string $camelKey): string => strtolower((string) preg_replace('/[A-Z]/', '_$0', $camelKey)),
-                $allowedSubKeys,
-            );
-
-            throw ConfigurationRefusal::atConfigFileKey(
-                $path,
-                RefusedPosition::closed([$originalSection], $originalSection, $originalSubKeys),
-                \sprintf(
-                    'Invalid value for "%s": expected a section of named keys (%s), got a list.',
-                    $originalSection,
-                    implode(', ', $originalSubKeys),
-                ),
-            );
-        }
-
-        foreach (ConfigSchema::listKeys() as $field) {
-            if (!isset($config[$field])) {
-                continue;
-            }
-
-            $originalField = $this->originalKey($field, $keyMap);
-
-            if (!\is_array($config[$field])) {
-                throw ConfigurationRefusal::atConfigFileKey(
-                    $path,
-                    RefusedPosition::open([$originalField], $originalField),
-                    \sprintf('"%s" must be a list', $originalField),
-                );
-            }
-
-            if ($config[$field] !== [] && !array_is_list($config[$field])) {
-                throw ConfigurationRefusal::atConfigFileKey(
-                    $path,
-                    RefusedPosition::open([$originalField], $originalField),
-                    \sprintf('Invalid value for "%s": expected a list of entries, got a map.', $originalField),
-                );
-            }
-        }
     }
 
     /**

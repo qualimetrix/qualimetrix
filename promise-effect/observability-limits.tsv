@@ -1,7 +1,7 @@
 # Where this stand cannot put a question to the product at all.
 #
 # A verdict is only about the product when the probe asked the product's own
-# question. Two ways it stops being one, both measured in this round and both
+# question. Four ways it stops being one, all measured in this round and all
 # declared here rather than left inside a number:
 #
 #   door-cannot-express   the DOOR has no syntax for this form, so the stand's
@@ -11,7 +11,28 @@
 #                         the door carries the form fine, but the canonical
 #                         MAGNITUDE names nothing this key could act on, so
 #                         what comes back is an answer about the value's
-#                         domain and not about its form.
+#                         domain and not about its form;
+#   refusal-about-the-inner-key
+#                         the container is written fine and what is refused is
+#                         the KEY inside it — a level slot handed `{a: 7331}`
+#                         refuses `a`, not the block;
+#   stand-writes-one-where-the-door-repeats
+#                         the door DOES write this form, by repeating its flag,
+#                         and the stand writes a single flag. A limit about the
+#                         stand, not about the door — and the honest name for
+#                         the six root flags and the positional argument that
+#                         `door-cannot-express` used to claim had no list
+#                         syntax at all.
+#
+# EACH KIND IS HELD TO ITS OWN CLAIM. The two value kinds say the answer is
+# about the VALUE, so neither may cover a COLLAPSED cell: a coerced value is
+# the product acting on the form. Silence and a refusal are both left to them
+# on purpose — which of the two a key answers with is the product's choice of
+# words, and this round's own cure moved several keys from one to the other.
+# The two door kinds are decided by the product's own input definition: a flag
+# declared `VALUE_IS_ARRAY` has a list spelling, so `door-cannot-express … list`
+# is false of it, and `stand-writes-one-where-the-door-repeats` is false of
+# every other flag.
 #
 # A cell a row here covers reads NOT OBSERVABLE with the reason below, on BOTH
 # halves of the before/after pair — which is the whole reason this is a
@@ -24,7 +45,18 @@
 # the stand, on both halves: `OK` means the effect was distinguishable and the
 # producer reachable, and a door that cannot express a form cannot have carried
 # a lawful effect through it. A limit declared over a working observation is a
-# deleted measurement, and that is the one mistake this table could make.
+# deleted measurement.
+#
+# That rule alone only protects what is GREEN. Three more protect what is RED,
+# because a table that can only eat a defect is the more dangerous half:
+#   - a `MALFORMED` cell — a crash, or a refusal without the product's framing —
+#     may not be covered unless the same `(door, path)` publishes `MALFORMED` on
+#     a form no limit covers. Being handed a value proves the write arrived;
+#   - a kind claiming the answer is about the value may not cover a COLLAPSED
+#     cell, where the value was coerced and the form is what was acted on;
+#   - the two door kinds are read off the product's input definition (above).
+# See `scripts/promise-effect/Limits.php` for the four rules as code, and
+# `promise-effect/README.md` for what stays inexpressible under them.
 #
 # MEASURED, NOT ASSUMED — the two commands behind the first block:
 #   --rule-opt=complexity.ccn:callable.warning=7331    -> exit 0
@@ -42,6 +74,7 @@
 #
 # COLUMNS
 #   kind    door-cannot-express | generic-write-names-nothing
+#           | refusal-about-the-inner-key | stand-writes-one-where-the-door-repeats
 #   door    the door this applies to, or `*`
 #   key     the option LEAF the path ends with, or `*`
 #   form    one of the eight forms of `forms.tsv`
@@ -52,6 +85,13 @@ door-cannot-express	cli-alias	*	string-number	a CLI door carries text: `7331` is
 door-cannot-express	cli-root	*	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
 door-cannot-express	rule-opt	*	list	a CLI door has no list syntax: the brackets arrive as characters
 door-cannot-express	cli-alias	*	list	a CLI door has no list syntax: the brackets arrive as characters
+stand-writes-one-where-the-door-repeats	cli-root	paths	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	exclude	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	disabled_rules	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	only_rules	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	suppress_paths	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	suppress_namespaces	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
+stand-writes-one-where-the-door-repeats	cli-root	exclude_health	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 door-cannot-express	cli-root	*	list	a CLI door has no list syntax: the brackets arrive as characters
 door-cannot-express	rule-opt	*	map	a CLI door has no map syntax: the braces arrive as characters
 door-cannot-express	cli-alias	*	map	a CLI door has no map syntax: the braces arrive as characters
@@ -67,6 +107,6 @@ generic-write-names-nothing	*	suppress-namespaces	float	the declared hit is a na
 generic-write-names-nothing	*	suppress-namespaces	string-number	the declared hit is a namespace list; every other form still writes 7331, which names no namespace
 generic-write-names-nothing	*	suppress-namespaces	string-nonnumber	the declared hit is a namespace list; `abc` names no namespace in the fixture
 generic-write-names-nothing	*	suppress-namespaces	map	the declared hit is a namespace list; `{a: 7331}` names no namespace
-generic-write-names-nothing	*	callable	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
-generic-write-names-nothing	*	class	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
-generic-write-names-nothing	*	namespace	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
+refusal-about-the-inner-key	*	callable	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
+refusal-about-the-inner-key	*	class	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block
+refusal-about-the-inner-key	*	namespace	map	a level slot takes the options of that level: `{a: 7331}` names no option, so the refusal is about the key inside, not the form of the block

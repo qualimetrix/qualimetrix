@@ -95,13 +95,11 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'class' => RuleOptionShape::block(),
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'max-error' => RuleOptionShape::number()->orNull(),
             'max-warning' => RuleOptionShape::number()->orNull(),
-            'namespace' => RuleOptionShape::block(),
             'threshold' => RuleOptionShape::number()->orNull(),
-        ]);
+        ])->withLevelSlots(self::levelOptionsClasses());
     }
 
     /**

@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
 
 #[CoversClass(RuleOptionShape::class)]
+#[CoversClass(RuleOptionValueForm::class)]
 final class RuleOptionShapeTest extends TestCase
 {
     #[Test]
@@ -93,18 +95,22 @@ final class RuleOptionShapeTest extends TestCase
     {
         yield 'boolean' => [RuleOptionShape::boolean(), 'a boolean'];
         yield 'nullable whole number' => [RuleOptionShape::integer()->orNull(), 'a whole number or null'];
-        yield 'list names its element' => [
+        yield 'list names its elements in the plural' => [
             RuleOptionShape::listOf(RuleOptionShape::nonEmptyText()),
-            'a list of a non-empty string',
+            'a list of non-empty strings',
+        ];
+        yield 'a nullable element keeps the singular, so the "or null" stays attached to one value' => [
+            RuleOptionShape::listOf(RuleOptionShape::integer()->orNull()),
+            'a list of a whole number or null',
         ];
         yield 'map names its value' => [
             RuleOptionShape::mapOf(RuleOptionShape::listOf(RuleOptionShape::text())),
-            'a map of a list of a string',
+            'a map of a list of strings',
         ];
         yield 'block' => [RuleOptionShape::block(), 'a block of options'];
         yield 'union names both branches' => [
             RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text())),
-            'a string or a list of a string',
+            'a string or a list of strings',
         ];
     }
 
@@ -112,7 +118,7 @@ final class RuleOptionShapeTest extends TestCase
     #[DataProvider('provideWrittenForms')]
     public function itNamesTheFormThatWasWritten(mixed $value, string $expected): void
     {
-        self::assertSame($expected, RuleOptionShape::describeWritten($value));
+        self::assertSame($expected, RuleOptionValueForm::describeWritten($value));
     }
 
     /**

@@ -9,6 +9,22 @@
 # is refused for a reason that has nothing to do with the probed leaf, and the
 # probe would measure the envelope.
 #
+# THE INSTANTIATION MUST BE ONE THE PRODUCT ACCEPTS. `computed_metrics.<name>`
+# was written as `probe_metric` until the review of this round: that name
+# violates `ComputedMetricDefinition::NAME_TEMPLATE` (`health.` or `computed.`
+# then kebab segments), so the resolver refused the NAME before any leaf could
+# show an effect, and eleven rows reported the name error as a verdict on the
+# leaf. The classifier now refuses such a cell on its own — a refusal the
+# omitted probe already carried word for word is the envelope's — but the
+# envelope itself is fixed too, because a row that can only read NOT OBSERVABLE
+# measures nothing. The frozen half of the pair keeps the old spelling by
+# construction: `promise-effect/README.md` names the cells that costs.
+#
+# `\.` IN A WRITE PATH is a dot inside a KEY, not a step down the document.
+# A computed metric is named `computed.<something>` by the product's own
+# template, so this is the one place where a key legitimately carries a dot and
+# a naive split would build a document two levels deep that nobody asked about.
+#
 # `cache_owned=yes` marks the three units that own the cache directory itself.
 # The isolation protocol of 02 §4 injects an explicit unique cache directory
 # into every other probe; it cannot inject one here without overwriting the
@@ -35,17 +51,17 @@ architecture.allow.<layer>	architecture.allow.Domain	{"architecture":{"layers":[
 architecture.allow.<layer>[*].target	architecture.allow.Infra.0.target	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}]}}	no
 architecture.allow.<layer>[*].relations	architecture.allow.Infra.0.relations	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}],"allow":{"Infra":[{"target":"Domain"}]}}}	no
 architecture.allow.<layer>[*].allow_cross_instance	architecture.allow.Infra.0.allow_cross_instance	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}],"allow":{"Infra":[{"target":"Domain"}]}}}	no
-computed_metrics.<name>	computed_metrics.probe_metric	{}	no
-computed_metrics.<name>.description	computed_metrics.probe_metric.description	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.enabled	computed_metrics.probe_metric.enabled	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.error	computed_metrics.probe_metric.error	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.formula	computed_metrics.probe_metric.formula	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
-computed_metrics.<name>.formulas	computed_metrics.probe_metric.formulas	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
-computed_metrics.<name>.formulas.<level>	computed_metrics.probe_metric.formulas.class	{"computed_metrics":{"probe_metric":{"levels":["class"]}}}	no
-computed_metrics.<name>.inverted	computed_metrics.probe_metric.inverted	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.levels	computed_metrics.probe_metric.levels	{"computed_metrics":{"probe_metric":{"formula":"1"}}}	no
-computed_metrics.<name>.threshold	computed_metrics.probe_metric.threshold	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.warning	computed_metrics.probe_metric.warning	{"computed_metrics":{"probe_metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>	computed_metrics.computed\.probe-metric	{}	no
+computed_metrics.<name>.description	computed_metrics.computed\.probe-metric.description	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.enabled	computed_metrics.computed\.probe-metric.enabled	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.error	computed_metrics.computed\.probe-metric.error	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.formula	computed_metrics.computed\.probe-metric.formula	{"computed_metrics":{"computed.probe-metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.formulas	computed_metrics.computed\.probe-metric.formulas	{"computed_metrics":{"computed.probe-metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.formulas.<level>	computed_metrics.computed\.probe-metric.formulas.class	{"computed_metrics":{"computed.probe-metric":{"levels":["class"]}}}	no
+computed_metrics.<name>.inverted	computed_metrics.computed\.probe-metric.inverted	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.levels	computed_metrics.computed\.probe-metric.levels	{"computed_metrics":{"computed.probe-metric":{"formula":"1"}}}	no
+computed_metrics.<name>.threshold	computed_metrics.computed\.probe-metric.threshold	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
+computed_metrics.<name>.warning	computed_metrics.computed\.probe-metric.warning	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
 cache	cache	{}	yes
 cache.dir	cache.dir	{}	yes
 cache.enabled	cache.enabled	{}	yes

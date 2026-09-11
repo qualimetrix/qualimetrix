@@ -30,21 +30,15 @@ use LogicException;
  */
 final readonly class RuleOptionShape
 {
-    private const string BOOLEAN = 'boolean';
-    private const string INTEGER = 'integer';
-    private const string NUMBER = 'number';
-    private const string TEXT = 'text';
-    private const string NON_EMPTY_TEXT = 'non-empty-text';
     private const string LIST_OF = 'list';
     private const string MAP_OF = 'map';
-    private const string BLOCK = 'block';
     private const string EITHER = 'either';
 
     /**
      * @param list<self> $alternatives non-empty only for {@see self::EITHER}
      */
     private function __construct(
-        private string $kind,
+        private RuleOptionValueForm|string $kind,
         private ?self $element,
         private array $alternatives,
         private bool $nullable,
@@ -52,31 +46,31 @@ final readonly class RuleOptionShape
 
     public static function boolean(): self
     {
-        return new self(self::BOOLEAN, null, [], false);
+        return self::plain(RuleOptionValueForm::Boolean);
     }
 
     /** A whole number: the form of every threshold read through an `(int)` cast. */
     public static function integer(): self
     {
-        return new self(self::INTEGER, null, [], false);
+        return self::plain(RuleOptionValueForm::WholeNumber);
     }
 
     /** An integer or a fraction: the form of every threshold read through a `(float)` cast. */
     public static function number(): self
     {
-        return new self(self::NUMBER, null, [], false);
+        return self::plain(RuleOptionValueForm::Number);
     }
 
     /** A string, the empty one included — the reading code accepts it. */
     public static function text(): self
     {
-        return new self(self::TEXT, null, [], false);
+        return self::plain(RuleOptionValueForm::Text);
     }
 
     /** A string the reading code rejects when it is empty or blank. */
     public static function nonEmptyText(): self
     {
-        return new self(self::NON_EMPTY_TEXT, null, [], false);
+        return self::plain(RuleOptionValueForm::NonEmptyText);
     }
 
     /** A sequential list, every element of the given form. */
@@ -100,7 +94,7 @@ final readonly class RuleOptionShape
      */
     public static function block(): self
     {
-        return new self(self::BLOCK, null, [], false);
+        return self::plain(RuleOptionValueForm::Block);
     }
 
     /**
@@ -117,8 +111,15 @@ final readonly class RuleOptionShape
     }
 
     /**
-     * The same form, with an explicit `null` accepted — the YAML `~` that every
-     * reading site here treats as "the key was not written".
+     * The same form, with an explicit `null` accepted.
+     *
+     * What that means is decided by the site that reads the key, and outside
+     * the `rules:` subtree the answer is uniform: normalization drops a `null`
+     * entry before the reader sees it, so the key reads as unwritten and the
+     * default applies. Inside `rules:` the entry survives normalization, and a
+     * reader asking whether the key is *present* — which is how the threshold
+     * mode and the flat form of a hierarchical rule are chosen — still sees it.
+     * `null` is accepted there too, but it is not the same as silence.
      */
     public function orNull(): self
     {
@@ -132,15 +133,10 @@ final readonly class RuleOptionShape
         }
 
         return match ($this->kind) {
-            self::BOOLEAN => \is_bool($value),
-            self::INTEGER => \is_int($value),
-            self::NUMBER => \is_int($value) || \is_float($value),
-            self::TEXT => \is_string($value),
-            self::NON_EMPTY_TEXT => \is_string($value) && trim($value) !== '',
             self::LIST_OF => \is_array($value) && array_is_list($value) && $this->everyElementMatches($value),
             self::MAP_OF => \is_array($value) && !array_is_list($value) && $this->everyElementMatches($value),
-            self::BLOCK => \is_array($value),
-            default => $this->anyAlternativeMatches($value),
+            self::EITHER => $this->anyAlternativeMatches($value),
+            default => $this->plainForm()->accepts($value),
         };
     }
 
@@ -148,42 +144,26 @@ final readonly class RuleOptionShape
     public function describe(): string
     {
         $described = match ($this->kind) {
-            self::BOOLEAN => 'a boolean',
-            self::INTEGER => 'a whole number',
-            self::NUMBER => 'a number',
-            self::TEXT => 'a string',
-            self::NON_EMPTY_TEXT => 'a non-empty string',
-            self::LIST_OF => 'a list of ' . $this->describeElement(),
-            self::MAP_OF => 'a map of ' . $this->describeElement(),
-            self::BLOCK => 'a block of options',
-            default => $this->describeAlternatives(),
+            self::LIST_OF => 'a list of ' . $this->describeElements(),
+            self::MAP_OF => 'a map of ' . $this->describeElements(),
+            self::EITHER => $this->describeAlternatives(),
+            default => $this->plainForm()->describe(),
         };
 
         return $this->nullable ? $described . ' or null' : $described;
     }
 
-    /**
-     * The form that was written, as the refusal names it. A value is described
-     * by what it is, never by what it was expected to be, so that the two
-     * halves of the sentence cannot agree by accident.
-     */
-    public static function describeWritten(mixed $value): string
+    private static function plain(RuleOptionValueForm $form): self
     {
-        if (\is_array($value)) {
-            return array_is_list($value) ? 'a list' : 'a map';
-        }
+        return new self($form, null, [], false);
+    }
 
-        if (\is_string($value)) {
-            return trim($value) === '' ? 'an empty string' : 'a string';
-        }
-
-        return match (true) {
-            \is_bool($value) => 'a boolean',
-            \is_int($value) => 'a whole number',
-            \is_float($value) => 'a number',
-            $value === null => 'null',
-            default => get_debug_type($value),
-        };
+    /** @throws LogicException when asked of a container, which has no plain form */
+    private function plainForm(): RuleOptionValueForm
+    {
+        return $this->kind instanceof RuleOptionValueForm
+            ? $this->kind
+            : throw new LogicException('A container shape has no plain form of its own.');
     }
 
     /**
@@ -217,9 +197,22 @@ final readonly class RuleOptionShape
         return false;
     }
 
-    private function describeElement(): string
+    /**
+     * The element of a container, named in the plural the container reads in.
+     * A container of containers keeps the singular: "a list of a map of
+     * numbers" has no plural spelling that stays readable.
+     */
+    private function describeElements(): string
     {
-        return $this->element?->describe() ?? 'values';
+        $element = $this->element;
+
+        if ($element === null) {
+            return 'values';
+        }
+
+        return $element->kind instanceof RuleOptionValueForm && !$element->nullable
+            ? $element->kind->describeMany()
+            : $element->describe();
     }
 
     private function describeAlternatives(): string

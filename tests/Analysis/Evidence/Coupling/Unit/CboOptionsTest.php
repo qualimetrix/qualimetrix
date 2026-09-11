@@ -101,4 +101,36 @@ final class CboOptionsTest extends TestCase
 
         self::assertSame('application', $options->class->scope);
     }
+
+    /**
+     * The documented equivalence "a key written with `~` means what omitting it
+     * means" is about the *value*; the entry survives normalization inside
+     * `rules:`, and the branch above is chosen by the key being written at all.
+     * So `warning: ~` still selects the flat form and still discards the level
+     * blocks beside it — the website says so, and this is what it says it about.
+     */
+    #[Test]
+    public function itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks(): void
+    {
+        $options = CboOptions::fromArray([
+            'warning' => null,
+            'class' => ['warning' => 0, 'error' => 0],
+        ]);
+
+        self::assertSame(14, $options->class->warning);
+        self::assertSame(20, $options->class->error);
+        self::assertSame(
+            $options->class->warning,
+            CboOptions::fromArray([])->class->warning,
+            'the level block is not merely overridden, it is gone: the result is the unconfigured one',
+        );
+    }
+
+    #[Test]
+    public function itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll(): void
+    {
+        $options = CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]);
+
+        self::assertSame(0, $options->class->warning);
+    }
 }

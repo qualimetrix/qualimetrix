@@ -132,7 +132,10 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            if ($acceptedHere->knows($normalized) || \in_array($normalized, self::normalizedFrameworkKeys(), true)) {
+            // A framework key is not tested here: the factory took all three
+            // out of `$userConfig` before this walk, and their form was judged
+            // one step earlier by `refuseMalformedFrameworkKeys()`.
+            if ($acceptedHere->knows($normalized)) {
                 self::refuseWrongShape($acceptedHere, $normalized, $key, $ruleName, null, $value);
 
                 continue;
@@ -251,13 +254,5 @@ final class RuleOptionKeyRecognition
         sort($options);
 
         return $options;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function normalizedFrameworkKeys(): array
-    {
-        return array_map(ConfigKeySpelling::normalize(...), self::FRAMEWORK_KEYS);
     }
 }

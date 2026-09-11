@@ -80,6 +80,20 @@ final class Classifier
             return new Judgement(Verdict::NOT_OBSERVABLE, $limit);
         }
 
+        // A refusal the omitted probe already carried, word for word, is the
+        // ENVELOPE's and not the leaf's: writing the key changed nothing about
+        // what came back, so nothing was asked about its form. Axis D found
+        // this the expensive way — every `computed_metrics.<name>.*` probe was
+        // written under a metric name the product rejects before it reaches
+        // any leaf, and eleven rows reported the name error as a verdict on
+        // the leaf. Judged here rather than re-spelled away, so it holds on
+        // both halves and on every envelope, not only the one that was caught.
+        if ($value->outcome === $omitted->outcome
+            && $value->text === $omitted->text
+            && \in_array($value->outcome, [Observation::REFUSED_FRAMED, Observation::REFUSED_UNFRAMED], true)) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, 'the envelope is refused with or without this key');
+        }
+
         if ($value->outcome === Observation::CRASHED) {
             return new Judgement(Verdict::MALFORMED, 'crashed', true);
         }

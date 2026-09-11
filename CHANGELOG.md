@@ -261,15 +261,28 @@ the default.
 
 ### Fixed
 
-- **`~` now means the same thing everywhere.** Writing a key and leaving it
-  empty — `key:` or the explicit YAML null `key: ~` — means the key was not
-  written, at every depth and in every section. It used to depend on which
-  branch of normalization a root fell into: `cache: ~` took the default, while
+- **`~` now means one thing across the document's roots and sections.** Writing
+  a key and leaving it empty — `key:` or the explicit YAML null `key: ~` — takes
+  the default for that key's own value. It used to depend on which branch of
+  normalization a root fell into: `cache: ~` took the default, while
   `coupling: ~`, `computed_metrics: ~`, `architecture: ~` and `exclude_health:
-  ~` refused, contradicting the documentation's own statement that `~` is
-  always valid. A `~` **element of a list** is unchanged and still refused
-  where the list holds non-empty strings: an element is a value, not an
-  unwritten key.
+  ~` refused. Two things are unchanged and are stated rather than implied: a `~`
+  **element of a list** is still refused where the list holds non-empty strings,
+  because an element is a value and not an unwritten key; and inside `rules:` a
+  threshold key written as `~` is still *present* for the reader that chooses
+  between a rule's flat and levelled form, so it opens the flat form and the
+  `callable:`/`class:`/`namespace:` blocks beside it are not read. See the
+  configuration guide for which keys those are.
+- **A directory whose name is a bare number now works in `suppress_paths:`.**
+  The root-level key refused it as "not a non-empty string"; it is converted
+  now, the way `--exclude` already is. `suppress_namespaces:` still refuses one,
+  because a namespace segment cannot begin with a digit.
+- **A refusal about a container names its element in the plural.** It read "a
+  list of a non-empty string"; it reads "a list of non-empty strings".
+- **Every source of a value is judged, not only the winning one.** A `format:`
+  or `cache.dir:` of the wrong shape in the configuration file ends the run even
+  when a command-line flag would have overridden it: the file is part of the
+  configuration whether or not its value survives the merge.
 - **`--exclude=7` no longer crashes the run.** A directory whose name is a bare
   number arrived as an integer and reached code expecting a string; the value is
   now converted rather than refused, because such a directory name is lawful.

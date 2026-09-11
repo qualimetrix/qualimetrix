@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffectControls;
 
 use FilesystemIterator;
+use PromiseEffectP1Set;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -78,6 +79,7 @@ require __DIR__ . '/promise-effect/FifthSet.php';
 require __DIR__ . '/promise-effect/CrossCheck.php';
 require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect-controls/Cases.php';
+require __DIR__ . '/promise-effect-p1-set.php';
 
 /** A working copy of the declarations and the frozen observations, one per case. */
 final class Workspace
@@ -297,6 +299,24 @@ function frozenStand(string $tree, InProcess $inProcess, ProcessProbe $process):
     return $stand;
 }
 
+/**
+ * The limit guard as the run asks it: the covered cells and the whole judged
+ * grid, because one of its rules is about a SIBLING form of the same row.
+ *
+ * @return list<string>
+ */
+function limitConflicts(string $tree, InProcess $inProcess, ProcessProbe $process): array
+{
+    $stand = frozenStand($tree, $inProcess, $process);
+    $judged = [];
+
+    foreach (frozenCells($tree, $inProcess, $process) as $cell) {
+        $judged[$cell->key] = $cell->verdict;
+    }
+
+    return Limits::load($tree)->conflicts($stand->unrestricted(), $judged);
+}
+
 /** The verdict a synthetic floor cell carries: the declared one, or any defect label. */
 function floorVerdict(string $declared): string
 {
@@ -462,8 +482,8 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             return $failures;
         }
 
-        if (Limits::load($tree)->conflicts(frozenStand($tree, $inProcess, $process)->unrestricted()) !== []) {
-            $failures[] = 'N2: the declared table already covers a cell whose effect the stand observes';
+        if (limitConflicts($tree, $inProcess, $process) !== []) {
+            $failures[] = 'N2: the declared table already conflicts with the stand before anything is planted';
         }
 
         // Planted: a limit on the YAML door, which expresses every form, over
@@ -474,7 +494,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             \FILE_APPEND,
         );
 
-        $conflicts = Limits::load($tree)->conflicts(frozenStand($tree, $inProcess, $process)->unrestricted());
+        $conflicts = limitConflicts($tree, $inProcess, $process);
         $named = false;
 
         foreach ($conflicts as $conflict) {
@@ -487,6 +507,137 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         }
 
         $workspace->cleanup();
+
+        return $failures;
+    }
+
+    if ($case->id === 'N3' || $case->id === 'N4') {
+        $workspace = new Workspace($root);
+        $tree = $workspace->checkout();
+        $failures = limitConflicts($tree, $inProcess, $process) === []
+            ? []
+            : [$case->id . ': the declared table already conflicts with the stand before anything is planted'];
+
+        if ($case->id === 'N3') {
+            // A covered cell whose row publishes no crash anywhere: its
+            // uncovered forms read OK, INERT and OK. Turning this one into an
+            // unframed refusal is therefore a crash the report would carry
+            // nowhere else, and the limit would be the only thing between it
+            // and the grid.
+            $crash = 'form|yaml|rules.annotation.directive.suppress-paths|int';
+            $published = 'form|yaml|rules.annotation.directive.suppress-paths|bool';
+            (new Planter($tree))->apply(new ControlCase('plant', '', '', [[$crash, 'value', 'outcome', 'crashed']], [], []));
+            $conflicts = limitConflicts($tree, $inProcess, $process);
+
+            if (!conflictsName($conflicts, $crash)) {
+                $failures[] = 'N3: a crash under a limit its row publishes nowhere did not redden; the run said '
+                    . ($conflicts === [] ? 'nothing' : implode('; ', $conflicts));
+            }
+
+            // The other half of the same rule: with the crash ALSO on an
+            // uncovered form of that row, the limit hides nothing and the
+            // exception must hold. Without this the case would pass against a
+            // guard that simply refused every crash.
+            (new Planter($tree))->apply(new ControlCase('plant', '', '', [[$published, 'value', 'outcome', 'crashed']], [], []));
+            $tolerated = limitConflicts($tree, $inProcess, $process);
+
+            if (conflictsName($tolerated, $crash)) {
+                $failures[] = 'N3: the crash stayed a conflict although an uncovered form of the same row now publishes it: ' . implode('; ', $tolerated);
+            }
+
+            $workspace->cleanup();
+
+            return $failures;
+        }
+
+        // N4: a value-domain limit planted over a cell the product coerced.
+        $coerced = 'form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|map';
+        file_put_contents(
+            $tree . '/promise-effect/observability-limits.tsv',
+            "generic-write-names-nothing\tyaml\tallowed-prefixes\tmap\tplanted\n",
+            \FILE_APPEND,
+        );
+        $conflicts = limitConflicts($tree, $inProcess, $process);
+
+        if (!conflictsName($conflicts, $coerced)) {
+            $failures[] = 'N4: a value-domain limit planted over ' . $coerced . ' did not redden; the run said '
+                . ($conflicts === [] ? 'nothing' : implode('; ', $conflicts));
+        }
+
+        $workspace->cleanup();
+
+        return $failures;
+    }
+
+    if ($case->id === 'N5') {
+        // Planted into the pure judgement: the basis is a reading of the
+        // product's input definition, and what this case is about is the rule
+        // applied to that reading, in both directions.
+        $limits = Limits::load($root);
+        $failures = [];
+        $false = $limits->basisProblems(['cli-root|exclude' => false]);
+
+        if (\count($false) !== 1 || !str_contains($false[0], 'no array-valued flag')) {
+            $failures[] = 'N5: `' . \Qualimetrix\PromiseEffect\LimitRow::STAND_WRITES_ONE
+                . '` declared where the door repeats nothing did not redden; the run said '
+                . ($false === [] ? 'nothing' : implode('; ', $false));
+        }
+
+        $true = $limits->basisProblems(['cli-root|format' => true]);
+
+        if (\count($true) !== 1 || !str_contains($true[0], 'array-valued')) {
+            $failures[] = 'N5: `' . \Qualimetrix\PromiseEffect\LimitRow::DOOR_CANNOT_EXPRESS
+                . '` declared over an array-valued flag did not redden; the run said '
+                . ($true === [] ? 'nothing' : implode('; ', $true));
+        }
+
+        // And the declared table, read against itself: every row the basis
+        // does judge must already agree, or the two directions above are being
+        // proved on a table that is wrong.
+        $agreed = $limits->basisProblems(['cli-root|exclude' => true, 'cli-root|format' => false]);
+
+        if ($agreed !== []) {
+            $failures[] = 'N5: the declared table disagrees with the door definition it is judged against: ' . implode('; ', $agreed);
+        }
+
+        // A flag the definition does not know is a third state, and it must not
+        // be read as "does not repeat": a limit passing because nobody could
+        // look is the failure this whole guard is about. The caller reports it;
+        // what this asserts is that the basis stays silent rather than agreeing.
+        if ($limits->basisProblems(['cli-root|exclude' => null]) !== []) {
+            $failures[] = 'N5: an unknown flag was judged by the basis instead of being left to the caller as unread';
+        }
+
+        return $failures;
+    }
+
+    if ($case->id === 'S1') {
+        // Planted into the pure judgement, the way B1 plants into the framing
+        // rule: the constants themselves cannot be edited from here, so the
+        // control hands the same function a group of its own and demands that
+        // exactly its own path comes back — and, beside it, that the real
+        // constants name nothing missing on today's tree.
+        $failures = [];
+        $real = PromiseEffectP1Set::missingDeclaredPaths(PromiseEffectP1Set::declaredPathGroups(), $root . '/');
+
+        if ($real !== []) {
+            $failures[] = 'S1: the declared constants name a path no file stands at: ' . implode('; ', $real);
+        }
+
+        $planted = PromiseEffectP1Set::missingDeclaredPaths(
+            [
+                'PLANTED' => [
+                    'src/Analysis/Configuration/YamlConfigLoader.php',
+                    'src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php',
+                ],
+            ],
+            $root . '/',
+        );
+
+        if (\count($planted) !== 1 || !str_contains($planted[0], 'src/Analysis/Configuration/YamlConfigLoader.php')) {
+            $failures[] = 'S1: a group naming one absent path and one real file should have named exactly the absent one; it named '
+                . ($planted === [] ? 'nothing' : implode('; ', $planted));
+        }
 
         return $failures;
     }
@@ -629,6 +780,22 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
     Workspace::remove($directory);
 
     return $failures;
+}
+
+/**
+ * Whether a guard's report names this cell.
+ *
+ * @param list<string> $conflicts
+ */
+function conflictsName(array $conflicts, string $key): bool
+{
+    foreach ($conflicts as $conflict) {
+        if (str_starts_with($conflict, $key . ':')) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /** @return array<string, string> producer name => options class */

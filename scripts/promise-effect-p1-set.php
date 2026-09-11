@@ -36,6 +36,10 @@ declare(strict_types=1);
  * any difference.
  *
  * Usage: php scripts/promise-effect-p1-set.php [--write]
+ *
+ * Exit codes: 0 the artefact agrees with the tree, 1 it is stale or missing,
+ * 2 a declaration cannot be judged at all — a hand-typed path no file stands
+ * at, or a complement the run states must be empty and which is not.
  */
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
@@ -73,7 +77,7 @@ final class PromiseEffectP1Set
      */
     private const array P2_FILES = [
         'src/Analysis/Configuration/Pipeline/ConfigDataNormalizer.php',
-        'src/Analysis/Configuration/YamlConfigLoader.php',
+        'src/Analysis/Configuration/Loader/YamlConfigLoader.php',
     ];
 
     /**
@@ -131,7 +135,7 @@ final class PromiseEffectP1Set
      */
     private const array FROZEN_FILES = [
         'src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php',
-        'src/Analysis/Finding/FindingConfigurationResolver.php',
+        'src/Analysis/Finding/Configuration/FindingConfigurationResolver.php',
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php',
         'src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php',
     ];
@@ -151,11 +155,77 @@ final class PromiseEffectP1Set
     ];
 
     /**
+     * Every hand-typed path this file declares, grouped by the constant that
+     * declares it.
+     *
+     * The grouping exists so {@see self::missingDeclaredPaths()} can be one
+     * rule over all of them. Two of these lists used to name a path no file
+     * stood at — `Configuration/YamlConfigLoader.php` for what is really
+     * `Configuration/Loader/YamlConfigLoader.php`, and
+     * `Finding/FindingConfigurationResolver.php` for
+     * `Finding/Configuration/FindingConfigurationResolver.php`. Both
+     * disjointness claims are made with `array_intersect` over strings, so
+     * those two files could never enter an intersection however deeply P1 had
+     * touched them: the guard was blind exactly where it was pointed.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function declaredPathGroups(): array
+    {
+        return [
+            'P2_FILES' => self::P2_FILES,
+            'P4_ADAPTERS' => self::P4_ADAPTERS,
+            'FROZEN_FILES' => self::FROZEN_FILES,
+            'NAMED' => array_keys(self::NAMED),
+            'ADDED_BY_THE_ORCHESTRATOR' => array_keys(self::ADDED_BY_THE_ORCHESTRATOR),
+        ];
+    }
+
+    /**
+     * Declared paths no file stands at — the refusal that makes the blindness
+     * above impossible to repeat.
+     *
+     * Pure, and takes its groups as an argument, so a control can plant a
+     * group of its own and watch exactly its own path come back.
+     *
+     * @param array<string, list<string>> $groups
+     *
+     * @return list<string>
+     */
+    public static function missingDeclaredPaths(array $groups, string $root): array
+    {
+        $missing = [];
+
+        foreach ($groups as $constant => $paths) {
+            foreach ($paths as $path) {
+                if (!is_file($root . $path)) {
+                    $missing[] = $constant . ' names ' . $path . ', and no file stands there';
+                }
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
      * @param list<string> $arguments
      */
     public static function main(array $arguments): int
     {
         $write = in_array('--write', $arguments, true);
+
+        // Before anything is measured: a hand-typed path that does not exist
+        // turns every claim made about it into a claim about a string, and
+        // `array_intersect` says nothing about a string no file carries.
+        $missing = self::missingDeclaredPaths(self::declaredPathGroups(), self::ROOT);
+
+        if ($missing !== []) {
+            foreach ($missing as $line) {
+                fwrite(STDERR, 'DECLARED PATH: ' . $line . "\n");
+            }
+
+            return 2;
+        }
 
         $set = new self();
         $declared = $set->declaredPairs();
@@ -166,6 +236,14 @@ final class PromiseEffectP1Set
         $report = $set->report($declared, $sites, $rows);
 
         echo $report;
+
+        if ($set->breaches() !== []) {
+            foreach ($set->breaches() as $breach) {
+                fwrite(STDERR, 'INVARIANT: ' . $breach . "\n");
+            }
+
+            return 2;
+        }
 
         $rendered = $set->render($rows);
         $path = self::ROOT . self::OUTPUT;
@@ -603,7 +681,7 @@ final class PromiseEffectP1Set
 
         $out[] = '';
         $out[] = '## freezes';
-        $out[] = $this->complement('frozen whole files inside P1 (must be empty)', array_intersect(self::FROZEN_FILES, $p1));
+        $out[] = $this->mustBeEmpty('frozen whole files inside P1', array_intersect(self::FROZEN_FILES, $p1));
         $missingHierarchical = [];
         foreach (self::HIERARCHICAL_REQUIRED as $class) {
             $found = false;
@@ -616,7 +694,7 @@ final class PromiseEffectP1Set
                 $missingHierarchical[] = $class;
             }
         }
-        $out[] = $this->complement('hierarchical classes absent from P1 (must be empty)', $missingHierarchical);
+        $out[] = $this->mustBeEmpty('hierarchical classes absent from P1', $missingHierarchical);
         $frozenRows = array_filter($rows, static fn(array $row): bool => $row['frozen_lines'] !== '-');
         $out[] = sprintf("files carrying a line-granular freeze\t%d", count($frozenRows));
         foreach ($frozenRows as $row) {
@@ -625,12 +703,12 @@ final class PromiseEffectP1Set
 
         $out[] = '';
         $out[] = '## disjointness with the sibling packages — the proof method of stage 01';
-        $out[] = $this->complement('P1 ∩ P2 (must be empty)', array_intersect(self::P2_FILES, $p1));
-        $out[] = $this->complement('P1 ∩ P4 (must be empty)', array_intersect($this->p4Files(), $p1));
-        $out[] = $this->complement('config-paths.tsv owners naming no loadable class', $this->unresolvedP4Owners);
+        $out[] = $this->mustBeEmpty('P1 ∩ P2', array_intersect(self::P2_FILES, $p1));
+        $out[] = $this->mustBeEmpty('P1 ∩ P4', array_intersect($this->p4Files(), $p1));
+        $out[] = $this->mustBeEmpty('config-paths.tsv owners naming no loadable class', $this->unresolvedP4Owners);
 
         $out[] = '';
-        $out[] = $this->complement('paths of form-deciding-sites.tsv absent from the tree', $sites['missing']);
+        $out[] = $this->mustBeEmpty('paths of form-deciding-sites.tsv absent from the tree', $sites['missing']);
 
         return implode("\n", $out) . "\n";
     }
@@ -728,6 +806,34 @@ final class PromiseEffectP1Set
     /**
      * @param iterable<string> $values
      */
+    /**
+     * A complement the run states must be empty — printed exactly as any other
+     * one, and remembered, because a "(must be empty)" line that only ever
+     * reached the report was a claim nothing could fail on.
+     *
+     * @var list<string>
+     */
+    private array $breaches = [];
+
+    /** @param iterable<string> $values */
+    private function mustBeEmpty(string $label, iterable $values): string
+    {
+        $listed = array_values([...$values]);
+
+        if ($listed !== []) {
+            $this->breaches[] = $label . ': ' . implode(' ', $listed);
+        }
+
+        return $this->complement($label . ' (must be empty)', $listed);
+    }
+
+    /** @return list<string> */
+    public function breaches(): array
+    {
+        return $this->breaches;
+    }
+
+    /** @param iterable<string> $values */
     private function complement(string $label, iterable $values): string
     {
         $listed = array_values([...$values]);
@@ -838,4 +944,10 @@ final class PromiseEffectP1Set
 /** @var list<string> $argv */
 $argv = $_SERVER['argv'] ?? [];
 
-exit(PromiseEffectP1Set::main(array_slice($argv, 1)));
+// Runs only when this file IS the command. The control on the declared-path
+// refusal has to reach {@see PromiseEffectP1Set::missingDeclaredPaths()} as a
+// function, and a file that measured the whole container on include would cost
+// the control the run it is supposed to be cheaper than.
+if (realpath((string) ($argv[0] ?? '')) === __FILE__) {
+    exit(PromiseEffectP1Set::main(array_slice($argv, 1)));
+}

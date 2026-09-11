@@ -112,11 +112,9 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'callable' => RuleOptionShape::block(),
-            'class' => RuleOptionShape::block(),
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->withLevelSlots(self::levelOptionsClasses());
     }
 
     /**

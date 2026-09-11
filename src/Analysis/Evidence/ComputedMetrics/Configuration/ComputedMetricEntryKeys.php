@@ -39,7 +39,18 @@ final class ComputedMetricEntryKeys
      */
     public const array REPORTING_LEVELS = [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project];
 
-    /** The nine keys a `computed_metrics:` entry answers for at depth 1. */
+    /**
+     * The nine keys a `computed_metrics:` entry answers for at depth 1.
+     *
+     * The forms below are stated, not consumed here: the traversal
+     * ({@see ComputedMetricEntryKeyRecognition}) asks only whether a name is
+     * known, and each leaf's form is judged by
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader}
+     * in wording that names the metric. Consuming them here would raise a
+     * second, more general refusal one step before the specific one, so the
+     * declaration stays a statement of the reader's contract rather than a
+     * second judge of it.
+     */
     public static function acceptedEntryKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
@@ -47,7 +58,7 @@ final class ComputedMetricEntryKeys
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::number()->orNull(),
             'formula' => RuleOptionShape::text()->orNull(),
-            'formulas' => RuleOptionShape::block(),
+            'formulas' => RuleOptionShape::block()->orNull(),
             'inverted' => RuleOptionShape::boolean()->orNull(),
             'levels' => RuleOptionShape::listOf(RuleOptionShape::text())->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),

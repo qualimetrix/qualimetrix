@@ -281,6 +281,26 @@ final class Cases
                 'a limit declared where the door DOES express the form, over a cell whose effect the stand observes',
             ),
             new ProbeCase(
+                'N3',
+                'limit over a crash',
+                'a limit covering a crash no uncovered form of the same row publishes reddens, and one whose row does publish it does not',
+            ),
+            new ProbeCase(
+                'N4',
+                'limit over coercion',
+                'a limit claiming the answer is about the value, declared over a cell whose value was coerced into another form, reddens',
+            ),
+            new ProbeCase(
+                'N5',
+                'limit basis',
+                'the two door kinds are refused against the door definition in both directions: array-valued under `door-cannot-express`, and everything else under `stand-writes-one-where-the-door-repeats`',
+            ),
+            new ProbeCase(
+                'S1',
+                'declared path',
+                'a path declared in one of the P1 set\'s hand-typed constants that no file stands at is refused by name, and the real constants name no such path',
+            ),
+            new ProbeCase(
                 'F1',
                 'floor, frozen half',
                 'a classifier that stops calling a floor row defective on the PRE-CURE half reddens, and names that row',

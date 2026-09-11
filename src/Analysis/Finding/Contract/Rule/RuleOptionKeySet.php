@@ -84,6 +84,36 @@ final readonly class RuleOptionKeySet
     }
 
     /**
+     * The hierarchical rule's level slots, taken from the one place their
+     * existence is stated.
+     *
+     * A slot is an accepted key like any other, but its name and its form are
+     * not written here a second time: writing `'callable' => block()` beside a
+     * `levelOptionsClasses()` that already names `callable` is two declarations
+     * of one fact, and they were already out of step — the walk into a slot
+     * accepts `null` ("an empty level block means what an omitted one means")
+     * while a hand-written `block()` did not say so. The form is therefore
+     * fixed here, once: a block of options, or nothing.
+     *
+     * @param array<string, class-string<LevelOptionsInterface>> $levelOptionsClasses as `HierarchicalRuleOptionsInterface` names them
+     */
+    public function withLevelSlots(array $levelOptionsClasses): self
+    {
+        $slots = array_map(strval(...), array_keys($levelOptionsClasses));
+        $shapes = $this->shapes;
+
+        foreach ($slots as $slot) {
+            $shapes[ConfigKeySpelling::normalize($slot)] = RuleOptionShape::block()->orNull();
+        }
+
+        return new self(
+            $this->accepted + self::index($slots, $this->accepted + $this->answeredByTheClass),
+            $shapes,
+            $this->answeredByTheClass,
+        );
+    }
+
+    /**
      * True when $key — already folded through `ConfigKeySpelling::normalize()` —
      * is in either half, which is to say the class has something to say about it.
      */

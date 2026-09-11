@@ -30,6 +30,10 @@ ROOT = Path(__file__).resolve().parent.parent
 MEASUREMENT = ROOT / "docs/internal/plans/promise-effect/measurement"
 LEDGER = MEASUREMENT / "promise-ledger.tsv"
 FROZEN = MEASUREMENT / "promise-ledger-frozen-ranges.tsv"
+P1_SET = MEASUREMENT / "p1-file-set.tsv"
+
+# The computed DoD-2 line, marked so `--check` can find the one it is comparing against.
+OVERLAP_MARK = "#   P1 ∩ frozen:"
 
 # A citation is `<path>:<line>` or `<path>:<line>-<line>`. Only paths inside the two trees the
 # ledger declares as carriers are citations; anything else in a note is prose.
@@ -61,21 +65,48 @@ HEADER = """\
 #   (вставка строки выше) покрасит диапазон, ничего в нём не изменив, — это осознанно
 #   консервативная сторона.
 #
-# ПРОВЕРКА DoD-2, в доступной пакету части. Продуктовый набор P1 (03-cure.md) — семь поимённых
-#   файлов плюс классы опций. Из замороженных диапазонов В НАБОР P1 ПОПАДАЮТ РОВНО ТРИ:
-#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:23-27   (три состояния ключа;
-#         носитель законности адресного ответа класса — C17)
-#     src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34   (канонические написания)
-#     src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:33-39
-#   Все три — докблоки, все три вне сигнатур и тел. На дереве {tree_short} P1 изменил
-#   RuleOptionKeySet.php, но НЕ эти строки: все три sha совпали с прежним снимком побайтно.
-#   Остальные лежат в website/docs/**, который принадлежит P6, а не P1.
+# ПРОВЕРКА DoD-2, в доступной пакету части. Пересечение «замороженные диапазоны × файлы набора P1»
+#   ВЫЧИСЛЯЕТСЯ здесь из p1-file-set.tsv при каждом выводе и сверяется при `--check`; строка ниже —
+#   не утверждение автора, а результат:
+{overlap}
+#   Рукописная часть, проверенная ОДИН раз и на ОДНОМ дереве, названном явно: на `2682106a` все
+#   пересечённые диапазоны — докблоки вне сигнатур и тел, P1 изменил RuleOptionKeySet.php, но не
+#   эти строки, и их sha совпали с прежним снимком побайтно. Дерево здесь зафиксировано нарочно:
+#   подстановка текущего HEAD делала бы однажды проверенное утверждение вечно свежим.
+#   Остальные диапазоны лежат в website/docs/**, который принадлежит P6, а не P1.
 #   Ни один класс опций (динамическая половина набора P1) носителем не является: реестр их не читал.
 #
 # ОЖИДАЕМЫЙ СЛУЧАЙ, А НЕ ПРОВАЛ (03-cure.md §P1.7): пакет меняет контракт или страницу, и носитель
 #   после него либо лжёт, либо правится. Порядок — возврат к оркестратору, перевывод затронутых
 #   строк реестра, обновление этого файла. Провал — МОЛЧАЛИВАЯ правка.
 """
+
+
+class InputError(Exception):
+    """The measurement cannot be read at all — exit 2, never a silent partial answer."""
+
+
+def p1_files() -> set[str]:
+    """The product files of package P1, read from its own artefact rather than retyped."""
+    if not P1_SET.exists():
+        raise InputError(f"cannot read {P1_SET}")
+    files = set()
+    for line in P1_SET.read_text(encoding="utf-8").split("\n"):
+        if not line or line.startswith("#") or line.startswith("file\t"):
+            continue
+        files.add(line.split("\t")[0])
+    return files
+
+
+def overlap_line(rows) -> str:
+    """Which frozen ranges fall inside the P1 file set — computed, not asserted.
+
+    The paragraph this feeds used to carry a hand-written "EXACTLY THREE" beside `git rev-parse
+    HEAD`, so every later rewrite re-dated a claim a human had checked once. Here the claim is
+    recomputed at every write and compared at every `--check`.
+    """
+    inside = [f"{f}:{a}-{b}" for f, a, b, _, _, _ in rows if f in p1_files()]
+    return OVERLAP_MARK + " " + (", ".join(inside) if inside else "(none)")
 
 
 def sha16(lines: list[str]) -> str:
@@ -98,12 +129,12 @@ def collect() -> list[tuple[str, int, int, str, str, str]]:
     for path, first, last in sorted(cited):
         target = ROOT / path
         if not target.exists():
-            raise SystemExit(f"cited carrier does not exist: {path}")
+            raise InputError(f"cited carrier does not exist: {path}")
         if path not in cache:
             cache[path] = target.read_text(encoding="utf-8").split("\n")
         body = cache[path]
         if last > len(body):
-            raise SystemExit(f"cited range runs past the end of {path}: {first}-{last}")
+            raise InputError(f"cited range runs past the end of {path}: {first}-{last}")
         window = body[first - 1 : last]
         # first_line_text is a human signpost only; stripped and clipped to 70 characters,
         # the convention the first snapshot used. The sha is what actually binds.
@@ -120,7 +151,7 @@ def render(rows) -> str:
         ["git", "-C", str(ROOT), "log", "-1", "--format=%cs"],
         capture_output=True, text=True, check=True,
     ).stdout.strip()
-    head = HEADER.format(tree=tree, tree_short=tree[:8], date=date)
+    head = HEADER.format(tree=tree, date=date, overlap=overlap_line(rows))
     body = "\n".join(
         "\t".join([f, str(a), str(b), s, o, t]) for f, a, b, s, o, t in rows
     )
@@ -137,17 +168,41 @@ def parse_frozen() -> dict[tuple[str, int, int], str]:
     return out
 
 
+def stored_overlap() -> str | None:
+    for line in FROZEN.read_text(encoding="utf-8").split("\n"):
+        if line.startswith(OVERLAP_MARK):
+            return line
+        if not line.startswith("#"):
+            return None
+    return None
+
+
 def main() -> int:
     if not LEDGER.exists():
         print(f"cannot read {LEDGER}", file=sys.stderr)
         return 2
-    rows = collect()
+    try:
+        rows = collect()
+    except InputError as error:
+        print(error, file=sys.stderr)
+        return 2
     if "--check" not in sys.argv:
-        FROZEN.write_text(render(rows), encoding="utf-8")
+        try:
+            rendered = render(rows)
+        except InputError as error:
+            print(error, file=sys.stderr)
+            return 2
+        FROZEN.write_text(rendered, encoding="utf-8")
         print(f"wrote {FROZEN.relative_to(ROOT)}: {len(rows)} ranges")
         return 0
 
     frozen = parse_frozen()
+    try:
+        computed = overlap_line(rows)
+    except InputError as error:
+        print(error, file=sys.stderr)
+        return 2
+    stored = stored_overlap()
     cited = {(f, a, b): s for f, a, b, s, _, _ in rows}
     missing = sorted(set(cited) - set(frozen))
     stale = sorted(set(frozen) - set(cited))
@@ -160,8 +215,14 @@ def main() -> int:
     for k in drifted:
         print(f"DRIFTED (text changed): {k[0]}:{k[1]}-{k[2]} {frozen[k]} -> {cited[k]}")
 
+    if stored is not None and stored.strip() != computed.strip():
+        # A claim about which frozen ranges P1 owns, re-derived rather than re-dated.
+        print(f"DoD-2 OVERLAP CHANGED:\n  frozen file says {stored.strip()}\n  the tree says   {computed.strip()}")
+
     if missing or stale or drifted:
         print(f"\n{len(cited)} cited, {len(frozen)} frozen: the freeze does not cover the ledger.")
+        return 1
+    if stored is not None and stored.strip() != computed.strip():
         return 1
     print(f"{len(cited)} cited ranges, all frozen and unchanged.")
     return 0

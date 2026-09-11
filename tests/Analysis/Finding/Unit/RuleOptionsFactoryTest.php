@@ -1976,7 +1976,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "suppressPaths" of rule "complexity.ccn" must be a non-empty string'
-            . ' or a list of a non-empty string or null, got a whole number.',
+            . ' or a list of non-empty strings or null, got a whole number.',
         );
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);

@@ -112,7 +112,7 @@ final class RuleOptionRefusalWording
             $ruleName,
             $level === null ? '' : \sprintf(' at level "%s"', $level),
             $shape->describe(),
-            RuleOptionShape::describeWritten($written),
+            RuleOptionValueForm::describeWritten($written),
         );
     }
 }

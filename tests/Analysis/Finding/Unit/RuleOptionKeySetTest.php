@@ -145,4 +145,33 @@ final class RuleOptionKeySetTest extends TestCase
         self::assertSame([], $set->acceptedForDisplay());
         self::assertFalse($set->knows('enabled'));
     }
+
+    /**
+     * The guard that keeps `levelOptionsClasses()` the single source of a
+     * slot: writing the slot by hand as well is the duplication codex-05
+     * found, and it now fails loudly instead of going quietly out of step.
+     */
+    #[Test]
+    public function itRefusesALevelSlotThatWasAlreadyDeclaredByHand(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('is declared twice');
+
+        RuleOptionKeySet::of(['callable' => RuleOptionShape::block()])
+            ->withLevelSlots(['callable' => \Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions::class]);
+    }
+
+    #[Test]
+    public function itGivesEveryLevelSlotTheSameFormTheWalkIntoItAccepts(): void
+    {
+        $set = RuleOptionKeySet::of(['enabled' => RuleOptionShape::boolean()])
+            ->withLevelSlots([
+                'callable' => \Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions::class,
+                'class' => \Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions::class,
+            ]);
+
+        self::assertSame(['callable', 'class', 'enabled'], $set->acceptedForDisplay());
+        self::assertSame('a block of options or null', $set->shapeOf('callable')?->describe());
+        self::assertTrue($set->shapeOf('class')?->matches(null));
+    }
 }

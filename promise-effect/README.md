@@ -346,6 +346,22 @@ says nothing about the product.
 - **The two `parallel.workers` rows of the frozen half.** See the section on the
   worker decision above: sixteen cells there are the stand's own contamination,
   fixed for every future measurement and unreachable in the frozen one.
+- **The 96 `computed_metrics` cells, across the pair.** Review found the axis-D
+  envelope writing the metric name `probe_metric`, which
+  `ComputedMetricDefinition::NAME_TEMPLATE` rejects before any leaf can show an
+  effect: every probe on those twelve rows measured the NAME error. Two
+  repairs, and they are different in kind. The classifier now refuses any cell
+  whose value-side refusal is byte-identical to the omitted-side one — the
+  refusal is the ENVELOPE's, and that rule holds on both halves and on every
+  envelope, not only the caught one: **117 cells of the frozen half** read it,
+  and the frozen defect count falls from **1793 to 1763**, because 30 of them
+  had been counted as defects of the product. The envelope itself is also
+  fixed, to `computed.probe-metric`, and that is a change of INPUT: those 96
+  cells no longer measure the same write on the two halves. The price is
+  bounded — **66 of the 96 already read `NOT OBSERVABLE`** on the frozen half,
+  so what stops comparing is **30 cells, 4 of them defects**. Without the input
+  fix those rows could only ever read `NOT OBSERVABLE`, which measures
+  nothing.
 
 ## Where the remaining `NOT OBSERVABLE` share comes from
 
@@ -497,6 +513,70 @@ reachable, and a door that cannot express a form cannot have carried a lawful
 effect through it. The stand computes both verdicts for every covered cell and
 prints how many of them the limit would have deleted. It stands at **0**.
 
+That rule alone only protects what is GREEN, and a table that can only eat a
+DEFECT is the more dangerous half. Review found it doing exactly that, so three
+more rules now stand beside it, all read by the classifier and therefore
+applied to both halves:
+
+- **No unpublished crash.** A `MALFORMED` cell — a crash, or a refusal without
+  the product's framing — may not be covered unless the same `(door, path)`
+  publishes `MALFORMED` on a form no limit covers. Being handed a value proves
+  the write arrived and was mishandled, which no statement about the value's
+  domain excuses. On the frozen half **246 covered cells are `MALFORMED`**, and
+  every one of them is published on an uncovered form of its own row; the
+  exception is what keeps the count honest rather than duplicated, and it is
+  the loss named at the end of this section.
+- **No coerced value under a value kind.** `generic-write-names-nothing` and
+  `refusal-about-the-inner-key` both claim the answer is about the VALUE. A
+  `COLLAPSED` cell is the product coercing the value, which is the form being
+  acted on. Silence and a refusal are both left to those kinds deliberately:
+  which of the two a key answers with is the product's choice of words, and
+  this round's own cure moved several keys from one to the other.
+- **The door kinds are read off the product.** `door-cannot-express … list` is
+  false for a flag the check command declares `VALUE_IS_ARRAY`, because such a
+  door writes a list by REPEATING the flag; and
+  `stand-writes-one-where-the-door-repeats` is false for every other flag. The
+  basis is `InputDefinition::getOption(…)->isArray()`, never a sentence in the
+  table. A flag the definition does not know is a THIRD state, not a `false`,
+  and is reported as a ledger row naming a door the command does not define.
+  The reading is asked per door — `cli-root` answers for 14 flags and
+  `cli-alias` for 80, and a door nothing was read about reddens even when the
+  other door looks healthy — and the reading as a whole must distinguish, or a
+  basis read off an empty definition would agree with anything.
+
+**What the guard found the first time it ran, and what it did not.** The basis
+rule refused **seven declarations**: the array-valued root flags (`--exclude`,
+`--disable-rule`, `--only-rule`, `--suppress-path`, `--suppress-namespace`,
+`--exclude-health` and the positional `paths`), whose row claimed a CLI door
+has no list syntax at all when in truth it is the STAND that writes one flag
+where the door repeats it. Those seven are now
+`stand-writes-one-where-the-door-repeats`, no cell changed verdict, and what
+was wrong was the statement — a statement nothing could contradict is the
+failure this round exists to remove.
+
+The **ten level-slot rows** were moved to `refusal-about-the-inner-key` **by
+hand**, from the wording of their own reason, and no rule that ships here
+reddens on them. They were caught by an intermediate rule — "each kind is held
+to the verdict its reason predicts" — which was then **withdrawn**, because it
+is false as a general rule: the cure of this very round moved several keys from
+silence to a framed refusal, so a row whose kind predicted `INERT` on the
+frozen half would have predicted wrongly on the cured one and reddened a
+successful repair. What survives of it is the narrow, defensible half: a value
+kind may not cover `COLLAPSED`. So of the two mistakes review found in this
+table, one is now machine-checked and one is not — the second rests on reading
+each row's reason, and nothing in the stand would notice a kind chosen wrongly
+between the two value kinds.
+
+### What the guard still cannot express
+
+Under the two door kinds, `REFUSES` and `COLLAPSED` cannot be told apart from a
+refusal of the form itself: the stand wrote characters the door took literally,
+and the product's answer is about those characters. On the frozen half that is
+**588 `REFUSES` and 30 `COLLAPSED` cells**. And the crash exception above is a
+loss of granularity by design: a limit may cover a crash on one form while the
+row publishes that crash on another, so **which form** crashes is not
+guaranteed to be on the report, only **that the row does**.
+
 ### What it cost, in both halves at once
 
 On the frozen half the limit covers **1507 cells**. `NOT OBSERVABLE` rises from
@@ -564,11 +644,20 @@ verdict.
 
 Two further groups exist because that rule is not the whole stand:
 
-- **stand controls** (`B1`, `B2`, `N1`, `N2`, `F1`, `F2`) address what the
-  verdict cases cannot reach. `N1` and `N2` are the two directions of the
-  observability limit: a covered cell that gets judged anyway reddens, and a
+- **stand controls** (`B1`, `B2`, `N1`–`N5`, `S1`, `F1`, `F2`) address what the
+  verdict cases cannot reach. `N1`–`N5` are the five directions of the
+  observability limit: a covered cell that gets judged anyway reddens (`N1`); a
   limit planted on the YAML door over a cell whose effect the stand observes
-  reddens too. `F1` and `F2` are the two halves of the floor. `B1` and `B2`
+  reddens (`N2`); a limit over a crash the row publishes nowhere reddens, and
+  the same crash stops being a conflict once an uncovered form of that row does
+  publish it (`N3` — both halves, or the case would pass against a guard that
+  simply refused every crash); a value-domain limit over a coerced value
+  reddens (`N4`); and both door kinds are refused against the door definition
+  in either direction (`N5`). `S1` is the same shape for the P1 file set: a
+  hand-typed path in one of its constants that no file stands at is named, and
+  the real constants name none — that guard was blind on two paths for a whole
+  round, and `array_intersect` over a string no file carries can never
+  intersect anything. `F1` and `F2` are the two halves of the floor. `B1` and `B2`
   address what happens *before* an observation is stored, which the frozen half
   is blind to by construction. `B1` takes the
   real framing pair — the only way to say "the fixture still answers unframed
