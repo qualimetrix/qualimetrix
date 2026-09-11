@@ -311,9 +311,23 @@ says nothing about the product.
 - **That `NOT OBSERVABLE` means the product is silent.** It means this fixture
   and this observable cannot tell a written value from an omitted one. Its share
   is reported as a number, not a footnote, because a growing share devalues the
-  denominator. It stands at **1297 of 6289 cells, 20.6%** — axis A 1254 of 5280
-  (23.8%), axis B none by construction, axis D 43 of 544 (7.9%) — and every one
-  of them is accounted for below.
+  denominator. On the frozen pre-cure half it stands at **1297 of 6289 cells,
+  20.6%** — axis A 1254 of 5280 (23.8%), axis B none by construction, axis D 43
+  of 544 (7.9%) — and every one of them is accounted for below.
+- **That a FALLING `NOT OBSERVABLE` share means the stand got less blind.** On
+  the cured tree the share reads **286 of 6289, 4.5%**, and almost none of that
+  is the stand seeing better. A refusal is judged BEFORE the sensitivity gate,
+  so a product that starts refusing a written value moves the cell out of
+  `NOT OBSERVABLE` without the stand becoming any more sensitive on that row.
+  Measured, cell by cell: of the 1012 cells that left, **1003 sit on rows whose
+  gate is still closed today** and became `REFUSES`; 9 are on rows whose gate
+  genuinely opened, 8 of them one row (`code-smell.error-suppression`
+  `.allowed-functions`) where the canonical `list` write is itself now refused,
+  so `omitted != equivalent` — which is a gate opened by a refusal, not by a
+  measured effect, and only 3 of those 8 cells are decided after the gate at
+  all. The honest row-level statement is the one to quote: the sensitivity gate
+  is closed on **166 rows before and 165 after, and 165 of them are the same
+  rows**.
 - **Element forms inside a list.** The row's axis is the form of the container.
 - **That the `map` form is written in a way every consumer can fail on.** The
   canonical write is `{a: 7331}`, whose value is a number, and a string
@@ -329,6 +343,7 @@ says nothing about the product.
 
 ## Where the remaining `NOT OBSERVABLE` share comes from
 
+Counted on the **frozen half**, which is where the number means what it says.
 The share was **2205 of 6289, 35.1%** when the stand was first built. Two of
 the three causes were the stand's, and both are fixed; the third is measured
 and left, and the reason is that fixing it changes what the `bool` cell of 155
@@ -352,6 +367,13 @@ from an omitted key and the sensitivity gate blinds all eight cells of the row,
 including the ones that would otherwise read `INERT` or `COLLAPSED`. The same
 hazard is already named for the magnitude 7331 in this file and was simply not
 carried over to `bool`.
+
+The cure of the round did NOT remove this blindness, and the live grid must not
+be read as though it had. The 162 bool-blind rows carry 1283
+`NOT OBSERVABLE` cells on the frozen half; on the cured tree 272 of them still
+read `NOT OBSERVABLE` and 1011 read `REFUSES` — the same rows, the same
+blindness, now standing behind a refusal that is judged first. 161 of the 162
+rows still fail the sensitivity gate today.
 
 The cure is a **counter-default write**: the row's `bool` cell and its
 `equivalent` both write the value the product is not already at, with `1 -> 0`
@@ -420,6 +442,34 @@ today's rule would no longer produce the published verdicts. The product is
 deliberately **not** in the stamp: `src/` moves every day, and hashing it would
 redden the aggregate on every commit while saying nothing about the verdicts.
 
+## The floor is two claims, not one
+
+`floor.tsv` is a statement about the CLASSIFIER reading a known pre-cure tree:
+`01-promise.md` says the snapshot **before**, read through the registry, must
+call defective position 64, position 66 and the 21 rows of
+`non-rules-roots.tsv`. It is judged where it means that — on the frozen half,
+by `composer promise-effect:before`, which exits 1 when a row stops being
+recognised.
+
+Applied to the LIVE grid the same list said the wrong thing, and it said it for
+a whole round: **a successful cure removes a defect**, so every row the round
+repaired became a floor miss and the first cured measurement exited 1 with
+21 of them. A floor that goes red when the work succeeds is not a floor.
+
+The live grid is held to a different and stronger claim, declared per row in
+the `cure` column:
+
+- a row with no `cure` must **still** be a defect — the floor's original job;
+- a row with a `cure` must **no longer** be one — the round's own claim about
+  what it repaired, checked rather than asserted.
+
+Both directions redden, and the second is why this is worth more than the floor
+it replaces. A row that quietly stops being defective with nothing claiming it
+was repaired used to hide inside a red floor; a row declared cured that is
+still defective is a false claim about the round, which is worse. Today the
+grid reads **2 rows still defective, 21 cured as declared**, and the cured ones
+are printed by name with the commit whose own subject covers them.
+
 ## The controls
 
 `composer promise-effect:controls` runs twenty cases in four groups: one
@@ -463,22 +513,22 @@ Two further groups exist because that rule is not the whole stand:
   the bound is stated — `C2` proves the comparison sees a changed declaration,
   not that it would see one changed in `src/`.
 
-Before any planting the run checks two cheap things: that every declared cell
-exists in the universe (exit 2 — a stale declaration is a different failure from
-a case that does not bite), and that the frozen half still reproduces the
-published grid cell for cell (exit 3 — a baseline that no longer is the grid
-would prove something about a document nobody reads).
+Before any planting the run checks that every declared cell exists in the
+universe (exit 2 — a stale declaration is a different failure from a case that
+does not bite).
 
-**The second of those is suspended while the input stamp is stale**, and the
-reason is not convenience. The stamp covers the stand's own verdict-producing
-code, so editing the classifier stales the grid by construction, and the
-published verdicts were then produced by a rule that no longer exists. Refusing
-there would make the controls unusable during exactly the work they guard — a
-classifier cannot be fixed while its own controls demand the pre-fix grid. The
-run says so in as many words and keeps going; the refusal returns the moment
-`composer promise-effect` re-measures, which is the only thing that clears the
-stamp. While it is suspended the controls prove the rule from observation to
-verdict and say nothing about the published grid.
+A second refusal used to stand beside it — the frozen half had to reproduce the
+published grid cell for cell — and it is **retired**, for the same reason the
+floor moved halves. It held only because both documents were measured on
+`6a833ab8`; the round has since cured the product, so the published grid is the
+cured tree and the frozen half is the pre-cure one, and they differ by
+thousands of cells because that is what a cure looks like. Suspending it while
+the input stamp is stale, which is what the first version of this package did,
+only postpones the refusal to the next measurement. What the demand protected —
+"the cases plant into the document a reader sees" — is carried by the
+stale-declaration refusal and by the floor case `F1`; what is lost is named in
+the script: nothing notices if the frozen half stops matching a published
+rendering of ITSELF, because no such rendering is published.
 
 ## The population guard
 

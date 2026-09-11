@@ -40,7 +40,8 @@ final readonly class ControlCase
 }
 
 /**
- * A control on a PROBE rather than on the rule from observation to verdict.
+ * A control on something that is not the rule from observation to verdict: a
+ * probe, or the floor as each half of the pair asks it.
  *
  * The nine verdict cases recompute over the frozen raw observations, which is
  * why they are cheap — and why they are blind to everything that happens
@@ -268,6 +269,16 @@ final class Cases
                 'B2',
                 'worker decision',
                 'the logfile observable carries the worker decision and nothing of the run that took it',
+            ),
+            new ProbeCase(
+                'F1',
+                'floor, frozen half',
+                'a classifier that stops calling a floor row defective on the PRE-CURE half reddens, and names that row',
+            ),
+            new ProbeCase(
+                'F2',
+                'floor, live grid',
+                'on the live grid a floor row that leaves the floor undeclared reddens, and so does one declared cured that did not move',
             ),
         ];
     }

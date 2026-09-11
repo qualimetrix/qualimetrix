@@ -24,6 +24,11 @@ declare(strict_types=1);
  * Exit codes: 0 clean, 1 a red outcome on axis A or D, 2 a declaration that
  * cannot be read, 3 a probe that could not be taken (see 02 §4: a run that did
  * not confirm its postcondition is not an observation).
+ *
+ * `--before` carries the DEFECT FLOOR, and that is where the floor belongs: it
+ * is a claim about the classifier reading a known pre-cure tree, so it exits 1
+ * there when a declared row stops being recognised. The live grid is held to
+ * the round's own claim about what it cured instead — see `Floor`.
  */
 
 namespace Qualimetrix\PromiseEffect;
@@ -35,6 +40,7 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Stand.php';
+require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
 
 /**
@@ -120,58 +126,6 @@ function readRaw(string $path): array
 }
 
 /**
- * The floor of 02 §11.3 and 01 §"Пол": rows this stand must call defective.
- * It checks the classifier, never completeness.
- *
- * @param list<Cell> $cells
- *
- * @return list<string> the floor rows the stand failed to recognise
- */
-function floorMisses(string $root, array $cells): array
-{
-    $expected = [];
-
-    $lines = file($root . '/promise-effect/floor.tsv', \FILE_IGNORE_NEW_LINES);
-
-    if ($lines === false) {
-        throw new LedgerError('cannot read promise-effect/floor.tsv');
-    }
-
-    foreach ($lines as $line) {
-        if ($line === '' || str_starts_with($line, '#') || str_starts_with($line, 'row	')) {
-            continue;
-        }
-
-        [$row, $verdict] = array_pad(explode("\t", $line), 3, '');
-        $expected[$row] = $verdict;
-    }
-
-    $seen = [];
-
-    foreach ($cells as $cell) {
-        $seen[$cell->key] = [$cell->verdict, $cell->defect];
-    }
-
-    $misses = [];
-
-    foreach ($expected as $row => $verdict) {
-        if (!isset($seen[$row])) {
-            $misses[] = $row . ': the grid has no such row';
-
-            continue;
-        }
-
-        [$actual, $defect] = $seen[$row];
-
-        if ($verdict === 'any-defect' ? !$defect : $actual !== $verdict) {
-            $misses[] = $row . ': expected ' . $verdict . ', got ' . $actual . ($defect ? ' (a defect)' : ' (not a defect)');
-        }
-    }
-
-    return $misses;
-}
-
-/**
  * @param list<Cell> $cells
  *
  * @return array<string, int>
@@ -235,7 +189,24 @@ if (isset($arguments['before'])) {
 
     printf("\n  %-22s %d\n", 'defects', \count(array_filter($frozen, static fn(Cell $cell): bool => $cell->defect)));
 
-    exit(0);
+    // The floor belongs HERE. It is a claim about the classifier reading a
+    // known pre-cure tree — `01-promise.md` states it of the snapshot BEFORE —
+    // and on this half it is meaningful whether or not the product was since
+    // repaired. Judging it on the live grid instead made every successful cure
+    // a floor miss, which is how a cured product came to exit 1.
+    $floorMisses = Floor::load($root)->missesOnTheFrozenHalf($frozen);
+
+    printf(
+        "  %-22s %s\n",
+        'defect floor',
+        $floorMisses === [] ? 'reproduced on the pre-cure half' : \count($floorMisses) . ' row(s) not recognised',
+    );
+
+    foreach ($floorMisses as $miss) {
+        fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
+    }
+
+    exit($floorMisses === [] ? 0 : 1);
 }
 
 if (isset($arguments['stability'])) {
@@ -476,13 +447,31 @@ printf("  %-22s %d\n", 'defects (all axes)', $defects);
 // line printed over a partial grid is the shape of false evidence this round
 // exists to remove.
 $whole = \count($axes) === 3;
-$misses = $whole ? floorMisses($root, $cells) : [];
+// On the LIVE grid the floor is not the floor. Every row this round repaired
+// is no longer a defect, so the pre-cure list applied here turned a successful
+// cure into a red run. What the live grid is held to instead is the round's
+// own claim, row by row: still defective where nothing claims a cure, and no
+// longer defective where the `cure` column names one. See `Floor`.
+[$misses, $standing, $cured] = $whole
+    ? Floor::load($root)->cureMisses($cells)
+    : [[], [], []];
 
 printf(
     "  %-22s %s\n",
     'defect floor',
-    $whole ? ($misses === [] ? 'reproduced' : \count($misses) . ' row(s) not recognised') : 'not judged (narrowed run)',
+    $whole
+        ? \sprintf(
+            '%d row(s) still defective, %d cured as declared%s',
+            \count($standing),
+            \count($cured),
+            $misses === [] ? '' : ', ' . \count($misses) . ' row(s) neither',
+        )
+        : 'not judged (narrowed run)',
 );
+
+foreach ($cured as $row) {
+    printf("    cured  %s — %s\n", $row->row, $row->cure);
+}
 
 foreach ($misses as $miss) {
     fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
