@@ -127,6 +127,10 @@
         "promise-effect:controls": "php scripts/promise-effect-controls.php",
         "promise-effect:grid": "php scripts/promise-effect-grid.php",
         "promise-effect:grid:check": "php scripts/promise-effect-grid.php --check",
+        "promise-effect:corpus": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/promise-effect-corpus.php"
+        ],
         "input-doors:controls": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-door-controls.php"

@@ -1,0 +1,108 @@
+# P1 FILE SET — the named product files of round X18 package P1.
+#
+# HOW OBTAINED: scripts/promise-effect-p1-set.php (this file is its output;
+#   run it without --write to have it re-measure and refuse a stale artefact).
+#   Declared side: the live container's RuleExecutionInterface::allRules(), each
+#   producer's options class asked for its own RuleOptionKeySet, both halves read
+#   by reflection, plus levelOptionsClasses() for the hierarchical ones. Site side:
+#   the rows of form-deciding-sites.tsv that are neither an exception candidate nor
+#   already inside RuleOptionsFactory. Second witness for the class set: Serena
+#   find_implementations over RuleOptionsInterface (38 in src/), LevelOptionsInterface
+#   (10) and HierarchicalRuleOptionsInterface (5) — the container agrees name for name.
+#
+# UNITS: a site is (file, line); a declared pair is (producer rule name, key path)
+#   summed over 54 producers. Neither is the other. They meet only after both are
+#   projected onto FILES, a pair through the class declaring it. That projection is
+#   this table.
+#
+# COLUMNS
+#   file           product file entering P1
+#   role           contract | consumer | options-class | options-class (no subject
+#                  site) | form-deciding, declares nothing
+#   declared_pairs axis-A pairs this file declares (a class serving N rules counts N
+#                  times, which is what makes the two 205s different numbers)
+#   declared_paths distinct key paths declared here, slot-qualified inside levels
+#   subject_sites  subject rows of form-deciding-sites.tsv carried by this file
+#   frozen_lines   line-granular freezes P1 must respect inside this file:
+#                  flat_branch_line:N from hierarchical-options.tsv (a START line,
+#                  not a range — the branch extent is not measured anywhere),
+#                  promise-docblock:A-B from promise-ledger-frozen-ranges.tsv
+#   why            why this row is in the set
+#
+# CONFIRMED BY THE ORCHESTRATOR: ThresholdParser.php and RuleOptionsParser.php stay in
+#   the set. They carry 8 of the 205 subject sites between them and declare no key of
+#   their own, so neither is one of "the options classes" the plan's prose names; they
+#   are the parsing side, and "the declaration is consumed by parsing" is what P1 does.
+#
+# ADDED BY THE ORCHESTRATOR: RuleNamespaceExclusionProvider.php,
+#   RulePathExclusionProvider.php and RuleOptionRefusalWording.php. The first is in no
+#   other package's set and is the throw site behind most malformed framework-key
+#   observations; the second is its neighbour, which judged no form at all; the third is
+#   the existing home of every rule-option refusal's words, so the sentence about a
+#   value's form belongs there rather than beside the judgement. All three carry zero
+#   subject sites, so they enter as named rows and not through the site projection.
+#
+# NOT CARRIED HERE: the inline door freeze of 03-cure.md (bodies of withOverride()
+#   and the inline appliers) is by code unit, not by line, and 27 files of this set
+#   carry such a body. It is named in the plan and deliberately absent as a column.
+file	role	declared_pairs	declared_paths	subject_sites	frozen_lines	why
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	options-class	3	direct-as-error,enabled,max-cycle-size	3	-	declares 3 axis-A pairs over 3 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php	options-class	3	allowed-prefixes,enabled,flag-promoted-properties	7	-	declares 3 axis-A pairs over 3 key paths; carries 7 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php	options-class	7	enabled	1	-	declares 7 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/ErrorSuppressionOptions.php	options-class	2	allowed-functions,enabled	5	-	declares 2 axis-A pairs over 2 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	options-class	7	enabled,error,threshold,vo-error,vo-threshold,vo-warning,warning	8	-	declares 7 axis-A pairs over 7 key paths; carries 8 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Cohesion/LcomOptions.php	options-class	7	enabled,error,exclude-methods,exclude-readonly,min-methods,threshold,warning	9	-	declares 7 axis-A pairs over 7 key paths; carries 9 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	options-class	4	callable,class,enabled,threshold	5	flat_branch_line:43	declares 4 axis-A pairs over 4 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	options-class	4	callable,class,enabled,threshold	5	flat_branch_line:43	declares 4 axis-A pairs over 4 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	options-class	4	callable.enabled,callable.error,callable.threshold,callable.warning	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	options-class	4	callable.enabled,callable.error,callable.threshold,callable.warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	options-class	4	callable.enabled,callable.error,callable.threshold,callable.warning	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	options-class	4	callable,class,enabled,threshold	5	flat_branch_line:43	declares 4 axis-A pairs over 4 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Complexity/WmcOptions.php	options-class	5	enabled,error,exclude-data-classes,threshold,warning	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricRuleOptions.php	options-class (no subject site)	7	enabled	0	-	declares 7 axis-A pairs over 1 key paths
+src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricEntryKeys.php	consumer	0	-	0	-	named by 03-cure.md: builds a RuleOptionKeySet for the user sub-tree and is owned by no producer
+src/Analysis/Evidence/Coupling/CboOptions.php	options-class	7	class,enabled,error,namespace,scope,threshold,warning	3	flat_branch_line:58	declares 7 axis-A pairs over 7 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	options-class	5	class.enabled,class.error,class.scope,class.threshold,class.warning	7	-	declares 5 axis-A pairs over 5 key paths; carries 7 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	options-class	5	class.enabled,class.max-error,class.max-warning,class.min-afferent,class.threshold	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/DistanceOptions.php	options-class	6	enabled,include-namespaces,max-distance-error,max-distance-warning,min-class-count,threshold	8	-	declares 6 axis-A pairs over 6 key paths; carries 8 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	options-class	6	class,enabled,max-error,max-warning,namespace,threshold	3	flat_branch_line:48	declares 6 axis-A pairs over 6 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	options-class	5	namespace.enabled,namespace.error,namespace.min-class-count,namespace.threshold,namespace.warning	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	options-class	6	namespace.enabled,namespace.max-error,namespace.max-warning,namespace.min-afferent,namespace.min-class-count,namespace.threshold	6	-	declares 6 axis-A pairs over 6 key paths; carries 6 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	options-class	7	enabled,exclude-exceptions,exclude-promoted-only,exclude-readonly,min-members,wmc-threshold,woc-threshold	8	-	declares 7 axis-A pairs over 7 key paths; carries 8 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	options-class	8	class-loc-threshold,enabled,exclude-readonly,lcom-threshold,min-criteria,min-methods,tcc-threshold,wmc-threshold	9	-	declares 8 axis-A pairs over 8 key paths; carries 9 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Design/Inheritance/NocOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	options-class	12	enabled,error,threshold,warning	4	-	declares 12 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	options-class	6	enabled,error,min-lines,min-tokens,threshold,warning	5	-	declares 6 axis-A pairs over 6 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	options-class	6	enabled,error,exclude-tests,min-statements,threshold,warning	6	-	declares 6 axis-A pairs over 6 key paths; carries 6 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Security/SecurityPatternOptions.php	options-class	3	enabled	1	-	declares 3 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Security/SensitiveParameterOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Size/ClassCountOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Size/MethodCountOptions.php	options-class	4	enabled,error,threshold,warning	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Size/PropertyCountOptions.php	options-class	6	enabled,error,exclude-promoted-only,exclude-readonly,threshold,warning	6	-	declares 6 axis-A pairs over 6 key paths; carries 6 subject sites of form-deciding-sites.tsv
+src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php	contract	0	-	0	-	named by 03-cure.md: contract stating levelOptionsClasses(), the source of slot existence
+src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	contract	0	-	0	promise-docblock:33-39	named by 03-cure.md: contract stating a level slot key set
+src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	contract	0	-	0	promise-docblock:23-27,promise-docblock:28-34	named by 03-cure.md: the declaration itself: P1 absorbs value form into this set
+src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php	contract	0	-	0	-	added by the orchestrator: the words of every rule-option refusal, including the one about a value's form
+src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php	contract	0	-	0	-	named by 03-cure.md: contract stating acceptedOptionKeys()
+src/Analysis/Finding/Contract/Rule/ThresholdParser.php	form-deciding, declares nothing	0	-	4	-	carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php	consumer	0	-	0	-	added by the orchestrator: the throw site behind most malformed framework-key cells, in no other package set
+src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php	consumer	0	-	0	-	added by the orchestrator: its neighbour, which judged no form at all
+src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php	consumer	0	-	0	-	named by 03-cure.md: the consumer asking the set what it knows
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	consumer	0	-	0	-	named by 03-cure.md: the consumer: refusal must read the declaration, not a substring of the key name
+src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php	form-deciding, declares nothing	0	-	4	-	carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	options-class	2	enabled,severity	5	-	declares 2 axis-A pairs over 2 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	options-class	1	mode	3	-	declares 1 axis-A pairs over 1 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	options-class	2	enabled,unused-directive-severity	5	-	declares 2 axis-A pairs over 2 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
