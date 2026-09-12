@@ -1,0 +1,15 @@
+# The MIDDLE layer. `threshold: 5` means both halves of the band; the command
+# line above rewrites `warning` and says nothing about `error`, so `error` must
+# still be 5 here.
+rules:
+  complexity.ccn:
+    callable:
+      threshold: 5
+suppress_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
