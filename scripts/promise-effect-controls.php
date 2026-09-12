@@ -39,9 +39,8 @@ declare(strict_types=1);
  *
  * Exit codes: 0 every case bit exactly its own row, 1 a case did not,
  * 2 coverage arithmetic failed. Exit 3 was "the baseline itself is not the
- * grid" and is retired: the published grid measures the cured tree and the
- * frozen half the pre-cure one, so they are SUPPOSED to differ now. See the
- * note where it stood.
+ * grid" and is retired, because the two halves are free to differ the moment
+ * a round cures anything. See the note where it stood.
  */
 
 namespace Qualimetrix\PromiseEffectControls;
@@ -52,13 +51,19 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\PromiseEffect\Cell;
+use Qualimetrix\PromiseEffect\Classifier;
+use Qualimetrix\PromiseEffect\CompositionComparison;
+use Qualimetrix\PromiseEffect\CompositionPlan;
+use Qualimetrix\PromiseEffect\CompositionPlanner;
 use Qualimetrix\PromiseEffect\CrossCheck;
 use Qualimetrix\PromiseEffect\Declarations;
 use Qualimetrix\PromiseEffect\Floor;
 use Qualimetrix\PromiseEffect\InProcess;
+use Qualimetrix\PromiseEffect\KeyPairGroups;
 use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
 use Qualimetrix\PromiseEffect\Limits;
+use Qualimetrix\PromiseEffect\Observation;
 use Qualimetrix\PromiseEffect\Population;
 use Qualimetrix\PromiseEffect\ProcessProbe;
 use Qualimetrix\PromiseEffect\Stand;
@@ -73,6 +78,8 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Limits.php';
+require __DIR__ . '/promise-effect/Composition.php';
+require __DIR__ . '/promise-effect/Neighbourhood.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';
@@ -95,6 +102,8 @@ final class Workspace
         'promise-effect/axis-a-hits.tsv',
         'promise-effect/witness-envelopes.tsv',
         'promise-effect/pair-kind-scope.tsv',
+        'promise-effect/composition-magnitudes.tsv',
+        'promise-effect/effect-magnitudes.tsv',
         'promise-effect/door-normalization.tsv',
         'promise-effect/observability-limits.tsv',
         'promise-effect/floor.tsv',
@@ -456,6 +465,64 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         return $failures;
     }
 
+    if ($case->id === 'PL1') {
+        // The one decision of axis C that no fixture case can reach: whether
+        // the sibling question is asked at all. A plan that answered `true`
+        // everywhere would make every triple read as a correct composition,
+        // and a plan answering `false` everywhere would make every kept
+        // promise on a list-shaped key a LOST_SIBLING — the two mistakes this
+        // flag stands between, measured once each.
+        $planner = new CompositionPlanner(
+            Declarations::load($root),
+            $inProcess->aliases,
+            new KeyPairGroups($root),
+        );
+        $failures = [];
+        $expected = ['composition-path' => true, 'composition-triple' => false];
+
+        foreach ($expected as $kind => $answer) {
+            $seen = false;
+
+            foreach (Ledger::load($root)->compositions as $row) {
+                if ($row->kind !== $kind) {
+                    continue;
+                }
+
+                $rule = $kind === 'composition-path' ? substr($row->subject, \strlen('rules.')) : $row->subject;
+                $option = '';
+
+                // The producer name is the longest registered prefix of the
+                // path, exactly as the grid splits it.
+                foreach (array_keys($inProcess->optionsClasses) as $producer) {
+                    if (str_starts_with($rule . '.', $producer . '.')) {
+                        $option = substr($rule, \strlen($producer) + 1);
+                        $rule = $producer;
+                    }
+                }
+
+                $plan = $planner->plan($row, $rule, $option, CompositionPlanner::POINT_OBJECT);
+
+                if (!$plan instanceof CompositionPlan) {
+                    continue;
+                }
+
+                $seen = true;
+
+                if ($plan->highRewritesEveryLowKey() !== $answer) {
+                    $failures[] = 'PL1: the plan for ' . $row->key() . ' answers '
+                        . ($plan->highRewritesEveryLowKey() ? 'true' : 'false') . ', and a ' . $kind . ' row owes '
+                        . ($answer ? 'true' : 'false');
+                }
+            }
+
+            if (!$seen) {
+                $failures[] = 'PL1: the ledger carries no plannable ' . $kind . ' row, so this half of the case measured nothing';
+            }
+        }
+
+        return $failures;
+    }
+
     if ($case->id === 'N1' || $case->id === 'N2') {
         $workspace = new Workspace($root);
         $tree = $workspace->checkout();
@@ -661,10 +728,16 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         }
 
         // N4: a value-domain limit planted over a cell the product coerced.
-        $coerced = 'form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|map';
+        // The form has to be one the product still COERCES: `map` on this key
+        // was the subject until `b9fd87d3` (the declared shape of a rule
+        // option value) turned it into a framed refusal, and a refusal is
+        // exactly what the two value kinds are allowed to cover. On the
+        // baseline this case is measured against, `string-number` is where the
+        // key still swallows the write.
+        $coerced = 'form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-number';
         file_put_contents(
             $tree . '/promise-effect/observability-limits.tsv',
-            "generic-write-names-nothing\tyaml\tallowed-prefixes\tmap\tplanted\n",
+            "generic-write-names-nothing\tyaml\tallowed-prefixes\tstring-number\tplanted\n",
             \FILE_APPEND,
         );
         $conflicts = limitConflicts($tree, $inProcess, $process);
@@ -753,28 +826,46 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
     }
 
     if ($case->id === 'F1') {
-        // Planted into the RAW observations, so the classifier itself produces
-        // the change: `bool` is not a promised form on that row, and a framed
-        // refusal of an unpromised form is not a defect — which is exactly the
-        // shape of a classifier that has stopped recognising the floor.
+        // The floor read off REAL observations rather than the synthetic cells
+        // F2 uses — the two cases are the same rule asked of different inputs,
+        // and only this one can fail because the CLASSIFIER changed.
+        //
+        // It used to ask a judge whose claim was "every
+        // declared row is a defect here, cured or not". That claim belonged to
+        // a snapshot taken BEFORE the cures the `cure` column names. This one
+        // was taken after them — `observations-before/shot.txt` records
+        // `product-commit 02a6ca66`, into which all three packages the column
+        // names were squashed — so twenty-one rows are no longer defects on
+        // this half either, and the old claim called every one of them a miss.
+        // The half is therefore held to the same two-directional claim the
+        // live grid is: standing rows still defective, cured rows no longer so.
+        //
+        // The planting is reversed with it. Turning a CURED row back into a
+        // defect is now the breakage: the pre-cure product took `true` here
+        // and silently wrote the canonical magnitude, so the planting replays
+        // exactly that, and the miss it must leave is the cure being false.
         $workspace = new Workspace($root);
         $tree = $workspace->checkout();
         $floorRow = 'form|yaml|rules.complexity.ccn.callable.warning|bool';
         $floor = Floor::load($tree);
-        $failures = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process)) === []
+        [$unplanted] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
+        $failures = $unplanted === []
             ? []
-            : ['F1: the floor does not reproduce on the unplanted pre-cure half'];
+            : ['F1: the floor does not reproduce on the unplanted frozen half: ' . implode('; ', $unplanted)];
 
         (new Planter($tree))->apply(new ControlCase(
             'plant',
             '',
             '',
-            [[$floorRow, 'value', 'outcome', 'refused-framed']],
+            [
+                [$floorRow, 'value', 'outcome', 'accepted'],
+                [$floorRow, 'value', 'text', '@value@form|yaml|rules.complexity.ccn.callable.warning|int'],
+            ],
             [],
             [],
         ));
 
-        $misses = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process));
+        [$misses] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
 
         if (\count($misses) !== 1 || !str_starts_with($misses[0], $floorRow . ':')) {
             $failures[] = 'F1: the planting should have left exactly one floor miss naming ' . $floorRow
@@ -893,6 +984,123 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
 }
 
 /**
+ * One axis-C or axis-E case: the fixture read twice, once as declared and once
+ * with a single observation replaced.
+ *
+ * The demand is symmetric with the verdict cases even though nothing is
+ * planted into a file: the baseline must read what it declares, the planting
+ * must read what IT declares, and the two must differ — a case whose planting
+ * moved nothing would otherwise agree with itself and pass.
+ *
+ * @return list<string> what went wrong, empty when the case holds
+ */
+function runJudgementCase(JudgementCase $case): array
+{
+    $failures = [];
+    $baseline = judge($case, $case->sides, CompositionComparison::Leaves);
+
+    if ($baseline->verdict !== $case->baselineVerdict) {
+        $failures[] = $case->id . ': the unplanted fixture reads ' . $baseline->verdict . ', and the case declares ' . $case->baselineVerdict;
+    }
+
+    if ($case->baselineVerdict === $case->verdict) {
+        $failures[] = $case->id . ': the planting and the baseline declare the same verdict, so the case cannot show anything moving';
+    }
+
+    [$side, $replacement] = $case->planted;
+    $planted = [...$case->sides, $side => $replacement];
+    $judgement = judge($case, $planted, CompositionComparison::Leaves);
+
+    if ($judgement->verdict !== $case->verdict) {
+        $failures[] = $case->id . ': expected the planting to read ' . $case->verdict . ', it read ' . $judgement->verdict;
+    }
+
+    if ($judgement->defect !== $case->defect) {
+        $failures[] = $case->id . ': expected defect=' . ($case->defect ? 'yes' : 'no') . ', the run said ' . ($judgement->defect ? 'yes' : 'no');
+    }
+
+    foreach ($case->substitutions as $name => $expected) {
+        $comparison = match ($name) {
+            'WholeText' => CompositionComparison::WholeText,
+            'WinnerBeforeSibling' => CompositionComparison::WinnerBeforeSibling,
+            default => null,
+        };
+
+        if ($comparison === null) {
+            $failures[] = $case->id . ': no comparison named "' . $name . '" exists to substitute';
+
+            continue;
+        }
+
+        $substituted = judge($case, $planted, $comparison);
+
+        if ($substituted->verdict !== $expected) {
+            $failures[] = \sprintf(
+                '%s: the %s comparison should have renamed this cell into %s, it read %s',
+                $case->id,
+                $name,
+                $expected,
+                $substituted->verdict,
+            );
+        }
+
+        if ($substituted->verdict === $judgement->verdict) {
+            $failures[] = $case->id . ': the ' . $name . ' comparison agrees with the real one here, so this case proves no substitution is possible';
+        }
+    }
+
+    return $failures;
+}
+
+/** @param array<string, string> $sides */
+function judge(JudgementCase $case, array $sides, CompositionComparison $how): \Qualimetrix\PromiseEffect\Judgement
+{
+    if ($case->axis === 'B') {
+        return Classifier::pair(
+            observationOf($sides['omitted']),
+            observationOf($sides['onlyA']),
+            observationOf($sides['onlyB']),
+            observationOf($sides['both']),
+            $case->coexistence,
+        );
+    }
+
+    if ($case->axis === 'E') {
+        return Classifier::neighbourhood(
+            observationOf($sides['omitted']),
+            observationOf($sides['neighbour']),
+            observationOf($sides['nullAlone']),
+            observationOf($sides['both']),
+        );
+    }
+
+    return Classifier::composition(
+        observationOf($sides['omitted']),
+        observationOf($sides['low']),
+        observationOf($sides['high']),
+        observationOf($sides['both']),
+        $case->promised,
+        $case->highRewritesEveryLowKey,
+        $how,
+    );
+}
+
+/**
+ * A fixture side as the classifier reads one: `outcome|text`, or a bare text
+ * for the accepted case. Read through `ofMeasured()`, which is the ONE place a
+ * raw outcome becomes a judgeable one — a case that built an Observation
+ * directly would be judged by a rule the run does not use.
+ */
+function observationOf(string $declared): Observation
+{
+    $halves = explode('|', $declared, 2);
+
+    return \count($halves) === 2 && !str_starts_with($declared, '{')
+        ? Observation::ofMeasured($halves[0], $halves[1])
+        : Observation::ofMeasured(Observation::ACCEPTED, $declared);
+}
+
+/**
  * Whether a guard's report names this cell.
  *
  * @param list<string> $conflicts
@@ -990,6 +1198,49 @@ foreach (['OK', 'INERT', 'COLLAPSED', 'REFUSES', 'MALFORMED', 'NOT OBSERVABLE', 
     }
 }
 
+// The new axes get their own coverage arithmetic rather than joining the list
+// above: their cases carry a fixture of their own and name no cell of the
+// frozen half at all, so a stale-declaration check over `$baseline` would
+// refuse every one of them.
+$judgementCovered = [];
+
+foreach (Cases::judgements() as $judgementCase) {
+    $judgementCovered[$judgementCase->verdict] = true;
+    $judgementCovered[$judgementCase->baselineVerdict] = true;
+}
+
+foreach ([
+    'COMPOSED_AS_PROMISED', 'MISLAYERED', 'LOST_SIBLING', 'COMPOSITION_REFUSED', 'FRANKENSTEIN',
+    'PRESENCE_NEUTRAL', 'PRESENCE_SWITCHED_BRANCH', 'PRESENCE_REFUSED',
+    // Axis B joined this list when its sensitivity gate landed: the pair
+    // verdicts are now decided by a rule with a vacuum in it, and a rule of
+    // that kind is not proved by the planting cases that address the grid.
+    'COEXISTENCE_OK', 'MISCOMPOSED',
+] as $verdict) {
+    if (!isset($judgementCovered[$verdict])) {
+        $stale[] = 'no judgement case reads ' . $verdict;
+    }
+}
+
+// Every case id, across every group, must be unique: `--only=` addresses a
+// case by id, and two cases sharing one would be run together while the
+// operator believed they had narrowed to a single probe.
+$identifiers = [];
+
+foreach ([
+    ...array_map(static fn(ControlCase $case): string => $case->id, Cases::verdicts()),
+    ...array_map(static fn(JudgementCase $case): string => $case->id, Cases::judgements()),
+    ...array_map(static fn(ProbeCase $case): string => $case->id, Cases::probes()),
+    ...array_map(static fn(CrossCase $case): string => $case->id, Cases::crossChecks()),
+    ...array_map(static fn(GuardCase $case): string => $case->id, Cases::guards()),
+] as $identifier) {
+    if (isset($identifiers[$identifier])) {
+        $stale[] = 'two control cases answer to the id ' . $identifier;
+    }
+
+    $identifiers[$identifier] = true;
+}
+
 $populations = [];
 
 foreach (Cases::guards() as $guard) {
@@ -1005,14 +1256,19 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 // WHAT USED TO STAND HERE, and why it cannot stand any more.
 //
 // The run refused (exit 3) unless the frozen half reproduced the published
-// grid cell for cell. That held for one reason only: both were measured on
-// `6a833ab8`, the same tree. The round has since cured the product, so the
-// published grid is the CURED tree and the frozen half is the pre-cure one —
-// they now differ by thousands of cells, and they are supposed to. Demanding
-// equality would refuse for ever, on the very property the round was built to
-// produce; the first version of this package only postponed that by
-// suspending the demand while the input stamp was stale, which is not a fix
-// because the stamp goes fresh again on the next measurement.
+// grid cell for cell. That holds only while the two measure the same product,
+// and whether they do is a property of WHERE THE ROUND STANDS, not of the
+// stand: the moment a round cures something, the grid moves ahead of its own
+// baseline by design. A demand that is true at the start of a round and false
+// the moment the work lands cannot be a refusal — the first version of this
+// package only postponed the contradiction by suspending the demand while the
+// input stamp was stale, which is not a fix, because the stamp goes fresh
+// again on the next measurement.
+//
+// So it stays retired even now that the two halves DO agree again: this
+// round's baseline was re-frozen against the cured product of `02a6ca66`, and
+// the round has not yet changed the product. Restoring the demand would buy a
+// green line today and refuse the first cure this round lands.
 //
 // What the demand protected was "the cases plant into the document a reader
 // sees". Two things carry that now, and the loss between them is named rather
@@ -1021,24 +1277,44 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 //   - every cell a case addresses must exist in the universe of the frozen
 //     half — the stale-declaration refusal above, exit 2;
 //   - the floor, judged on the frozen half (case F1), which is the claim
-//     `01-promise.md` actually makes about that document.
+//     `01-promise.md` makes about that document, in the form the `cure`
+//     column leaves of it once the baseline post-dates the cures.
 //
 // What is lost: nothing here notices if the frozen half stops matching a
 // PUBLISHED rendering of itself, because no such rendering is published —
 // `composer promise-effect:before` recomputes it on demand.
-$publishedComparison = 'retired: the published grid measures the cured tree, the frozen half the pre-cure one';
+$publishedComparison = 'retired: a round that cures anything moves the grid ahead of its own baseline';
 
 printf(
-    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d stand case(s), %d cross-check case(s) over both\n"
-        . "sides of the four sets, and %d guard case(s) over 4 populations, in a universe of %d cells.\n"
+    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d judgement case(s) over the 10 verdicts of axes\n"
+        . "B, C and E, %d stand case(s), %d cross-check case(s) over both sides of the four sets, and %d guard case(s)\n"
+        . "over 4 populations, in a universe of %d cells.\n"
         . "The frozen half against the published grid: %s.\n",
     \count(Cases::verdicts()),
+    \count(Cases::judgements()),
     \count(Cases::probes()),
     \count(Cases::crossChecks()),
     \count(Cases::guards()),
     \count($baseline),
     $publishedComparison,
 );
+
+// The cheap half is not evidence unless it is READ. Every line collected
+// above was thrown away here until this round: `$stale` was filled by three
+// guards, never consulted, and the documented exit 2 could not happen — so a
+// case addressing a cell the run does not carry, a verdict nothing plants, and
+// a population nothing guards were all silently tolerated. Named as a defect
+// of the stand rather than quietly repaired, because a guard that cannot
+// redden is the class this whole programme measures.
+if ($stale !== []) {
+    foreach ($stale as $problem) {
+        fwrite(\STDERR, 'COVERAGE: ' . $problem . "\n");
+    }
+
+    $workspace->cleanup();
+
+    exit(2);
+}
 
 $failures = [];
 $ran = 0;
@@ -1105,6 +1381,16 @@ foreach (Cases::probes() as $probe) {
     ++$ran;
     $failures = [...$failures, ...runProbeCase($probe, $root, $inProcess, $process)];
     printf("  %-3s %-15s %s\n", $probe->id, $probe->subject, $probe->intent);
+}
+
+foreach (Cases::judgements() as $judgementCase) {
+    if ($only !== [] && !\in_array($judgementCase->id, $only, true)) {
+        continue;
+    }
+
+    ++$ran;
+    $failures = [...$failures, ...runJudgementCase($judgementCase)];
+    printf("  %-3s %-15s %s\n", $judgementCase->id, $judgementCase->verdict, $judgementCase->intent);
 }
 
 foreach (Cases::crossChecks() as $cross) {

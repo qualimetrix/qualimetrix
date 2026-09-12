@@ -24,9 +24,54 @@ formatter reads — previously accepted and ignored). `graph:export
 --exclude-namespace` deliberately keeps its silence: a missed exclusion leaves
 the picture whole.
 
+**An empty `--rule-opt`/short-alias value is now refused, instead of becoming
+  a one-element list holding the empty string.**
+  `--rule-opt='code-smell.boolean-argument:allowed-prefixes='` used to set
+  `allowedPrefixes` to `['']` rather than the default seven prefixes, so
+  `$isActive`/`$hasPermission` were flagged as violations; the same shape of
+  bug made `--rule-opt='coupling.distance:include-namespaces='` stop finding
+  anything at all, because `['']` never matches a real namespace. It also
+  affected `code-smell.error-suppression:allowed-functions`,
+  `cohesion.lcom:exclude-methods` and that option's own short alias
+  (`--lcom-exclude-methods=`). An empty value written after `=` on either CLI
+  door is now **refused**, with a message naming the rule, the option and what
+  to write instead. Refusing rather than defaulting is what the documentation
+  promises for a command-line value, and it keeps the two doors honestly
+  different: YAML's `~` says "take the default", while a command line that
+  stops after `=` says nothing at all. Write the intended value, or drop the
+  `--rule-opt` entry entirely to get the default.
+
+**`coupling.cbo` refuses an unknown `scope` instead of silently measuring the
+other one.** `scope:` accepts `all` and `application`; anything else — a typo
+like `applicaton`, or any other word — used to fall back to `all` without a
+word, so the run measured the opposite of what the configuration asked for. It
+now exits 3 naming both accepted spellings. Migration: fix the spelling; a
+configuration that meant `all` can also just omit the key.
+
 **`debug:layer-assignment` refuses a class the run never analysed** (exit 3)
 instead of answering "(no layer)" — the same words it uses for a real class
 that no layer matched.
+
+**A threshold key written `~` inside `rules:` now selects nothing, instead of
+selecting the flat form of a hierarchical rule.** The keys are `threshold:` on
+`complexity.ccn`, `complexity.cognitive` and `complexity.npath`; `threshold:`,
+`warning:` or `error:` on `coupling.cbo`; `threshold:`, `max_warning:` or
+`max_error:` on `coupling.instability`. Writing one of them without a value used
+to count as writing it, with two consequences, both gone:
+
+- *the level blocks beside it were discarded in silence.* `warning: ~` above a
+  `class:` block on `coupling.cbo` left the rule completely unconfigured and
+  exited 0. The blocks are read now. (A command line stopping after `=` used to
+  reach the same reading; it is refused outright now — see below.)
+- *`threshold: ~` beside `warning:`/`error:` was refused* with `Cannot mix
+  "threshold" with "warning"/"error"`, naming a mix of one written value with
+  nothing. It is accepted now and the graduated mode applies. Two keys that each
+  carry a value are still two modes and are still refused.
+
+Migration, for a configuration that was relying on the old reading: write the
+threshold's value where you wrote `~` to keep the flat form, or, where the point
+was to silence the class level of a complexity rule, write
+`class: {enabled: false}`, which says so.
 
 **An unrecognised rule option key now stops the run with exit 3, at every depth
 it can be written at.** It used to warn at the top level of a rule's options and
@@ -259,7 +304,39 @@ the default.
   The same refusal now fires identically whether the entry carried a formula
   or `enabled: false` — two different messages for the same typo are gone.
 
+- **Five CLI short aliases the product has always accepted are now documented**
+  in the options tables: `--wmc-exclude-data-classes`, `--lcom-exclude-methods`,
+  `--data-class-exclude-exceptions`, `--property-count-warning` and
+  `--property-count-error`. Nothing about them changed; they simply were not
+  listed anywhere, so there was no way to find them but to read the source.
+
+- **The documented form of four list-valued rule options is now stated rather
+  than left to be discovered.** `code-smell.boolean-argument.allowed_prefixes`,
+  `code-smell.error-suppression.allowed_functions`,
+  `cohesion.lcom.exclude_methods` and `coupling.distance.include_namespaces`
+  each accept a single string as the one-element list, and a digit string is an
+  element like any other. The same pages also drop two `--rule-opt` examples
+  that could not work: `allowed_prefixes=is,has,can` was never split on the
+  commas — it set one prefix spelled `is,has,can`, which matches nothing. A CLI
+  door carries one scalar; several values are written as a list in `qmx.yaml`.
+  Migration: replace any `--rule-opt` for these four options that carries commas
+  with the list form in the configuration file.
+
+- **A cache directory that is a name of digits, and a computed-metric formula
+  that is a bare constant, are documented as what they always were** —
+  `cache: {dir: "7331"}` is the directory `7331`, and `formula: "80"` is a
+  metric worth 80 everywhere. Both need the quotes: unquoted they are numbers,
+  and neither a path nor a formula is a number.
+
 ### Fixed
+
+- **An empty `cache.dir` no longer offers `--no-cache` as the way out.** Both
+  cache refusals used to end with "or disable the cache with --no-cache".
+  Against an unwritable directory that is true and it stays — the flag really
+  does carry the run past that check. Against an empty value it never was: the
+  path is judged before the flag is consulted at all, so the run stopped
+  whether or not the reader followed the advice. That refusal now names the
+  default directory (`.qmx-cache`) instead.
 
 - **`~` now means one thing across the document's roots and sections.** Writing
   a key and leaving it empty — `key:` or the explicit YAML null `key: ~` — takes
@@ -268,11 +345,10 @@ the default.
   `coupling: ~`, `computed_metrics: ~`, `architecture: ~` and `exclude_health:
   ~` refused. Two things are unchanged and are stated rather than implied: a `~`
   **element of a list** is still refused where the list holds non-empty strings,
-  because an element is a value and not an unwritten key; and inside `rules:` a
-  threshold key written as `~` is still *present* for the reader that chooses
-  between a rule's flat and levelled form, so it opens the flat form and the
-  `callable:`/`class:`/`namespace:` blocks beside it are not read. See the
-  configuration guide for which keys those are.
+  because an element is a value and not an unwritten key; and a `~` written as
+  the value of a key is never itself a value the rule can act on. Inside
+  `rules:` the equivalence now holds for the keys that choose *how* a rule is
+  read as well — see the Breaking entry on threshold keys above.
 - **A directory whose name is a bare number now works in `suppress_paths:`.**
   The root-level key refused it as "not a non-empty string"; it is converted
   now, the way `--exclude` already is. `suppress_namespaces:` still refuses one,

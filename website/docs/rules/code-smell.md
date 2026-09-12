@@ -77,10 +77,14 @@ rules:
 
 Boolean parameters whose names start with one of these prefixes are considered self-documenting and are not flagged. For example, `$isActive`, `$hasPermission`, or `$is_active` (snake_case) would all be allowed with the default prefixes. Set to `[]` to flag all boolean parameters.
 
+A single string stands for a one-element list: `allowed_prefixes: is` means exactly `allowed_prefixes: [is]`. A digit string is a prefix like any other, so `allowed_prefixes: "2"` is the one-element list `["2"]`.
+
 `flag_promoted_properties` controls whether promoted constructor properties (`public bool $x`) are flagged like regular boolean arguments. Defaults to `false`, since a promoted parameter is a field declaration, not a behavior switch.
 
 ```bash
-bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+# A CLI door carries one scalar, so this sets the single prefix `is` -- the
+# text after `=` is never split. Several prefixes are written as a list in qmx.yaml.
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is"
 bin/qmx check src/ --rule-opt="code-smell.boolean-argument:flag_promoted_properties=true"
 ```
 
@@ -291,8 +295,12 @@ rules:
 
 Functions where `@` error suppression is acceptable. Some I/O functions return `false` and emit a warning on failure -- using `@` with them is a common practice when you check the return value explicitly. By default, no functions are allowed.
 
+A single string stands for a one-element list: `allowed_functions: fopen` means exactly `allowed_functions: [fopen]`. A digit string is a name like any other.
+
 ```bash
-bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen,unlink"
+# A CLI door carries one scalar, so this allows the single function `fopen` --
+# the text after `=` is never split. Several names are written as a list in qmx.yaml.
+bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen"
 ```
 
 ---

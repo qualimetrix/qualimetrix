@@ -435,6 +435,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParser",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator",
           "closes_in": null
@@ -542,6 +547,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser",
           "closes_in": null
         },
         {
@@ -10159,6 +10169,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionWordSet": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionWordSet.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionValueForm": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionValueForm.php",

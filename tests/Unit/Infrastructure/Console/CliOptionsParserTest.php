@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -248,6 +249,103 @@ final class CliOptionsParserTest extends TestCase
 
         self::assertArrayHasKey('test.rule', $result);
         self::assertSame(150.0, $result['test.rule']['threshold']);
+    }
+
+    /**
+     * The sibling door of the `--rule-opt` empty-value defect: a short alias
+     * carrying an empty value (`--lcom-exclude-methods=`) went through the
+     * same `''` fallback and produced a genuine one-element list `['']`
+     * instead of falling back to the option's default.
+     *
+     * The door's own promise (`promise-effect/promise-ledger.tsv`, `cli-alias`
+     * rows) is `refuse`, not "fold to the default": the fix raises a
+     * `ConfigurationRefusal` naming the alias, rule and option instead of a
+     * silent `null`, so the defective `['']` still never reaches
+     * `LcomOptions::fromArray()`, and the door keeps its promise besides.
+     */
+    #[Test]
+    public function itRefusesAnEmptyAliasValueInsteadOfFoldingItToAOneElementEmptyString(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('lcom-exclude-methods', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--lcom-exclude-methods' => '',
+        ], $definition);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'Option --lcom-exclude-methods (rule "cohesion.lcom", option "excludeMethods")'
+            . ' was written with an empty value ("--lcom-exclude-methods=").',
+        );
+
+        $cliParser->parseRuleOptions($input);
+    }
+
+    /**
+     * The boundary case for this door: a single non-empty value must keep
+     * parsing exactly as before the cure.
+     */
+    #[Test]
+    public function itStillParsesANonEmptyAliasValueAsBefore(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('lcom-exclude-methods', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--lcom-exclude-methods' => 'getName',
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertSame('getName', $result['cohesion.lcom']['excludeMethods']);
+    }
+
+    /**
+     * The sixteen aliases with no external carrier for `null_means` (their CLI
+     * option never appears in the CLI options table) are refused the same
+     * way: this door has one code path for every alias, and there is no
+     * reason an undocumented alias should behave differently from a
+     * documented one for the same empty-value input.
+     */
+    #[Test]
+    public function itRefusesAnEmptyValueOnAnUndocumentedAliasTheSameWay(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('circular-deps', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--circular-deps' => '',
+        ], $definition);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Option --circular-deps (rule "architecture.circular-dependency", option "enabled") was written with an empty value');
+
+        $cliParser->parseRuleOptions($input);
     }
 
     #[Test]

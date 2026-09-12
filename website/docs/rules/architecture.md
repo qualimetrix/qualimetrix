@@ -333,6 +333,8 @@ Phase 1 decided layer membership purely from class FQN matched against `patterns
 
 Within one criterion, lists are always OR'd (`attributes: [A, B]` means "has A or B"). `match` controls how the criteria of *different* kinds combine.
 
+**Single-value shorthand.** Any of the five criteria accepts a bare value instead of a one-element list — `suffix: 'Repository'` is equivalent to `suffix: ['Repository']`. The shorthand is the same inside an `exclude:` block (`exclude: { suffix: 'Bridge' }`). Each criterion still enforces its own shape on the value: `attributes` / `implements` / `extends` require an FQN (a value containing `\`), `suffix` refuses one, and `patterns` accepts either.
+
 ```yaml
 # Migration-friendly default (match: any)
 - name: repository

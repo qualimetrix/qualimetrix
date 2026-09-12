@@ -109,30 +109,6 @@ final class Floor
     }
 
     /**
-     * The floor as `01-promise.md` states it, over the pre-cure half: every
-     * declared row is a defect there, cured or not. The `cure` column is not
-     * read here — a row the round repaired was still a defect on the tree the
-     * frozen half measures, and reading the cure would make this half agree
-     * with the after half by construction.
-     *
-     * @param list<Cell> $cells
-     *
-     * @return list<string>
-     */
-    public function missesOnTheFrozenHalf(array $cells): array
-    {
-        $misses = [];
-
-        foreach ($this->judge($cells) as [$row, $held, $actual]) {
-            if (!$held) {
-                $misses[] = $row->row . ': the pre-cure half must call this ' . $row->verdict . ', it reads ' . $actual;
-            }
-        }
-
-        return $misses;
-    }
-
-    /**
      * The live grid against the round's own claim about what it cured.
      *
      * @param list<Cell> $cells
@@ -210,7 +186,14 @@ final class Floor
             }
 
             [$verdict, $defect, $decidedBy] = $seen[$row->row];
-            $held = $row->verdict === 'any-defect' ? $defect : $verdict === $row->verdict;
+            // A named verdict has to be a DEFECT too, not merely wear the
+            // label. The two came apart in this round: four axis-C rows kept
+            // reading LOST_SIBLING after the ledger decided such a loss keeps
+            // the promise, so `defect` went false while the label stayed put --
+            // and a floor comparing labels alone would have gone on reporting
+            // them as reproduced. The floor exists to say "this row must still
+            // be wrong", and wrongness is the bit, not the word.
+            $held = $row->verdict === 'any-defect' ? $defect : ($verdict === $row->verdict && $defect);
             $judged[] = [$row, $held, $verdict . ($defect ? ' (a defect)' : ' (not a defect)'), $decidedBy];
         }
 

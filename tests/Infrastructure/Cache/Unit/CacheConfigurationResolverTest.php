@@ -64,6 +64,51 @@ final class CacheConfigurationResolverTest extends TestCase
         self::assertDirectoryDoesNotExist($this->root . '/blocked/cache');
     }
 
+    /**
+     * A refusal may only offer `--no-cache` where the flag actually answers it.
+     *
+     * The two refusals differ, and the difference is measured rather than
+     * assumed: `enabled` is consulted only before the writability check, so a
+     * run with `--no-cache` passes an unwritable directory (exit 2 against the
+     * same directory's exit 3 without the flag) and is still stopped by an
+     * empty `cache.dir`. The empty-value refusal used to offer the flag anyway
+     * — advice that changed nothing about the run it was printed for.
+     */
+    #[Test]
+    public function itOffersTheFlagOnlyWhereTheFlagWouldChangeTheOutcome(): void
+    {
+        touch($this->root . '/blocked');
+
+        try {
+            $this->resolve('blocked/cache', enabled: true);
+            self::fail('An unwritable cache directory must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('--no-cache', $refusal->getMessage());
+        }
+
+        try {
+            $this->resolve('', enabled: true);
+            self::fail('An empty cache directory must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringNotContainsString('--no-cache', $refusal->getMessage());
+            self::assertStringContainsString('.qmx-cache', $refusal->getMessage());
+        }
+    }
+
+    /**
+     * The half the refusal above relies on: a disabled cache really does skip
+     * the writability check, so the advice it prints is not a dead end.
+     */
+    #[Test]
+    public function itLetsADisabledCachePastAnUnwritableDirectory(): void
+    {
+        touch($this->root . '/blocked');
+
+        $configuration = $this->resolve('blocked/cache', enabled: false);
+
+        self::assertFalse($configuration->enabled);
+    }
+
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/qmx-cache-resolver-' . bin2hex(random_bytes(6));

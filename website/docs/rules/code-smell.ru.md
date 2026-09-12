@@ -77,10 +77,14 @@ rules:
 
 Булевые параметры, имена которых начинаются с одного из этих префиксов, считаются самодокументируемыми и не помечаются. Например, `$isActive`, `$hasPermission` или `$is_active` (snake_case) будут пропущены с настройками по умолчанию. Установите `[]`, чтобы помечать все булевые параметры.
 
+Одна строка означает список из одного элемента: `allowed_prefixes: is` — это ровно `allowed_prefixes: [is]`. Строка из цифр — такой же префикс, как любой другой: `allowed_prefixes: "2"` — это список `["2"]`.
+
 `flag_promoted_properties` определяет, помечаются ли промотированные свойства конструктора (`public bool $x`) как обычные булевые аргументы. По умолчанию `false`, так как промотированный параметр — это объявление поля, а не переключатель поведения.
 
 ```bash
-bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+# CLI-дверь несёт один скаляр, поэтому здесь задаётся единственный префикс `is` —
+# текст после `=` не разбивается. Несколько префиксов пишутся списком в qmx.yaml.
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is"
 bin/qmx check src/ --rule-opt="code-smell.boolean-argument:flag_promoted_properties=true"
 ```
 
@@ -291,8 +295,12 @@ rules:
 
 Функции, для которых подавление ошибок через `@` допустимо. Некоторые функции ввода-вывода возвращают `false` и генерируют предупреждение при ошибке -- использование `@` с ними является распространённой практикой, когда возвращаемое значение проверяется явно. По умолчанию список пуст.
 
+Одна строка означает список из одного элемента: `allowed_functions: fopen` — это ровно `allowed_functions: [fopen]`. Строка из цифр — такое же имя, как любое другое.
+
 ```bash
-bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen,unlink"
+# CLI-дверь несёт один скаляр, поэтому здесь разрешается единственная функция `fopen` —
+# текст после `=` не разбивается. Несколько имён пишутся списком в qmx.yaml.
+bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen"
 ```
 
 ---

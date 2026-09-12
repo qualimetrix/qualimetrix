@@ -680,22 +680,23 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Complexity"
 
-| Flag                           | Rule                 | Option            |
-| ------------------------------ | -------------------- | ----------------- |
-| `--cyclomatic-warning=N`       | complexity.ccn       | callable.warning  |
-| `--cyclomatic-error=N`         | complexity.ccn       | callable.error    |
-| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_warning |
-| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_error   |
-| `--cognitive-warning=N`        | complexity.cognitive | callable.warning  |
-| `--cognitive-error=N`          | complexity.cognitive | callable.error    |
-| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_warning |
-| `--cognitive-class-error=N`    | complexity.cognitive | class.max_error   |
-| `--npath-warning=N`            | complexity.npath     | callable.warning  |
-| `--npath-error=N`              | complexity.npath     | callable.error    |
-| `--npath-class-warning=N`      | complexity.npath     | class.max_warning |
-| `--npath-class-error=N`        | complexity.npath     | class.max_error   |
-| `--wmc-warning=N`              | complexity.wmc       | warning           |
-| `--wmc-error=N`                | complexity.wmc       | error             |
+| Flag                           | Rule                 | Option             |
+| ------------------------------ | -------------------- | ------------------ |
+| `--cyclomatic-warning=N`       | complexity.ccn       | callable.warning   |
+| `--cyclomatic-error=N`         | complexity.ccn       | callable.error     |
+| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_warning  |
+| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_error    |
+| `--cognitive-warning=N`        | complexity.cognitive | callable.warning   |
+| `--cognitive-error=N`          | complexity.cognitive | callable.error     |
+| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_warning  |
+| `--cognitive-class-error=N`    | complexity.cognitive | class.max_error    |
+| `--npath-warning=N`            | complexity.npath     | callable.warning   |
+| `--npath-error=N`              | complexity.npath     | callable.error     |
+| `--npath-class-warning=N`      | complexity.npath     | class.max_warning  |
+| `--npath-class-error=N`        | complexity.npath     | class.max_error    |
+| `--wmc-warning=N`              | complexity.wmc       | warning            |
+| `--wmc-error=N`                | complexity.wmc       | error              |
+| `--wmc-exclude-data-classes`   | complexity.wmc       | excludeDataClasses |
 
 === "Coupling"
 
@@ -711,15 +712,19 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--instability-class-error=N`   | coupling.instability | class.max_error       |
 | `--instability-ns-warning=N`    | coupling.instability | namespace.max_warning |
 | `--instability-ns-error=N`      | coupling.instability | namespace.max_error   |
+| `--class-rank-warning=N`        | coupling.class-rank  | warning               |
+| `--class-rank-error=N`          | coupling.class-rank  | error                 |
 
 === "Size"
 
-| Flag                       | Rule              | Option  |
-| -------------------------- | ----------------- | ------- |
-| `--class-count-warning=N`  | size.class-count  | warning |
-| `--class-count-error=N`    | size.class-count  | error   |
-| `--method-count-warning=N` | size.method-count | warning |
-| `--method-count-error=N`   | size.method-count | error   |
+| Flag                         | Rule                | Option  |
+| ---------------------------- | ------------------- | ------- |
+| `--class-count-warning=N`    | size.class-count    | warning |
+| `--class-count-error=N`      | size.class-count    | error   |
+| `--method-count-warning=N`   | size.method-count   | warning |
+| `--method-count-error=N`     | size.method-count   | error   |
+| `--property-count-warning=N` | size.property-count | warning |
+| `--property-count-error=N`   | size.property-count | error   |
 
 === "Design"
 
@@ -731,6 +736,7 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
 | `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
+| `--lcom-exclude-methods=NAME`        | cohesion.lcom                 | excludeMethods      |
 | `--noc-warning=N`                    | design.noc                    | warning             |
 | `--noc-error=N`                      | design.noc                    | error               |
 | `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
@@ -762,6 +768,7 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--data-class-min-members=N`            | design.data-class                    | minMembers          |
 | `--data-class-exclude-readonly`         | design.data-class                    | excludeReadonly     |
 | `--data-class-exclude-promoted-only`    | design.data-class                    | excludePromotedOnly |
+| `--data-class-exclude-exceptions`       | design.data-class                    | excludeExceptions   |
 | `--god-class-wmc-threshold=N`           | design.god-class                     | wmcThreshold        |
 | `--god-class-lcom-threshold=N`          | design.god-class                     | lcomThreshold       |
 | `--god-class-tcc-threshold=N`           | design.god-class                     | tccThreshold        |

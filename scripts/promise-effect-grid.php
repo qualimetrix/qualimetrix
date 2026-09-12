@@ -38,6 +38,8 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Limits.php';
+require __DIR__ . '/promise-effect/Composition.php';
+require __DIR__ . '/promise-effect/Neighbourhood.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';

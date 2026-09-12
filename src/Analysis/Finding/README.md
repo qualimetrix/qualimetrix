@@ -90,8 +90,14 @@ types.
 
 Each accepted key carries its form in the same entry, as a `RuleOptionShape`:
 an integer, a number, a boolean, a string, a non-empty string, a list or map of
-one of those, a nested block, or a union of several, each optionally accepting
-an explicit `null`. The form lives *inside* the key set rather than beside it,
+one of those, a nested block, a union of several, or a closed set of words
+(`RuleOptionWordSet`), each optionally accepting an explicit `null`. The closed
+set is deliberately narrow and its docblock says why: a set whose members exist
+only at run time, and a value constrained by a pattern rather than by
+membership, stay with the readers that own them instead of being spelled as a
+shape. No key declares it yet — `promise-effect`'s pair probe cannot write a
+value outside its eight canonical magnitudes, and every reader that owns a
+static word set is in that enumeration. The form lives *inside* the key set rather than beside it,
 so a key cannot be admitted by one declaration and shaped by another; it is
 derived from what the reading code does with the value — the cast's target, the
 guard's predicate — not from what the key is called, which is what the removed

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -43,6 +44,8 @@ final readonly class CliOptionsParser
                 continue;
             }
 
+            $this->refuseEmptyAliasValue($alias, $value);
+
             $parsed = $this->ruleOptionsParser->parseShortAlias($alias, $this->normalizeValue($value));
             if ($parsed === null) {
                 continue;
@@ -72,9 +75,49 @@ final readonly class CliOptionsParser
     }
 
     /**
+     * Refuses a short alias written with an empty value (`--some-alias=`).
+     *
+     * The alias resolves to the same rule/option pair {@see RuleOptionsParser::normalizeValue()}
+     * guards against on the sibling `--rule-opt` door: this door also carries
+     * text only, so an empty value is never a genuine "explicitly nothing" —
+     * it is the same one-element-empty-string defect the CLI cannot express
+     * on purpose (see `promise-effect/promise-ledger.tsv`, `cli-alias` rows).
+     * Applied uniformly to every alias, including the sixteen whose door-null
+     * meaning no external carrier documents: the reasoning is the same
+     * regardless of whether the alias appears in the CLI options table, and
+     * this door has one code path for all of them.
+     */
+    private function refuseEmptyAliasValue(string $alias, mixed $value): void
+    {
+        if (!\is_string($value) || trim($value) !== '') {
+            return;
+        }
+
+        $target = $this->ruleOptionsParser->aliasTarget($alias);
+        $targetPhrase = $target !== null
+            ? \sprintf(' (rule "%s", option "%s")', $target['rule'], $target['option'])
+            : '';
+
+        throw ConfigurationRefusal::aboutCommandLineInput(
+            '--' . $alias,
+            \sprintf(
+                'Option --%s%s was written with an empty value ("--%s="). '
+                . 'Write a value after "=", or omit --%s entirely to use its default.',
+                $alias,
+                $targetPhrase,
+                $alias,
+                $alias,
+            ),
+        );
+    }
+
+    /**
      * Normalizes a CLI option value to the appropriate PHP type.
      *
      * Handles boolean strings ('true'/'false'), floats, and integers.
+     *
+     * Never receives an empty string: its only caller runs
+     * {@see self::refuseEmptyAliasValue()} first.
      */
     private function normalizeValue(mixed $value): mixed
     {

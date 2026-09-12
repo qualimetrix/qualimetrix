@@ -82,6 +82,54 @@ final readonly class PairRow
     }
 }
 
+/**
+ * One `kind=composition-*` row: a promise about WHICH writer of one path wins.
+ *
+ * The three kinds share ten columns with every other row (the ledger's own
+ * layout rule), and the meaning of columns 2-6 differs per kind:
+ *
+ *   composition-path   | path              | writer_low         | writer_high          | path_scope | promised_winner
+ *   composition-bucket | rule              | key_low@writer_low | key_high@writer_high | level      | promised_outcome
+ *   composition-triple | rule              | path@slot          | l1/l2/l3             | T1..T4     | promised_survival
+ *
+ * Held as one type rather than three because every consumer asks the same
+ * four questions of a row — who writes low, who writes high, what is disputed,
+ * what was promised — and the kind is what says how to read the answers.
+ */
+final readonly class CompositionRow
+{
+    /** @param list<string> $layers the triple's layers, low to high; empty for the other two kinds */
+    public function __construct(
+        public string $kind,
+        public string $subject,
+        public string $low,
+        public string $high,
+        public string $scope,
+        public string $promised,
+        public string $carrier,
+        public string $status,
+        public string $note,
+        public array $layers = [],
+    ) {}
+
+    /**
+     * The scope value `unrestricted` is what says the promise is about the
+     * layer order and not about the one path column 2 happens to name, which
+     * is what lets the framework-key observation point stand on the same row.
+     * An `80-alias-restricted` row promises nothing outside the 80 alias
+     * paths, and no framework key is one of them.
+     */
+    public function reachesEveryPath(): bool
+    {
+        return $this->scope === 'unrestricted';
+    }
+
+    public function key(): string
+    {
+        return 'composition|' . $this->kind . '|' . $this->subject . '|' . $this->low . '|' . $this->high . '|' . $this->scope;
+    }
+}
+
 final class Ledger
 {
     public const string PATH = 'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv';
@@ -89,10 +137,12 @@ final class Ledger
     /**
      * @param list<FormRow> $forms
      * @param list<PairRow> $pairs
+     * @param list<CompositionRow> $compositions
      */
     private function __construct(
         public readonly array $forms,
         public readonly array $pairs,
+        public readonly array $compositions,
         public readonly int $deferredRows,
     ) {}
 
@@ -106,6 +156,7 @@ final class Ledger
 
         $forms = [];
         $pairs = [];
+        $compositions = [];
         $deferred = 0;
         $seenHeader = false;
 
@@ -131,6 +182,27 @@ final class Ledger
 
             if ($kind === 'deferred') {
                 ++$deferred;
+
+                continue;
+            }
+
+            // Stage 01's axis-C promise rows (`docs/internal/plans/source-composition/01-promise.md`):
+            // who wins between two or three writers of one path. Recognised by
+            // name rather than by "anything unmatched", so a genuine typo in
+            // `kind` stays the `LedgerError` below.
+            if ($kind === 'composition-path' || $kind === 'composition-triple' || $kind === 'composition-bucket') {
+                $compositions[] = new CompositionRow(
+                    kind: $kind,
+                    subject: $cells[1],
+                    low: $cells[2],
+                    high: $cells[3],
+                    scope: $cells[4],
+                    promised: $cells[5],
+                    carrier: $cells[6],
+                    status: $cells[7],
+                    note: $cells[8],
+                    layers: $kind === 'composition-triple' ? self::layers($cells[3]) : [],
+                );
 
                 continue;
             }
@@ -180,7 +252,28 @@ final class Ledger
             throw new LedgerError('unknown row kind "' . $kind . '"');
         }
 
-        return new self($forms, $pairs, $deferred);
+        return new self($forms, $pairs, $compositions, $deferred);
+    }
+
+    /**
+     * The three layers of a `composition-triple` row, low to high, out of the
+     * `l1/l2/l3` cell the ledger's own layout rule packs them into.
+     *
+     * Fail-closed on anything but three: the probe writes one document per
+     * layer, and a row naming two or four would silently become a different
+     * experiment from the one the denominator counted.
+     *
+     * @return list<string>
+     */
+    private static function layers(string $cell): array
+    {
+        $layers = array_values(array_map(trim(...), explode('/', $cell)));
+
+        if (\count($layers) !== 3) {
+            throw new LedgerError('a composition-triple row names ' . \count($layers) . ' layers in "' . $cell . '", and a triple has three');
+        }
+
+        return $layers;
     }
 
     /**

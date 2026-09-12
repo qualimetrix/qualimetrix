@@ -1,0 +1,36 @@
+# The two distinguishable values axis C writes, one per side of a dispute.
+#
+# WHY THIS FILE AND NOT `forms.tsv`. That table fixes a SINGLE magnitude, 7331,
+# because axis A asks about the FORM of a value and one value per form is
+# enough. Axis C asks who wrote the value that survived, which needs two
+# values that can be told apart — and `forms.tsv` is frozen, so the pair is
+# declared here instead of by widening it.
+#
+# Distinguishability is never assumed. Every row of axis C compares the two
+# sides as the product rendered them, and a pair the run cannot tell apart is
+# read NOT OBSERVABLE rather than repaired by picking a different number: the
+# stand reports what the declaration bought, it does not shop until it wins.
+#
+# The magnitudes are far above every threshold default in this tree (the same
+# property the 7331 comment states), so a write is distinguishable from the
+# key being omitted. `graduated-sibling` is the SECOND slot of a graduated
+# pair: a triple needs one slot only the lowest layer writes, and one the
+# highest layer writes back, or nothing is at stake in it. Both sibling values
+# stay above their primary so that `warning <= error` holds and the write is
+# not refused for a reason that has nothing to do with composition.
+#
+# `framework-pattern` and `framework-witness` belong to the SECOND observation
+# point. `suppress_paths` never reaches the options object — the factory
+# drains it into the registry's providers before `fromArray()` — so the value
+# is observed by asking the predicate the product's own consumers ask, about
+# the witness file each pattern is chosen to match and the other one it is
+# chosen to miss.
+slot	side	yaml_write	cli_write
+graduated-primary	low	4211	4211
+graduated-primary	high	8623	8623
+graduated-sibling	low	4212	4212
+graduated-sibling	high	8624	8624
+framework-pattern	low	src/Low/*	src/Low/*
+framework-pattern	high	src/High/*	src/High/*
+framework-witness	low	src/Low/Helper.php	src/Low/Helper.php
+framework-witness	high	src/High/Helper.php	src/High/Helper.php

@@ -1,0 +1,32 @@
+# The stand's own run parameters, in ONE declared place (X19 S11).
+#
+# Before this, `--freeze-before` hardcoded the "before" commit as a string
+# literal, and the axis list `A,B,D` was written TWICE inside
+# scripts/promise-effect.php — once as the default for `--axis=`, once more
+# as the fixed iteration order of the summary loops. A round that changed one
+# without the other would silently stop measuring an axis. Both now come from
+# this file, read once at startup.
+#
+# `before-commit` is not just compared against HEAD: a value that is not a
+# real commit in this repository refuses the run before anything else runs,
+# so a typo here cannot silently defeat the very check it exists to make (the
+# X18 lesson of a guard whose constants named paths that did not exist, and
+# so could never redden).
+#
+# `axes` lists every axis the grid spans, in the fixed order the summary is
+# printed in. `--axis=` narrows a run against this same list; it never
+# replaces it. It is also held against the script's own generator map in both
+# directions: a declared axis nothing produces, and a generator nothing
+# declares, are two ways of not measuring in silence.
+#
+# `blocking-axes` names the subset whose defects move the EXIT CODE. It is a
+# decision of the round and not a property of an axis, which is why it is
+# declared rather than written into the summary loop:
+#   A, D  cured by this programme, so a defect blocks;
+#   B     pair semantics have no owner holding a mandate (X17's decision);
+#   C, E  the subject this round is measuring in order to cure later — a stage
+#         that must produce their grid cannot also demand it be green.
+key	value
+before-commit	02a6ca66
+axes	A,B,C,D,E
+blocking-axes	A,D

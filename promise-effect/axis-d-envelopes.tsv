@@ -31,6 +31,40 @@
 # very value being probed. Those probes instead get a fresh unique run
 # directory and no injection, and the appearance of the default `.qmx-cache`
 # is recorded rather than failing the probe.
+#
+# THE SIX `architecture.layers[*].exclude.*` ROWS (S10 02-stand.md) used to
+# instantiate `exclude:` with the probed leaf as its ONLY key. Writing `~` at
+# that leaf then left `exclude:` with every criterion empty, and
+# `ExcludeBlockValidator` refuses that shape regardless of which leaf is
+# empty ("must declare at least one of patterns/suffix/attributes/implements/
+# extends") — a refusal of the ENVELOPE, worded differently from the omitted
+# probe's own refusal, so the classifier could not fold it away as one.
+#
+# The base for each of the five criterion rows now fills the OTHER four —
+# never its own leaf. Filling all five uniformly was tried first and is
+# wrong: `omitted` (no write at all) would then already carry a real value at
+# the very leaf being tested, so writing `~` there removes a criterion
+# `omitted` still has, and the two compare unequal for a reason that has
+# nothing to do with whether `~` behaves as an absent key. Each row's base
+# must leave EXACTLY the criterion it tests absent, so `omitted` and a `~`
+# write differ in nothing else. `match` is not one of the five criteria the
+# emptiness check reads, so its base carries all five safely.
+#
+# The layer name is also lowercased to `domain`:
+# `LayerDefinition::NAME_REGEX` refuses an uppercase static-layer name
+# unconditionally, so the un-lowered "Domain" this file's OTHER rows still
+# use would have let `~` pass exclude validation only to be refused one step
+# later for a reason that is, once again, not about the probed leaf — still a
+# correct-but-uninformative NOT OBSERVABLE rather than the wrong REFUSES
+# defect, but not the "valid layer" this repair asks for. Measured: with both
+# changes, all six `exclude.*: ~` writes produce byte-identical output to
+# omitting the key entirely (`bin/qmx check`, and `Stand::axisD()` reads all
+# six as `OK` — "`~` behaved as an omitted key"). The other
+# `architecture.layers[*].*` rows above keep their original `"Domain"` base
+# unchanged — they are not named by this repair, and
+# `.patterns`/`.suffix`/`.attributes`/`.implements`/`.extends` still carry an
+# analogous "at least one criterion" gap of their own at the LAYER level (not
+# the exclude level), left for a future round to name.
 ledger_path	write_path	base	cache_owned
 architecture.layers[*].name	architecture.layers.0.name	{"architecture":{"layers":[{"patterns":["Probe\\Domain\\*"]}]}}	no
 architecture.layers[*].patterns	architecture.layers.0.patterns	{"architecture":{"layers":[{"name":"Domain"}]}}	no
@@ -41,12 +75,12 @@ architecture.layers[*].extends	architecture.layers.0.extends	{"architecture":{"l
 architecture.layers[*].match	architecture.layers.0.match	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"],"suffix":["Order"]}]}}	no
 architecture.layers[*].exclude	architecture.layers.0.exclude	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
 architecture.layers[*].pending	architecture.layers.0.pending	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.patterns	architecture.layers.0.exclude.patterns	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.suffix	architecture.layers.0.exclude.suffix	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.attributes	architecture.layers.0.exclude.attributes	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.implements	architecture.layers.0.exclude.implements	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.extends	architecture.layers.0.exclude.extends	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
-architecture.layers[*].exclude.match	architecture.layers.0.exclude.match	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]}]}}	no
+architecture.layers[*].exclude.patterns	architecture.layers.0.exclude.patterns	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"suffix":["ExcludedOther"],"attributes":["Probe\\ExcludedAttribute"],"implements":["Probe\\ExcludedInterface"],"extends":["Probe\\ExcludedBase"]}}]}}	no
+architecture.layers[*].exclude.suffix	architecture.layers.0.exclude.suffix	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"patterns":["Probe\\ExcludedOther\\*"],"attributes":["Probe\\ExcludedAttribute"],"implements":["Probe\\ExcludedInterface"],"extends":["Probe\\ExcludedBase"]}}]}}	no
+architecture.layers[*].exclude.attributes	architecture.layers.0.exclude.attributes	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"patterns":["Probe\\ExcludedOther\\*"],"suffix":["ExcludedOther"],"implements":["Probe\\ExcludedInterface"],"extends":["Probe\\ExcludedBase"]}}]}}	no
+architecture.layers[*].exclude.implements	architecture.layers.0.exclude.implements	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"patterns":["Probe\\ExcludedOther\\*"],"suffix":["ExcludedOther"],"attributes":["Probe\\ExcludedAttribute"],"extends":["Probe\\ExcludedBase"]}}]}}	no
+architecture.layers[*].exclude.extends	architecture.layers.0.exclude.extends	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"patterns":["Probe\\ExcludedOther\\*"],"suffix":["ExcludedOther"],"attributes":["Probe\\ExcludedAttribute"],"implements":["Probe\\ExcludedInterface"]}}]}}	no
+architecture.layers[*].exclude.match	architecture.layers.0.exclude.match	{"architecture":{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"],"exclude":{"patterns":["Probe\\ExcludedOther\\*"],"suffix":["ExcludedOther"],"attributes":["Probe\\ExcludedAttribute"],"implements":["Probe\\ExcludedInterface"],"extends":["Probe\\ExcludedBase"]}}]}}	no
 architecture.allow.<layer>	architecture.allow.Domain	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}]}}	no
 architecture.allow.<layer>[*].target	architecture.allow.Infra.0.target	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}]}}	no
 architecture.allow.<layer>[*].relations	architecture.allow.Infra.0.relations	{"architecture":{"layers":[{"name":"Domain","patterns":["Probe\\Domain\\*"]},{"name":"Infra","patterns":["Probe\\Infra\\*"]}],"allow":{"Infra":[{"target":"Domain"}]}}}	no

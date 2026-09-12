@@ -18,10 +18,11 @@ declare(strict_types=1);
  *   php scripts/promise-effect.php --check        0 fresh, 1 drift or a red outcome
  *   php scripts/promise-effect.php --before       re-judge the frozen raw observations
  *   php scripts/promise-effect.php --freeze-before --reason='…'
- *   php scripts/promise-effect.php --axis=A,B,D   narrow the run (never evidence on its own)
+ *   php scripts/promise-effect.php --axis=A,C     narrow the run (never evidence on its own)
  *   php scripts/promise-effect.php --stability    measure twice, demand the same text
  *
- * Exit codes: 0 clean, 1 a red outcome on axis A or D, 2 a declaration that
+ * Exit codes: 0 clean, 1 a red outcome on a BLOCKING axis (which ones those
+ * are is declared in `promise-effect/run-declaration.tsv`), 2 a declaration that
  * cannot be read, 3 a probe that could not be taken (see 02 §4: a run that did
  * not confirm its postcondition is not an observation).
  *
@@ -45,9 +46,75 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Limits.php';
+require __DIR__ . '/promise-effect/Composition.php';
+require __DIR__ . '/promise-effect/Neighbourhood.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
+require __DIR__ . '/promise-effect/RunDeclaration.php';
+
+/**
+ * The one place an axis NAME becomes the cells it produces.
+ *
+ * Before this the dispatch was three literal `if (in_array('A', ...))` blocks
+ * in two code paths, and S11's lesson is exactly that shape: a new axis added
+ * to one of them and forgotten in the other is an axis that silently does not
+ * get measured. The declared list decides WHICH of these run; this map decides
+ * only HOW, and {@see assertAxesHaveGenerators()} holds the two together.
+ *
+ * @return array<string, callable(Stand): list<Cell>>
+ */
+function axisGenerators(): array
+{
+    return [
+        'A' => static fn(Stand $stand): array => $stand->axisA(),
+        'B' => static fn(Stand $stand): array => $stand->axisB(),
+        'C' => static fn(Stand $stand): array => $stand->axisC(),
+        'D' => static fn(Stand $stand): array => $stand->axisD(),
+        'E' => static fn(Stand $stand): array => $stand->axisE(),
+    ];
+}
+
+/**
+ * Both directions, because both are a way to stop measuring in silence: a
+ * declared axis nothing can produce, and a generator no declaration ever
+ * names.
+ *
+ * @param list<string> $declared
+ */
+function assertAxesHaveGenerators(array $declared): void
+{
+    $generators = axisGenerators();
+
+    foreach ($declared as $axis) {
+        if (!isset($generators[$axis])) {
+            throw new LedgerError('run-declaration.tsv names the axis "' . $axis . '", which nothing in this script produces');
+        }
+    }
+
+    foreach (array_keys($generators) as $axis) {
+        if (!\in_array($axis, $declared, true)) {
+            throw new LedgerError('the script produces the axis "' . $axis . '", which run-declaration.tsv does not declare');
+        }
+    }
+}
+
+/**
+ * @param list<string> $axes
+ *
+ * @return list<Cell>
+ */
+function measure(Stand $stand, array $axes): array
+{
+    $generators = axisGenerators();
+    $cells = [];
+
+    foreach ($axes as $axis) {
+        $cells = [...$cells, ...$generators[$axis]($stand)];
+    }
+
+    return $cells;
+}
 
 /**
  * @param list<string> $argv
@@ -316,7 +383,6 @@ $root = \dirname(__DIR__);
 $argv = $_SERVER['argv'] ?? [];
 $arguments = parseArguments($argv);
 $scratch = $arguments['scratch'] ?? sys_get_temp_dir() . '/qmx-promise-effect';
-$axes = explode(',', $arguments['axis'] ?? 'A,B,D');
 
 $snapshotDirectory = $root . '/' . Stand::SNAPSHOT_DIR;
 
@@ -325,6 +391,12 @@ if (!is_dir($snapshotDirectory)) {
 }
 
 try {
+    // The one declared source for the axis order and the "before" commit —
+    // see `RunDeclaration`. `--axis=` narrows this same list; it never
+    // supplies a second one of its own.
+    $runDeclaration = RunDeclaration::load($root);
+    $canonicalAxes = $runDeclaration->axes;
+    assertAxesHaveGenerators($canonicalAxes);
     $ledger = Ledger::load($root);
     $declarations = Declarations::load($root);
     $inProcess = new InProcess($scratch);
@@ -336,6 +408,8 @@ try {
     exit(2);
 }
 
+$axes = isset($arguments['axis']) ? explode(',', $arguments['axis']) : $canonicalAxes;
+
 if (isset($arguments['before'])) {
     // Re-judged, never replayed: the frozen file holds raw observations, and
     // today's classifier is applied to them. Editing the classifier therefore
@@ -343,7 +417,7 @@ if (isset($arguments['before'])) {
     // to keep.
     $frozen = $stand->before(readRaw($snapshotDirectory . '/observations-before/raw.tsv'));
 
-    foreach (['A', 'B', 'D'] as $axis) {
+    foreach ($canonicalAxes as $axis) {
         printf("axis %s (before)\n", $axis);
 
         foreach (summarize($frozen, $axis) as $verdict => $count) {
@@ -369,17 +443,21 @@ if (isset($arguments['before'])) {
         \count($limitConflicts),
     );
 
-    // The floor belongs HERE. It is a claim about the classifier reading a
-    // known pre-cure tree — `01-promise.md` states it of the snapshot BEFORE —
-    // and on this half it is meaningful whether or not the product was since
-    // repaired. Judging it on the live grid instead made every successful cure
-    // a floor miss, which is how a cured product came to exit 1.
-    $floorMisses = Floor::load($root)->missesOnTheFrozenHalf($frozen);
+    // The floor belongs HERE, but not in the shape it had. It used to claim
+    // "every declared row is a defect on this half, cured or not", which held
+    // only while the frozen half predated every cure. X19 rebased the snapshot
+    // onto the product of 02a6ca66 — after X18's cure — so twenty-one declared
+    // rows are lawfully green there, and the old claim turned each of them into
+    // a miss. The half is now judged through the same `cure` column the live
+    // grid uses: a row without a cure must still be a defect, a row with one
+    // must read as repaired, and a cure that names a commit the snapshot does
+    // not contain is the lie this catches.
+    [$floorMisses] = Floor::load($root)->cureMisses($frozen);
 
     printf(
         "  %-22s %s\n",
         'defect floor',
-        $floorMisses === [] ? 'reproduced on the pre-cure half' : \count($floorMisses) . ' row(s) not recognised',
+        $floorMisses === [] ? 'reproduced on the frozen half' : \count($floorMisses) . ' row(s) not recognised',
     );
 
     foreach ($floorMisses as $miss) {
@@ -423,21 +501,7 @@ if (isset($arguments['stability'])) {
     $texts = [];
 
     foreach ([$stand, $second] as $round) {
-        $cells = [];
-
-        if (\in_array('A', $axes, true)) {
-            $cells = [...$cells, ...$round->axisA()];
-        }
-
-        if (\in_array('B', $axes, true)) {
-            $cells = [...$cells, ...$round->axisB()];
-        }
-
-        if (\in_array('D', $axes, true)) {
-            $cells = [...$cells, ...$round->axisD()];
-        }
-
-        $texts[] = render($cells);
+        $texts[] = render(measure($round, $axes));
     }
 
     $differences = 0;
@@ -480,20 +544,7 @@ if (\in_array('A', $axes, true)) {
     $stand->takeWitnesses();
 }
 
-$cells = [];
-
-if (\in_array('A', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisA()];
-}
-
-if (\in_array('B', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisB()];
-}
-
-if (\in_array('D', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisD()];
-}
-
+$cells = measure($stand, $axes);
 $rendered = render($cells);
 $target = $snapshotDirectory . '/verdicts.tsv';
 $spanProblems = 0;
@@ -515,7 +566,7 @@ if (isset($arguments['check'])) {
 // reconstruction is held to the generators it mirrors. Without the assertion
 // the two could drift apart and the aggregate would keep calling a grid fresh
 // that the expensive run no longer produces.
-if (\count($axes) === 3) {
+if (\count($axes) === \count($canonicalAxes)) {
     $produced = [];
 
     foreach ($cells as $cell) {
@@ -538,13 +589,41 @@ if (\count($axes) === 3) {
 }
 
 if (isset($arguments['freeze-before'])) {
+    $beforeCommit = $runDeclaration->beforeCommit;
+
+    // A declared commit that does not exist in this repository is a run
+    // failure here, not a `HEAD is (something else)` message that reads like
+    // the branch is merely on the wrong commit — see
+    // `RunDeclaration::assertBeforeCommitExists()`.
+    try {
+        $runDeclaration->assertBeforeCommitExists($root);
+    } catch (LedgerError $error) {
+        fwrite(\STDERR, 'promise-effect: ' . $error->getMessage() . "\n");
+
+        exit(3);
+    }
+
     // The snapshot stores RAW observations, never verdicts: one classifier
     // judges both halves of the pair, and a frozen verdict would let a later
     // edit of the classifier split them in silence.
+    //
+    // What the shot has to hold still is the PRODUCT, not the whole tree. The
+    // stand is always repaired before the shot is taken -- that is the whole
+    // point of taking it after the input edits -- so HEAD never equals the
+    // declared commit, and a guard comparing HEAD would either refuse every
+    // honest shot or be switched off. It compares `src/` instead: an empty
+    // diff means this measurement is of the declared product, whatever else
+    // the branch has changed.
     $head = trim((string) shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
+    $productDiff = trim((string) shell_exec(
+        'git -C ' . escapeshellarg($root) . ' diff --name-only ' . escapeshellarg($beforeCommit) . ' -- src/',
+    ));
 
-    if (!str_starts_with($head, '6a833ab8')) {
-        fwrite(\STDERR, 'promise-effect: the "before" shot must be taken on 6a833ab8, HEAD is ' . $head . "\n");
+    if ($productDiff !== '') {
+        $moved = substr_count($productDiff, "\n") + 1;
+
+        fwrite(\STDERR, 'promise-effect: the "before" shot measures the product at ' . $beforeCommit
+            . ', but ' . $moved . " file(s) under src/ differ from it:\n" . $productDiff . "\n");
 
         exit(3);
     }
@@ -568,7 +647,12 @@ if (isset($arguments['freeze-before'])) {
     file_put_contents($snapshotDirectory . '/observations-before/raw.tsv', renderRaw($stand->rawObservations()));
     file_put_contents(
         $snapshotDirectory . '/observations-before/shot.txt',
-        "commit\t" . $head . "\n"
+        // Two commits, because they are two different facts: the tree the shot
+        // was taken on always carries the stand repairs, while what the shot
+        // is ABOUT is the product. Writing only the former made the file say
+        // the snapshot measured a tree whose stand did not yet exist.
+        "product-commit\t" . $beforeCommit . "\n"
+        . "tree-commit\t" . $head . "\n"
         . "taken\t" . gmdate('Y-m-d') . "\n"
         . "axes\t" . implode(',', $axes) . "\n"
         . "reason\t" . str_replace(["\t", "\n"], ' ', $reason) . "\n",
@@ -578,7 +662,7 @@ if (isset($arguments['freeze-before'])) {
 $defects = 0;
 $red = 0;
 
-foreach (['A', 'B', 'D'] as $axis) {
+foreach ($canonicalAxes as $axis) {
     if (!\in_array($axis, $axes, true)) {
         continue;
     }
@@ -599,9 +683,13 @@ foreach (['A', 'B', 'D'] as $axis) {
 
         ++$defects;
 
-        // Axis B is measured, not cured, in this round: no owner holds a
-        // mandate over pair semantics, so MISCOMPOSED does not block.
-        if ($axis !== 'B') {
+        // Only the axes the declaration calls blocking move the exit code.
+        // B, C and E are measured and not cured HERE: axis B has no owner
+        // holding a mandate over pair semantics, and axis C and the
+        // neighbourhood coordinate are this round's own subject — a stage that
+        // measures them cannot also demand they already be green, or the grid
+        // it exists to produce could never be written.
+        if (\in_array($axis, $runDeclaration->blockingAxes, true)) {
             ++$red;
         }
     }
@@ -618,15 +706,58 @@ foreach ($cells as $cell) {
     }
 }
 
+// Printed apart from the verdict counts because it is a fact about the
+// LEDGER, not about the product: a row whose carriers decide nothing cannot be
+// contradicted, whatever its cell says happened. 03-grid.md asks for this
+// number separately for exactly that reason.
+if (\in_array('C', $axes, true)) {
+    $silent = 0;
+
+    foreach ($ledger->compositions as $row) {
+        if ($row->promised === 'unpromised' || $row->promised === '') {
+            ++$silent;
+        }
+    }
+
+    printf("\n  %-22s %d of %d ledger row(s)\n", 'axis C unpromised', $silent, \count($ledger->compositions));
+
+    // 02-stand.md asks for this per pair rather than as a belief about the
+    // declared magnitudes: a pair whose two sides render alike is read
+    // NOT OBSERVABLE, never nudged until it differs, so the count of cells
+    // that DID tell their sides apart is the honest denominator of axis C.
+    $alike = 0;
+    $asked = 0;
+
+    foreach ($cells as $cell) {
+        if ($cell->axis !== 'C') {
+            continue;
+        }
+
+        if (str_contains($cell->decidedBy, Classifier::SIDES_ALIKE)) {
+            ++$alike;
+        }
+
+        if ($cell->verdict !== Verdict::NOT_OBSERVABLE || str_contains($cell->decidedBy, Classifier::SIDES_ALIKE)) {
+            ++$asked;
+        }
+    }
+
+    printf("  %-22s %d of %d cell(s) probed, %d could not\n", 'axis C sides apart', $asked - $alike, $asked, $alike);
+}
+
+if (\in_array('E', $axes, true)) {
+    printf("  %-22s %d cell(s)\n", 'axis E population', \count((new Neighbourhood($root, $inProcess->optionsClasses))->rows));
+}
+
 printf("\n  %-22s %d\n", 'in-process probes', $inProcess->observations());
 printf("  %-22s %d\n", 'product runs', $process->runs());
 printf("  %-22s %d of %d (%.1f%%)\n", 'NOT OBSERVABLE', $total - $observable, $total, $total === 0 ? 0.0 : ($total - $observable) / $total * 100);
 printf("  %-22s %d\n", 'defects (all axes)', $defects);
 
-// A narrowed run cannot judge the floor: it spans all three axes, and a green
-// line printed over a partial grid is the shape of false evidence this round
-// exists to remove.
-$whole = \count($axes) === 3;
+// A narrowed run cannot judge the floor: it must span every declared axis,
+// and a green line printed over a partial grid is the shape of false
+// evidence this round exists to remove.
+$whole = \count($axes) === \count($canonicalAxes);
 // On the LIVE grid the floor is not the floor. Every row this round repaired
 // is no longer a defect, so the pre-cure list applied here turned a successful
 // cure into a red run. What the live grid is held to instead is the round's

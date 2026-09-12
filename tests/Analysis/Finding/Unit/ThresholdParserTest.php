@@ -241,10 +241,16 @@ final class ThresholdParserTest extends TestCase
     // ---------------------------------------------------------------------
     // Characterization tests.
     //
-    // These pin the exact edge-case semantics of parse() — key *presence* vs.
-    // key *value*, first-match-wins ordering, null handling — so that any
-    // restructuring of the parser can be proven behavior-preserving. They are
-    // deliberately written against observed behavior, quirks included.
+    // These pin the exact edge-case semantics of parse() — what counts as a
+    // key having been written, first-match-wins ordering, null handling — so
+    // that any restructuring of the parser can be proven behavior-preserving.
+    //
+    // Every question the parser asks is asked of a key's VALUE: `~` is the
+    // author leaving that key's own value to the default, never a mode
+    // selection and never a mixing partner. The cases below that used to pin
+    // the opposite are kept, inverted, because both readings were live: a
+    // presence reading refused `threshold: ~` beside `warning: 5` as a mix
+    // with nothing, and let a `~` alias shadow a populated one behind it.
     // ---------------------------------------------------------------------
 
     #[Test]
@@ -257,29 +263,27 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function itDetectsTheConflictByKeyPresenceSoANullThresholdStillClashesWithWarning(): void
+    public function itSeesNoConflictWhenTheThresholdKeyBesideWarningIsWrittenNull(): void
     {
-        // The mixing check uses array_key_exists(), not the value: an explicit
-        // `threshold: ~` next to `warning:` is still a configuration error.
-        self::expectException(ConfigurationRefusal::class);
+        // There is one value in this document, and it is `warning`'s. A
+        // refusal here would name a mix of a written value with nothing.
+        $result = ThresholdParser::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
 
-        ThresholdParser::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
     }
 
     #[Test]
-    public function itDetectsTheConflictWhenTheWarningKeyIsPresentButNull(): void
+    public function itSeesNoConflictWhenTheWarningKeyBesideThresholdIsWrittenNull(): void
     {
-        self::expectException(ConfigurationRefusal::class);
+        $result = ThresholdParser::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
 
-        ThresholdParser::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
+        self::assertSame(['warning' => 15, 'error' => 15], $result);
     }
 
     #[Test]
-    public function itDetectsTheConflictWhenALegacyErrorKeyIsPresentButNull(): void
+    public function itSeesNoConflictWhenALegacyErrorKeyBesideThresholdIsWrittenNull(): void
     {
-        self::expectException(ConfigurationRefusal::class);
-
-        ThresholdParser::parse(
+        $result = ThresholdParser::parse(
             ['threshold' => 15, 'errorThreshold' => null],
             'warning',
             'error',
@@ -287,6 +291,8 @@ final class ThresholdParserTest extends TestCase
             20,
             legacyKeys: ['error' => ['errorThreshold']],
         );
+
+        self::assertSame(['warning' => 15, 'error' => 15], $result);
     }
 
     #[Test]
@@ -326,11 +332,11 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function itResolvesTheThresholdKeyByPresenceSoTheFirstListedLegacyKeyWinsEvenWhenNull(): void
+    public function itSkipsANullFirstLegacyThresholdKeyAndUsesTheNextOneThatCarriesAValue(): void
     {
-        // Quirk, pinned deliberately: threshold-key resolution is presence-based
-        // and stops at the first match, so a null first legacy key shadows a
-        // populated second one and the defaults are used.
+        // Alias resolution stops at the first candidate WRITTEN WITH A VALUE,
+        // so a `~` alias no longer shadows a populated one behind it — the
+        // shape the threshold slot shares with the warning/error slots below.
         $result = ThresholdParser::parse(
             ['firstLegacy' => null, 'secondLegacy' => 7],
             'warning',
@@ -341,11 +347,11 @@ final class ThresholdParserTest extends TestCase
             legacyKeys: ['threshold' => ['firstLegacy', 'secondLegacy']],
         );
 
-        self::assertSame(['warning' => 10, 'error' => 20], $result);
+        self::assertSame(['warning' => 7, 'error' => 7], $result);
     }
 
     #[Test]
-    public function itPrefersThePrimaryThresholdKeyEvenWhenItIsNullAndALegacyKeyHasAValue(): void
+    public function itFallsBackToTheLegacyThresholdKeyWhenThePrimaryThresholdIsWrittenNull(): void
     {
         $result = ThresholdParser::parse(
             ['threshold' => null, 'legacyThreshold' => 7],
@@ -357,14 +363,12 @@ final class ThresholdParserTest extends TestCase
             legacyKeys: ['threshold' => ['legacyThreshold']],
         );
 
-        self::assertSame(['warning' => 10, 'error' => 20], $result);
+        self::assertSame(['warning' => 7, 'error' => 7], $result);
     }
 
     #[Test]
     public function itFallsBackToTheLegacyWarningKeyWhenThePrimaryWarningIsExplicitlyNull(): void
     {
-        // Unlike threshold resolution, warning/error resolution is value-based:
-        // a null primary value is skipped in favor of a non-null legacy value.
         $result = ThresholdParser::parse(
             ['warning' => null, 'warningThreshold' => 5],
             'warning',

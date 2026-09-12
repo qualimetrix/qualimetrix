@@ -64,6 +64,23 @@ final readonly class Envelope
     ) {}
 }
 
+/**
+ * The two values one axis-C dispute is written with, per slot.
+ *
+ * `low` and `high` name the SIDES of the dispute, not an ordering of the
+ * numbers: which writer is the lower layer is the ledger row's business, and
+ * this table only promises the two are different text.
+ */
+final readonly class Magnitude
+{
+    public function __construct(
+        public string $slot,
+        public string $side,
+        public string $yamlWrite,
+        public string $cliWrite,
+    ) {}
+}
+
 final class Declarations
 {
     /**
@@ -72,6 +89,9 @@ final class Declarations
      * @param array<string, WitnessEnvelope> $witnessEnvelopes
      * @param array<string, string> $axisAHits option leaf => the hit literal
      * @param array<string, list<string>> $pairScopes pair kind => the coordinates it owes
+     * @param array<string, Magnitude> $magnitudes `<slot>|<side>` => the two writings of it
+     * @param array<string, string> $formAlternates form name => the counter-default literal of that form
+     * @param array<string, string> $leafAlternates option leaf => the counter-default literal of that key
      */
     private function __construct(
         public readonly array $forms,
@@ -79,7 +99,22 @@ final class Declarations
         public readonly array $witnessEnvelopes,
         public readonly array $axisAHits,
         public readonly array $pairScopes,
+        public readonly array $magnitudes,
+        public readonly array $formAlternates,
+        public readonly array $leafAlternates,
     ) {}
+
+    /**
+     * One side of one slot, refused rather than guessed when the table does
+     * not declare it: a silent fallback would let axis C write the SAME value
+     * on both sides and then read the row NOT OBSERVABLE, reporting the
+     * missing declaration as a property of the product.
+     */
+    public function magnitude(string $slot, string $side): Magnitude
+    {
+        return $this->magnitudes[$slot . '|' . $side]
+            ?? throw new LedgerError('composition-magnitudes.tsv declares no "' . $side . '" side for the slot "' . $slot . '"');
+    }
 
     public static function load(string $root): self
     {
@@ -138,7 +173,57 @@ final class Declarations
             $pairScopes[$row[0]] = array_values(array_map(trim(...), explode(',', $row[1])));
         }
 
-        return new self($forms, $envelopes, $witnesses, $hits, $pairScopes);
+        $magnitudes = [];
+
+        foreach (self::rows($root . '/promise-effect/composition-magnitudes.tsv', 4) as $row) {
+            $magnitudes[$row[0] . '|' . $row[1]] = new Magnitude($row[0], $row[1], $row[2], $row[3]);
+        }
+
+        foreach ($magnitudes as $key => $magnitude) {
+            if ($magnitude->side !== 'low') {
+                continue;
+            }
+
+            $opposite = $magnitudes[$magnitude->slot . '|high'] ?? null;
+
+            // The one property this table can be held to WITHOUT running the
+            // product: two sides that are the same text can never be told
+            // apart, and a run reporting that as NOT OBSERVABLE would be
+            // reporting a typo here as a property of the product.
+            if ($opposite === null || $opposite->yamlWrite === $magnitude->yamlWrite || $opposite->cliWrite === $magnitude->cliWrite) {
+                throw new LedgerError('composition-magnitudes.tsv: the slot "' . $magnitude->slot . '" has no distinguishable high side (' . $key . ')');
+            }
+        }
+
+        $formAlternates = [];
+        $leafAlternates = [];
+
+        foreach (self::rows($root . '/promise-effect/effect-magnitudes.tsv', 4) as $row) {
+            if ($row[0] === 'option_leaf') {
+                $leafAlternates[$row[1]] = $row[2];
+
+                continue;
+            }
+
+            if ($row[0] !== 'form') {
+                throw new LedgerError('effect-magnitudes.tsv: unknown selector kind "' . $row[0] . '"');
+            }
+
+            $canonical = $forms[$row[1]] ?? throw new LedgerError('effect-magnitudes.tsv names the form "' . $row[1] . '", which forms.tsv does not');
+
+            // The one property this table can be held to WITHOUT running the
+            // product, and the whole reason the table exists: an alternate
+            // equal to the canonical write is not a second value, so a run
+            // falling back to it would report a typo here as "the product
+            // cannot tell this key from an omitted one".
+            if ($canonical->yamlWrite === $row[2]) {
+                throw new LedgerError('effect-magnitudes.tsv: the alternate of the form "' . $row[1] . '" is its canonical write');
+            }
+
+            $formAlternates[$row[1]] = $row[2];
+        }
+
+        return new self($forms, $envelopes, $witnesses, $hits, $pairScopes, $magnitudes, $formAlternates, $leafAlternates);
     }
 
     /** @return list<string> */

@@ -582,6 +582,14 @@ bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
 
 По умолчанию пространства имён проекта автоматически определяются из `composer.json` (`autoload.psr-4`).
 
+`include_namespaces` принимает и одну строку — она означает список из одного
+элемента: `include_namespaces: App\Domain` — это ровно
+`include_namespaces: [App\Domain]`. Строка из цифр — такой же префикс
+пространства имён, как любой другой. CLI-дверь несёт один скаляр и не
+разбивает текст после `=`, поэтому
+`--rule-opt="coupling.distance:include_namespaces=App\Domain"` называет одно
+пространство имён; несколько пишутся списком в `qmx.yaml`.
+
 ---
 
 ## ClassRank

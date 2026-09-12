@@ -529,6 +529,10 @@ cache:
   dir: .qmx-cache       # Default: .qmx-cache
 ```
 
+`dir` is a directory path, written as a string. A name made only of digits is a
+directory name like any other, so `dir: "7331"` is the directory `7331`; it has
+to be quoted, because an unquoted `7331` is a number and a number is not a path.
+
 Equivalent CLI: `--no-cache` to disable, `--cache-dir=DIR` to change directory.
 
 ### Parallel Processing
@@ -805,7 +809,7 @@ The shapes a key can ask for, in the words the refusal uses:
 | a map of X         | a YAML mapping you name the keys of, every value of shape X |
 | a block of options | a mapping whose own keys another declaration answers for    |
 
-Four consequences are worth spelling out, because each of them used to pass
+Five consequences are worth spelling out, because each of them used to pass
 unnoticed:
 
 - **A quoted number is a string.** `warning: "15"` is refused where a whole
@@ -814,9 +818,27 @@ unnoticed:
   converted before their shape is judged, so
   `--rule-opt="size.method-count:threshold=25"` and
   `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
-- **A whole number is not a fraction.** `warning: 10.5` is refused where a whole
-  number is declared. Where a key genuinely takes a fraction, the refusal says
-  "a number" instead.
+- **A whole number is not a fraction — except for the keys named here, which
+  declare "a number".** `warning: 10.5` is refused where a whole number is
+  declared, and most thresholds in this document declare exactly that: a
+  whole number. The keys below declare "a number" instead, and therefore
+  accept a fraction exactly as written, because each one measures a
+  continuously-valued metric rather than counting something: the
+  maintainability index (`maintainability.mi.error` / `.warning` /
+  `.threshold`), instability (`coupling.instability.max-error` /
+  `.max-warning` / `.threshold`, the same three at the `class.` and
+  `namespace.` level slots too), distance from the main sequence
+  (`coupling.distance.max-distance-error` / `.max-distance-warning` /
+  `.threshold`), ClassRank (`coupling.class-rank.error` / `.warning` /
+  `.threshold`), type coverage (`design.type-coverage.param.error` / `.warning`
+  / `.threshold`, the same three under `.property.` and `.return.`) and the
+  TCC threshold on `design.god-class.tcc-threshold`. This is a property of
+  each key's own declared shape, not of its rule or family as a whole: keys
+  living right beside an accepting one stay whole numbers and refuse a
+  fraction, because they count something instead of measuring it —
+  `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
+  (at every level slot) and `coupling.instability.namespace.min-class-count`
+  are each a class or file count, not a ratio.
 - **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
   and `exclude_methods: {a: getName}` are refused; write
   `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in
@@ -839,7 +861,7 @@ unnoticed:
 
 Writing a key and leaving it empty — `key:` or the explicit YAML null `key: ~` —
 means the default is taken for that key's own value, at every depth and in every
-section:
+section, `rules:` included:
 
 ```yaml
 cache: ~                 # same as not writing cache:
@@ -852,45 +874,44 @@ rules:
     callable: ~          # same as not writing callable:
 ```
 
-Inside `rules:` that is where the equivalence stops. The entry itself survives:
-the key is still *written*, it is only written with nothing under it. That makes
-no difference to a key whose value is simply read — `enabled: ~` above is the
-same as silence — but two readers ask whether a key is **present** rather than
-what it holds, and to those a `~` is not silence:
+That covers the keys inside `rules:` that choose *how* a rule is read, not only
+those whose value is read. A threshold key selects the shorthand form of a
+hierarchical rule — `threshold:` on `complexity.ccn`, `complexity.cognitive` and
+`complexity.npath`; `threshold:`, `warning:` or `error:` on `coupling.cbo`;
+`threshold:`, `max_warning:` or `max_error:` on `coupling.instability` — and it
+is the **value** written there that selects it. A `~` writes no value, so it
+selects nothing and the `callable:` / `class:` / `namespace:` blocks beside it
+are read exactly as if the key were not there:
 
-- **A threshold key chooses the shorthand form of a hierarchical rule.** On
-  `complexity.ccn`, `complexity.cognitive` and `complexity.npath` that key is
-  `threshold:`; on `coupling.cbo` it is `threshold:`, `warning:` or `error:`; on
-  `coupling.instability` it is `threshold:`, `max_warning:` or `max_error:`.
-  Writing one at the rule's own top level selects the threshold shorthand
-  described under **Rules** above — and, as there, the `callable:` / `class:` /
-  `namespace:` blocks written beside it are then not read. A `~` is no different
-  from a number here:
+```yaml
+rules:
+  coupling.cbo:
+    warning: ~       # same as omitting it
+    class:
+      warning: 0     # read
+      error: 0
+```
 
-    ```yaml
-    rules:
-      coupling.cbo:
-        warning: ~       # NOT the same as omitting it
-        class:
-          warning: 0     # never read: the block above already chose the flat form
-          error: 0
-    ```
+For the same reason `threshold: ~` written beside `warning:` / `error:` names no
+second mode, so there is nothing for it to be mixed with:
 
-    Omit the key to configure the levels; the rule then behaves as if nothing
-    had been written at its top level at all.
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: ~     # no value, so no mode
+    warning: 5       # graduated mode, as if threshold: had not been written
+```
 
-- **`threshold:` and `warning:` / `error:` are still two modes.** Writing
-  `threshold: ~` beside either refuses the document rather than falling back to
-  the graduated mode:
+Two *values* are still two modes, and that is still a configuration error:
 
-    ```yaml
-    rules:
-      cohesion.lcom:
-        threshold: ~     # Configuration error, exit 3:
-        warning: 5       # Cannot mix "threshold" with "warning"/"error"
-    ```
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: 3     # Configuration error, exit 3:
+    warning: 5       # Cannot mix "threshold" with "warning"/"error"
+```
 
-An **element of a list** is the other place this does not apply, and for a reason:
+An **element of a list** is the one place this does not apply, and for a reason:
 an element is a value, not a key that was left unwritten, so there is nothing for
 it to mean. Where the list is declared to hold non-empty strings, a `~` element
 is refused:

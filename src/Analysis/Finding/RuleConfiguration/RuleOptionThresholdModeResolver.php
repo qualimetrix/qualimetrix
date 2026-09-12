@@ -9,9 +9,9 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * two configuration layers (preset, config file, CLI) are merged.
  *
  * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser} rejects an option array
- * that contains both a `threshold` key and a `warning`/`error` key for the
- * same option group — the two are mutually exclusive spellings of the same
- * concept. That guard is correct for a single configuration source, but a
+ * in which both a `threshold` key and a `warning`/`error` key of the same
+ * option group carry a value — the two are mutually exclusive spellings of the
+ * same concept. That guard is correct for a single configuration source, but a
  * naive deep-merge of two *different* sources (e.g. a `strict` preset that
  * sets `warning`/`error`, overridden by a `--rule-opt=...:threshold=25` CLI
  * flag) lets both keys survive into the same array and trips the guard even
@@ -27,6 +27,12 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * same source) is left untouched, since only the lower-priority side is
  * ever modified — it still reaches `ThresholdParser` and is reported as a
  * genuine configuration error.
+ *
+ * Eviction itself still asks whether a key is PRESENT, not what it holds, so
+ * an overlay writing `threshold: ~` evicts the base layer's `warning`/`error`
+ * pair even though it selected no mode — the result then defaults. That is a
+ * question about which layer wins, not about what one document means, and it
+ * belongs with the rest of the cross-layer semantics rather than here.
  *
  * ## Grouping: declared first, heuristic only as an unreliable fallback
  *

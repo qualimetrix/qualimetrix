@@ -1,4 +1,5 @@
-commit	6a833ab8fcd5004e964e32a59bfeb9978c39739c
-taken	2026-09-11
-axes	A,B,D
-reason	the fixture changed, the product did not: 47 of 54 producers had no reachability witness because the five-file fixture tripped nothing, and the suppress-* probes named nothing in it. HEAD is still 6a833ab8, so this is the same pre-cure product measured against an enriched fixture and a corrected hit rule (02 section 10: a retake needs a reason, and editing the classifier is not one).
+product-commit	02a6ca66
+tree-commit	458d22ccb5f76ff40df9c1381a28d64d78597b9e
+taken	2026-09-12
+axes	A,B,C,D,E
+reason	the pair and neighbour generators changed: axes B and E now write the counter-default magnitudes declared in the new effect-magnitudes.tsv wherever the canonical one is what the product already does without the key. The canonical bool write `true` is the standing value of almost every `enabled` key, and 117 of 117 pair sides writing that key had stopped moving the object; three enumerated keys (scope, unused-directive-severity, mode) were refused or silently defaulted for a spelling the row is not about. An input moved, so the shot is retaken against the same product (02a6ca66, src/ identical) rather than left to be compared across two different stands.
