@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 
 /**
@@ -79,6 +80,24 @@ final readonly class RuleOptionsParser
      */
     public function parseShortAlias(string $alias, mixed $value): ?array
     {
+        $target = $this->aliasTarget($alias);
+        if ($target === null) {
+            return null;
+        }
+
+        return [...$target, 'value' => $value];
+    }
+
+    /**
+     * The rule/option a short alias resolves to, without attaching a value.
+     *
+     * Used to name the target in a refusal raised before {@see self::parseShortAlias()}
+     * would run — an empty CLI value is refused before any value is attached to it.
+     *
+     * @return array{rule: string, option: string}|null
+     */
+    public function aliasTarget(string $alias): ?array
+    {
         $mapping = $this->shortAliases[$alias] ?? null;
         if ($mapping === null) {
             return null;
@@ -87,7 +106,6 @@ final readonly class RuleOptionsParser
         return [
             'rule' => $mapping['rule'],
             'option' => ConfigKeySpelling::normalize($mapping['option']),
-            'value' => $value,
         ];
     }
 
@@ -153,7 +171,22 @@ final readonly class RuleOptionsParser
         RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
 
         $option = ConfigKeySpelling::normalize($authoredOption);
-        $value = $this->normalizeValue(substr($rest, $equalsPos + 1));
+        $rawValue = substr($rest, $equalsPos + 1);
+
+        if (trim($rawValue) === '') {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--rule-opt',
+                \sprintf(
+                    'Option "%s" of rule "%s" was written with an empty value ("--rule-opt %s"). '
+                    . 'Write a value after "=", or omit this --rule-opt entry entirely to use the option\'s default.',
+                    $option,
+                    $ruleName,
+                    $opt,
+                ),
+            );
+        }
+
+        $value = $this->normalizeValue($rawValue);
 
         return [$ruleName, $option, $value];
     }
@@ -169,20 +202,16 @@ final readonly class RuleOptionsParser
     /**
      * Normalizes value to appropriate type.
      *
-     * An empty value after `=` (`--rule-opt=rule:option=`) becomes `null`,
-     * the same absent-value marker the YAML door hands the declaration for a
-     * bare `~`: this door carries text only, so it has no way to type PHP's
-     * `null` directly, and without this fold an empty option would land as
-     * `''`, a genuine one-element value rather than "value not written" (see
-     * `promise-effect/door-normalization.tsv`).
+     * Never receives an empty string: {@see self::parseRuleOption()} refuses
+     * an empty value after `=` before this is called, because this door
+     * carries text only and has no way to type PHP's `null` directly — a
+     * silent fold to "unwritten" would accept what the door's promise (see
+     * `promise-effect/promise-ledger.tsv`, `rule-opt` rows) says must be
+     * refused.
      */
     private function normalizeValue(string $value): mixed
     {
         $value = trim($value);
-
-        if ($value === '') {
-            return null;
-        }
 
         // Boolean
         if ($value === 'true') {

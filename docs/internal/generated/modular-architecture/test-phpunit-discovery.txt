@@ -4408,11 +4408,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itThrowsWhenUserExplicitlyMixesThresholdAndWarningThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itHandlesParserWithoutAliases
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itIgnoresInvalidFormatInRuleOptions
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesAnEmptyPlainOptionValueToNullAsWell
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString"boolean-argument allowed-prefixes"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString"cohesion.lcom exclude-methods"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString"coupling.distance include-namespaces"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString"error-suppression allowed-functions"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNamesTheRuleAndOptionInTheEmptyValueRefusal
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesKebabCaseInRuleOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesMixedKebabAndSnakeCaseInRuleOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itNormalizesSnakeCaseInRuleOptions
@@ -4427,6 +4423,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itParsesRuleOptionsMultipleForSameRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itParsesShortAlias
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itParsesStringValuesInRuleOptions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itRefusesAnEmptyPlainOptionValueAsWell
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itRefusesAnEmptyRuleOptValueInsteadOfFoldingItToAOneElementEmptyString"boolean-argument allowed-prefixes"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itRefusesAnEmptyRuleOptValueInsteadOfFoldingItToAOneElementEmptyString"cohesion.lcom exclude-methods"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itRefusesAnEmptyRuleOptValueInsteadOfFoldingItToAOneElementEmptyString"coupling.distance include-namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itRefusesAnEmptyRuleOptValueInsteadOfFoldingItToAOneElementEmptyString"error-suppression allowed-functions"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itReturnsAllRegisteredAliasNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itReturnsEmptyAliasNamesForParserWithoutAliases
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsParserTest::itReturnsNullForUnknownShortAlias
@@ -7983,11 +7984,12 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesAliasValuesToBooleans
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesAnAliasValueToFloat
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesAnAliasValueToInt
- - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesAnEmptyAliasValueToNullInsteadOfAOneElementEmptyString
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesScientificNotationToFloat
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itNormalizesScientificNotationWithADecimalPointToFloat
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itPrefersRuleOptOverAConflictingAlias
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itProcessesEveryRegisteredAliasNotJustTheHardcodedOnes
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itRefusesAnEmptyAliasValueInsteadOfFoldingItToAOneElementEmptyString
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itRefusesAnEmptyValueOnAnUndocumentedAliasTheSameWay
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itSkipsAnAbsentValueNoneAlias
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itSkipsAnAliasThatWasNotPassedOnTheCommandLine
  - Qualimetrix\Tests\Unit\Infrastructure\Console\CliOptionsParserTest::itStillParsesANonEmptyAliasValueAsBefore

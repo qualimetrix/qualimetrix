@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 
 #[CoversClass(RuleOptionsParser::class)]
@@ -281,6 +281,12 @@ final class RuleOptionsParserTest extends TestCase
      * the Options class, because a test on `Options::fromArray()` never sees
      * what the door itself hands over.
      *
+     * The door's own promise (`promise-effect/promise-ledger.tsv`, `rule-opt`
+     * rows) is `refuse`, not "fold to the default": the fix therefore raises
+     * a `ConfigurationRefusal` instead of a silent `null`, so the defective
+     * `['']` still never reaches the four affected `Options::fromArray()`
+     * calls, and the door keeps its promise besides.
+     *
      * @return iterable<string, array{0: string}>
      */
     public static function provideEmptyValueGridRows(): iterable
@@ -293,25 +299,18 @@ final class RuleOptionsParserTest extends TestCase
 
     #[Test]
     #[DataProvider('provideEmptyValueGridRows')]
-    public function itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString(string $ruleOpt): void
+    public function itRefusesAnEmptyRuleOptValueInsteadOfFoldingItToAOneElementEmptyString(string $ruleOpt): void
     {
-        $result = $this->parser->parseRuleOptions([$ruleOpt]);
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('was written with an empty value');
 
-        [$ruleName, $rest] = explode(':', $ruleOpt, 2);
-        [$option] = explode('=', $rest, 2);
-        $option = ConfigKeySpelling::normalize($option);
-
-        self::assertArrayHasKey($ruleName, $result);
-        self::assertNull(
-            $result[$ruleName][$option],
-            'An empty CLI value must fold to null (the absent-value marker), never to the literal empty string.',
-        );
+        $this->parser->parseRuleOptions([$ruleOpt]);
     }
 
     /**
      * The boundary case: a single, non-empty value on the same keys must
      * keep working exactly as before — the cure must not turn "one written
-     * value" into "no value" too. There is no legitimate empty-string case to
+     * value" into a refusal too. There is no legitimate empty-string case to
      * protect on this door for these keys: `--rule-opt` cannot type a real
      * empty PHP list at all (no bracket parsing — see
      * `promise-effect/door-normalization.tsv`, `rule-opt|list` row), so
@@ -329,12 +328,25 @@ final class RuleOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function itNormalizesAnEmptyPlainOptionValueToNullAsWell(): void
+    public function itRefusesAnEmptyPlainOptionValueAsWell(): void
     {
-        $result = $this->parser->parseRuleOptions([
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Option "someOption" of rule "test-rule" was written with an empty value');
+
+        $this->parser->parseRuleOptions([
             'test-rule:some-option=',
         ]);
+    }
 
-        self::assertNull($result['test-rule']['someOption']);
+    #[Test]
+    public function itNamesTheRuleAndOptionInTheEmptyValueRefusal(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'Option "allowedPrefixes" of rule "code-smell.boolean-argument" was written with an empty value'
+            . ' ("--rule-opt code-smell.boolean-argument:allowed-prefixes=").',
+        );
+
+        $this->parser->parseRuleOptions(['code-smell.boolean-argument:allowed-prefixes=']);
     }
 }

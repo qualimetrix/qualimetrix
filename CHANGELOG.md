@@ -304,10 +304,12 @@ the default.
   affected `code-smell.error-suppression:allowed-functions`,
   `cohesion.lcom:exclude-methods` and that option's own short alias
   (`--lcom-exclude-methods=`). An empty value written after `=` on either CLI
-  door now folds to the same absent-value marker the YAML door's `~` uses, so
-  it takes the option's own default the way an unwritten key would. Write the
-  intended value instead of an empty one if you were relying on the previous
-  (unintended) behaviour.
+  door is now **refused**, with a message naming the rule, the option and what
+  to write instead. Refusing rather than defaulting is what the documentation
+  promises for a command-line value, and it keeps the two doors honestly
+  different: YAML's `~` says "take the default", while a command line that
+  stops after `=` says nothing at all. Write the intended value, or drop the
+  `--rule-opt` entry entirely to get the default.
 - **A directory whose name is a bare number now works in `suppress_paths:`.**
   The root-level key refused it as "not a non-empty string"; it is converted
   now, the way `--exclude` already is. `suppress_namespaces:` still refuses one,

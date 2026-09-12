@@ -443,6 +443,18 @@ final class InProcess
             $object = new Observation(Observation::ACCEPTED, '(no options object at this path)');
         }
 
+        // A refused door has nothing downstream to observe. Before this, the
+        // probe caught the door's refusal, left $cliValues empty and went on to
+        // build an options object out of the document alone -- which is all
+        // defaults -- so the deepest point voted "accepted, no effect" and the
+        // row read INERT. 186 cells of axis A said the product silently
+        // accepted a value it had in fact refused, with its own framing, at the
+        // door. What travels downstream now is the refusal itself.
+        if (!$door->accepted()) {
+            $merged = $door;
+            $object = $door;
+        }
+
         if ($object === null && $merged->accepted()) {
             try {
                 $resolved = $this->pipeline->resolve($request);
