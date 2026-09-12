@@ -602,10 +602,24 @@ if (isset($arguments['freeze-before'])) {
     // The snapshot stores RAW observations, never verdicts: one classifier
     // judges both halves of the pair, and a frozen verdict would let a later
     // edit of the classifier split them in silence.
+    //
+    // What the shot has to hold still is the PRODUCT, not the whole tree. The
+    // stand is always repaired before the shot is taken -- that is the whole
+    // point of taking it after the input edits -- so HEAD never equals the
+    // declared commit, and a guard comparing HEAD would either refuse every
+    // honest shot or be switched off. It compares `src/` instead: an empty
+    // diff means this measurement is of the declared product, whatever else
+    // the branch has changed.
     $head = trim((string) shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
+    $productDiff = trim((string) shell_exec(
+        'git -C ' . escapeshellarg($root) . ' diff --name-only ' . escapeshellarg($beforeCommit) . ' -- src/',
+    ));
 
-    if (!str_starts_with($head, $beforeCommit)) {
-        fwrite(\STDERR, 'promise-effect: the "before" shot must be taken on ' . $beforeCommit . ', HEAD is ' . $head . "\n");
+    if ($productDiff !== '') {
+        $moved = substr_count($productDiff, "\n") + 1;
+
+        fwrite(\STDERR, 'promise-effect: the "before" shot measures the product at ' . $beforeCommit
+            . ', but ' . $moved . " file(s) under src/ differ from it:\n" . $productDiff . "\n");
 
         exit(3);
     }
@@ -629,7 +643,12 @@ if (isset($arguments['freeze-before'])) {
     file_put_contents($snapshotDirectory . '/observations-before/raw.tsv', renderRaw($stand->rawObservations()));
     file_put_contents(
         $snapshotDirectory . '/observations-before/shot.txt',
-        "commit\t" . $head . "\n"
+        // Two commits, because they are two different facts: the tree the shot
+        // was taken on always carries the stand repairs, while what the shot
+        // is ABOUT is the product. Writing only the former made the file say
+        // the snapshot measured a tree whose stand did not yet exist.
+        "product-commit\t" . $beforeCommit . "\n"
+        . "tree-commit\t" . $head . "\n"
         . "taken\t" . gmdate('Y-m-d') . "\n"
         . "axes\t" . implode(',', $axes) . "\n"
         . "reason\t" . str_replace(["\t", "\n"], ' ', $reason) . "\n",
