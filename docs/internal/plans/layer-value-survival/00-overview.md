@@ -13,14 +13,16 @@ This round cures it, and closes the two neighbouring defects that reading the
 code turned up beside it.
 
 The subject is one sentence: **a value a layer wrote must still be there after a
-higher layer rewrote something else.** Three things break it today, all in the
-same method, all measured (see `measurement/observations.md`):
+higher layer rewrote something else.** Four things break it today, all on the path
+two configuration layers take to meet, all measured (see
+`measurement/observations.md`):
 
-| #   | what breaks                                                                  | measured effect                                                   |
-| --- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 1   | eviction drops a shorthand the higher layer only half-rewrote                | `error` falls to a compiled default nobody wrote                  |
-| 2   | eviction asks whether a key is PRESENT, not whether it was WRITTEN           | an overlay's `threshold: ~` silences the lower layer's whole band |
-| 3   | a rule with no registry entry has its grouping GUESSED by a suffix heuristic | after the cure the guess would WRITE keys, not just remove them   |
+| #   | what breaks                                                                                  | measured effect                                                 |
+| --- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | eviction drops a shorthand the higher layer only half-rewrote                                | `error` falls to a compiled default nobody wrote                |
+| 2   | an overlay's `threshold: ~` evicts a band while selecting no mode                            | the lower layer's whole band is silenced                        |
+| 3   | the merge writes an overlay's `null` over a value, and `isset()` cannot tell it from silence | an overlay's `warning: ~` erases an explicit `warning: 2`       |
+| 4   | a rule with no registry entry has its grouping GUESSED by a suffix heuristic                 | after the cure the guess would WRITE keys, not just remove them |
 
 A fourth, unrelated in mechanism but named by the same programme: three option
 keys own a closed set of words and are declared `text()`, so the declaration
@@ -28,12 +30,23 @@ promises every string while the reader accepts three.
 
 ## The decisions this round takes, and why
 
-**The shorthand is unfolded before the layers merge, inside the resolver.**
-ADR 0055 left this question open and ADR 0056 fixed the direction; the price was
-measured at 31 `ThresholdParser::parse()` call sites in 30 files, so moving the
-parser is not the cheap shape. The resolver already receives `$ruleName` and
-`$path` and already consults the group declaration, so unfolding happens where
-eviction happens today. See `02-unfolding.md`.
+**The shorthand is unfolded in EVERY layer before they merge, and eviction is
+deleted.** ADR 0055 left this question open and ADR 0056 fixed the direction; the
+price was measured at 31 `ThresholdParser::parse()` call sites in 30 files, so
+moving the parser is not the cheap shape. Unfolding is a rewrite of ONE layer,
+applied by each merge site to base and overlay alike — unfolding only the lower
+layer turns the reverse case into a refusal. Once both are unfolded there is
+nothing left to evict, proved by enumeration over all 32 rule×path pairs rather
+than asserted, so the eviction path goes rather than being kept and tested
+against cases it can no longer reach. See `02-unfolding.md`.
+
+**A `~` written above does not erase what was written below.** Two measured
+shapes with one cause, and the second is not fixed by unfolding: both merge sites
+assign an overlay's `null` unconditionally, and `isset()` cannot tell a written
+`null` from silence. The tree already settled this question one level down — a
+`~` must not shadow a populated alias behind it — and answering it differently
+across layers would give one symbol two meanings, which is the defect class this
+round exists to remove. See `03-writtenness.md`.
 
 **`RuleThresholdKeyGroupRegistry` survives the unfolding; its suffix heuristic
 does not.** This is ADR 0055's second open question, which ADR 0056 explicitly
@@ -84,18 +97,33 @@ defers, for the reason in the table.
 Order is forced, not stylistic: the floor must be able to judge a post-snapshot
 cure before any cure lands, or the intermediate commit is red.
 
-1. `01-floor.md` — the floor judges a cure landed after its own snapshot.
-2. `02-unfolding.md` — the shorthand unfolds before the merge; the heuristic dies.
-3. `03-writtenness.md` — eviction asks what was written, not what is present.
+1. `01-floor.md` — the floor judges a cure landed after its own snapshot, stops
+   reading an absent row as proof of repair, and refuses a narrowed snapshot.
+2. `02-unfolding.md` — the shorthand unfolds in every layer; eviction and the
+   heuristic are deleted; the registry becomes a checked claim.
+3. `03-writtenness.md` — a `~` written above does not erase what was written below.
 4. `04-words.md` — three keys declare their closed set, and the set says it folds case.
 5. `05-acceptance.md` — ledger, floor rows, blocking axes, grid, docs, changelog.
 
-Stages 2 and 3 are one package (one method, two commits). Stage 4 is independent
-of 2-3 by file set but shares the generated grid, so it runs after them rather
-than beside them.
+Stage 1 is first because stages 2 and 3 cannot be shown to work without it: its
+two pre-existing holes would swallow the very evidence they produce.
+
+Stages 2 and 3 are one package — they change the same two merge sites — and land
+as separate commits, so a reader can see which change moved which observation.
+Stage 4 shares no `src/` file with them but does share the generated grid, so it
+runs after them rather than beside them.
 
 ## Measurement this plan stands on
 
 Tables are on disk and are not reproduced here. `measurement/observations.md`
-holds what the orchestrator measured personally, with the command for each.
-The enumerations behind the deferrals are in the scratchpad tables named there.
+holds what this round measured personally, with the command for each;
+`measurement/deferred.md` holds every deferral with the number that made it one,
+and the four tables beside it are the banked enumerations themselves.
+
+This plan was reviewed before any code was written, by a native reviewer and by
+`codex` independently. Fifteen confirmed findings came back, six of them HIGH, and
+the three decisions above are what the round chose in answer to them — unfolding
+both layers rather than one, deleting eviction rather than curing its predicate,
+and treating a `~` above a written value as silence rather than as a reset. Two of
+the four defects in the table were found by that review, not by the measurement
+that opened the round.

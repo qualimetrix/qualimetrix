@@ -31,8 +31,17 @@ mirror defect: narrower than its reader, refusing a value the product accepts.
 
 The tree has already written down the answer. `RuleOptionWordSet`'s class
 docblock says: *"where a reader does fold case, the set it declares has to say so
-rather than be assumed."* The same docblock opens by claiming matching ignores
-case, which its own code contradicts — it is stale, and it is repaired here.
+rather than be assumed."*
+
+**The paragraph carrying that sentence is repaired whole, not in its first
+sentence.** It is wrong twice over. It opens by claiming matching ignores letter
+case, which `contains()` contradicts with a comment saying the opposite
+deliberately. It then names "the four inside `rules:`" and lists a layer `match`
+among them — but `match` lives under the `architecture:` root, not under `rules:`,
+is normalized by a different policy, and is declared by no `RuleOptionKeySet` at
+all, so the count is wrong as well as the membership. Repairing one sentence and
+leaving the other would produce a docblock that argues with itself, which is the
+condition this round keeps finding and is not going to add to.
 
 ## The cure
 
@@ -40,16 +49,29 @@ The word set carries whether it folds, and the declaration site says which it is
 Two named factories, so neither can be chosen by inattention:
 
 ```
-RuleOptionShape::oneOf(string ...$words): self            // exact, unchanged
-RuleOptionShape::oneOfIgnoringCase(string ...$words): self // folds, new
+RuleOptionShape::oneOf(string ...$words): self             // exact, unchanged
+RuleOptionShape::oneOfIgnoringCase(string ...$words): self  // folds, new
 RuleOptionWordSet::of(...) / ::foldingCase(...)
 ```
 
-`coupling.cbo`'s `scope` keeps `oneOf()`. The three keys above take
-`oneOfIgnoringCase()`, each declaring exactly the words its own enum offers.
-`computed_metrics.<name>.levels` takes neither, for the reason already recorded:
-it separates "a real level word that does not report" from "not a level at all",
-and one set of words would flatten two different refusals into one.
+**Each of the three keeps `->orNull()`, and that is part of the cure rather than a
+detail.** All three are declared `text()->orNull()` today and all three readers
+answer a written `~` with their own default (`Severity::Info`,
+`UnassignedClassMode::Ignore`). A declaration written as `oneOfIgnoringCase(...)`
+alone would be NARROWER than its reader and would start refusing `~` — which is
+the same mistake in the same direction as a case-sensitive set in front of a
+case-folding reader, and it would contradict stage 3 of this very round, where a
+written `~` means "left to what it would otherwise be".
+
+The accepted set of each reader is therefore three things, not one: its words, a
+written `~`, and an instance of its own enum (the readers accept one when
+`fromArray()` is called directly). The first two are declared; the third is
+reachable only off the recognition seam and belongs to the enumeration below.
+
+`coupling.cbo`'s `scope` keeps `oneOf()`. `computed_metrics.<name>.levels` takes
+neither, for the reason already recorded: it separates "a real level word that
+does not report" from "not a level at all", and one set of words would flatten two
+different refusals into one.
 
 ## The guard, so the pair cannot drift apart again
 
@@ -72,23 +94,26 @@ to the seam's, and the round's report reads the difference rather than assuming 
 
 A consequence to check, not assume: once the seam refuses first, each reader's own
 refusal branch is reachable only through a direct `fromArray()` call — tests,
-hierarchical wrappers, `scripts/promise-effect/InProcess.php`. That is the same
-question as `ClassCboOptions::parseScope()`'s fallback, which its own comment
-already calls unreachable. One enumeration of `fromArray()` callers answers all
-four places; "dead" is a property of the set of call sites, not of the code, so it
-is settled by enumeration and not by reading.
+hierarchical wrappers, `scripts/promise-effect/InProcess.php`. The DoD below
+settles that and the three questions of the same shape with one enumeration.
 
 ## Definition of Done
 
-- The three keys declare `oneOfIgnoringCase()` with exactly their reader's words.
-- `RuleOptionWordSet`'s stale class docblock no longer contradicts its code.
+- The three keys declare `oneOfIgnoringCase(...)->orNull()` with exactly their
+  reader's words, and a test writes `~` at each of the three and asserts the
+  reader's default rather than a refusal.
+- `RuleOptionWordSet`'s class docblock paragraph is correct in both of its
+  claims: what `contains()` does, and which keys the set is for.
 - The declaration↔reader guard exists and fails when a word is removed from a
   declaration and when a reader's fold is removed — both proved by planting each
   breakage once.
-- The four reachability questions above are answered by one enumeration of
-  `fromArray()` callers, written into the stage's report; anything the enumeration
-  shows to be genuinely unreachable is deleted, anything reachable keeps its
-  branch and the comment claiming otherwise is corrected.
+- One enumeration of `fromArray()` callers answers every reachability question
+  this stage opens at once: each reader's own word refusal, each reader's
+  enum-instance branch, and `ClassCboOptions::parseScope()`'s fallback, whose
+  comment already calls itself unreachable. "Dead" is a property of the set of
+  call sites, not of the code, so it is settled by that enumeration — anything it
+  shows unreachable is deleted, anything reachable keeps its branch and any
+  comment claiming otherwise is corrected.
 - The 8 DECLARATION rows of the remainder table stop being defects on the live
   grid, and the ledger rows that move framing are updated in the same commit.
 

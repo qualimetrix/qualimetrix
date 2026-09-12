@@ -55,7 +55,39 @@ overlay writing a key that selects no mode silences the lower layer's entire
 band, and the rule falls to 10/20 where the subject scores 6. Unfolding does not
 close this; the presence test must itself become a writtenness test.
 
-## 5. The `cure` column cannot be checked by git ancestry
+## 5. A `~` above an explicit value erases it — the mirror of §4
+
+Raised by both reviewers of this plan, reproduced here before it was accepted.
+
+| run                                                 | observation           |
+| --------------------------------------------------- | --------------------- |
+| preset `callable {warning: 2, error: 100}` alone    | `warning@2`           |
+| the same, under `qmx.yaml {callable: {warning: ~}}` | **no finding at all** |
+
+Both merge sites assign unconditionally, so the overlay's `null` lands in the
+merged array; `firstWrittenKey()` asks `isset()`, for which a written `null` and
+an absent key are one thing; the slot falls to the compiled default of 10, and the
+subject scores 6.
+
+This is NOT the same cell as §4. There the overlay wrote `threshold: ~` — a
+shorthand KEY, not a value slot — and the band was lost to eviction. Here the
+overlay writes `warning: ~` — a value slot — and the value is lost to the merge's
+own write. Two mechanisms, one class, and curing the first does not touch the
+second.
+
+## 6. The floor reports a row it stopped observing as cured
+
+`Floor::judge()` returns `held = false` for a row the grid does not carry;
+`cureMisses()` reads `!$held` on a row with a `cure` as success. A row that left
+the population is therefore proof of repair. `judge()`'s own docblock says the
+opposite — "neither held nor cured: it is a stale declaration" — so this is the
+third docblock in this subtree found disagreeing with its code.
+
+Reachable through ordinary flags, too: `--axis=` narrows every run including
+`--freeze-before`, so a snapshot can be taken over a subset of axes; `shot.txt`
+records the subset and `--before` never compares it against the canonical list.
+
+## 7. The `cure` column cannot be checked by git ancestry
 
 `7fe879f6`, `b9fd87d3`, `f20bd708` — the three commits standing in filled `cure`
 cells — are **not ancestors of `origin/main`**: they are pre-squash branch commits
@@ -66,7 +98,7 @@ Separately: `scripts/promise-effect.php`'s floor block promises that "a cure tha
 names a commit the snapshot does not contain is the lie this catches".
 `Floor::cureMisses()` contains no such check. Docblock and code disagree.
 
-## 6. Only three of eight forms are reachable as a map KEY
+## 8. Only three of eight forms are reachable as a map KEY
 
 `Symfony\Component\Yaml\Yaml::parse()` over the eight canonical forms in key
 position: `~`, `true`, `7331.9`, `[7331]` and `{a: 7331}` are **refused by the
@@ -75,7 +107,7 @@ parser** before the product sees anything; `7331` and `"7331"` both arrive as th
 position × 8 forms would record false collapses and blindness for five sixths of
 its map side.
 
-## 7. The three word-set readers already refuse, and fold case on purpose
+## 9. The three word-set readers already refuse, and fold case on purpose
 
 `InlineDirectiveOptions:89`, `UnassignedClassOptions:183`,
 `LayerViolationOptions:208` each `strtolower()` the value and each throws naming
@@ -88,12 +120,12 @@ the tree is lowercase.
 `contains()` is strict, with a comment saying deliberately so. The class docblock
 is stale, and it states the cure this round adopts.
 
-## 8. The live grid, read off the committed artifact
+## 10. The live grid, read off the committed artifact
 
 A 12, B 82, C 4, D 37, E 0 — 135 defects over 7218 cells. Matches what the round
 was handed.
 
-## 9. Numbers the round was handed that do not survive measurement
+## 11. Numbers the round was handed that do not survive measurement
 
 - **axis B "blocked on channel boundary"** — 4 mechanisms, 81 of 82 cells one
   copy-pasted early-return pattern in 5 sibling options classes, 0 blocked.

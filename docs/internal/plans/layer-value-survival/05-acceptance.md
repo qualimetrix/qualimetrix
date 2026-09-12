@@ -23,6 +23,11 @@ no row's `verdict` is relaxed to `any-defect` to make a run green — the DoD of
 stage 2 is that they stop being defects on the live grid, not that the floor stops
 asking.
 
+Stage 1's repair of the absent-row hole is what makes this checkable at all: until
+it lands, a row that left the grid's population counted as cured, and stage 2
+regenerates the grid while stage 5 moves ledger rows for the same coordinates, so
+both sides could have travelled together in silence.
+
 **The witness question this answers.** The round was asked whether to restore the
 floor's positive direction by hand-picking new rows under live defects. It does
 not need to: with the sentinel, every cure a round lands after its own snapshot is
@@ -38,8 +43,17 @@ them. That reason expires here.
 
 - **C becomes blocking.** Its one mechanism is cured; a new defect on it is a
   regression, and the four floor rows are not a substitute for an exit code.
-- **E becomes blocking.** It stands at 0 defects after X19. An axis at zero with
-  no exit code is an axis nothing protects.
+- **E becomes blocking.** It stands at 0 defects after X19.
+
+**What "blocking" is worth, said plainly rather than implied.** Nothing automatic
+consumes `composer promise-effect`'s exit code: `composer check` reaches the stand
+only through `promise-effect:grid:check`, which compares the committed artifact
+against its declarations and takes no probe of its own, and no workflow runs the
+stand. So the exit code protects an axis at the round's own validation step and
+nowhere else — the protection is manual, and calling an axis "blocking" means a
+human or a round is the gate. Automating it would put a ~200-second run into
+`composer check`, against today's whole-suite cost of roughly 150 seconds for the
+tests; that is the number, and this round does not spend it.
 - **B stays non-blocking**, and the declaration's comment is corrected: the reason
   is not a missing substrate, it is that its 4 mechanisms are an undecided
   question about what a top-level shorthand means beside a nested block. The
@@ -58,10 +72,24 @@ them. That reason expires here.
 - **Website**, EN and RU together: the layered-configuration page gains what a
   `threshold` means when a higher layer rewrites half a band, and the three
   option keys get their accepted words.
-- **CHANGELOG.** `Changed` for the layering behaviour and for the three keys'
-  earlier refusal. Not `Breaking`: nothing that was accepted is refused, and
-  nothing that was refused is accepted — a value that reached a compiled default
-  now reaches the value that was written for it.
+- **CHANGELOG: `Breaking`, and the first draft of this plan had it wrong.** It
+  argued "nothing that was accepted is refused". Three things are:
+  - a lower layer that mixed `threshold` with a graduated key was masked by
+    eviction and is now refused — eviction was quietly cleaning up an illegal
+    document;
+  - a rule with no registry entry now refuses a cross-layer mode change, where
+    the deleted heuristic made it work;
+  - and the effect a consumer actually sees is not a refusal at all: a value that
+    reached a compiled default now reaches the value written for it, which MOVES
+    THE SEVERITY OF EXISTING FINDINGS. Preset `threshold: 25` under `warning: 10`
+    shifts the error boundary from a compiled 20 to 25, so findings scoring 20-24
+    become warnings, and a `--fail-on=error` run can turn from red to green with
+    no configuration change. A changelog entry that only said "the layering is
+    fixed" would let that land unannounced.
+
+  Migration steps are written from the consumer's side: what to re-check after
+  upgrading (any rule configured across two layers with a `threshold` on one of
+  them) and how to see the difference (compare finding severities, not counts).
 - **Component READMEs** under `src/Analysis/Finding/` for the deleted heuristic
   and the new guards.
 - `promise-effect/README.md` for the sentinel.
