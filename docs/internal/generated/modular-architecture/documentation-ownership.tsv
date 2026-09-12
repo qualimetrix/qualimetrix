@@ -60,6 +60,8 @@ docs/adr/0052-the-shape-of-a-signal-about-a-miss.md	Architecture.Governance	shar
 docs/adr/0053-door-enumeration-as-an-oracle.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0054-an-oracle-for-effect-diverging-from-promise.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md	Analysis.Finding	P6-A	"Move or update atomically with the named migration package."
+docs/adr/0056-source-composition-is-measured-and-left-alone.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/adr/0057-probing-composition-and-adjacency.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

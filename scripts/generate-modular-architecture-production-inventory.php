@@ -2578,6 +2578,8 @@ function documentationDisposition(string $path): array
         'docs/adr/0052-the-shape-of-a-signal-about-a-miss.md',
         'docs/adr/0053-door-enumeration-as-an-oracle.md',
         'docs/adr/0054-an-oracle-for-effect-diverging-from-promise.md',
+        'docs/adr/0056-source-composition-is-measured-and-left-alone.md',
+        'docs/adr/0057-probing-composition-and-adjacency.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',
