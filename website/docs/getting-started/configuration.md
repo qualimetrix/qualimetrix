@@ -182,13 +182,39 @@ bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 
 The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.ccn`'s `callable:`/`class:`).
 
-`coupling.cbo` and `coupling.instability` accept the same bare `threshold` shorthand at their own top level too, but with a different effect than `complexity.ccn`'s: since their `class`/`namespace` defaults already match, a top-level `threshold` applies uniformly to BOTH levels at once, instead of only the more granular one:
+**A bare `threshold` at a hierarchical rule's own top level replaces the level blocks, it does not add to them.** Writing one selects a shorthand form, and whatever `callable:` / `class:` / `namespace:` blocks stand beside it are not read — silently, with no word about them. Which levels the shorthand then covers differs between the two families:
 
-```yaml
-rules:
-  coupling.cbo:
-    threshold: 15   # class AND namespace: warning=error=15
-```
+- `complexity.ccn`, `complexity.cognitive` and `complexity.npath` apply it to the **callable** level and **switch the class level off**. So this reports nothing about classes at all:
+
+    ```yaml
+    rules:
+      complexity.ccn:
+        threshold: 5      # callable: warning=error=5
+        class:
+          max_warning: 2  # never read — and the class level is off
+    ```
+
+    To configure both levels, do not write the bare key: put a `threshold:` inside each block instead.
+
+    ```yaml
+    rules:
+      complexity.ccn:
+        callable:
+          threshold: 5
+        class:
+          max_warning: 2
+          max_error: 3
+    ```
+
+- `coupling.cbo` and `coupling.instability` apply it uniformly to **both** levels at once, because their `class`/`namespace` defaults already match:
+
+    ```yaml
+    rules:
+      coupling.cbo:
+        threshold: 15   # class AND namespace: warning=error=15
+    ```
+
+    The same replacement holds here: a `class:` or `namespace:` block written beside the bare key is not read.
 
 Each type-coverage dimension is a rule of its own, so each takes its own bare
 `threshold`:
@@ -746,8 +772,136 @@ same message.
     typo gets wrong — are unchanged. The allowed keys are always listed in the
     canonical kebab spelling.
 
-!!! tip
-    Set a value to `~` (YAML null) or leave it empty to explicitly use the default — this is always valid.
+### The shape of a value
+
+The two rules below hold for **every** key in this document — the roots, the
+sections, the `rules:` subtree and the level slots inside it alike. They are not
+a property of rule options; rule options are simply where you meet them most
+often.
+
+Every key declares the shape its value may take. A value of another shape ends
+the run with exit code 3. It is never converted into something usable, and it is
+never dropped in favour of the default while the run reports success. Every
+source the value arrives from is judged, not only the one that wins: a wrong
+`format:` or `cache_dir:` in a file is refused even when the command line
+overrides it, because a value nobody will use is still a value somebody wrote:
+
+```
+Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.
+Configuration error: Invalid value for "only_rules": expected a list of entries, got a map.
+Configuration error: Invalid value for "cache": expected a section of named keys (dir, enabled), got a list.
+```
+
+The shapes a key can ask for, in the words the refusal uses:
+
+| Shape              | Accepts                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| a boolean          | `true` / `false`                                            |
+| a whole number     | `15` — not `10.5`, not `"15"`                               |
+| a number           | `15` or `10.5`                                              |
+| a string           | any string, the empty one included                          |
+| a non-empty string | a string with at least one non-blank character              |
+| a list of X        | a YAML sequence, every element of shape X                   |
+| a map of X         | a YAML mapping you name the keys of, every value of shape X |
+| a block of options | a mapping whose own keys another declaration answers for    |
+
+Four consequences are worth spelling out, because each of them used to pass
+unnoticed:
+
+- **A quoted number is a string.** `warning: "15"` is refused where a whole
+  number is declared; write `warning: 15`. This is a YAML-only distinction —
+  values that arrive on the command line are text by construction and are
+  converted before their shape is judged, so
+  `--rule-opt="size.method-count:threshold=25"` and
+  `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
+- **A whole number is not a fraction.** `warning: 10.5` is refused where a whole
+  number is declared. Where a key genuinely takes a fraction, the refusal says
+  "a number" instead.
+- **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
+  and `exclude_methods: {a: getName}` are refused; write
+  `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in
+  the other direction: `cache: [dir]` is refused, because `cache:` is a section
+  of named keys.
+- **The root `suppress_paths:` is the exception to "a number is not a string".**
+  A directory can lawfully be called `2024`, and YAML hands such an unquoted
+  segment over as a number, so that root reads it as the name it is. Three
+  neighbours do not: `suppress_namespaces:` refuses it, because a namespace
+  segment cannot begin with a digit; the per-rule `rules.<name>.suppress_paths:`
+  refuses it too, being declared as strings; and `paths:` / `exclude:` drop such
+  an entry without a word. Quote it — `['2024']` — wherever you are not writing
+  the root key.
+- **The empty string is a shape of its own.** It is refused wherever a non-empty
+  value is required, on the command line as well: `--fail-on=`, `--format=`,
+  `--cache-dir=` and `--memory-limit=` each name what they expected instead of
+  quietly taking the default.
+
+### A key written with no value
+
+Writing a key and leaving it empty — `key:` or the explicit YAML null `key: ~` —
+means the default is taken for that key's own value, at every depth and in every
+section:
+
+```yaml
+cache: ~                 # same as not writing cache:
+coupling: ~              # same as not writing coupling:
+cache:
+  dir: ~                 # same as not writing dir:
+rules:
+  complexity.ccn:
+    enabled: ~           # same as not writing enabled:
+    callable: ~          # same as not writing callable:
+```
+
+Inside `rules:` that is where the equivalence stops. The entry itself survives:
+the key is still *written*, it is only written with nothing under it. That makes
+no difference to a key whose value is simply read — `enabled: ~` above is the
+same as silence — but two readers ask whether a key is **present** rather than
+what it holds, and to those a `~` is not silence:
+
+- **A threshold key chooses the shorthand form of a hierarchical rule.** On
+  `complexity.ccn`, `complexity.cognitive` and `complexity.npath` that key is
+  `threshold:`; on `coupling.cbo` it is `threshold:`, `warning:` or `error:`; on
+  `coupling.instability` it is `threshold:`, `max_warning:` or `max_error:`.
+  Writing one at the rule's own top level selects the threshold shorthand
+  described under **Rules** above — and, as there, the `callable:` / `class:` /
+  `namespace:` blocks written beside it are then not read. A `~` is no different
+  from a number here:
+
+    ```yaml
+    rules:
+      coupling.cbo:
+        warning: ~       # NOT the same as omitting it
+        class:
+          warning: 0     # never read: the block above already chose the flat form
+          error: 0
+    ```
+
+    Omit the key to configure the levels; the rule then behaves as if nothing
+    had been written at its top level at all.
+
+- **`threshold:` and `warning:` / `error:` are still two modes.** Writing
+  `threshold: ~` beside either refuses the document rather than falling back to
+  the graduated mode:
+
+    ```yaml
+    rules:
+      cohesion.lcom:
+        threshold: ~     # Configuration error, exit 3:
+        warning: 5       # Cannot mix "threshold" with "warning"/"error"
+    ```
+
+An **element of a list** is the other place this does not apply, and for a reason:
+an element is a value, not a key that was left unwritten, so there is nothing for
+it to mean. Where the list is declared to hold non-empty strings, a `~` element
+is refused:
+
+```yaml
+rules:
+  complexity.ccn:
+    suppress_namespaces:
+      - App\Legacy
+      - ~              # refused: exit 3
+```
 
 ---
 

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Size;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -86,13 +87,13 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'enabled',
-            'error',
-            'exclude-promoted-only',
-            'exclude-readonly',
-            'threshold',
-            'warning',
-        );
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error' => RuleOptionShape::integer()->orNull(),
+            'exclude-promoted-only' => RuleOptionShape::boolean()->orNull(),
+            'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
+            'threshold' => RuleOptionShape::integer()->orNull(),
+            'warning' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

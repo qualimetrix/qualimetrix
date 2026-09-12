@@ -108,6 +108,6 @@ final readonly class SubjectControlOptions implements RuleOptionsInterface, Thre
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of();
+        return RuleOptionKeySet::of([]);
     }
 }

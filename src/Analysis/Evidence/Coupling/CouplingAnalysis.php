@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 
 final class CouplingAnalysis implements CouplingConfiguratorInterface
@@ -53,7 +54,10 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     private function couplingContribution(mixed $contribution): array
     {
         if (!\is_array($contribution) || ($contribution !== [] && array_is_list($contribution))) {
-            throw new InvalidArgumentException('coupling must be an associative map.');
+            throw ConfigurationRefusal::aboutResolvedInput(
+                'Invalid value for "' . ConfigSchema::COUPLING . '": expected an associative map of coupling settings.',
+                ConfigSchema::COUPLING,
+            );
         }
 
         return $contribution;
@@ -63,12 +67,18 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     private function validatedPrefixes(mixed $prefixes): array
     {
         if (!\is_array($prefixes) || !array_is_list($prefixes)) {
-            throw new InvalidArgumentException('coupling.framework_namespaces must be a list.');
+            throw ConfigurationRefusal::aboutResolvedInput(
+                'Invalid value for "' . ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES . '": expected a list of namespace prefixes.',
+                ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
+            );
         }
 
         foreach ($prefixes as $prefix) {
             if (!\is_string($prefix)) {
-                throw new InvalidArgumentException('coupling.framework_namespaces entries must be strings.');
+                throw ConfigurationRefusal::aboutResolvedInput(
+                    'Invalid entry in "' . ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES . '": every entry must be a namespace prefix string.',
+                    ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES,
+                );
             }
         }
 

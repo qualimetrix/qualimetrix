@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -51,7 +52,7 @@ final class RuleNamespaceExclusionProvider
 
         $patterns = \is_string($patterns) ? [$patterns] : $patterns;
         if (!\is_array($patterns) || !array_is_list($patterns)) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($ruleName, 'suppress_namespaces', \sprintf(
                 'Option "suppress_namespaces" for rule "%s" must be a string or a list of strings; use "suppress_namespace_channels" for namespace-aggregate channel exclusions',
                 $ruleName,
             ));
@@ -92,7 +93,7 @@ final class RuleNamespaceExclusionProvider
         }
 
         if (!\is_array($channelPatterns) || $channelPatterns === [] || array_is_list($channelPatterns)) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($ruleName, 'suppress_namespace_channels', \sprintf(
                 'Option "suppress_namespace_channels" for rule "%s" must be a non-empty channel map',
                 $ruleName,
             ));
@@ -108,7 +109,7 @@ final class RuleNamespaceExclusionProvider
     private function validateSelector(string $ruleName, mixed $selector): string
     {
         if (!\is_string($selector) || trim($selector) === '') {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($ruleName, 'suppress_namespace_channels', \sprintf(
                 'Option "suppress_namespace_channels" for rule "%s" contains an empty or non-string channel selector',
                 $ruleName,
             ));
@@ -123,7 +124,7 @@ final class RuleNamespaceExclusionProvider
     private function validateChannelPatterns(string $ruleName, string $selector, mixed $patterns): array
     {
         if (!\is_array($patterns) || !array_is_list($patterns) || $patterns === []) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($ruleName, 'suppress_namespace_channels.' . $selector, \sprintf(
                 'Option "suppress_namespace_channels.%s" for rule "%s" must be a non-empty list of strings',
                 $selector,
                 $ruleName,
@@ -146,7 +147,7 @@ final class RuleNamespaceExclusionProvider
     {
         foreach ($patterns as $pattern) {
             if (!\is_string($pattern) || trim($pattern) === '') {
-                throw new InvalidArgumentException(\sprintf(
+                throw self::refusal($ruleName, $option, \sprintf(
                     'Option "%s" for rule "%s" must contain only non-empty strings',
                     $option,
                     $ruleName,
@@ -156,6 +157,19 @@ final class RuleNamespaceExclusionProvider
 
         /** @var list<string> $patterns */
         return $patterns;
+    }
+
+    /**
+     * These options are consumed by the framework before a rule's own
+     * `fromArray()` runs, so nothing downstream would give a bare exception a
+     * configuration frame; the refusal carries its own.
+     */
+    private static function refusal(string $ruleName, string $option, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open([$ruleName, ...explode('.', $option)], $option),
+            $summary,
+        );
     }
 
     /**

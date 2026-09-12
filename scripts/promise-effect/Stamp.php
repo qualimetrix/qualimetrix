@@ -41,6 +41,10 @@ final class Stamp
         'promise-effect/axis-a-hits.tsv',
         'promise-effect/witness-envelopes.tsv',
         'promise-effect/floor.tsv',
+        // Read at judgement and therefore verdict-producing: a limit declared
+        // or withdrawn changes what the grid says, so a grid measured before
+        // the change is stale.
+        'promise-effect/observability-limits.tsv',
         'scripts/promise-effect.php',
         // Only the files that PRODUCE the grid. `Population`, `FifthSet` and
         // `Stamp` itself are read by the cheap check and cannot move a
@@ -51,6 +55,7 @@ final class Stamp
         'scripts/promise-effect/InProcess.php',
         'scripts/promise-effect/ProcessProbe.php',
         'scripts/promise-effect/Classifier.php',
+        'scripts/promise-effect/Limits.php',
         'scripts/promise-effect/Stand.php',
     ];
 

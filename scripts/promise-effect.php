@@ -24,9 +24,19 @@ declare(strict_types=1);
  * Exit codes: 0 clean, 1 a red outcome on axis A or D, 2 a declaration that
  * cannot be read, 3 a probe that could not be taken (see 02 §4: a run that did
  * not confirm its postcondition is not an observation).
+ *
+ * `--before` carries the DEFECT FLOOR, and that is where the floor belongs: it
+ * is a claim about the classifier reading a known pre-cure tree, so it exits 1
+ * there when a declared row stops being recognised. The live grid is held to
+ * the round's own claim about what it cured instead — see `Floor`.
  */
 
 namespace Qualimetrix\PromiseEffect;
+
+use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Symfony\Component\Console\Command\Command;
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/promise-effect/Ledger.php';
@@ -34,7 +44,9 @@ require __DIR__ . '/promise-effect/Declarations.php';
 require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
+require __DIR__ . '/promise-effect/Limits.php';
 require __DIR__ . '/promise-effect/Stand.php';
+require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
 
 /**
@@ -95,6 +107,164 @@ function renderRaw(array $raw): string
     return "axis\trow\tside\toutcome\tobservation\n" . implode("\n", $lines) . "\n";
 }
 
+/**
+ * The grid as a flat map, which is the second argument the limit guard needs:
+ * one of its rules asks whether a SIBLING form of the same row publishes the
+ * crash a limit covers.
+ *
+ * @param list<Cell> $cells
+ *
+ * @return array<string, string>
+ */
+function judgedMap(array $cells): array
+{
+    $map = [];
+
+    foreach ($cells as $cell) {
+        $map[$cell->key] = $cell->verdict;
+    }
+
+    return $map;
+}
+
+/**
+ * Which `(door, key)` the product itself writes by REPEATING a flag, read off
+ * the check command's own input definition.
+ *
+ * This is the machine basis under the two door kinds of
+ * `observability-limits.tsv`: a flag declared `VALUE_IS_ARRAY` (or an array
+ * argument) has a list spelling, so a row claiming the door cannot express one
+ * is false. Asked of the product rather than declared here, because a
+ * hand-written answer to "can this door carry a list" is the very claim under
+ * review.
+ *
+ * `null` marks a flag the definition does not know at all: that is a third
+ * state, not a `false`. A ledger row naming a door the command does not define
+ * is a broken reading, and answering `false` would let a
+ * `door-cannot-express` row pass on a door nobody looked at.
+ *
+ * @return array<string, bool|null>
+ */
+function repeatableDoors(Ledger $ledger, string $root): array
+{
+    $command = new Command('promise-effect-probe');
+    $container = (new ContainerFactory())->create();
+    $registry = $container->get(RuleRegistryInterface::class);
+
+    if (!$registry instanceof RuleRegistryInterface) {
+        throw new LedgerError('the container did not yield the rule registry the CLI door is built from');
+    }
+
+    CheckCommandDefinition::addOptions($command, $registry);
+    $definition = $command->getDefinition();
+    $flags = [];
+
+    foreach (rootFlagTable($root) as $path => $flag) {
+        $flags[$path] = $flag;
+    }
+
+    $repeatable = [];
+
+    foreach ($ledger->forms as $row) {
+        $name = match ($row->door) {
+            'cli-root' => $flags[$row->path] ?? null,
+            'cli-alias' => $row->alias === '' ? null : ltrim($row->alias, '-'),
+            default => null,
+        };
+
+        if ($name === null) {
+            continue;
+        }
+
+        if ($name === '(positional)') {
+            $argument = $definition->hasArgument('paths') ? $definition->getArgument('paths') : null;
+            $repeatable[$row->door . '|' . $row->path] = $argument?->isArray();
+
+            continue;
+        }
+
+        $option = ltrim($name, '-');
+        $repeatable[$row->door . '|' . $row->path] = $definition->hasOption($option)
+            ? $definition->getOption($option)->isArray()
+            : null;
+    }
+
+    return $repeatable;
+}
+
+/**
+ * The flag each configuration root is written with, from the same declaration
+ * the stand probes through.
+ *
+ * @return array<string, string>
+ */
+function rootFlagTable(string $root): array
+{
+    $lines = file($root . '/promise-effect/cli-root-flags.tsv', \FILE_IGNORE_NEW_LINES);
+
+    if ($lines === false) {
+        throw new LedgerError('cannot read promise-effect/cli-root-flags.tsv');
+    }
+
+    $flags = [];
+    $header = false;
+
+    foreach ($lines as $line) {
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        if (!$header) {
+            $header = true;
+
+            continue;
+        }
+
+        $cells = array_pad(explode("\t", $line), 5, '');
+        $flags[$cells[0]] = $cells[1];
+    }
+
+    return $flags;
+}
+
+/**
+ * @param list<Cell> $cells
+ *
+ * @return list<string>
+ */
+function limitProblems(Limits $limits, Stand $stand, array $cells, Ledger $ledger, string $root): array
+{
+    $problems = $limits->conflicts($stand->unrestricted(), judgedMap($cells));
+    $repeatable = repeatableDoors($ledger, $root);
+    $readPerDoor = [];
+
+    foreach ($repeatable as $cell => $repeats) {
+        $door = explode('|', $cell, 2)[0];
+        $readPerDoor[$door] = ($readPerDoor[$door] ?? 0) + ($repeats === null ? 0 : 1);
+
+        if ($repeats === null) {
+            $problems[] = $cell . ': the ledger names a CLI door the check command does not define, so nothing was read about it';
+        }
+    }
+
+    // A basis read off an empty definition would agree with anything, so it is
+    // asked PER DOOR: one door answering for all of them would leave the other
+    // unchecked while the total looked healthy. Beside that, the reading as a
+    // whole must distinguish — an answer of one value everywhere is not a
+    // reading either.
+    foreach ($readPerDoor as $door => $read) {
+        if ($read === 0) {
+            $problems[] = $door . ': no flag of this door was read against the input definition, so its kind rests on nothing';
+        }
+    }
+
+    if (!\in_array(true, $repeatable, true) || !\in_array(false, $repeatable, true)) {
+        $problems[] = 'the CLI doors yielded no repeatable/non-repeatable pair, so the basis of the door kinds never distinguished anything';
+    }
+
+    return [...$problems, ...$limits->basisProblems($repeatable)];
+}
+
 /** @return list<array{string, string, string, string, string}> */
 function readRaw(string $path): array
 {
@@ -117,58 +287,6 @@ function readRaw(string $path): array
     }
 
     return $rows;
-}
-
-/**
- * The floor of 02 §11.3 and 01 §"Пол": rows this stand must call defective.
- * It checks the classifier, never completeness.
- *
- * @param list<Cell> $cells
- *
- * @return list<string> the floor rows the stand failed to recognise
- */
-function floorMisses(string $root, array $cells): array
-{
-    $expected = [];
-
-    $lines = file($root . '/promise-effect/floor.tsv', \FILE_IGNORE_NEW_LINES);
-
-    if ($lines === false) {
-        throw new LedgerError('cannot read promise-effect/floor.tsv');
-    }
-
-    foreach ($lines as $line) {
-        if ($line === '' || str_starts_with($line, '#') || str_starts_with($line, 'row	')) {
-            continue;
-        }
-
-        [$row, $verdict] = array_pad(explode("\t", $line), 3, '');
-        $expected[$row] = $verdict;
-    }
-
-    $seen = [];
-
-    foreach ($cells as $cell) {
-        $seen[$cell->key] = [$cell->verdict, $cell->defect];
-    }
-
-    $misses = [];
-
-    foreach ($expected as $row => $verdict) {
-        if (!isset($seen[$row])) {
-            $misses[] = $row . ': the grid has no such row';
-
-            continue;
-        }
-
-        [$actual, $defect] = $seen[$row];
-
-        if ($verdict === 'any-defect' ? !$defect : $actual !== $verdict) {
-            $misses[] = $row . ': expected ' . $verdict . ', got ' . $actual . ($defect ? ' (a defect)' : ' (not a defect)');
-        }
-    }
-
-    return $misses;
 }
 
 /**
@@ -235,7 +353,40 @@ if (isset($arguments['before'])) {
 
     printf("\n  %-22s %d\n", 'defects', \count(array_filter($frozen, static fn(Cell $cell): bool => $cell->defect)));
 
-    exit(0);
+    // A limit declared over a working observation is a deleted measurement,
+    // and the refusal is the same on both halves — which is why the
+    // unrestricted verdict is computed beside every limited one.
+    $limitConflicts = limitProblems(Limits::load($root), $stand, $frozen, $ledger, $root);
+
+    foreach ($limitConflicts as $conflict) {
+        fwrite(\STDERR, 'LIMIT: ' . $conflict . "\n");
+    }
+
+    printf(
+        "  %-22s %d cell(s) covered, %d of them over a lawful effect\n",
+        'observability limit',
+        \count($stand->unrestricted()),
+        \count($limitConflicts),
+    );
+
+    // The floor belongs HERE. It is a claim about the classifier reading a
+    // known pre-cure tree — `01-promise.md` states it of the snapshot BEFORE —
+    // and on this half it is meaningful whether or not the product was since
+    // repaired. Judging it on the live grid instead made every successful cure
+    // a floor miss, which is how a cured product came to exit 1.
+    $floorMisses = Floor::load($root)->missesOnTheFrozenHalf($frozen);
+
+    printf(
+        "  %-22s %s\n",
+        'defect floor',
+        $floorMisses === [] ? 'reproduced on the pre-cure half' : \count($floorMisses) . ' row(s) not recognised',
+    );
+
+    foreach ($floorMisses as $miss) {
+        fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
+    }
+
+    exit($floorMisses === [] && $limitConflicts === [] ? 0 : 1);
 }
 
 if (isset($arguments['stability'])) {
@@ -476,13 +627,44 @@ printf("  %-22s %d\n", 'defects (all axes)', $defects);
 // line printed over a partial grid is the shape of false evidence this round
 // exists to remove.
 $whole = \count($axes) === 3;
-$misses = $whole ? floorMisses($root, $cells) : [];
+// On the LIVE grid the floor is not the floor. Every row this round repaired
+// is no longer a defect, so the pre-cure list applied here turned a successful
+// cure into a red run. What the live grid is held to instead is the round's
+// own claim, row by row: still defective where nothing claims a cure, and no
+// longer defective where the `cure` column names one. See `Floor`.
+[$misses, $standing, $cured] = $whole
+    ? Floor::load($root)->cureMisses($cells)
+    : [[], [], []];
 
 printf(
     "  %-22s %s\n",
     'defect floor',
-    $whole ? ($misses === [] ? 'reproduced' : \count($misses) . ' row(s) not recognised') : 'not judged (narrowed run)',
+    $whole
+        ? \sprintf(
+            '%d row(s) still defective, %d cured as declared%s',
+            \count($standing),
+            \count($cured),
+            $misses === [] ? '' : ', ' . \count($misses) . ' row(s) neither',
+        )
+        : 'not judged (narrowed run)',
 );
+
+foreach ($cured as $row) {
+    printf("    cured  %s — %s\n", $row->row, $row->cure);
+}
+
+$limitConflicts = limitProblems(Limits::load($root), $stand, $cells, $ledger, $root);
+
+printf(
+    "  %-22s %d cell(s) covered, %d of them over a lawful effect\n",
+    'observability limit',
+    \count($stand->unrestricted()),
+    \count($limitConflicts),
+);
+
+foreach ($limitConflicts as $conflict) {
+    fwrite(\STDERR, 'LIMIT: ' . $conflict . "\n");
+}
 
 foreach ($misses as $miss) {
     fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
@@ -496,7 +678,7 @@ if ($stand->failures() !== []) {
     exit(3);
 }
 
-if ($misses !== [] || $spanProblems !== 0) {
+if ($misses !== [] || $spanProblems !== 0 || $limitConflicts !== []) {
     exit(1);
 }
 

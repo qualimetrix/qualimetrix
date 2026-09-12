@@ -40,6 +40,7 @@ Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	constructor	optionsCla
 Qualimetrix\Analysis\Finding\Contract\RuleMetadata	constructor	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	method	levelOptionsClasses	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface	method	getOptionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	method	levelOptionsClasses	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	method	levelOptionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	method	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	method	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface

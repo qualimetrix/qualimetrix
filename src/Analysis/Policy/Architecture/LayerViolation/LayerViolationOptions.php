@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -84,9 +86,9 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     /**
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException When a severity or mode value does not match a known enum
-     *                                  case, or when the config still sets one of the three removed
-     *                                  diagnostic-severity keys.
+     * @throws ConfigurationRefusal When a severity or mode value does not match a known enum
+     *                              case, or when the config still sets one of the three removed
+     *                              diagnostic-severity keys.
      */
     public static function fromArray(array $config): self
     {
@@ -108,7 +110,10 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'severity')
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'severity' => RuleOptionShape::text()->orNull(),
+        ])
             ->alsoAnsweredByTheClass(
                 'empty-template-severity',
                 'potential-shadow-severity',
@@ -131,7 +136,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
      *
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException
+     * @throws ConfigurationRefusal
      */
     private static function assertNoRemovedSeverityKeys(array $config): void
     {
@@ -140,7 +145,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
                 continue;
             }
 
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($snakeCase, \sprintf(
                 'Option "%s" for rule "%s" no longer exists. The channel it configured reports a configuration'
                 . ' error, which always fails the run regardless of "fail_on" and can never be accepted by a'
                 . ' baseline, so its severity was not a behaviour setting. Remove the key; to decline the'
@@ -179,7 +184,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
      * failed (`rules.architecture.layer-violation.<optionName>` in the
      * user's YAML).
      *
-     * @throws InvalidArgumentException When $raw is set but not a recognized severity string.
+     * @throws ConfigurationRefusal When $raw is set but not a recognized severity string.
      */
     private static function resolveSeverity(mixed $raw, string $optionName, Severity $default): Severity
     {
@@ -192,7 +197,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
         }
 
         if (!\is_string($raw)) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal($optionName, \sprintf(
                 'Option "%s" for rule "%s" must be a string, got %s.',
                 $optionName,
                 self::RULE_NAME,
@@ -208,12 +213,25 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
         }
 
         $allowed = implode(', ', array_map(static fn(Severity $c): string => "'{$c->value}'", Severity::cases()));
-        throw new InvalidArgumentException(\sprintf(
+        throw self::refusal($optionName, \sprintf(
             'Option "%s" for rule "%s" has unknown value "%s"; expected one of %s.',
             $optionName,
             self::RULE_NAME,
             $raw,
             $allowed,
         ));
+    }
+
+    /**
+     * This class answers about these keys in its own words rather than letting
+     * a general form check speak for it, so the answer has to carry the
+     * configuration frame itself.
+     */
+    private static function refusal(string $option, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open([self::RULE_NAME, $option], $option),
+            $summary,
+        );
     }
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 
 #[CoversClass(CboOptions::class)]
@@ -66,7 +66,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         CboOptions::fromArray(['threshold' => 30, 'warning' => 10]);
@@ -100,5 +100,37 @@ final class CboOptionsTest extends TestCase
         $options = CboOptions::fromArray(['threshold' => 30, 'scope' => 'application']);
 
         self::assertSame('application', $options->class->scope);
+    }
+
+    /**
+     * The documented equivalence "a key written with `~` means what omitting it
+     * means" is about the *value*; the entry survives normalization inside
+     * `rules:`, and the branch above is chosen by the key being written at all.
+     * So `warning: ~` still selects the flat form and still discards the level
+     * blocks beside it — the website says so, and this is what it says it about.
+     */
+    #[Test]
+    public function itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks(): void
+    {
+        $options = CboOptions::fromArray([
+            'warning' => null,
+            'class' => ['warning' => 0, 'error' => 0],
+        ]);
+
+        self::assertSame(14, $options->class->warning);
+        self::assertSame(20, $options->class->error);
+        self::assertSame(
+            $options->class->warning,
+            CboOptions::fromArray([])->class->warning,
+            'the level block is not merely overridden, it is gone: the result is the unconfigured one',
+        );
+    }
+
+    #[Test]
+    public function itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll(): void
+    {
+        $options = CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]);
+
+        self::assertSame(0, $options->class->warning);
     }
 }

@@ -202,7 +202,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     {
         $this->validateRootKeys($config, $path, $keyMap);
         $this->validateRulesSection($config, $path, $keyMap, $rawConfig);
-        $this->validateTypeConstraints($config, $path, $keyMap);
+        RootContainerShapes::refuseWrongContainer($config, $path, $keyMap);
         $this->validateSectionSubKeys($config, $path, $rawConfig);
         $this->validateScalarTypes($config, $path);
     }
@@ -286,43 +286,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         RetiredSuppressionOptions::refuseInRules($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
-    }
-
-    /**
-     * Validates that section keys are arrays and list keys are arrays.
-     *
-     * @param array<string, mixed> $config
-     * @param array<string, string> $keyMap
-     */
-    private function validateTypeConstraints(array $config, string $path, array $keyMap): void
-    {
-        foreach (ConfigSchema::associativeRootKeys() as $section) {
-            if (!isset($config[$section])) {
-                continue;
-            }
-
-            if (!\is_array($config[$section])) {
-                $originalSection = $this->originalKey($section, $keyMap);
-
-                throw ConfigurationRefusal::atConfigFileKey(
-                    $path,
-                    RefusedPosition::open([$originalSection], $originalSection),
-                    \sprintf('"%s" must be an associative array', $originalSection),
-                );
-            }
-        }
-
-        foreach (ConfigSchema::listKeys() as $field) {
-            if (isset($config[$field]) && !\is_array($config[$field])) {
-                $originalField = $this->originalKey($field, $keyMap);
-
-                throw ConfigurationRefusal::atConfigFileKey(
-                    $path,
-                    RefusedPosition::open([$originalField], $originalField),
-                    \sprintf('"%s" must be a list', $originalField),
-                );
-            }
-        }
     }
 
     /**

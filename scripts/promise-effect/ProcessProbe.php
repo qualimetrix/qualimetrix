@@ -46,6 +46,15 @@ final readonly class ProcessObservation
         public string $cacheNote,
     ) {}
 
+    /**
+     * The RAW reading of one run: what the process did, before anything is
+     * judged. Exit 2 lands in the unframed branch here and is turned into the
+     * accepted observation it actually is by
+     * {@see Observation::ofMeasured()} — the one place an exit code becomes a
+     * verdict input, so that the frozen half and a fresh run cannot be judged
+     * by two rules. Deciding it here instead would leave the frozen half,
+     * which stores this raw wording, on the old rule.
+     */
     public function outcome(): string
     {
         if ($this->exit === 3 && str_contains($this->stderrHead . $this->stdoutHead, 'Configuration error:')) {
@@ -246,7 +255,7 @@ final class ProcessProbe
             'exitcode' => 'exit-only',
             'cachedir' => 'named=' . (is_dir($cacheDirectory) ? self::countFiles($cacheDirectory) : 'absent')
                 . ' default=' . (is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) ? self::countFiles($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) : 'absent'),
-            'logfile' => self::logEcho($logFile),
+            'logfile' => self::workerDecision($logFile),
             default => self::digest($stdout),
         };
     }
@@ -292,7 +301,27 @@ final class ProcessProbe
         return 'files=' . $count;
     }
 
-    private static function logEcho(string $logFile): string
+    /**
+     * The worker decision, read out of the debug log and nothing else.
+     *
+     * The line is a JSON record and every field of it used to travel into the
+     * observation: the whole line was kept and hashed. Two of those fields
+     * move on their own — `timestamp` is second-granular, and `projectRoot` is
+     * the probe's run directory, which is keyed on the document the probe
+     * writes. So every logfile probe produced a text unique BY CONSTRUCTION,
+     * `~` differed from an omitted key for a reason that was the stand's, and
+     * `parallel.workers|null` read COLLAPSED against a product that defaults
+     * correctly. Only the message and the worker fields survive here.
+     *
+     * Kept as readable text rather than a digest, deliberately: the defect
+     * above lived inside an md5 for a whole round, and a number a reader can
+     * see is a number a reader can doubt.
+     *
+     * Public so a control can address it directly. There is no other way to
+     * prove this extraction: the frozen half stores the contaminated digest,
+     * md5 is not invertible, and re-judging cannot reach what the digest ate.
+     */
+    public static function workerDecision(string $logFile): string
     {
         if (!is_file($logFile)) {
             return 'no log';
@@ -302,14 +331,46 @@ final class ProcessProbe
         $lines = [];
 
         foreach ($read === false ? [] : $read as $line) {
-            if (str_contains($line, 'orkers')) {
-                $lines[] = (string) preg_replace('/^.*?(\{.*)$/', '$1', $line);
+            /** @var mixed $decoded */
+            $decoded = json_decode($line, true);
+
+            if (!\is_array($decoded)) {
+                // The stand cannot tell the observable from its environment in
+                // a line it cannot read, and guessing would put the run
+                // directory back into the comparison.
+                if (str_contains($line, 'orkers')) {
+                    $lines[] = 'unreadable log line';
+                }
+
+                continue;
             }
+
+            // Matched on the DECODED fields, never on the raw line: every
+            // record carries file paths, and a scratch directory whose own
+            // name happens to hold the word would enrol the whole log.
+            $message = (string) ($decoded['message'] ?? '');
+            /** @var mixed $context */
+            $context = $decoded['context'] ?? [];
+            $fields = [];
+
+            foreach (\is_array($context) ? $context : [] as $key => $value) {
+                if (!str_contains((string) $key, 'orkers')) {
+                    continue;
+                }
+
+                $fields[] = (string) $key . '=' . json_encode($value);
+            }
+
+            if ($fields === [] && !str_contains($message, 'orkers')) {
+                continue;
+            }
+
+            $lines[] = implode(' ', [$message, ...$fields]);
         }
 
         sort($lines, \SORT_STRING);
 
-        return $lines === [] ? 'no workers line' : substr(md5(implode("\n", $lines)), 0, 10) . '/' . \count($lines);
+        return $lines === [] ? 'no workers line' : implode(' / ', $lines);
     }
 
     private static function digest(string $stdout): string

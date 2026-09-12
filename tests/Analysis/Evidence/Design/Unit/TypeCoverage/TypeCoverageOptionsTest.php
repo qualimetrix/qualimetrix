@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -76,7 +76,7 @@ final class TypeCoverageOptionsTest extends TestCase
     #[Test]
     public function itRefusesAThresholdMixedWithAGraduatedKey(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         TypeCoverageOptions::fromArray(['threshold' => 90.0, 'warning' => 80.0]);
     }

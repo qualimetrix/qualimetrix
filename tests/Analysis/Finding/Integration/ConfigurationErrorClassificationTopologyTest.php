@@ -385,7 +385,7 @@ final readonly class StampOptions implements RuleOptionsInterface
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of();
+        return RuleOptionKeySet::of([]);
     }
 }
 

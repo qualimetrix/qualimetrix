@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -50,6 +51,11 @@ final readonly class TestRuleOptions implements RuleOptionsInterface
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('enabled', 'warning-threshold', 'error-threshold', 'count-nullsafe');
+        return RuleOptionKeySet::of([
+            'count-nullsafe' => RuleOptionShape::boolean()->orNull(),
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'error-threshold' => RuleOptionShape::integer()->orNull(),
+            'warning-threshold' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

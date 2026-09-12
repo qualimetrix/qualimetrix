@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 
 /**
  * Parses threshold configuration for rules with dual warning/error thresholds.
@@ -40,7 +41,7 @@ final class ThresholdParser
      * @param string $thresholdKey Config key for unified threshold (default: 'threshold')
      * @param array{warning?: list<string>, error?: list<string>, threshold?: list<string>} $legacyKeys Fallback keys, keyed by which primary key they alias
      *
-     * @throws InvalidArgumentException If threshold is mixed with warning/error keys
+     * @throws ConfigurationRefusal If threshold is mixed with warning/error keys
      *
      * @return array{warning: int|float, error: int|float}
      */
@@ -69,7 +70,8 @@ final class ThresholdParser
         }
 
         if (self::hasAnyKey($config, $candidates['warning']) || self::hasAnyKey($config, $candidates['error'])) {
-            throw new InvalidArgumentException(
+            throw ConfigurationRefusal::atResolvedKey(
+                RefusedPosition::open([$thresholdSourceKey], $thresholdSourceKey),
                 self::mixedModesMessage($warningKey, $errorKey, $thresholdKey),
             );
         }

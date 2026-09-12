@@ -17,8 +17,6 @@ namespace Qualimetrix\Analysis\Configuration;
  * Configuration owns it because configuration is where a key's spelling is a
  * subject at all; the rule layer reads it across the one import edge that
  * already exists in that direction.
- *
- * @qmx-threshold coupling.class-rank warning=0.024 error=0.024 -- Agreement on one spelling, not change impact: this class has no project dependency of its own, and four fifths of its rank arrives through the single edge from RuleOptionKeySet, which every options class asks about its own keys. Every door that stopped writing the fold out again is one of those paths, which is the point of the class. Measured rank 0.0076 against the 0.0075 the 0.023 above it scaled to at 936 classes; 0.024 is the new measurement written back in unscaled units with the same slim headroom, scaling to 0.0078 at that class count, so a further rise still reports. What moved it in X16 is neither renormalization nor new coupling to this class: its direct dependents stayed at twelve, and the three options classes the round added (`UnmatchedExcludeOptions`, `UnboundSuppressionOptions`, `UnmatchedFrameworkNamespaceOptions`) each ask RuleOptionKeySet about their own keys, so the rank arrives through that one named edge. Every future options class recrosses this by the same mechanism; the alternative of suppressing the channel on this path was rejected because the line above deliberately keeps a further rise reportable.
  */
 final class ConfigKeySpelling
 {

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 
@@ -144,4 +145,93 @@ final class ConfigDataNormalizerTest extends TestCase
         self::assertSame(4, $result['parallel.workers']);
     }
 
+    #[Test]
+    #[TestWith(['coupling'])]
+    #[TestWith(['computedMetrics'])]
+    #[TestWith(['excludeHealth'])]
+    #[TestWith(['architecture'])]
+    public function itReadsANullDocumentRootAsAnUnwrittenKey(string $root): void
+    {
+        $result = ConfigDataNormalizer::normalize([$root => null]);
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function itReadsANullEntryKeyAsAnUnwrittenKey(): void
+    {
+        $result = ConfigDataNormalizer::normalize(['paths' => null, 'format' => null]);
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function itReadsANullKeyInsideACopiedSubtreeAsAnUnwrittenKeyWithoutTouchingItsSiblings(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'architecture' => ['coverage-gap' => 'ignore', 'layers' => null],
+            'coupling' => ['frameworkNamespaces' => null],
+            'computedMetrics' => ['health.typing' => ['enabled' => null, 'warning' => 80]],
+        ]);
+
+        self::assertSame(['coverage-gap' => 'ignore'], $result['architecture']);
+        self::assertSame([], $result['coupling']);
+        self::assertArrayNotHasKey('coupling.framework_namespaces', $result);
+        self::assertSame(['health.typing' => ['warning' => 80]], $result['computedMetrics']);
+    }
+
+    #[Test]
+    public function itReadsANullKeyAsUnwrittenAtEveryDepth(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'domain', 'patterns' => ['App\\Domain\\*'], 'pending' => null],
+                ],
+            ],
+        ]);
+
+        self::assertSame(
+            ['layers' => [['name' => 'domain', 'patterns' => ['App\\Domain\\*']]]],
+            $result['architecture'],
+        );
+    }
+
+    #[Test]
+    public function itKeepsFalsyValuesThatAreNotNullAtEveryDepth(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'includeGenerated' => false,
+            'cache' => ['enabled' => false, 'dir' => ''],
+            'excludeHealth' => [],
+            'computedMetrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
+        ]);
+
+        self::assertFalse($result['include_generated']);
+        self::assertFalse($result['cache.enabled']);
+        self::assertSame('', $result['cache.dir']);
+        self::assertSame([], $result['excludeHealth']);
+        self::assertSame(['health.typing' => ['enabled' => false, 'warning' => 0]], $result['computedMetrics']);
+    }
+
+    #[Test]
+    public function itKeepsANullListElement(): void
+    {
+        $result = ConfigDataNormalizer::normalize(['excludeHealth' => [null, 'health.typing']]);
+
+        self::assertSame([null, 'health.typing'], $result['excludeHealth']);
+    }
+
+    #[Test]
+    public function itLeavesNullsInsideTheRulesSubtreeAlone(): void
+    {
+        $rules = [
+            'complexity.ccn' => null,
+            'code-smell.boolean-argument' => ['callable' => ['warning' => null]],
+        ];
+
+        $result = ConfigDataNormalizer::normalize(['rules' => $rules]);
+
+        self::assertSame($rules, $result['rules']);
+    }
 }

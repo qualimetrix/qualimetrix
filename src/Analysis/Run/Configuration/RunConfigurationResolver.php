@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -24,7 +25,10 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $root = $document->workingDirectory();
         $paths = self::lastStringList($document->contributions(ConfigSchema::PATHS), ['.']);
         $pathList = array_map(
-            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
+            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument(
+                self::acceptedPath($path),
+                $root,
+            ),
             $paths,
         );
 
@@ -43,6 +47,26 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
                 $document->contributions(ConfigSchema::INCLUDE_GENERATED),
             ),
         );
+    }
+
+    /**
+     * The empty path reached {@see PathFactory} unframed and was answered
+     * there in the vocabulary of the CLI, which misnames the door whenever the
+     * value came from `paths:` in a document.
+     */
+    private static function acceptedPath(string $path): string
+    {
+        if ($path === '') {
+            throw ConfigurationRefusal::aboutResolvedInput(
+                \sprintf(
+                    'Invalid entry in "%s": a path cannot be empty. Name a directory or a file, or omit the key to analyse the working directory.',
+                    ConfigSchema::PATHS,
+                ),
+                ConfigSchema::PATHS,
+            );
+        }
+
+        return $path;
     }
 
     /**

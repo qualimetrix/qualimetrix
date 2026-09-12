@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 
@@ -68,7 +68,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itRejectsAnUnknownSeverity(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('severity');
 
         LayerViolationOptions::fromArray(['severity' => 'bogus']);
@@ -77,7 +77,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itRejectsANonStringSeverity(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('severity');
 
         LayerViolationOptions::fromArray(['severity' => 42]);
@@ -103,7 +103,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[TestWith(['emptyTemplateSeverity'])]
     public function itRejectsARemovedPerDiagnosticSeverityKey(string $key): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('no longer exists');
 
         LayerViolationOptions::fromArray([$key => 'info']);

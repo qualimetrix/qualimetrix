@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -26,6 +28,19 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * options. The walk now runs for either producer and every consumer checks its
  * own gate. `--disable-rule=architecture.layer-violation` never silenced this
  * rule — that is the selector, and it addresses the two producers separately.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- This one moved by three project edges, not
+ * one: it traded a bare `InvalidArgumentException` for `ConfigurationRefusal` and
+ * `RefusedPosition` (the P4 refusal framing X18 introduces) and gained `RuleOptionShape` with the rest. Measured
+ * against 72f18239, those three are the whole difference in its import list. Ca=2, Ce=8 puts this
+ * at exactly 0.800 against an inclusive 0.800 ceiling, so it is reported for reaching the limit
+ * rather than passing it. A rule options class is efferent by construction: it names the option
+ * vocabulary it accepts and almost nothing names it back. The sibling options classes that carry
+ * the same shape with a single afferent edge compute higher still -- Ca=1 with this Ce is 0.889 --
+ * and are not judged at all, because `min_afferent: 2` filters them out; this class is judged only
+ * because one extra consumer names it, which makes the ranking the wrong way round and is the
+ * metric mis-modelling the shape rather than a defect to refactor. 0.81 silences today's 0.800 and
+ * still reports the next efferent edge, which takes Ce to 9 and instability to 0.818.
  */
 final readonly class UnassignedClassOptions implements RuleOptionsInterface
 {
@@ -44,8 +59,8 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
     /**
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException When `mode` is set to something no
-     *                                  {@see UnassignedClassMode} case spells.
+     * @throws ConfigurationRefusal When `mode` is set to something no
+     *                              {@see UnassignedClassMode} case spells.
      */
     public static function fromArray(array $config): self
     {
@@ -63,7 +78,9 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of('mode')
+        return RuleOptionKeySet::of([
+            'mode' => RuleOptionShape::text()->orNull(),
+        ])
             ->alsoAnsweredByTheClass('enabled');
     }
 
@@ -96,7 +113,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
      *
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException
+     * @throws ConfigurationRefusal
      */
     private static function assertNoContradictoryEnabled(array $config, UnassignedClassMode $mode): void
     {
@@ -110,7 +127,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
             return;
         }
 
-        throw new InvalidArgumentException(\sprintf(
+        throw self::refusal('enabled', \sprintf(
             'Option "%s" for rule "%s" does not exist, and here it would %s. "mode" is the only switch: write'
             . ' "mode: ignore" to decline the rule and "mode: warn" or "mode: error" to turn it on. A second switch'
             . ' would be a second answer to one question, and the one that is off by default would win over the one'
@@ -143,7 +160,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
     }
 
     /**
-     * @throws InvalidArgumentException When $raw is set but not a recognized mode string.
+     * @throws ConfigurationRefusal When $raw is set but not a recognized mode string.
      */
     private static function resolveMode(mixed $raw): UnassignedClassMode
     {
@@ -156,7 +173,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
         }
 
         if (!\is_string($raw)) {
-            throw new InvalidArgumentException(\sprintf(
+            throw self::refusal('mode', \sprintf(
                 'Option "mode" for rule "%s" must be a string, got %s.',
                 self::RULE_NAME,
                 get_debug_type($raw),
@@ -172,11 +189,24 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
 
         $allowed = implode(', ', array_map(static fn(UnassignedClassMode $c): string => "'{$c->value}'", UnassignedClassMode::cases()));
 
-        throw new InvalidArgumentException(\sprintf(
+        throw self::refusal('mode', \sprintf(
             'Option "mode" for rule "%s" has unknown value "%s"; expected one of %s.',
             self::RULE_NAME,
             $raw,
             $allowed,
         ));
+    }
+
+    /**
+     * This class answers about these keys in its own words rather than letting
+     * a general form check speak for it, so the answer has to carry the
+     * configuration frame itself.
+     */
+    private static function refusal(string $option, string $summary): ConfigurationRefusal
+    {
+        return ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open([self::RULE_NAME, $option], $option),
+            $summary,
+        );
     }
 }

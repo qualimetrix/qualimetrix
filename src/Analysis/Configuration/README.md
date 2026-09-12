@@ -26,7 +26,7 @@ Configuration/
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Discovery/          # Composer metadata reader
-├── Loader/             # YAML load and section normalization
+├── Loader/             # YAML load, section normalization, and the container shape of every root
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse

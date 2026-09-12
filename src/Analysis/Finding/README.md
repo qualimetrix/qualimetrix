@@ -88,6 +88,20 @@ options class also names the level options class behind each slot through
 rule accept different key sets and the map cannot be derived from parameter
 types.
 
+Each accepted key carries its form in the same entry, as a `RuleOptionShape`:
+an integer, a number, a boolean, a string, a non-empty string, a list or map of
+one of those, a nested block, or a union of several, each optionally accepting
+an explicit `null`. The form lives *inside* the key set rather than beside it,
+so a key cannot be admitted by one declaration and shaped by another; it is
+derived from what the reading code does with the value — the cast's target, the
+guard's predicate — not from what the key is called, which is what the removed
+`validateNumericFields()` judged by. The words a refusal uses for a form, and
+the words it uses for the form that was actually written, are one vocabulary:
+`RuleOptionValueForm`. A hierarchical rule does not restate its level slots
+here: `RuleOptionKeySet::withLevelSlots()` takes them from
+`levelOptionsClasses()`, which stays the single source of a slot's existence
+and form.
+
 `RuleOptionKeyRecognition` compares what the user wrote against those
 declarations at both depths and refuses — `ConfigurationRefusal`
 (`Analysis\Configuration\Contract\Refusal`), which `check` prints as

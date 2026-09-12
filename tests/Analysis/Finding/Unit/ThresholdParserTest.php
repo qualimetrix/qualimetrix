@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 
 final class ThresholdParserTest extends TestCase
@@ -68,7 +68,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itRejectsThresholdMixedWithWarning(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         ThresholdParser::parse(['threshold' => 15, 'warning' => 10], 'warning', 'error', 10, 20);
@@ -77,7 +77,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itRejectsThresholdMixedWithError(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(['threshold' => 15, 'error' => 20], 'warning', 'error', 10, 20);
     }
@@ -85,7 +85,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itRejectsThresholdMixedWithALegacyWarningKey(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(
             ['threshold' => 15, 'warningThreshold' => 10],
@@ -100,7 +100,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itRejectsThresholdMixedWithALegacyErrorKey(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(
             ['threshold' => 15, 'errorThreshold' => 20],
@@ -225,7 +225,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itThrowsWhenTheLegacyThresholdKeyConflictsWithTheWarningKey(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(
             ['voThreshold' => 10, 'vo-warning' => 8],
@@ -261,7 +261,7 @@ final class ThresholdParserTest extends TestCase
     {
         // The mixing check uses array_key_exists(), not the value: an explicit
         // `threshold: ~` next to `warning:` is still a configuration error.
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
     }
@@ -269,7 +269,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itDetectsTheConflictWhenTheWarningKeyIsPresentButNull(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
     }
@@ -277,7 +277,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itDetectsTheConflictWhenALegacyErrorKeyIsPresentButNull(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
 
         ThresholdParser::parse(
             ['threshold' => 15, 'errorThreshold' => null],
@@ -292,7 +292,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itNamesThePrimaryKeysInTheConflictMessageEvenWhenALegacyKeyTriggeredIt(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage(
             'Cannot mix "vo-threshold" with "vo-warning"/"vo-error". Use either "vo-threshold" alone'
             . ' (simple mode) or "vo-warning"/"vo-error" (graduated mode).',

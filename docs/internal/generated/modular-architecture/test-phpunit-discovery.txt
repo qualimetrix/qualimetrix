@@ -152,6 +152,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itReturnsAnEmptyArrayWhenThereIsNoAutoloadSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Discovery\ComposerReaderTest::itStripsTrailingSlashesFromExtractedPaths
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsAllValidRootKeys
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsAnEmptyContainerOnEveryShapedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsBooleanRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsCouplingSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex
@@ -175,11 +176,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesMultipleRuleNamesWithMixedFormats
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesTheChannelKeysOfAnExclusionMap
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#2
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#3
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#4
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#5
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#6
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRootOptionInTheSpellingItsAuthorUsed"camel"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRootOptionInTheSpellingItsAuthorUsed"snake"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"camel"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"kebab"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"snake"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesASectionRootWrittenAsAList#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesASectionRootWrittenAsAList#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesASectionRootWrittenAsAList#2
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsAnUnknownRootKeyWrittenWithANullValue
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsAnUnknownSectionSubKeyWrittenWithANullValue
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsInvalidRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsMultipleUnknownSubKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsNonArrayCache
@@ -199,6 +212,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeParallelWorkers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsAllowedKeysInSubKeyError
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillAcceptsTheWellShapedFormOfEveryShapedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesCliKeysOutsideArchitecture
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesTheTypedOptionKeysBesideAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSuggestsCorrectRootKeyForTypo
@@ -211,10 +225,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCacheSectionIntoDottedKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensCouplingFrameworkNamespacesWhileKeepingTheOriginalSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itFlattensParallelWorkersIntoADottedKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsANullListElement
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsExcludeHealthKeyAsCamelCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsFalsyValuesThatAreNotNullAtEveryDepth
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsFormatAsIs
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsPathsAsIs
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsRulesUnchanged
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itLeavesNullsInsideTheRulesSubtreeAlone
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#2
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#3
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullEntryKeyAsAnUnwrittenKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullKeyAsUnwrittenAtEveryDepth
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullKeyInsideACopiedSubtreeAsAnUnwrittenKeyWithoutTouchingItsSiblings
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesDisabledRulesToSnakeCase
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesExcludeToExcludes
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesFailOnToSnakeCase
@@ -1186,6 +1210,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itTracksIncrementsWithNestedStructures
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itDisablesEveryLevelWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itKeepsDefaultsWhenEnabledIsOmitted
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itLetsTheBareThresholdDiscardTheClassBlockAndSilenceTheClassLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itReadsTheClassBlockWhenNoBareThresholdIsWritten
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenHierarchicalLevelKeysArePresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenTheFlatThresholdShorthandIsPresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeCallsBothLevels
@@ -1787,7 +1813,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAppliesTheFlatThresholdShorthandUniformlyToBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itDisablesBothLevelsWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itFallsBackToSubDefaultsWhenEnabledIsNotSetToFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsTheFlatThresholdWinOverAPreExistingNestedClassAndNamespaceConfigInTheSameArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillHonorsTheTopLevelScopeAlongsideTheFlatThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillSupportsTheNestedClassAndNamespaceForm
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray
@@ -1948,6 +1976,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRequiresNoUpstreamMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itScoresZeroCePackagesForAClassWithOnlyIncomingDependencies
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itScoresZeroInstabilityForAClassWithOnlyIncomingDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"a non-string entry"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the leaf as a boolean"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the leaf as a map"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the leaf as an integer"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itRefusesWithTheProductFraming"the root as a list"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itStillAcceptsAListOfNamespacePrefixes
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingConfigurationRefusalTest::itStillAcceptsAnEmptyList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itDeclaresOneMetricDefinitionAveragedAtProjectLevel
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itDefaultsMissingAbstractnessAndInstabilityToZero
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itNamesItselfDistance
@@ -4195,6 +4230,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"kebab"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"padded"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itFoldsSnakeCamelAndKebabIntoOneKey"snake"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itGivesEveryLevelSlotTheSameFormTheWalkIntoItAccepts
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itKnowsAKeyTheClassAnswersAboutItselfWithoutAcceptingIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itLetsASecondAnsweredHalfJoinTheFirst
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itPlacesAnAcceptedKeyInTheAcceptedStateOnly
@@ -4202,10 +4238,51 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesABlankKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyDeclaredInAnythingButKebab
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesAKeyThatWouldSitInTwoStatesAtOnce
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesTheSameKeySpelledTwoWaysInOneHalf
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesALevelSlotThatWasAlreadyDeclaredByHand
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionKeySetTest::itRefusesTheSameKeyDeclaredTwiceInTheAnsweredHalf
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"block"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"boolean"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"either, first branch"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"either, second branch"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"empty list"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"list of strings"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"map of lists"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"non-empty string"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"null where null is named"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"number takes a fraction"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"number takes a whole one"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"string"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"the empty string where text is named"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"a nullable element keeps the singular, so the "or null" stays attached to one value"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"block"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"boolean"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"list names its elements in the plural"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"map names its value"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"nullable whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"union names both branches"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"boolean"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"empty string"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"fraction"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"list"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"map"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"null"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"string"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAUnionOfOneForm
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a blank string is not a non-empty one"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a fraction is not a whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a list is not a map"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a list is not a number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a map is not a list"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a numeric string is not a whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a scalar is not a block"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a whole number is not a boolean"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a wrongly typed element fails its list"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"no branch of a union matches"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsANullLevelSlotAsAnOmittedOne
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsFloatStringForThresholdFields
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsNumericStringForThresholdFields
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsAWholeNumberWrittenAsANumber
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheDocumentedThresholdShorthandOnASupportingRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnCboAndAppliesItToBothLevels
@@ -4233,7 +4310,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itGetsCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itGetsConfigFileOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesArrayMergeWithScalarOverwrite
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesBooleanStringValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesCliOptionsAddedIncrementally
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesConfigWithOnlyDisabledFlag
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesDeepNestedDotNotationLevels
@@ -4242,7 +4318,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesEmptyConfigArrays
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesEmptyRuleNameInConfig
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesEmptyStringKeys
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesFloatValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesMultiLevelDotNotation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesMultipleRulesIndependently
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesNestedConfigFileOptions
@@ -4254,6 +4329,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredInTheFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredViaCli
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itKeepsTheRuleEnabledWhenOnlyExcludePathsIsConfiguredInTheFile
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLeavesAKeyTheClassAnswersAboutToItsOwnWords
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLeavesAnUnrelatedVoGroupUntouchedByACliThresholdOverride
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFileWarningAndError
@@ -4277,10 +4353,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPreservesCamelCaseKeysFromConfigFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPreservesZeroValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itPrintsTheKeyAsTheFactoryReceivedItRatherThanGuessingAnAuthoredSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesABooleanOptionWrittenAsAString
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFalseLevelSlotWithTheSpellingThatSwitchesOneLevelOff
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFractionWhereAWholeNumberWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAGenuinelyUnknownKeyAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAListWhereABooleanSwitchWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesANonMapLevelSlotWithoutInventingAdvice
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesANumericStringForAWholeNumberOption
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereANamespacePatternWasDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereAPathPatternWasDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWholeNumberWhereASeverityWordWasDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAWronglyShapedValueInsideALevelSlot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAnUnknownKeyInsideALevelSlotAndNamesThatSlotsOwnSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludeNamespacesSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesTheRetiredCamelCaseExcludePathsSpelling
@@ -4301,6 +4385,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itScopesThePrefixedGraduatedKeyEvictionToItsOwnNestedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itSetsCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillAppliesConstructorDefaultsWhenRuleIsEntirelyUnconfigured
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillSwitchesARuleOffWithAnExplicitBoolean
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesASeverityWord
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesAWholeNumberInsideALevelSlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillTakesPathPatternsAsOneStringAndAsAList
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndPrefixedGraduatedKeysComeFromTheSameLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStripsSuppressNamespacesFromOptionsBeforeBuildingThem
@@ -6329,6 +6417,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itProcessesFileSuccessfully
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itReturnsFailureOnParseException
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessorTest::itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEmptyPathAmongLawfulOnes
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEmptyPathWithTheProductFraming
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillAcceptsLawfulPaths
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillDefaultsToTheWorkingDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"a composer.json that does not parse"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"a manifest with no autoload section"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itCannotJudgeAProjectThatDeclaresNoReadableProductionAutoload"no composer.json at all"
@@ -6401,6 +6493,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itOnlyChecksFirst2KbOfFile
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\GeneratedFileFilterTest::itReturnsReindexedArray
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsABareNameToADirectoryAtAnyDepth
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsANumericDirectoryNamePrunedByItsOwnPattern
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsAPatternNamingAPrunedDirectoryItself
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsASlashedPatternAtAnySegmentBoundaryRatherThanOnlyAtTheRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itBindsExactlyWhenARealFinderRemovesSomething"bare name at the top"
@@ -6422,6 +6515,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternNoDirectoryMatches
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itReportsAPatternPointingInsideAPrunedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStaysSilentWhenNoRootIsADirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\ExcludeBindingProbeTest::itStillReportsAnUnmatchedNumericPatternAsUnbound
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
@@ -6591,6 +6685,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itCreatesAMissingCacheDirectory
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itRefusesAnEnabledCacheDirectoryThatCannotBeCreated
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationStoreTest::itDoesNotRetainAReplacedConfigurationAfterReset
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"boolean"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"empty string"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"float"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"integer"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"list"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"map"
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itStillDefaultsWhenNobodyNamedADirectory
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itStillHonoursAWritableDirectory
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itMemoizesTheCacheInstanceAcrossCalls
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itRebuildsTheCacheOnTheNextCreateAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::itReturnsAFileCacheConfiguredFromTheProvider
@@ -6859,6 +6961,16 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itRefusesAPrefixThatOnlyLooksLikeOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DrillDownBindingTest::itTreatsATrailingBackslashAsCosmetic
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--cache-dir"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--fail-on"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--format"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--memory-limit"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillCarriesAnOrdinaryValue
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingForAnArrayOptionNobodyRepeated
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingWhenTheOptionIsAbsent"--cache-dir"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingWhenTheOptionIsAbsent"--fail-on"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingWhenTheOptionIsAbsent"--format"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itStillWritesNothingWhenTheOptionIsAbsent"--memory-limit"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itRefusesAConfigurationErrorReportedBelowWarning
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itStillHonoursFailOnForAnOrdinaryDebtFinding
@@ -6984,6 +7096,54 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresStaticOnlyChannelsBeforeAnyConfigurationResolution
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itLetsTwoTranslatedPositionsReadAlikeOnlyWhenTheyNameTheSameSubject
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"30 an unrecognised depth-1 key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"31 a level this rule does not have"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"32 another level this rule does not have"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"34 a level slot in upper case"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"35 a typo on a rule with no levels"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"36 an option belonging to another rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"37 a threshold on a rule that takes none"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"38 a pluralised option name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"40 the switch spelled without its d"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"41 a severity key the rule does not take"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"43 a suppression key with a dropped letter"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"48 a retired option at depth 2"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"52 the depth-1 typo under a machine-readable format"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"53 a typo inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"54 two typos inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"55 two abbreviations inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"56 level options in upper case"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"57 the option names of the other level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"58 one level options written at the other level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"59 a scalar where a level takes a map"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"72 a level this rule does not have, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"73 a typo inside a level, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"74 a level option written at depth 1, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itRunsToCompletionWhenTheSameOptionsAreSpelledCorrectly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"30 an unrecognised depth-1 key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"31 a level this rule does not have"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"32 another level this rule does not have"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"34 a level slot in upper case"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"35 a typo on a rule with no levels"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"36 an option belonging to another rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"37 a threshold on a rule that takes none"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"38 a pluralised option name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"40 the switch spelled without its d"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"41 a severity key the rule does not take"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"43 a suppression key with a dropped letter"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"48 a retired option at depth 2"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"52 the depth-1 typo under a machine-readable format"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"53 a typo inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"54 two typos inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"55 two abbreviations inside a level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"56 level options in upper case"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"57 the option names of the other level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"58 one level options written at the other level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"59 a scalar where a level takes a map"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"72 a level this rule does not have, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"73 a typo inside a level, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"74 a level option written at depth 1, through the flag"
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
@@ -7204,6 +7364,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesNamespaceExclusion
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesPathExclusion
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itReadsABareNumberAsTheDirectoryNameItIs
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itRefusesAMapWhereAListOfEntriesBelongs
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itStillRefusesABareNumberWhereANamespaceBelongs
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itMarksEveryDeclaredChannelAsProjectScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itAcceptsAGroupItsEntryBounds
@@ -7326,6 +7489,27 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"include by parent namespace"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"no filters keeps every class"
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itSelectsTheSameClassesInEveryExporter"prefix stops at a namespace separator"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itReadsABareNumberAsAPathNameAndStillRefusesItAsANamespace
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a non-string namespace entry"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a map"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAcceptsAnEmptyList
+ - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAccumulatesLawfulLists
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itNamesTheOfferedFormattersWhenItRefusesAnUnknownOne
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"boolean"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"empty string"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"float"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"integer"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"list"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"map"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAFormatTheRunCannotExecute"unknown name"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"a hidden formatter the listing omits"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"json"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"text"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillDefaultsWhenNobodyNamedAFormat
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itFindsNoClockDerivedIdentifierInTheTree
  - Qualimetrix\Tests\System\ScratchPathIsolation\Unit\ScratchPathsCarryRealEntropyTest::itReadsTheWholeTreeItJudges

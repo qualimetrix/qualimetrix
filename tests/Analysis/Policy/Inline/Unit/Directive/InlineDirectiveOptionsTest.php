@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 
@@ -55,7 +55,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     #[Test]
     public function itRefusesAValueItCannotHonour(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('unknown value "warnin"');
 
         InlineDirectiveOptions::fromArray(['unused_directive_severity' => 'warnin']);
@@ -64,7 +64,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     #[Test]
     public function itRefusesANonStringValue(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a string');
 
         InlineDirectiveOptions::fromArray(['unused_directive_severity' => 2]);

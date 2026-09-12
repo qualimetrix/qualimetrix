@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -322,7 +321,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             $optionsClass,
         );
 
-        self::assertInstanceOf(InvalidArgumentException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString($ownWords, $refusal->getMessage());
         self::assertStringNotContainsString('is not an option of rule', $refusal->getMessage());
     }
@@ -370,7 +369,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             UnassignedClassOptions::class,
         );
 
-        self::assertInstanceOf(InvalidArgumentException::class, $refusal);
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
         self::assertStringContainsString('"mode" is the only switch', $refusal->getMessage());
         self::assertStringNotContainsString('is not an option of rule', $refusal->getMessage());
 

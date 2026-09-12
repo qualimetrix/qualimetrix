@@ -53,4 +53,39 @@ final class ComplexityOptionsTest extends TestCase
 
         self::assertFalse($options->isEnabled());
     }
+
+    /**
+     * The bare `threshold` replaces the level blocks rather than adding to
+     * them, and it does so by the key being written — with a value or with
+     * `~`. The class level is not merely left at its default here: the
+     * shorthand switches it off, so a `class:` block beside the key both goes
+     * unread and reports nothing. The website says exactly this; this is what
+     * it says it about.
+     */
+    #[Test]
+    public function itLetsTheBareThresholdDiscardTheClassBlockAndSilenceTheClassLevel(): void
+    {
+        $options = ComplexityOptions::fromArray([
+            'threshold' => 5,
+            'class' => ['max_warning' => 2, 'max_error' => 3],
+        ]);
+
+        self::assertSame(5, $options->callable->warning);
+        self::assertSame(5, $options->callable->error);
+        self::assertFalse($options->class->isEnabled());
+        self::assertSame(
+            ComplexityOptions::fromArray(['threshold' => 5])->class->maxWarning,
+            $options->class->maxWarning,
+            'the class block is gone, not merged: the level holds what the bare shorthand alone leaves it',
+        );
+    }
+
+    #[Test]
+    public function itReadsTheClassBlockWhenNoBareThresholdIsWritten(): void
+    {
+        $options = ComplexityOptions::fromArray(['class' => ['max_warning' => 2, 'max_error' => 3]]);
+
+        self::assertTrue($options->class->isEnabled());
+        self::assertSame(2, $options->class->maxWarning);
+    }
 }

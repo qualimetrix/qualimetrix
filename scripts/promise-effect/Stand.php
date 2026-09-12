@@ -52,13 +52,40 @@ final class Stand
     /** @var list<string> */
     private array $failures = [];
 
+    /**
+     * Cells a declared observability limit covered, the verdict they would
+     * carry without it, and the kind of the row that covered them — the kind
+     * because the guard judges the two kinds by different rules.
+     *
+     * @var list<array{string, string, string}>
+     */
+    private array $unrestricted = [];
+
     public function __construct(
         private readonly string $root,
         private readonly Ledger $ledger,
         private readonly Declarations $declarations,
         private readonly InProcess $inProcess,
         private readonly ProcessProbe $process,
+        private readonly ?Limits $limits = null,
     ) {}
+
+    /**
+     * What the cells under a declared limit would read without it — the input
+     * to {@see Limits::conflicts()}, which refuses a limit declared over an
+     * observation the stand actually makes.
+     *
+     * @return list<array{string, string, string}>
+     */
+    public function unrestricted(): array
+    {
+        return $this->unrestricted;
+    }
+
+    private function limits(): Limits
+    {
+        return $this->limits ?? Limits::load($this->root);
+    }
 
     /** @return list<string> */
     public function failures(): array
@@ -91,22 +118,59 @@ final class Stand
      */
     public function proveRefusalFraming(): array
     {
-        $problems = [];
-
         $framed = $this->process->observe(['rules' => ['complexity.ccn' => ['callable' => ['warning' => 'abc']]]]);
 
-        if ($framed->outcome() !== Observation::REFUSED_FRAMED) {
-            $problems[] = 'a ConfigurationRefusal no longer reaches the user framed: ' . $framed->text();
-        }
-
-        $unframed = $this->process->observe([], ['--layer-violation-severity=true']);
-
-        if ($unframed->outcome() !== Observation::REFUSED_UNFRAMED) {
-            $problems[] = 'the unframed refusal control changed shape: ' . $unframed->text();
-        }
+        // A negative worker count: refused by
+        // `ParallelConfigurationResolver` with a bare
+        // `InvalidArgumentException`, which the console catches as its
+        // FALLBACK refusal — exit 3 with no `Configuration error:` frame.
+        //
+        // The invariant `--workers=0` is withdrawn, or the probe would hand
+        // the product two values for one flag and measure the parser instead
+        // of the resolver.
+        //
+        // This control stood on `--layer-violation-severity=true` until the
+        // first cure package framed it, and the replacement is chosen to
+        // outlive the same fate rather than to be merely different: the
+        // subject is a ROOT flag whose value is judged by an infrastructure
+        // resolver, so no rule-option key, spelling or registry — the whole
+        // material of axis C — can reach it. Its predecessor was a rule-option
+        // alias, which is why it died. The control is still mortal, as it must
+        // be: when this refusal is framed too, the stand exits 3 instead of
+        // reporting, and `php scripts/enumerate-refusal-fallback.php` is where
+        // the next subject is found.
+        $unframed = $this->process->observe([], ['--workers=-5'], false, 'findings', ['--workers']);
 
         $this->raw[] = ['control', 'refusal-framing', 'framed', $framed->outcome(), $framed->text()];
         $this->raw[] = ['control', 'refusal-framing', 'unframed', $unframed->outcome(), $unframed->text()];
+
+        return self::framingProblems(
+            $framed->outcome(),
+            $framed->text(),
+            $unframed->outcome(),
+            $unframed->text(),
+        );
+    }
+
+    /**
+     * The judgement the two framing probes are put to, as a function of what
+     * they observed — separated from the probes so a control can plant an
+     * outcome into it. A control that could only run the real probes could
+     * never show this judgement going red without breaking the product.
+     *
+     * @return list<string>
+     */
+    public static function framingProblems(string $framedOutcome, string $framedText, string $unframedOutcome, string $unframedText): array
+    {
+        $problems = [];
+
+        if ($framedOutcome !== Observation::REFUSED_FRAMED) {
+            $problems[] = 'a ConfigurationRefusal no longer reaches the user framed: ' . $framedText;
+        }
+
+        if ($unframedOutcome !== Observation::REFUSED_UNFRAMED) {
+            $problems[] = 'the unframed refusal control changed shape: ' . $unframedText;
+        }
 
         return $problems;
     }
@@ -178,7 +242,11 @@ final class Stand
                 continue;
             }
 
-            $sides[$axis . "\0" . $key . "\0" . $side] = new Observation($outcome, $text);
+            // Read through the one normalization both halves share, never
+            // through the constructor: an exit code is turned into an outcome
+            // in exactly one place, or the frozen half and a fresh
+            // measurement are judged by two rules.
+            $sides[$axis . "\0" . $key . "\0" . $side] = Observation::ofMeasured($outcome, $text);
         }
 
         $cells = [];
@@ -210,15 +278,15 @@ final class Stand
                     continue;
                 }
 
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted,
                     $value,
                     $equivalent,
                     $sides[$axis . "\0" . $cellKey . "\0" . 'collapse'] ?? null,
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     $axis === 'A' ? ($witnesses[$rule] ?? false) : true,
+                    $cellKey,
                 );
 
                 $cells[] = new Cell($axis, $cellKey, $form, $axis === 'A' ? 'optionsObject' : 'report', $judgement->verdict, $judgement->decidedBy, $row->status, $judgement->defect);
@@ -360,15 +428,15 @@ final class Stand
                 // still `true` at the door and `1` only after the factory —
                 // that asymmetry is the reason the stand keeps four points and
                 // the reason only one of them votes.
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted['object'],
                     $value['object'],
                     $equivalent['object'],
                     $collapse === null ? null : $collapse['object'],
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     $this->witnesses[$rule] ?? false,
+                    $row->key() . '|' . $form,
                 );
 
                 $cells[] = new Cell(
@@ -522,15 +590,15 @@ final class Stand
                     ? null
                     : $this->rootProbe($row, $writePath, $base, $spelling->comparand(), $flag, $cacheOwned, $observable, $withdraw);
 
-                $judgement = Classifier::form(
+                $judgement = $this->judge(
                     $omitted,
                     $value,
                     $equivalent,
                     $collapse,
                     $form,
-                    \in_array($form, $row->promisedForms, true),
-                    $row->nullMeans,
+                    $row,
                     true,
+                    $row->key() . '|' . $form,
                 );
 
                 $cells[] = new Cell('D', $row->key() . '|' . $form, $form, 'report', $judgement->verdict, $judgement->decidedBy, $row->status, $judgement->defect);
@@ -571,7 +639,7 @@ final class Stand
                     default => $flag[1] . '=' . $spelling->cliWrite,
                 };
             } else {
-                $document = self::place($document, explode('.', $writePath), self::parse($spelling->yamlWrite));
+                $document = self::place($document, self::segments($writePath), self::parse($spelling->yamlWrite));
             }
         }
 
@@ -583,7 +651,7 @@ final class Stand
             return new Observation(Observation::CRASHED, 'probe failed: ' . $failure->getMessage());
         }
 
-        return new Observation($observation->outcome(), $observation->text());
+        return Observation::ofMeasured($observation->outcome(), $observation->text());
     }
 
     /**
@@ -607,6 +675,62 @@ final class Stand
                 $rule,
             ),
         };
+    }
+
+    /**
+     * One cell, judged through the declared observability limit.
+     *
+     * The limit is asked here rather than inside the classifier's signature at
+     * three call sites, and the verdict the cell WOULD have carried without it
+     * is recorded beside it: a limit that covers a working observation is
+     * refused by {@see Limits::conflicts()}, and that refusal needs the
+     * unrestricted verdict to exist.
+     */
+    private function judge(
+        Observation $omitted,
+        Observation $value,
+        Observation $equivalent,
+        ?Observation $collapse,
+        string $form,
+        FormRow $row,
+        bool $witnessed,
+        string $cellKey,
+    ): Judgement {
+        $promised = \in_array($form, $row->promisedForms, true);
+        $limitRow = $this->limits()->rowFor($row->door, $row->path, $form);
+
+        if ($limitRow !== null) {
+            $this->unrestricted[] = [
+                $cellKey,
+                Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed)->verdict,
+                $limitRow->kind,
+            ];
+        }
+
+        return Classifier::form($omitted, $value, $equivalent, $collapse, $form, $promised, $row->nullMeans, $witnessed, $limitRow?->reason);
+    }
+
+    /**
+     * A write path split into its segments, with `\.` meaning a dot INSIDE a
+     * key rather than a step down.
+     *
+     * A computed metric is named `computed.<something>` by the product's own
+     * template, so the one place a key legitimately carries a dot is also the
+     * one place axis D writes a placeholder. Splitting such a path naively
+     * builds a document two levels deep that the product has never been asked
+     * about.
+     *
+     * @return list<string>
+     */
+    private static function segments(string $path): array
+    {
+        $segments = preg_split('/(?<!\\\\)\./', $path);
+
+        if ($segments === false) {
+            return [$path];
+        }
+
+        return array_values(array_map(static fn(string $segment): string => str_replace('\\.', '.', $segment), $segments));
     }
 
     /**

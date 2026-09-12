@@ -18,9 +18,11 @@ use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
@@ -353,21 +355,18 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesBooleanStringValues(): void
+    public function itRefusesABooleanOptionWrittenAsAString(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
-                'enabled' => 'true', // string instead of bool
-                'count_nullsafe' => '0', // string instead of bool
+                'enabled' => 'true',
             ],
         ]);
 
-        /** @var TestRuleOptions $options */
-        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "enabled" of rule "test-rule" must be a boolean or null, got a string.');
 
-        // TestRuleOptions::fromArray does type coercion
-        self::assertTrue($options->enabled); // 'true' truthy
-        self::assertFalse($options->countNullsafe); // '0' falsy
+        $this->factory->create('test-rule', TestRuleOptions::class);
     }
 
     #[Test]
@@ -405,21 +404,18 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesFloatValues(): void
+    public function itRefusesAFractionWhereAWholeNumberWasDeclared(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 10.5,
-                'error_threshold' => 20.7,
             ],
         ]);
 
-        /** @var TestRuleOptions $options */
-        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a number.');
 
-        // TestRuleOptions casts to int
-        self::assertSame(10, $options->warningThreshold);
-        self::assertSame(20, $options->errorThreshold);
+        $this->factory->create('test-rule', TestRuleOptions::class);
     }
 
     #[Test]
@@ -578,8 +574,8 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        // Overwrite with different type (should work)
-        $this->registry->addCliOption('test-rule', 'warningThreshold', '25');
+        // Overwrite from the CLI door, which hands over an already-typed value
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -909,7 +905,10 @@ final class RuleOptionsFactoryTest extends TestCase
             $this->factory->create('test-rule', TestRuleOptions::class);
             self::fail('The non-numeric value was accepted.');
         } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString('option "warningThreshold" must be numeric', $e->getMessage());
+            self::assertStringContainsString(
+                'Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a string.',
+                $e->getMessage(),
+            );
             self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
             self::assertNull($e->origin()->locator());
             self::assertNotNull($e->position());
@@ -928,43 +927,39 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('option "errorThreshold" must be numeric');
+        self::expectExceptionMessage('Option "errorThreshold" of rule "test-rule" must be a whole number or null, got a string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
 
     #[Test]
-    public function itAcceptsNumericStringForThresholdFields(): void
+    public function itRefusesANumericStringForAWholeNumberOption(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => '15',
-                'error_threshold' => '30',
             ],
         ]);
 
-        // Numeric strings are valid — no exception should be thrown
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a whole number or null, got a string.');
+
+        $this->factory->create('test-rule', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itAcceptsAWholeNumberWrittenAsANumber(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'test-rule' => [
+                'warning_threshold' => 15,
+            ],
+        ]);
+
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
 
         self::assertSame(15, $options->warningThreshold);
-        self::assertSame(30, $options->errorThreshold);
-    }
-
-    #[Test]
-    public function itAcceptsFloatStringForThresholdFields(): void
-    {
-        $this->registry->setConfigFileOptions([
-            'test-rule' => [
-                'warning_threshold' => '10.5',
-            ],
-        ]);
-
-        // Float numeric strings should be accepted
-        /** @var TestRuleOptions $options */
-        $options = $this->factory->create('test-rule', TestRuleOptions::class);
-
-        self::assertSame(10, $options->warningThreshold); // cast to int
     }
 
     #[Test]
@@ -1063,7 +1058,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('suppress_namespace_channels.health.cohesion');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1078,7 +1073,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must contain only non-empty strings');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1093,7 +1088,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must be a non-empty list of strings');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1108,7 +1103,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('empty or non-string channel selector');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1123,7 +1118,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('use "suppress_namespace_channels"');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1138,7 +1133,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('must contain only non-empty strings');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
@@ -1414,7 +1409,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
@@ -1722,7 +1717,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'architecture.unassigned-class' => ['enabled' => true],
         ]);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.unassigned-class');
 
         $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
@@ -1824,7 +1819,7 @@ final class RuleOptionsFactoryTest extends TestCase
         // is ever evicted.
         $this->registry->setCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
@@ -1908,7 +1903,7 @@ final class RuleOptionsFactoryTest extends TestCase
             'maxDistanceWarning' => 0.4,
         ]);
 
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Cannot mix "threshold" with "max_distance_warning"/"max_distance_error"');
 
         $this->factory->create('coupling.distance', DistanceOptions::class);
@@ -1937,5 +1932,157 @@ final class RuleOptionsFactoryTest extends TestCase
         // Untouched sibling level keeps its own config-file values.
         self::assertSame(0.7, $options->namespace->maxWarning);
         self::assertSame(0.9, $options->namespace->maxError);
+    }
+
+    /**
+     * Each pair below answers one measured form of the same defect — a value
+     * of a form the rule cannot use, taken silently — and each is followed by
+     * the shape of value that must keep working, so that the cure cannot be
+     * mistaken for a blanket refusal.
+     */
+    #[Test]
+    public function itRefusesAListWhereABooleanSwitchWasDeclared(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['enabled' => [7331]],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Option "enabled" of rule "complexity.ccn" must be a boolean or null, got a list.');
+
+        $this->factory->create('complexity.ccn', ComplexityOptions::class);
+    }
+
+    #[Test]
+    public function itStillSwitchesARuleOffWithAnExplicitBoolean(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['enabled' => false],
+        ]);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
+
+        self::assertFalse($options->isEnabled());
+    }
+
+    #[Test]
+    public function itRefusesAWholeNumberWhereAPathPatternWasDeclared(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['suppress_paths' => 7331],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'Option "suppressPaths" of rule "complexity.ccn" must be a non-empty string'
+            . ' or a list of non-empty strings or null, got a whole number.',
+        );
+
+        $this->factory->create('complexity.ccn', ComplexityOptions::class);
+    }
+
+    #[Test]
+    public function itStillTakesPathPatternsAsOneStringAndAsAList(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'one.rule' => ['suppress_paths' => 'src/Generated/'],
+            'many.rules' => ['suppress_paths' => ['src/Generated/', 'tests/']],
+        ]);
+
+        $this->factory->create('one.rule', TestRuleOptions::class);
+        $this->factory->create('many.rules', TestRuleOptions::class);
+
+        self::assertTrue($this->registry->isPathExcluded('one.rule', RelativePath::fromString('src/Generated/A.php')));
+        self::assertTrue($this->registry->isPathExcluded('many.rules', RelativePath::fromString('tests/AT.php')));
+    }
+
+    #[Test]
+    public function itRefusesAWholeNumberWhereANamespacePatternWasDeclared(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['suppress_namespaces' => 7331],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('must be a string or a list of strings');
+
+        $this->factory->create('complexity.ccn', ComplexityOptions::class);
+    }
+
+    #[Test]
+    public function itRefusesAWholeNumberWhereASeverityWordWasDeclared(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'architecture.layer-violation' => ['severity' => 7331],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'Option "severity" of rule "architecture.layer-violation" must be a string or null, got a whole number.',
+        );
+
+        $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);
+    }
+
+    #[Test]
+    public function itStillTakesASeverityWord(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'architecture.layer-violation' => ['severity' => 'error'],
+        ]);
+
+        /** @var LayerViolationOptions $options */
+        $options = $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);
+
+        self::assertSame(Severity::Error, $options->severity);
+    }
+
+    #[Test]
+    public function itRefusesAWronglyShapedValueInsideALevelSlot(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['callable' => ['warning' => 'ten']],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'Option "warning" of rule "complexity.ccn" at level "callable" must be a whole number or null, got a string.',
+        );
+
+        $this->factory->create('complexity.ccn', ComplexityOptions::class);
+    }
+
+    #[Test]
+    public function itStillTakesAWholeNumberInsideALevelSlot(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['callable' => ['warning' => 7, 'error' => 9]],
+        ]);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
+
+        self::assertSame(7, $options->callable->warning);
+        self::assertSame(9, $options->callable->error);
+    }
+
+    /**
+     * The half of {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet}
+     * that carries no form: a key the class recognises only in order to
+     * answer about it must still reach that answer, not a sentence about its
+     * form and not the generic unknown-key one.
+     */
+    #[Test]
+    public function itLeavesAKeyTheClassAnswersAboutToItsOwnWords(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'architecture.layer-violation' => ['unreachable_layer_severity' => 7331],
+        ]);
+
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('no longer exists');
+
+        $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);
     }
 }

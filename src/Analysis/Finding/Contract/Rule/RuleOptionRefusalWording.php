@@ -89,4 +89,30 @@ final class RuleOptionRefusalWording
             ? $sentence . \sprintf(' To switch one level off write "%s: {enabled: false}".', $level)
             : $sentence;
     }
+
+    /**
+     * A value whose form is not the one its key was declared with.
+     *
+     * Both halves of the sentence are named — what may stand there and what
+     * was written — because a sentence carrying only the expectation leaves
+     * the author guessing which of several values it is about. The written
+     * form is described by what it is and never by what it was expected to
+     * be, so the two halves cannot agree by accident.
+     */
+    public static function valueOfTheWrongShape(
+        string $key,
+        string $ruleName,
+        ?string $level,
+        RuleOptionShape $shape,
+        mixed $written,
+    ): string {
+        return \sprintf(
+            'Option "%s" of rule "%s"%s must be %s, got %s.',
+            $key,
+            $ruleName,
+            $level === null ? '' : \sprintf(' at level "%s"', $level),
+            $shape->describe(),
+            RuleOptionValueForm::describeWritten($written),
+        );
+    }
 }

@@ -150,6 +150,6 @@ final readonly class FixtureChannelPresentationRuleOptions implements RuleOption
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of();
+        return RuleOptionKeySet::of([]);
     }
 }

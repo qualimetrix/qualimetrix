@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 /**
@@ -50,6 +51,58 @@ final class RuleOptionKeyRecognition
     ];
 
     /**
+     * Refuses a framework key whose value is of no form the framework can use.
+     *
+     * Separate from {@see self::refuseUnknownKeys()} and called before it,
+     * because the factory takes these three keys out of the config on the way
+     * to `fromArray()`: by the time the key walk below runs they are gone.
+     *
+     * Only `suppress-paths` is judged here. The two namespace keys are read by
+     * a provider that already answers about their form in its own words —
+     * naming `suppress_namespace_channels` as the fix for a channel map
+     * written under `suppress_namespaces`, and naming the offending selector —
+     * and a general sentence raised one step earlier would replace a specific
+     * answer with a vaguer one.
+     *
+     * @param array<string, mixed> $userConfig what the user actually wrote, framework keys still in place
+     *
+     * @throws ConfigurationRefusal on the first framework key of the wrong form, in document order
+     */
+    public static function refuseMalformedFrameworkKeys(array $userConfig, string $ruleName): void
+    {
+        $shapes = self::frameworkKeyShapes();
+
+        foreach ($userConfig as $writtenKey => $value) {
+            $key = (string) $writtenKey;
+            $shape = $shapes->shapeOf(ConfigKeySpelling::normalize($key));
+
+            if ($shape === null || $shape->matches($value)) {
+                continue;
+            }
+
+            throw ConfigurationRefusal::atResolvedKey(
+                RefusedPosition::open([$ruleName], $key),
+                RuleOptionRefusalWording::valueOfTheWrongShape($key, $ruleName, null, $shape, $value),
+            );
+        }
+    }
+
+    /**
+     * The form of the framework key nothing else judges: path patterns are
+     * read as strings, one or many, and `null` means the key was written with
+     * nothing under it.
+     */
+    private static function frameworkKeyShapes(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of([
+            'suppress-paths' => RuleOptionShape::either(
+                RuleOptionShape::nonEmptyText(),
+                RuleOptionShape::listOf(RuleOptionShape::nonEmptyText()),
+            )->orNull(),
+        ]);
+    }
+
+    /**
      * Refuses every rule option key the class at its depth does not answer for.
      *
      * The subject must be what the user actually wrote, never an array that
@@ -79,7 +132,12 @@ final class RuleOptionKeyRecognition
                 continue;
             }
 
-            if ($acceptedHere->knows($normalized) || \in_array($normalized, self::normalizedFrameworkKeys(), true)) {
+            // A framework key is not tested here: the factory took all three
+            // out of `$userConfig` before this walk, and their form was judged
+            // one step earlier by `refuseMalformedFrameworkKeys()`.
+            if ($acceptedHere->knows($normalized)) {
+                self::refuseWrongShape($acceptedHere, $normalized, $key, $ruleName, null, $value);
+
                 continue;
             }
 
@@ -124,10 +182,19 @@ final class RuleOptionKeyRecognition
 
         $acceptedThere = $levelOptionsClass::acceptedOptionKeys();
 
-        foreach ($value as $writtenKey => $_) {
+        foreach ($value as $writtenKey => $written) {
             $key = (string) $writtenKey;
 
             if ($acceptedThere->knows(ConfigKeySpelling::normalize($key))) {
+                self::refuseWrongShape(
+                    $acceptedThere,
+                    ConfigKeySpelling::normalize($key),
+                    $key,
+                    $ruleName,
+                    $level,
+                    $written,
+                );
+
                 continue;
             }
 
@@ -141,6 +208,35 @@ final class RuleOptionKeyRecognition
                 ),
             );
         }
+    }
+
+    /**
+     * Refuses a value whose form is not the one its key was declared with.
+     *
+     * Silent for a key the class answers about itself: that half carries no
+     * form here on purpose, so that `fromArray()` keeps the whole answer about
+     * it rather than being contradicted one line earlier.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseWrongShape(
+        RuleOptionKeySet $declaration,
+        string $normalized,
+        string $writtenKey,
+        string $ruleName,
+        ?string $level,
+        mixed $written,
+    ): void {
+        $shape = $declaration->shapeOf($normalized);
+
+        if ($shape === null || $shape->matches($written)) {
+            return;
+        }
+
+        throw ConfigurationRefusal::atResolvedKey(
+            RefusedPosition::open($level === null ? [$ruleName] : [$ruleName, $level], $writtenKey),
+            RuleOptionRefusalWording::valueOfTheWrongShape($writtenKey, $ruleName, $level, $shape, $written),
+        );
     }
 
     /**
@@ -158,13 +254,5 @@ final class RuleOptionKeyRecognition
         sort($options);
 
         return $options;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function normalizedFrameworkKeys(): array
-    {
-        return array_map(ConfigKeySpelling::normalize(...), self::FRAMEWORK_KEYS);
     }
 }

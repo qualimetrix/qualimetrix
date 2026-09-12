@@ -85,7 +85,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 {
     private const string MARKER = 'ThresholdParser::parse(';
 
-    private const float SENTINEL = 987654.0;
+    private const int SENTINEL = 987654;
 
     // ------------------------------------------------------------------
     // Test 1: every (rule, path) that actually calls ThresholdParser::parse()

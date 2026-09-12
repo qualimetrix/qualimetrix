@@ -13,31 +13,78 @@
 # `verdict` names the one expected where the round can name it; `any-defect`
 # means the floor requires a defect without fixing which of the seven.
 #
+#
+# THE `cure` COLUMN, AND WHY THE FLOOR IS NOT ONE CLAIM BUT TWO
+#
+# The floor is a statement about the CLASSIFIER reading a known pre-cure tree.
+# On the frozen half that is exactly what it checks, and the `cure` column is
+# not read there: a row this round repaired was still a defect on the tree the
+# frozen half measures.
+#
+# Applied to the LIVE grid the same list said the wrong thing, and it said it
+# for a whole round: a successful cure REMOVES a defect, so every row the round
+# repaired became a floor miss and a cured product exited 1. A floor that goes
+# red when the work succeeds is not a floor. So on the live grid:
+#
+#   `cure` empty      the row must STILL be a defect;
+#   `cure` filled     the round CLAIMS this row is repaired, and the grid must
+#                     no longer call it a defect;
+#   `withdrawn` filled
+#                     the PROBE that produced this row was wrong, and the
+#                     corrected probe cannot see the row at all. The grid must
+#                     read NOT OBSERVABLE, and its `decided_by` must carry the
+#                     text before the first `: ` of this column.
+#
+# Both directions redden, and the second is the point: a row that quietly stops
+# being defective with nothing claiming it was repaired used to hide inside a
+# red floor, and a row declared cured that is still defective is a false claim
+# about the round.
+#
+# The commit named in `cure` is the one whose own subject covers that row's
+# door and failure — the attribution is read off what each package said it was
+# doing, not off a bisected measurement of every row.
+#
+# WHY `withdrawn` IS NOT A SECOND SPELLING OF `cure`
+#
+# A cure is a claim about the PRODUCT and is evidence that it was repaired. A
+# withdrawal is a claim about the STAND and is evidence of nothing whatever
+# about the product: the row left the floor because the question that produced
+# it was never the product's own. Writing one as the other is the worse lie of
+# the two, because a `cure` reads as proof. The two columns are therefore
+# mutually exclusive, and a row carrying both is refused when the file is read.
+#
+# Three things redden a withdrawal, so that it cannot become a licence to take
+# any row off the floor: the row is still a defect; the grid OBSERVES the row
+# (anything other than NOT OBSERVABLE, `OK` included); or the grid is blind for
+# a reason other than the one declared. And a row that leaves the floor with
+# NEITHER column still reddens exactly as before — that is the hole this
+# column would otherwise open.
+#
 # A `pair` row is addressed by `pair|<rule>|<a>|<b>|<scope>|<kind>`. The kind
 # is the last segment because nineteen `same-source` pairs are a ledger row
 # twice under two kinds; without it this floor row would address one of two
 # cells and no one could say which.
-row	verdict	source
-form|yaml|rules.complexity.ccn.callable.warning|bool	any-defect	M11 position 64: `true` coerced to 1, silently
+row	verdict	source	cure	withdrawn
+form|yaml|rules.complexity.ccn.callable.warning|bool	any-defect	M11 position 64: `true` coerced to 1, silently	b9fd87d3 (the declared shape of a rule option value): refused instead of coerced
 pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block	MISCOMPOSED	M11 position 66: a top-level shorthand discards the written `class` block
-form|yaml|paths|map	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|exclude|map	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|format|bool	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|format|list	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|disabled_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|only_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|cache.dir|bool	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|cache.dir|list	any-defect	non-rules-roots: SILENT-AND-INERT
-form|yaml|suppress_paths|map	any-defect	non-rules-roots: CRASHES
-form|yaml|suppress_namespaces|map	any-defect	non-rules-roots: CRASHES
-form|yaml|cache|list	any-defect	non-rules-roots: CRASHES
-form|yaml|parallel|list	any-defect	non-rules-roots: CRASHES
-form|yaml|coupling|list	any-defect	non-rules-roots: CRASHES
-form|yaml|coupling|null	any-defect	non-rules-roots: a refusal on `~`, and unframed
-form|yaml|coupling.framework_namespaces|null	any-defect	non-rules-roots: a refusal on `~`, and unframed
-form|yaml|coupling.framework_namespaces|bool	any-defect	non-rules-roots: REFUSES-UNFRAMED
-form|yaml|coupling.framework_namespaces|map	any-defect	non-rules-roots: REFUSES-UNFRAMED
-form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`
-form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`
-form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`
-form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`
+form|yaml|paths|map	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|exclude|map	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|format|bool	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|format|list	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|disabled_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|only_rules|map	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|cache.dir|bool	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|cache.dir|list	any-defect	non-rules-roots: SILENT-AND-INERT	f20bd708 (unexecutable values outside rules:): refused instead of ignored
+form|yaml|suppress_paths|map	any-defect	non-rules-roots: CRASHES	f20bd708 (unexecutable values outside rules:): refused instead of crashing
+form|yaml|suppress_namespaces|map	any-defect	non-rules-roots: CRASHES	f20bd708 (unexecutable values outside rules:): refused instead of crashing
+form|yaml|cache|list	any-defect	non-rules-roots: CRASHES	f20bd708 (unexecutable values outside rules:): refused instead of crashing
+form|yaml|parallel|list	any-defect	non-rules-roots: CRASHES	f20bd708 (unexecutable values outside rules:): refused instead of crashing
+form|yaml|coupling|list	any-defect	non-rules-roots: CRASHES	f20bd708 (unexecutable values outside rules:): refused instead of crashing
+form|yaml|coupling|null	any-defect	non-rules-roots: a refusal on `~`, and unframed	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
+form|yaml|coupling.framework_namespaces|null	any-defect	non-rules-roots: a refusal on `~`, and unframed	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
+form|yaml|coupling.framework_namespaces|bool	any-defect	non-rules-roots: REFUSES-UNFRAMED	f20bd708 (unexecutable values outside rules:): refused with the product framing
+form|yaml|coupling.framework_namespaces|map	any-defect	non-rules-roots: REFUSES-UNFRAMED	f20bd708 (unexecutable values outside rules:): refused with the product framing
+form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
+form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
+form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
+form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`		omitted == equivalent: the envelope wrote the metric name `probe_metric`, which the product's own NAME_TEMPLATE rejects before any leaf is read, so the pre-cure verdict was a refusal of the NAME. Under the corrected name `computed.probe-metric` the row is unmeasurable for a second reason of the stand's own: `enabled: true` is the default, so the canonical write equals an omitted key and the sensitivity probe is blind. Nothing here is a statement about the product

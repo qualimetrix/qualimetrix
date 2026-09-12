@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Loader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -212,6 +213,133 @@ YAML);
         self::expectExceptionMessage('"unknown_key", "another_bad_key"');
 
         $this->loader->load($path);
+    }
+
+    /**
+     * A null value reads as "the author never wrote this key" only once the key
+     * itself is known; writing `~` must not buy an unknown key a pass.
+     */
+    #[Test]
+    public function itRejectsAnUnknownRootKeyWrittenWithANullValue(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+bogus_key: ~
+YAML);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown configuration key: "bogus_key"');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownSectionSubKeyWrittenWithANullValue(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache:
+  bogus: ~
+YAML);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key in "cache" section: "bogus"');
+
+        $this->loader->load($path);
+    }
+
+    /**
+     * A list under a section root used to reach findOriginalSubKey() with an
+     * integer sub-key and kill the process with exit 1 instead of refusing.
+     */
+    #[Test]
+    #[TestWith(['cache', 'dir, enabled'])]
+    #[TestWith(['parallel', 'workers'])]
+    #[TestWith(['coupling', 'framework_namespaces'])]
+    public function itRefusesASectionRootWrittenAsAList(string $section, string $allowed): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, $section . ": [something]\n");
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage(\sprintf(
+            'Invalid value for "%s": expected a section of named keys (%s), got a list.',
+            $section,
+            $allowed,
+        ));
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    #[TestWith(['paths'])]
+    #[TestWith(['exclude'])]
+    #[TestWith(['disabled_rules'])]
+    #[TestWith(['only_rules'])]
+    #[TestWith(['suppress_paths'])]
+    #[TestWith(['suppress_namespaces'])]
+    #[TestWith(['exclude_health'])]
+    public function itRefusesAListRootWrittenAsAMap(string $field): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, $field . ": {a: something}\n");
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage(
+            \sprintf('Invalid value for "%s": expected a list of entries, got a map.', $field),
+        );
+
+        $this->loader->load($path);
+    }
+
+    /**
+     * An empty container has not chosen a shape, so neither direction of the
+     * check may claim it.
+     */
+    #[Test]
+    public function itAcceptsAnEmptyContainerOnEveryShapedRoot(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache: {}
+parallel: {}
+coupling: {}
+paths: []
+exclude: []
+disabled_rules: []
+only_rules: []
+suppress_paths: []
+suppress_namespaces: []
+exclude_health: []
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame([], $config['cache']);
+        self::assertSame([], $config['paths']);
+        self::assertSame([], $config['excludeHealth']);
+    }
+
+    #[Test]
+    public function itStillAcceptsTheWellShapedFormOfEveryShapedRoot(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache: {dir: /tmp/x, enabled: false}
+parallel: {workers: 2}
+coupling: {framework_namespaces: [Symfony]}
+paths: [src]
+exclude: [vendor]
+exclude_health: [complexity]
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame('/tmp/x', $config['cache']['dir']);
+        self::assertSame(2, $config['parallel']['workers']);
+        self::assertSame(['Symfony'], $config['coupling']['frameworkNamespaces']);
+        self::assertSame(['src'], $config['paths']);
+        self::assertSame(['complexity'], $config['excludeHealth']);
     }
 
     #[Test]

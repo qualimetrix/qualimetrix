@@ -7,9 +7,7 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -24,9 +22,9 @@ use ReflectionParameter;
  * Priority: defaults → config file → CLI options
  *
  * Reads option values from RuleOptionsRegistry (storage concern) and performs
- * merging, normalization and numeric validation (creation concern). Deciding
- * which keys a rule answers for, and refusing the rest, is
- * {@see RuleOptionKeyRecognition}.
+ * merging and normalization (creation concern). Deciding which keys a rule
+ * answers for, what form each of their values may take, and refusing the rest,
+ * is {@see RuleOptionKeyRecognition}.
  */
 final class RuleOptionsFactory
 {
@@ -93,6 +91,7 @@ final class RuleOptionsFactory
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
         RetiredSuppressionOptions::refuseRuleOption($userConfig, ConfigurationOrigin::of(ConfigurationSource::Resolved));
+        RuleOptionKeyRecognition::refuseMalformedFrameworkKeys($userConfig, $ruleName);
         $this->extractSuppressNamespaces($ruleName, $userConfig);
         $this->extractSuppressPaths($ruleName, $userConfig);
 
@@ -126,10 +125,7 @@ final class RuleOptionsFactory
         // 5. Refuse every option key nothing at its depth answers for
         RuleOptionKeyRecognition::refuseUnknownKeys($userConfig, $ruleName, $optionsClass);
 
-        // 6. Validate numeric fields before instantiation
-        $this->validateNumericFields($merged, $ruleName);
-
-        // 7. Create instance using fromArray
+        // 6. Create instance using fromArray
         return $optionsClass::fromArray($merged);
     }
 
@@ -323,58 +319,6 @@ final class RuleOptionsFactory
         }
 
         return $result;
-    }
-
-    /**
-     * Validates that numeric option fields contain actual numeric values.
-     *
-     * Detects when YAML config contains a non-numeric string for a field whose name
-     * suggests it should be numeric (e.g. threshold, warning, error, count, limit, etc.).
-     * PHP's (int) cast would silently coerce "not_a_number" to 0, hiding misconfiguration.
-     *
-     * @param array<string, mixed> $options
-     *
-     * @throws ConfigurationRefusal when a numeric field contains a non-numeric string value
-     */
-    private function validateNumericFields(array $options, string $ruleName, string $path = ''): void
-    {
-        // Key name suffixes/substrings that indicate a numeric value is expected.
-        static $numericPatterns = ['threshold', 'warning', 'error', 'count', 'limit', 'depth', 'min', 'max', 'size', 'length', 'weight', 'ratio', 'score'];
-
-        foreach ($options as $key => $value) {
-            $fullKey = $path !== '' ? "{$path}.{$key}" : (string) $key;
-
-            if (\is_array($value)) {
-                $this->validateNumericFields($value, $ruleName, $fullKey);
-
-                continue;
-            }
-
-            if (!\is_string($value)) {
-                continue;
-            }
-
-            $lowerKey = strtolower((string) $key);
-            $isNumericField = false;
-            foreach ($numericPatterns as $pattern) {
-                if (str_contains($lowerKey, $pattern)) {
-                    $isNumericField = true;
-                    break;
-                }
-            }
-
-            if ($isNumericField && (!is_numeric($value) || !is_finite((float) $value))) {
-                throw ConfigurationRefusal::atResolvedKey(
-                    RefusedPosition::open(explode('.', $fullKey), (string) $key),
-                    \sprintf(
-                        'Invalid configuration for rule "%s": option "%s" must be numeric, got "%s".',
-                        $ruleName,
-                        $fullKey,
-                        $value,
-                    ),
-                );
-            }
-        }
     }
 
     /**

@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -22,6 +23,20 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * `@qmx-threshold design.data-class W E` maps W to `wocThreshold`
  * (maximum WOC to flag) and E to `wmcThreshold` (maximum WMC to flag).
  * Both conditions must hold for the rule to flag a class.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- The eighth efferent edge is
+ * `RuleOptionShape`, the option-shape vocabulary X18 introduces so an options class can
+ * declare the value form of each key it accepts; the counterfactual was measured, not assumed --
+ * the import list against 72f18239 differs by exactly that one line, and without it Ce is 7 and
+ * instability 0.778. Ca=2, Ce=8 puts this at exactly 0.800 against an inclusive 0.800 ceiling, so
+ * it is reported for reaching the limit rather than passing it. A rule options class is efferent
+ * by construction: it names the option vocabulary it accepts and almost nothing names it back. The
+ * sibling options classes that carry the same shape with a single afferent edge compute higher
+ * still -- Ca=1 with this Ce is 0.889 -- and are not judged at all, because `min_afferent: 2`
+ * filters them out; this class is judged only because one extra consumer names it, which makes the
+ * ranking the wrong way round and is the metric mis-modelling the shape rather than a defect to
+ * refactor. 0.81 silences today's 0.800 and still reports the next efferent edge, which takes Ce
+ * to 9 and instability to 0.818.
  */
 final readonly class DataClassOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
@@ -110,14 +125,14 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
-        return RuleOptionKeySet::of(
-            'enabled',
-            'exclude-exceptions',
-            'exclude-promoted-only',
-            'exclude-readonly',
-            'min-members',
-            'wmc-threshold',
-            'woc-threshold',
-        );
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean()->orNull(),
+            'exclude-exceptions' => RuleOptionShape::boolean()->orNull(),
+            'exclude-promoted-only' => RuleOptionShape::boolean()->orNull(),
+            'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
+            'min-members' => RuleOptionShape::integer()->orNull(),
+            'wmc-threshold' => RuleOptionShape::integer()->orNull(),
+            'woc-threshold' => RuleOptionShape::integer()->orNull(),
+        ]);
     }
 }

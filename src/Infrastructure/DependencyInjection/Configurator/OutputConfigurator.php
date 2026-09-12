@@ -222,7 +222,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RunConfigurationResolver::class)
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
-        $container->register(OutputFormatResolver::class);
+        $container->register(OutputFormatResolver::class)
+            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
         $container->register(ConfiguredFindingExclusionsResolver::class);
         $container->setAlias(
