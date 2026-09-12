@@ -56,11 +56,10 @@ final class ComplexityOptionsTest extends TestCase
 
     /**
      * The bare `threshold` replaces the level blocks rather than adding to
-     * them, and it does so by the key being written — with a value or with
-     * `~`. The class level is not merely left at its default here: the
-     * shorthand switches it off, so a `class:` block beside the key both goes
-     * unread and reports nothing. The website says exactly this; this is what
-     * it says it about.
+     * them, and it does so by carrying a VALUE. The class level is not merely
+     * left at its default here: the shorthand switches it off, so a `class:`
+     * block beside the key both goes unread and reports nothing. The website
+     * says exactly this; this is what it says it about.
      */
     #[Test]
     public function itLetsTheBareThresholdDiscardTheClassBlockAndSilenceTheClassLevel(): void
@@ -87,5 +86,27 @@ final class ComplexityOptionsTest extends TestCase
 
         self::assertTrue($options->class->isEnabled());
         self::assertSame(2, $options->class->maxWarning);
+    }
+
+    /**
+     * Regression: `threshold: ~` beside a `class:` block used to open the flat
+     * branch on the strength of the key existing, which both silenced the
+     * class level and threw the block away — exit 0, no word said.
+     */
+    #[Test]
+    public function itReadsTheClassBlockWhenTheBareThresholdBesideItIsWrittenNull(): void
+    {
+        $options = ComplexityOptions::fromArray([
+            'threshold' => null,
+            'class' => ['max_warning' => 2, 'max_error' => 3],
+        ]);
+
+        self::assertTrue($options->class->isEnabled());
+        self::assertSame(2, $options->class->maxWarning);
+        self::assertEquals(
+            ComplexityOptions::fromArray(['class' => ['max_warning' => 2, 'max_error' => 3]]),
+            $options,
+            'the `~` beside the block is worth exactly what leaving it out is worth',
+        );
     }
 }

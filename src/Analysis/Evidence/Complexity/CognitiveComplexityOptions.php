@@ -39,9 +39,12 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             );
         }
 
-        // Flat shorthand at the top level: one `threshold` applied to the
-        // callable dimension, which also switches the class level off.
-        if (\array_key_exists('threshold', $config)) {
+        // Flat shorthand at the top level: one `threshold` VALUE applied to
+        // the callable dimension, which also switches the class level off.
+        // `threshold: ~` is not that value — it leaves the key's own value to
+        // the default and takes no branch, so a `class:` block beside it is
+        // still read.
+        if (isset($config['threshold'])) {
             $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30);
 
             return new self(

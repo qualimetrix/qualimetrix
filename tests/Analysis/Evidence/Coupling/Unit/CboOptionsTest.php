@@ -104,25 +104,28 @@ final class CboOptionsTest extends TestCase
 
     /**
      * The documented equivalence "a key written with `~` means what omitting it
-     * means" is about the *value*; the entry survives normalization inside
-     * `rules:`, and the branch above is chosen by the key being written at all.
-     * So `warning: ~` still selects the flat form and still discards the level
-     * blocks beside it — the website says so, and this is what it says it about.
+     * means" holds for the branch as well as for the value: `warning: ~` is no
+     * flat threshold, so it selects no flat form and the level block beside it
+     * is read exactly as if the key had not been written at all.
+     *
+     * This used to discard the block, silently and with exit 0 — the widest
+     * reach of that being `--rule-opt 'coupling.cbo:warning='`, which hands
+     * this array a null through the CLI door.
      */
     #[Test]
-    public function itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks(): void
+    public function itLeavesTheLevelBlocksAloneWhenTheTopLevelThresholdKeyIsWrittenNull(): void
     {
         $options = CboOptions::fromArray([
             'warning' => null,
             'class' => ['warning' => 0, 'error' => 0],
         ]);
 
-        self::assertSame(14, $options->class->warning);
-        self::assertSame(20, $options->class->error);
-        self::assertSame(
-            $options->class->warning,
-            CboOptions::fromArray([])->class->warning,
-            'the level block is not merely overridden, it is gone: the result is the unconfigured one',
+        self::assertSame(0, $options->class->warning);
+        self::assertSame(0, $options->class->error);
+        self::assertEquals(
+            CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]),
+            $options,
+            'the `~` beside the block is worth exactly what leaving it out is worth',
         );
     }
 
@@ -132,5 +135,28 @@ final class CboOptionsTest extends TestCase
         $options = CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]);
 
         self::assertSame(0, $options->class->warning);
+    }
+
+    /**
+     * Regression: the mixing guard used to fire on key presence, so a
+     * `threshold: ~` that wrote no value at all was reported as a second mode
+     * clashing with `warning:` — a refusal naming a mix with nothing.
+     */
+    #[Test]
+    public function itDoesNotCallItAMixWhenTheThresholdKeyBesideWarningIsWrittenNull(): void
+    {
+        $options = CboOptions::fromArray(['threshold' => null, 'warning' => 5]);
+
+        self::assertSame(5, $options->class->warning);
+        self::assertEquals(CboOptions::fromArray(['warning' => 5]), $options);
+    }
+
+    #[Test]
+    public function itStillCallsItAMixWhenBothModesCarryAValue(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+
+        CboOptions::fromArray(['threshold' => 30, 'warning' => 5]);
     }
 }

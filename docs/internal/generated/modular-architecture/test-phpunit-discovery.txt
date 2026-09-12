@@ -1125,6 +1125,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityOptionsTest::itDisablesAllLevelsWhenTheTopLevelEnabledFlagIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityOptionsTest::itKeepsTheDefaultEnabledStateWhenNoEnabledKeyIsGiven
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityOptionsTest::itReadsTheClassBlockWhenTheBareThresholdBesideItIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityOptionsTest::itStillLetsABareThresholdWithAValueDiscardTheClassBlock
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itAnalyzeCallsBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itAnalyzeLevelClassGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itAnalyzeLevelClassGeneratesWarning
@@ -1212,6 +1214,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itKeepsDefaultsWhenEnabledIsOmitted
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itLetsTheBareThresholdDiscardTheClassBlockAndSilenceTheClassLevel
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itReadsTheClassBlockWhenNoBareThresholdIsWritten
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itReadsTheClassBlockWhenTheBareThresholdBesideItIsWrittenNull
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenHierarchicalLevelKeysArePresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityOptionsTest::itStaysDisabledWhenTheFlatThresholdShorthandIsPresent
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itAnalyzeCallsBothLevels
@@ -1328,6 +1331,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itTracksFactorsForMultiplicativeStatements
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityOptionsTest::itDisablesEveryLevelWhenEnabledIsFalse
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityOptionsTest::itKeepsDefaultsWhenEnabledIsOmitted
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityOptionsTest::itReadsTheClassBlockWhenTheBareThresholdBesideItIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityOptionsTest::itStillLetsABareThresholdWithAValueDiscardTheClassBlock
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itAnalyzeCallsBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itAnalyzeLevelClassGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itAnalyzeLevelClassGeneratesWarning
@@ -1812,10 +1817,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAdvertisesTheThresholdShorthandKey
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAppliesTheFlatThresholdShorthandUniformlyToBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itDisablesBothLevelsWhenEnabledIsFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itDoesNotCallItAMixWhenTheThresholdKeyBesideWarningIsWrittenNull
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itFallsBackToSubDefaultsWhenEnabledIsNotSetToFalse
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsATopLevelNullThresholdKeyOpenTheFlatFormAndDiscardTheLevelBlocks
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLeavesTheLevelBlocksAloneWhenTheTopLevelThresholdKeyIsWrittenNull
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itLetsTheFlatThresholdWinOverAPreExistingNestedClassAndNamespaceConfigInTheSameArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillCallsItAMixWhenBothModesCarryAValue
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillHonorsTheTopLevelScopeAlongsideTheFlatThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itStillSupportsTheNestedClassAndNamespaceForm
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray
@@ -2033,7 +2040,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itAdvertisesTheThresholdShorthandKey
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itAppliesTheFlatThresholdShorthandUniformlyToBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itDisablesAllLevelsWhenTheTopLevelEnabledFlagIsFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itDoesNotCallItAMixWhenTheGraduatedKeyBesideTheFlatThresholdIsWrittenNull
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itLetsTheFlatThresholdWinOverAPreExistingNestedClassAndNamespaceConfigInTheSameArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itReadsTheLevelBlocksWhenTheFlatThresholdBesideThemIsWrittenNull
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itStillSupportsTheNestedClassAndNamespaceForm
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareMaxWarningInTheSameConfigArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itAnalyzesBothLevels
@@ -4671,9 +4680,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itRejectsTheWildcardToken
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itAcceptsACamelCaseLegacyKeyForACustomThresholdKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itAppliesTheLegacyErrorFallbackIndependentlyOfTheWarningResolution
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itDetectsTheConflictByKeyPresenceSoANullThresholdStillClashesWithWarning
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itDetectsTheConflictWhenALegacyErrorKeyIsPresentButNull
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itDetectsTheConflictWhenTheWarningKeyIsPresentButNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itDoesNotTreatALegacyWarningKeyAsAThresholdKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToALegacyKeyForACustomPrimaryKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToDefaultsForAnEmptyConfig
@@ -4681,6 +4687,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToDefaultsWhenTheOnlyLegacyThresholdKeyIsNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToDefaultsWhenThresholdIsNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToLegacyKeysWhenPrimaryKeysAreAbsent
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToTheLegacyThresholdKeyWhenThePrimaryThresholdIsWrittenNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itFallsBackToTheLegacyWarningKeyWhenThePrimaryWarningIsExplicitlyNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itGivesThePrimaryThresholdKeyPrecedenceOverTheLegacyThresholdKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itIgnoresConfigKeysThatAreNeitherPrimaryNorDeclaredAsLegacy
@@ -4693,14 +4700,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itParsesACustomThresholdKeyIntoBothWarningAndError
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itParsesAFloatThresholdIntoBothWarningAndError
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itPrefersPrimaryKeysOverLegacyKeys
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itPrefersThePrimaryThresholdKeyEvenWhenItIsNullAndALegacyKeyHasAValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itPropagatesTheLegacyThresholdValueToBothWarningAndError
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itRejectsThresholdMixedWithALegacyErrorKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itRejectsThresholdMixedWithALegacyWarningKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itRejectsThresholdMixedWithError
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itRejectsThresholdMixedWithWarning
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itResolvesTheThresholdKeyByPresenceSoTheFirstListedLegacyKeyWinsEvenWhenNull
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itReturnsTheResultKeyedByWarningThenError
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itSeesNoConflictWhenALegacyErrorKeyBesideThresholdIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itSeesNoConflictWhenTheThresholdKeyBesideWarningIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itSeesNoConflictWhenTheWarningKeyBesideThresholdIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itSkipsANullFirstLegacyThresholdKeyAndUsesTheNextOneThatCarriesAValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itSkipsNullLegacyWarningValuesAndUsesTheNextNonNullLegacyKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itThrowsWhenTheLegacyThresholdKeyConflictsWithTheWarningKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::itUsesExplicitWarningAndErrorValues

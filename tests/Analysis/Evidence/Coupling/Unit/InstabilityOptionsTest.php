@@ -79,4 +79,42 @@ final class InstabilityOptionsTest extends TestCase
         self::assertSame(0.5, $options->namespace->maxWarning);
         self::assertSame(0.5, $options->namespace->maxError);
     }
+
+    /**
+     * Regression: `threshold: ~` beside the level blocks used to open the flat
+     * branch on the strength of the key existing, and the blocks were thrown
+     * away — exit 0, no word said.
+     */
+    #[Test]
+    public function itReadsTheLevelBlocksWhenTheFlatThresholdBesideThemIsWrittenNull(): void
+    {
+        $blocks = [
+            'class' => ['max_warning' => 0.6, 'max_error' => 0.8],
+            'namespace' => ['max_warning' => 0.7, 'max_error' => 0.9],
+        ];
+
+        $options = InstabilityOptions::fromArray(['threshold' => null] + $blocks);
+
+        self::assertSame(0.6, $options->class->maxWarning);
+        self::assertSame(0.7, $options->namespace->maxWarning);
+        self::assertEquals(
+            InstabilityOptions::fromArray($blocks),
+            $options,
+            'the `~` beside the blocks is worth exactly what leaving it out is worth',
+        );
+    }
+
+    /**
+     * Regression: the mixing guard used to fire on key presence, so a
+     * `max_warning: ~` that wrote no value at all was reported as a second
+     * mode clashing with the first.
+     */
+    #[Test]
+    public function itDoesNotCallItAMixWhenTheGraduatedKeyBesideTheFlatThresholdIsWrittenNull(): void
+    {
+        $options = InstabilityOptions::fromArray(['threshold' => 0.5, 'max_warning' => null]);
+
+        self::assertSame(0.5, $options->class->maxWarning);
+        self::assertSame(0.5, $options->class->maxError);
+    }
 }

@@ -28,6 +28,28 @@ the picture whole.
 instead of answering "(no layer)" — the same words it uses for a real class
 that no layer matched.
 
+**A threshold key written `~` inside `rules:` now selects nothing, instead of
+selecting the flat form of a hierarchical rule.** The keys are `threshold:` on
+`complexity.ccn`, `complexity.cognitive` and `complexity.npath`; `threshold:`,
+`warning:` or `error:` on `coupling.cbo`; `threshold:`, `max_warning:` or
+`max_error:` on `coupling.instability`. Writing one of them without a value used
+to count as writing it, with two consequences, both gone:
+
+- *the level blocks beside it were discarded in silence.* `warning: ~` above a
+  `class:` block on `coupling.cbo` — which is also what
+  `--rule-opt 'coupling.cbo:warning='` hands the rule since the CLI door started
+  folding an empty value to `~` — left the rule completely unconfigured and
+  exited 0. The blocks are read now.
+- *`threshold: ~` beside `warning:`/`error:` was refused* with `Cannot mix
+  "threshold" with "warning"/"error"`, naming a mix of one written value with
+  nothing. It is accepted now and the graduated mode applies. Two keys that each
+  carry a value are still two modes and are still refused.
+
+Migration, for a configuration that was relying on the old reading: write the
+threshold's value where you wrote `~` to keep the flat form, or, where the point
+was to silence the class level of a complexity rule, write
+`class: {enabled: false}`, which says so.
+
 **An unrecognised rule option key now stops the run with exit 3, at every depth
 it can be written at.** It used to warn at the top level of a rule's options and
 to be dropped in silence inside a level slot — so `callable: {warnign: 1,
@@ -268,11 +290,10 @@ the default.
   `coupling: ~`, `computed_metrics: ~`, `architecture: ~` and `exclude_health:
   ~` refused. Two things are unchanged and are stated rather than implied: a `~`
   **element of a list** is still refused where the list holds non-empty strings,
-  because an element is a value and not an unwritten key; and inside `rules:` a
-  threshold key written as `~` is still *present* for the reader that chooses
-  between a rule's flat and levelled form, so it opens the flat form and the
-  `callable:`/`class:`/`namespace:` blocks beside it are not read. See the
-  configuration guide for which keys those are.
+  because an element is a value and not an unwritten key; and a `~` written as
+  the value of a key is never itself a value the rule can act on. Inside
+  `rules:` the equivalence now holds for the keys that choose *how* a rule is
+  read as well — see the Breaking entry on threshold keys above.
 - **An empty `--rule-opt`/short-alias value now takes the default too, instead
   of becoming a one-element list holding the empty string.**
   `--rule-opt='code-smell.boolean-argument:allowed-prefixes='` used to set

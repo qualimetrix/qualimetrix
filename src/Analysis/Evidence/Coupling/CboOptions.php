@@ -55,10 +55,13 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
         // is where the complexity wrappers differ: their same-named top-level
         // keys are read only inside a branch some other key opens, so writing
         // one alone does nothing — and they are refused rather than declared.
+        // What opens the branch is a written VALUE, not a written key: `~`
+        // leaves the key's own value to the default and selects nothing, so a
+        // `class:`/`namespace:` block beside it is still read.
         if (
-            \array_key_exists(RuleOptionKey::THRESHOLD, $config)
-            || \array_key_exists(RuleOptionKey::WARNING, $config)
-            || \array_key_exists(RuleOptionKey::ERROR, $config)
+            isset($config[RuleOptionKey::THRESHOLD])
+            || isset($config[RuleOptionKey::WARNING])
+            || isset($config[RuleOptionKey::ERROR])
         ) {
             $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 14, 20);
             $levelConfig = [

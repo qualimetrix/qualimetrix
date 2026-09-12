@@ -1,5 +1,5 @@
 # ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L; перевывод L2).
-# Дерево e6d83192deb82ca362a518bfa5f08a0a87eb6593. Дата: 2026-09-12.
+# Дерево b8cc257903420801dc1cc80db464016f7b7f53b7. Дата: 2026-09-12.
 #
 # ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
 # проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
@@ -102,15 +102,15 @@ website/docs/getting-started/configuration.md	813	816	57a5a20643611a74	P6 (websi
 website/docs/getting-started/configuration.md	820	824	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
 website/docs/getting-started/configuration.md	825	832	ac6055aa24e9e403	P6 (website)	- **The root `suppress_paths:` is the exception to "a number is not a 
 website/docs/getting-started/configuration.md	833	836	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
-website/docs/getting-started/configuration.md	838	842	a21d1b3a2e3559ae	P6 (website)	### A key written with no value
-website/docs/getting-started/configuration.md	840	842	c8a56e2d6c1d4a47	P6 (website)	Writing a key and leaving it empty — `key:` or the explicit YAML null 
+website/docs/getting-started/configuration.md	838	842	82152e225aa04259	P6 (website)	### A key written with no value
+website/docs/getting-started/configuration.md	840	842	05157406a66d7cb0	P6 (website)	Writing a key and leaving it empty — `key:` or the explicit YAML null 
 website/docs/getting-started/configuration.md	845	846	cd23183ee0bb678d	P6 (website)	cache: ~                 # same as not writing cache:
-website/docs/getting-started/configuration.md	855	855	35e4e7288561939b	P6 (website)	Inside `rules:` that is where the equivalence stops. The entry itself 
-website/docs/getting-started/configuration.md	855	891	db380c75e32400a9	P6 (website)	Inside `rules:` that is where the equivalence stops. The entry itself 
-website/docs/getting-started/configuration.md	861	880	dcbf5f617e5d62cc	P6 (website)	- **A threshold key chooses the shorthand form of a hierarchical rule.
-website/docs/getting-started/configuration.md	865	868	0bcbb7778593bbd3	P6 (website)	Writing one at the rule's own top level selects the threshold shorthan
-website/docs/getting-started/configuration.md	882	891	4656799737b79cb3	P6 (website)	- **`threshold:` and `warning:` / `error:` are still two modes.** Writ
-website/docs/getting-started/configuration.md	893	903	31b1c6b46c7c70cd	P6 (website)	An **element of a list** is the other place this does not apply, and f
+website/docs/getting-started/configuration.md	855	855	a770dea0ff8f9537	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
+website/docs/getting-started/configuration.md	855	891	7fecd0de0bdf9dbb	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
+website/docs/getting-started/configuration.md	861	880	bb582161b4d64227	P6 (website)	selects nothing and the `callable:` / `class:` / `namespace:` blocks b
+website/docs/getting-started/configuration.md	865	868	980737d5d98bfa61	P6 (website)	rules:
+website/docs/getting-started/configuration.md	882	891	2430ad67b74fd08c	P6 (website)	
+website/docs/getting-started/configuration.md	893	903	15571208688e7df5	P6 (website)	an element is a value, not a key that was left unwritten, so there is 
 website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
 website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website)	| Potential Shadow          | `architecture.potential-shadow`      | E

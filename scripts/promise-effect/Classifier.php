@@ -236,31 +236,20 @@ final class Classifier
             );
         }
 
-        // null_means=default-value-present-key is the promise's own name for a
-        // narrower claim than `default`: PRESENCE of the key, `~` included,
-        // still selects the rule's flat form and suppresses a sibling level
-        // block (`callable:`/`class:`/`namespace:`) beside it. This branch
-        // judges only the OTHER half of that promise — the key's OWN VALUE,
-        // which the carrier says still takes the default, through the SAME
-        // comparison `default` uses below. The "presence suppresses the
-        // sibling" half has no probe here — it needs a document that writes a
-        // block BESIDE the key, which is the "form x neighbourhood"
-        // coordinate, a different package's input. A green cell from this
-        // branch says nothing about that half either way.
-        if ($nullMeans === 'default-value-present-key') {
-            return self::defaultingValue($omitted, $value, $collapse, $witnessed);
-        }
-
         // null_means=default: `~` must mean exactly what an omitted key means.
         return self::defaultingValue($omitted, $value, $collapse, $witnessed);
     }
 
     /**
-     * `~` judged as a value that must default: the comparison
-     * `null_means=default` and the value half of
-     * `null_means=default-value-present-key` share, word for word. Extracted
-     * so the two carriers are provably the SAME rule rather than two texts
-     * that happen to agree today.
+     * `~` judged as a value that must default.
+     *
+     * This once served two ledger values: `default`, and a narrower
+     * `default-value-present-key` for keys inside `rules:`, where writing a
+     * key with no value still chose the rule's flat form. X19 removed that
+     * distinction from the product -- branch selection now asks whether a
+     * value was written, not whether a key was -- so the carrier dropped the
+     * carve-out, the ledger rows moved to `default`, and the second branch
+     * here became unreachable and went with them.
      */
     private static function defaultingValue(
         Observation $omitted,
@@ -432,7 +421,12 @@ final class Classifier
             $lost = self::lostSibling($omitted, $low, $high, $both);
 
             if ($lost !== '') {
-                return new Judgement(Verdict::LOST_SIBLING, $lost, $defect);
+                // `promised_survival=lost` is a promise the loss KEEPS, not one
+                // it breaks. The `threshold` shorthand writes both halves of a
+                // band, so a middle layer writing it overwrote the slot rather
+                // than leaving it alone, and finding it gone afterwards is the
+                // promise being met. The label still reports what happened.
+                return new Judgement(Verdict::LOST_SIBLING, $lost, $promised === 'lost' ? false : $defect);
             }
         }
 

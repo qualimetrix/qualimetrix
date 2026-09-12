@@ -839,7 +839,7 @@ unnoticed:
 
 Writing a key and leaving it empty — `key:` or the explicit YAML null `key: ~` —
 means the default is taken for that key's own value, at every depth and in every
-section:
+section, `rules:` included:
 
 ```yaml
 cache: ~                 # same as not writing cache:
@@ -852,45 +852,44 @@ rules:
     callable: ~          # same as not writing callable:
 ```
 
-Inside `rules:` that is where the equivalence stops. The entry itself survives:
-the key is still *written*, it is only written with nothing under it. That makes
-no difference to a key whose value is simply read — `enabled: ~` above is the
-same as silence — but two readers ask whether a key is **present** rather than
-what it holds, and to those a `~` is not silence:
+That covers the keys inside `rules:` that choose *how* a rule is read, not only
+those whose value is read. A threshold key selects the shorthand form of a
+hierarchical rule — `threshold:` on `complexity.ccn`, `complexity.cognitive` and
+`complexity.npath`; `threshold:`, `warning:` or `error:` on `coupling.cbo`;
+`threshold:`, `max_warning:` or `max_error:` on `coupling.instability` — and it
+is the **value** written there that selects it. A `~` writes no value, so it
+selects nothing and the `callable:` / `class:` / `namespace:` blocks beside it
+are read exactly as if the key were not there:
 
-- **A threshold key chooses the shorthand form of a hierarchical rule.** On
-  `complexity.ccn`, `complexity.cognitive` and `complexity.npath` that key is
-  `threshold:`; on `coupling.cbo` it is `threshold:`, `warning:` or `error:`; on
-  `coupling.instability` it is `threshold:`, `max_warning:` or `max_error:`.
-  Writing one at the rule's own top level selects the threshold shorthand
-  described under **Rules** above — and, as there, the `callable:` / `class:` /
-  `namespace:` blocks written beside it are then not read. A `~` is no different
-  from a number here:
+```yaml
+rules:
+  coupling.cbo:
+    warning: ~       # same as omitting it
+    class:
+      warning: 0     # read
+      error: 0
+```
 
-    ```yaml
-    rules:
-      coupling.cbo:
-        warning: ~       # NOT the same as omitting it
-        class:
-          warning: 0     # never read: the block above already chose the flat form
-          error: 0
-    ```
+For the same reason `threshold: ~` written beside `warning:` / `error:` names no
+second mode, so there is nothing for it to be mixed with:
 
-    Omit the key to configure the levels; the rule then behaves as if nothing
-    had been written at its top level at all.
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: ~     # no value, so no mode
+    warning: 5       # graduated mode, as if threshold: had not been written
+```
 
-- **`threshold:` and `warning:` / `error:` are still two modes.** Writing
-  `threshold: ~` beside either refuses the document rather than falling back to
-  the graduated mode:
+Two *values* are still two modes, and that is still a configuration error:
 
-    ```yaml
-    rules:
-      cohesion.lcom:
-        threshold: ~     # Configuration error, exit 3:
-        warning: 5       # Cannot mix "threshold" with "warning"/"error"
-    ```
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: 3     # Configuration error, exit 3:
+    warning: 5       # Cannot mix "threshold" with "warning"/"error"
+```
 
-An **element of a list** is the other place this does not apply, and for a reason:
+An **element of a list** is the one place this does not apply, and for a reason:
 an element is a value, not a key that was left unwritten, so there is nothing for
 it to mean. Where the list is declared to hold non-empty strings, a `~` element
 is refused:

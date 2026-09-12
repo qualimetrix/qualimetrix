@@ -44,12 +44,13 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
         // and namespace dimensions, instead of the nested `class:`/
         // `namespace:` sub-configs below. Mirrors CboOptions's own top-level
         // branch — see its docblock for why both levels stay enabled with
-        // the same threshold rather than one being disabled, and
-        // acceptedOptionKeys() below for why the flat keys are declared.
-        $hasFlatMaxWarning = \array_key_exists('max_warning', $config) || \array_key_exists('maxWarning', $config);
-        $hasFlatMaxError = \array_key_exists('max_error', $config) || \array_key_exists('maxError', $config);
+        // the same threshold rather than one being disabled, why a written
+        // VALUE and not a written key opens it, and acceptedOptionKeys() below
+        // for why the flat keys are declared.
+        $hasFlatMaxWarning = isset($config['max_warning']) || isset($config['maxWarning']);
+        $hasFlatMaxError = isset($config['max_error']) || isset($config['maxError']);
 
-        if (\array_key_exists(RuleOptionKey::THRESHOLD, $config) || $hasFlatMaxWarning || $hasFlatMaxError) {
+        if (isset($config[RuleOptionKey::THRESHOLD]) || $hasFlatMaxWarning || $hasFlatMaxError) {
             $thresholds = ThresholdParser::parse(
                 $config,
                 'max_warning',

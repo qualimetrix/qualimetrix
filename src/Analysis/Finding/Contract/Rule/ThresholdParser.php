@@ -15,6 +15,18 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  * - Graduated: `warning: X, error: Y` — separate thresholds for different severity levels
  *
  * Mixing `threshold` with `warning`/`error` is a configuration error.
+ *
+ * ## A key is what it was written WITH, not that it was written
+ *
+ * Every question here — which mode was chosen, and whether the two modes were
+ * mixed — is asked of keys carrying a NON-NULL value. A key written `~` is a
+ * key whose value the author left to the default, exactly as the rest of the
+ * document reads it, so it selects no mode and mixes with nothing.
+ *
+ * It used to be asked of key PRESENCE instead, and that answered two different
+ * questions with one word. `threshold: ~` beside `warning: 5` was refused as a
+ * mix although no second value was written anywhere; the same `~` shadowed a
+ * populated alias behind it. Both are gone.
  */
 final class ThresholdParser
 {
@@ -56,20 +68,18 @@ final class ThresholdParser
     ): array {
         $candidates = self::candidateKeys($warningKey, $errorKey, $thresholdKey, $legacyKeys);
 
-        // Threshold resolution is *presence*-based: the first candidate key
-        // present in the config wins, even when its value is null.
-        $thresholdSourceKey = self::firstPresentKey($config, $candidates['threshold']);
+        $thresholdSourceKey = self::firstWrittenKey($config, $candidates['threshold']);
 
         if ($thresholdSourceKey === null) {
-            // Graduated mode. Unlike the threshold lookup, warning/error
-            // resolution is *value*-based: null candidates are skipped.
+            // Graduated mode, either because a graduated key carries a value
+            // or because nothing here carries one at all.
             return [
-                'warning' => self::firstNonNullValue($config, $candidates['warning']) ?? $defaultWarning,
-                'error' => self::firstNonNullValue($config, $candidates['error']) ?? $defaultError,
+                'warning' => self::firstWrittenValue($config, $candidates['warning']) ?? $defaultWarning,
+                'error' => self::firstWrittenValue($config, $candidates['error']) ?? $defaultError,
             ];
         }
 
-        if (self::hasAnyKey($config, $candidates['warning']) || self::hasAnyKey($config, $candidates['error'])) {
+        if (self::hasAnyWrittenKey($config, $candidates['warning']) || self::hasAnyWrittenKey($config, $candidates['error'])) {
             throw ConfigurationRefusal::atResolvedKey(
                 RefusedPosition::open([$thresholdSourceKey], $thresholdSourceKey),
                 self::mixedModesMessage($warningKey, $errorKey, $thresholdKey),
@@ -78,10 +88,7 @@ final class ThresholdParser
 
         $value = $config[$thresholdSourceKey];
 
-        // Treat null as "not set" — fall back to defaults
-        return $value === null
-            ? ['warning' => $defaultWarning, 'error' => $defaultError]
-            : ['warning' => $value, 'error' => $value];
+        return ['warning' => $value, 'error' => $value];
     }
 
     /**
@@ -106,18 +113,20 @@ final class ThresholdParser
     }
 
     /**
-     * Returns the first candidate key present in the config, or null if none is.
+     * Returns the first candidate key written with a value, or null when every
+     * candidate is either absent or written `~`.
      *
-     * Presence is decided by `array_key_exists()`, so an explicitly null value
-     * still counts as "the user set this key".
+     * The one traversal behind all three questions this class asks, so "was it
+     * written" cannot come to mean one thing for the mode and another for the
+     * mix.
      *
      * @param array<string, mixed> $config
      * @param list<string> $candidateKeys
      */
-    private static function firstPresentKey(array $config, array $candidateKeys): ?string
+    private static function firstWrittenKey(array $config, array $candidateKeys): ?string
     {
         foreach ($candidateKeys as $key) {
-            if (\array_key_exists($key, $config)) {
+            if (isset($config[$key])) {
                 return $key;
             }
         }
@@ -129,29 +138,22 @@ final class ThresholdParser
      * @param array<string, mixed> $config
      * @param list<string> $candidateKeys
      */
-    private static function hasAnyKey(array $config, array $candidateKeys): bool
+    private static function hasAnyWrittenKey(array $config, array $candidateKeys): bool
     {
-        return self::firstPresentKey($config, $candidateKeys) !== null;
+        return self::firstWrittenKey($config, $candidateKeys) !== null;
     }
 
     /**
-     * Returns the value of the first candidate key configured with a non-null
-     * value, or null when every candidate is absent or explicitly null.
+     * The value behind {@see firstWrittenKey()}, or null when there is none.
      *
      * @param array<string, mixed> $config
      * @param list<string> $candidateKeys
      */
-    private static function firstNonNullValue(array $config, array $candidateKeys): mixed
+    private static function firstWrittenValue(array $config, array $candidateKeys): mixed
     {
-        foreach ($candidateKeys as $key) {
-            $value = $config[$key] ?? null;
+        $key = self::firstWrittenKey($config, $candidateKeys);
 
-            if ($value !== null) {
-                return $value;
-            }
-        }
-
-        return null;
+        return $key === null ? null : $config[$key];
     }
 
     private static function mixedModesMessage(string $warningKey, string $errorKey, string $thresholdKey): string
