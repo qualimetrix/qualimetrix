@@ -35,6 +35,16 @@ final class UnassignedClassOptionsTest extends TestCase
         self::assertSame($expected, UnassignedClassOptions::fromArray(['mode' => $raw])->mode);
     }
 
+    /**
+     * A written `~` is left to the reader's own default, the same as an
+     * unwritten key — it is not a narrower declaration refusing a legal value.
+     */
+    #[Test]
+    public function itLeavesTheDefaultWhenModeIsWrittenNull(): void
+    {
+        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromArray(['mode' => null])->mode);
+    }
+
     #[Test]
     public function itRejectsAnUnknownMode(): void
     {

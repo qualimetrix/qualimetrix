@@ -79,7 +79,7 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'mode' => RuleOptionShape::text()->orNull(),
+            'mode' => RuleOptionShape::oneOfIgnoringCase('ignore', 'warn', 'error')->orNull(),
         ])
             ->alsoAnsweredByTheClass('enabled');
     }

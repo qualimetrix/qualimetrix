@@ -112,7 +112,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     {
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean()->orNull(),
-            'severity' => RuleOptionShape::text()->orNull(),
+            'severity' => RuleOptionShape::oneOfIgnoringCase('info', 'warning', 'error')->orNull(),
         ])
             ->alsoAnsweredByTheClass(
                 'empty-template-severity',

@@ -23,8 +23,10 @@ use LogicException;
  * list's elements, and a closed set of words — which is what the factories
  * below enumerate.
  *
- * A closed set is {@see self::oneOf()} and only that. Two mechanisms that look
- * like it are deliberately left with their readers rather than spelled as a
+ * A closed set is {@see self::oneOf()} or {@see self::oneOfIgnoringCase()} and
+ * only those — the two differ in whether the reader folds letter case, not in
+ * what kind of question they answer. Two mechanisms that look like a closed
+ * set are deliberately left with their readers rather than spelled as a
  * shape — a set whose members exist only at run time, and a value constrained
  * by a pattern instead of by membership. {@see self::oneOf()} says why.
  *
@@ -36,6 +38,8 @@ use LogicException;
  */
 final readonly class RuleOptionShape
 {
+    use RuleOptionShapeCompoundForms;
+
     private const string LIST_OF = 'list';
     private const string MAP_OF = 'map';
     private const string EITHER = 'either';
@@ -128,9 +132,9 @@ final readonly class RuleOptionShape
      * reader, in the reader's own words, while the declaration went on
      * claiming every string was welcome.
      *
-     * This is the ONLY closed-set mechanism the vocabulary carries, and the
-     * boundary is deliberate — two neighbouring mechanisms are NOT this shape
-     * and must not be spelled as it:
+     * This and {@see self::oneOfIgnoringCase()} are the ONLY closed-set
+     * mechanisms the vocabulary carries, and the boundary is deliberate — two
+     * neighbouring mechanisms are NOT this shape and must not be spelled as it:
      *
      * - a set whose members are known only at run time (the output format is
      *   whatever the formatter registry holds) has no words to write here, and
@@ -141,21 +145,39 @@ final readonly class RuleOptionShape
      *
      * Matching is case-SENSITIVE: a declaration must not accept a spelling its
      * reader will not, or the value falls back to a default without a word.
-     * Where a reader does fold case, the set it declares has to say so.
+     * Where a reader folds case before its own lookup, declare
+     * {@see self::oneOfIgnoringCase()} instead.
      *
-     * `coupling.cbo`'s `scope` declares one. Three more readers inside `rules:`
-     * own a static word set and could — `annotation.directive`'s
-     * `unused-directive-severity`, `architecture.unassigned-class`'s `mode` and
-     * `architecture.layer-violation`'s `severity`. A fourth must not:
-     * `computed_metrics.<name>.levels` deliberately separates "a real level
-     * word that does not report" from "not a level at all", and one set of
-     * words would flatten those two refusals into one.
+     * `coupling.cbo`'s `scope` declares one of these — its reader compares
+     * strictly through a plain `in_array()`. `computed_metrics.<name>.levels`
+     * declares neither factory: it deliberately separates "a real level word
+     * that does not report" from "not a level at all", and one set of words
+     * would flatten those two refusals into one.
      *
      * @throws LogicException when the set is empty or carries a blank word
      */
     public static function oneOf(string ...$words): self
     {
         return new self(self::ONE_OF, words: RuleOptionWordSet::of(...$words));
+    }
+
+    /**
+     * The same closed-set shape, for a reader that folds letter case before
+     * its own lookup rather than comparing the value as written.
+     *
+     * Declaring {@see self::oneOf()} in front of such a reader would be
+     * NARROWER than it: the reader answers `Warning`, and a case-sensitive
+     * declaration would refuse it at the seam before the reader ever gets the
+     * chance. Three readers inside `rules:` fold case on purpose, pinned by
+     * tests, and declare this factory: `annotation.directive`'s
+     * `unused-directive-severity`, `architecture.unassigned-class`'s `mode`,
+     * and `architecture.layer-violation`'s `severity`.
+     *
+     * @throws LogicException when the set is empty or carries a blank word
+     */
+    public static function oneOfIgnoringCase(string ...$words): self
+    {
+        return new self(self::ONE_OF, words: RuleOptionWordSet::foldingCase(...$words));
     }
 
     /**
@@ -186,6 +208,19 @@ final readonly class RuleOptionShape
             self::ONE_OF => $this->words->contains($value),
             default => $this->plainForm()->accepts($value),
         };
+    }
+
+    /**
+     * The word set this shape was declared with, for a closed-set shape; null
+     * for every other kind.
+     *
+     * Exists so that a guard proving a declaration and its reader still agree
+     * can read the declared words and their fold from the declaration itself,
+     * rather than keeping a second hand-written copy beside it.
+     */
+    public function wordsDeclared(): ?RuleOptionWordSet
+    {
+        return $this->kind === self::ONE_OF ? $this->words : null;
     }
 
     /** The expected form, as the refusal names it. */
@@ -223,64 +258,6 @@ final readonly class RuleOptionShape
         return $this->kind instanceof RuleOptionValueForm
             ? $this->kind
             : throw new LogicException('A container shape has no plain form of its own.');
-    }
-
-    /**
-     * A list or a map, and every one of its elements.
-     *
-     * One method for both containers because they differ in one predicate:
-     * a list is `array_is_list()`, a map is its negation, and the elements are
-     * judged the same way either side of that. Two arms spelling out the same
-     * three conditions is the duplication this class measures elsewhere.
-     */
-    private function matchesContainer(mixed $value): bool
-    {
-        if (!\is_array($value) || array_is_list($value) !== ($this->kind === self::LIST_OF)) {
-            return false;
-        }
-
-        $element = $this->element;
-
-        if ($element === null) {
-            return true;
-        }
-
-        foreach ($value as $item) {
-            if (!$element->matches($item)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function anyAlternativeMatches(mixed $value): bool
-    {
-        foreach ($this->alternatives as $alternative) {
-            if ($alternative->matches($value)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * The element of a container, named in the plural the container reads in.
-     * A container of containers keeps the singular: "a list of a map of
-     * numbers" has no plural spelling that stays readable.
-     */
-    private function describeElements(): string
-    {
-        $element = $this->element;
-
-        if ($element === null) {
-            return 'values';
-        }
-
-        return $element->kind instanceof RuleOptionValueForm && !$element->nullable
-            ? $element->kind->describeMany()
-            : $element->describe();
     }
 
 }

@@ -16,31 +16,69 @@ use LogicException;
  * together and belong to nobody else. The shape holds one of these and asks it;
  * it does not reimplement membership beside its container and union logic.
  *
- * Matching ignores letter case, and that is a choice about WHICH readers this
- * set is meant for. The four inside `rules:` — a layer-violation `severity`, an
- * unassigned-class `mode`, an unused-directive severity, a layer `match` — all
- * fold case before their own lookup, so a case-sensitive set would refuse
- * values they accept. Two readers outside that group do NOT fold (`fail_on`
- * through `Severity::tryFrom()`, and a CBO `scope` through a strict
- * `in_array()`); adopting this set for either of them means folding there
- * first, or it would accept a spelling the reader then drops.
+ * Whether matching folds letter case is a property of the individual set, not
+ * a blanket policy of this class: {@see self::of()} builds a case-sensitive
+ * set and {@see self::foldingCase()} builds one that lowers both sides before
+ * comparing. The choice tracks the reader the set stands for, and getting it
+ * backwards is a promise that disagrees with the code behind it either way —
+ * a folding set in front of a strict reader accepts a spelling the reader
+ * then drops without a word, and a strict set in front of a folding reader
+ * refuses a spelling the reader would have honoured.
+ *
+ * Three word sets inside `rules:` fold case before their own lookup and are
+ * declared with {@see self::foldingCase()}: `architecture.layer-violation`'s
+ * `severity`, `architecture.unassigned-class`'s `mode`, and
+ * `annotation.directive`'s `unused-directive-severity`. `coupling.cbo`'s
+ * `scope` compares strictly through a plain `in_array()` and stays declared
+ * with {@see self::of()}. `fail_on` also compares strictly, through
+ * `Severity::tryFrom()`, but declares no word set here at all — its accepted
+ * values are read off the enum, not written a second time in this class.
  */
 final readonly class RuleOptionWordSet
 {
     /**
-     * The plain carrier. {@see self::of()} is the validating way in; the empty
-     * set is what every shape that names no words carries, and it is spelled
-     * here rather than as a factory because a promoted readonly property needs
-     * a default the caller can write inline.
+     * The plain carrier. {@see self::of()} and {@see self::foldingCase()} are
+     * the validating way in; the empty set is what every shape that names no
+     * words carries, and it is spelled here rather than as a factory because
+     * a promoted readonly property needs a default the caller can write
+     * inline.
      *
      * @param list<string> $words
      */
-    public function __construct(public array $words) {}
+    public function __construct(
+        public array $words,
+        private bool $foldsCase = false,
+    ) {}
 
     /**
+     * A case-sensitive set: the reader compares the written value against
+     * these words exactly as spelled.
+     *
      * @throws LogicException when the set is empty or carries a blank word
      */
     public static function of(string ...$words): self
+    {
+        return new self(self::validated(...$words));
+    }
+
+    /**
+     * A case-folding set: the reader lowers the written value before its own
+     * lookup, so a declaration that did not fold too would refuse a spelling
+     * the reader accepts.
+     *
+     * @throws LogicException when the set is empty or carries a blank word
+     */
+    public static function foldingCase(string ...$words): self
+    {
+        return new self(self::validated(...$words), foldsCase: true);
+    }
+
+    /**
+     * @throws LogicException when the set is empty or carries a blank word
+     *
+     * @return list<string>
+     */
+    private static function validated(string ...$words): array
     {
         if ($words === []) {
             throw new LogicException('A closed set of words needs at least one word.');
@@ -52,7 +90,17 @@ final readonly class RuleOptionWordSet
             }
         }
 
-        return new self(array_values($words));
+        return array_values($words);
+    }
+
+    /**
+     * Whether this set folds letter case before comparing — the fact a guard
+     * pairing a declaration with its reader needs, read off the declaration
+     * rather than assumed.
+     */
+    public function foldsCase(): bool
+    {
+        return $this->foldsCase;
     }
 
     public function contains(mixed $value): bool
@@ -61,12 +109,16 @@ final readonly class RuleOptionWordSet
             return false;
         }
 
-        // Case-SENSITIVE, and deliberately so. A case-insensitive set accepts
-        // `APPLICATION` for a reader that compares strictly, and the value then
-        // falls back to the reader's default without a word -- which is the
-        // exact defect declaring the set was meant to close. The declaration
-        // must not be wider than the reader it stands for; where a reader does
-        // fold case, the set it declares has to say so rather than be assumed.
+        if ($this->foldsCase) {
+            return \in_array(strtolower($value), array_map(strtolower(...), $this->words), true);
+        }
+
+        // Case-SENSITIVE, and deliberately so for a set built by {@see self::of()}.
+        // A case-insensitive set accepts `APPLICATION` for a reader that compares
+        // strictly, and the value then falls back to the reader's default without
+        // a word -- which is the exact defect declaring the set was meant to
+        // close. A set built by {@see self::foldingCase()} takes the branch above
+        // instead, because there the reader is the one that folds.
         return \in_array($value, $this->words, true);
     }
 
