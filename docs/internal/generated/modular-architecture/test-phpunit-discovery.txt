@@ -4265,7 +4265,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"whole number"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsOnlyTheWordsAClosedSetNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itKeepsTheWordsWhenTheClosedSetIsMadeNullable
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itMatchesAClosedSetWithoutRegardToLetterCase
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesAWrittenValueByItsFormForEveryShapeButAClosedSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesEveryWordOfAClosedSetInTheRefusal
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"a nullable element keeps the singular, so the "or null" stays attached to one value"
@@ -4285,6 +4284,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"whole number"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheWordThatWasWrittenWhenAClosedSetRefuses
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesABlankWordInAClosedSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAClosedSetWordSpelledInAnotherLetterCase
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAUnionOfOneForm
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a blank string is not a non-empty one"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a fraction is not a whole number"

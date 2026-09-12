@@ -24,6 +24,23 @@ formatter reads — previously accepted and ignored). `graph:export
 --exclude-namespace` deliberately keeps its silence: a missed exclusion leaves
 the picture whole.
 
+**An empty `--rule-opt`/short-alias value is now refused, instead of becoming
+  a one-element list holding the empty string.**
+  `--rule-opt='code-smell.boolean-argument:allowed-prefixes='` used to set
+  `allowedPrefixes` to `['']` rather than the default seven prefixes, so
+  `$isActive`/`$hasPermission` were flagged as violations; the same shape of
+  bug made `--rule-opt='coupling.distance:include-namespaces='` stop finding
+  anything at all, because `['']` never matches a real namespace. It also
+  affected `code-smell.error-suppression:allowed-functions`,
+  `cohesion.lcom:exclude-methods` and that option's own short alias
+  (`--lcom-exclude-methods=`). An empty value written after `=` on either CLI
+  door is now **refused**, with a message naming the rule, the option and what
+  to write instead. Refusing rather than defaulting is what the documentation
+  promises for a command-line value, and it keeps the two doors honestly
+  different: YAML's `~` says "take the default", while a command line that
+  stops after `=` says nothing at all. Write the intended value, or drop the
+  `--rule-opt` entry entirely to get the default.
+
 **`coupling.cbo` refuses an unknown `scope` instead of silently measuring the
 other one.** `scope:` accepts `all` and `application`; anything else — a typo
 like `applicaton`, or any other word — used to fall back to `all` without a
@@ -332,22 +349,6 @@ the default.
   the value of a key is never itself a value the rule can act on. Inside
   `rules:` the equivalence now holds for the keys that choose *how* a rule is
   read as well — see the Breaking entry on threshold keys above.
-- **An empty `--rule-opt`/short-alias value now takes the default too, instead
-  of becoming a one-element list holding the empty string.**
-  `--rule-opt='code-smell.boolean-argument:allowed-prefixes='` used to set
-  `allowedPrefixes` to `['']` rather than the default seven prefixes, so
-  `$isActive`/`$hasPermission` were flagged as violations; the same shape of
-  bug made `--rule-opt='coupling.distance:include-namespaces='` stop finding
-  anything at all, because `['']` never matches a real namespace. It also
-  affected `code-smell.error-suppression:allowed-functions`,
-  `cohesion.lcom:exclude-methods` and that option's own short alias
-  (`--lcom-exclude-methods=`). An empty value written after `=` on either CLI
-  door is now **refused**, with a message naming the rule, the option and what
-  to write instead. Refusing rather than defaulting is what the documentation
-  promises for a command-line value, and it keeps the two doors honestly
-  different: YAML's `~` says "take the default", while a command line that
-  stops after `=` says nothing at all. Write the intended value, or drop the
-  `--rule-opt` entry entirely to get the default.
 - **A directory whose name is a bare number now works in `suppress_paths:`.**
   The root-level key refused it as "not a non-empty string"; it is converted
   now, the way `--exclude` already is. `suppress_namespaces:` still refuses one,

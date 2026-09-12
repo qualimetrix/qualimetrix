@@ -61,13 +61,13 @@ final readonly class RuleOptionWordSet
             return false;
         }
 
-        foreach ($this->words as $word) {
-            if (strcasecmp($word, $value) === 0) {
-                return true;
-            }
-        }
-
-        return false;
+        // Case-SENSITIVE, and deliberately so. A case-insensitive set accepts
+        // `APPLICATION` for a reader that compares strictly, and the value then
+        // falls back to the reader's default without a word -- which is the
+        // exact defect declaring the set was meant to close. The declaration
+        // must not be wider than the reader it stands for; where a reader does
+        // fold case, the set it declares has to say so rather than be assumed.
+        return \in_array($value, $this->words, true);
     }
 
     /**

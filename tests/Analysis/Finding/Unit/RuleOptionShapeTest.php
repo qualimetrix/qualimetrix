@@ -158,12 +158,17 @@ final class RuleOptionShapeTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesAClosedSetWithoutRegardToLetterCase(): void
+    public function itRefusesAClosedSetWordSpelledInAnotherLetterCase(): void
     {
+        // The set used to fold case, and that made the declaration wider than
+        // the reader it stands for: `scope: APPLICATION` passed the shape and
+        // then fell back to the reader's default in silence -- the very defect
+        // declaring a closed set exists to close.
         $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
 
-        self::assertTrue($shape->matches('WARNING'));
-        self::assertTrue($shape->matches('Error'));
+        self::assertFalse($shape->matches('WARNING'));
+        self::assertFalse($shape->matches('Error'));
+        self::assertTrue($shape->matches('warning'));
     }
 
     #[Test]

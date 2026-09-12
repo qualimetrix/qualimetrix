@@ -139,25 +139,17 @@ final readonly class RuleOptionShape
      *   limit is digits with an optional K/M/G suffix) is not a word set at
      *   all, and "one of ..." could not print it.
      *
-     * Matching ignores letter case, and {@see RuleOptionWordSet} says which
-     * readers that suits and which would have to fold case first. The words are
-     * printed in the spelling given here.
+     * Matching is case-SENSITIVE: a declaration must not accept a spelling its
+     * reader will not, or the value falls back to a default without a word.
+     * Where a reader does fold case, the set it declares has to say so.
      *
-     * NO KEY DECLARES THIS YET, and the reason is measured rather than a
-     * preference. The four keys inside `rules:` whose readers own a static word
-     * set — `coupling.cbo`'s `scope`, `annotation.directive`'s
-     * `unused-directive-severity`, `architecture.unassigned-class`'s `mode`
-     * and `architecture.layer-violation`'s `severity` — all appear in
-     * `promise-effect`'s pair enumeration, and its `Stand::effectWritesFor()`
-     * demands a write out of its eight canonical magnitudes BEFORE it consults
-     * the alternate its own `effect-magnitudes.tsv` declares for exactly those
-     * leaves. A closed word set matches none of the eight, so declaring one
-     * there ends the measurement run with a `LedgerError` rather than
-     * measuring anything. The one remaining closed-set reader inside `rules:`,
-     * `computed_metrics.<name>.levels`, must not use this either: it
-     * deliberately separates "a real level word that does not report" from "not
-     * a level at all", and one set of words would flatten the two refusals into
-     * one.
+     * `coupling.cbo`'s `scope` declares one. Three more readers inside `rules:`
+     * own a static word set and could — `annotation.directive`'s
+     * `unused-directive-severity`, `architecture.unassigned-class`'s `mode` and
+     * `architecture.layer-violation`'s `severity`. A fourth must not:
+     * `computed_metrics.<name>.levels` deliberately separates "a real level
+     * word that does not report" from "not a level at all", and one set of
+     * words would flatten those two refusals into one.
      *
      * @throws LogicException when the set is empty or carries a blank word
      */
