@@ -39,9 +39,8 @@ declare(strict_types=1);
  *
  * Exit codes: 0 every case bit exactly its own row, 1 a case did not,
  * 2 coverage arithmetic failed. Exit 3 was "the baseline itself is not the
- * grid" and is retired: the published grid measures the cured tree and the
- * frozen half the pre-cure one, so they are SUPPOSED to differ now. See the
- * note where it stood.
+ * grid" and is retired, because the two halves are free to differ the moment
+ * a round cures anything. See the note where it stood.
  */
 
 namespace Qualimetrix\PromiseEffectControls;
@@ -728,10 +727,16 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         }
 
         // N4: a value-domain limit planted over a cell the product coerced.
-        $coerced = 'form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|map';
+        // The form has to be one the product still COERCES: `map` on this key
+        // was the subject until `b9fd87d3` (the declared shape of a rule
+        // option value) turned it into a framed refusal, and a refusal is
+        // exactly what the two value kinds are allowed to cover. On the
+        // baseline this case is measured against, `string-number` is where the
+        // key still swallows the write.
+        $coerced = 'form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-number';
         file_put_contents(
             $tree . '/promise-effect/observability-limits.tsv',
-            "generic-write-names-nothing\tyaml\tallowed-prefixes\tmap\tplanted\n",
+            "generic-write-names-nothing\tyaml\tallowed-prefixes\tstring-number\tplanted\n",
             \FILE_APPEND,
         );
         $conflicts = limitConflicts($tree, $inProcess, $process);
@@ -820,28 +825,46 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
     }
 
     if ($case->id === 'F1') {
-        // Planted into the RAW observations, so the classifier itself produces
-        // the change: `bool` is not a promised form on that row, and a framed
-        // refusal of an unpromised form is not a defect — which is exactly the
-        // shape of a classifier that has stopped recognising the floor.
+        // The floor read off REAL observations rather than the synthetic cells
+        // F2 uses — the two cases are the same rule asked of different inputs,
+        // and only this one can fail because the CLASSIFIER changed.
+        //
+        // It used to ask `missesOnTheFrozenHalf()`, whose claim is "every
+        // declared row is a defect here, cured or not". That claim belonged to
+        // a snapshot taken BEFORE the cures the `cure` column names. This one
+        // was taken after them — `observations-before/shot.txt` records
+        // `product-commit 02a6ca66`, into which all three packages the column
+        // names were squashed — so twenty-one rows are no longer defects on
+        // this half either, and the old claim called every one of them a miss.
+        // The half is therefore held to the same two-directional claim the
+        // live grid is: standing rows still defective, cured rows no longer so.
+        //
+        // The planting is reversed with it. Turning a CURED row back into a
+        // defect is now the breakage: the pre-cure product took `true` here
+        // and silently wrote the canonical magnitude, so the planting replays
+        // exactly that, and the miss it must leave is the cure being false.
         $workspace = new Workspace($root);
         $tree = $workspace->checkout();
         $floorRow = 'form|yaml|rules.complexity.ccn.callable.warning|bool';
         $floor = Floor::load($tree);
-        $failures = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process)) === []
+        [$unplanted] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
+        $failures = $unplanted === []
             ? []
-            : ['F1: the floor does not reproduce on the unplanted pre-cure half'];
+            : ['F1: the floor does not reproduce on the unplanted frozen half: ' . implode('; ', $unplanted)];
 
         (new Planter($tree))->apply(new ControlCase(
             'plant',
             '',
             '',
-            [[$floorRow, 'value', 'outcome', 'refused-framed']],
+            [
+                [$floorRow, 'value', 'outcome', 'accepted'],
+                [$floorRow, 'value', 'text', '@value@form|yaml|rules.complexity.ccn.callable.warning|int'],
+            ],
             [],
             [],
         ));
 
-        $misses = $floor->missesOnTheFrozenHalf(frozenCells($tree, $inProcess, $process));
+        [$misses] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
 
         if (\count($misses) !== 1 || !str_starts_with($misses[0], $floorRow . ':')) {
             $failures[] = 'F1: the planting should have left exactly one floor miss naming ' . $floorRow
@@ -1165,9 +1188,9 @@ foreach (['OK', 'INERT', 'COLLAPSED', 'REFUSES', 'MALFORMED', 'NOT OBSERVABLE', 
 }
 
 // The new axes get their own coverage arithmetic rather than joining the list
-// above: their cases are not plantings into the frozen half, which has no side
-// for them to edit, so a stale-declaration check over `$baseline` would refuse
-// every one of them.
+// above: their cases carry a fixture of their own and name no cell of the
+// frozen half at all, so a stale-declaration check over `$baseline` would
+// refuse every one of them.
 $judgementCovered = [];
 
 foreach (Cases::judgements() as $judgementCase) {
@@ -1218,14 +1241,19 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 // WHAT USED TO STAND HERE, and why it cannot stand any more.
 //
 // The run refused (exit 3) unless the frozen half reproduced the published
-// grid cell for cell. That held for one reason only: both were measured on
-// `6a833ab8`, the same tree. The round has since cured the product, so the
-// published grid is the CURED tree and the frozen half is the pre-cure one —
-// they now differ by thousands of cells, and they are supposed to. Demanding
-// equality would refuse for ever, on the very property the round was built to
-// produce; the first version of this package only postponed that by
-// suspending the demand while the input stamp was stale, which is not a fix
-// because the stamp goes fresh again on the next measurement.
+// grid cell for cell. That holds only while the two measure the same product,
+// and whether they do is a property of WHERE THE ROUND STANDS, not of the
+// stand: the moment a round cures something, the grid moves ahead of its own
+// baseline by design. A demand that is true at the start of a round and false
+// the moment the work lands cannot be a refusal — the first version of this
+// package only postponed the contradiction by suspending the demand while the
+// input stamp was stale, which is not a fix, because the stamp goes fresh
+// again on the next measurement.
+//
+// So it stays retired even now that the two halves DO agree again: this
+// round's baseline was re-frozen against the cured product of `02a6ca66`, and
+// the round has not yet changed the product. Restoring the demand would buy a
+// green line today and refuse the first cure this round lands.
 //
 // What the demand protected was "the cases plant into the document a reader
 // sees". Two things carry that now, and the loss between them is named rather
@@ -1234,12 +1262,13 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 //   - every cell a case addresses must exist in the universe of the frozen
 //     half — the stale-declaration refusal above, exit 2;
 //   - the floor, judged on the frozen half (case F1), which is the claim
-//     `01-promise.md` actually makes about that document.
+//     `01-promise.md` makes about that document, in the form the `cure`
+//     column leaves of it once the baseline post-dates the cures.
 //
 // What is lost: nothing here notices if the frozen half stops matching a
 // PUBLISHED rendering of itself, because no such rendering is published —
 // `composer promise-effect:before` recomputes it on demand.
-$publishedComparison = 'retired: the published grid measures the cured tree, the frozen half the pre-cure one';
+$publishedComparison = 'retired: a round that cures anything moves the grid ahead of its own baseline';
 
 printf(
     "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d judgement case(s) over the 8 verdicts of axes C\n"

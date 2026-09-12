@@ -22,18 +22,15 @@
 #
 # THE `cure` COLUMN, AND WHY THE FLOOR IS NOT ONE CLAIM BUT TWO
 #
-# The floor is a statement about the CLASSIFIER reading a known pre-cure tree.
-# On the frozen half that is exactly what it checks, and the `cure` column is
-# not read there: a row this round repaired was still a defect on the tree the
-# frozen half measures.
-#
-# Applied to the LIVE grid the same list said the wrong thing, and it said it
-# for a whole round: a successful cure REMOVES a defect, so every row the round
+# The floor is a statement about the CLASSIFIER reading a tree whose defects
+# are known. Applied as a bare list it said the wrong thing, and it said it for
+# a whole round: a successful cure REMOVES a defect, so every row the round
 # repaired became a floor miss and a cured product exited 1. A floor that goes
-# red when the work succeeds is not a floor. So on the live grid:
+# red when the work succeeds is not a floor. So each row carries its own
+# disposition:
 #
 #   `cure` empty      the row must STILL be a defect;
-#   `cure` filled     the round CLAIMS this row is repaired, and the grid must
+#   `cure` filled     a round CLAIMS this row is repaired, and the grid must
 #                     no longer call it a defect;
 #   `withdrawn` filled
 #                     the PROBE that produced this row was wrong, and the
@@ -49,6 +46,22 @@
 # The commit named in `cure` is the one whose own subject covers that row's
 # door and failure — the attribution is read off what each package said it was
 # doing, not off a bisected measurement of every row.
+#
+# WHICH HALF THIS IS ASKED OF, AND THE ONE PLACE IT BREAKS
+#
+# The dispositions above were written for the LIVE grid, while the frozen half
+# was held to the bare list — that half measured a tree older than every cure,
+# so every row was a defect there and the column said nothing. X19 re-froze the
+# baseline against the CURED product of `02a6ca66`, and the bare list then
+# called twenty-one repaired rows a miss on a half that agrees with the grid
+# cell for cell. Both halves are therefore read through the dispositions above.
+#
+# That holds only while every commit in `cure` pre-dates the baseline's own
+# `observations-before/shot.txt`. The first cure a round lands AFTER its
+# baseline breaks it: the row is then correctly a defect on the frozen half and
+# correctly repaired on the live grid, and one column cannot say both. Re-take
+# the baseline at the start of the round, as X19 did, or give the floor a way
+# to compare the cure's commit against the shot.
 #
 # WHY `withdrawn` IS NOT A SECOND SPELLING OF `cure`
 #

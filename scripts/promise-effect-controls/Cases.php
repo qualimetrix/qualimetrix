@@ -110,12 +110,11 @@ final readonly class GuardCase
  * A planting into the axis-C or axis-E rule itself.
  *
  * These cannot be planted the way the nine verdict cases are. A verdict case
- * edits a RAW observation of the frozen half — and the frozen half predates
- * this axis, so there is no stored side to edit. More to the point, two of the
- * cases here are not about an observation at all: they are about the
- * COMPARISON, and the only way to show that comparing whole texts renames
- * `FRANKENSTEIN` into `MISLAYERED` is to run both comparisons over one
- * fixture.
+ * edits a RAW observation of the frozen half and names the grid cell it must
+ * move; a case here carries its own fixture and names no cell, because two of
+ * them are not about an observation at all: they are about the COMPARISON, and
+ * the only way to show that comparing whole texts renames `FRANKENSTEIN` into
+ * `MISLAYERED` is to run both comparisons over one fixture.
  *
  * So each case carries a fixture and TWO readings of it: the `baseline`, which
  * differs from the planted one in exactly one observation, and the planted
@@ -210,14 +209,22 @@ final class Cases
                     '@omitted',
                 ]],
                 [],
-                // Three cells of this row are decided after the sensitivity
-                // check; the other five are refusals, and a refusal is judged
-                // before it. It was one until `coupling.distance` gained a
-                // reachability witness — `int` and `float` had been held at
-                // NOT OBSERVABLE by the missing witness, which is the later
-                // test, so the sensitivity planting could not move them.
+                // Two cells of this row are decided after the sensitivity
+                // check. Of the other six, three are refusals and three are
+                // covered by the CLI door's own limit; both are settled before
+                // the sensitivity question, so neither can witness it. It was
+                // one until `coupling.distance` gained a reachability witness —
+                // `int` and `float` had been held at NOT OBSERVABLE by the
+                // missing witness, which is the later test, so the sensitivity
+                // planting could not move them.
+                //
+                // `bool` was the third until `b9fd87d3` (the declared shape of
+                // a rule option value): a rule-opt door now REFUSES a boolean
+                // where it used to coerce it, and the baseline this case is
+                // measured against is the product that already carries that
+                // cure. The cell is not lost — it is judged before the rule
+                // this case is about, so it cannot witness it.
                 [
-                    'form|rule-opt|rules.coupling.distance.max-distance-error|bool' => 'NOT OBSERVABLE|no',
                     'form|rule-opt|rules.coupling.distance.max-distance-error|float' => 'NOT OBSERVABLE|no',
                     'form|rule-opt|rules.coupling.distance.max-distance-error|int' => 'NOT OBSERVABLE|no',
                 ],
@@ -242,27 +249,45 @@ final class Cases
                 'P1',
                 'COEXISTENCE_OK',
                 'the product starts refusing, framed, where the ledger promised a refusal',
+                // It used to plant into `architecture.layer-violation`'s
+                // superseded-key pair. That pair answered `refused-unframed`
+                // on the pre-cure product, so planting the framing moved it;
+                // on the baseline this case is now measured against it already
+                // answers `refused-framed` — `b9fd87d3` rewrote that very
+                // refusal along with the rest of `LayerViolationOptions` — and
+                // a planting that writes what is already there proves nothing.
+                // The pair below is promised a refusal
+                // by the ledger and composes anyway, so the planting still has
+                // somewhere to move the cell FROM.
                 [[
-                    'pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused',
+                    'pair|complexity.ccn|callable.threshold|threshold|same-source|2-same-name-top-vs-level',
                     'both',
                     'outcome',
                     'refused-framed',
                 ]],
                 [],
-                ['pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused' => 'COEXISTENCE_OK|no'],
+                ['pair|complexity.ccn|callable.threshold|threshold|same-source|2-same-name-top-vs-level' => 'COEXISTENCE_OK|no'],
             ),
             new ControlCase(
                 'P2',
                 'MISCOMPOSED',
                 'two keys that composed stop composing: writing both loses what each did alone',
+                // The pair has to be one where each key alone MOVES the
+                // object: `both := omitted` can only lose an effect that was
+                // there. The old subject was a `6-gate` pair of
+                // `architecture.circular-dependency`, whose four sides are
+                // identical on this baseline — neither key moves the object,
+                // so the planting wrote what was already there. Both keys of
+                // the pair below move it, so the planting loses two effects
+                // and the verdict names them.
                 [[
-                    'pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate',
+                    'pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter',
                     'both',
                     'text',
                     '@omitted',
                 ]],
                 [],
-                ['pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate' => 'MISCOMPOSED|yes'],
+                ['pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter' => 'MISCOMPOSED|yes'],
             ),
             new ControlCase(
                 'X1',
@@ -524,7 +549,7 @@ final class Cases
             new ProbeCase(
                 'F1',
                 'floor, frozen half',
-                'a classifier that stops calling a floor row defective on the PRE-CURE half reddens, and names that row',
+                'on REAL observations a classifier that puts a cured floor row back among the defects reddens, and names that row',
             ),
             new ProbeCase(
                 'F2',
