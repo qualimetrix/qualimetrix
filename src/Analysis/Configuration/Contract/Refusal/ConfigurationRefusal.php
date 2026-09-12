@@ -24,6 +24,16 @@ use Throwable;
  * {@see ConfigurationSource} for no reason but to assemble a constant — three
  * type dependencies where one would do. The three general forms stay public
  * for the sites that compute their source or forward an origin they were given.
+ *
+ * @qmx-threshold coupling.class-rank warning=0.024 error=0.024 -- ClassRank
+ * measures how much of the graph flows into a type, and for the one carried
+ * kind of exit code 3 that number is a count of places the product refuses
+ * BAD INPUT rather than accepting it. It rose in X19 for that exact reason:
+ * two CLI doors stopped folding an empty value into a default and started
+ * refusing it. Splitting the kind to lower the rank would buy a number with a
+ * second way to spell a refusal, which is what the single-kind design exists
+ * to prevent. The headroom is deliberate and finite -- it covers the doors
+ * this programme still has to teach, and the round that spends it says so.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

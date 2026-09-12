@@ -360,8 +360,8 @@ final class LayersValidatorTest extends TestCase
     {
         // YAML scalar shorthand: `patterns: 'App\Foo'` is equivalent to
         // `patterns: ['App\Foo']`. The shorthand is consistent across all
-        // five criterion kinds (suffix / attributes / implements / extends
-        // documented examples in the Phase 2 design use the shorthand).
+        // five criterion kinds (suffix / attributes / implements / extends),
+        // see website/docs/rules/architecture.md "Single-value shorthand".
         $entries = $this->validator->validate([
             ['name' => 'controller', 'patterns' => 'App\\Controller'],
         ]);
@@ -925,6 +925,31 @@ final class LayersValidatorTest extends TestCase
         self::assertNotNull($layer->membership()->exclude);
         self::assertSame(['App\\Service\\Legacy\\**'], $layer->membership()->exclude->patterns);
         self::assertSame(['Bridge'], $layer->membership()->exclude->suffix);
+    }
+
+    #[Test]
+    public function itAcceptsAQuotedDigitStringShorthandForExcludeCriterionLists(): void
+    {
+        // A quoted all-digit string (YAML "string-number") is still a string:
+        // the singleton-shorthand coercion in LayerCriterionNormalizer reads
+        // is_string(), not the digit content, so it qualifies exactly like
+        // any other bare value (see also the non-numeric case above).
+        $entries = $this->validator->validate([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => '7331',
+                    'suffix' => '7331',
+                ],
+            ],
+        ]);
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['7331'], $layer->membership()->exclude->patterns);
+        self::assertSame(['7331'], $layer->membership()->exclude->suffix);
     }
 
     #[Test]

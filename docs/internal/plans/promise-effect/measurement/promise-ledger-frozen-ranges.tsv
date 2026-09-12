@@ -1,5 +1,5 @@
 # ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L; перевывод L2).
-# Дерево b8cc257903420801dc1cc80db464016f7b7f53b7. Дата: 2026-09-12.
+# Дерево b17a0db74201d25fb34cbefd543691e0c1d2cfd4. Дата: 2026-09-12.
 #
 # ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
 # проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
@@ -133,20 +133,23 @@ website/docs/rules/architecture.md	104	104	8749a7f03604c241	P6 (website)	maxCycl
 website/docs/rules/architecture.md	105	105	ef9d4ed8578569d4	P6 (website)	directAsError: true    # direct cycles are errors
 website/docs/rules/architecture.md	249	249	f4daef6be46ff5a8	P6 (website)	- name: controller
 website/docs/rules/architecture.md	250	250	4aa80518ce359c76	P6 (website)	patterns: ['App\Controller\**']
-website/docs/rules/architecture.md	340	340	3995e74357bd3a19	P6 (website)	suffix: ['Repository']
-website/docs/rules/architecture.md	341	341	2099c9b01ad7bf1a	P6 (website)	implements: ['Doctrine\Persistence\ObjectRepository']
-website/docs/rules/architecture.md	349	349	12924d8cf0ef8f3b	P6 (website)	match: all
-website/docs/rules/architecture.md	350	350	89097cc012493fef	P6 (website)	attributes: ['App\Messenger\AsCommandHandler']
-website/docs/rules/architecture.md	360	360	67d48b66da2041ed	P6 (website)	extends: ['App\Domain\AggregateRoot']
-website/docs/rules/architecture.md	418	418	04d4ce5466e2d88c	P6 (website)	- target: 'domain-*'
-website/docs/rules/architecture.md	419	419	4edc07535dd16755	P6 (website)	allow_cross_instance: true   # acknowledge — any domain-* may depend o
-website/docs/rules/architecture.md	486	486	f8e797675a694185	P6 (website)	exclude:
-website/docs/rules/architecture.md	551	551	1f0bd21ec42354f9	P6 (website)	pending: true
-website/docs/rules/architecture.md	566	566	192e79edd58f2cb7	P6 (website)	relations: [implements, extends]    # inheritance only — no method cal
-website/docs/rules/architecture.md	658	658	e10d5c9ed42d1bd2	P6 (website)	mode: warn   # ignore (default) | warn | error
-website/docs/rules/architecture.md	811	811	8f8e0b1e2de94ab6	P6 (website)	```yaml
-website/docs/rules/architecture.md	814	814	044ba26648fd7f1e	P6 (website)	enabled: true
-website/docs/rules/architecture.md	815	815	1a8eb43021eed760	P6 (website)	severity: error
+website/docs/rules/architecture.md	324	324	ced9f3b1f5d474d0	P6 (website)	Phase 1 decided layer membership purely from class FQN matched against
+website/docs/rules/architecture.md	336	336	3f3873dcfd7d416c	P6 (website)	**Single-value shorthand.** Any of the five criteria accepts a bare va
+website/docs/rules/architecture.md	342	342	3995e74357bd3a19	P6 (website)	suffix: ['Repository']
+website/docs/rules/architecture.md	343	343	2099c9b01ad7bf1a	P6 (website)	implements: ['Doctrine\Persistence\ObjectRepository']
+website/docs/rules/architecture.md	351	351	12924d8cf0ef8f3b	P6 (website)	match: all
+website/docs/rules/architecture.md	352	352	89097cc012493fef	P6 (website)	attributes: ['App\Messenger\AsCommandHandler']
+website/docs/rules/architecture.md	362	362	67d48b66da2041ed	P6 (website)	extends: ['App\Domain\AggregateRoot']
+website/docs/rules/architecture.md	420	420	04d4ce5466e2d88c	P6 (website)	- target: 'domain-*'
+website/docs/rules/architecture.md	421	421	4edc07535dd16755	P6 (website)	allow_cross_instance: true   # acknowledge — any domain-* may depend o
+website/docs/rules/architecture.md	488	488	f8e797675a694185	P6 (website)	exclude:
+website/docs/rules/architecture.md	489	489	d43d159c5f3aeb2d	P6 (website)	patterns: ['App\Service\Legacy\**']
+website/docs/rules/architecture.md	553	553	1f0bd21ec42354f9	P6 (website)	pending: true
+website/docs/rules/architecture.md	568	568	192e79edd58f2cb7	P6 (website)	relations: [implements, extends]    # inheritance only — no method cal
+website/docs/rules/architecture.md	660	660	e10d5c9ed42d1bd2	P6 (website)	mode: warn   # ignore (default) | warn | error
+website/docs/rules/architecture.md	813	813	8f8e0b1e2de94ab6	P6 (website)	```yaml
+website/docs/rules/architecture.md	816	816	044ba26648fd7f1e	P6 (website)	enabled: true
+website/docs/rules/architecture.md	817	817	1a8eb43021eed760	P6 (website)	severity: error
 website/docs/rules/code-smell.md	74	74	d2730183858c5d4e	P6 (website)	allowed_prefixes: [is, has, can, should, will, did, was]  # defaults
 website/docs/rules/code-smell.md	75	75	7ef968312f193ea5	P6 (website)	flag_promoted_properties: false                          # default
 website/docs/rules/code-smell.md	83	83	376a31aab2953668	P6 (website)	bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_pre

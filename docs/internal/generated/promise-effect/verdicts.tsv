@@ -5962,8 +5962,8 @@ D	form|yaml|architecture.layers[*].exclude.match|float	float	report	REFUSES	no	D
 D	form|yaml|architecture.layers[*].exclude.match|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.match|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.match|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].exclude.match|null	null	report	OK	no	DECIDED	`~` behaved as an omitted key
-D	form|yaml|architecture.layers[*].exclude.match|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude.match|null	null	report	NOT OBSERVABLE	no	DECIDED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude.match|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.match|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|float	float	report	REFUSES	no	PROMISED	refused
@@ -5971,16 +5971,16 @@ D	form|yaml|architecture.layers[*].exclude.patterns|int	int	report	REFUSES	no	PR
 D	form|yaml|architecture.layers[*].exclude.patterns|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.patterns|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
-D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
-D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
+D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	OK	no	PROMISED	effect distinguishable and the producer reachable
 D	form|yaml|architecture.layers[*].exclude.suffix|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.suffix|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
-D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
-D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
+D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	OK	no	PROMISED	effect distinguishable and the producer reachable
 D	form|yaml|architecture.layers[*].exclude|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|int	int	report	REFUSES	no	PROMISED	refused
@@ -6011,7 +6011,7 @@ D	form|yaml|architecture.layers[*].match|int	int	report	REFUSES	no	DECIDED	refus
 D	form|yaml|architecture.layers[*].match|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].match|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|architecture.layers[*].match|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].match|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].name|bool	bool	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].name|float	float	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
@@ -6027,8 +6027,8 @@ D	form|yaml|architecture.layers[*].patterns|int	int	report	REFUSES	no	PROMISED	r
 D	form|yaml|architecture.layers[*].patterns|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].patterns|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].patterns|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].patterns|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].patterns|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.layers[*].patterns|string-nonnumber	string-nonnumber	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].patterns|string-number	string-number	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].pending|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
 D	form|yaml|architecture.layers[*].pending|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].pending|int	int	report	REFUSES	no	PROMISED	refused
@@ -6043,8 +6043,8 @@ D	form|yaml|architecture.layers[*].suffix|int	int	report	REFUSES	no	PROMISED	ref
 D	form|yaml|architecture.layers[*].suffix|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].suffix|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].suffix|null	null	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].suffix|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].suffix|string-number	string-number	report	REFUSES	no	PROMISED	refused
+D	form|yaml|architecture.layers[*].suffix|string-nonnumber	string-nonnumber	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].suffix|string-number	string-number	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers|int	int	report	REFUSES	no	PROMISED	refused

@@ -4919,6 +4919,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAListOfFqnsForAFullyQualifiedCriterion"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAListOfFqnsForAFullyQualifiedCriterion"implements"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAListOfShortClassNamesForTheSuffixCriterion
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAQuotedDigitStringShorthandForExcludeCriterionLists
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAScalarPatternsValueAsSingletonShorthand
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsAShortClassNameForTheSuffixCriterion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsStringShorthandForExcludeCriterionLists
