@@ -1,0 +1,21 @@
+# The stand's own run parameters, in ONE declared place (X19 S11).
+#
+# Before this, `--freeze-before` hardcoded the "before" commit as a string
+# literal, and the axis list `A,B,D` was written TWICE inside
+# scripts/promise-effect.php — once as the default for `--axis=`, once more
+# as the fixed iteration order of the summary loops. A round that changed one
+# without the other would silently stop measuring an axis. Both now come from
+# this file, read once at startup.
+#
+# `before-commit` is not just compared against HEAD: a value that is not a
+# real commit in this repository refuses the run before anything else runs,
+# so a typo here cannot silently defeat the very check it exists to make (the
+# X18 lesson of a guard whose constants named paths that did not exist, and
+# so could never redden).
+#
+# `axes` lists every axis the grid spans, in the fixed order the summary is
+# printed in. `--axis=` narrows a run against this same list; it never
+# replaces it.
+key	value
+before-commit	02a6ca66
+axes	A,B,D

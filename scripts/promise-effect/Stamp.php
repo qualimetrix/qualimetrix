@@ -45,7 +45,13 @@ final class Stamp
         // or withdrawn changes what the grid says, so a grid measured before
         // the change is stale.
         'promise-effect/observability-limits.tsv',
+        // Declares the axis list (02-stand.md S11): an undeclared change here
+        // moves what an unqualified run measures without touching any file
+        // this list already named, which is exactly the drift this stamp
+        // exists to catch.
+        'promise-effect/run-declaration.tsv',
         'scripts/promise-effect.php',
+        'scripts/promise-effect/RunDeclaration.php',
         // Only the files that PRODUCE the grid. `Population`, `FifthSet` and
         // `Stamp` itself are read by the cheap check and cannot move a
         // verdict; hashing the whole directory would oblige a 200 s

@@ -5280,24 +5280,24 @@ A	form|yaml|rules.suppression.configuration.suppress-paths|null	null	optionsObje
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
 B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
-B	pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|architecture.circular-dependency|direct-as-error|max-cycle-size|same-source|6-gate-vs-severity	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|architecture.circular-dependency|direct-as-error|max-cycle-size|same-source|6-gate-vs-severity	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|architecture.circular-dependency|enabled|max-cycle-size|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|architecture.layer-violation|enabled|severity|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
 B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
-B	pair|code-smell.boolean-argument|allowed-prefixes|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
-B	pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|code-smell.boolean-argument|enabled|flag-promoted-properties|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
+B	pair|code-smell.boolean-argument|allowed-prefixes|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
+B	pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|code-smell.boolean-argument|enabled|flag-promoted-properties|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|code-smell.constructor-overinjection|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|code-smell.constructor-overinjection|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|code-smell.constructor-overinjection|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|code-smell.constructor-overinjection|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|code-smell.constructor-overinjection|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|code-smell.constructor-overinjection|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
-B	pair|code-smell.error-suppression|allowed-functions|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed
+B	pair|code-smell.error-suppression|allowed-functions|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|code-smell.long-parameter-list|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|code-smell.long-parameter-list|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|code-smell.long-parameter-list|enabled|vo-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5326,20 +5326,20 @@ B	pair|code-smell.unreachable-code|error|threshold|same-source|1-threshold-group
 B	pair|code-smell.unreachable-code|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|code-smell.unreachable-code|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|cohesion.lcom|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|cohesion.lcom|enabled|exclude-methods|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|cohesion.lcom|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|cohesion.lcom|enabled|exclude-methods|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|cohesion.lcom|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|enabled|min-methods|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|cohesion.lcom|error|exclude-methods|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|cohesion.lcom|error|exclude-readonly|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|cohesion.lcom|error|exclude-methods|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|cohesion.lcom|error|exclude-readonly|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|error|min-methods|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|cohesion.lcom|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|cohesion.lcom|exclude-methods|threshold|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|cohesion.lcom|exclude-methods|warning|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|cohesion.lcom|exclude-readonly|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|cohesion.lcom|exclude-readonly|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|cohesion.lcom|exclude-methods|threshold|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|cohesion.lcom|exclude-methods|warning|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|cohesion.lcom|exclude-readonly|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|cohesion.lcom|exclude-readonly|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|min-methods|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|min-methods|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|cohesion.lcom|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
@@ -5352,7 +5352,7 @@ B	pair|complexity.ccn|callable.error|callable.warning|same-source|1-threshold-gr
 B	pair|complexity.ccn|callable.error|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.ccn|callable.error|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.ccn|callable.error|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.ccn|callable.error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.ccn|callable.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.ccn|callable.threshold|callable.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.ccn|callable.threshold|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.ccn|callable.threshold|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5362,7 +5362,7 @@ B	pair|complexity.ccn|callable.threshold|threshold|same-source|4-cross-level	bot
 B	pair|complexity.ccn|callable.warning|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.ccn|callable.warning|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.ccn|callable.warning|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.ccn|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.ccn|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.ccn|callable:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|complexity.ccn|callable|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.ccn|class.enabled|class.max-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5378,7 +5378,7 @@ B	pair|complexity.ccn|class.threshold|threshold|same-source|2-same-name-top-vs-l
 B	pair|complexity.ccn|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.ccn|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|complexity.ccn|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|complexity.ccn|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.enabled|callable.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.enabled|callable.threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.enabled|callable.warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5388,7 +5388,7 @@ B	pair|complexity.cognitive|callable.error|callable.warning|same-source|1-thresh
 B	pair|complexity.cognitive|callable.error|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.error|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.cognitive|callable.error|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.cognitive|callable.error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.cognitive|callable.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.threshold|callable.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.cognitive|callable.threshold|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.threshold|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5398,7 +5398,7 @@ B	pair|complexity.cognitive|callable.threshold|threshold|same-source|4-cross-lev
 B	pair|complexity.cognitive|callable.warning|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable.warning|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|complexity.cognitive|callable.warning|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.cognitive|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.cognitive|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.cognitive|callable:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|complexity.cognitive|callable|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.cognitive|class.enabled|class.max-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5414,7 +5414,7 @@ B	pair|complexity.cognitive|class.threshold|threshold|same-source|2-same-name-to
 B	pair|complexity.cognitive|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.cognitive|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.cognitive|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|complexity.cognitive|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|complexity.cognitive|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.enabled|callable.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.enabled|callable.threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.enabled|callable.warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5424,7 +5424,7 @@ B	pair|complexity.npath|callable.error|callable.warning|same-source|1-threshold-
 B	pair|complexity.npath|callable.error|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.error|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.error|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.npath|callable.error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.npath|callable.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.threshold|callable.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.npath|callable.threshold|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.threshold|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5434,7 +5434,7 @@ B	pair|complexity.npath|callable.threshold|threshold|same-source|4-cross-level	b
 B	pair|complexity.npath|callable.warning|class.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.warning|class.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable.warning|class.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.npath|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|complexity.npath|callable.warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.npath|callable:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|complexity.npath|callable|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.npath|class.enabled|class.max-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5450,36 +5450,36 @@ B	pair|complexity.npath|class.threshold|threshold|same-source|2-same-name-top-vs
 B	pair|complexity.npath|class.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|complexity.npath|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|complexity.npath|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|complexity.npath|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|complexity.npath|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.wmc|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.wmc|enabled|exclude-data-classes|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.wmc|enabled|exclude-data-classes|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.wmc|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.wmc|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|complexity.wmc|error|exclude-data-classes|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.wmc|error|exclude-data-classes|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.wmc|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|complexity.wmc|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|complexity.wmc|exclude-data-classes|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|complexity.wmc|exclude-data-classes|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|complexity.wmc|exclude-data-classes|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|complexity.wmc|exclude-data-classes|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|complexity.wmc|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.cbo|class.enabled|class.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.cbo|class.enabled|class.scope|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|coupling.cbo|class.enabled|class.scope|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.enabled|class.threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.enabled|class.warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.enabled|enabled|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.cbo|class.error|class.scope|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|coupling.cbo|class.error|class.scope|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.error|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.cbo|class.error|class.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|coupling.cbo|class.error|error|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|class.error|error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.cbo|class.error|error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.error|error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.error|namespace.error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.error|namespace.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.error|namespace.warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.cbo|class.error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.cbo|class.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.error|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|class.scope|class.threshold|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|class.scope|class.warning|same-source|6-measurement-input	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|class.scope|scope|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|class.scope|scope|same-source|6-precedence-fill-in	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|coupling.cbo|class.scope|class.threshold|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.scope|class.warning|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.scope|scope|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.scope|scope|same-source|6-precedence-fill-in	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.threshold|class.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.cbo|class.threshold|error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|coupling.cbo|class.threshold|namespace.error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5492,21 +5492,21 @@ B	pair|coupling.cbo|class.warning|error|same-source|4-cross-level	both	optionsOb
 B	pair|coupling.cbo|class.warning|namespace.error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.warning|namespace.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class.warning|namespace.warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.cbo|class.warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|class.warning|warning|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|class.warning|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.cbo|class.warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.warning|warning|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|class.warning|warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|class:|error|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.cbo|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|coupling.cbo|class:|warning|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.cbo|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|enabled|error|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.cbo|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|enabled|namespace.enabled|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|enabled|namespace|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|enabled|scope|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.cbo|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.cbo|enabled|warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.cbo|error|namespace.error|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.cbo|error|namespace.error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.cbo|enabled|scope|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|error|namespace.error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|error|namespace.error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|error|namespace.threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|coupling.cbo|error|namespace.warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|coupling.cbo|error|namespace:|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
@@ -5519,7 +5519,7 @@ B	pair|coupling.cbo|namespace.enabled|namespace.warning|same-source|6-gate	both	
 B	pair|coupling.cbo|namespace.error|namespace.min-class-count|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|namespace.error|namespace.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.cbo|namespace.error|namespace.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.cbo|namespace.error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.cbo|namespace.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|namespace.error|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|coupling.cbo|namespace.min-class-count|namespace.threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|namespace.min-class-count|namespace.warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5527,9 +5527,9 @@ B	pair|coupling.cbo|namespace.threshold|namespace.warning|same-source|1-threshol
 B	pair|coupling.cbo|namespace.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted
 B	pair|coupling.cbo|namespace.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted
 B	pair|coupling.cbo|namespace.threshold|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|namespace.warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|namespace.warning|warning|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.cbo|namespace.warning|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.cbo|namespace.warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|namespace.warning|warning|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.cbo|namespace.warning|warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.cbo|namespace:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|coupling.cbo|namespace:|warning|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.cbo|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
@@ -5539,14 +5539,14 @@ B	pair|coupling.class-rank|enabled|warning|same-source|6-gate	both	optionsObject
 B	pair|coupling.class-rank|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.class-rank|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|coupling.class-rank|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
-B	pair|coupling.distance|enabled|include-namespaces|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|coupling.distance|enabled|include-namespaces|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|enabled|max-distance-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|enabled|max-distance-warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|enabled|min-class-count|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.distance|include-namespaces|max-distance-error|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.distance|include-namespaces|max-distance-warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.distance|include-namespaces|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|coupling.distance|include-namespaces|max-distance-error|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.distance|include-namespaces|max-distance-warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.distance|include-namespaces|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|max-distance-error|max-distance-warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|coupling.distance|max-distance-error|min-class-count|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.distance|max-distance-error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
@@ -5561,22 +5561,22 @@ B	pair|coupling.instability|class.enabled|enabled|same-source|2-same-name-top-vs
 B	pair|coupling.instability|class.max-error|class.max-warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|coupling.instability|class.max-error|class.min-afferent|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-error|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
-B	pair|coupling.instability|class.max-error|max-error|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.instability|class.max-error|max-error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|class.max-error|max-error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.instability|class.max-error|max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-error|max-warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|coupling.instability|class.max-error|namespace.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-error|namespace.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-error|namespace.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.instability|class.max-error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|class.max-error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-warning|class.min-afferent|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-warning|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.instability|class.max-warning|max-error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.instability|class.max-warning|max-warning|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
-B	pair|coupling.instability|class.max-warning|max-warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|class.max-warning|max-warning|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.instability|class.max-warning|max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-warning|namespace.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-warning|namespace.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.max-warning|namespace.threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|coupling.instability|class.max-warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|class.max-warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.min-afferent|class.threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|class.threshold|max-error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
 B	pair|coupling.instability|class.threshold|max-warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
@@ -5589,21 +5589,21 @@ B	pair|coupling.instability|class:|max-error|same-source|3-shorthand-vs-level-bl
 B	pair|coupling.instability|class:|max-warning|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.instability|class:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
 B	pair|coupling.instability|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.instability|enabled|max-error|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.instability|enabled|max-warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.instability|enabled|max-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.instability|enabled|max-warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|enabled|namespace.enabled|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|enabled|namespace|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|coupling.instability|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.instability|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|max-error|max-warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|coupling.instability|max-error|namespace.max-error|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.instability|max-error|namespace.max-error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.instability|max-error|namespace.max-error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.instability|max-error|namespace.max-error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|max-error|namespace.max-warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|coupling.instability|max-error|namespace.threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|coupling.instability|max-error|namespace:|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.instability|max-error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|coupling.instability|max-warning|namespace.max-error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.instability|max-warning|namespace.max-warning|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
-B	pair|coupling.instability|max-warning|namespace.max-warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
+B	pair|coupling.instability|max-warning|namespace.max-warning|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|coupling.instability|max-warning|namespace.max-warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|max-warning|namespace.threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written
 B	pair|coupling.instability|max-warning|namespace:|same-source|3-shorthand-vs-level-block	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
 B	pair|coupling.instability|max-warning|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
@@ -5616,28 +5616,28 @@ B	pair|coupling.instability|namespace.max-error|namespace.max-warning|same-sourc
 B	pair|coupling.instability|namespace.max-error|namespace.min-afferent|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.max-error|namespace.min-class-count|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.max-error|namespace.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
-B	pair|coupling.instability|namespace.max-error|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|namespace.max-error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.max-warning|namespace.min-afferent|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.max-warning|namespace.min-class-count|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.max-warning|namespace.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
-B	pair|coupling.instability|namespace.max-warning|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written
+B	pair|coupling.instability|namespace.max-warning|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.min-afferent|namespace.threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.min-class-count|namespace.threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|coupling.instability|namespace.threshold|threshold|same-source|2-same-name-top-vs-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted
 B	pair|coupling.instability|namespace.threshold|threshold|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted
 B	pair|coupling.instability|namespace:|threshold|same-source|3-shorthand-vs-level-block	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised
-B	pair|design.data-class|enabled|exclude-exceptions|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|enabled|exclude-promoted-only|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|design.data-class|enabled|exclude-exceptions|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|enabled|exclude-promoted-only|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.data-class|enabled|min-members|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.data-class|enabled|wmc-threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.data-class|enabled|woc-threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|design.data-class|exclude-exceptions|wmc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|exclude-exceptions|woc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|exclude-promoted-only|wmc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|exclude-promoted-only|woc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|exclude-readonly|wmc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.data-class|exclude-readonly|woc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|design.data-class|exclude-exceptions|wmc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|exclude-exceptions|woc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|exclude-promoted-only|wmc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|exclude-promoted-only|woc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|exclude-readonly|wmc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.data-class|exclude-readonly|woc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.data-class|min-members|wmc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.data-class|min-members|woc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.dit|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5647,18 +5647,18 @@ B	pair|design.dit|error|threshold|same-source|1-threshold-group-declared	both	op
 B	pair|design.dit|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|design.dit|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|design.god-class|class-loc-threshold|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|design.god-class|class-loc-threshold|exclude-readonly|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|design.god-class|class-loc-threshold|exclude-readonly|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|class-loc-threshold|min-criteria|same-source|6-criteria-count	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|class-loc-threshold|min-methods|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|design.god-class|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|design.god-class|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|enabled|lcom-threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|enabled|min-criteria|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|enabled|min-methods|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|enabled|tcc-threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|enabled|wmc-threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|design.god-class|exclude-readonly|lcom-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.god-class|exclude-readonly|tcc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|design.god-class|exclude-readonly|wmc-threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|design.god-class|exclude-readonly|lcom-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.god-class|exclude-readonly|tcc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|design.god-class|exclude-readonly|wmc-threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|lcom-threshold|min-criteria|same-source|6-criteria-count	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|lcom-threshold|min-methods|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|design.god-class|min-criteria|tcc-threshold|same-source|6-criteria-count	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
@@ -5705,16 +5705,16 @@ B	pair|duplication.clone|min-tokens|threshold|same-source|6-subject-filter	both	
 B	pair|duplication.clone|min-tokens|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|duplication.clone|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|maintainability.mi|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|maintainability.mi|enabled|exclude-tests|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|maintainability.mi|enabled|exclude-tests|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|enabled|min-statements|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|maintainability.mi|error|exclude-tests|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|maintainability.mi|error|exclude-tests|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|error|min-statements|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|maintainability.mi|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|maintainability.mi|exclude-tests|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|maintainability.mi|exclude-tests|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|maintainability.mi|exclude-tests|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|maintainability.mi|exclude-tests|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|min-statements|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|min-statements|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|maintainability.mi|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
@@ -5731,18 +5731,18 @@ B	pair|size.method-count|error|threshold|same-source|1-threshold-group-declared	
 B	pair|size.method-count|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
 B	pair|size.method-count|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|size.property-count|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|size.property-count|enabled|exclude-promoted-only|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|size.property-count|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|size.property-count|enabled|exclude-promoted-only|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|size.property-count|enabled|exclude-readonly|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|enabled|warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
-B	pair|size.property-count|error|exclude-promoted-only|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|size.property-count|error|exclude-readonly|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|size.property-count|error|exclude-promoted-only|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|size.property-count|error|exclude-readonly|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 B	pair|size.property-count|error|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present
-B	pair|size.property-count|exclude-promoted-only|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|size.property-count|exclude-promoted-only|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|size.property-count|exclude-readonly|threshold|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
-B	pair|size.property-count|exclude-readonly|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed
+B	pair|size.property-count|exclude-promoted-only|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|size.property-count|exclude-promoted-only|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|size.property-count|exclude-readonly|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
+B	pair|size.property-count|exclude-readonly|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
 D	form|cli-root|cache.dir|bool	bool	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|float	float	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
@@ -5917,7 +5917,7 @@ D	form|yaml|architecture.layers[*].exclude.attributes|float	float	report	REFUSES
 D	form|yaml|architecture.layers[*].exclude.attributes|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.attributes|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.attributes|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude.attributes|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|architecture.layers[*].exclude.attributes|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5925,7 +5925,7 @@ D	form|yaml|architecture.layers[*].exclude.extends|float	float	report	REFUSES	no
 D	form|yaml|architecture.layers[*].exclude.extends|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.extends|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.extends|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude.extends|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|architecture.layers[*].exclude.extends|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5933,7 +5933,7 @@ D	form|yaml|architecture.layers[*].exclude.implements|float	float	report	REFUSES
 D	form|yaml|architecture.layers[*].exclude.implements|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.implements|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.implements|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude.implements|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|architecture.layers[*].exclude.implements|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.match|bool	bool	report	REFUSES	no	DECIDED	refused
@@ -5941,7 +5941,7 @@ D	form|yaml|architecture.layers[*].exclude.match|float	float	report	REFUSES	no	D
 D	form|yaml|architecture.layers[*].exclude.match|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.match|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.match|map	map	report	REFUSES	no	DECIDED	refused
-D	form|yaml|architecture.layers[*].exclude.match|null	null	report	REFUSES	yes	DECIDED	refused a form it promised
+D	form|yaml|architecture.layers[*].exclude.match|null	null	report	OK	no	DECIDED	`~` behaved as an omitted key
 D	form|yaml|architecture.layers[*].exclude.match|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.match|string-number	string-number	report	REFUSES	no	DECIDED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|bool	bool	report	REFUSES	no	PROMISED	refused
@@ -5949,17 +5949,17 @@ D	form|yaml|architecture.layers[*].exclude.patterns|float	float	report	REFUSES	n
 D	form|yaml|architecture.layers[*].exclude.patterns|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.patterns|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
+D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
 D	form|yaml|architecture.layers[*].exclude.suffix|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|list	list	report	REFUSES	yes	PROMISED	refused a form it promised
 D	form|yaml|architecture.layers[*].exclude.suffix|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	REFUSES	yes	PROMISED	refused a form it promised
-D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
-D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
+D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
+D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed
 D	form|yaml|architecture.layers[*].exclude|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|int	int	report	REFUSES	no	PROMISED	refused

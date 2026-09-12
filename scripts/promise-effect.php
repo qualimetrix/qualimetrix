@@ -48,6 +48,7 @@ require __DIR__ . '/promise-effect/Limits.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
+require __DIR__ . '/promise-effect/RunDeclaration.php';
 
 /**
  * @param list<string> $argv
@@ -316,7 +317,6 @@ $root = \dirname(__DIR__);
 $argv = $_SERVER['argv'] ?? [];
 $arguments = parseArguments($argv);
 $scratch = $arguments['scratch'] ?? sys_get_temp_dir() . '/qmx-promise-effect';
-$axes = explode(',', $arguments['axis'] ?? 'A,B,D');
 
 $snapshotDirectory = $root . '/' . Stand::SNAPSHOT_DIR;
 
@@ -325,6 +325,11 @@ if (!is_dir($snapshotDirectory)) {
 }
 
 try {
+    // The one declared source for the axis order and the "before" commit —
+    // see `RunDeclaration`. `--axis=` narrows this same list; it never
+    // supplies a second one of its own.
+    $runDeclaration = RunDeclaration::load($root);
+    $canonicalAxes = $runDeclaration->axes;
     $ledger = Ledger::load($root);
     $declarations = Declarations::load($root);
     $inProcess = new InProcess($scratch);
@@ -336,6 +341,8 @@ try {
     exit(2);
 }
 
+$axes = isset($arguments['axis']) ? explode(',', $arguments['axis']) : $canonicalAxes;
+
 if (isset($arguments['before'])) {
     // Re-judged, never replayed: the frozen file holds raw observations, and
     // today's classifier is applied to them. Editing the classifier therefore
@@ -343,7 +350,7 @@ if (isset($arguments['before'])) {
     // to keep.
     $frozen = $stand->before(readRaw($snapshotDirectory . '/observations-before/raw.tsv'));
 
-    foreach (['A', 'B', 'D'] as $axis) {
+    foreach ($canonicalAxes as $axis) {
         printf("axis %s (before)\n", $axis);
 
         foreach (summarize($frozen, $axis) as $verdict => $count) {
@@ -515,7 +522,7 @@ if (isset($arguments['check'])) {
 // reconstruction is held to the generators it mirrors. Without the assertion
 // the two could drift apart and the aggregate would keep calling a grid fresh
 // that the expensive run no longer produces.
-if (\count($axes) === 3) {
+if (\count($axes) === \count($canonicalAxes)) {
     $produced = [];
 
     foreach ($cells as $cell) {
@@ -538,13 +545,27 @@ if (\count($axes) === 3) {
 }
 
 if (isset($arguments['freeze-before'])) {
+    $beforeCommit = $runDeclaration->beforeCommit;
+
+    // A declared commit that does not exist in this repository is a run
+    // failure here, not a `HEAD is (something else)` message that reads like
+    // the branch is merely on the wrong commit — see
+    // `RunDeclaration::assertBeforeCommitExists()`.
+    try {
+        $runDeclaration->assertBeforeCommitExists($root);
+    } catch (LedgerError $error) {
+        fwrite(\STDERR, 'promise-effect: ' . $error->getMessage() . "\n");
+
+        exit(3);
+    }
+
     // The snapshot stores RAW observations, never verdicts: one classifier
     // judges both halves of the pair, and a frozen verdict would let a later
     // edit of the classifier split them in silence.
     $head = trim((string) shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 
-    if (!str_starts_with($head, '6a833ab8')) {
-        fwrite(\STDERR, 'promise-effect: the "before" shot must be taken on 6a833ab8, HEAD is ' . $head . "\n");
+    if (!str_starts_with($head, $beforeCommit)) {
+        fwrite(\STDERR, 'promise-effect: the "before" shot must be taken on ' . $beforeCommit . ', HEAD is ' . $head . "\n");
 
         exit(3);
     }
@@ -578,7 +599,7 @@ if (isset($arguments['freeze-before'])) {
 $defects = 0;
 $red = 0;
 
-foreach (['A', 'B', 'D'] as $axis) {
+foreach ($canonicalAxes as $axis) {
     if (!\in_array($axis, $axes, true)) {
         continue;
     }
@@ -623,10 +644,10 @@ printf("  %-22s %d\n", 'product runs', $process->runs());
 printf("  %-22s %d of %d (%.1f%%)\n", 'NOT OBSERVABLE', $total - $observable, $total, $total === 0 ? 0.0 : ($total - $observable) / $total * 100);
 printf("  %-22s %d\n", 'defects (all axes)', $defects);
 
-// A narrowed run cannot judge the floor: it spans all three axes, and a green
-// line printed over a partial grid is the shape of false evidence this round
-// exists to remove.
-$whole = \count($axes) === 3;
+// A narrowed run cannot judge the floor: it must span every declared axis,
+// and a green line printed over a partial grid is the shape of false
+// evidence this round exists to remove.
+$whole = \count($axes) === \count($canonicalAxes);
 // On the LIVE grid the floor is not the floor. Every row this round repaired
 // is no longer a defect, so the pre-cure list applied here turned a successful
 // cure into a red run. What the live grid is held to instead is the round's

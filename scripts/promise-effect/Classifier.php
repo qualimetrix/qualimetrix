@@ -171,7 +171,38 @@ final class Classifier
             );
         }
 
+        // null_means=default-value-present-key is the promise's own name for a
+        // narrower claim than `default`: PRESENCE of the key, `~` included,
+        // still selects the rule's flat form and suppresses a sibling level
+        // block (`callable:`/`class:`/`namespace:`) beside it. This branch
+        // judges only the OTHER half of that promise — the key's OWN VALUE,
+        // which the carrier says still takes the default, through the SAME
+        // comparison `default` uses below. The "presence suppresses the
+        // sibling" half has no probe here — it needs a document that writes a
+        // block BESIDE the key, which is the "form x neighbourhood"
+        // coordinate, a different package's input. A green cell from this
+        // branch says nothing about that half either way.
+        if ($nullMeans === 'default-value-present-key') {
+            return self::defaultingValue($omitted, $value, $collapse, $witnessed);
+        }
+
         // null_means=default: `~` must mean exactly what an omitted key means.
+        return self::defaultingValue($omitted, $value, $collapse, $witnessed);
+    }
+
+    /**
+     * `~` judged as a value that must default: the comparison
+     * `null_means=default` and the value half of
+     * `null_means=default-value-present-key` share, word for word. Extracted
+     * so the two carriers are provably the SAME rule rather than two texts
+     * that happen to agree today.
+     */
+    private static function defaultingValue(
+        Observation $omitted,
+        Observation $value,
+        ?Observation $collapse,
+        bool $witnessed,
+    ): Judgement {
         if ($value->text === $omitted->text) {
             return $witnessed
                 ? new Judgement(Verdict::OK, '`~` behaved as an omitted key')

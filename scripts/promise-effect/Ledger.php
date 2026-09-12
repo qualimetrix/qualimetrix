@@ -94,6 +94,7 @@ final class Ledger
         public readonly array $forms,
         public readonly array $pairs,
         public readonly int $deferredRows,
+        public readonly int $compositionRows,
     ) {}
 
     public static function load(string $root): self
@@ -107,6 +108,7 @@ final class Ledger
         $forms = [];
         $pairs = [];
         $deferred = 0;
+        $composition = 0;
         $seenHeader = false;
 
         foreach ($lines as $line) {
@@ -131,6 +133,20 @@ final class Ledger
 
             if ($kind === 'deferred') {
                 ++$deferred;
+
+                continue;
+            }
+
+            // Stage 01's axis-C promise rows (`docs/internal/plans/source-composition/01-promise.md`):
+            // who wins between two or three writers of one path. Counted so
+            // the reader does not silently drop what it does not judge, and
+            // skipped rather than parsed into `$forms`/`$pairs`: axis C's
+            // probe and its own verdicts are a later package's input, not
+            // this stand's (02-stand.md's explicit boundary). Recognising the
+            // three kinds by name, rather than skipping anything unmatched,
+            // keeps a genuine typo in `kind` a `LedgerError` below.
+            if ($kind === 'composition-path' || $kind === 'composition-triple' || $kind === 'composition-bucket') {
+                ++$composition;
 
                 continue;
             }
@@ -180,7 +196,7 @@ final class Ledger
             throw new LedgerError('unknown row kind "' . $kind . '"');
         }
 
-        return new self($forms, $pairs, $deferred);
+        return new self($forms, $pairs, $deferred, $composition);
     }
 
     /**

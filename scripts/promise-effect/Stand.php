@@ -13,6 +13,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\PromiseEffect;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+
 final readonly class Cell
 {
     public function __construct(
@@ -31,7 +36,12 @@ final class Stand
 {
     public const string SNAPSHOT_DIR = 'docs/internal/generated/promise-effect';
 
-    /** The value every pair probe writes on the A side; the B side gets the next one. */
+    /**
+     * The value a BLOCK-key pair probe writes on the A side; the B side gets
+     * the next one. A leaf key ignores the seed and writes the canonical
+     * value of its own declared shape instead — see
+     * {@see self::canonicalWriteFor()} and S8 of 02-stand.md.
+     */
     private const int PAIR_SEED = 7331;
 
     private const string UNWRITABLE = 'a valueless flag carries no spelling for this form';
@@ -830,11 +840,107 @@ final class Stand
             return $children;
         }
 
-        if (str_ends_with(strtolower($key), 'enabled')) {
-            return false;
+        return $this->canonicalWriteFor($rule, $key);
+    }
+
+    /**
+     * The value written for one pair member, taken from the shape declared
+     * for it rather than from the spelling of its own name.
+     *
+     * The key set that answers is found through exactly the same two-depth
+     * walk {@see CrossCheck::resolveKey()} already asks of axis A: the rule's
+     * own declaration, or — when the head segment names a level slot — that
+     * slot's own. A key nothing declares is not a guess this stand makes on
+     * its behalf: it is a `LedgerError`, because a silent fallback here would
+     * reproduce the defect S8 removes (an int written under a text/list/bool
+     * key, read as a composition failure that was really a form mismatch).
+     *
+     * A key the class recognises only to answer about ITSELF —
+     * `RuleOptionKeySet::alsoAnsweredByTheClass()`, `knows()` true and
+     * `shapeOf()` null — carries no general form to search: measured against
+     * every `same-source` pair in the ledger, this is exactly two rules.
+     * `UnassignedClassOptions` accepts `enabled: false` as "leave things as
+     * they are" and refuses `enabled: true` outright; `LayerViolationOptions`
+     * refuses its three removed severity keys for ANY value at all. `false`
+     * is therefore the write this stand asks for the whole bucket: it is the
+     * "leave things as they are" spelling the vocabulary itself documents for
+     * this state, not a guess read off the key's spelling — the two real
+     * occurrences (`architecture.unassigned-class.enabled`, and the three
+     * `architecture.layer-violation` removed-severity keys) are accepted and
+     * refused respectively either way, because their answer does not depend
+     * on the value at all.
+     */
+    private function canonicalWriteFor(string $rule, string $key): mixed
+    {
+        $class = $this->inProcess->optionsClasses[$rule] ?? null;
+
+        if ($class === null || !is_a($class, RuleOptionsInterface::class, true)) {
+            throw new LedgerError('pair probe: "' . $rule . '" is not a registered rule with an options class');
         }
 
-        return $seed;
+        $segments = explode('.', $key);
+        $slots = is_a($class, HierarchicalRuleOptionsInterface::class, true) ? $class::levelOptionsClasses() : [];
+        $head = ConfigKeySpelling::normalize($segments[0]);
+
+        if (\count($segments) > 1 && isset($slots[$head])) {
+            $set = $slots[$head]::acceptedOptionKeys();
+            $normalized = ConfigKeySpelling::normalize(implode('.', \array_slice($segments, 1)));
+        } else {
+            $set = $class::acceptedOptionKeys();
+            $normalized = ConfigKeySpelling::normalize($key);
+        }
+
+        if (!$set->knows($normalized)) {
+            throw new LedgerError(
+                'pair probe: "' . $rule . '.' . $key . '" — no declaration recognises the key normalized as "' . $normalized . '"',
+            );
+        }
+
+        $shape = $set->shapeOf($normalized);
+
+        return $shape === null ? false : $this->canonicalWriteForShape($shape);
+    }
+
+    /**
+     * The eight declared forms of {@see Declarations::$forms}, asked of the
+     * shape in the shape's own words — the same question
+     * {@see CrossCheck::accepts()} asks for axis A, with the container
+     * offered filled when the canonical magnitude on its own does not match
+     * (`listOf(nonEmptyText())` refuses `[7331]` while still being a list).
+     */
+    private function canonicalWriteForShape(RuleOptionShape $shape): mixed
+    {
+        foreach ($this->declarations->formNames() as $form) {
+            if ($form === 'null') {
+                continue;
+            }
+
+            $candidate = self::parse($this->declarations->forms[$form]->yamlWrite);
+
+            if ($shape->matches($candidate)) {
+                return $candidate;
+            }
+        }
+
+        foreach ($this->declarations->formNames() as $form) {
+            if ($form === 'null' || $form === 'list' || $form === 'map') {
+                continue;
+            }
+
+            $scalar = self::parse($this->declarations->forms[$form]->yamlWrite);
+
+            if ($shape->matches([$scalar])) {
+                return [$scalar];
+            }
+
+            if ($shape->matches(['a' => $scalar])) {
+                return ['a' => $scalar];
+            }
+        }
+
+        throw new LedgerError(
+            'pair probe: the declared shape "' . $shape->describe() . '" accepts none of the eight forms this stand can write',
+        );
     }
 
     /**
