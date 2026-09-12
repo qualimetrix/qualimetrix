@@ -11,6 +11,7 @@ Finding/
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
 │   └── Threshold/        # threshold override value
+├── Configuration/        # FindingConfigurationResolver — merges `rules:` across ordered configuration layers
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # Option parsing, key recognition, normalization, and per-run state
@@ -95,9 +96,16 @@ one of those, a nested block, a union of several, or a closed set of words
 set is deliberately narrow and its docblock says why: a set whose members exist
 only at run time, and a value constrained by a pattern rather than by
 membership, stay with the readers that own them instead of being spelled as a
-shape. No key declares it yet — `promise-effect`'s pair probe cannot write a
-value outside its eight canonical magnitudes, and every reader that owns a
-static word set is in that enumeration. The form lives *inside* the key set rather than beside it,
+shape. A closed set is declared case-sensitive (`RuleOptionShape::oneOf()`) or
+case-folding (`RuleOptionShape::oneOfIgnoringCase()`), matching whichever way
+the reader behind it compares — `RuleOptionWordSet::of()` and
+`::foldingCase()` carry that choice on the set itself rather than as a policy
+of the shape class, and a declaration on the wrong side of that split either
+refuses a spelling its reader would honour or accepts one its reader then
+drops without a word. Three readers inside `rules:` fold case and declare
+`oneOfIgnoringCase()`: `annotation.directive`'s `unused-directive-severity`,
+`architecture.unassigned-class`'s `mode`, and `architecture.layer-violation`'s
+`severity`. The form lives *inside* the key set rather than beside it,
 so a key cannot be admitted by one declaration and shaped by another; it is
 derived from what the reading code does with the value — the cast's target, the
 guard's predicate — not from what the key is called, which is what the removed
@@ -125,6 +133,24 @@ spelling that works.
 and for the same reason. Every sentence prints the key exactly as the walk
 received it: each door folds separators before the factory exists, so there is
 no authored spelling left to quote and none is guessed at.
+
+A rule's `threshold` shorthand and the graduated `warning`/`error` pair it
+stands for are two spellings of one concept, and each configuration layer
+(preset, config file, CLI) is free to pick either. `RuleOptionThresholdShorthand::unfold()`
+rewrites one layer's `threshold` key, for every group `RuleThresholdKeyGroupRegistry`
+declares at that rule/path, into the graduated pair before that layer is
+merged with any other — called on both sides of a merge by both merge sites,
+`RuleOptionsFactory` (config file ↔ CLI) and `Configuration/FindingConfigurationResolver`
+(config-file layers among themselves), and at every nesting level. Unfolding
+both layers before they meet removes the base/overlay asymmetry a prior design
+(the deleted `RuleOptionThresholdModeResolver`) could not express: that design
+evicted the lower layer's keys of whichever mode the higher layer switched
+away from, which silently dropped a value the lower layer wrote instead of
+merely leaving it unrewritten. `RuleOptionValueWrittenness::isWritten()` is the
+one place both merge sites (and `ThresholdParser`) ask whether a value counts
+as written — `null` (an author's `~`) does not, so an overlay's `~` selects no
+mode and leaves the layer below it alone rather than erasing it. See
+`docs/adr/0058-a-layers-value-survives-the-layers-above-it.md`.
 
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies

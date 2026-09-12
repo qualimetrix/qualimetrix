@@ -8,9 +8,19 @@ before the grid is asked to agree:
 - the four `composition-triple` rows whose claim was `DECIDED` ("the middle
   layer's value must survive in the half the top layer did not rewrite") now have
   a product that keeps it;
-- the cross-layer `~` cell, which belonged to neither axis and was found by
-  reading code, gets a ledger row of its own rather than being cured in silence;
 - the three word-set keys move from a reader's refusal to the seam's.
+
+The cross-layer `~` cell does NOT get a ledger row, and it cannot: no axis
+writes `~` into a composition probe (the probe writes magnitudes into layers,
+never `~`) or into one document at the adjacency coordinate (that coordinate
+writes `~` only inside one document), and ledger coverage is checked in BOTH
+directions — a row nothing produces reddens the span guard exactly as an
+unledgered row would. This round cures the cell (measured before and after) but
+leaves it unwatched: a future change could undo the cure without a cell going
+red. That fact is recorded where a round that measures rather than cures can
+find it — `docs/adr/0058-a-layers-value-survives-the-layers-above-it.md` and
+`measurement/deferred.md` ("The cross-layer `~` cell, cured but unprobed") —
+rather than asserted here as a ledger row this round never produces.
 
 The grid is regenerated once per code package, not once at the end: a commit whose
 `verdicts.tsv` is stale reddens `composer check` through
