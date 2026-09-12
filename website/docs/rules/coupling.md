@@ -584,6 +584,13 @@ bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
 
+`include_namespaces` also takes a single string, which stands for a one-element
+list: `include_namespaces: App\Domain` means exactly
+`include_namespaces: [App\Domain]`. A digit string is a namespace prefix like
+any other. A CLI door carries one scalar and never splits the text after `=`,
+so `--rule-opt="coupling.distance:include_namespaces=App\Domain"` names that
+one namespace; several are written as a list in `qmx.yaml`.
+
 ---
 
 ## ClassRank

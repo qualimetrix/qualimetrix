@@ -174,6 +174,10 @@ computed_metrics:
     formula: "clamp(m['maintainability.mi.avg'], 0, 100)"
 ```
 
+A formula is an expression written as a string, and a constant is an
+expression: `formula: "80"` is a metric that is 80 everywhere. It has to be
+quoted — an unquoted `80` is a number, and a number is not a formula.
+
 ```yaml
 computed_metrics:
   health.maintainability:

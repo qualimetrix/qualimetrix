@@ -144,4 +144,83 @@ final class RuleOptionShapeTest extends TestCase
 
         RuleOptionShape::either(RuleOptionShape::text());
     }
+
+    #[Test]
+    public function itAcceptsOnlyTheWordsAClosedSetNames(): void
+    {
+        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+
+        self::assertTrue($shape->matches('warning'));
+        self::assertFalse($shape->matches('warnin'));
+        self::assertFalse($shape->matches(''));
+        self::assertFalse($shape->matches(7331));
+        self::assertFalse($shape->matches(['warning']));
+    }
+
+    #[Test]
+    public function itMatchesAClosedSetWithoutRegardToLetterCase(): void
+    {
+        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+
+        self::assertTrue($shape->matches('WARNING'));
+        self::assertTrue($shape->matches('Error'));
+    }
+
+    #[Test]
+    public function itNamesEveryWordOfAClosedSetInTheRefusal(): void
+    {
+        self::assertSame(
+            'one of "info", "warning", "error"',
+            RuleOptionShape::oneOf('info', 'warning', 'error')->describe(),
+        );
+        self::assertSame(
+            'one of "all", "application" or null',
+            RuleOptionShape::oneOf('all', 'application')->orNull()->describe(),
+        );
+    }
+
+    #[Test]
+    public function itKeepsTheWordsWhenTheClosedSetIsMadeNullable(): void
+    {
+        $shape = RuleOptionShape::oneOf('all', 'application')->orNull();
+
+        self::assertTrue($shape->matches(null));
+        self::assertTrue($shape->matches('application'));
+        self::assertFalse($shape->matches('applicaton'));
+    }
+
+    #[Test]
+    public function itNamesTheWordThatWasWrittenWhenAClosedSetRefuses(): void
+    {
+        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+
+        self::assertSame('"warnin"', $shape->describeWritten('warnin'));
+        self::assertSame('a whole number', $shape->describeWritten(7331));
+        self::assertSame('an empty string', $shape->describeWritten(''));
+    }
+
+    #[Test]
+    public function itNamesAWrittenValueByItsFormForEveryShapeButAClosedSet(): void
+    {
+        self::assertSame('a string', RuleOptionShape::text()->describeWritten('warnin'));
+        self::assertSame('a list', RuleOptionShape::listOf(RuleOptionShape::text())->describeWritten(['a']));
+    }
+
+    #[Test]
+    public function itRefusesAnEmptyClosedSet(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('at least one word');
+
+        RuleOptionShape::oneOf();
+    }
+
+    #[Test]
+    public function itRefusesABlankWordInAClosedSet(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('blank word');
+
+        RuleOptionShape::oneOf('info', '  ');
+    }
 }

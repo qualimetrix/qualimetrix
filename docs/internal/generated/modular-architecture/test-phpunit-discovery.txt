@@ -4263,6 +4263,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"string"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"the empty string where text is named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsOnlyTheWordsAClosedSetNames
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itKeepsTheWordsWhenTheClosedSetIsMadeNullable
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itMatchesAClosedSetWithoutRegardToLetterCase
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesAWrittenValueByItsFormForEveryShapeButAClosedSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesEveryWordOfAClosedSetInTheRefusal
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"a nullable element keeps the singular, so the "or null" stays attached to one value"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"block"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormItExpects"boolean"
@@ -4278,6 +4283,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"null"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"string"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheFormThatWasWritten"whole number"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itNamesTheWordThatWasWrittenWhenAClosedSetRefuses
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesABlankWordInAClosedSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAUnionOfOneForm
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a blank string is not a non-empty one"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a fraction is not a whole number"
@@ -4290,6 +4297,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"a wrongly typed element fails its list"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"no branch of a union matches"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAnEmptyClosedSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsANullLevelSlotAsAnOmittedOne
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsAWholeNumberWrittenAsANumber
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt
@@ -6700,6 +6708,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAcceptsAnUnusableDirectoryWhenTheCacheIsDisabled
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itAppliesOwnerDefaultsAndLastOverrides
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itCreatesAMissingCacheDirectory
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itLetsADisabledCachePastAnUnwritableDirectory
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itOffersTheFlagOnlyWhereTheFlagWouldChangeTheOutcome
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itRefusesAnEnabledCacheDirectoryThatCannotBeCreated
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationStoreTest::itDoesNotRetainAReplacedConfigurationAfterReset
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheDirectoryShapeRefusalTest::itRefusesADirectoryTheRunCannotUse"boolean"

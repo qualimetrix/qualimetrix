@@ -33,6 +33,10 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
+`exclude_methods` принимает и одну строку — она означает список из одного
+элемента: `exclude_methods: getName` — это ровно `exclude_methods: [getName]`.
+Строка из цифр — такое же имя метода, как любое другое.
+
 ### Особенности реализации
 
 Qualimetrix реализует основанный на графах алгоритм LCOM4. Instance-методы

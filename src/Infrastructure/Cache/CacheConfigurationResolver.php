@@ -14,9 +14,11 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterfac
 
 final class CacheConfigurationResolver implements CacheConfigurationResolverInterface
 {
+    private const string DEFAULT_DIRECTORY = '.qmx-cache';
+
     public function resolve(ConfigurationDocument $document, AbsolutePath $projectRoot): CacheConfiguration
     {
-        $directory = '.qmx-cache';
+        $directory = self::DEFAULT_DIRECTORY;
         foreach ($document->contributions(ConfigSchema::CACHE_DIR) as $candidate) {
             $directory = self::acceptedDirectory($candidate);
         }
@@ -33,6 +35,12 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         // A cache that cannot be written is a cache that silently does nothing.
         // Only an enabled one makes a promise: `--no-cache` and
         // `cache.enabled: false` are entitled to an unusable path.
+        //
+        // Measured, because the two refusals below differ on it: `--no-cache`
+        // DOES carry a run past this check (exit 2 where the same directory
+        // without the flag exits 3), and does NOT carry one past the
+        // empty-value refusal above, which runs before `enabled` is consulted
+        // at all. Only the refusal the flag can actually answer may name it.
         if ($configuration->enabled) {
             $this->assertUsable($configuration);
         }
@@ -61,8 +69,9 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         if ($candidate === '') {
             throw ConfigurationRefusal::aboutResolvedInput(
                 \sprintf(
-                    'Invalid value for "%s": a directory path cannot be empty. Omit the key to use the default, or disable the cache with --no-cache.',
+                    'Invalid value for "%s": a directory path cannot be empty. Omit the key to use the default (%s).',
                     ConfigSchema::CACHE_DIR,
+                    self::DEFAULT_DIRECTORY,
                 ),
                 ConfigSchema::CACHE_DIR,
             );
@@ -89,7 +98,8 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         // no longer recoverable here.
         throw ConfigurationRefusal::aboutResolvedInput(
             \sprintf(
-                'Cache directory "%s" is not writable. Point cache.dir (or --cache-dir) at a writable path, or disable the cache with --no-cache.',
+                'Cache directory "%s" is not writable. Point cache.dir (or --cache-dir) at a writable path,'
+                . ' or disable the cache with --no-cache.',
                 $path,
             ),
         );

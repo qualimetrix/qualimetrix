@@ -281,7 +281,39 @@ the default.
   The same refusal now fires identically whether the entry carried a formula
   or `enabled: false` — two different messages for the same typo are gone.
 
+- **Five CLI short aliases the product has always accepted are now documented**
+  in the options tables: `--wmc-exclude-data-classes`, `--lcom-exclude-methods`,
+  `--data-class-exclude-exceptions`, `--property-count-warning` and
+  `--property-count-error`. Nothing about them changed; they simply were not
+  listed anywhere, so there was no way to find them but to read the source.
+
+- **The documented form of four list-valued rule options is now stated rather
+  than left to be discovered.** `code-smell.boolean-argument.allowed_prefixes`,
+  `code-smell.error-suppression.allowed_functions`,
+  `cohesion.lcom.exclude_methods` and `coupling.distance.include_namespaces`
+  each accept a single string as the one-element list, and a digit string is an
+  element like any other. The same pages also drop two `--rule-opt` examples
+  that could not work: `allowed_prefixes=is,has,can` was never split on the
+  commas — it set one prefix spelled `is,has,can`, which matches nothing. A CLI
+  door carries one scalar; several values are written as a list in `qmx.yaml`.
+  Migration: replace any `--rule-opt` for these four options that carries commas
+  with the list form in the configuration file.
+
+- **A cache directory that is a name of digits, and a computed-metric formula
+  that is a bare constant, are documented as what they always were** —
+  `cache: {dir: "7331"}` is the directory `7331`, and `formula: "80"` is a
+  metric worth 80 everywhere. Both need the quotes: unquoted they are numbers,
+  and neither a path nor a formula is a number.
+
 ### Fixed
+
+- **An empty `cache.dir` no longer offers `--no-cache` as the way out.** Both
+  cache refusals used to end with "or disable the cache with --no-cache".
+  Against an unwritable directory that is true and it stays — the flag really
+  does carry the run past that check. Against an empty value it never was: the
+  path is judged before the flag is consulted at all, so the run stopped
+  whether or not the reader followed the advice. That refusal now names the
+  default directory (`.qmx-cache`) instead.
 
 - **`~` now means one thing across the document's roots and sections.** Writing
   a key and leaving it empty — `key:` or the explicit YAML null `key: ~` — takes

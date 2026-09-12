@@ -33,6 +33,10 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
+`exclude_methods` also takes a single string, which stands for a one-element
+list: `exclude_methods: getName` means exactly `exclude_methods: [getName]`. A
+digit string is a method name like any other.
+
 ### Implementation notes
 
 Qualimetrix implements the graph-based LCOM4 algorithm. Instance methods are

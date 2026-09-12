@@ -117,7 +117,7 @@ A	form|cli-alias|rules.cohesion.lcom.excludeMethods|int	int	optionsObject	REFUSE
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.cohesion.lcom.excludeMethods|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.cohesion.lcom.excludeMethods|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeReadonly|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|cli-alias|rules.cohesion.lcom.excludeReadonly|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -247,7 +247,7 @@ A	form|cli-alias|rules.complexity.wmc.error|map	map	optionsObject	NOT OBSERVABLE
 A	form|cli-alias|rules.complexity.wmc.error|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.complexity.wmc.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.complexity.wmc.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|cli-alias|rules.complexity.wmc.excludeDataClasses|bool	bool	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.complexity.wmc.excludeDataClasses|bool	bool	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.complexity.wmc.excludeDataClasses|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.complexity.wmc.excludeDataClasses|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.complexity.wmc.excludeDataClasses|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
@@ -609,7 +609,7 @@ A	form|cli-alias|rules.size.method-count.warning|string-nonnumber	string-nonnumb
 A	form|cli-alias|rules.size.method-count.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.size.property-count.error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.size.property-count.error|int	int	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.size.property-count.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.size.property-count.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.error|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -633,7 +633,7 @@ A	form|cli-alias|rules.size.property-count.excludeReadonly|string-nonnumber	stri
 A	form|cli-alias|rules.size.property-count.excludeReadonly|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.size.property-count.warning|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.size.property-count.warning|int	int	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.size.property-count.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.size.property-count.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.size.property-count.warning|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -741,7 +741,7 @@ A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|int	int	optio
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.code-smell.boolean-argument.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -821,7 +821,7 @@ A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|int	int	opt
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.code-smell.error-suppression.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -989,7 +989,7 @@ A	form|rule-opt|rules.cohesion.lcom.exclude-methods|int	int	optionsObject	REFUSE
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.cohesion.lcom.exclude-methods|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.cohesion.lcom.exclude-methods|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-readonly|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.cohesion.lcom.exclude-readonly|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -1541,7 +1541,7 @@ A	form|rule-opt|rules.coupling.distance.include-namespaces|int	int	optionsObject
 A	form|rule-opt|rules.coupling.distance.include-namespaces|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.include-namespaces|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.include-namespaces|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.include-namespaces|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.coupling.distance.include-namespaces|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.include-namespaces|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.max-distance-error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.max-distance-error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -2509,8 +2509,8 @@ A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|int	int	optionsOb
 A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|list	list	optionsObject	REFUSES	yes	PROMISED	refused a form it promised; lost at nowhere
 A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-number	string-number	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-nonnumber	string-nonnumber	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.code-smell.boolean-argument.allowed-prefixes|string-number	string-number	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.code-smell.boolean-argument.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.code-smell.boolean-argument.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.boolean-argument.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -2709,8 +2709,8 @@ A	form|yaml|rules.code-smell.error-suppression.allowed-functions|int	int	options
 A	form|yaml|rules.code-smell.error-suppression.allowed-functions|list	list	optionsObject	REFUSES	yes	PROMISED	refused a form it promised; lost at nowhere
 A	form|yaml|rules.code-smell.error-suppression.allowed-functions|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.error-suppression.allowed-functions|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.code-smell.error-suppression.allowed-functions|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.code-smell.error-suppression.allowed-functions|string-number	string-number	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|yaml|rules.code-smell.error-suppression.allowed-functions|string-nonnumber	string-nonnumber	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.code-smell.error-suppression.allowed-functions|string-number	string-number	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.code-smell.error-suppression.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.code-smell.error-suppression.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.error-suppression.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -3093,8 +3093,8 @@ A	form|yaml|rules.cohesion.lcom.exclude-methods|int	int	optionsObject	REFUSES	no
 A	form|yaml|rules.cohesion.lcom.exclude-methods|list	list	optionsObject	REFUSES	yes	PROMISED	refused a form it promised; lost at nowhere
 A	form|yaml|rules.cohesion.lcom.exclude-methods|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.cohesion.lcom.exclude-methods|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.cohesion.lcom.exclude-methods|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.cohesion.lcom.exclude-methods|string-number	string-number	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|yaml|rules.cohesion.lcom.exclude-methods|string-nonnumber	string-nonnumber	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.cohesion.lcom.exclude-methods|string-number	string-number	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.cohesion.lcom.exclude-readonly|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.cohesion.lcom.exclude-readonly|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.cohesion.lcom.exclude-readonly|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -3837,8 +3837,8 @@ A	form|yaml|rules.coupling.distance.include-namespaces|int	int	optionsObject	REF
 A	form|yaml|rules.coupling.distance.include-namespaces|list	list	optionsObject	REFUSES	yes	PROMISED	refused a form it promised; lost at nowhere
 A	form|yaml|rules.coupling.distance.include-namespaces|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.distance.include-namespaces|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.coupling.distance.include-namespaces|string-nonnumber	string-nonnumber	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.coupling.distance.include-namespaces|string-number	string-number	optionsObject	COLLAPSED	yes	PROMISED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|yaml|rules.coupling.distance.include-namespaces|string-nonnumber	string-nonnumber	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.distance.include-namespaces|string-number	string-number	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.coupling.distance.max-distance-error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.distance.max-distance-error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.coupling.distance.max-distance-error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
@@ -6076,7 +6076,7 @@ D	form|yaml|cache.dir|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|cache.dir|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|cache.dir|null	null	report	OK	no	DECIDED	`~` behaved as an omitted key
 D	form|yaml|cache.dir|string-nonnumber	string-nonnumber	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|yaml|cache.dir|string-number	string-number	report	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed
+D	form|yaml|cache.dir|string-number	string-number	report	OK	no	DECIDED	effect distinguishable and the producer reachable
 D	form|yaml|cache.enabled|bool	bool	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|cache.enabled|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|cache.enabled|int	int	report	REFUSES	no	PROMISED	refused
@@ -6140,7 +6140,7 @@ D	form|yaml|computed_metrics.<name>.formula|list	list	report	REFUSES	no	DECIDED	
 D	form|yaml|computed_metrics.<name>.formula|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|computed_metrics.<name>.formula|null	null	report	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key
 D	form|yaml|computed_metrics.<name>.formula|string-nonnumber	string-nonnumber	report	REFUSES	yes	DECIDED	refused a form it promised
-D	form|yaml|computed_metrics.<name>.formula|string-number	string-number	report	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed
+D	form|yaml|computed_metrics.<name>.formula|string-number	string-number	report	OK	no	DECIDED	effect distinguishable and the producer reachable
 D	form|yaml|computed_metrics.<name>.inverted|bool	bool	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|computed_metrics.<name>.inverted|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|computed_metrics.<name>.inverted|int	int	report	REFUSES	no	PROMISED	refused

@@ -509,6 +509,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'

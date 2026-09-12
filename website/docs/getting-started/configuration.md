@@ -529,6 +529,10 @@ cache:
   dir: .qmx-cache       # Default: .qmx-cache
 ```
 
+`dir` is a directory path, written as a string. A name made only of digits is a
+directory name like any other, so `dir: "7331"` is the directory `7331`; it has
+to be quoted, because an unquoted `7331` is a number and a number is not a path.
+
 Equivalent CLI: `--no-cache` to disable, `--cache-dir=DIR` to change directory.
 
 ### Parallel Processing
