@@ -191,6 +191,8 @@ final class Ledger
             // name rather than by "anything unmatched", so a genuine typo in
             // `kind` stays the `LedgerError` below.
             if ($kind === 'composition-path' || $kind === 'composition-triple' || $kind === 'composition-bucket') {
+                self::assertKnownPromise($cells[5], $kind, $cells[1]);
+
                 $compositions[] = new CompositionRow(
                     kind: $kind,
                     subject: $cells[1],
@@ -234,6 +236,8 @@ final class Ledger
             }
 
             if ($kind === 'pair') {
+                self::assertKnownCoexistence($cells[5], $cells[7], $cells[1]);
+
                 $pairs[] = new PairRow(
                     rule: $cells[1],
                     keyA: $cells[2],
@@ -253,6 +257,90 @@ final class Ledger
         }
 
         return new self($forms, $pairs, $compositions, $deferred);
+    }
+
+    /**
+     * The closed set of promise values a `composition-*` row may carry, and the
+     * reason it is closed rather than read as "whatever the classifier makes of
+     * it".
+     *
+     * {@see Classifier::composition()} awards a verdict by comparing this value
+     * against named literals and falls through to `FRANKENSTEIN` for anything it
+     * does not recognise. A value the classifier cannot award therefore reads as
+     * a defect in the PRODUCT, which is how `survives` spent a round invisible:
+     * it sat here with no branch able to award it, and only became a defect once
+     * the product stopped losing the slot that had been masking it earlier.
+     *
+     * The set is exactly what the classifier accepts — no wider, no narrower.
+     * Wider, and a value nothing awards bills its silence to the product;
+     * narrower, and a row the classifier could have judged is refused here.
+     * `unpromised` is deliberately absent: the stand synthesises it for rows
+     * this file does not carry, so it can never arrive from this file.
+     *
+     * @var list<string>
+     */
+    private const array PROMISE_VALUES = ['high', 'low', 'refuse', 'lost', 'survives'];
+
+    /**
+     * The closed set for a `pair` row's `coexistence`, and why the empty value
+     * is in it with a condition attached.
+     *
+     * {@see Classifier::pair()} reads `one-wins:` and `refuse` by name and
+     * treats EVERYTHING ELSE as a promise of composition. So an unknown value
+     * here does not fail and does not redden — it silently means something other
+     * than what it says, which is the same mechanism as the paragraph above with
+     * the alarm removed. A round adding a value without adding its branch would
+     * measure against a promise nobody made.
+     *
+     * The empty value is legitimate and means "no promise": every row carrying
+     * it today is `DEFERRED`, and those rows never reach the classifier. That
+     * condition is checked rather than trusted — an empty `coexistence` on a
+     * `PROMISED` or `DECIDED` row would reach `Classifier::pair()` and be read
+     * as composition.
+     *
+     * @var list<string>
+     */
+    private const array COEXISTENCE_VALUES = ['compose', 'refuse'];
+
+    private static function assertKnownPromise(string $promised, string $kind, string $subject): void
+    {
+        if (!\in_array($promised, self::PROMISE_VALUES, true)) {
+            throw new LedgerError(\sprintf(
+                'ledger row %s "%s" promises "%s", which no classifier branch awards; expected one of %s',
+                $kind,
+                $subject,
+                $promised,
+                implode(', ', array_map(static fn(string $value): string => '"' . $value . '"', self::PROMISE_VALUES)),
+            ));
+        }
+    }
+
+    private static function assertKnownCoexistence(string $coexistence, string $status, string $subject): void
+    {
+        if (str_starts_with($coexistence, 'one-wins:')) {
+            return;
+        }
+
+        if ($coexistence === '') {
+            if ($status !== 'DEFERRED') {
+                throw new LedgerError(\sprintf(
+                    'pair row "%s" carries no coexistence and is %s rather than DEFERRED, so it reaches the classifier and is read as a promise of composition',
+                    $subject,
+                    $status === '' ? 'blank' : $status,
+                ));
+            }
+
+            return;
+        }
+
+        if (!\in_array($coexistence, self::COEXISTENCE_VALUES, true)) {
+            throw new LedgerError(\sprintf(
+                'pair row "%s" promises coexistence "%s", which the classifier does not recognise and would read as "compose"; expected one of "one-wins:<key>", %s, or nothing on a DEFERRED row',
+                $subject,
+                $coexistence,
+                implode(', ', array_map(static fn(string $value): string => '"' . $value . '"', self::COEXISTENCE_VALUES)),
+            ));
+        }
     }
 
     /**
