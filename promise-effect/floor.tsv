@@ -13,11 +13,15 @@
 # `verdict` names the one expected where the round can name it; `any-defect`
 # means the floor requires a defect without fixing which of the seven.
 #
-# Axis C rows name their verdict and MUST NOT use `any-defect`: what makes
-# those rows defective is a decision of X19 recorded in the ledger
-# (`promised_survival=survives`), and before that decision they were lawful
-# observations. A floor asking only for "some defect" there would have been
-# green on a tree that lost the value silently, which is the whole subject.
+# Axis C has NO floor row, and the reason is worth keeping. X19 first declared
+# four of them, on the reading that a slot written by a lower layer and not
+# rewritten by a higher one must survive. External review refuted that reading
+# from the code: `ThresholdParser` returns [warning => v, error => v], so the
+# `threshold` shorthand rewrites BOTH slots, and the middle layer of those
+# triples overwrote the pair rather than leaving half of it alone. The rows are
+# lawful composition, the floor rows were withdrawn, and what stands in their
+# place is this paragraph -- so the next round does not rediscover the same
+# wrong reading and plant the same four rows again.
 #
 #
 # THE `cure` COLUMN, AND WHY THE FLOOR IS NOT ONE CLAIM BUT TWO
@@ -107,7 +111,3 @@ form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`	7fe
 form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`		omitted == equivalent: the envelope wrote the metric name `probe_metric`, which the product's own NAME_TEMPLATE rejects before any leaf is read, so the pre-cure verdict was a refusal of the NAME. Under the corrected name `computed.probe-metric` the row is unmeasurable for a second reason of the stand's own: `enabled: true` is the default, so the canonical write equals an omitted key and the sensitivity probe is blind. Nothing here is a statement about the product
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	LOST_SIBLING	X19 axis C: the slot only the lowest layer wrote is evicted by the middle layer's mode switch and never restored		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	LOST_SIBLING	X19 axis C: the slot only the lowest layer wrote is evicted by the middle layer's mode switch and never restored		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	LOST_SIBLING	X19 axis C: the slot only the lowest layer wrote is evicted by the middle layer's mode switch and never restored		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	LOST_SIBLING	X19 axis C: the slot only the lowest layer wrote is evicted by the middle layer's mode switch and never restored		

@@ -23,26 +23,27 @@ second list is started here), raw observations stored rather than verdicts, and
 
 ## What is here
 
-| file                                                                   | what it is                                                                                                                   | written by         |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1308 rows, frozen product of stage 01                                                                          | stage 01, a person |
-| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                                | a person           |
-| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                                  | a person           |
-| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                          | a person           |
-| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                        | a person           |
-| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                                  | a person           |
-| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist      | a person           |
-| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                            | a person           |
-| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                       | a person           |
-| `floor.tsv`                                                            | the rows the stand is required to call defective                                                                             | a person           |
-| `run-declaration.tsv`                                                  | the axes the grid spans, which of them own the exit code, and the commit the pre-cure shot is taken on                       | a person           |
-| `composition-magnitudes.tsv`                                           | the two distinguishable values axis C writes with, and the framework patterns and witnesses its second point uses            | a person           |
-| `effect-magnitudes.tsv`                                                | the counter-default value axes B and E fall back to where the canonical one is what the product already does without the key | a person           |
-| `../docs/internal/plans/promise-effect/measurement/key-pairs.tsv`      | stage 01's frozen pair enumeration — read by axis C for a triple's graduated partner and by axis E for its whole population  | stage 01, a person |
-| `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak     | a person           |
-| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                         | the stand          |
-| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                         | the stand          |
-| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** pre-cure observations                                                                                     | the stand          |
+| file                                                                   | what it is                                                                                                                                                   | written by         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1322 rows, frozen product of stage 01 (each round's own stage 01 may add rows and re-freeze it; X19 added 14 for axis C)                       | stage 01, a person |
+| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                                                                | a person           |
+| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                                                                  | a person           |
+| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                                                          | a person           |
+| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                                                        | a person           |
+| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                                                                  | a person           |
+| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist                                      | a person           |
+| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                                                            | a person           |
+| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                                                       | a person           |
+| `floor.tsv`                                                            | the rows the stand is required to call defective, and — via `cure`/`withdrawn` — the ones a round claims to have repaired or to have lost the ability to see | a person           |
+| `run-declaration.tsv`                                                  | the axes the grid spans, which of them own the exit code, and the commit the "before" shot is taken against                                                  | a person           |
+| `composition-magnitudes.tsv`                                           | the two distinguishable values axis C writes with, and the framework patterns and witnesses its second point uses                                            | a person           |
+| `effect-magnitudes.tsv`                                                | the counter-default value axes B and E fall back to where the canonical one is what the product already does without the key                                 | a person           |
+| `observability-limits.tsv`                                             | where a door or a magnitude cannot put the product's own question, declared per (kind, door, key, form) rather than left inside a number                     | a person           |
+| `../docs/internal/plans/promise-effect/measurement/key-pairs.tsv`      | stage 01's frozen pair enumeration — read by axis C for a triple's graduated partner and by axis E for its whole population                                  | stage 01, a person |
+| `fixtures/probe/**`                                                    | the small project every process run is taken against — nineteen files, eighteen PHP ones each there to make some producer speak, plus its `composer.json`    | a person           |
+| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                                                         | the stand          |
+| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                                                         | the stand          |
+| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** "before" observations — which product and why are `shot.txt`'s, not this table's, to say                                                  | the stand          |
 
 ## The row key
 
@@ -204,10 +205,14 @@ the hit stands for is unchanged — only the magnitude is.
 Axis A needs the same thing and declares it in `axis-a-hits.tsv`. The three
 framework keys never reach `fromArray()`, so the stand observes them by asking
 `isPathExcluded('src/Sub/Helper.php')` and `isNamespaceExcluded('Probe\Sub')`;
-a canonical `[7331]` answers neither, and all 54 `suppress-paths` rows — 432
-cells — read `NOT OBSERVABLE` for the stand's reason. The hit is keyed on the
-option **leaf**, because those three keys repeat under every producer and an
-enumeration of 162 paths would be four statements written 162 times.
+a canonical `[7331]` answers neither, which is why — without the hit — all 54
+`suppress-paths` rows, 432 cells, would read `NOT OBSERVABLE`. With the hit
+declared, `verdicts.tsv` today reads 270 of those 432 cells `NOT OBSERVABLE`,
+108 `OK` and 54 `REFUSES`: the hit rescues the forms it can act on, not the
+whole row — the next paragraph names exactly what it fixes and what it does
+not. The hit is keyed on the option **leaf**, because those three keys repeat
+under every producer and an enumeration of 162 paths would be four statements
+written 162 times.
 
 The hit replaces the magnitude in the reference form's own cell as well as in
 `equivalent`, and that is a correction: substituting it only into `equivalent`
@@ -301,10 +306,11 @@ instead of failing. That exemption is named in `axis-d-envelopes.tsv`.
 ## The refusal framing is proved, not assumed
 
 In process the stand sees an exception, not a frame, and `REFUSES` is defined
-by the frame. So every run first takes two process controls: a value the product
-refuses with `Configuration error:` and a value it refuses without one. If
-either changes shape the stand exits 3 rather than reporting. Measured on
-`6a833ab8`: `ConfigurationRefusal` is framed, a bare `InvalidArgumentException`
+by the frame. So every run first takes two process controls — a value the
+product refuses with `Configuration error:` and a value it refuses without
+one — freshly, against whatever tree the run is taken on, never against a
+frozen commit. If either changes shape the stand exits 3 rather than
+reporting: `ConfigurationRefusal` is framed, a bare `InvalidArgumentException`
 from a rule-option type check is **not** — exit 3 with no frame, which is the
 `MALFORMED` class.
 
@@ -344,11 +350,15 @@ withdraws its own `--fail-on=none`, which is the two `fail_on` rows, and their
 declared observable **is** the exit code. Anywhere else the row would lose
 sensitivity and read `NOT OBSERVABLE`, which is the worse verdict, deliberately.
 
-What the two cells say now, on the frozen half: `yaml|fail_on|null` is `OK`
-(`~` behaves as an omitted key, both runs ending above the gate), and
-`cli-root|fail_on|null` is the `INERT` defect — an empty `--fail-on=` accepted
-and doing nothing where the ledger promised a refusal. That defect was
-previously wearing the stand's own `MALFORMED` label.
+What the two cells say: `yaml|fail_on|null` is `OK` (`~` behaves as an omitted
+key, both runs ending above the gate), and `cli-root|fail_on|null` is `REFUSES`
+— **not** a defect. `--fail-on=` already refuses an empty value with the
+product's own `Configuration error:` framing; it never went through the
+"empty CLI value silently means an empty string" bug that `--rule-opt` and
+the alias doors carried (fixed in `a8013593`, which named this row
+separately for exactly this reason). An earlier revision of this file called
+the row `INERT`, then `MALFORMED` — both were the stand's own misreading, not
+a product defect, and neither survives contact with `verdicts.tsv`.
 
 ## The worker decision, and what the observation used to carry
 
@@ -363,13 +373,17 @@ and the worker fields and nothing else, matched on the decoded record rather
 than on the raw line, and it is kept as readable text: the defect lived inside
 an md5 for a whole round.
 
-**This one could not be applied to both halves, and the consequence is a
-property of the snapshot.** The frozen half stores the digest, md5 is not
-invertible, and no re-judging can reach what it ate. So the pre-cure half keeps
-`yaml|parallel.workers|null = COLLAPSED` — one overstated defect — and its two
-`int` cells read `OK` for the wrong reason. Sixteen cells of the frozen half,
-the two `parallel.workers` rows, are the stand's; a before/after delta on them
-says nothing about the product.
+**This repair could not be retro-fitted to a half whose raw text was already
+an md5 digest — md5 is not invertible, and no re-judging can reach what it
+ate.** That was the whole reason the "before" shot standing at `6a833ab8`
+carried an overstated `yaml|parallel.workers|null = COLLAPSED` for as long as
+it stood: sixteen cells there were the stand's own contamination, not the
+product's, and a before/after delta on them said nothing. X19's rebase of the
+shot onto `02a6ca66` retook the raw observations with the repaired
+extraction already in place, so the current frozen half never carried the
+digest at all — both `parallel.workers` rows read the same way on both halves
+today (`null` an accepted default, `int` accepted and reachable), and the
+sixteen-cell caveat is retired along with the shot it was about.
 
 ## What the oracle does not prove
 
@@ -402,26 +416,42 @@ says nothing about the product.
 - **That `NOT OBSERVABLE` means the product is silent.** It means this fixture
   and this observable cannot tell a written value from an omitted one. Its share
   is reported as a number, not a footnote, because a growing share devalues the
-  denominator. On the frozen pre-cure half it stands at **1297 of 6289 cells,
+  denominator. On the retired `6a833ab8` shot it stood at **1297 of 6289 cells,
   20.6%** — axis A 1254 of 5280 (23.8%), axis B none by construction, axis D 43
-  of 544 (7.9%) — and every one of them is accounted for below.
+  of 544 (7.9%) — and every one of them was accounted for below, at that
+  snapshot; the breakdown has not been retaken against the current
+  `02a6ca66` shot, and the live A/D shares to quote for today are the ones
+  `verdicts.tsv` itself carries (below).
 - **That a FALLING `NOT OBSERVABLE` share means the stand got less blind.** On
-  the cured tree the share reads **286 of 6289, 4.5%**, and almost none of that
-  is the stand seeing better. A refusal is judged BEFORE the sensitivity gate,
-  so a product that starts refusing a written value moves the cell out of
-  `NOT OBSERVABLE` without the stand becoming any more sensitive on that row.
-  Measured, cell by cell: of the 1012 cells that left, **1003 sit on rows whose
-  gate is still closed today** and became `REFUSES`; 9 are on rows whose gate
-  genuinely opened, 8 of them one row (`code-smell.error-suppression`
-  `.allowed-functions`) where the canonical `list` write is itself now refused,
-  so `omitted != equivalent` — which is a gate opened by a refusal, not by a
-  measured effect, and only 3 of those 8 cells are decided after the gate at
-  all. The honest row-level statement is the one to quote: the sensitivity gate
-  is closed on **166 rows before and 165 after, and 165 of them are the same
-  rows**. Both shares above are the X18 pair, over its 6289 cells. The live
-  grid is no longer that size — axis C and the neighbourhood coordinate added
-  891 cells to it — and the number to quote for today is the one the run
-  prints.
+  the cured tree X18 measured, the share read **286 of 6289, 4.5%**, and almost
+  none of that was the stand seeing better. A refusal is judged BEFORE the
+  sensitivity gate, so a product that starts refusing a written value moves
+  the cell out of `NOT OBSERVABLE` without the stand becoming any more
+  sensitive on that row. Measured then, cell by cell: of the 1012 cells that
+  left, **1003 sat on rows whose gate was still closed** and became `REFUSES`;
+  9 were on rows whose gate genuinely opened, 8 of them one row
+  (`code-smell.error-suppression.allowed-functions`) where the canonical
+  `list` write was itself now refused, so `omitted != equivalent` — a gate
+  opened by a refusal, not by a measured effect — and only 3 of those 8 cells
+  were decided after the gate at all. The row-level statement X18 judged more
+  honest than the cell count: the sensitivity gate was closed on **166 rows
+  before and 165 after, and 165 of them were the same rows**. Both shares
+  above are the X18 pair, over its 6289 cells, and neither has been retaken
+  against `02a6ca66` or the axis-C/E addition.
+
+  **The number to quote for today** is per-axis, read straight from
+  `verdicts.tsv` — it moves with the tree, so what follows is one read, not a
+  constant: axis A **1803 of 5280 (34.1%)**, axis D **138 of 544 (25.4%)**,
+  axis C **3 of 21 (14.3%)**, axis E **15 of 870 (1.7%)**, axis B **0 by
+  construction** (its own triple never writes `~`, so it has no omitted side
+  to collide with). Summed across the whole 7180-cell grid that is 1959
+  (27.3%), and that blended figure is the one number this file recommends
+  against quoting on its own — axis C and E answer different questions with
+  different populations, and a share over all five hides which one moved. Do
+  not copy these five numbers forward without re-reading `verdicts.tsv` first
+  — every number in this file that names a live cell count is one read, not a
+  constant, and the grid is regenerated far more often than this file is
+  edited.
 - **Element forms inside a list.** The row's axis is the form of the container.
 - **Anything about a form its door cannot spell, or a key the canonical
   magnitude does not name.** Those cells read `NOT OBSERVABLE` by declaration,
@@ -437,9 +467,13 @@ says nothing about the product.
   before/after pair, so it stays named: the 120 frozen axis-D defects
   **understate** the count by at least two, and that is a property of the
   snapshot, not of the product.
-- **The two `parallel.workers` rows of the frozen half.** See the section on the
-  worker decision above: sixteen cells there are the stand's own contamination,
-  fixed for every future measurement and unreachable in the frozen one.
+- **The two `parallel.workers` rows, historically.** See the section on the
+  worker decision above: sixteen cells of the retired `6a833ab8` shot were the
+  stand's own contamination (an md5 of a text that varied for reasons that
+  were the probe's, not the product's) and unreachable by re-judging. The
+  current `02a6ca66` shot was retaken after that extraction was repaired, so
+  it never carried the digest — there is nothing left for this bullet to
+  disclaim on the live pair.
 - **The 96 `computed_metrics` cells, across the pair.** Review found the axis-D
   envelope writing the metric name `probe_metric`, which
   `ComputedMetricDefinition::NAME_TEMPLATE` rejects before any leaf can show an
@@ -447,8 +481,9 @@ says nothing about the product.
   repairs, and they are different in kind. The classifier now refuses any cell
   whose value-side refusal is byte-identical to the omitted-side one — the
   refusal is the ENVELOPE's, and that rule holds on both halves and on every
-  envelope, not only the caught one: **117 cells of the frozen half** read it,
-  and the frozen defect count falls from **1793 to 1763**, because 30 of them
+  envelope, not only the caught one: **117 cells of the frozen half** (counted
+  on the shot then standing, `6a833ab8`, since retired and rebased) read it,
+  and the frozen defect count fell from **1793 to 1763**, because 30 of them
   had been counted as defects of the product. The envelope itself is also
   fixed, to `computed.probe-metric`, and that is a change of INPUT: those 96
   cells no longer measure the same write on the two halves. The price is
@@ -470,10 +505,14 @@ says nothing about the product.
 
 ## Where the remaining `NOT OBSERVABLE` share comes from
 
-Counted on the **frozen half**, which is where the number means what it says.
-The share was **2205 of 6289, 35.1%** when the stand was first built. Two of
-the three causes were the stand's, and both are fixed; the third is measured
-and left, and the reason is that fixing it changes what the `bool` cell of 155
+This is X17/X18 history, counted on the **`6a833ab8` shot** — retired and
+rebased since — which is where these particular numbers meant what they said.
+Nothing below has been retaken against the current `02a6ca66` shot; it is kept
+because the mechanism it explains (the bool-default blindness) is still
+unrepaired on axis A today, only its cell count is not. The share was
+**2205 of 6289, 35.1%** when the stand was first built. Two of the three
+causes were the stand's, and both were fixed; the third was measured and
+left, and the reason is that fixing it changes what the `bool` cell of 155
 rows means and needs controls of its own.
 
 | cause                                                                                                                                                                                | cells then | cells now |
@@ -495,21 +534,38 @@ including the ones that would otherwise read `INERT` or `COLLAPSED`. The same
 hazard is already named for the magnitude 7331 in this file and was simply not
 carried over to `bool`.
 
-The cure of the round did NOT remove this blindness, and the live grid must not
-be read as though it had. The 162 bool-blind rows carry 1283
-`NOT OBSERVABLE` cells on the frozen half; on the cured tree 272 of them still
-read `NOT OBSERVABLE` and 1011 read `REFUSES` — the same rows, the same
-blindness, now standing behind a refusal that is judged first. 161 of the 162
-rows still fail the sensitivity gate today.
+X18's cure did NOT remove this blindness on axis A, and it must not be read as
+though it had. The 162 bool-blind rows carried 1283 `NOT OBSERVABLE` cells on
+the `6a833ab8` shot; on the tree X18 cured, 272 of them still read
+`NOT OBSERVABLE` and 1011 read `REFUSES` — the same rows, the same blindness,
+now standing behind a refusal that is judged first. 161 of the 162 rows still
+failed the sensitivity gate at that measurement.
 
-The cure is a **counter-default write**: the row's `bool` cell and its
-`equivalent` both write the value the product is not already at, with `1 -> 0`
-as the comparand. It is not applied here for two reasons said plainly rather
-than deferred: flipping only `equivalent` would make `value(bool) = true` read
-`INERT` on 155 rows, which is the stand calling correct behaviour a defect; and
-flipping both changes what the `bool` cell of 155 rows asks, which owes a
-control of its own and would destroy the attribution this table exists to give
-("how much did enriching the fixture remove?").
+The cure for that is a **counter-default write**: the row's `bool` cell and
+its `equivalent` both write the value the product is not already at, with
+`1 -> 0` as the comparand. X18 named two reasons not to apply it to axis A:
+flipping only `equivalent` would make `value(bool) = true` read `INERT` on 155
+rows, which is the stand calling correct behaviour a defect; and flipping both
+changes what the `bool` cell of 155 rows asks, which owes a control of its own
+and would destroy the attribution this table exists to give ("how much did
+enriching the fixture remove?").
+
+**X19 applied exactly this counter-default write, but to axes B and E, not to
+axis A.** `effect-magnitudes.tsv` (declared above) is the same idea stated as
+a table instead of a paragraph: a pair or neighbourhood row whose canonical
+`bool` write is `true` now falls back to `false`, and a `form` row whose
+canonical write happens to equal the product's own default falls back to a
+declared alternate magnitude — chosen from the observation, never from the
+key's spelling. Axes B and E could take this cure where axis A could not
+because they ask a different question: axis A's cell records "what form did
+this key's write take", so writing `false` where the ledger promises `bool`
+still answers that question and is not the trap named above; axis B and E's
+cells record "did this key still do something beside a neighbour or a
+co-writer", which `false` answers exactly as well as `true` does, and better,
+since `true` is what the row was blind on. `forms.tsv` (axis A and D's single
+magnitude per form) stays frozen for the reason stated where it is declared:
+widening it would be a change of input, and the before/after pair would stop
+comparing on every cell it touches.
 
 ## Running it
 
@@ -542,27 +598,62 @@ and C and E are the subject the current round is measuring in order to cure
 later, so their defects travel with a number and do not redden the run.
 
 `promise-effect:before` re-judges the frozen raw observations with **today's**
-classifier, so both halves of the before/after pair are judged by one rule.
-Retaking the shot needs `--freeze-before` on the commit `run-declaration.tsv`
-names **and** a `--reason=`;
-the reason is written into `shot.txt` beside the commit and the date, because
-the file is what the next reader of the frozen half has in front of them.
-Editing the classifier is not a reason to retake, because it requires nothing
-to be re-measured.
+classifier, so both halves of the before/after pair are judged by one rule —
+and, since `a1438c9b`, by one FLOOR too: `--before` runs the same
+`Floor::cureMisses()` the live grid is held to, not a bare "is every declared
+row still recognised" check. That is not a cosmetic unification. It is what
+lets a shot be retaken against an ALREADY-cured product at all: a bare
+recognition check would demand every floor row still read as a defect on the
+half that starts the round, and a round that begins after some other round's
+cure would refuse its own baseline. The `cure`/`withdrawn` columns of
+`floor.tsv` are what let the frozen half say "still defective" and "repaired,
+as claimed" in the same breath the live grid does — see "The floor is two
+claims, not one" below for what this costs.
 
-The shot has been retaken once, on **2026-09-11**, from
-`6a833ab8fcd5004e964e32a59bfeb9978c39739c` — the same commit, the same product
-code. The reason is the one `shot.txt` records: **the fixture changed and the
-product did not.** 47 of the 54 producers had no reachability witness because
-the five-file fixture tripped nothing, and the `suppress-*` probes named
-nothing in it. The pre-cure half therefore still measures the pre-cure product;
-it measures it against a fixture that can see the product speak.
+Retaking the shot needs `--freeze-before` on the commit `run-declaration.tsv`
+names **and** a `--reason=`; the reason is written into `shot.txt` beside the
+commit and the date, because the file is what the next reader of the frozen
+half has in front of them. Editing the classifier is not a reason to retake,
+because it requires nothing to be re-measured. `--freeze-before` reads the
+"before" commit from `run-declaration.tsv` rather than a literal, and refuses
+the run outright when that commit does not exist in this repository; the
+postcondition it checks is not "HEAD equals the commit" — the stand is always
+repaired *after* the input edits that motivate a retake, so HEAD never equals
+it — but an empty `git diff <commit> -- src/`: whatever else the branch has
+changed, the PRODUCT the shot measures must be exactly the one named.
+
+**The shot has been retaken twice.** The first retake, on 2026-09-11, kept the
+commit at `6a833ab8` and re-took the raw observations against a grown fixture
+(see below). The second, on 2026-09-12, is the one that matters for reading
+this file today: `observations-before/shot.txt` now names product-commit
+`02a6ca66` — this branch's own merge-base with `main`, the product **after
+X18's cure and before X19's** — and tree-commit `458d22cc…`, the later branch
+HEAD the shot was actually taken from (the stand's own inputs are always
+repaired *before* a shot is taken, which is exactly what `--freeze-before`'s
+`src/`-only diff is built to tolerate). The reason `shot.txt` records: axes B
+and E's generators changed to write the counter-default magnitudes of
+`effect-magnitudes.tsv`, and 117 of 117 pair sides that write the key
+`enabled` had stopped moving the object under the old, canonical-`true`
+generator — an input change, which is exactly the kind that forces a retake
+rather than a re-judgement. So "the frozen half" in every section below is the
+product at `02a6ca66`: **before** this round's (X19's) own cure, **after**
+X18's.
+
+The **first** retake is the one the rest of this file's `6a833ab8` citations
+belong to, and it is now itself historical: it changed nothing about the
+product, only about how much of the fixture could make a producer speak (see
+"The reachability witness" above). Any number in this file still anchored to
+`6a833ab8` is from that shot or from measurements taken against it, is marked
+as such, and has not been re-taken against `02a6ca66`.
 
 The expensive stand lives **outside** `composer check`, beside
-`composer input-doors`: it costs process runs — measured at about 200 s over
-614 of them, against a `check:artifacts` threshold of roughly 40 s. It was
-150 s before the fixture grew from five files to twenty, and that is what the
-other 47 reachability witnesses cost.
+`composer input-doors`: it costs process runs — last measured at about 200 s
+over 614 of them, against a `check:artifacts` threshold of roughly 40 s. It
+was 150 s before the fixture grew from five files to nineteen, and that is
+what the other 47 reachability witnesses cost. That timing has not been
+re-taken for axes C and E, which add no process runs of their own (both are
+computed in-process, from the same options object and registry predicates
+axis B already reads).
 
 What does go into `check:artifacts` is `composer promise-effect:grid:check`,
 which takes no probe at all. It answers three narrower questions in under a
@@ -584,9 +675,15 @@ redden the aggregate on every commit while saying nothing about the verdicts.
 
 ## The observability limit: where the question was never put
 
+*Every specific cell count in this section, except where marked otherwise, is
+the X17/X18 measurement taken on the retired `6a833ab8` shot, over its 6289
+cells. It has not been retaken against the current `02a6ca66` shot or the
+7180-cell live grid; what is still current is the MECHANISM each number
+illustrates, not the number.*
+
 A verdict is about the product only if the probe asked the product's own
-question. 473 cells of the last measurement did not, and they had been counted
-as product defects for two rounds. Two mechanisms, both measured:
+question. 473 cells of that measurement did not, and they had been counted
+as product defects for two rounds. Two mechanisms, both measured then:
 
 **A CLI door has no syntax for three of the eight forms.** In a document the
 quotes around `"7331"` are the language's own syntax and produce the string
@@ -618,10 +715,13 @@ door, so the empty value is a distinct spelling, not an inexpressible form.
 ### Why a declaration and not a re-spelling
 
 Re-spelling the probe is a change of INPUT. The frozen half is nailed to
-`6a833ab8` and can never be re-measured, so the 238 cells under argument would
-stop comparing across the pair — which is the one thing the before/after
-acceptance rests on. A rule read by the CLASSIFIER applies to both halves by
-construction, and the share moves in both together.
+`02a6ca66` and can never be re-measured (short of retaking the shot again,
+which is its own event, declared and reasoned in `shot.txt`), so the 238
+cells under argument would stop comparing across the pair — which is the one
+thing the before/after acceptance rests on. A rule read by the CLASSIFIER
+applies to both halves by construction, and the share moves in both together.
+`observability-limits.tsv` and `scripts/promise-effect/Limits.php` are
+unchanged by this round; the 238-cell count is theirs, not axis C or E's.
 
 ### The guard that keeps it from being a silencer
 
@@ -640,10 +740,16 @@ applied to both halves:
   the product's framing — may not be covered unless the same `(door, path)`
   publishes `MALFORMED` on a form no limit covers. Being handed a value proves
   the write arrived and was mishandled, which no statement about the value's
-  domain excuses. On the frozen half **246 covered cells are `MALFORMED`**, and
-  every one of them is published on an uncovered form of its own row; the
-  exception is what keeps the count honest rather than duplicated, and it is
-  the loss named at the end of this section.
+  domain excuses. This rule is a guard against a state the tree no longer
+  carries much of: an earlier measurement counted **246 covered cells** as
+  `MALFORMED`, every one published on an uncovered form of its own row; on the
+  current live grid `MALFORMED` does not appear at all (`verdicts.tsv`, zero
+  rows across all 7180 cells), and the current frozen half's raw observations
+  carry no organic `MALFORMED` outcome either — only the deliberate unframed
+  control value `B1` writes for its own baseline. Successive rounds' framing
+  cures moved almost everything this rule used to protect into `REFUSES`; the
+  rule stays, because a future unframed crash is still exactly what it is
+  built to catch, not because 246 is still the count.
 - **No coerced value under a value kind.** `generic-write-names-nothing` and
   `refusal-about-the-inner-key` both claim the answer is about the VALUE. A
   `COLLAPSED` cell is the product coercing the value, which is the form being
@@ -689,36 +795,45 @@ between the two value kinds.
 
 Under the two door kinds, `REFUSES` and `COLLAPSED` cannot be told apart from a
 refusal of the form itself: the stand wrote characters the door took literally,
-and the product's answer is about those characters. On the frozen half that is
-**588 `REFUSES` and 30 `COLLAPSED` cells**. And the crash exception above is a
+and the product's answer is about those characters. On the `6a833ab8` shot,
+at the same X17/X18 measurement as above, that was **588 `REFUSES` and 30
+`COLLAPSED` cells**, and it has not been recounted against `02a6ca66`. And the
+crash exception above is a
 loss of granularity by design: a limit may cover a crash on one form while the
 row publishes that crash on another, so **which form** crashes is not
 guaranteed to be on the report, only **that the row does**.
 
 ### What it cost, in both halves at once
 
-On the frozen half the limit covers **1507 cells**. `NOT OBSERVABLE` rises from
-**1297 of 6289 (20.6%) to 2549 of 6289 (40.5%)**, and the defect count falls
-from **2632 to 1793**. That is not the stand getting blinder — it is the same
-blindness, named where it was previously being reported as the product's
-behaviour. On the cured grid the same table covers 1513 cells, 473 of which
-were counted as defects.
+This is the X17/X18 measurement, over the pair's 6289 cells before axis C and
+E existed, and it has not been retaken. On the `6a833ab8` shot the limit
+covered **1507 cells**. `NOT OBSERVABLE` rose from **1297 of 6289 (20.6%) to
+2549 of 6289 (40.5%)**, and the defect count fell from **2632 to 1793**. That
+was not the stand getting blinder — it was the same blindness, named where it
+had previously been reported as the product's behaviour. On the tree X18
+cured, the same table covered 1513 cells, 473 of which were counted as
+defects. The mechanism these numbers illustrate — a declared limit moving
+cells out of the defect count without the stand becoming more sensitive —
+still holds today; the cell counts are this pair's, not today's.
 
-Held against the round's own reading of the remainder: of the 454 axis-A
-defects called stand properties, **all 454 are**, and none is a product defect
-in disguise — with one correction of attribution. The 64 `map` refusals are
-54 `suppress-namespace-channels` and 10 level-slot rows (`complexity.ccn`
-`.callable|map` and its siblings), where `{a: 7331}` names no option OF THAT
-LEVEL; the family is the same, the count is not.
+Held, at that same measurement, against X18's own reading of the remainder: of
+the 454 axis-A defects it called stand properties, **all 454 were**, and none
+was a product defect in disguise — with one correction of attribution. The 64
+`map` refusals were 54 `suppress-namespace-channels` and 10 level-slot rows
+(`complexity.ccn.callable|map` and its siblings), where `{a: 7331}` names no
+option OF THAT LEVEL; the family is the same, the count was not. Axis A's
+defect count on the live grid moves with the tree — 263 at the last read of
+`verdicts.tsv` in this session, and a different denominator on a different
+tree by the time this is read again; this paragraph is the X18 audit's own
+accounting, not a claim about today's count. Read `verdicts.tsv` for the
+number that is true right now.
 
 ## The floor is two claims, not one
 
 `floor.tsv` is a statement about the CLASSIFIER reading a known pre-cure tree:
 `01-promise.md` says the snapshot **before**, read through the registry, must
 call defective position 64, position 66 and the 21 rows of
-`non-rules-roots.tsv`. It is judged where it means that — on the frozen half,
-by `composer promise-effect:before`, which exits 1 when a row stops being
-recognised.
+`non-rules-roots.tsv`.
 
 Applied to the LIVE grid the same list said the wrong thing, and it said it for
 a whole round: **a successful cure removes a defect**, so every row the round
@@ -726,30 +841,86 @@ repaired became a floor miss and the first cured measurement exited 1 with
 21 of them. A floor that goes red when the work succeeds is not a floor.
 
 The live grid is held to a different and stronger claim, declared per row in
-the `cure` column:
+the `cure` column (and, for a row the probe itself was wrong about, in
+`withdrawn` — see the `computed_metrics` discussion above):
 
-- a row with no `cure` must **still** be a defect — the floor's original job;
+- a row with no `cure` (and no `withdrawn`) must **still** be a defect — the
+  floor's original job;
 - a row with a `cure` must **no longer** be one — the round's own claim about
-  what it repaired, checked rather than asserted.
+  what it repaired, checked rather than asserted;
+- a row `withdrawn` must read `NOT OBSERVABLE`, and for the declared reason —
+  a claim about the STAND having lost the row, not about the product.
 
-Both directions redden, and the second is why this is worth more than the floor
-it replaces. A row that quietly stops being defective with nothing claiming it
-was repaired used to hide inside a red floor; a row declared cured that is
-still defective is a false claim about the round, which is worse. Today the
-grid reads **2 rows still defective, 21 cured as declared**, and the cured ones
-are printed by name with the commit whose own subject covers them.
+Both directions redden, and the second is why this is worth more than the
+floor it replaces. A row that quietly stops being defective with nothing
+claiming it was repaired used to hide inside a red floor; a row declared
+cured that is still defective is a false claim about the round, which is
+worse. At the last read of `floor.tsv` against `verdicts.tsv`
+(`Floor::cureMisses()`'s own logic, no run needed to check it — figures like
+this are pinned to one read, never assumed to hold past it) the grid read
+**1 row still defective, 21 cured as declared, 1 withdrawn, 0 misses**. The
+one standing row is `pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block`,
+`MISCOMPOSED`; the cured and withdrawn rows are printed by name, with the
+commit whose own subject covers each cure.
+
+**Axis C's four `LOST_SIBLING` triples were floor rows for part of this round,
+and are not any more — removed, not cured, and the difference matters.** X19
+first declared them defective on the reading that a slot only the lowest
+layer writes, and no higher layer disputes, must survive a triple's middle
+layer un-rewritten. External review refuted that reading from the code:
+`ThresholdParser` returns `[warning => v, error => v]` for a bare `threshold:`
+write, so the middle layer's `threshold` shorthand rewrites BOTH slots of the
+pair, not one — the triples are lawful composition, and the four floor rows
+asserted a bug that was never there. `floor.tsv` deleted them outright rather
+than marking them cured or `withdrawn`: `cure` claims the PRODUCT was
+repaired, `withdrawn` claims the STAND lost the row, and neither is true here
+— the reasoning that put them on the floor was wrong from the start, about a
+tree that never had the defect. The correction lives in `floor.tsv`'s own
+header comment rather than in a row, so a later round does not rediscover the
+same wrong reading and plant the same four rows again. **The grid still
+emits `LOST_SIBLING` on these four cells at the last read of `verdicts.tsv`**
+— the classifier has not yet been re-run against the `ThresholdParser` fix —
+so for now the floor and the grid disagree on exactly these four cells by
+design: the floor no longer asks the question, the grid has not yet been
+asked to answer it differently. `docs/internal/plans/source-composition/02-stand.md`
+(and possibly `05-composition.md`) still describe the reading review
+refuted; they have not been reconciled with `floor.tsv` as of this writing.
+
+**This is judged on BOTH halves, and only since this round.** Before X19,
+`composer promise-effect:before` held the frozen half to the bare pre-cure
+list — every declared row simply had to still be a defect, because the shot
+that stood before X19's rebase (`6a833ab8`) predated every cure the `cure`
+column names. Rebasing the shot onto `02a6ca66` — itself already past three
+of this round's own repair packages — broke that assumption: the new frozen
+half carries 21 cures the bare list would have called misses. So `:before`
+was taught (`a1438c9b`) to run the SAME `Floor::cureMisses()` the live grid
+does, and the floor's positive requirement — "must still be a defect" —
+shrank from 26 rows to 5 on the frozen half at that commit's own reading (its
+message says so), and to 1 once the four `LOST_SIBLING` rows were withdrawn —
+in exchange for a negative requirement (the `withdrawn` row) the floor never
+carried before either change.
+
+**That dual reading holds only while every commit named in `cure` pre-dates
+the shot's own commit.** The moment a round's cure lands AFTER its shot is
+taken, the row it repairs is correctly still a defect on the frozen half and
+correctly repaired on the live grid, and one `cure` column cannot assert both
+— `floor.tsv`'s own header names this as the one place the mechanism breaks,
+and the fix is procedural: retake the "before" shot at the start of a round,
+as X19 did, rather than mid-round.
 
 ## The controls
 
-`composer promise-effect:controls` runs thirty-nine cases in five groups: one
+`composer promise-effect:controls` runs forty-two cases in five groups: one
 planting per verdict — all seven of the form and both of the pair — plus one
 that edits the ledger rather than an observation, plus one that plants an exit
-code back into the shape the stand used to read it as; nine **judgement** cases
-over the eight verdicts of axes C and E; twelve probe cases; three cross-check
-cases over the two sides of the four sets; and one per population against the
-guard. Every planting case must redden **its own** cell and no other: the run
-diffs the whole outcome map against the unplanted baseline, so a blanket
-breakage fails as loudly as one that does not bite.
+code back into the shape the stand used to read it as (eleven cases); twelve
+**judgement** cases (three over axis B's own counter-default gate, `PR1`–`PR3`;
+six over the eight verdicts of axis C, `CP1`–`CP6`; three over axis E,
+`NB1`–`NB3`); twelve probe cases; three cross-check cases over the two sides
+of the four sets; and one per population against the guard (four). Every
+planting case must redden **its own** cell and no other: the run diffs the
+whole outcome map against the unplanted baseline, so a blanket breakage fails
+as loudly as one that does not bite.
 
 **The cheap half was collected and never read, for a whole round.** The
 coverage arithmetic — a case addressing a cell the run does not carry, a
@@ -777,48 +948,64 @@ verdict.
 
 Two further groups exist because that rule is not the whole stand:
 
-- **stand controls** (`B1`, `B2`, `N1`–`N5`, `S1`, `F1`, `F2`) address what the
-  verdict cases cannot reach. `N1`–`N5` are the five directions of the
-  observability limit: a covered cell that gets judged anyway reddens (`N1`); a
-  limit planted on the YAML door over a cell whose effect the stand observes
-  reddens (`N2`); a limit over a crash the row publishes nowhere reddens, and
-  the same crash stops being a conflict once an uncovered form of that row does
-  publish it (`N3` — both halves, or the case would pass against a guard that
-  simply refused every crash); a value-domain limit over a coerced value
-  reddens (`N4`); and both door kinds are refused against the door definition
-  in either direction (`N5`). `S1` is the same shape for the P1 file set: a
-  hand-typed path in one of its constants that no file stands at is named, and
-  the real constants name none — that guard was blind on two paths for a whole
-  round, and `array_intersect` over a string no file carries can never
-  intersect anything. `F1` and `F2` are the two halves of the floor. `B1` and `B2`
-  address what happens *before* an observation is stored, which the frozen half
-  is blind to by construction. `B1` takes the
-  real framing pair — the only way to say "the fixture still answers unframed
-  today" — and then plants an outcome into the pure judgement, so the control
-  can go red without the product being broken. `B2` addresses the worker
-  extraction directly, because the frozen half holds an md5 of the contaminated
-  line and nothing recomputed over it can reach what that digest ate. It asserts
-  three things, and the third is the one that matters: that the observation
-  still *carries the worker number*, or an extraction returning a constant would
-  pass the other two and observe nothing;
-- **judgement controls** (`CP1`–`CP6`, `NB1`–`NB3`) plant into the axis-C and
-  axis-E rules themselves. They cannot be planted the way the verdict cases
-  are: the frozen half predates both axes, so there is no stored side to edit —
-  and two of them are not about an observation at all but about the
-  **comparison**. Each carries a fixture read twice, a baseline and a planting
-  that differ in exactly one observation, and must move from one declared
-  verdict to another; a case whose planting changed nothing would otherwise
-  pass by agreeing with itself. `CP4` and `CP2` are the two substitutions
-  `03-grid.md` asks for by name — whole texts instead of leaves renames
-  `FRANKENSTEIN` into `MISLAYERED`, and winner equality asked before sibling
-  loss renames `LOST_SIBLING` into `COMPOSED_AS_PROMISED`. `CP4` only
-  *demonstrates* the first, because the renaming branch is reachable only
-  through the control; `CP6` is what actually bites the run, through a fixture
-  whose leaves match the promised side in a different order — it reddens the
-  moment the production comparison stops being leaf-based. `PL1` sits in the
-  stand group and covers the one decision no fixture can reach: whether the
-  plan says a higher layer rewrote every key the lowest one wrote, true for a
-  two-writer path and false for a triple, refused in both directions;
+- **stand controls** (`B1`, `B2`, `N1`–`N5`, `S1`, `F1`, `F2`, `F3`, `PL1`)
+  address what the verdict cases cannot reach. `N1`–`N5` are the five
+  directions of the observability limit: a covered cell that gets judged
+  anyway reddens (`N1`); a limit declared where the door DOES express the
+  form, over a cell whose effect the stand observes, reddens (`N2`); a limit
+  over a crash the row publishes nowhere reddens, and the same crash stops
+  being a conflict once an uncovered form of that row does publish it (`N3` —
+  both halves, or the case would pass against a guard that simply refused
+  every crash); a value-domain limit over a coerced value reddens (`N4`); and
+  both door kinds are refused against the door definition in either direction
+  (`N5`). `S1` is the same shape for the P1 file set: a hand-typed path in one
+  of its constants that no file stands at is named, and the real constants
+  name none — that guard was blind on two paths for a whole round, and
+  `array_intersect` over a string no file carries can never intersect
+  anything. `F1`, `F2` and `F3` are the three faces of the floor: `F1` holds
+  the frozen half's REAL observations to `Floor::cureMisses()` and reddens
+  when a cured row is planted back into defect; `F2` does the equivalent on
+  the live grid's synthetic cells, for a row left undeclared and for one
+  declared cured that did not move; `F3` is `withdrawn`'s own three-way
+  refusal — a withdrawn row that is still defective, or that the grid
+  observes at all, or that is blind for a different reason than the one
+  declared, each reddens on its own. `B1` and `B2` address what happens
+  *before* an observation is stored, which a frozen raw text is blind to by
+  construction. `B1` takes the real framing pair — the only way to say "the
+  fixture still answers unframed today" — and then plants an outcome into the
+  pure judgement, so the control can go red without the product being broken.
+  `B2` addresses the worker extraction directly: it asserts three things, and
+  the third is the one that matters — that the observation still *carries the
+  worker number*, or an extraction returning a constant would pass the other
+  two and observe nothing. `PL1` covers the one decision no fixture can
+  reach: whether the plan says a higher layer rewrote every key the lowest one
+  wrote, true for a two-writer path and false for a triple, refused in both
+  directions;
+- **judgement controls** (`PR1`–`PR3`, `CP1`–`CP6`, `NB1`–`NB3`) plant into
+  axis B's own counter-default gate and the axis-C and axis-E rules
+  themselves. They cannot be planted the way the verdict cases are — not
+  because the frozen half lacks these axes (`shot.txt` carries all five), but
+  because a judgement case's outcome is computed from a THREE-WAY comparison
+  (`low`/`high`/`both`, or `omitted`/`neighbour`/`both`) built fresh from a
+  synthetic fixture of the case's own, never from a single stored raw text —
+  so there is no one frozen cell to edit, on either half. `PR1`–`PR3` prove
+  the counter-default gate itself: a side written with what the product does
+  anyway has no effect to lose (`PR1`); the sensitive half of a row whose
+  other half is inert must still be measured, not swallowed by the gate
+  (`PR2`); and which key won cannot be read off two sides that render alike,
+  only once they differ (`PR3`). Two of the six axis-C cases are not about an
+  observation at all but about the **comparison**. Each carries a fixture read
+  twice, a baseline and a planting that differ in exactly one observation, and
+  must move from one declared verdict to another; a case whose planting
+  changed nothing would otherwise pass by agreeing with itself. `CP4` and
+  `CP2` are the two substitutions `03-grid.md` asks for by name — whole texts
+  instead of leaves renames `FRANKENSTEIN` into `MISLAYERED`, and winner
+  equality asked before sibling loss renames `LOST_SIBLING` into
+  `COMPOSED_AS_PROMISED`. `CP4` only *demonstrates* the first, because the
+  renaming branch is reachable only through the control; `CP6` is what
+  actually bites the run, through a fixture whose leaves match the promised
+  side in a different order — it reddens the moment the production comparison
+  stops being leaf-based;
 - **cross-check controls** (`C1`, `C2`, `C3`) plant into each side of the four
   sets, and `C3` is an absolute assertion rather than a differential one: a
   comparison that ignored the door normalization would produce the same
@@ -835,16 +1022,25 @@ does not bite).
 
 A second refusal used to stand beside it — the frozen half had to reproduce the
 published grid cell for cell — and it is **retired**, for the same reason the
-floor moved halves. It held only because both documents were measured on
-`6a833ab8`; the round has since cured the product, so the published grid is the
-cured tree and the frozen half is the pre-cure one, and they differ by
-thousands of cells because that is what a cure looks like. Suspending it while
-the input stamp is stale, which is what the first version of this package did,
-only postpones the refusal to the next measurement. What the demand protected —
-"the cases plant into the document a reader sees" — is carried by the
-stale-declaration refusal and by the floor case `F1`; what is lost is named in
-the script: nothing notices if the frozen half stops matching a published
-rendering of ITSELF, because no such rendering is published.
+floor moved halves, though not for the reason it first was: that equality
+holds only while the two halves measure the same product, and whether they do
+is a property of WHERE THE ROUND STANDS, not of the stand. The moment a round
+cures something, the grid moves ahead of its own baseline by design — a demand
+that is true at the start of a round and false the instant its first cure
+lands cannot be a refusal. It stays retired even now that the two halves DO
+agree again: this round's baseline was re-frozen against the cured product of
+`02a6ca66`, and at the time of writing the round has not yet changed the
+product, so the two happen to agree cell for cell — restoring the demand
+would buy a green line today and refuse the very first cure this round lands.
+Suspending it while the input stamp is stale, which is what the first version
+of this package did, only postpones the refusal to the next measurement. What
+the demand protected — "the cases plant into the document a reader sees" — is
+carried by the stale-declaration refusal and by the floor case `F1`, in the
+form the `cure`/`withdrawn` columns leave of it once the baseline post-dates
+the cures; what is lost is named in the script: nothing notices if the frozen
+half stops matching a published rendering of ITSELF, because no such
+rendering is published — `composer promise-effect:before` recomputes it on
+demand.
 
 ## The population guard
 
