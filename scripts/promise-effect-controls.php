@@ -52,13 +52,19 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\PromiseEffect\Cell;
+use Qualimetrix\PromiseEffect\Classifier;
+use Qualimetrix\PromiseEffect\CompositionComparison;
+use Qualimetrix\PromiseEffect\CompositionPlan;
+use Qualimetrix\PromiseEffect\CompositionPlanner;
 use Qualimetrix\PromiseEffect\CrossCheck;
 use Qualimetrix\PromiseEffect\Declarations;
 use Qualimetrix\PromiseEffect\Floor;
 use Qualimetrix\PromiseEffect\InProcess;
+use Qualimetrix\PromiseEffect\KeyPairGroups;
 use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
 use Qualimetrix\PromiseEffect\Limits;
+use Qualimetrix\PromiseEffect\Observation;
 use Qualimetrix\PromiseEffect\Population;
 use Qualimetrix\PromiseEffect\ProcessProbe;
 use Qualimetrix\PromiseEffect\Stand;
@@ -73,6 +79,8 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Limits.php';
+require __DIR__ . '/promise-effect/Composition.php';
+require __DIR__ . '/promise-effect/Neighbourhood.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Population.php';
 require __DIR__ . '/promise-effect/FifthSet.php';
@@ -95,6 +103,7 @@ final class Workspace
         'promise-effect/axis-a-hits.tsv',
         'promise-effect/witness-envelopes.tsv',
         'promise-effect/pair-kind-scope.tsv',
+        'promise-effect/composition-magnitudes.tsv',
         'promise-effect/door-normalization.tsv',
         'promise-effect/observability-limits.tsv',
         'promise-effect/floor.tsv',
@@ -451,6 +460,64 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
 
         if (\count($unframedBroken) !== 1 || !str_contains($unframedBroken[0], 'unframed refusal control')) {
             $failures[] = 'B1: breaking the unframed side did not produce exactly its own problem';
+        }
+
+        return $failures;
+    }
+
+    if ($case->id === 'PL1') {
+        // The one decision of axis C that no fixture case can reach: whether
+        // the sibling question is asked at all. A plan that answered `true`
+        // everywhere would make every triple read as a correct composition,
+        // and a plan answering `false` everywhere would make every kept
+        // promise on a list-shaped key a LOST_SIBLING — the two mistakes this
+        // flag stands between, measured once each.
+        $planner = new CompositionPlanner(
+            Declarations::load($root),
+            $inProcess->aliases,
+            new KeyPairGroups($root),
+        );
+        $failures = [];
+        $expected = ['composition-path' => true, 'composition-triple' => false];
+
+        foreach ($expected as $kind => $answer) {
+            $seen = false;
+
+            foreach (Ledger::load($root)->compositions as $row) {
+                if ($row->kind !== $kind) {
+                    continue;
+                }
+
+                $rule = $kind === 'composition-path' ? substr($row->subject, \strlen('rules.')) : $row->subject;
+                $option = '';
+
+                // The producer name is the longest registered prefix of the
+                // path, exactly as the grid splits it.
+                foreach (array_keys($inProcess->optionsClasses) as $producer) {
+                    if (str_starts_with($rule . '.', $producer . '.')) {
+                        $option = substr($rule, \strlen($producer) + 1);
+                        $rule = $producer;
+                    }
+                }
+
+                $plan = $planner->plan($row, $rule, $option, CompositionPlanner::POINT_OBJECT);
+
+                if (!$plan instanceof CompositionPlan) {
+                    continue;
+                }
+
+                $seen = true;
+
+                if ($plan->highRewritesEveryLowKey() !== $answer) {
+                    $failures[] = 'PL1: the plan for ' . $row->key() . ' answers '
+                        . ($plan->highRewritesEveryLowKey() ? 'true' : 'false') . ', and a ' . $kind . ' row owes '
+                        . ($answer ? 'true' : 'false');
+                }
+            }
+
+            if (!$seen) {
+                $failures[] = 'PL1: the ledger carries no plannable ' . $kind . ' row, so this half of the case measured nothing';
+            }
         }
 
         return $failures;
@@ -893,6 +960,113 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
 }
 
 /**
+ * One axis-C or axis-E case: the fixture read twice, once as declared and once
+ * with a single observation replaced.
+ *
+ * The demand is symmetric with the verdict cases even though nothing is
+ * planted into a file: the baseline must read what it declares, the planting
+ * must read what IT declares, and the two must differ — a case whose planting
+ * moved nothing would otherwise agree with itself and pass.
+ *
+ * @return list<string> what went wrong, empty when the case holds
+ */
+function runJudgementCase(JudgementCase $case): array
+{
+    $failures = [];
+    $baseline = judge($case, $case->sides, CompositionComparison::Leaves);
+
+    if ($baseline->verdict !== $case->baselineVerdict) {
+        $failures[] = $case->id . ': the unplanted fixture reads ' . $baseline->verdict . ', and the case declares ' . $case->baselineVerdict;
+    }
+
+    if ($case->baselineVerdict === $case->verdict) {
+        $failures[] = $case->id . ': the planting and the baseline declare the same verdict, so the case cannot show anything moving';
+    }
+
+    [$side, $replacement] = $case->planted;
+    $planted = [...$case->sides, $side => $replacement];
+    $judgement = judge($case, $planted, CompositionComparison::Leaves);
+
+    if ($judgement->verdict !== $case->verdict) {
+        $failures[] = $case->id . ': expected the planting to read ' . $case->verdict . ', it read ' . $judgement->verdict;
+    }
+
+    if ($judgement->defect !== $case->defect) {
+        $failures[] = $case->id . ': expected defect=' . ($case->defect ? 'yes' : 'no') . ', the run said ' . ($judgement->defect ? 'yes' : 'no');
+    }
+
+    foreach ($case->substitutions as $name => $expected) {
+        $comparison = match ($name) {
+            'WholeText' => CompositionComparison::WholeText,
+            'WinnerBeforeSibling' => CompositionComparison::WinnerBeforeSibling,
+            default => null,
+        };
+
+        if ($comparison === null) {
+            $failures[] = $case->id . ': no comparison named "' . $name . '" exists to substitute';
+
+            continue;
+        }
+
+        $substituted = judge($case, $planted, $comparison);
+
+        if ($substituted->verdict !== $expected) {
+            $failures[] = \sprintf(
+                '%s: the %s comparison should have renamed this cell into %s, it read %s',
+                $case->id,
+                $name,
+                $expected,
+                $substituted->verdict,
+            );
+        }
+
+        if ($substituted->verdict === $judgement->verdict) {
+            $failures[] = $case->id . ': the ' . $name . ' comparison agrees with the real one here, so this case proves no substitution is possible';
+        }
+    }
+
+    return $failures;
+}
+
+/** @param array<string, string> $sides */
+function judge(JudgementCase $case, array $sides, CompositionComparison $how): \Qualimetrix\PromiseEffect\Judgement
+{
+    if ($case->axis === 'E') {
+        return Classifier::neighbourhood(
+            observationOf($sides['omitted']),
+            observationOf($sides['neighbour']),
+            observationOf($sides['nullAlone']),
+            observationOf($sides['both']),
+        );
+    }
+
+    return Classifier::composition(
+        observationOf($sides['omitted']),
+        observationOf($sides['low']),
+        observationOf($sides['high']),
+        observationOf($sides['both']),
+        $case->promised,
+        $case->highRewritesEveryLowKey,
+        $how,
+    );
+}
+
+/**
+ * A fixture side as the classifier reads one: `outcome|text`, or a bare text
+ * for the accepted case. Read through `ofMeasured()`, which is the ONE place a
+ * raw outcome becomes a judgeable one — a case that built an Observation
+ * directly would be judged by a rule the run does not use.
+ */
+function observationOf(string $declared): Observation
+{
+    $halves = explode('|', $declared, 2);
+
+    return \count($halves) === 2 && !str_starts_with($declared, '{')
+        ? Observation::ofMeasured($halves[0], $halves[1])
+        : Observation::ofMeasured(Observation::ACCEPTED, $declared);
+}
+
+/**
  * Whether a guard's report names this cell.
  *
  * @param list<string> $conflicts
@@ -990,6 +1164,45 @@ foreach (['OK', 'INERT', 'COLLAPSED', 'REFUSES', 'MALFORMED', 'NOT OBSERVABLE', 
     }
 }
 
+// The new axes get their own coverage arithmetic rather than joining the list
+// above: their cases are not plantings into the frozen half, which has no side
+// for them to edit, so a stale-declaration check over `$baseline` would refuse
+// every one of them.
+$judgementCovered = [];
+
+foreach (Cases::judgements() as $judgementCase) {
+    $judgementCovered[$judgementCase->verdict] = true;
+    $judgementCovered[$judgementCase->baselineVerdict] = true;
+}
+
+foreach ([
+    'COMPOSED_AS_PROMISED', 'MISLAYERED', 'LOST_SIBLING', 'COMPOSITION_REFUSED', 'FRANKENSTEIN',
+    'PRESENCE_NEUTRAL', 'PRESENCE_SWITCHED_BRANCH', 'PRESENCE_REFUSED',
+] as $verdict) {
+    if (!isset($judgementCovered[$verdict])) {
+        $stale[] = 'no judgement case reads ' . $verdict;
+    }
+}
+
+// Every case id, across every group, must be unique: `--only=` addresses a
+// case by id, and two cases sharing one would be run together while the
+// operator believed they had narrowed to a single probe.
+$identifiers = [];
+
+foreach ([
+    ...array_map(static fn(ControlCase $case): string => $case->id, Cases::verdicts()),
+    ...array_map(static fn(JudgementCase $case): string => $case->id, Cases::judgements()),
+    ...array_map(static fn(ProbeCase $case): string => $case->id, Cases::probes()),
+    ...array_map(static fn(CrossCase $case): string => $case->id, Cases::crossChecks()),
+    ...array_map(static fn(GuardCase $case): string => $case->id, Cases::guards()),
+] as $identifier) {
+    if (isset($identifiers[$identifier])) {
+        $stale[] = 'two control cases answer to the id ' . $identifier;
+    }
+
+    $identifiers[$identifier] = true;
+}
+
 $populations = [];
 
 foreach (Cases::guards() as $guard) {
@@ -1029,16 +1242,35 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 $publishedComparison = 'retired: the published grid measures the cured tree, the frozen half the pre-cure one';
 
 printf(
-    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d stand case(s), %d cross-check case(s) over both\n"
-        . "sides of the four sets, and %d guard case(s) over 4 populations, in a universe of %d cells.\n"
+    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d judgement case(s) over the 8 verdicts of axes C\n"
+        . "and E, %d stand case(s), %d cross-check case(s) over both sides of the four sets, and %d guard case(s)\n"
+        . "over 4 populations, in a universe of %d cells.\n"
         . "The frozen half against the published grid: %s.\n",
     \count(Cases::verdicts()),
+    \count(Cases::judgements()),
     \count(Cases::probes()),
     \count(Cases::crossChecks()),
     \count(Cases::guards()),
     \count($baseline),
     $publishedComparison,
 );
+
+// The cheap half is not evidence unless it is READ. Every line collected
+// above was thrown away here until this round: `$stale` was filled by three
+// guards, never consulted, and the documented exit 2 could not happen — so a
+// case addressing a cell the run does not carry, a verdict nothing plants, and
+// a population nothing guards were all silently tolerated. Named as a defect
+// of the stand rather than quietly repaired, because a guard that cannot
+// redden is the class this whole programme measures.
+if ($stale !== []) {
+    foreach ($stale as $problem) {
+        fwrite(\STDERR, 'COVERAGE: ' . $problem . "\n");
+    }
+
+    $workspace->cleanup();
+
+    exit(2);
+}
 
 $failures = [];
 $ran = 0;
@@ -1105,6 +1337,16 @@ foreach (Cases::probes() as $probe) {
     ++$ran;
     $failures = [...$failures, ...runProbeCase($probe, $root, $inProcess, $process)];
     printf("  %-3s %-15s %s\n", $probe->id, $probe->subject, $probe->intent);
+}
+
+foreach (Cases::judgements() as $judgementCase) {
+    if ($only !== [] && !\in_array($judgementCase->id, $only, true)) {
+        continue;
+    }
+
+    ++$ran;
+    $failures = [...$failures, ...runJudgementCase($judgementCase)];
+    printf("  %-3s %-15s %s\n", $judgementCase->id, $judgementCase->verdict, $judgementCase->intent);
 }
 
 foreach (Cases::crossChecks() as $cross) {

@@ -5744,6 +5744,27 @@ B	pair|size.property-count|exclude-promoted-only|warning|same-source|6-subject-f
 B	pair|size.property-count|exclude-readonly|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|exclude-readonly|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present
 B	pair|size.property-count|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised
+C	composition|composition-bucket|complexity.ccn|callable.warning@cli-alias|callable.threshold@rule-opt|callable|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	refused, as promised; promised refuse
+C	composition|composition-bucket|complexity.cognitive|callable.warning@cli-alias|callable.threshold@rule-opt|callable|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	refused, as promised; promised refuse
+C	composition|composition-bucket|complexity.npath|callable.warning@cli-alias|callable.threshold@rule-opt|callable|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	refused, as promised; promised refuse
+C	composition|composition-path|rules.size.method-count.warning|cli-alias|rule-opt|80-alias-restricted|frameworkKeys	both	frameworkKeys	NOT OBSERVABLE	no	DECIDED	the row promises only over the 80 alias paths, and no framework key is one of them (scope 80-alias-restricted)
+C	composition|composition-path|rules.size.method-count.warning|cli-alias|rule-opt|80-alias-restricted|optionsObject	both	optionsObject	MISLAYERED	no	DECIDED	the high side won; promised unpromised
+C	composition|composition-path|rules.size.method-count.warning|preset#i|preset#j|unrestricted|frameworkKeys	both	frameworkKeys	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high; observed through the registry predicate, because the factory drains this key before fromArray(); at optionsObject the same two writes are indistinguishable, which is the whole reason for this point
+C	composition|composition-path|rules.size.method-count.warning|preset#i|preset#j|unrestricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-path|rules.size.method-count.warning|preset|cli-alias|80-alias-restricted|frameworkKeys	both	frameworkKeys	NOT OBSERVABLE	no	PROMISED	the row promises only over the 80 alias paths, and no framework key is one of them (scope 80-alias-restricted)
+C	composition|composition-path|rules.size.method-count.warning|preset|cli-alias|80-alias-restricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-path|rules.size.method-count.warning|preset|qmx.yaml|unrestricted|frameworkKeys	both	frameworkKeys	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high; observed through the registry predicate, because the factory drains this key before fromArray(); at optionsObject the same two writes are indistinguishable, which is the whole reason for this point
+C	composition|composition-path|rules.size.method-count.warning|preset|qmx.yaml|unrestricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-path|rules.size.method-count.warning|preset|rule-opt|unrestricted|frameworkKeys	both	frameworkKeys	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high; observed through the registry predicate, because the factory drains this key before fromArray(); at optionsObject the same two writes are indistinguishable, which is the whole reason for this point
+C	composition|composition-path|rules.size.method-count.warning|preset|rule-opt|unrestricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|cli-alias|80-alias-restricted|frameworkKeys	both	frameworkKeys	NOT OBSERVABLE	no	PROMISED	the row promises only over the 80 alias paths, and no framework key is one of them (scope 80-alias-restricted)
+C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|cli-alias|80-alias-restricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|rule-opt|unrestricted|frameworkKeys	both	frameworkKeys	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high; observed through the registry predicate, because the factory drains this key before fromArray(); at optionsObject the same two writes are indistinguishable, which is the whole reason for this point
+C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|rule-opt|unrestricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	both	optionsObject	LOST_SIBLING	no	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised unpromised; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	both	optionsObject	LOST_SIBLING	no	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised unpromised; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	both	optionsObject	LOST_SIBLING	no	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised unpromised; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	both	optionsObject	LOST_SIBLING	no	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised unpromised; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
 D	form|cli-root|cache.dir|bool	bool	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|float	float	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|int	int	report	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed
@@ -6288,3 +6309,873 @@ D	form|yaml|suppress_paths|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|suppress_paths|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|string-number	string-number	report	REFUSES	no	PROMISED	refused
+E	neighbourhood|annotation.directive|enabled|unused-directive-severity	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|annotation.directive|unused-directive-severity|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|architecture.circular-dependency|direct-as-error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|architecture.circular-dependency|direct-as-error|max-cycle-size	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate-vs-severity
+E	neighbourhood|architecture.circular-dependency|enabled|direct-as-error	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|architecture.circular-dependency|enabled|max-cycle-size	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|architecture.circular-dependency|max-cycle-size|direct-as-error	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate-vs-severity
+E	neighbourhood|architecture.circular-dependency|max-cycle-size|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|architecture.layer-violation|enabled|severity	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|architecture.layer-violation|severity|empty-template-severity	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused
+E	neighbourhood|architecture.layer-violation|severity|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|architecture.layer-violation|severity|potential-shadow-severity	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused
+E	neighbourhood|architecture.layer-violation|severity|unreachable-layer-severity	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused
+E	neighbourhood|architecture.unassigned-class|mode|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-contradiction-refused
+E	neighbourhood|code-smell.boolean-argument|allowed-prefixes|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-vs-filter
+E	neighbourhood|code-smell.boolean-argument|enabled|allowed-prefixes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.boolean-argument|enabled|flag-promoted-properties	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.boolean-argument|flag-promoted-properties|allowed-prefixes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-vs-filter
+E	neighbourhood|code-smell.boolean-argument|flag-promoted-properties|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.constructor-overinjection|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.constructor-overinjection|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.constructor-overinjection|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.constructor-overinjection|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.constructor-overinjection|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.constructor-overinjection|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.error-suppression|allowed-functions|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.error-suppression|enabled|allowed-functions	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|vo-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|vo-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|vo-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|error|vo-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|error|vo-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|error|vo-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|threshold|vo-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|threshold|vo-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|threshold|vo-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|vo-error|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-error|vo-threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-error|vo-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|vo-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|vo-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-threshold|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|vo-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|vo-threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|vo-warning|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.long-parameter-list|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.long-parameter-list|warning|vo-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|warning|vo-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.long-parameter-list|warning|vo-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-group-same-path
+E	neighbourhood|code-smell.unreachable-code|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.unreachable-code|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.unreachable-code|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.unreachable-code|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.unreachable-code|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|code-smell.unreachable-code|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|code-smell.unreachable-code|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|enabled|exclude-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|enabled|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|enabled|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|error|exclude-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|error|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|error|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|exclude-methods|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|exclude-methods|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|exclude-methods|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|exclude-methods|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|exclude-readonly|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|exclude-readonly|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|exclude-readonly|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|exclude-readonly|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|min-methods|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|min-methods|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|min-methods|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|min-methods|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|threshold|exclude-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|threshold|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|cohesion.lcom|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|cohesion.lcom|warning|exclude-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|cohesion.lcom|warning|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|warning|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|cohesion.lcom|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.enabled|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.enabled|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.enabled|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|callable.error|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.error|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.error|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.threshold|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.threshold|callable.error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.threshold|callable.warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.threshold|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.threshold|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|callable.warning|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|callable.warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.warning|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|callable.warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.warning|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|callable|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.enabled|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.enabled|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|class.max-error|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-error|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-error|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.max-error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.max-error|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.max-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-warning|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-warning|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.max-warning|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.max-warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.max-warning|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.max-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.threshold|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.threshold|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.threshold|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|class.threshold|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|class.threshold|class.max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.threshold|class.max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.ccn|class.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|class|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.ccn|enabled|callable	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.ccn|enabled|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|enabled|class	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.ccn|enabled|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.ccn|threshold|callable.error	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|threshold|callable.threshold	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|threshold|callable.warning	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|threshold|callable:	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.ccn|threshold|class.max-error	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|threshold|class.max-warning	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.ccn|threshold|class.threshold	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.ccn|threshold|class:	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.ccn|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.enabled|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.enabled|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.enabled|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|callable.error|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.error|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.error|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.threshold|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.threshold|callable.error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.threshold|callable.warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.threshold|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.threshold|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|callable.warning|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|callable.warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.warning|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|callable.warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.warning|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|callable|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.enabled|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.enabled|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|class.max-error|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-error|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-error|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.max-error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.max-error|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.max-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-warning|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-warning|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.max-warning|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.max-warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.max-warning|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.max-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.threshold|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.threshold|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.threshold|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|class.threshold|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|class.threshold|class.max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.threshold|class.max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.cognitive|class.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|class|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|enabled|callable	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|enabled|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|enabled|class	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|enabled|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.cognitive|threshold|callable.error	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|threshold|callable.threshold	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|threshold|callable.warning	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|threshold|callable:	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.cognitive|threshold|class.max-error	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|threshold|class.max-warning	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 4-cross-level
+E	neighbourhood|complexity.cognitive|threshold|class.threshold	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.cognitive|threshold|class:	both	optionsObject	NOT OBSERVABLE	no	(none)	`~` alone is already not an omitted key here, which axis A owns; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.cognitive|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.enabled|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.enabled|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.enabled|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|callable.error|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.error|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.error|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.threshold|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.threshold|callable.error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.threshold|callable.warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.threshold|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.threshold|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|callable.warning|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|callable.warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.warning|callable.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|callable.warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.warning|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|callable|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.enabled|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.enabled|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|class.max-error|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-error|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-error|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-error|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.max-error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.max-error|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.max-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-warning|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-warning|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-warning|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.max-warning|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.max-warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.max-warning|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.max-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.threshold|callable.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.threshold|callable.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.threshold|callable.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|class.threshold|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|class.threshold|class.max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.threshold|class.max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.npath|class.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|class|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.npath|enabled|callable	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.npath|enabled|callable.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|enabled|class	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|complexity.npath|enabled|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.npath|threshold|callable.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|threshold|callable.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|threshold|callable.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|threshold|callable:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.npath|threshold|class.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|threshold|class.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|complexity.npath|threshold|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|complexity.npath|threshold|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|complexity.npath|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.wmc|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.wmc|enabled|exclude-data-classes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.wmc|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.wmc|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|complexity.wmc|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.wmc|error|exclude-data-classes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.wmc|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.wmc|exclude-data-classes|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.wmc|exclude-data-classes|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|exclude-data-classes|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|exclude-data-classes|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.wmc|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.wmc|threshold|exclude-data-classes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.wmc|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|complexity.wmc|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|complexity.wmc|warning|exclude-data-classes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|complexity.wmc|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.enabled|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.enabled|class.scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.enabled|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|class.error|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.error|class.scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.error|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.error|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.error|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|class.error|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.error|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.error|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.scope|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.scope|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.scope|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.scope|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.scope|scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|class.threshold|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.threshold|class.error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.threshold|class.scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.threshold|class.warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.threshold|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.threshold|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.threshold|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.threshold|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|class.threshold|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|class.warning|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.warning|class.scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-measurement-input
+E	neighbourhood|coupling.cbo|class.warning|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|class.warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|class.warning|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|class|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|class	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|namespace	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|enabled|scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|error|class.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|error|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|error|class.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|error|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|error|namespace.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|error|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|error|namespace.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|error|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|namespace.enabled|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.enabled|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.enabled|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.enabled|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.error|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.error|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.error|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|namespace.error|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.error|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.error|namespace.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.error|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.min-class-count|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.min-class-count|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.min-class-count|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.min-class-count|namespace.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.threshold|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.threshold|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.threshold|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.threshold|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.threshold|namespace.error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.threshold|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.threshold|namespace.warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|namespace.threshold|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|namespace.warning|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.warning|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.cbo|namespace.warning|namespace.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|namespace.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|namespace.warning|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|namespace|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|scope|class.scope	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|scope|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|threshold|class.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|threshold|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|threshold|class.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|threshold|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|threshold|namespace.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|threshold|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|threshold|namespace.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|threshold|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|warning|class.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|warning|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|warning|class.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|warning|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.cbo|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.cbo|warning|namespace.error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|warning|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.cbo|warning|namespace.warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.cbo|warning|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.cbo|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.class-rank|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.class-rank|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|enabled|include-namespaces	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.distance|enabled|max-distance-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.distance|enabled|max-distance-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.distance|enabled|min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.distance|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.distance|include-namespaces|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.distance|include-namespaces|max-distance-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|include-namespaces|max-distance-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|include-namespaces|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|max-distance-error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.distance|max-distance-error|include-namespaces	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|max-distance-error|max-distance-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|max-distance-error|min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|max-distance-error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|max-distance-warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.distance|max-distance-warning|include-namespaces	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|max-distance-warning|max-distance-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|max-distance-warning|min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|max-distance-warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|min-class-count|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.distance|min-class-count|max-distance-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|min-class-count|max-distance-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|min-class-count|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.distance|threshold|include-namespaces	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.distance|threshold|max-distance-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|threshold|max-distance-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.distance|threshold|min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.enabled|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.enabled|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.enabled|class.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|class.max-error|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.max-error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.max-error|class.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.max-error|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.max-error|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|class.max-error|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-error|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-error|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-error|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-warning|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.max-warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.max-warning|class.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.max-warning|class.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.max-warning|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-warning|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|class.max-warning|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-warning|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-warning|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.max-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.min-afferent|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.min-afferent|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.min-afferent|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.min-afferent|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.threshold|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|class.threshold|class.max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.threshold|class.max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|class.threshold|class.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|class.threshold|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.threshold|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.threshold|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.threshold|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.threshold|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|class.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|class|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|enabled|class	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|coupling.instability|enabled|class.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|enabled|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|enabled|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|enabled|namespace	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate
+E	neighbourhood|coupling.instability|enabled|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|max-error|class.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|max-error|class.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-error|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-error|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.instability|max-error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|max-error|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|max-error|namespace.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|max-error|namespace.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-error|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-error|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.instability|max-error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|max-warning|class.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-warning|class.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|max-warning|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-warning|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.instability|max-warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|max-warning|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|max-warning|namespace.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-warning|namespace.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|max-warning|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|max-warning|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.instability|max-warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.enabled|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|namespace.enabled|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.enabled|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.enabled|namespace.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.enabled|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.enabled|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.max-error|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-error|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-error|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|namespace.max-error|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-error|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.max-error|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.max-error|namespace.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.max-error|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.max-error|namespace.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.max-error|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-warning|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-warning|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-warning|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.max-warning|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|namespace.max-warning|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.max-warning|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.max-warning|namespace.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.max-warning|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.max-warning|namespace.threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.max-warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.min-afferent|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.min-afferent|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.min-afferent|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.min-afferent|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.min-class-count|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.min-class-count|namespace.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.min-class-count|namespace.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.min-class-count|namespace.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.threshold|class.max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.threshold|class.max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.threshold|max-error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.threshold|max-warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|namespace.threshold|namespace.enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|namespace.threshold|namespace.max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.threshold|namespace.max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|namespace.threshold|namespace.min-afferent	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.threshold|namespace.min-class-count	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|coupling.instability|namespace.threshold|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|namespace|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|threshold|class.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|threshold|class.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|threshold|class.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|threshold|class:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|coupling.instability|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|coupling.instability|threshold|max-error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|threshold|max-warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|coupling.instability|threshold|namespace.max-error	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|threshold|namespace.max-warning	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 4-cross-level
+E	neighbourhood|coupling.instability|threshold|namespace.threshold	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 2-same-name-top-vs-level
+E	neighbourhood|coupling.instability|threshold|namespace:	both	optionsObject	PRESENCE_SWITCHED_BRANCH	yes	(none)	`~` beside the neighbour changed how it is read; pair kind 3-shorthand-vs-level-block
+E	neighbourhood|design.data-class|enabled|exclude-exceptions	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|enabled|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|enabled|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|enabled|min-members	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.data-class|enabled|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.data-class|enabled|woc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.data-class|exclude-exceptions|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|exclude-exceptions|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|exclude-exceptions|woc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|exclude-promoted-only|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|exclude-promoted-only|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|exclude-promoted-only|woc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|exclude-readonly|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|exclude-readonly|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|exclude-readonly|woc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|min-members|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|min-members|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|min-members|woc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|wmc-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|wmc-threshold|exclude-exceptions	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|wmc-threshold|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|wmc-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|wmc-threshold|min-members	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|woc-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.data-class|woc-threshold|exclude-exceptions	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|woc-threshold|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|woc-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.data-class|woc-threshold|min-members	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.dit|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.dit|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.dit|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.dit|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.dit|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.dit|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.dit|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.dit|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.dit|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.dit|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.dit|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.dit|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.god-class|class-loc-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|class-loc-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|class-loc-threshold|min-criteria	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|class-loc-threshold|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|enabled|class-loc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|lcom-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|min-criteria	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|tcc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|enabled|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.god-class|exclude-readonly|class-loc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|exclude-readonly|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|exclude-readonly|lcom-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|exclude-readonly|tcc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|exclude-readonly|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|lcom-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|lcom-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|lcom-threshold|min-criteria	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|lcom-threshold|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|min-criteria|class-loc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|min-criteria|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|min-criteria|lcom-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|min-criteria|tcc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|min-criteria|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|min-methods|class-loc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|min-methods|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|min-methods|lcom-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|min-methods|tcc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|min-methods|wmc-threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|tcc-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|tcc-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|tcc-threshold|min-criteria	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|tcc-threshold|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|wmc-threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.god-class|wmc-threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|design.god-class|wmc-threshold|min-criteria	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-criteria-count
+E	neighbourhood|design.god-class|wmc-threshold|min-methods	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|design.noc|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.noc|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.noc|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.noc|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.noc|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.noc|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.noc|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.noc|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.noc|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.noc|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.noc|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.noc|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.param|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.param|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.property|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.property|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|design.type-coverage.return|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|design.type-coverage.return|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|duplication.clone|enabled|min-lines	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|duplication.clone|enabled|min-tokens	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|duplication.clone|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|duplication.clone|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|duplication.clone|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|duplication.clone|error|min-lines	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|error|min-tokens	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|min-lines|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|duplication.clone|min-lines|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|min-lines|min-tokens	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-two-filters-one-subject
+E	neighbourhood|duplication.clone|min-lines|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|min-lines|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|min-tokens|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|duplication.clone|min-tokens|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|min-tokens|min-lines	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-two-filters-one-subject
+E	neighbourhood|duplication.clone|min-tokens|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|min-tokens|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|duplication.clone|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|threshold|min-lines	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|threshold|min-tokens	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|duplication.clone|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|duplication.clone|warning|min-lines	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|warning|min-tokens	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|duplication.clone|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|maintainability.mi|enabled|exclude-tests	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|enabled|min-statements	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|maintainability.mi|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|maintainability.mi|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|maintainability.mi|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|error|exclude-tests	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|error|min-statements	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|exclude-tests|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|exclude-tests|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|exclude-tests|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|exclude-tests|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|min-statements|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|min-statements|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|min-statements|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|min-statements|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|threshold|exclude-tests	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|threshold|min-statements	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|maintainability.mi|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|maintainability.mi|warning|exclude-tests	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|warning|min-statements	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|maintainability.mi|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.class-count|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.class-count|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.class-count|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.class-count|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.class-count|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.class-count|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.class-count|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.method-count|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.method-count|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.method-count|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.method-count|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.method-count|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.method-count|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.method-count|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.property-count|enabled|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|enabled|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.property-count|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate
+E	neighbourhood|size.property-count|error|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|error|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|error|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|error|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|error|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|exclude-promoted-only|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|exclude-promoted-only|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|exclude-promoted-only|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|exclude-promoted-only|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|exclude-readonly|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|exclude-readonly|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|exclude-readonly|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|exclude-readonly|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|threshold|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|threshold|error	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|threshold|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|threshold|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|threshold|warning	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|warning|enabled	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate
+E	neighbourhood|size.property-count|warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared
+E	neighbourhood|size.property-count|warning|exclude-promoted-only	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|warning|exclude-readonly	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-subject-filter
+E	neighbourhood|size.property-count|warning|threshold	both	optionsObject	PRESENCE_REFUSED	yes	(none)	refused only because `~` stands beside the neighbour: refused-framed; pair kind 1-threshold-group-declared

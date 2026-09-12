@@ -18,10 +18,11 @@ declare(strict_types=1);
  *   php scripts/promise-effect.php --check        0 fresh, 1 drift or a red outcome
  *   php scripts/promise-effect.php --before       re-judge the frozen raw observations
  *   php scripts/promise-effect.php --freeze-before --reason='…'
- *   php scripts/promise-effect.php --axis=A,B,D   narrow the run (never evidence on its own)
+ *   php scripts/promise-effect.php --axis=A,C     narrow the run (never evidence on its own)
  *   php scripts/promise-effect.php --stability    measure twice, demand the same text
  *
- * Exit codes: 0 clean, 1 a red outcome on axis A or D, 2 a declaration that
+ * Exit codes: 0 clean, 1 a red outcome on a BLOCKING axis (which ones those
+ * are is declared in `promise-effect/run-declaration.tsv`), 2 a declaration that
  * cannot be read, 3 a probe that could not be taken (see 02 §4: a run that did
  * not confirm its postcondition is not an observation).
  *
@@ -45,10 +46,75 @@ require __DIR__ . '/promise-effect/InProcess.php';
 require __DIR__ . '/promise-effect/ProcessProbe.php';
 require __DIR__ . '/promise-effect/Classifier.php';
 require __DIR__ . '/promise-effect/Limits.php';
+require __DIR__ . '/promise-effect/Composition.php';
+require __DIR__ . '/promise-effect/Neighbourhood.php';
 require __DIR__ . '/promise-effect/Stand.php';
 require __DIR__ . '/promise-effect/Floor.php';
 require __DIR__ . '/promise-effect/Stamp.php';
 require __DIR__ . '/promise-effect/RunDeclaration.php';
+
+/**
+ * The one place an axis NAME becomes the cells it produces.
+ *
+ * Before this the dispatch was three literal `if (in_array('A', ...))` blocks
+ * in two code paths, and S11's lesson is exactly that shape: a new axis added
+ * to one of them and forgotten in the other is an axis that silently does not
+ * get measured. The declared list decides WHICH of these run; this map decides
+ * only HOW, and {@see assertAxesHaveGenerators()} holds the two together.
+ *
+ * @return array<string, callable(Stand): list<Cell>>
+ */
+function axisGenerators(): array
+{
+    return [
+        'A' => static fn(Stand $stand): array => $stand->axisA(),
+        'B' => static fn(Stand $stand): array => $stand->axisB(),
+        'C' => static fn(Stand $stand): array => $stand->axisC(),
+        'D' => static fn(Stand $stand): array => $stand->axisD(),
+        'E' => static fn(Stand $stand): array => $stand->axisE(),
+    ];
+}
+
+/**
+ * Both directions, because both are a way to stop measuring in silence: a
+ * declared axis nothing can produce, and a generator no declaration ever
+ * names.
+ *
+ * @param list<string> $declared
+ */
+function assertAxesHaveGenerators(array $declared): void
+{
+    $generators = axisGenerators();
+
+    foreach ($declared as $axis) {
+        if (!isset($generators[$axis])) {
+            throw new LedgerError('run-declaration.tsv names the axis "' . $axis . '", which nothing in this script produces');
+        }
+    }
+
+    foreach (array_keys($generators) as $axis) {
+        if (!\in_array($axis, $declared, true)) {
+            throw new LedgerError('the script produces the axis "' . $axis . '", which run-declaration.tsv does not declare');
+        }
+    }
+}
+
+/**
+ * @param list<string> $axes
+ *
+ * @return list<Cell>
+ */
+function measure(Stand $stand, array $axes): array
+{
+    $generators = axisGenerators();
+    $cells = [];
+
+    foreach ($axes as $axis) {
+        $cells = [...$cells, ...$generators[$axis]($stand)];
+    }
+
+    return $cells;
+}
 
 /**
  * @param list<string> $argv
@@ -330,6 +396,7 @@ try {
     // supplies a second one of its own.
     $runDeclaration = RunDeclaration::load($root);
     $canonicalAxes = $runDeclaration->axes;
+    assertAxesHaveGenerators($canonicalAxes);
     $ledger = Ledger::load($root);
     $declarations = Declarations::load($root);
     $inProcess = new InProcess($scratch);
@@ -430,21 +497,7 @@ if (isset($arguments['stability'])) {
     $texts = [];
 
     foreach ([$stand, $second] as $round) {
-        $cells = [];
-
-        if (\in_array('A', $axes, true)) {
-            $cells = [...$cells, ...$round->axisA()];
-        }
-
-        if (\in_array('B', $axes, true)) {
-            $cells = [...$cells, ...$round->axisB()];
-        }
-
-        if (\in_array('D', $axes, true)) {
-            $cells = [...$cells, ...$round->axisD()];
-        }
-
-        $texts[] = render($cells);
+        $texts[] = render(measure($round, $axes));
     }
 
     $differences = 0;
@@ -487,20 +540,7 @@ if (\in_array('A', $axes, true)) {
     $stand->takeWitnesses();
 }
 
-$cells = [];
-
-if (\in_array('A', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisA()];
-}
-
-if (\in_array('B', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisB()];
-}
-
-if (\in_array('D', $axes, true)) {
-    $cells = [...$cells, ...$stand->axisD()];
-}
-
+$cells = measure($stand, $axes);
 $rendered = render($cells);
 $target = $snapshotDirectory . '/verdicts.tsv';
 $spanProblems = 0;
@@ -620,9 +660,13 @@ foreach ($canonicalAxes as $axis) {
 
         ++$defects;
 
-        // Axis B is measured, not cured, in this round: no owner holds a
-        // mandate over pair semantics, so MISCOMPOSED does not block.
-        if ($axis !== 'B') {
+        // Only the axes the declaration calls blocking move the exit code.
+        // B, C and E are measured and not cured HERE: axis B has no owner
+        // holding a mandate over pair semantics, and axis C and the
+        // neighbourhood coordinate are this round's own subject — a stage that
+        // measures them cannot also demand they already be green, or the grid
+        // it exists to produce could never be written.
+        if (\in_array($axis, $runDeclaration->blockingAxes, true)) {
             ++$red;
         }
     }
@@ -637,6 +681,49 @@ foreach ($cells as $cell) {
     if ($cell->verdict !== Verdict::NOT_OBSERVABLE) {
         ++$observable;
     }
+}
+
+// Printed apart from the verdict counts because it is a fact about the
+// LEDGER, not about the product: a row whose carriers decide nothing cannot be
+// contradicted, whatever its cell says happened. 03-grid.md asks for this
+// number separately for exactly that reason.
+if (\in_array('C', $axes, true)) {
+    $silent = 0;
+
+    foreach ($ledger->compositions as $row) {
+        if ($row->promised === 'unpromised' || $row->promised === '') {
+            ++$silent;
+        }
+    }
+
+    printf("\n  %-22s %d of %d ledger row(s)\n", 'axis C unpromised', $silent, \count($ledger->compositions));
+
+    // 02-stand.md asks for this per pair rather than as a belief about the
+    // declared magnitudes: a pair whose two sides render alike is read
+    // NOT OBSERVABLE, never nudged until it differs, so the count of cells
+    // that DID tell their sides apart is the honest denominator of axis C.
+    $alike = 0;
+    $asked = 0;
+
+    foreach ($cells as $cell) {
+        if ($cell->axis !== 'C') {
+            continue;
+        }
+
+        if (str_contains($cell->decidedBy, Classifier::SIDES_ALIKE)) {
+            ++$alike;
+        }
+
+        if ($cell->verdict !== Verdict::NOT_OBSERVABLE || str_contains($cell->decidedBy, Classifier::SIDES_ALIKE)) {
+            ++$asked;
+        }
+    }
+
+    printf("  %-22s %d of %d cell(s) probed, %d could not\n", 'axis C sides apart', $asked - $alike, $asked, $alike);
+}
+
+if (\in_array('E', $axes, true)) {
+    printf("  %-22s %d cell(s)\n", 'axis E population', \count((new Neighbourhood($root, $inProcess->optionsClasses))->rows));
 }
 
 printf("\n  %-22s %d\n", 'in-process probes', $inProcess->observations());

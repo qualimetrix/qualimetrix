@@ -23,29 +23,42 @@ second list is started here), raw observations stored rather than verdicts, and
 
 ## What is here
 
-| file                                                                   | what it is                                                                                                               | written by         |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1308 rows, frozen product of stage 01                                                                      | stage 01, a person |
-| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                            | a person           |
-| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                              | a person           |
-| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                      | a person           |
-| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                    | a person           |
-| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                              | a person           |
-| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist  | a person           |
-| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                        | a person           |
-| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                   | a person           |
-| `floor.tsv`                                                            | the rows the stand is required to call defective                                                                         | a person           |
-| `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak | a person           |
-| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                     | the stand          |
-| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                     | the stand          |
-| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** pre-cure observations                                                                                 | the stand          |
+| file                                                                   | what it is                                                                                                                  | written by         |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1308 rows, frozen product of stage 01                                                                         | stage 01, a person |
+| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                               | a person           |
+| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                                 | a person           |
+| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                         | a person           |
+| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                       | a person           |
+| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                                 | a person           |
+| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist     | a person           |
+| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                           | a person           |
+| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                      | a person           |
+| `floor.tsv`                                                            | the rows the stand is required to call defective                                                                            | a person           |
+| `run-declaration.tsv`                                                  | the axes the grid spans, which of them own the exit code, and the commit the pre-cure shot is taken on                      | a person           |
+| `composition-magnitudes.tsv`                                           | the two distinguishable values axis C writes with, and the framework patterns and witnesses its second point uses           | a person           |
+| `../docs/internal/plans/promise-effect/measurement/key-pairs.tsv`      | stage 01's frozen pair enumeration — read by axis C for a triple's graduated partner and by axis E for its whole population | stage 01, a person |
+| `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak    | a person           |
+| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                        | the stand          |
+| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                        | the stand          |
+| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** pre-cure observations                                                                                    | the stand          |
 
 ## The row key
 
 `form|<door>|<path>|<form>` for axis A and D,
-`pair|<rule>|<a>|<b>|<scope>|<kind>` for axis B. The form is part of the key:
-one ledger row carries eight questions, and folding them into one verdict
-would hide seven of them.
+`pair|<rule>|<a>|<b>|<scope>|<kind>` for axis B,
+`composition|<kind>|<subject>|<low>|<high>|<scope>|<point>` for axis C, and
+`neighbourhood|<rule>|<null key>|<neighbour>` for axis E. The form is part of
+the key: one ledger row carries eight questions, and folding them into one
+verdict would hide seven of them.
+
+The **point** is part of the axis-C key for the same reason. A
+`composition-path` row is asked twice — once of the options object, once of
+the registry predicates the three framework keys are read through — and the
+two answers can differ, because `RuleOptionsFactory::create()` drains those
+keys before `fromArray()` ever runs. On today's tree all four framework cells
+say so in their own words: *at optionsObject the same two writes are
+indistinguishable*.
 
 The **kind** is part of the pair key for the same reason and was added after
 the fact. Without it nineteen `same-source` pairs collapsed onto thirteen row
@@ -79,13 +92,20 @@ A CLI door does not pass through the merged document at all — its value travel
 beside the document as an override — so `mergedDocument` is not a location a CLI
 form can be lost at, and the stand does not name it as one.
 
-## The two probes
+## The four probes
 
 The triple `omitted / value / equivalent` is a question about the **form of a
 value**, and it produces seven verdicts. A promise about **adjacency** is not
 expressible by it: "a refusal was promised, the product composed" is neither
 `INERT` nor `COLLAPSED`. So `kind=pair` rows get their own triple
 `onlyA / onlyB / both` and their own two verdicts.
+
+Two more questions need two more probes, for the same reason. "Whose value
+survived" is not "what form may this value take": axis C writes one path from
+up to three layers and compares `onlyLow / onlyHigh / both`. And "what does
+`~` do BESIDE a neighbour" is asked by neither — axes A and D write a key
+alone, axis B writes two keys at the canonical magnitude and never at `~` — so
+axis E writes `omitted / neighbour / nullAlone / both` into one document.
 
 | verdict          | condition                                                   |
 | ---------------- | ----------------------------------------------------------- |
@@ -98,6 +118,50 @@ expressible by it: "a refusal was promised, the product composed" is neither
 | `UNPROMISED`     | no ledger row: the grid grew and nobody said so             |
 | `COEXISTENCE_OK` | `both` matched the ledger's `coexistence`                   |
 | `MISCOMPOSED`    | `both` did something else                                   |
+
+Axis C, where the ledger's sixth column names `low`, `high`, `refuse` or
+`unpromised`:
+
+| verdict                | condition                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `COMPOSED_AS_PROMISED` | `both` is the promised side, or a promised refusal actually refused          |
+| `MISLAYERED`           | `both` is the other side                                                     |
+| `LOST_SIBLING`         | a slot only one side wrote, and no higher layer disputes, is back to default |
+| `FRANKENSTEIN`         | `both` was accepted and equals **neither** side leaf for leaf                |
+| `COMPOSITION_REFUSED`  | `both` was refused where no carrier promised a refusal                       |
+| `NOT OBSERVABLE`       | `onlyLow == onlyHigh`, a side is unwritable, or the row has no plan          |
+
+The order of those questions carries as much as the questions do, and it is
+the reverse of the obvious one: sibling loss is asked **before** winner
+equality. A middle layer that evicts the lowest layer's exclusive slot leaves
+a result identical to the highest layer's, leaf for leaf, so a winner-first
+reading calls it a correct composition and the triples measure nothing. The
+one thing that keeps that from swallowing the ordinary case is a fact no
+observation carries — whether a higher layer rewrote every key the lowest one
+wrote. Where both sides dispute the same key, the higher value replacing the
+lower one **is** the promise being kept, and its leaf effect is
+indistinguishable from a slot vanishing; measured on the framework point, a
+stand that only looked at leaves turned four kept promises into four defects.
+
+`FRANKENSTEIN` is a name and not a nicety. A list or a map merges recursively,
+so `[a, b]` from below and `[c]` from above produce a value equal to neither
+side; a stand comparing whole texts has nowhere to put that but "the other
+side won". Comparison is leaf by leaf, sorted, and control case `CP6` reddens
+if it ever stops being.
+
+Axis E, whose claim is narrow and is about the **neighbour**: writing `~` must
+be worth exactly as much as leaving the key out.
+
+| verdict                    | condition                                                                  |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `PRESENCE_NEUTRAL`         | `both == neighbour`: the `~` changed nothing                               |
+| `PRESENCE_SWITCHED_BRANCH` | `both != neighbour`: the `~` changed how its neighbour is read             |
+| `PRESENCE_REFUSED`         | `both` was refused while the neighbour alone was accepted                  |
+| `NOT OBSERVABLE`           | the neighbour has no effect to lose, or `~` alone already moves the object |
+
+That last gate hands a row to axis A rather than judging it here: a `~` that is
+already not an omitted key on its own is a defect axis A owns, and counting it
+again here would publish one defect as two.
 
 ### The label and the defect are two columns, not one
 
@@ -306,8 +370,25 @@ says nothing about the product.
   exactly one hand-written instantiation, and the claim is about that one.
 - **Anything about the `inline` door.** It is deferred whole, and out of the
   denominator: four doors in this round, not five.
-- **Anything about `cross-source` adjacency.** The 108 rows of that coordinate
-  are deferred with axis C.
+- **Anything about `cross-source` adjacency.** Those 108 rows are pairs of two
+  DIFFERENT keys written from two sources; axis C answers the other question —
+  one path, several writers — and does not cover them.
+- **The five SLOT pairs of axis C.** Of the twelve real writer pairs, seven are
+  path pairs and five put `@qmx-threshold` on the upper side, which writes an
+  already-built options slot rather than a configuration path: another
+  mechanism, another oracle, not measured here.
+- **What any SHIPPED preset actually writes.** Axis C writes its own preset
+  files. The denominator claims the stage can carry any path, not that
+  `strict`, `legacy` or `ci` writes one, and no cell here reads their contents.
+- **Triples beyond the four forms.** The scenario count is `C(N+2,3) x 30` by
+  formula; the grid exercises one triple per form T1-T4, with `L3` writing
+  STRICTLY one slot of the pair. A triple whose `L3` writes both slots has
+  nothing to lose and is green by construction, so it is outside the sample on
+  purpose.
+- **Whether a neighbour is right, on axis E.** The claim is only that writing
+  `~` beside it changes nothing; a neighbour that was already wrong stays
+  wrong, and a `~` whose own value already misbehaves is handed back to axis A
+  rather than counted twice.
 - **That `NOT OBSERVABLE` means the product is silent.** It means this fixture
   and this observable cannot tell a written value from an omitted one. Its share
   is reported as a number, not a footnote, because a growing share devalues the
@@ -327,7 +408,10 @@ says nothing about the product.
   measured effect, and only 3 of those 8 cells are decided after the gate at
   all. The honest row-level statement is the one to quote: the sensitivity gate
   is closed on **166 rows before and 165 after, and 165 of them are the same
-  rows**.
+  rows**. Both shares above are the X18 pair, over its 6289 cells. The live
+  grid is no longer that size — axis C and the neighbourhood coordinate added
+  891 cells to it — and the number to quote for today is the one the run
+  prints.
 - **Element forms inside a list.** The row's axis is the form of the container.
 - **Anything about a form its door cannot spell, or a key the canonical
   magnitude does not name.** Those cells read `NOT OBSERVABLE` by declaration,
@@ -421,23 +505,36 @@ control of its own and would destroy the attribution this table exists to give
 
 ```bash
 composer promise-effect            # write the verdict grid and the input stamp (~200 s)
-composer promise-effect:check      # 0 fresh, 1 drift or a red outcome on A or D (~200 s)
+composer promise-effect:check      # 0 fresh, 1 drift or a red outcome on a blocking axis (~200 s)
 composer promise-effect:before     # re-judge the frozen raw observations (<1 s)
 composer promise-effect:grid       # declarations, grid span, populations, fifth set (<1 s)
 composer promise-effect:grid:check # the same, exit 1 on drift — this one is in `check:artifacts`
-composer promise-effect:controls   # the stand's own controls (~4 s: two of them take process runs)
+composer promise-effect:controls   # the stand's own controls (~5 s: two of them take process runs)
 composer promise-effect:stability  # measure twice, demand the same text
-php scripts/promise-effect.php --freeze-before --reason='…'   # retake the pre-cure shot (only on 6a833ab8)
+php scripts/promise-effect.php --freeze-before --reason='…'   # retake the pre-cure shot
 php scripts/promise-effect.php --axis=A          # narrow a run; never evidence on its own
 php scripts/promise-effect.php --axis=B --stability   # the cheap way to exercise the repeat
 ```
 
-Axis B is measured and **not** cured in this round, so `MISCOMPOSED` travels
-with a number and does not redden the run. Axes A and D own the exit code.
+**A narrowed run still WRITES the grid**, with only the axes it measured in it.
+That is a trap rather than a feature: the next `grid:check` — and every control
+that reads the published grid — then judges a partial file. Follow any
+`--axis=` run with a full one before trusting anything that reads
+`verdicts.tsv`.
+
+Which axes exist, which of them own the exit code, and which commit the
+pre-cure shot belongs on are all read from `run-declaration.tsv`; the script
+holds its own generator map against that list in **both** directions, so an
+axis nobody produces and a generator nobody declares are each a refusal rather
+than an axis that silently stops being measured. Today A and D are blocking.
+B is measured and not cured — no owner holds a mandate over pair semantics —
+and C and E are the subject the current round is measuring in order to cure
+later, so their defects travel with a number and do not redden the run.
 
 `promise-effect:before` re-judges the frozen raw observations with **today's**
 classifier, so both halves of the before/after pair are judged by one rule.
-Retaking the shot needs `--freeze-before` on `6a833ab8` **and** a `--reason=`;
+Retaking the shot needs `--freeze-before` on the commit `run-declaration.tsv`
+names **and** a `--reason=`;
 the reason is written into `shot.txt` beside the commit and the date, because
 the file is what the next reader of the frozen half has in front of them.
 Editing the classifier is not a reason to retake, because it requires nothing
@@ -634,14 +731,29 @@ are printed by name with the commit whose own subject covers them.
 
 ## The controls
 
-`composer promise-effect:controls` runs twenty-four cases in four groups: one
+`composer promise-effect:controls` runs thirty-nine cases in five groups: one
 planting per verdict — all seven of the form and both of the pair — plus one
 that edits the ledger rather than an observation, plus one that plants an exit
-code back into the shape the stand used to read it as; two probe cases; three
-cross-check cases over the two sides of the four sets; and one per population
-against the guard. Every planting case must redden **its own** cell and no
-other: the run diffs the whole outcome map against the unplanted baseline, so a
-blanket breakage fails as loudly as one that does not bite.
+code back into the shape the stand used to read it as; nine **judgement** cases
+over the eight verdicts of axes C and E; twelve probe cases; three cross-check
+cases over the two sides of the four sets; and one per population against the
+guard. Every planting case must redden **its own** cell and no other: the run
+diffs the whole outcome map against the unplanted baseline, so a blanket
+breakage fails as loudly as one that does not bite.
+
+**The cheap half was collected and never read, for a whole round.** The
+coverage arithmetic — a case addressing a cell the run does not carry, a
+verdict nothing plants, a population nothing guards — filled a list that was
+then thrown away, and the exit 2 this file documents could not happen. That was
+true of this stand from the round that wrote it, and it is the class this
+programme exists to measure: a guard that cannot redden. The list is consulted
+now, before a single planting runs.
+
+A duplicate case id is refused beside it. `--only=` addresses a case by id, so
+two cases sharing one are run together while the operator believes they have
+narrowed to a single probe — which is exactly what happened twice while the
+axis-C cases were being written, and is why the guard exists rather than being
+argued for.
 
 The outcome compared is `VERDICT|defect`, never the label alone. The round
 exists because a framed refusal of a promised form is a defect wearing an
@@ -679,6 +791,24 @@ Two further groups exist because that rule is not the whole stand:
   three things, and the third is the one that matters: that the observation
   still *carries the worker number*, or an extraction returning a constant would
   pass the other two and observe nothing;
+- **judgement controls** (`CP1`–`CP6`, `NB1`–`NB3`) plant into the axis-C and
+  axis-E rules themselves. They cannot be planted the way the verdict cases
+  are: the frozen half predates both axes, so there is no stored side to edit —
+  and two of them are not about an observation at all but about the
+  **comparison**. Each carries a fixture read twice, a baseline and a planting
+  that differ in exactly one observation, and must move from one declared
+  verdict to another; a case whose planting changed nothing would otherwise
+  pass by agreeing with itself. `CP4` and `CP2` are the two substitutions
+  `03-grid.md` asks for by name — whole texts instead of leaves renames
+  `FRANKENSTEIN` into `MISLAYERED`, and winner equality asked before sibling
+  loss renames `LOST_SIBLING` into `COMPOSED_AS_PROMISED`. `CP4` only
+  *demonstrates* the first, because the renaming branch is reachable only
+  through the control; `CP6` is what actually bites the run, through a fixture
+  whose leaves match the promised side in a different order — it reddens the
+  moment the production comparison stops being leaf-based. `PL1` sits in the
+  stand group and covers the one decision no fixture can reach: whether the
+  plan says a higher layer rewrote every key the lowest one wrote, true for a
+  two-writer path and false for a triple, refused in both directions;
 - **cross-check controls** (`C1`, `C2`, `C3`) plant into each side of the four
   sets, and `C3` is an absolute assertion rather than a differential one: a
   comparison that ignored the door normalization would produce the same

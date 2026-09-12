@@ -50,6 +50,11 @@ final class Stamp
         // this list already named, which is exactly the drift this stamp
         // exists to catch.
         'promise-effect/run-declaration.tsv',
+        // The two magnitudes axis C writes with, and stage 01's key-pair
+        // enumeration, which axis C reads for a triple's graduated partner and
+        // axis E reads for its whole population. Both produce cells.
+        'promise-effect/composition-magnitudes.tsv',
+        'docs/internal/plans/promise-effect/measurement/key-pairs.tsv',
         'scripts/promise-effect.php',
         'scripts/promise-effect/RunDeclaration.php',
         // Only the files that PRODUCE the grid. `Population`, `FifthSet` and
@@ -62,6 +67,8 @@ final class Stamp
         'scripts/promise-effect/ProcessProbe.php',
         'scripts/promise-effect/Classifier.php',
         'scripts/promise-effect/Limits.php',
+        'scripts/promise-effect/Composition.php',
+        'scripts/promise-effect/Neighbourhood.php',
         'scripts/promise-effect/Stand.php',
     ];
 

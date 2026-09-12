@@ -15,7 +15,18 @@
 #
 # `axes` lists every axis the grid spans, in the fixed order the summary is
 # printed in. `--axis=` narrows a run against this same list; it never
-# replaces it.
+# replaces it. It is also held against the script's own generator map in both
+# directions: a declared axis nothing produces, and a generator nothing
+# declares, are two ways of not measuring in silence.
+#
+# `blocking-axes` names the subset whose defects move the EXIT CODE. It is a
+# decision of the round and not a property of an axis, which is why it is
+# declared rather than written into the summary loop:
+#   A, D  cured by this programme, so a defect blocks;
+#   B     pair semantics have no owner holding a mandate (X17's decision);
+#   C, E  the subject this round is measuring in order to cure later — a stage
+#         that must produce their grid cannot also demand it be green.
 key	value
 before-commit	02a6ca66
-axes	A,B,D
+axes	A,B,C,D,E
+blocking-axes	A,D

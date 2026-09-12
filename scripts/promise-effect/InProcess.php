@@ -125,6 +125,9 @@ final class InProcess
     /** @var array<string, array{door: Observation, merged: Observation, object: Observation}> */
     private array $memo = [];
 
+    /** @var array<string, array{object: Observation, framework: Observation}> */
+    private array $compositionMemo = [];
+
     private int $observations = 0;
 
     public function __construct(string $scratchRoot)
@@ -199,6 +202,159 @@ final class InProcess
         $this->memo[$memoKey] = $this->takeFresh($document, $ruleOpts, $aliasFlags, $rule);
 
         return $this->memo[$memoKey];
+    }
+
+    /**
+     * The axis-C probe: one invocation written by up to three layers at once,
+     * observed at the two points a merged document is actually read from.
+     *
+     * `take()` is deliberately untouched. It is the input axes A, B and D were
+     * measured through, and widening it would move cells this package does not
+     * address — the input/classifier distinction 02-stand.md opens with.
+     *
+     * Two observations come back, not one:
+     *
+     *   - `object` is what `RuleOptionsFactory::create()` built. It answers
+     *     "whose value is in the object" for every ordinary rule-option path.
+     *   - `framework` is what the registry's own predicates answer. The three
+     *     framework keys (`suppress_paths`, `suppress_namespaces`,
+     *     `suppress_namespace_channels`) are drained by the factory BEFORE
+     *     `fromArray()` and reach no field of any options object, so a grid
+     *     with only the first point would be green while their composition
+     *     was broken. Asked of the same predicates three of the four consumers
+     *     of the merged document ask.
+     *
+     * @param array<string, mixed> $document what the `qmx.yaml` door is handed
+     * @param list<array<string, mixed>> $presets preset documents, lowest layer first
+     * @param list<string> $ruleOpts what the `--rule-opt` door is handed
+     * @param array<string, string> $aliasFlags what the `cli-alias` door is handed
+     * @param list<string> $pathWitnesses relative files the path predicate is asked about
+     * @param list<string> $namespaceWitnesses namespaces the namespace predicate is asked about
+     *
+     * @return array{object: Observation, framework: Observation}
+     */
+    public function compose(
+        array $document,
+        array $presets,
+        array $ruleOpts,
+        array $aliasFlags,
+        string $rule,
+        array $pathWitnesses = [],
+        array $namespaceWitnesses = [],
+    ): array {
+        $memoKey = 'compose:' . md5(serialize([$document, $presets, $ruleOpts, $aliasFlags, $rule, $pathWitnesses, $namespaceWitnesses]));
+
+        if (isset($this->compositionMemo[$memoKey])) {
+            return $this->compositionMemo[$memoKey];
+        }
+
+        ++$this->observations;
+        $this->compositionMemo[$memoKey] = $this->composeFresh(
+            $document,
+            $presets,
+            $ruleOpts,
+            $aliasFlags,
+            $rule,
+            $pathWitnesses,
+            $namespaceWitnesses,
+        );
+
+        return $this->compositionMemo[$memoKey];
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param list<array<string, mixed>> $presets
+     * @param list<string> $ruleOpts
+     * @param array<string, string> $aliasFlags
+     * @param list<string> $pathWitnesses
+     * @param list<string> $namespaceWitnesses
+     *
+     * @return array{object: Observation, framework: Observation}
+     */
+    private function composeFresh(
+        array $document,
+        array $presets,
+        array $ruleOpts,
+        array $aliasFlags,
+        string $rule,
+        array $pathWitnesses,
+        array $namespaceWitnesses,
+    ): array {
+        $file = $this->workDirectory . '/qmx.yaml';
+        file_put_contents($file, Yaml::dump($document, 8, 2));
+
+        // Content-addressed, so a layer written by one probe can never be read
+        // by the next one through a name the loader happens to have cached.
+        // The ORDER is the list's, not the name's: `presetNames` is what the
+        // stage merges left to right.
+        $presetNames = [];
+
+        foreach ($presets as $index => $preset) {
+            $name = 'composition-' . $index . '-' . md5(serialize($preset)) . '.yaml';
+            file_put_contents($this->workDirectory . '/' . $name, Yaml::dump($preset, 8, 2));
+            $presetNames[] = $name;
+        }
+
+        $cliValues = [];
+
+        try {
+            $input = new ArrayInput(
+                array_merge(
+                    $ruleOpts === [] ? [] : ['--rule-opt' => $ruleOpts],
+                    $aliasFlags === [] ? [] : array_combine(
+                        array_map(static fn(string $a): string => '--' . $a, array_keys($aliasFlags)),
+                        array_values($aliasFlags),
+                    ),
+                ),
+                $this->checkCommand->getDefinition(),
+            );
+            $cliValues = (new CliOptionsParser($this->ruleOptionsParser))->parseRuleOptions($input);
+        } catch (Throwable $error) {
+            $refused = self::fromThrowable($error);
+            $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
+
+            return ['object' => $refused, 'framework' => $refused];
+        }
+
+        $request = new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->workDirectory),
+            $file,
+            $presetNames,
+        );
+
+        try {
+            $resolved = $this->pipeline->resolve($request);
+            $configuration = $this->resolver->resolve($resolved, new FindingCliOverrides($cliValues));
+
+            // A fresh registry per observation, for the same reason `take()`
+            // builds one: the factory drains the framework keys into the
+            // providers this registry owns, and a shared one would answer this
+            // probe with the previous probe's exclusions.
+            $registry = new RuleOptionsRegistry();
+            $registry->replace($configuration);
+            $options = (new RuleOptionsFactory($registry))->create($rule, $this->optionsClasses[$rule]);
+        } catch (Throwable $error) {
+            $refused = self::fromThrowable($error);
+            $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
+
+            return ['object' => $refused, 'framework' => $refused];
+        }
+
+        $excluded = [];
+
+        foreach ($pathWitnesses as $witness) {
+            $excluded['path:' . $witness] = $registry->isPathExcluded($rule, RelativePath::fromString($witness));
+        }
+
+        foreach ($namespaceWitnesses as $witness) {
+            $excluded['namespace:' . $witness] = $registry->isNamespaceExcluded($rule, $witness);
+        }
+
+        return [
+            'object' => new Observation(Observation::ACCEPTED, $this->tokenize(self::dump(['options' => self::plain($options)]))),
+            'framework' => new Observation(Observation::ACCEPTED, $this->tokenize(self::dump(['excluded' => $excluded]))),
+        ];
     }
 
     /**

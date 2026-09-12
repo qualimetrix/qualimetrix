@@ -17,6 +17,39 @@ declare(strict_types=1);
 
 namespace Qualimetrix\PromiseEffect;
 
+/**
+ * How an axis-C observation is compared against the two sides of its dispute.
+ *
+ * `Leaves` is the only member the run ever uses. The other two exist so a
+ * control can show what the round's own warnings are about: each is a
+ * comparison this stand could plausibly have been written with, and each
+ * silently renames one verdict into a neighbouring one. A control that could
+ * only call the real comparison could never show either substitution without
+ * breaking the product.
+ */
+enum CompositionComparison
+{
+    /** Leaf by leaf, sibling loss first. What the run uses. */
+    case Leaves;
+
+    /**
+     * Whole texts instead of leaves. A merge that assembled the value
+     * element by element equals neither side as TEXT, and a stand comparing
+     * texts has nowhere to put that but "the other side won" — `FRANKENSTEIN`
+     * read as `MISLAYERED`.
+     */
+    case WholeText;
+
+    /**
+     * Winner equality asked before sibling loss. When the middle layer of a
+     * triple evicts a slot only the lowest layer wrote and the highest layer
+     * does not write it back, the result equals the highest layer leaf for
+     * leaf — so asking "did the promised side win" first reads a lost sibling
+     * as a correct composition.
+     */
+    case WinnerBeforeSibling;
+}
+
 final class Verdict
 {
     public const string OK = 'OK';
@@ -29,6 +62,27 @@ final class Verdict
 
     public const string COEXISTENCE_OK = 'COEXISTENCE_OK';
     public const string MISCOMPOSED = 'MISCOMPOSED';
+
+    // Axis C: which WRITER of one path won. `MISLAYERED` and
+    // `COMPOSITION_REFUSED` are the two ways the promised layer order can be
+    // contradicted; `LOST_SIBLING` and `FRANKENSTEIN` are two outcomes a
+    // four-name vocabulary would have folded into `MISLAYERED` — a slot only
+    // the lower layer wrote vanishing, and a value assembled leaf by leaf that
+    // equals neither side. Both are named because both are what the
+    // denominator counted the triples for.
+    public const string COMPOSED_AS_PROMISED = 'COMPOSED_AS_PROMISED';
+    public const string MISLAYERED = 'MISLAYERED';
+    public const string LOST_SIBLING = 'LOST_SIBLING';
+    public const string COMPOSITION_REFUSED = 'COMPOSITION_REFUSED';
+    public const string FRANKENSTEIN = 'FRANKENSTEIN';
+
+    // Axis E: the form of one key BESIDE a neighbour. The claim is narrow and
+    // it is about the neighbour: writing `~` must be indistinguishable from
+    // leaving the key out, so whatever the neighbour did alone it must still
+    // do with `~` written next to it.
+    public const string PRESENCE_NEUTRAL = 'PRESENCE_NEUTRAL';
+    public const string PRESENCE_SWITCHED_BRANCH = 'PRESENCE_SWITCHED_BRANCH';
+    public const string PRESENCE_REFUSED = 'PRESENCE_REFUSED';
 
     /**
      * Verdicts that are always a defect of the product, not of the stand.
@@ -53,6 +107,17 @@ final readonly class Judgement
 
 final class Classifier
 {
+    /**
+     * The reason an axis-C cell carries when the probe could not tell its two
+     * sides apart.
+     *
+     * A constant rather than a sentence written twice, because the run counts
+     * these cells: 02-stand.md asks for "distinguishable, yes or no" to be
+     * PRINTED for every pair, and a summary that recognised the state by
+     * matching prose would silently stop counting the day the prose changed.
+     */
+    public const string SIDES_ALIKE = 'onlyLow == onlyHigh: the probe does not tell the sides apart';
+
     /**
      * @param bool $promised the ledger names this form among the promised ones
      * @param bool $witnessed the producer behind this path was seen to run
@@ -263,6 +328,202 @@ final class Classifier
         return $lost === []
             ? new Judgement(Verdict::COEXISTENCE_OK, 'both effects present')
             : new Judgement(Verdict::MISCOMPOSED, 'the effect of ' . implode(' and ', $lost) . ' is absent when both are written', true);
+    }
+
+    /**
+     * The axis-C rule: of the two (or three) layers that wrote one path, whose
+     * value is in the result, and does that match the promise.
+     *
+     * The order of the questions carries as much as the questions do, and it
+     * is the reverse of the obvious one:
+     *
+     *   1. can the sides be told apart at all — the sensitivity gate;
+     *   2. was the whole thing refused;
+     *   3. did a slot only ONE side wrote disappear;
+     *   4. and only then, which side's value is in the result.
+     *
+     * Step 3 before step 4 is not stylistic. A middle layer that evicts the
+     * lowest layer's exclusive slot leaves a result identical to the highest
+     * layer's, leaf for leaf, so a winner-first reading calls it a correct
+     * composition and the triples measure nothing. {@see CompositionComparison}
+     * carries both wrong orders so a control can show the difference.
+     *
+     * @param string $promised `low`, `high`, `refuse` or `unpromised`, out of
+     *                         the ledger's own sixth column
+     * @param bool $highRewritesEveryLowKey when true the sides dispute the
+     *                                      same keys, so there is no slot for the low side
+     *                                      to lose and the sibling question is not asked
+     */
+    public static function composition(
+        Observation $omitted,
+        Observation $low,
+        Observation $high,
+        Observation $both,
+        string $promised,
+        bool $highRewritesEveryLowKey = false,
+        CompositionComparison $how = CompositionComparison::Leaves,
+    ): Judgement {
+        // A side that cannot be written is a question about the DOOR, which
+        // axis A owns. "Both applied" has no meaning when one of them was
+        // never applied on its own, and calling it a composition defect would
+        // publish a form fact under a composition label.
+        if (!$low->accepted() || !$high->accepted()) {
+            return new Judgement(
+                Verdict::NOT_OBSERVABLE,
+                'one side alone is not writable: ' . $low->outcome . '/' . $high->outcome,
+            );
+        }
+
+        // The sensitivity gate of this axis, and the reason the two magnitudes
+        // are declared rather than assumed: a probe whose two sides render
+        // identically cannot say whose value survived, whatever came back.
+        if ($low->text === $high->text) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, self::SIDES_ALIKE);
+        }
+
+        // Unpromised rows are the ledger's silence, not the product's fault.
+        // The label still says what happened — that is what stage 03 counts —
+        // and `defect` stays false because no promise was contradicted.
+        $silent = $promised === 'unpromised';
+
+        if (!$both->accepted()) {
+            return $promised === 'refuse'
+                ? new Judgement(Verdict::COMPOSED_AS_PROMISED, 'refused, as promised')
+                : new Judgement(Verdict::COMPOSITION_REFUSED, 'refused where nothing promised a refusal: ' . $both->outcome, !$silent);
+        }
+
+        // Accepted where a refusal was promised: whichever label the
+        // comparison below lands on, the promise is contradicted.
+        $defect = $promised === 'refuse' || !$silent;
+
+        if (!$highRewritesEveryLowKey && $how !== CompositionComparison::WinnerBeforeSibling) {
+            $lost = self::lostSibling($omitted, $low, $high, $both);
+
+            if ($lost !== '') {
+                return new Judgement(Verdict::LOST_SIBLING, $lost, $defect);
+            }
+        }
+
+        $same = $how === CompositionComparison::WholeText
+            ? static fn(Observation $side): bool => $both->text === $side->text
+            : static fn(Observation $side): bool => self::sameLeaves($side->text, $both->text);
+
+        foreach (['high' => $high, 'low' => $low] as $side => $observation) {
+            if (!$same($observation)) {
+                continue;
+            }
+
+            return $promised === $side
+                ? new Judgement(Verdict::COMPOSED_AS_PROMISED, 'the promised side won')
+                : new Judgement(Verdict::MISLAYERED, 'the ' . $side . ' side won', $defect);
+        }
+
+        if ($how === CompositionComparison::WholeText) {
+            // The substitution the round warns about, spelled out: a text
+            // comparison has no name for "equal to neither", so the only
+            // reading left to it is that the other side won.
+            return new Judgement(Verdict::MISLAYERED, 'equal to neither side as TEXT', $defect);
+        }
+
+        return new Judgement(Verdict::FRANKENSTEIN, 'accepted and equal to neither side leaf for leaf', $defect);
+    }
+
+    /**
+     * A slot exactly one side wrote, and which is back to its unwritten value
+     * once both are written.
+     *
+     * Both directions are asked even though the triples only stake the lower
+     * one: a slot the HIGHER layer alone wrote and that vanished is the same
+     * defect seen from the other end, and refusing to look at it would be a
+     * claim about which half of the mechanism is allowed to break.
+     *
+     * @return string the reason, or the empty string when no slot was lost
+     */
+    private static function lostSibling(Observation $omitted, Observation $low, Observation $high, Observation $both): string
+    {
+        $before = self::leaves($omitted->text);
+        $together = self::leaves($both->text);
+
+        foreach (['low' => [$low, $high], 'high' => [$high, $low]] as $side => [$writer, $other]) {
+            $written = self::leaves($writer->text);
+            $untouched = self::leaves($other->text);
+
+            foreach ($written as $pointer => $leaf) {
+                $unwritten = $before[$pointer] ?? null;
+
+                // Exclusive to this side: this side moved the slot, the other
+                // side left it exactly as an unwritten key leaves it.
+                if ($unwritten === null || $unwritten === $leaf || ($untouched[$pointer] ?? null) !== $unwritten) {
+                    continue;
+                }
+
+                if (($together[$pointer] ?? null) === $unwritten) {
+                    return 'the slot ' . $pointer . ', written by the ' . $side . ' side alone, is back to its unwritten value';
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Whether two observations carry the same value at every leaf.
+     *
+     * Sorted before comparing, because PHP's `===` on arrays is order
+     * sensitive and the order here is the product's own insertion order: a
+     * value assembled by merging two layers can carry the same leaves as a
+     * value written by one of them and still render them in a different
+     * sequence. Comparing unsorted would report that as "equal to neither
+     * side" — the FRANKENSTEIN this axis exists to detect, produced by the
+     * stand rather than by the product.
+     */
+    private static function sameLeaves(string $left, string $right): bool
+    {
+        $leftLeaves = self::leaves($left);
+        $rightLeaves = self::leaves($right);
+        ksort($leftLeaves);
+        ksort($rightLeaves);
+
+        return $leftLeaves === $rightLeaves;
+    }
+
+    /**
+     * The axis-E rule: `~` written BESIDE a neighbour must be worth exactly
+     * as much as the key not being there.
+     *
+     * The comparison is against the neighbour ALONE, never against the empty
+     * document: what is claimed is that the presence of the key changes
+     * nothing about how its neighbour is read. Two gates come first, and both
+     * of them hand the row to another axis rather than judging it here — a
+     * neighbour with no visible effect has nothing to lose, and a `~` that
+     * already moves the object on its own is a defect axis A owns, which this
+     * axis would otherwise count a second time.
+     */
+    public static function neighbourhood(
+        Observation $omitted,
+        Observation $neighbour,
+        Observation $nullAlone,
+        Observation $both,
+    ): Judgement {
+        if (!$neighbour->accepted()) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, 'the neighbour alone is refused: ' . $neighbour->outcome);
+        }
+
+        if ($neighbour->text === $omitted->text) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, 'the neighbour alone changes nothing, so it has no effect to lose');
+        }
+
+        if (!$nullAlone->accepted() || $nullAlone->text !== $omitted->text) {
+            return new Judgement(Verdict::NOT_OBSERVABLE, '`~` alone is already not an omitted key here, which axis A owns');
+        }
+
+        if (!$both->accepted()) {
+            return new Judgement(Verdict::PRESENCE_REFUSED, 'refused only because `~` stands beside the neighbour: ' . $both->outcome, true);
+        }
+
+        return $both->text === $neighbour->text
+            ? new Judgement(Verdict::PRESENCE_NEUTRAL, '`~` beside the neighbour changed nothing')
+            : new Judgement(Verdict::PRESENCE_SWITCHED_BRANCH, '`~` beside the neighbour changed how it is read', true);
     }
 
     /**

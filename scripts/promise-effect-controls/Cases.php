@@ -106,6 +106,46 @@ final readonly class GuardCase
     ) {}
 }
 
+/**
+ * A planting into the axis-C or axis-E rule itself.
+ *
+ * These cannot be planted the way the nine verdict cases are. A verdict case
+ * edits a RAW observation of the frozen half — and the frozen half predates
+ * this axis, so there is no stored side to edit. More to the point, two of the
+ * cases here are not about an observation at all: they are about the
+ * COMPARISON, and the only way to show that comparing whole texts renames
+ * `FRANKENSTEIN` into `MISLAYERED` is to run both comparisons over one
+ * fixture.
+ *
+ * So each case carries a fixture and TWO readings of it: the `baseline`, which
+ * differs from the planted one in exactly one observation, and the planted
+ * one. "Reddens exactly its own case" means here that the one cell the fixture
+ * describes moved from the baseline verdict to the declared one, and that the
+ * two are not the same verdict — a case whose planting changed nothing would
+ * otherwise pass by agreeing with itself.
+ */
+final readonly class JudgementCase
+{
+    /**
+     * @param array<string, string> $sides side name => `outcome|text`, where a bare text means `accepted`
+     * @param array{string, string} $planted the side this case replaces, and its new `outcome|text`
+     * @param array<string, string> $substitutions the name of a wrong comparison => the verdict it would have produced instead
+     */
+    public function __construct(
+        public string $id,
+        public string $axis,
+        public string $verdict,
+        public bool $defect,
+        public string $baselineVerdict,
+        public string $intent,
+        public array $sides,
+        public array $planted,
+        public string $promised = '',
+        public bool $highRewritesEveryLowKey = false,
+        public array $substitutions = [],
+    ) {}
+}
+
 final class Cases
 {
     /** The cell every form case works on: promised, witnessed, accepted, with a comparand recorded. */
@@ -256,6 +296,177 @@ final class Cases
         ];
     }
 
+    /**
+     * The axis-C and axis-E plantings.
+     *
+     * Every verdict either axis can produce is named by at least one case, on
+     * both sides of the move: the baseline reading and the planted one. The
+     * two substitution cases are the ones 03-grid.md asks for by name — each
+     * points at a comparison this stand could have been written with, and says
+     * which verdict that comparison would have silently produced instead.
+     *
+     * @return list<JudgementCase>
+     */
+    public static function judgements(): array
+    {
+        // One scalar path, both layers writing the same key. The shape of
+        // every `composition-path` row.
+        $scalar = [
+            'omitted' => '{"options":{"warning":20}}',
+            'low' => '{"options":{"warning":4211}}',
+            'high' => '{"options":{"warning":8623}}',
+            'both' => '{"options":{"warning":8623}}',
+        ];
+
+        // A triple: the lowest layer writes the graduated pair, the highest
+        // writes one slot of it back, and `warning` is disputed by nobody.
+        $triple = [
+            'omitted' => '{"options":{"warning":20,"error":30}}',
+            'low' => '{"options":{"warning":4211,"error":4212}}',
+            'high' => '{"options":{"warning":20,"error":8624}}',
+            'both' => '{"options":{"warning":4211,"error":8624}}',
+        ];
+
+        // A framework key, observed through the two predicates. Both layers
+        // write the same key, and a merge that kept both patterns is a value
+        // equal to neither side.
+        $framework = [
+            'omitted' => '{"excluded":{"path:src/Low/Helper.php":false,"path:src/High/Helper.php":false}}',
+            'low' => '{"excluded":{"path:src/Low/Helper.php":true,"path:src/High/Helper.php":false}}',
+            'high' => '{"excluded":{"path:src/Low/Helper.php":false,"path:src/High/Helper.php":true}}',
+            'both' => '{"excluded":{"path:src/Low/Helper.php":false,"path:src/High/Helper.php":true}}',
+        ];
+
+        $neighbour = [
+            'omitted' => '{"options":{"class":{"warning":14,"error":20}}}',
+            'neighbour' => '{"options":{"class":{"warning":4211,"error":8623}}}',
+            'nullAlone' => '{"options":{"class":{"warning":14,"error":20}}}',
+            'both' => '{"options":{"class":{"warning":4211,"error":8623}}}',
+        ];
+
+        return [
+            new JudgementCase(
+                'CP1',
+                'C',
+                'MISLAYERED',
+                true,
+                'COMPOSED_AS_PROMISED',
+                'the lower layer\'s value is the one in the object, where the carrier promised the higher one',
+                $scalar,
+                ['both', '{"options":{"warning":4211}}'],
+                'high',
+                true,
+            ),
+            new JudgementCase(
+                'CP2',
+                'C',
+                'LOST_SIBLING',
+                true,
+                'FRANKENSTEIN',
+                'the slot only the lowest layer wrote is back to its unwritten value, and the result reads as the highest layer\'s',
+                $triple,
+                ['both', '{"options":{"warning":20,"error":8624}}'],
+                'high',
+                false,
+                // The substitution that matters more than the famous one: ask
+                // "did the promised side win" before "did a slot vanish" and
+                // this exact cell reports a correct composition.
+                ['WinnerBeforeSibling' => 'COMPOSED_AS_PROMISED'],
+            ),
+            new JudgementCase(
+                'CP3',
+                'C',
+                'COMPOSITION_REFUSED',
+                true,
+                'COMPOSED_AS_PROMISED',
+                'the two layers together are refused, and no carrier promised a refusal',
+                $scalar,
+                ['both', 'refused-framed|Cannot mix "threshold" with "warning"/"error".'],
+                'high',
+                true,
+            ),
+            new JudgementCase(
+                'CP4',
+                'C',
+                'FRANKENSTEIN',
+                true,
+                'COMPOSED_AS_PROMISED',
+                'the merge kept both layers\' patterns, so the value equals neither side',
+                $framework,
+                ['both', '{"excluded":{"path:src/Low/Helper.php":true,"path:src/High/Helper.php":true}}'],
+                'high',
+                true,
+                // The substitution 03-grid.md names: whole texts instead of
+                // leaves. A text comparison has no word for "equal to
+                // neither", so it reports the other side winning.
+                ['WholeText' => 'MISLAYERED'],
+            ),
+            new JudgementCase(
+                'CP5',
+                'C',
+                'NOT OBSERVABLE',
+                false,
+                'COMPOSED_AS_PROMISED',
+                'the two magnitudes render the same, so nothing the run came back with could say whose value survived',
+                $scalar,
+                ['high', '{"options":{"warning":4211}}'],
+                'high',
+                true,
+            ),
+            new JudgementCase(
+                'CP6',
+                'C',
+                'COMPOSED_AS_PROMISED',
+                false,
+                'FRANKENSTEIN',
+                'the promised side won although the product rendered its leaves in a different order — which is what tells a leaf comparison from a text one in the RUN, not only in a control',
+                [
+                    'omitted' => '{"options":{"warning":20,"error":30}}',
+                    'low' => '{"options":{"warning":4211,"error":30}}',
+                    'high' => '{"options":{"warning":20,"error":8624}}',
+                    'both' => '{"options":{"warning":20,"error":30}}',
+                ],
+                ['both', '{"options":{"error":8624,"warning":20}}'],
+                'high',
+                true,
+                // The same cell under the substitution: a text comparison sees
+                // two different strings and has no word for it but "the other
+                // side won".
+                ['WholeText' => 'MISLAYERED'],
+            ),
+            new JudgementCase(
+                'NB1',
+                'E',
+                'PRESENCE_SWITCHED_BRANCH',
+                true,
+                'PRESENCE_NEUTRAL',
+                '`~` beside a level block throws the block away, although `~` alone is worth an omitted key',
+                $neighbour,
+                ['both', '{"options":{"class":{"warning":14,"error":20}}}'],
+            ),
+            new JudgementCase(
+                'NB2',
+                'E',
+                'PRESENCE_REFUSED',
+                true,
+                'PRESENCE_NEUTRAL',
+                'a document lawful without the key is refused once `~` stands beside its neighbour',
+                $neighbour,
+                ['both', 'refused-framed|Cannot mix "threshold" with "warning"/"error".'],
+            ),
+            new JudgementCase(
+                'NB3',
+                'E',
+                'NOT OBSERVABLE',
+                false,
+                'PRESENCE_NEUTRAL',
+                'a `~` that already moves the object alone belongs to axis A, and this axis must not count it a second time',
+                $neighbour,
+                ['nullAlone', '{"options":{"class":{"warning":7331,"error":20}}}'],
+            ),
+        ];
+    }
+
     /** @return list<ProbeCase> */
     public static function probes(): array
     {
@@ -264,6 +475,11 @@ final class Cases
                 'B1',
                 'refusal framing',
                 'the two framing probes still answer as the REFUSES verdict is defined, and the judgement on them reddens when either changes',
+            ),
+            new ProbeCase(
+                'PL1',
+                'composition plan',
+                'the plan says whether the higher layers rewrite every key the lowest one wrote — true where two layers dispute one key, false for a triple whose top layer writes a strict subset',
             ),
             new ProbeCase(
                 'B2',

@@ -19,10 +19,14 @@ final readonly class RunDeclaration
 {
     private const string PATH = 'promise-effect/run-declaration.tsv';
 
-    /** @param list<string> $axes */
+    /**
+     * @param list<string> $axes
+     * @param list<string> $blockingAxes the subset whose defects move the exit code
+     */
     private function __construct(
         public string $beforeCommit,
         public array $axes,
+        public array $blockingAxes,
     ) {}
 
     /**
@@ -56,13 +60,22 @@ final readonly class RunDeclaration
             $declared[$cells[0]] = $cells[1];
         }
 
-        foreach (['before-commit', 'axes'] as $required) {
+        foreach (['before-commit', 'axes', 'blocking-axes'] as $required) {
             if (trim($declared[$required] ?? '') === '') {
                 throw new LedgerError(self::PATH . ' does not declare a non-blank "' . $required . '"');
             }
         }
 
-        return new self($declared['before-commit'], explode(',', $declared['axes']));
+        $axes = explode(',', $declared['axes']);
+        $blocking = explode(',', $declared['blocking-axes']);
+
+        foreach ($blocking as $axis) {
+            if (!\in_array($axis, $axes, true)) {
+                throw new LedgerError(self::PATH . ' calls "' . $axis . '" blocking, and it is not one of the declared axes');
+            }
+        }
+
+        return new self($declared['before-commit'], $axes, $blocking);
     }
 
     /**
