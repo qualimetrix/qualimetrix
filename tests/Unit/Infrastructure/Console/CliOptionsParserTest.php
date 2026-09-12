@@ -250,6 +250,68 @@ final class CliOptionsParserTest extends TestCase
         self::assertSame(150.0, $result['test.rule']['threshold']);
     }
 
+    /**
+     * The sibling door of the `--rule-opt` empty-value defect: a short alias
+     * carrying an empty value (`--lcom-exclude-methods=`) went through the
+     * same `''` fallback and produced a genuine one-element list `['']`
+     * instead of falling back to the option's default. Both doors are
+     * documented in `promise-effect/door-normalization.tsv` as handing over
+     * the empty string identically, so both needed the same fold to `null`.
+     */
+    #[Test]
+    public function itNormalizesAnEmptyAliasValueToNullInsteadOfAOneElementEmptyString(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('lcom-exclude-methods', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--lcom-exclude-methods' => '',
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertArrayHasKey('cohesion.lcom', $result);
+        self::assertNull(
+            $result['cohesion.lcom']['excludeMethods'],
+            'An empty CLI alias value must fold to null, never to the literal empty string.',
+        );
+    }
+
+    /**
+     * The boundary case for this door: a single non-empty value must keep
+     * parsing exactly as before the cure.
+     */
+    #[Test]
+    public function itStillParsesANonEmptyAliasValueAsBefore(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('lcom-exclude-methods', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--lcom-exclude-methods' => 'getName',
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertSame('getName', $result['cohesion.lcom']['excludeMethods']);
+    }
+
     #[Test]
     public function itSkipsAnAliasThatWasNotPassedOnTheCommandLine(): void
     {

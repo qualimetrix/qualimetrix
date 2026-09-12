@@ -75,11 +75,20 @@ final readonly class CliOptionsParser
      * Normalizes a CLI option value to the appropriate PHP type.
      *
      * Handles boolean strings ('true'/'false'), floats, and integers.
+     *
+     * An empty value after `=` (`--some-alias=`) becomes `null` for the same
+     * reason {@see RuleOptionsParser::normalizeValue()} does: this door also
+     * carries text only, so an empty option is folded to the absent-value
+     * marker rather than kept as a genuine one-element `''`.
      */
     private function normalizeValue(mixed $value): mixed
     {
         if (!\is_string($value)) {
             return $value;
+        }
+
+        if ($value === '') {
+            return null;
         }
 
         // Boolean strings

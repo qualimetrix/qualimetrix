@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 
 #[CoversClass(RuleOptionsParser::class)]
@@ -268,5 +270,71 @@ final class RuleOptionsParserTest extends TestCase
             'complexity.method',
             'size.namespace',
         ], $result);
+    }
+
+    /**
+     * Regression for the empty-value-on-the-CLI-door defect: an empty value
+     * after `=` used to survive as the literal string `''`, which every
+     * affected Options::fromArray() then wrapped into a genuine one-element
+     * list `['']` instead of falling back to its default. `--rule-opt` is the
+     * door where the defect was reproduced — this pins it at the door, not at
+     * the Options class, because a test on `Options::fromArray()` never sees
+     * what the door itself hands over.
+     *
+     * @return iterable<string, array{0: string}>
+     */
+    public static function provideEmptyValueGridRows(): iterable
+    {
+        yield 'boolean-argument allowed-prefixes' => ['code-smell.boolean-argument:allowed-prefixes='];
+        yield 'error-suppression allowed-functions' => ['code-smell.error-suppression:allowed-functions='];
+        yield 'cohesion.lcom exclude-methods' => ['cohesion.lcom:exclude-methods='];
+        yield 'coupling.distance include-namespaces' => ['coupling.distance:include-namespaces='];
+    }
+
+    #[Test]
+    #[DataProvider('provideEmptyValueGridRows')]
+    public function itNormalizesAnEmptyRuleOptValueToNullInsteadOfAOneElementEmptyString(string $ruleOpt): void
+    {
+        $result = $this->parser->parseRuleOptions([$ruleOpt]);
+
+        [$ruleName, $rest] = explode(':', $ruleOpt, 2);
+        [$option] = explode('=', $rest, 2);
+        $option = ConfigKeySpelling::normalize($option);
+
+        self::assertArrayHasKey($ruleName, $result);
+        self::assertNull(
+            $result[$ruleName][$option],
+            'An empty CLI value must fold to null (the absent-value marker), never to the literal empty string.',
+        );
+    }
+
+    /**
+     * The boundary case: a single, non-empty value on the same keys must
+     * keep working exactly as before — the cure must not turn "one written
+     * value" into "no value" too. There is no legitimate empty-string case to
+     * protect on this door for these keys: `--rule-opt` cannot type a real
+     * empty PHP list at all (no bracket parsing — see
+     * `promise-effect/door-normalization.tsv`, `rule-opt|list` row), so
+     * before this fix an empty value here was never anything but the defect,
+     * on every one of the four rows.
+     */
+    #[Test]
+    public function itStillParsesANonEmptyValueOnTheSameKeyAsASingleElement(): void
+    {
+        $result = $this->parser->parseRuleOptions([
+            'code-smell.boolean-argument:allowed-prefixes=is',
+        ]);
+
+        self::assertSame('is', $result['code-smell.boolean-argument']['allowedPrefixes']);
+    }
+
+    #[Test]
+    public function itNormalizesAnEmptyPlainOptionValueToNullAsWell(): void
+    {
+        $result = $this->parser->parseRuleOptions([
+            'test-rule:some-option=',
+        ]);
+
+        self::assertNull($result['test-rule']['someOption']);
     }
 }

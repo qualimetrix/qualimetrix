@@ -273,6 +273,20 @@ the default.
   between a rule's flat and levelled form, so it opens the flat form and the
   `callable:`/`class:`/`namespace:` blocks beside it are not read. See the
   configuration guide for which keys those are.
+- **An empty `--rule-opt`/short-alias value now takes the default too, instead
+  of becoming a one-element list holding the empty string.**
+  `--rule-opt='code-smell.boolean-argument:allowed-prefixes='` used to set
+  `allowedPrefixes` to `['']` rather than the default seven prefixes, so
+  `$isActive`/`$hasPermission` were flagged as violations; the same shape of
+  bug made `--rule-opt='coupling.distance:include-namespaces='` stop finding
+  anything at all, because `['']` never matches a real namespace. It also
+  affected `code-smell.error-suppression:allowed-functions`,
+  `cohesion.lcom:exclude-methods` and that option's own short alias
+  (`--lcom-exclude-methods=`). An empty value written after `=` on either CLI
+  door now folds to the same absent-value marker the YAML door's `~` uses, so
+  it takes the option's own default the way an unwritten key would. Write the
+  intended value instead of an empty one if you were relying on the previous
+  (unintended) behaviour.
 - **A directory whose name is a bare number now works in `suppress_paths:`.**
   The root-level key refused it as "not a non-empty string"; it is converted
   now, the way `--exclude` already is. `suppress_namespaces:` still refuses one,

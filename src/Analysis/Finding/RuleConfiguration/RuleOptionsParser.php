@@ -168,10 +168,21 @@ final readonly class RuleOptionsParser
 
     /**
      * Normalizes value to appropriate type.
+     *
+     * An empty value after `=` (`--rule-opt=rule:option=`) becomes `null`,
+     * the same absent-value marker the YAML door hands the declaration for a
+     * bare `~`: this door carries text only, so it has no way to type PHP's
+     * `null` directly, and without this fold an empty option would land as
+     * `''`, a genuine one-element value rather than "value not written" (see
+     * `promise-effect/door-normalization.tsv`).
      */
     private function normalizeValue(string $value): mixed
     {
         $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
 
         // Boolean
         if ($value === 'true') {
