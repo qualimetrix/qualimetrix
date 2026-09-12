@@ -804,7 +804,7 @@ Configuration error: Invalid value for "cache": expected a section of named keys
 | a map of X         | YAML-отображение, ключи которого называете вы; значения формы X       |
 | a block of options | отображение, за собственные ключи которого отвечает другое объявление |
 
-Четыре следствия стоит проговорить отдельно — каждое из них раньше проходило
+Пять следствий стоит проговорить отдельно — каждое из них раньше проходило
 незамеченным:
 
 - **Число в кавычках — это строка.** `warning: "15"` отклоняется там, где
@@ -813,8 +813,26 @@ Configuration error: Invalid value for "cache": expected a section of named keys
   приводятся до проверки формы, поэтому
   `--rule-opt="size.method-count:threshold=25"` и
   `--rule-opt="complexity.ccn:enabled=false"` работают как раньше.
-- **Целое — это не дробь.** `warning: 10.5` отклоняется там, где объявлено
-  целое. Там, где ключ действительно принимает дробь, отказ говорит «a number».
+- **Целое — это не дробь, кроме перечисленных здесь ключей, объявивших «a
+  number».** `warning: 10.5` отклоняется там, где объявлено целое, а таким
+  образом объявлено большинство порогов этого документа. Ключи ниже
+  объявляют «a number» вместо этого и потому принимают дробь точно в
+  написанном виде — каждый измеряет непрерывную величину, а не считает
+  что-то: индекс сопровождаемости (`maintainability.mi.error` / `.warning` /
+  `.threshold`), нестабильность (`coupling.instability.max-error` /
+  `.max-warning` / `.threshold`, те же три и на слотах уровня `class.` и
+  `namespace.`), дистанция от главной последовательности
+  (`coupling.distance.max-distance-error` / `.max-distance-warning` /
+  `.threshold`), ClassRank (`coupling.class-rank.error` / `.warning` /
+  `.threshold`), покрытие типами (`design.type-coverage.param.error` /
+  `.warning` / `.threshold`, те же три под `.property.` и `.return.`) и порог
+  TCC на `design.god-class.tcc-threshold`. Это свойство объявленной формы
+  КОНКРЕТНОГО ключа, а не его правила или семейства целиком: ключи,
+  стоящие рядом с принимающим, остаются целыми и отклоняют дробь, потому что
+  считают что-то, а не измеряют, — `coupling.distance.min-class-count`,
+  `coupling.instability.min-afferent` (на каждом слоте уровня) и
+  `coupling.instability.namespace.min-class-count` каждый раз считают классы
+  или файлы, а не отношение.
 - **Список и карта не взаимозаменяемы.** `only_rules: {a: complexity.ccn}` и
   `exclude_methods: {a: getName}` отклоняются; пишите
   `only_rules: [complexity.ccn]` и `exclude_methods: [getName]`. То же в другую

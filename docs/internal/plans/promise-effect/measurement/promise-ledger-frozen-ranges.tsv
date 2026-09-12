@@ -1,5 +1,5 @@
 # ЗАМОРОЖЕННЫЕ ДИАПАЗОНЫ НОСИТЕЛЕЙ — спутник promise-ledger.tsv (этап 01, пакет L; перевывод L2).
-# Дерево b17a0db74201d25fb34cbefd543691e0c1d2cfd4. Дата: 2026-09-12.
+# Дерево 35201d9ba29a55d98a68e325ff64e904a9984fc0. Дата: 2026-09-12.
 #
 # ЗАЧЕМ: единица непересечения с пакетом P1 — не файл, а ДИАПАЗОН СТРОК (01-promise.md §«Как
 # проверяется непересечение, не убивая носителей»). Здесь перечислен каждый диапазон, который
@@ -36,6 +36,7 @@
 #   после него либо лжёт, либо правится. Порядок — возврат к оркестратору, перевывод затронутых
 #   строк реестра, обновление этого файла. Провал — МОЛЧАЛИВАЯ правка.
 file	first_line	last_line	sha256_16	owner_package	first_line_text
+src/Analysis/Evidence/Coupling/ClassRankRule.php	28	29	90ad790649cf5341	P1 (03-cure.md ownership table)	#[CliAlias('class-rank-warning', 'warning')]
 src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	33	39	f84132545b7f7be1	P1 (03-cure.md ownership table)	/**
 src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	23	27	517d0ff3436edc4c	P1 (03-cure.md ownership table)	* - **answered by the class** — recognised only so that `fromArray()` 
 src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	28	34	fe5921582c172eb5	P1 (03-cure.md ownership table)	* - **unknown** — everything else.
@@ -87,7 +88,7 @@ website/docs/getting-started/configuration.md	630	630	1c86b3812b0c525e	P6 (websi
 website/docs/getting-started/configuration.md	632	632	4e6d907cdc24afaf	P6 (website)	**Multiple presets:** When combining presets, they are merged left-to-
 website/docs/getting-started/configuration.md	706	706	e2ccf05e1ac9a181	P6 (website)	Command-line options always take precedence over values in the configu
 website/docs/getting-started/configuration.md	734	740	83880220a6df07a5	P6 (website)	### Type errors
-website/docs/getting-started/configuration.md	775	836	ea7e7a2070fa714d	P6 (website)	### The shape of a value
+website/docs/getting-started/configuration.md	775	854	150511b843e4f97c	P6 (website)	### The shape of a value
 website/docs/getting-started/configuration.md	777	787	ee61d6133b217451	P6 (website)	The two rules below hold for **every** key in this document — the root
 website/docs/getting-started/configuration.md	782	787	32693c9f3214c7ec	P6 (website)	Every key declares the shape its value may take. A value of another sh
 website/docs/getting-started/configuration.md	784	787	f43811b6d123d231	P6 (website)	never dropped in favour of the default while the run reports success. 
@@ -96,21 +97,22 @@ website/docs/getting-started/configuration.md	799	799	43cd583824543508	P6 (websi
 website/docs/getting-started/configuration.md	800	800	0342a3eb8c44a4f5	P6 (website)	| a whole number     | `15` — not `10.5`, not `"15"`                  
 website/docs/getting-started/configuration.md	801	801	820a793f7c29ecad	P6 (website)	| a number           | `15` or `10.5`                                 
 website/docs/getting-started/configuration.md	802	803	35e9d7af91224b97	P6 (website)	| a string           | any string, the empty one included             
-website/docs/getting-started/configuration.md	808	836	25645437d110aa8d	P6 (website)	Four consequences are worth spelling out, because each of them used to
+website/docs/getting-started/configuration.md	808	854	a178c5e40314b3cc	P6 (website)	Five consequences are worth spelling out, because each of them used to
 website/docs/getting-started/configuration.md	811	812	f12c377f900e01ce	P6 (website)	- **A quoted number is a string.** `warning: "15"` is refused where a 
 website/docs/getting-started/configuration.md	813	816	57a5a20643611a74	P6 (website)	values that arrive on the command line are text by construction and ar
-website/docs/getting-started/configuration.md	820	824	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
-website/docs/getting-started/configuration.md	825	832	ac6055aa24e9e403	P6 (website)	- **The root `suppress_paths:` is the exception to "a number is not a 
-website/docs/getting-started/configuration.md	833	836	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
-website/docs/getting-started/configuration.md	838	842	82152e225aa04259	P6 (website)	### A key written with no value
-website/docs/getting-started/configuration.md	840	842	05157406a66d7cb0	P6 (website)	Writing a key and leaving it empty — `key:` or the explicit YAML null 
-website/docs/getting-started/configuration.md	845	846	cd23183ee0bb678d	P6 (website)	cache: ~                 # same as not writing cache:
-website/docs/getting-started/configuration.md	855	855	a770dea0ff8f9537	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
-website/docs/getting-started/configuration.md	855	891	7fecd0de0bdf9dbb	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
-website/docs/getting-started/configuration.md	861	880	bb582161b4d64227	P6 (website)	selects nothing and the `callable:` / `class:` / `namespace:` blocks b
-website/docs/getting-started/configuration.md	865	868	980737d5d98bfa61	P6 (website)	rules:
-website/docs/getting-started/configuration.md	882	891	2430ad67b74fd08c	P6 (website)	
-website/docs/getting-started/configuration.md	893	903	15571208688e7df5	P6 (website)	an element is a value, not a key that was left unwritten, so there is 
+website/docs/getting-started/configuration.md	817	836	e418b91f9a5e6eff	P6 (website)	- **A whole number is not a fraction — except for the keys named here,
+website/docs/getting-started/configuration.md	838	842	d55d9e7fc223ae94	P6 (website)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
+website/docs/getting-started/configuration.md	843	850	ac6055aa24e9e403	P6 (website)	- **The root `suppress_paths:` is the exception to "a number is not a 
+website/docs/getting-started/configuration.md	851	854	ef8c7481424dfc85	P6 (website)	- **The empty string is a shape of its own.** It is refused wherever a
+website/docs/getting-started/configuration.md	856	860	82152e225aa04259	P6 (website)	### A key written with no value
+website/docs/getting-started/configuration.md	858	860	05157406a66d7cb0	P6 (website)	Writing a key and leaving it empty — `key:` or the explicit YAML null 
+website/docs/getting-started/configuration.md	863	864	cd23183ee0bb678d	P6 (website)	cache: ~                 # same as not writing cache:
+website/docs/getting-started/configuration.md	873	873	a770dea0ff8f9537	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
+website/docs/getting-started/configuration.md	873	909	7fecd0de0bdf9dbb	P6 (website)	That covers the keys inside `rules:` that choose *how* a rule is read,
+website/docs/getting-started/configuration.md	879	898	bb582161b4d64227	P6 (website)	selects nothing and the `callable:` / `class:` / `namespace:` blocks b
+website/docs/getting-started/configuration.md	883	886	980737d5d98bfa61	P6 (website)	rules:
+website/docs/getting-started/configuration.md	900	909	2430ad67b74fd08c	P6 (website)	
+website/docs/getting-started/configuration.md	911	921	15571208688e7df5	P6 (website)	an element is a value, not a key that was left unwritten, so there is 
 website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
 website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website)	| Potential Shadow          | `architecture.potential-shadow`      | E
@@ -379,47 +381,49 @@ website/docs/usage/cli-options.md	710	710	fc3c7f87ff1a2733	P6 (website)	| `--ins
 website/docs/usage/cli-options.md	711	711	b9578abbe25cc5f3	P6 (website)	| `--instability-class-error=N`   | coupling.instability | class.max_e
 website/docs/usage/cli-options.md	712	712	88f64ecc0e873834	P6 (website)	| `--instability-ns-warning=N`    | coupling.instability | namespace.m
 website/docs/usage/cli-options.md	713	713	662edd7bab8646c9	P6 (website)	| `--instability-ns-error=N`      | coupling.instability | namespace.m
-website/docs/usage/cli-options.md	719	719	ee00a5f0ce26f968	P6 (website)	| `--class-count-warning=N`  | size.class-count  | warning |
-website/docs/usage/cli-options.md	720	720	71d513b4335e3d74	P6 (website)	| `--class-count-error=N`    | size.class-count  | error   |
-website/docs/usage/cli-options.md	721	721	022d57c5b8769f35	P6 (website)	| `--method-count-warning=N` | size.method-count | warning |
-website/docs/usage/cli-options.md	722	722	d748eea7413a21e4	P6 (website)	| `--method-count-error=N`   | size.method-count | error   |
-website/docs/usage/cli-options.md	728	728	23caa7ac4633e5d2	P6 (website)	| `--dit-warning=N`                    | design.dit                   
-website/docs/usage/cli-options.md	729	729	88e05859a1875e52	P6 (website)	| `--dit-error=N`                      | design.dit                   
-website/docs/usage/cli-options.md	730	730	27420fc86508edd8	P6 (website)	| `--lcom-warning=N`                   | cohesion.lcom                
-website/docs/usage/cli-options.md	731	731	9c3b00c6b352c984	P6 (website)	| `--lcom-error=N`                     | cohesion.lcom                
-website/docs/usage/cli-options.md	732	732	09b762914100ea99	P6 (website)	| `--lcom-min-methods=N`               | cohesion.lcom                
-website/docs/usage/cli-options.md	734	734	31cf68ed0682459a	P6 (website)	| `--noc-warning=N`                    | design.noc                   
-website/docs/usage/cli-options.md	735	735	89346bd575591c39	P6 (website)	| `--noc-error=N`                      | design.noc                   
-website/docs/usage/cli-options.md	736	736	588d1d5589b6af1d	P6 (website)	| `--param-type-coverage-warning=N`    | design.type-coverage.param   
-website/docs/usage/cli-options.md	737	737	7e256ee280034eb6	P6 (website)	| `--param-type-coverage-error=N`      | design.type-coverage.param   
-website/docs/usage/cli-options.md	738	738	49a7edbe831d83d3	P6 (website)	| `--return-type-coverage-warning=N`   | design.type-coverage.return  
-website/docs/usage/cli-options.md	739	739	5cf3491dc785bc48	P6 (website)	| `--return-type-coverage-error=N`     | design.type-coverage.return  
-website/docs/usage/cli-options.md	740	740	39447a8a652719e8	P6 (website)	| `--property-type-coverage-warning=N` | design.type-coverage.property
-website/docs/usage/cli-options.md	741	741	5c73ca757c56652c	P6 (website)	| `--property-type-coverage-error=N`   | design.type-coverage.property
-website/docs/usage/cli-options.md	749	749	d1b6e70764d772a9	P6 (website)	| `--mi-warning=N`        | maintainability.mi | warning       |
-website/docs/usage/cli-options.md	750	750	c368e724d1dc27c0	P6 (website)	| `--mi-error=N`          | maintainability.mi | error         |
-website/docs/usage/cli-options.md	751	751	b1185faf01a9cb89	P6 (website)	| `--mi-min-statements=N` | maintainability.mi | minStatements |
-website/docs/usage/cli-options.md	758	758	01b903d98b81b16c	P6 (website)	| `--constructor-overinjection-warning=N` | code-smell.constructor-ove
-website/docs/usage/cli-options.md	759	759	ffd98adeea5803dd	P6 (website)	| `--constructor-overinjection-error=N`   | code-smell.constructor-ove
-website/docs/usage/cli-options.md	760	760	9c9a162076edb00c	P6 (website)	| `--data-class-woc-threshold=N`          | design.data-class         
-website/docs/usage/cli-options.md	761	761	07a54080da69ba00	P6 (website)	| `--data-class-wmc-threshold=N`          | design.data-class         
-website/docs/usage/cli-options.md	762	762	ad19297e52f546a4	P6 (website)	| `--data-class-min-members=N`            | design.data-class         
-website/docs/usage/cli-options.md	765	765	e64bf2cc6a546523	P6 (website)	| `--god-class-wmc-threshold=N`           | design.god-class          
-website/docs/usage/cli-options.md	766	766	8ad2d3a423661425	P6 (website)	| `--god-class-lcom-threshold=N`          | design.god-class          
-website/docs/usage/cli-options.md	767	767	aafc279287785593	P6 (website)	| `--god-class-tcc-threshold=N`           | design.god-class          
-website/docs/usage/cli-options.md	768	768	91036128176b4420	P6 (website)	| `--god-class-class-loc-threshold=N`     | design.god-class          
-website/docs/usage/cli-options.md	769	769	7295b63b10d915fe	P6 (website)	| `--god-class-min-criteria=N`            | design.god-class          
-website/docs/usage/cli-options.md	770	770	e691c2678c8b8361	P6 (website)	| `--god-class-min-methods=N`             | design.god-class          
-website/docs/usage/cli-options.md	772	772	b8e2bef2bfc648da	P6 (website)	| `--long-parameter-list-warning=N`       | code-smell.long-parameter-
-website/docs/usage/cli-options.md	773	773	9890e1344770595d	P6 (website)	| `--long-parameter-list-error=N`         | code-smell.long-parameter-
-website/docs/usage/cli-options.md	774	774	fabfe7c3e4dcc61f	P6 (website)	| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-
-website/docs/usage/cli-options.md	775	775	92604fa4c59c471a	P6 (website)	| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-
-website/docs/usage/cli-options.md	776	776	6a6718cb3ad0eec4	P6 (website)	| `--unreachable-code-warning=N`          | code-smell.unreachable-cod
-website/docs/usage/cli-options.md	777	777	5ea626be0812b09d	P6 (website)	| `--unreachable-code-error=N`            | code-smell.unreachable-cod
-website/docs/usage/cli-options.md	784	784	83fcd0eb753c9ab8	P6 (website)	| `--max-cycle-size=N`                  | architecture.circular-depend
-website/docs/usage/cli-options.md	786	786	2118641943932cf7	P6 (website)	| `--layer-violation-severity=SEVERITY` | architecture.layer-violation
-website/docs/usage/cli-options.md	787	787	bbd6a1528b8288e9	P6 (website)	| `--unassigned-class-mode=MODE`        | architecture.unassigned-clas
-website/docs/usage/cli-options.md	1001	1003	ff622b895b542416	P6 (website)	Rules are grouped by category, and each CLI alias is listed with the l
+website/docs/usage/cli-options.md	714	714	a08b7b7127dd701b	P6 (website)	| `--class-rank-warning=N`        | coupling.class-rank  | warning    
+website/docs/usage/cli-options.md	715	715	510501dea4627dc2	P6 (website)	| `--class-rank-error=N`          | coupling.class-rank  | error      
+website/docs/usage/cli-options.md	721	721	ee00a5f0ce26f968	P6 (website)	| `--class-count-warning=N`  | size.class-count  | warning |
+website/docs/usage/cli-options.md	722	722	71d513b4335e3d74	P6 (website)	| `--class-count-error=N`    | size.class-count  | error   |
+website/docs/usage/cli-options.md	723	723	022d57c5b8769f35	P6 (website)	| `--method-count-warning=N` | size.method-count | warning |
+website/docs/usage/cli-options.md	724	724	d748eea7413a21e4	P6 (website)	| `--method-count-error=N`   | size.method-count | error   |
+website/docs/usage/cli-options.md	730	730	23caa7ac4633e5d2	P6 (website)	| `--dit-warning=N`                    | design.dit                   
+website/docs/usage/cli-options.md	731	731	88e05859a1875e52	P6 (website)	| `--dit-error=N`                      | design.dit                   
+website/docs/usage/cli-options.md	732	732	27420fc86508edd8	P6 (website)	| `--lcom-warning=N`                   | cohesion.lcom                
+website/docs/usage/cli-options.md	733	733	9c3b00c6b352c984	P6 (website)	| `--lcom-error=N`                     | cohesion.lcom                
+website/docs/usage/cli-options.md	734	734	09b762914100ea99	P6 (website)	| `--lcom-min-methods=N`               | cohesion.lcom                
+website/docs/usage/cli-options.md	736	736	31cf68ed0682459a	P6 (website)	| `--noc-warning=N`                    | design.noc                   
+website/docs/usage/cli-options.md	737	737	89346bd575591c39	P6 (website)	| `--noc-error=N`                      | design.noc                   
+website/docs/usage/cli-options.md	738	738	588d1d5589b6af1d	P6 (website)	| `--param-type-coverage-warning=N`    | design.type-coverage.param   
+website/docs/usage/cli-options.md	739	739	7e256ee280034eb6	P6 (website)	| `--param-type-coverage-error=N`      | design.type-coverage.param   
+website/docs/usage/cli-options.md	740	740	49a7edbe831d83d3	P6 (website)	| `--return-type-coverage-warning=N`   | design.type-coverage.return  
+website/docs/usage/cli-options.md	741	741	5cf3491dc785bc48	P6 (website)	| `--return-type-coverage-error=N`     | design.type-coverage.return  
+website/docs/usage/cli-options.md	742	742	39447a8a652719e8	P6 (website)	| `--property-type-coverage-warning=N` | design.type-coverage.property
+website/docs/usage/cli-options.md	743	743	5c73ca757c56652c	P6 (website)	| `--property-type-coverage-error=N`   | design.type-coverage.property
+website/docs/usage/cli-options.md	751	751	d1b6e70764d772a9	P6 (website)	| `--mi-warning=N`        | maintainability.mi | warning       |
+website/docs/usage/cli-options.md	752	752	c368e724d1dc27c0	P6 (website)	| `--mi-error=N`          | maintainability.mi | error         |
+website/docs/usage/cli-options.md	753	753	b1185faf01a9cb89	P6 (website)	| `--mi-min-statements=N` | maintainability.mi | minStatements |
+website/docs/usage/cli-options.md	760	760	01b903d98b81b16c	P6 (website)	| `--constructor-overinjection-warning=N` | code-smell.constructor-ove
+website/docs/usage/cli-options.md	761	761	ffd98adeea5803dd	P6 (website)	| `--constructor-overinjection-error=N`   | code-smell.constructor-ove
+website/docs/usage/cli-options.md	762	762	9c9a162076edb00c	P6 (website)	| `--data-class-woc-threshold=N`          | design.data-class         
+website/docs/usage/cli-options.md	763	763	07a54080da69ba00	P6 (website)	| `--data-class-wmc-threshold=N`          | design.data-class         
+website/docs/usage/cli-options.md	764	764	ad19297e52f546a4	P6 (website)	| `--data-class-min-members=N`            | design.data-class         
+website/docs/usage/cli-options.md	767	767	e64bf2cc6a546523	P6 (website)	| `--god-class-wmc-threshold=N`           | design.god-class          
+website/docs/usage/cli-options.md	768	768	8ad2d3a423661425	P6 (website)	| `--god-class-lcom-threshold=N`          | design.god-class          
+website/docs/usage/cli-options.md	769	769	aafc279287785593	P6 (website)	| `--god-class-tcc-threshold=N`           | design.god-class          
+website/docs/usage/cli-options.md	770	770	91036128176b4420	P6 (website)	| `--god-class-class-loc-threshold=N`     | design.god-class          
+website/docs/usage/cli-options.md	771	771	7295b63b10d915fe	P6 (website)	| `--god-class-min-criteria=N`            | design.god-class          
+website/docs/usage/cli-options.md	772	772	e691c2678c8b8361	P6 (website)	| `--god-class-min-methods=N`             | design.god-class          
+website/docs/usage/cli-options.md	774	774	b8e2bef2bfc648da	P6 (website)	| `--long-parameter-list-warning=N`       | code-smell.long-parameter-
+website/docs/usage/cli-options.md	775	775	9890e1344770595d	P6 (website)	| `--long-parameter-list-error=N`         | code-smell.long-parameter-
+website/docs/usage/cli-options.md	776	776	fabfe7c3e4dcc61f	P6 (website)	| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-
+website/docs/usage/cli-options.md	777	777	92604fa4c59c471a	P6 (website)	| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-
+website/docs/usage/cli-options.md	778	778	6a6718cb3ad0eec4	P6 (website)	| `--unreachable-code-warning=N`          | code-smell.unreachable-cod
+website/docs/usage/cli-options.md	779	779	5ea626be0812b09d	P6 (website)	| `--unreachable-code-error=N`            | code-smell.unreachable-cod
+website/docs/usage/cli-options.md	786	786	83fcd0eb753c9ab8	P6 (website)	| `--max-cycle-size=N`                  | architecture.circular-depend
+website/docs/usage/cli-options.md	788	788	2118641943932cf7	P6 (website)	| `--layer-violation-severity=SEVERITY` | architecture.layer-violation
+website/docs/usage/cli-options.md	789	789	bbd6a1528b8288e9	P6 (website)	| `--unassigned-class-mode=MODE`        | architecture.unassigned-clas
+website/docs/usage/cli-options.md	1003	1005	ff622b895b542416	P6 (website)	Rules are grouped by category, and each CLI alias is listed with the l
 website/docs/usage/usage-scenarios.md	20	20	8f8e0b1e2de94ab6	P6 (website)	```yaml
 website/docs/usage/usage-scenarios.md	23	23	f67246882fa79a6e	P6 (website)	only_rules:
 website/docs/usage/usage-scenarios.md	30	30	b19015e7fa874b3f	P6 (website)	callable:

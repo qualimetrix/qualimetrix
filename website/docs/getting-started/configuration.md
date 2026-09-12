@@ -805,7 +805,7 @@ The shapes a key can ask for, in the words the refusal uses:
 | a map of X         | a YAML mapping you name the keys of, every value of shape X |
 | a block of options | a mapping whose own keys another declaration answers for    |
 
-Four consequences are worth spelling out, because each of them used to pass
+Five consequences are worth spelling out, because each of them used to pass
 unnoticed:
 
 - **A quoted number is a string.** `warning: "15"` is refused where a whole
@@ -814,9 +814,27 @@ unnoticed:
   converted before their shape is judged, so
   `--rule-opt="size.method-count:threshold=25"` and
   `--rule-opt="complexity.ccn:enabled=false"` are unaffected.
-- **A whole number is not a fraction.** `warning: 10.5` is refused where a whole
-  number is declared. Where a key genuinely takes a fraction, the refusal says
-  "a number" instead.
+- **A whole number is not a fraction — except for the keys named here, which
+  declare "a number".** `warning: 10.5` is refused where a whole number is
+  declared, and most thresholds in this document declare exactly that: a
+  whole number. The keys below declare "a number" instead, and therefore
+  accept a fraction exactly as written, because each one measures a
+  continuously-valued metric rather than counting something: the
+  maintainability index (`maintainability.mi.error` / `.warning` /
+  `.threshold`), instability (`coupling.instability.max-error` /
+  `.max-warning` / `.threshold`, the same three at the `class.` and
+  `namespace.` level slots too), distance from the main sequence
+  (`coupling.distance.max-distance-error` / `.max-distance-warning` /
+  `.threshold`), ClassRank (`coupling.class-rank.error` / `.warning` /
+  `.threshold`), type coverage (`design.type-coverage.param.error` / `.warning`
+  / `.threshold`, the same three under `.property.` and `.return.`) and the
+  TCC threshold on `design.god-class.tcc-threshold`. This is a property of
+  each key's own declared shape, not of its rule or family as a whole: keys
+  living right beside an accepting one stay whole numbers and refuse a
+  fraction, because they count something instead of measuring it —
+  `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
+  (at every level slot) and `coupling.instability.namespace.min-class-count`
+  are each a class or file count, not a ratio.
 - **A list and a map are not interchangeable.** `only_rules: {a: complexity.ccn}`
   and `exclude_methods: {a: getName}` are refused; write
   `only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The same in

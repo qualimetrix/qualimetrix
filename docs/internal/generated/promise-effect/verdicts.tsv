@@ -296,23 +296,23 @@ A	form|cli-alias|rules.coupling.cbo.namespace.warning|null	null	optionsObject	RE
 A	form|cli-alias|rules.coupling.cbo.namespace.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.cbo.namespace.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.class-rank.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|cli-alias|rules.coupling.class-rank.error|int	int	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.class-rank.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|cli-alias|rules.coupling.class-rank.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.class-rank.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|cli-alias|rules.coupling.class-rank.warning|int	int	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.class-rank.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|cli-alias|rules.coupling.class-rank.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.class-rank.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.distance.max_distance_error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.distance.max_distance_error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -320,7 +320,7 @@ A	form|cli-alias|rules.coupling.distance.max_distance_error|null	null	optionsObj
 A	form|cli-alias|rules.coupling.distance.max_distance_error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.distance.max_distance_warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.distance.max_distance_warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -328,7 +328,7 @@ A	form|cli-alias|rules.coupling.distance.max_distance_warning|null	null	optionsO
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.distance.max_distance_warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.instability.class.max_error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.instability.class.max_error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -336,7 +336,7 @@ A	form|cli-alias|rules.coupling.instability.class.max_error|null	null	optionsObj
 A	form|cli-alias|rules.coupling.instability.class.max_error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.instability.class.max_warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.instability.class.max_warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -344,7 +344,7 @@ A	form|cli-alias|rules.coupling.instability.class.max_warning|null	null	optionsO
 A	form|cli-alias|rules.coupling.instability.class.max_warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.class.max_warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.instability.namespace.max_error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.instability.namespace.max_error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -352,7 +352,7 @@ A	form|cli-alias|rules.coupling.instability.namespace.max_error|null	null	option
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.coupling.instability.namespace.max_warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.coupling.instability.namespace.max_warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.coupling.instability.namespace.max_warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -464,7 +464,7 @@ A	form|cli-alias|rules.design.god-class.minMethods|null	null	optionsObject	REFUS
 A	form|cli-alias|rules.design.god-class.minMethods|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.god-class.minMethods|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.god-class.tccThreshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.god-class.tccThreshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.god-class.tccThreshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.god-class.tccThreshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.god-class.tccThreshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.god-class.tccThreshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -496,7 +496,7 @@ A	form|cli-alias|rules.design.noc.warning|null	null	optionsObject	REFUSES	no	DEC
 A	form|cli-alias|rules.design.noc.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.noc.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.param.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.param.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -504,7 +504,7 @@ A	form|cli-alias|rules.design.type-coverage.param.error|null	null	optionsObject	
 A	form|cli-alias|rules.design.type-coverage.param.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.param.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.param.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -512,7 +512,7 @@ A	form|cli-alias|rules.design.type-coverage.param.warning|null	null	optionsObjec
 A	form|cli-alias|rules.design.type-coverage.param.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.param.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.property.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.property.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -520,7 +520,7 @@ A	form|cli-alias|rules.design.type-coverage.property.error|null	null	optionsObje
 A	form|cli-alias|rules.design.type-coverage.property.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.property.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.property.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -528,7 +528,7 @@ A	form|cli-alias|rules.design.type-coverage.property.warning|null	null	optionsOb
 A	form|cli-alias|rules.design.type-coverage.property.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.property.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.return.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.return.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -536,7 +536,7 @@ A	form|cli-alias|rules.design.type-coverage.return.error|null	null	optionsObject
 A	form|cli-alias|rules.design.type-coverage.return.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.design.type-coverage.return.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.design.type-coverage.return.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -544,7 +544,7 @@ A	form|cli-alias|rules.design.type-coverage.return.warning|null	null	optionsObje
 A	form|cli-alias|rules.design.type-coverage.return.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.design.type-coverage.return.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.maintainability.mi.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.maintainability.mi.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -568,7 +568,7 @@ A	form|cli-alias|rules.maintainability.mi.minStatements|null	null	optionsObject	
 A	form|cli-alias|rules.maintainability.mi.minStatements|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.minStatements|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.maintainability.mi.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|cli-alias|rules.maintainability.mi.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.maintainability.mi.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1656,7 +1656,7 @@ A	form|rule-opt|rules.coupling.instability.namespace.enabled|null	null	optionsOb
 A	form|rule-opt|rules.coupling.instability.namespace.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.instability.namespace.max-error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.coupling.instability.namespace.max-error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1664,7 +1664,7 @@ A	form|rule-opt|rules.coupling.instability.namespace.max-error|null	null	options
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.instability.namespace.max-warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.coupling.instability.namespace.max-warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.max-warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1688,7 +1688,7 @@ A	form|rule-opt|rules.coupling.instability.namespace.min-class-count|null	null	o
 A	form|rule-opt|rules.coupling.instability.namespace.min-class-count|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.min-class-count|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.instability.namespace.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.coupling.instability.namespace.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.threshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.instability.namespace.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1912,7 +1912,7 @@ A	form|rule-opt|rules.design.type-coverage.param.enabled|null	null	optionsObject
 A	form|rule-opt|rules.design.type-coverage.param.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.param.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.param.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1920,7 +1920,7 @@ A	form|rule-opt|rules.design.type-coverage.param.error|null	null	optionsObject	R
 A	form|rule-opt|rules.design.type-coverage.param.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.param.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.param.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.threshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1928,7 +1928,7 @@ A	form|rule-opt|rules.design.type-coverage.param.threshold|null	null	optionsObje
 A	form|rule-opt|rules.design.type-coverage.param.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.threshold|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.param.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.param.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.param.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1944,7 +1944,7 @@ A	form|rule-opt|rules.design.type-coverage.property.enabled|null	null	optionsObj
 A	form|rule-opt|rules.design.type-coverage.property.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.property.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.property.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1952,7 +1952,7 @@ A	form|rule-opt|rules.design.type-coverage.property.error|null	null	optionsObjec
 A	form|rule-opt|rules.design.type-coverage.property.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.property.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.property.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.threshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1960,7 +1960,7 @@ A	form|rule-opt|rules.design.type-coverage.property.threshold|null	null	optionsO
 A	form|rule-opt|rules.design.type-coverage.property.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.threshold|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.property.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.property.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.property.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1976,7 +1976,7 @@ A	form|rule-opt|rules.design.type-coverage.return.enabled|null	null	optionsObjec
 A	form|rule-opt|rules.design.type-coverage.return.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.return.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.return.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1984,7 +1984,7 @@ A	form|rule-opt|rules.design.type-coverage.return.error|null	null	optionsObject	
 A	form|rule-opt|rules.design.type-coverage.return.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.error|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.return.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.return.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.threshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -1992,7 +1992,7 @@ A	form|rule-opt|rules.design.type-coverage.return.threshold|null	null	optionsObj
 A	form|rule-opt|rules.design.type-coverage.return.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.threshold|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.design.type-coverage.return.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.design.type-coverage.return.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.design.type-coverage.return.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -2112,7 +2112,7 @@ A	form|rule-opt|rules.maintainability.mi.enabled|null	null	optionsObject	REFUSES
 A	form|rule-opt|rules.maintainability.mi.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.maintainability.mi.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.maintainability.mi.error|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.error|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.error|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -2136,7 +2136,7 @@ A	form|rule-opt|rules.maintainability.mi.min-statements|null	null	optionsObject	
 A	form|rule-opt|rules.maintainability.mi.min-statements|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.min-statements|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.maintainability.mi.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.maintainability.mi.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.threshold|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -2144,7 +2144,7 @@ A	form|rule-opt|rules.maintainability.mi.threshold|null	null	optionsObject	REFUS
 A	form|rule-opt|rules.maintainability.mi.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.threshold|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.maintainability.mi.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
+A	form|rule-opt|rules.maintainability.mi.warning|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.warning|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.maintainability.mi.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
@@ -3975,22 +3975,22 @@ A	form|yaml|rules.coupling.instability.namespace.enabled|map	map	optionsObject	R
 A	form|yaml|rules.coupling.instability.namespace.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.coupling.instability.namespace.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.coupling.instability.namespace.max-error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-error|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.coupling.instability.namespace.max-warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.max-warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.coupling.instability.namespace.max-error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-error|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.coupling.instability.namespace.max-warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.max-warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace.min-afferent|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace.min-afferent|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace.min-afferent|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -4007,14 +4007,14 @@ A	form|yaml|rules.coupling.instability.namespace.min-class-count|map	map	options
 A	form|yaml|rules.coupling.instability.namespace.min-class-count|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.coupling.instability.namespace.min-class-count|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace.min-class-count|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.coupling.instability.namespace.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.instability.namespace.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.coupling.instability.namespace.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.coupling.instability.namespace.threshold|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.instability.namespace|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4375,14 +4375,14 @@ A	form|yaml|rules.design.type-coverage.param.enabled|map	map	optionsObject	REFUS
 A	form|yaml|rules.design.type-coverage.param.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.param.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.param.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.param.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.error|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.param.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.error|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.param.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.param.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.param.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4407,22 +4407,22 @@ A	form|yaml|rules.design.type-coverage.param.suppress-paths|map	map	optionsObjec
 A	form|yaml|rules.design.type-coverage.param.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.param.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.param.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.param.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.param.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.param.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.param.warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.param.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.threshold|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.param.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.param.warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.property.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4431,14 +4431,14 @@ A	form|yaml|rules.design.type-coverage.property.enabled|map	map	optionsObject	RE
 A	form|yaml|rules.design.type-coverage.property.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.property.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.property.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.error|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.property.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.error|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.property.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4463,22 +4463,22 @@ A	form|yaml|rules.design.type-coverage.property.suppress-paths|map	map	optionsOb
 A	form|yaml|rules.design.type-coverage.property.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.property.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.property.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.property.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.property.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.property.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.property.warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.property.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.threshold|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.property.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.property.warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.return.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4487,14 +4487,14 @@ A	form|yaml|rules.design.type-coverage.return.enabled|map	map	optionsObject	REFU
 A	form|yaml|rules.design.type-coverage.return.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.return.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.return.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.error|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.return.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.error|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.design.type-coverage.return.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4519,22 +4519,22 @@ A	form|yaml|rules.design.type-coverage.return.suppress-paths|map	map	optionsObje
 A	form|yaml|rules.design.type-coverage.return.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.return.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.design.type-coverage.return.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.return.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.return.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.design.type-coverage.return.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.design.type-coverage.return.warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.return.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.threshold|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.design.type-coverage.return.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.design.type-coverage.return.warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.discovery.unmatched-exclude.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.discovery.unmatched-exclude.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.discovery.unmatched-exclude.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4839,14 +4839,14 @@ A	form|yaml|rules.maintainability.mi.enabled|map	map	optionsObject	REFUSES	no	PR
 A	form|yaml|rules.maintainability.mi.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.maintainability.mi.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.maintainability.mi.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.maintainability.mi.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.error|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.maintainability.mi.error|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.error|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.maintainability.mi.exclude-tests|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.maintainability.mi.exclude-tests|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.maintainability.mi.exclude-tests|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -4887,22 +4887,22 @@ A	form|yaml|rules.maintainability.mi.suppress-paths|map	map	optionsObject	NOT OB
 A	form|yaml|rules.maintainability.mi.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.maintainability.mi.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.maintainability.mi.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
-A	form|yaml|rules.maintainability.mi.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.maintainability.mi.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|float	float	optionsObject	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.maintainability.mi.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.maintainability.mi.warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.maintainability.mi.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.threshold|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|float	float	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|int	int	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.maintainability.mi.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.maintainability.mi.warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.security.command-injection.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.security.command-injection.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.security.command-injection.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere

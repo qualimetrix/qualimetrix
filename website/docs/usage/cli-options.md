@@ -711,6 +711,8 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--instability-class-error=N`   | coupling.instability | class.max_error       |
 | `--instability-ns-warning=N`    | coupling.instability | namespace.max_warning |
 | `--instability-ns-error=N`      | coupling.instability | namespace.max_error   |
+| `--class-rank-warning=N`        | coupling.class-rank  | warning               |
+| `--class-rank-error=N`          | coupling.class-rank  | error                 |
 
 === "Size"
 
