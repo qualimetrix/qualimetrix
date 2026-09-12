@@ -81,7 +81,7 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
-            'scope' => RuleOptionShape::text()->orNull(),
+            'scope' => RuleOptionShape::oneOf('all', 'application')->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
         ]);
@@ -112,13 +112,13 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
      */
     private static function parseScope(array $config): string
     {
+        // No silent fallback: an unknown word used to become 'all', so a typo
+        // like `scope: applicaton` quietly measured the opposite of what it
+        // asked for. The declaration above now names the two accepted words and
+        // the refusal comes from it, before this method is ever reached.
         $scope = $config['scope'] ?? 'all';
 
-        if (!\is_string($scope) || !\in_array($scope, ['all', 'application'], true)) {
-            return 'all';
-        }
-
-        return $scope;
+        return \is_string($scope) && \in_array($scope, ['all', 'application'], true) ? $scope : 'all';
     }
 
     public function withOverride(int|float|null $warning, int|float|null $error): static

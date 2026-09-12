@@ -656,17 +656,24 @@ final class Cases
                 'a declaration that narrows appears on the registry side of the comparison',
                 [],
                 // `number()->orNull()` narrowed to `integer()->orNull()`: the
-                // fractional form the registry promises at the two doors that
-                // promise it becomes unaccepted, and the third door — an alias
-                // whose row promises nothing — loses a WIDER line instead.
-                // One plant, three cells, each in a different bucket: a
-                // comparison blind to the door would move them together.
+                // fractional form the registry promises becomes unaccepted at
+                // every door that promises it. One plant, three cells, one per
+                // door — a comparison blind to the door would move them as one.
+                //
+                // There used to be a third bucket here: the alias door promised
+                // nothing, so it lost a WIDER line instead of gaining a
+                // LEDGER_ONLY one. X19 documented the two class-rank aliases
+                // that the product had registered and no page listed, so that
+                // door now promises what the others do and answers like them.
+                // The asymmetry this case once demonstrated was a gap in the
+                // documentation, and closing it is what removed the bucket.
                 ['coupling.class-rank', 'error', 'integer'],
                 [
                     'LEDGER_ONLY|form|yaml|rules.coupling.class-rank.error|float',
                     'LEDGER_ONLY|form|rule-opt|rules.coupling.class-rank.error|float',
+                    'LEDGER_ONLY|form|cli-alias|rules.coupling.class-rank.error|float',
                 ],
-                ['WIDER_UNOPPOSED|form|cli-alias|rules.coupling.class-rank.error|float'],
+                [],
             ),
         ];
     }

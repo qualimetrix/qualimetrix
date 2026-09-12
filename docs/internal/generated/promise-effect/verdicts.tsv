@@ -1378,11 +1378,11 @@ A	form|rule-opt|rules.coupling.cbo.class.error|string-number	string-number	optio
 A	form|rule-opt|rules.coupling.cbo.class.scope|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.scope|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.scope|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.cbo.class.scope|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at optionsObject
-A	form|rule-opt|rules.coupling.cbo.class.scope|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at optionsObject
+A	form|rule-opt|rules.coupling.cbo.class.scope|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
+A	form|rule-opt|rules.coupling.cbo.class.scope|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.scope|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.cbo.class.scope|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|rule-opt|rules.coupling.cbo.class.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at optionsObject
+A	form|rule-opt|rules.coupling.cbo.class.scope|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|rule-opt|rules.coupling.cbo.class.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.threshold|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.class.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -1474,11 +1474,11 @@ A	form|rule-opt|rules.coupling.cbo.namespace|string-number	string-number	options
 A	form|rule-opt|rules.coupling.cbo.scope|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.scope|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.scope|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.cbo.scope|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at optionsObject
-A	form|rule-opt|rules.coupling.cbo.scope|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at optionsObject
+A	form|rule-opt|rules.coupling.cbo.scope|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
+A	form|rule-opt|rules.coupling.cbo.scope|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.scope|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.cbo.scope|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|rule-opt|rules.coupling.cbo.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at optionsObject
+A	form|rule-opt|rules.coupling.cbo.scope|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|rule-opt|rules.coupling.cbo.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.threshold|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.cbo.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -3629,8 +3629,8 @@ A	form|yaml|rules.coupling.cbo.class.scope|int	int	optionsObject	REFUSES	no	DECI
 A	form|yaml|rules.coupling.cbo.class.scope|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.class.scope|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.class.scope|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|yaml|rules.coupling.cbo.class.scope|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|yaml|rules.coupling.cbo.class.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
+A	form|yaml|rules.coupling.cbo.class.scope|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.coupling.cbo.class.scope|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.class.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.class.threshold|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.class.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -3725,8 +3725,8 @@ A	form|yaml|rules.coupling.cbo.scope|int	int	optionsObject	REFUSES	no	DECIDED	re
 A	form|yaml|rules.coupling.cbo.scope|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.scope|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.scope|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|yaml|rules.coupling.cbo.scope|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
-A	form|yaml|rules.coupling.cbo.scope|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
+A	form|yaml|rules.coupling.cbo.scope|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.coupling.cbo.scope|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.cbo.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5462,11 +5462,11 @@ B	pair|complexity.wmc|exclude-data-classes|threshold|same-source|6-subject-filte
 B	pair|complexity.wmc|exclude-data-classes|warning|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|complexity.wmc|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.enabled|class.error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|coupling.cbo|class.enabled|class.scope|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
+B	pair|coupling.cbo|class.enabled|class.scope|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.enabled|class.threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.enabled|class.warning|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.enabled|enabled|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
-B	pair|coupling.cbo|class.error|class.scope|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the alternate magnitude
+B	pair|coupling.cbo|class.error|class.scope|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.error|class.threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.error|class.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.error|error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
@@ -5476,10 +5476,10 @@ B	pair|coupling.cbo|class.error|namespace.threshold|same-source|4-cross-level	bo
 B	pair|coupling.cbo|class.error|namespace.warning|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.error|threshold|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.error|warning|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written; A wrote the canonical magnitude, B the canonical magnitude
-B	pair|coupling.cbo|class.scope|class.threshold|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|coupling.cbo|class.scope|class.warning|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|coupling.cbo|class.scope|scope|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
-B	pair|coupling.cbo|class.scope|scope|same-source|6-precedence-fill-in	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
+B	pair|coupling.cbo|class.scope|class.threshold|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
+B	pair|coupling.cbo|class.scope|class.warning|same-source|6-measurement-input	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
+B	pair|coupling.cbo|class.scope|scope|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
+B	pair|coupling.cbo|class.scope|scope|same-source|6-precedence-fill-in	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.threshold|class.warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.threshold|error|same-source|4-cross-level	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of A is absent when both are written; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|coupling.cbo|class.threshold|namespace.error|same-source|4-cross-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
@@ -5502,7 +5502,7 @@ B	pair|coupling.cbo|class|enabled|same-source|6-gate	both	optionsObject	MISCOMPO
 B	pair|coupling.cbo|enabled|error|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|enabled|namespace.enabled|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
 B	pair|coupling.cbo|enabled|namespace|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|coupling.cbo|enabled|scope|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the alternate magnitude
+B	pair|coupling.cbo|enabled|scope|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|enabled|threshold|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|enabled|warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	the effect of B is absent when both are written; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.cbo|error|namespace.error|same-source|2-same-name-top-vs-level	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
@@ -6652,12 +6652,12 @@ E	neighbourhood|complexity.wmc|warning|error	both	optionsObject	PRESENCE_NEUTRAL
 E	neighbourhood|complexity.wmc|warning|exclude-data-classes	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|complexity.wmc|warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.enabled|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
-E	neighbourhood|coupling.cbo|class.enabled|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|class.enabled|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.enabled|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.enabled|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.enabled|enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.cbo|class.error|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
-E	neighbourhood|coupling.cbo|class.error|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|class.error|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.error|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.error|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.error|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude
@@ -6670,10 +6670,10 @@ E	neighbourhood|coupling.cbo|class.scope|class.enabled	both	optionsObject	PRESEN
 E	neighbourhood|coupling.cbo|class.scope|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.scope|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.scope|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
-E	neighbourhood|coupling.cbo|class.scope|scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|class.scope|scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.threshold|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.cbo|class.threshold|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|coupling.cbo|class.threshold|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|class.threshold|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.threshold|class.warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.threshold|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.threshold|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
@@ -6683,7 +6683,7 @@ E	neighbourhood|coupling.cbo|class.threshold|threshold	both	optionsObject	PRESEN
 E	neighbourhood|coupling.cbo|class.threshold|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.warning|class.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.cbo|class.warning|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|coupling.cbo|class.warning|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|class.warning|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-measurement-input; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.warning|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.warning|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|class.warning|namespace.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
@@ -6697,7 +6697,7 @@ E	neighbourhood|coupling.cbo|enabled|class.enabled	both	optionsObject	PRESENCE_N
 E	neighbourhood|coupling.cbo|enabled|error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|enabled|namespace	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|coupling.cbo|enabled|namespace.enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the alternate magnitude
-E	neighbourhood|coupling.cbo|enabled|scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|enabled|scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|enabled|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|enabled|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|error|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude
@@ -6751,7 +6751,7 @@ E	neighbourhood|coupling.cbo|namespace.warning|namespace.threshold	both	optionsO
 E	neighbourhood|coupling.cbo|namespace.warning|threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|namespace.warning|warning	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|namespace|enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
-E	neighbourhood|coupling.cbo|scope|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the alternate magnitude
+E	neighbourhood|coupling.cbo|scope|class.scope	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|scope|enabled	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.cbo|threshold|class.error	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 4-cross-level; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.cbo|threshold|class.threshold	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 2-same-name-top-vs-level; the neighbour wrote the canonical magnitude

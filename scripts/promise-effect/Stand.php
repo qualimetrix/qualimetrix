@@ -1481,7 +1481,7 @@ final class Stand
             return [false];
         }
 
-        $writes = [$this->writeForShape($shape, $this->literals(null), $rule . '.' . $key)];
+        $writes = [$this->writeForShape($shape, $this->literals(null), $rule . '.' . $key, $key)];
         $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
 
         if ($leaf !== null) {
@@ -1551,7 +1551,7 @@ final class Stand
      * @param array<string, string> $literals form name => the spelling to write
      * @param string|null $subject the key to name when nothing matches, or null to answer null instead
      */
-    private function writeForShape(RuleOptionShape $shape, array $literals, ?string $subject): mixed
+    private function writeForShape(RuleOptionShape $shape, array $literals, ?string $subject, ?string $leafKey = null): mixed
     {
         foreach ($this->declarations->formNames() as $form) {
             if ($form === 'null' || !isset($literals[$form])) {
@@ -1583,13 +1583,34 @@ final class Stand
             }
         }
 
+        // A closed set of words accepts none of the eight canonical forms by
+        // construction: `all`, `any`, `error` are not 7331 in any spelling. The
+        // stand already declares real values for such leaves in
+        // `effect-magnitudes.tsv`, and before this it threw before looking at
+        // them -- so a key could not declare its word set without stopping the
+        // run. The declared alternate is consulted here, and only a leaf with
+        // no declaration at all is still a LedgerError.
+        if ($leafKey !== null) {
+            $declaredLeaf = $this->declarations->leafAlternates[self::leafOf($leafKey)] ?? null;
+
+            if ($declaredLeaf !== null) {
+                /** @var mixed $alternate */
+                $alternate = self::parse($declaredLeaf);
+
+                if ($shape->matches($alternate)) {
+                    return $alternate;
+                }
+            }
+        }
+
         if ($subject === null) {
             return null;
         }
 
         throw new LedgerError(
             'pair probe: the declared shape "' . $shape->describe() . '" of "' . $subject
-            . '" accepts none of the eight forms this stand can write',
+            . '" accepts none of the eight forms this stand can write, and '
+            . ($leafKey === null ? 'no leaf was named' : 'effect-magnitudes.tsv declares nothing for its leaf'),
         );
     }
 
