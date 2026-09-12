@@ -13,15 +13,19 @@
 # `verdict` names the one expected where the round can name it; `any-defect`
 # means the floor requires a defect without fixing which of the seven.
 #
-# Axis C has NO floor row, and the reason is worth keeping. X19 first declared
-# four of them, on the reading that a slot written by a lower layer and not
-# rewritten by a higher one must survive. External review refuted that reading
-# from the code: `ThresholdParser` returns [warning => v, error => v], so the
-# `threshold` shorthand rewrites BOTH slots, and the middle layer of those
-# triples overwrote the pair rather than leaving half of it alone. The rows are
-# lawful composition, the floor rows were withdrawn, and what stands in their
-# place is this paragraph -- so the next round does not rediscover the same
-# wrong reading and plant the same four rows again.
+# Axis C's floor rows are BACK, and the detour is kept on purpose because the
+# round got the same measurement wrong twice. It first declared four
+# LOST_SIBLING rows on the reading that a slot written by a lower layer and not
+# rewritten by a higher one must survive. Review refuted that from the code:
+# `ThresholdParser` returns [warning => v, error => v], so the shorthand
+# rewrites BOTH halves and the lowest layer's value is lawfully gone. The rows
+# were withdrawn -- and that was the second error, because the surviving half
+# is not the middle layer's value either. A fixture that tells the two apart
+# (L1 2/3, L2 threshold 5, L3 warning 2, subject CCN 6) reports warning at 2 and
+# NO error, though 6 > 5: the half the top layer never rewrote fell through to
+# the constructor default of 20. Eviction drops the lower pair AND the middle
+# shorthand. The loss is real, the rows are declared again, and this paragraph
+# stands so the next round does not withdraw them a second time.
 #
 #
 # THE `cure` COLUMN, AND WHY THE FLOOR IS NOT ONE CLAIM BUT TWO
@@ -111,3 +115,7 @@ form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`	7fe
 form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`		omitted == equivalent: the envelope wrote the metric name `probe_metric`, which the product's own NAME_TEMPLATE rejects before any leaf is read, so the pre-cure verdict was a refusal of the NAME. Under the corrected name `computed.probe-metric` the row is unmeasurable for a second reason of the stand's own: `enabled: true` is the default, so the canonical write equals an omitted key and the sensitivity probe is blind. Nothing here is a statement about the product
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		

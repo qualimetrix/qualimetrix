@@ -421,11 +421,12 @@ final class Classifier
             $lost = self::lostSibling($omitted, $low, $high, $both);
 
             if ($lost !== '') {
-                // `promised_survival=lost` is a promise the loss KEEPS, not one
-                // it breaks. The `threshold` shorthand writes both halves of a
-                // band, so a middle layer writing it overwrote the slot rather
-                // than leaving it alone, and finding it gone afterwards is the
-                // promise being met. The label still reports what happened.
+                // `promised_survival=lost` would be a promise the loss KEEPS.
+                // No row carries it: the round tried that reading and a fixture
+                // that could tell a middle layer's value from the constructor
+                // default refuted it. What is lost is not the lowest layer's
+                // value -- the shorthand did overwrite that -- but the MIDDLE
+                // layer's, in the half the top layer never rewrote.
                 return new Judgement(Verdict::LOST_SIBLING, $lost, $promised === 'lost' ? false : $defect);
             }
         }
