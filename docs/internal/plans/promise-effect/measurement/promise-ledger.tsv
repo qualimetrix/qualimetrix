@@ -410,6 +410,98 @@
 # - Эта сетка — знаменатель и оракул этапа 02, а не доказательство полноты: реестр, написанный
 #   под известный пол дефектов, пол проходит и вне его остаётся тавтологичным (01-promise.md §Пол).
 #
+# =============== ЭТАП 01 ЗАХОДА X19 — ОСЬ C, КОМПОЗИЦИЯ ИСТОЧНИКОВ ===============
+# Ветка x19-source-composition, база 02a6ca66. План: docs/internal/plans/source-composition/
+# 00-overview.md и docs/internal/plans/source-composition/01-promise.md — не путать с
+# одноимённым файлом docs/internal/plans/promise-effect/01-promise.md, первым этапом ДРУГОГО
+# захода (X17); оба названы «01-promise.md» в разных деревьях плана.
+#
+# ЧЕМ ПОЛУЧЕНО (дословно, ось C, три новых kind).
+#   ОБЕЩАНИЕ (carrier/status/note новых строк) прочитано ТОЛЬКО из:
+#     - website/docs/getting-started/configuration.md — EN, прочитан ЦЕЛИКОМ (919 строк);
+#     - website/docs/usage/cli-options.md — EN, прочитан ЦЕЛИКОМ (1004 строки);
+#     - website/docs/usage/baseline.md — прогреплен на "precedence|override": ничего сверх
+#       уже процитированного не нашлось (только --force / формат объяснений, вне оси C);
+#     - website/docs/ci-cd/github-actions.md, website/docs/ci-cd/other-ci.md,
+#       website/docs/usage/usage-scenarios.md — прогреплены на "preset" и
+#       "precedence|override": ни одна из трёх страниц не ставит preset рядом с флагом и не
+#       говорит о порядке источников;
+#     - website/docs/reference/default-thresholds.md — прочитан ЦЕЛИКОМ; это таблица
+#       дефолтов по правилам, ни слова о композиции источников, носителем оси C не стал.
+#   Список запрещённых файлов из задания — RuleOptionsFactory.php, FindingConfigurationRes-
+#     olver.php (и любой *ConfigurationResolver.php), RuleOptionThresholdModeResolver.php,
+#     RuleThresholdKeyGroupRegistry.php, RuleOptionsRegistry.php, RuleOptionsParser.php,
+#     CliOptionsParser.php, PresetStage.php, ConfigFileStage.php — не открывался, не
+#     грепался. Продукт не запускался НИ РАЗУ для чтения поведения (никакого `bin/qmx check`
+#     на пробном qmx.yaml/preset). `composer check:artifacts` был исполнен ПОСЛЕ того, как
+#     все 14 строк уже написаны и заморожены (DoD-5, диагностика ниже) — он не кормил собой
+#     ни одну строку реестра.
+#
+#   ЗНАМЕНАТЕЛЬ (какие СТРОКИ обязаны существовать, не что они обещают) получен из
+#   measurement/writer-applicability.tsv, секции 3 и 4, колонки id/party/capability/
+#   paths_or_count ТОЛЬКО: 7 путевых пар (P6, P7, P8, P9, P11, P12, P14), 5 слотовых пар
+#   (P5, P10, P13, P15, P16 — не путь, а объектный слот; вынесены, см. «ЧЕГО НЕ ВИДИТ»),
+#   30 из 33 переключаемых групп (секция 4, TD2) и четыре формы троек T1-T4 (пятая, T5,
+#   отмечена в колонке party как невозможная — над CLI-ведром слоя нет).
+#
+# ОТСТУПЛЕНИЕ ОТ АСИММЕТРИИ, ЭТАП 01 X19 — названо первоклассно, по прецеденту блока
+# «ОТСТУПЛЕНИЕ ОТ АСИММЕТРИИ» выше (этап 01 X17).
+#   ЧТО ПРОИЗОШЛО. Секции writer-applicability.tsv читались построчным выводом (`sed`),
+#   который печатает ВСЮ строку, а не только колонки id/party/capability/paths_or_count.
+#   В контекст поэтому попали колонки evidence и note секций 3 и 4 — с цитатами строк
+#   ЗАПРЕЩЁННЫХ файлов (например, "RuleOptionThresholdModeResolver.php:84-91",
+#   "CliOptionsParser.php:55-56 (??=)") и прозаическим описанием механизма (deepMerge,
+#   evictOverriddenMode). Тем же способом по невнимательности были показаны ЦЕЛИКОМ секции
+#   1, 2 и 5 (WRITERS, CAPABILITY MATRIX, THE SECOND READER) — задание называло только 3 и 4.
+#   ЧЕМ ЭТО ОПАСНО. Это ровно тот канал, которого асимметрия избегает: знание МЕХАНИЗМА могло
+#   подменить собой чтение НОСИТЕЛЯ и превратить код в скрытого «второго свидетеля».
+#   КОНТРМЕРА. Ни carrier, ни status, ни note ни одной новой строки не опирается на
+#   увиденное там. Carrier каждой новой строки — цитата из website/docs/**, независимо
+#   перечитанного инструментом чтения строка в строку уже ПОСЛЕ этого инцидента, с проверенными
+#   номерами строк. Там, где секции 3-4 дали факт из РАЗРЕШЁННЫХ колонок (что путевых пар 7,
+#   что переключаемых групп 30 из 33, что T5 невозможна), тот же факт заданием и был разрешён —
+#   утечка ничего не добавила сверх дозволенного для этой части.
+#   ЦЕНА ОТКАТА. Обещание строки (carrier/status/note) не зависит от этого блока и его не
+#   цитирует; чинить пришлось бы отдельную строку, а не пересобирать пакет.
+#
+# ЧЕГО ЭТОТ СПОСОБ НЕ ВИДИТ (ось C, этап 01).
+#   - 5 СЛОТОВЫХ ПАР — P5 (defaults), P10 (preset), P13 (qmx.yaml), P15 (#[CliAlias]), P16
+#     (--rule-opt), каждая против @qmx-threshold: не путь конфигурации, а объектный слот на
+#     уже построенном объекте опций; другой механизм, другой оракул (source-composition/
+#     01-promise.md «Что чиним»; 00-overview.md, таблица выносов). Ни одной строки под них.
+#   - СОДЕРЖИМОЕ ПОСТАВЛЯЕМЫХ ПРЕСЕТОВ (YAML-тела `strict`/`legacy`/`ci`) не читалось вовсе:
+#     знаменатель утверждает про СПОСОБНОСТЬ PresetStage отдать любой путь, а не про то, какой
+#     путь какой-то КОНКРЕТНЫЙ пресет действительно пишет. Ни одна строка не цитирует
+#     содержимое пресета как carrier — только страницы, где сам продукт описывает порядок.
+#   - Словарь promised_winner (low|high|refuse|unpromised) не несёт значения «оба применяются»
+#     (accumulate/compose). Носитель прямо обещает такой исход для списочных путей: «later
+#     presets override earlier ones, except list keys like `disabled_rules` which accumulate»
+#     (website/docs/getting-started/configuration.md:632) — третий исход, для которого в этой
+#     форме нет слова. Не натянут на low/high/refuse; назван в note строки P6 и здесь же — тем
+#     же приёмом, каким выше (блок ПЕРЕВЫВОД-3) названа вакансия «сокращение выигрывает молча»
+#     в словаре coexistence. ВОЗВРАТ ОРКЕСТРАТОРУ, а не решение пакета.
+#   - Тем же приёмом не превращена в строку соседняя асимметрия двери: список/карта
+#     СПИСОЧНОГО rule-option пути (например, `suppress_namespace_channels`) НЕ ЗАПИСЫВАЕТСЯ
+#     через `--rule-opt` вовсе — «configured in YAML, not through `--rule-opt`... `--rule-opt`
+#     carries scalar values» (website/docs/usage/cli-options.md:669-674). Дверь, которая не
+#     может дотянуться до пути, ничего не «проигрывает» и не «выигрывает» — это уже факт формы
+#     двери (kind=form, уже в реестре), а не факт композиции; заводить под него composition-path
+#     значило бы задвоить существующие строки формы натянутым толкованием.
+#   - composition-triple: ни одна из прочитанных страниц не обсуждает судьбу слота, который
+#     нижний слой написал в одиночку, после того как средний слой переключил режим и его
+#     эвикнул, а верхний слой пишет режим обратно неполным набором ключей. Все четыре строки
+#     T1-T4 поэтому DECIDED/unpromised — это ОЖИДАЕМЫЙ исход (source-composition/01-promise.md,
+#     «Ожидаемый исход, и почему он не подгонка»), а не пробел разведки.
+#   - RU-половина сайта, CHANGELOG, ADR, README компонентов — по-прежнему не носители (правило
+#     шапки этапа 01 X17 выше); ось C эту границу не меняет и не расширяет.
+#
+# ИТОГОВЫЕ ЧИСЛА ОСИ C (этап 01 X19, добавлено к сумме выше):
+#   новых строк ......... 14  (kind=composition-path 7, kind=composition-bucket 3,
+#                               kind=composition-triple 4)
+#   PROMISED ............  9  (composition-path: P6,P7,P8,P9,P11,P12; composition-bucket: 3)
+#   DECIDED .............  5  (composition-path: P14; composition-triple: T1-T4)
+#   DEFERRED ............  0
+#
 # =========================== ИТОГОВЫЕ ЧИСЛА ===========================
 #   ФОРМА НА CLI-ДВЕРЯХ — это НАПИСАНИЕ. Строка двери rule-opt / cli-alias / cli-root называет
 #   те же восемь форм, но пробой каждой служит её текстовое написание после `=`:
@@ -451,12 +543,35 @@
 #              дефолт, не отказ и не «не обещано», а ОТВЕТ САМОГО КЛАССА своими словами (C17).
 #              Стенд обязан признать дефектом и молчание, и общий отказ по C13.
 #
-# СХЕМА СТРОКИ — две формы, как в 01-promise.md. Колонок десять; последняя (decided_forms) —
-# сверх обязательных, заведена, чтобы «решено» и «прочитано» внутри одной строки не слипались.
-#   kind=form     | door | path        | promised_forms | null_means | equivalences | carrier | status | note | decided_forms
-#   kind=pair     | rule | key_a       | key_b          | source_scope | coexistence | carrier | status | note | (пусто)
-#   kind=deferred | (пусто ×5)                                                       |         | status | что и по какой цене | (пусто)
-kind	door|rule	path|key_a	promised_forms|key_b	null_means|source_scope	equivalences|coexistence	carrier	status	note	decided_forms
+# СХЕМА СТРОКИ — пять форм: form/pair/deferred сняты этапом 01 X17 (промисс-эффект),
+# composition-path/composition-bucket/composition-triple добавлены этапом 01 X19 (ось C,
+# docs/internal/plans/source-composition/01-promise.md) В ТЕ ЖЕ ДЕСЯТЬ КОЛОНОК — заморозка и
+# сторож покрытия остаются одним механизмом на весь файл. Последняя колонка (decided_forms) —
+# сверх обязательных, заведена, чтобы «решено» и «прочитано» внутри одной строки не слипались;
+# три новых kind её не используют (пусто), как и kind=pair и kind=deferred.
+#   kind=form               | door | path              | promised_forms    | null_means  | equivalences        | carrier | status | note | decided_forms
+#   kind=pair               | rule | key_a              | key_b             | source_scope| coexistence         | carrier | status | note | (пусто)
+#   kind=deferred            | (пусто ×5)                                                                       |         | status | что и по какой цене | (пусто)
+#   kind=composition-path   | path | writer_low         | writer_high       | path_scope  | promised_winner     | carrier | status | note | (пусто)
+#   kind=composition-bucket | rule | key_low@writer_low | key_high@writer_high | level    | promised_outcome    | carrier | status | note | (пусто)
+#   kind=composition-triple | rule | path@slot          | l1/l2/l3          | T1..T4      | promised_survival   | carrier | status | note | (пусто)
+#
+# ПРАВИЛО РАСКЛАДКИ composition-* (колонки переиспользованы, как для kind=pair):
+#   composition-path — «путь × пара» (source-composition/01-promise.md): колонка 2 держит
+#     ЕДИНЫЙ разделяемый предмет спора (путь), как «rule» держит его для kind=pair; колонки
+#     3-4 держат двух спорящих ПИСАТЕЛЕЙ (а не два ключа); колонка 5 — область пути
+#     (unrestricted | 80-alias-restricted, из writer-applicability.tsv §3, party-колонка);
+#     колонка 6 — вердикт (промисс-эффектный аналог coexistence).
+#   composition-bucket — «два разных ключа одной группы» (`rule` в колонке 2, как у pair);
+#     колонки 3-4 упаковывают ПАРУ (ключ, писатель) через `@`, потому что у формы четыре
+#     координаты идентичности (rule, key_low, key_high, writer_low, writer_high) и только
+#     две свободные колонки для них; колонка 5 — уровень иерархического правила (callable,
+#     class, ...), где расположена спорящая группа; колонка 6 — вердикт.
+#   composition-triple — шесть координат идентичности (rule, path, slot, l1, l2, l3) на
+#     четыре свободные колонки: путь и слот упакованы через `@` в колонку 3, тройка слоёв —
+#     через `/` в колонку 4 (порядок L1/L2/L3), колонка 5 держит КОД ФОРМЫ (T1-T4,
+#     writer-applicability.tsv §4) вместо не нужного здесь скоупа-пути; колонка 6 — вердикт.
+kind	door|rule|path|rule|rule	path|key_a|writer_low|key_low@writer_low|path@slot	promised_forms|key_b|writer_high|key_high@writer_high|l1/l2/l3	null_means|source_scope|path_scope|level|T1..T4	equivalences|coexistence|promised_winner|promised_outcome|promised_survival	carrier	status	note	decided_forms
 form	yaml	rules.code-smell.boolean-argument.allowed-prefixes	null,list	default	website/docs/getting-started/configuration.md:232-235 + src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34 snake=camel=kebab	website/docs/rules/code-smell.md:74	PROMISED	form taken from the documented example `[is, has, can, should, will, did, was]  `; complement refused by website/docs/getting-started/configuration.md:734-740	
 form	rule-opt	rules.code-smell.boolean-argument.allowed-prefixes		refuse	website/docs/getting-started/configuration.md:232-235 + src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34 snake=camel=kebab	website/docs/rules/code-smell.md:83	DECIDED	form taken from the documented example `[is, has, can, should, will, did, was]  `; complement refused by website/docs/getting-started/configuration.md:734-740 | CLI door carries scalar text only (website/docs/usage/cli-options.md:669-674) | a container value is not writable on this door at all (website/docs/usage/cli-options.md:669-674); only a deeper scalar path is | null: empty value after `=`: no carrier; ADR 0052 row 4 (accepted set closed before analysis) -> refuse	null
 form	yaml	rules.code-smell.boolean-argument.enabled	null,bool	default	website/docs/getting-started/configuration.md:232-235 + src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:28-34 snake=camel=kebab	website/docs/getting-started/configuration.md:135	PROMISED	form taken from the documented example `false`; complement refused by website/docs/getting-started/configuration.md:734-740 | string-nonnumber: read from website/docs/getting-started/configuration.md:799 - a boolean accepts `true` / `false`; a quoted `"false"` is a string, and a value of another shape ends the run with exit code 3 (website/docs/getting-started/configuration.md:782-787); string-number: read from website/docs/getting-started/configuration.md:799 - a boolean accepts `true` / `false`; `1`-as-string is a string, and a value of another shape ends the run with exit code 3 (website/docs/getting-started/configuration.md:782-787)	
@@ -1765,3 +1880,17 @@ deferred							DEFERRED	the `inline` door in full -- price: 93 form-deciding sit
 deferred							DEFERRED	reconciling the carriers that dispute mixing `threshold` with `warning`/`error` -- price: the pages stay as they are. Lifting the unconditional ban in default-thresholds.md would raise the layered wording into the SOLE carrier of a promise this round both refuses to measure and refuses to cure.	
 deferred							DEFERRED	`--no-cache` does not hold -- price: an observable member of the class; it touches the whole cache subsystem. The oracle is obliged not to rely on the flag (measurement protocol, 02 §4).	
 deferred							DEFERRED	the numbers in default-thresholds.md against the defaults in code -- price: cheap once the shape declaration exists; taken next.	
+composition-path	rules.size.method-count.warning	preset#i	preset#j	unrestricted	high	website/docs/getting-started/configuration.md:632	PROMISED	pair P6 (writer-applicability.tsv §3): preset#i -> preset#j, i<j, needs N>=2 --preset names. "When combining presets, they are merged left-to-right -- later presets override earlier ones" -> high (later/#j) for a scalar key. The SAME sentence names an exception for list-shaped keys ("except list keys like disabled_rules which accumulate") -- a third outcome (both survive) that promised_winner (low|high|refuse|unpromised) has no word for; not forced into a value here, see the header block "ЧЕГО ЭТОТ СПОСОБ НЕ ВИДИТ".	
+composition-path	rules.size.method-count.warning	preset	qmx.yaml	unrestricted	high	website/docs/getting-started/configuration.md:630	PROMISED	pair P7: preset -> qmx.yaml. "Priority order: Presets are applied after composer.json discovery but before qmx.yaml. Your config file always overrides preset values." -> high (qmx.yaml). Restated at website/docs/usage/cli-options.md:118 ("so your config file always takes precedence").	
+composition-path	rules.size.method-count.warning	preset	cli-alias	80-alias-restricted	high	website/docs/getting-started/configuration.md:168 + website/docs/getting-started/configuration.md:630 + website/docs/getting-started/configuration.md:706	PROMISED	pair P8, restricted to the 80 declared alias paths. Direct chain in one sentence: "a higher-priority layer (config file over a preset, CLI over the config file) may freely switch mode" (configuration.md:168) names all three layers together; restated as two adjacent statements at configuration.md:630 (preset < qmx.yaml) and configuration.md:706 ("Command-line options always take precedence over values in the configuration file"). CliAlias flags are framed throughout website/docs/usage/cli-options.md as CLI options (e.g. --method-count-warning), never as a mechanism distinct from "the command line" when precedence is stated.	
+composition-path	rules.size.method-count.warning	preset	rule-opt	unrestricted	high	website/docs/getting-started/configuration.md:168 + website/docs/getting-started/configuration.md:170-181	PROMISED	pair P9 -- the pair the website names explicitly (source-composition/01-promise.md): "a higher-priority layer (config file over a preset, CLI over the config file) may freely switch mode for a rule level" (configuration.md:168). The worked example at configuration.md:170-181 is a mode-switch (different keys -- see composition-bucket rows below); the plain same-key case recorded here follows from the same sentence's general layer order: high (--rule-opt).	
+composition-path	rules.size.method-count.warning	qmx.yaml	cli-alias	80-alias-restricted	high	website/docs/getting-started/configuration.md:706	PROMISED	pair P11, restricted to the 80 declared alias paths. Direct: "Command-line options always take precedence over values in the configuration file" (configuration.md:706) -- no distinction drawn there between an alias flag and --rule-opt; both are "command-line options".	
+composition-path	rules.size.method-count.warning	qmx.yaml	rule-opt	unrestricted	high	website/docs/getting-started/configuration.md:706 + website/docs/getting-started/configuration.md:170-181	PROMISED	pair P12: qmx.yaml -> --rule-opt. Direct statement (configuration.md:706) plus the worked example (configuration.md:170-181). For a list-shaped rule-option path (e.g. suppress_namespace_channels) this door cannot write the path AT ALL -- "configured in YAML, not through --rule-opt ... --rule-opt carries scalar values" (cli-options.md:669-674) -- so no dispute exists there; that is a door/form fact already carried by kind=form rows on this door, not a different composition-path verdict. Named so the path-dependence this row's scalar choice hides is not lost, per source-composition/01-promise.md's own warning against collapsing a pair into one row.	
+composition-path	rules.size.method-count.warning	cli-alias	rule-opt	80-alias-restricted	unpromised		DECIDED	pair P14, restricted to the 80 declared alias paths, same CLI-bucket layer. No page states which one wins when the SAME key is written both by an alias flag and by literal --rule-opt in one invocation. cli-options.md:1001-1003 says only that "each CLI alias is listed with the long --rule-opt form it expands to" -- describing the mechanism's relationship, not a same-key collision winner. Expected silent case (source-composition/01-promise.md, "Ожидаемый исход").	
+composition-bucket	complexity.ccn	callable.warning@cli-alias	callable.threshold@rule-opt	callable	refuse	website/docs/getting-started/configuration.md:166 + website/docs/getting-started/configuration.md:199-207 + website/docs/usage/cli-options.md:658-661 + website/docs/usage/cli-options.md:685-686 + website/docs/usage/cli-options.md:1001-1003	PROMISED	"You cannot mix threshold with explicit warning/error keys from the same configuration layer (the same preset, the same qmx.yaml, or the same CLI invocation) for the same rule level" (configuration.md:166) -> refuse. callable.threshold is a documented nested key (configuration.md:199-207, the two-levels-configured example) written via --rule-opt using the SAME dot-path convention shown for callable.warning/callable.error (cli-options.md:659-660); --cyclomatic-warning=N expands to --rule-opt=complexity.ccn:callable.warning=... (website/docs/usage/cli-options.md:685-686, and generally at cli-options.md:1001-1003: "each CLI alias is listed with the long --rule-opt form it expands to"). Both therefore land in "the same CLI invocation" the mixing rule names.	
+composition-bucket	complexity.cognitive	callable.warning@cli-alias	callable.threshold@rule-opt	callable	refuse	website/docs/getting-started/configuration.md:166 + website/docs/getting-started/configuration.md:199-207 + website/docs/usage/cli-options.md:658-661 + website/docs/usage/cli-options.md:689-690 + website/docs/usage/cli-options.md:1001-1003	PROMISED	"You cannot mix threshold with explicit warning/error keys from the same configuration layer (the same preset, the same qmx.yaml, or the same CLI invocation) for the same rule level" (configuration.md:166) -> refuse. callable.threshold is a documented nested key (configuration.md:199-207, the two-levels-configured example) written via --rule-opt using the SAME dot-path convention shown for callable.warning/callable.error (cli-options.md:659-660); --cognitive-warning=N expands to --rule-opt=complexity.cognitive:callable.warning=... (website/docs/usage/cli-options.md:689-690, and generally at cli-options.md:1001-1003: "each CLI alias is listed with the long --rule-opt form it expands to"). Both therefore land in "the same CLI invocation" the mixing rule names.	
+composition-bucket	complexity.npath	callable.warning@cli-alias	callable.threshold@rule-opt	callable	refuse	website/docs/getting-started/configuration.md:166 + website/docs/getting-started/configuration.md:199-207 + website/docs/usage/cli-options.md:658-661 + website/docs/usage/cli-options.md:693-694 + website/docs/usage/cli-options.md:1001-1003	PROMISED	"You cannot mix threshold with explicit warning/error keys from the same configuration layer (the same preset, the same qmx.yaml, or the same CLI invocation) for the same rule level" (configuration.md:166) -> refuse. callable.threshold is a documented nested key (configuration.md:199-207, the two-levels-configured example) written via --rule-opt using the SAME dot-path convention shown for callable.warning/callable.error (cli-options.md:659-660); --npath-warning=N expands to --rule-opt=complexity.npath:callable.warning=... (website/docs/usage/cli-options.md:693-694, and generally at cli-options.md:1001-1003: "each CLI alias is listed with the long --rule-opt form it expands to"). Both therefore land in "the same CLI invocation" the mixing rule names.	
+composition-triple	complexity.ccn	callable@warning	preset#1/preset#2/qmx.yaml	T1	unpromised		DECIDED	triple T1 (writer-applicability.tsv §4): preset#1, preset#2, qmx.yaml, the middle layer writes `threshold` and evicts the lower layer's graduated pair; needs N>=2 --preset names. No page discusses the fate of a slot the lower layer alone wrote once a middle layer's mode-switch evicts it and a higher layer writes the mode back with a strict subset of keys. Expected silent case (source-composition/01-promise.md, "Ожидаемый исход, и почему он не подгонка").	
+composition-triple	complexity.ccn	callable@warning	preset#1/preset#2/cli-bucket	T2	unpromised		DECIDED	triple T2 (writer-applicability.tsv §4): preset#1, preset#2, cli-bucket, the middle layer writes `threshold` and evicts the lower layer's graduated pair; needs N>=2 --preset names. No page discusses the fate of a slot the lower layer alone wrote once a middle layer's mode-switch evicts it and a higher layer writes the mode back with a strict subset of keys. Expected silent case (source-composition/01-promise.md, "Ожидаемый исход, и почему он не подгонка").	
+composition-triple	complexity.ccn	callable@warning	preset#1/preset#2/preset#3	T3	unpromised		DECIDED	triple T3 (writer-applicability.tsv §4): preset#1, preset#2, preset#3, the middle layer writes `threshold` and evicts the lower layer's graduated pair; needs N>=3 --preset names. No page discusses the fate of a slot the lower layer alone wrote once a middle layer's mode-switch evicts it and a higher layer writes the mode back with a strict subset of keys. Expected silent case (source-composition/01-promise.md, "Ожидаемый исход, и почему он не подгонка").	
+composition-triple	complexity.ccn	callable@warning	preset#1/qmx.yaml/cli-bucket	T4	unpromised		DECIDED	triple T4 (writer-applicability.tsv §4): preset#1, qmx.yaml, cli-bucket, the middle layer writes `threshold` and evicts the lower layer's graduated pair; needs N>=1 --preset name. No page discusses the fate of a slot the lower layer alone wrote once a middle layer's mode-switch evicts it and a higher layer writes the mode back with a strict subset of keys. Expected silent case (source-composition/01-promise.md, "Ожидаемый исход, и почему он не подгонка").	
