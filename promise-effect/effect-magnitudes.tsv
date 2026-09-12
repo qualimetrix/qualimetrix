@@ -1,0 +1,58 @@
+# The SECOND value an effect probe writes, when the canonical one is what the
+# product already does without the key.
+#
+# WHY THIS FILE AND NOT `forms.tsv`. That table asks about the FORM of a value
+# and one magnitude per form is enough for it, so it fixes exactly one — and it
+# is frozen. Axes B and E ask a different question: whether a key still carries
+# ITS OWN EFFECT beside a neighbour. A write indistinguishable from the key
+# being omitted answers that question vacuously, whatever the merge did. The
+# same reasoning already produced `composition-magnitudes.tsv` for axis C, and
+# this file is its sibling for the two axes that compare against an omitted
+# side.
+#
+# The canonical `bool` write is `true`, and `true` is what almost every
+# `*.enabled` key in this tree already is. Measured on the frozen half: of the
+# 117 pair sides that write the key `enabled`, 116 changed the object when the
+# stand wrote an int at them and 0 did once the repaired generator wrote the
+# canonical `true`.
+#
+# HOW THE VALUE IS CHOSEN, AND WHAT IS NOT ALLOWED TO CHOOSE IT. The stand does
+# not read a default off a key's spelling — a suffix heuristic is the very
+# thing this round removes from the product. It OBSERVES: the `omitted` side is
+# already taken, so "this write is what the product does anyway" is a
+# measurement, and the alternate below is tried only after that measurement
+# says so. A key where neither the canonical write nor its alternate can be
+# told from the omitted one is read NOT OBSERVABLE by the classifier; it is
+# never written with a third value chosen to win.
+#
+# TWO SELECTORS, ONE QUESTION.
+#
+#   `form`        the alternate magnitude of a whole form, applied through the
+#                 same shape match the canonical write goes through, so the
+#                 form the shape accepts does not change with the magnitude.
+#   `option_leaf` a key whose accepted values are an ENUMERATION the canonical
+#                 magnitude is not in. The product's own list is the basis, and
+#                 the `why` column names where it stands — this is a
+#                 declaration read off the product, not a guess read off the
+#                 key's name. Matched on the leaf, exactly as
+#                 `axis-a-hits.tsv` is, so one row covers the same key at every
+#                 depth it is accepted at.
+#
+# A leaf row wins over the form row for its key. A leaf row whose value the
+# declared shape refuses is a `LedgerError`, not a silently skipped candidate.
+#
+# The magnitude 9137 is the same kind of number as `forms.tsv`'s 7331 and axis
+# C's 4211/8623: far above every threshold default in this tree, so a write of
+# it is distinguishable from the key being omitted, and different from all of
+# them, so a value surviving a merge can still be attributed.
+selector_kind	selector	yaml_write	why the canonical write cannot carry an effect here
+form	bool	false	`true` is the standing value of most `enabled` keys, so the canonical write is the product's own default
+form	int	9137	a key whose default is 7331 would be inert under the canonical write; none is known, and the fallback is declared rather than assumed
+form	float	9137.9	the same, for a shape that accepts a fractional value
+form	string-number	"9137"	the same, for a shape that accepts the numeric magnitude only as text
+form	string-nonnumber	xyz	a second non-numeric text, for a shape whose standing value happens to be `abc`
+form	list	[9137]	the list container carrying the alternate magnitude
+form	map	{a: 9137}	the map container carrying the alternate magnitude
+option_leaf	scope	application	`ClassCboOptions::parseScope()` accepts `all` and `application` and silently returns `all` for everything else, so every canonical magnitude is read as the default
+option_leaf	unused-directive-severity	warning	`InlineDirectiveOptions::resolveSeverity()` refuses any word outside `info`/`warning`/`error`, so the canonical magnitude is refused for the stand's spelling and the row reads MISCOMPOSED for a reason that is not the product's
+option_leaf	mode	warn	`UnassignedClassOptions::resolveMode()` accepts `ignore`, `warn` and `error` and refuses everything else, so the canonical magnitude is refused for a spelling the pair row is not about

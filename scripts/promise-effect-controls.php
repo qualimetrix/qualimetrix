@@ -103,6 +103,7 @@ final class Workspace
         'promise-effect/witness-envelopes.tsv',
         'promise-effect/pair-kind-scope.tsv',
         'promise-effect/composition-magnitudes.tsv',
+        'promise-effect/effect-magnitudes.tsv',
         'promise-effect/door-normalization.tsv',
         'promise-effect/observability-limits.tsv',
         'promise-effect/floor.tsv',
@@ -829,7 +830,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         // F2 uses — the two cases are the same rule asked of different inputs,
         // and only this one can fail because the CLASSIFIER changed.
         //
-        // It used to ask `missesOnTheFrozenHalf()`, whose claim is "every
+        // It used to ask a judge whose claim was "every
         // declared row is a defect here, cured or not". That claim belonged to
         // a snapshot taken BEFORE the cures the `cure` column names. This one
         // was taken after them — `observations-before/shot.txt` records
@@ -1054,6 +1055,16 @@ function runJudgementCase(JudgementCase $case): array
 /** @param array<string, string> $sides */
 function judge(JudgementCase $case, array $sides, CompositionComparison $how): \Qualimetrix\PromiseEffect\Judgement
 {
+    if ($case->axis === 'B') {
+        return Classifier::pair(
+            observationOf($sides['omitted']),
+            observationOf($sides['onlyA']),
+            observationOf($sides['onlyB']),
+            observationOf($sides['both']),
+            $case->coexistence,
+        );
+    }
+
     if ($case->axis === 'E') {
         return Classifier::neighbourhood(
             observationOf($sides['omitted']),
@@ -1201,6 +1212,10 @@ foreach (Cases::judgements() as $judgementCase) {
 foreach ([
     'COMPOSED_AS_PROMISED', 'MISLAYERED', 'LOST_SIBLING', 'COMPOSITION_REFUSED', 'FRANKENSTEIN',
     'PRESENCE_NEUTRAL', 'PRESENCE_SWITCHED_BRANCH', 'PRESENCE_REFUSED',
+    // Axis B joined this list when its sensitivity gate landed: the pair
+    // verdicts are now decided by a rule with a vacuum in it, and a rule of
+    // that kind is not proved by the planting cases that address the grid.
+    'COEXISTENCE_OK', 'MISCOMPOSED',
 ] as $verdict) {
     if (!isset($judgementCovered[$verdict])) {
         $stale[] = 'no judgement case reads ' . $verdict;
@@ -1271,8 +1286,8 @@ foreach (['producer', 'options-class', 'config-path', 'same-source-pair'] as $po
 $publishedComparison = 'retired: a round that cures anything moves the grid ahead of its own baseline';
 
 printf(
-    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d judgement case(s) over the 8 verdicts of axes C\n"
-        . "and E, %d stand case(s), %d cross-check case(s) over both sides of the four sets, and %d guard case(s)\n"
+    "Coverage arithmetic: %d verdict case(s) over 9 verdicts, %d judgement case(s) over the 10 verdicts of axes\n"
+        . "B, C and E, %d stand case(s), %d cross-check case(s) over both sides of the four sets, and %d guard case(s)\n"
         . "over 4 populations, in a universe of %d cells.\n"
         . "The frozen half against the published grid: %s.\n",
     \count(Cases::verdicts()),

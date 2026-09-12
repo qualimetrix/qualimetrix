@@ -129,6 +129,7 @@ final readonly class JudgementCase
      * @param array<string, string> $sides side name => `outcome|text`, where a bare text means `accepted`
      * @param array{string, string} $planted the side this case replaces, and its new `outcome|text`
      * @param array<string, string> $substitutions the name of a wrong comparison => the verdict it would have produced instead
+     * @param string $coexistence axis B only: the promise the ledger's own column carries for this pair
      */
     public function __construct(
         public string $id,
@@ -142,6 +143,7 @@ final readonly class JudgementCase
         public string $promised = '',
         public bool $highRewritesEveryLowKey = false,
         public array $substitutions = [],
+        public string $coexistence = '',
     ) {}
 }
 
@@ -322,7 +324,7 @@ final class Cases
     }
 
     /**
-     * The axis-C and axis-E plantings.
+     * The axis-B, axis-C and axis-E plantings.
      *
      * Every verdict either axis can produce is named by at least one case, on
      * both sides of the move: the baseline reading and the planted one. The
@@ -369,7 +371,58 @@ final class Cases
             'both' => '{"options":{"class":{"warning":4211,"error":8623}}}',
         ];
 
+        // Two keys of one document, each moving a leaf of its own and both
+        // moving it in the merge. The shape of a `compose` pair row.
+        $pair = [
+            'omitted' => '{"options":{"warning":10,"error":20}}',
+            'onlyA' => '{"options":{"warning":7331,"error":20}}',
+            'onlyB' => '{"options":{"warning":10,"error":9137}}',
+            'both' => '{"options":{"warning":7331,"error":9137}}',
+        ];
+
+        // The same document with A ALREADY inert, which is what a side written
+        // with the product's own default looks like.
+        $inertA = [...$pair, 'onlyA' => '{"options":{"warning":10,"error":20}}'];
+
         return [
+            new JudgementCase(
+                'PR1',
+                'B',
+                'NOT OBSERVABLE',
+                false,
+                'COEXISTENCE_OK',
+                'a side written with what the product does anyway has no effect to lose, so every merge would satisfy this row',
+                $pair,
+                ['onlyA', '{"options":{"warning":10,"error":20}}'],
+                coexistence: 'compose',
+            ),
+            new JudgementCase(
+                'PR2',
+                'B',
+                'MISCOMPOSED',
+                true,
+                'NOT OBSERVABLE',
+                'the SENSITIVE half of a row whose other half is inert is still measured — the gate must not swallow a real loss',
+                $inertA,
+                ['both', '{"options":{"warning":10,"error":20}}'],
+                coexistence: 'compose',
+            ),
+            new JudgementCase(
+                'PR3',
+                'B',
+                'COEXISTENCE_OK',
+                false,
+                'NOT OBSERVABLE',
+                'which key won cannot be read off two sides that render the same, and can be once they differ',
+                [
+                    'omitted' => '{"options":{"warning":10}}',
+                    'onlyA' => '{"options":{"warning":4211}}',
+                    'onlyB' => '{"options":{"warning":4211}}',
+                    'both' => '{"options":{"warning":4211}}',
+                ],
+                ['onlyB', '{"options":{"warning":8623}}'],
+                coexistence: 'one-wins:a',
+            ),
             new JudgementCase(
                 'CP1',
                 'C',

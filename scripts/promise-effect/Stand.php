@@ -36,14 +36,6 @@ final class Stand
 {
     public const string SNAPSHOT_DIR = 'docs/internal/generated/promise-effect';
 
-    /**
-     * The value a BLOCK-key pair probe writes on the A side; the B side gets
-     * the next one. A leaf key ignores the seed and writes the canonical
-     * value of its own declared shape instead — see
-     * {@see self::canonicalWriteFor()} and S8 of 02-stand.md.
-     */
-    private const int PAIR_SEED = 7331;
-
     private const string UNWRITABLE = 'a valueless flag carries no spelling for this form';
 
     /** @var array<string, bool> producer name => was it seen to run */
@@ -591,9 +583,9 @@ final class Stand
             }
 
             $omitted = $this->pairWrite($rule, []);
-            $a = $this->pairWrite($rule, [$row->keyA => self::PAIR_SEED]);
-            $b = $this->pairWrite($rule, [$row->keyB => self::PAIR_SEED + 1]);
-            $both = $this->pairWrite($rule, [$row->keyA => self::PAIR_SEED, $row->keyB => self::PAIR_SEED + 1]);
+            [$valueA, $a, $chosenA] = $this->pairSide($rule, $row->keyA, $omitted['object']);
+            [$valueB, $b, $chosenB] = $this->pairSide($rule, $row->keyB, $omitted['object']);
+            $both = $this->pairWrite($rule, [$row->keyA => $valueA, $row->keyB => $valueB]);
 
             $coexistence = $row->coexistence;
 
@@ -603,7 +595,16 @@ final class Stand
             }
 
             $judgement = Classifier::pair($omitted['object'], $a['object'], $b['object'], $both['object'], $coexistence);
-            $cells[] = new Cell('B', $row->key(), 'both', 'optionsObject', $judgement->verdict, $judgement->decidedBy, $row->status, $judgement->defect);
+            $cells[] = new Cell(
+                'B',
+                $row->key(),
+                'both',
+                'optionsObject',
+                $judgement->verdict,
+                $judgement->decidedBy . '; A wrote the ' . $chosenA . ', B the ' . $chosenB,
+                $row->status,
+                $judgement->defect,
+            );
 
             $this->record('B', $row->key(), 'omitted', $omitted['object']);
             $this->record('B', $row->key(), 'onlyA', $a['object']);
@@ -711,11 +712,12 @@ final class Stand
         $cells = [];
 
         foreach ($this->neighbourhood()->rows as $row) {
-            $neighbourWrite = isset($this->inProcess->optionsClasses[$row->rule])
+            $candidates = isset($this->inProcess->optionsClasses[$row->rule])
                 ? $this->neighbourWrite($row)
                 : 'no registered producer owns this rule';
 
-            if (\is_string($neighbourWrite)) {
+            if (\is_string($candidates)) {
+                $neighbourWrite = $candidates;
                 $cells[] = new Cell('E', $row->key(), 'both', 'optionsObject', Verdict::NOT_OBSERVABLE, $neighbourWrite, '(none)');
                 $this->record('E', $row->key(), 'unplanned', new Observation(Observation::ACCEPTED, $neighbourWrite));
 
@@ -730,7 +732,7 @@ final class Stand
             // No pair in today's table does — a block neighbour writes keys
             // UNDER itself and the `~` key is always at another depth — but a
             // future row that did would be a green cell measuring nothing.
-            if (\array_key_exists($row->nullKey, $neighbourWrite)) {
+            if (\array_key_exists($row->nullKey, $candidates[0])) {
                 $cells[] = new Cell('E', $row->key(), 'both', 'optionsObject', Verdict::NOT_OBSERVABLE, 'the neighbour writes the same key, so `~` could not stand beside it', '(none)');
                 $this->record('E', $row->key(), 'unplanned', new Observation(Observation::ACCEPTED, 'the neighbour writes the same key, so `~` could not stand beside it'));
 
@@ -738,7 +740,7 @@ final class Stand
             }
 
             $omitted = $this->neighbourhoodWrite($row->rule, []);
-            $neighbour = $this->neighbourhoodWrite($row->rule, $neighbourWrite);
+            [$neighbourWrite, $neighbour, $chosen] = $this->neighbourSide($row->rule, $candidates, $omitted);
             $nullAlone = $this->neighbourhoodWrite($row->rule, $nullWrite);
             $both = $this->neighbourhoodWrite($row->rule, [...$nullWrite, ...$neighbourWrite]);
 
@@ -749,7 +751,7 @@ final class Stand
                 'both',
                 'optionsObject',
                 $judgement->verdict,
-                $judgement->decidedBy . '; pair kind ' . $row->pairKind,
+                $judgement->decidedBy . '; pair kind ' . $row->pairKind . '; the neighbour wrote the ' . $chosen,
                 '(none)',
                 $judgement->defect,
             );
@@ -891,19 +893,23 @@ final class Stand
     /**
      * What a neighbour is written as, or why it cannot be written.
      *
-     * A leaf carries the canonical value of its own declared shape — the same
-     * rule S8 put under the pair probe. A LEVEL BLOCK carries the band pair
-     * its own level declares: `class: {}` is an empty mapping and means
-     * "omitted", so a block written empty would measure nothing and read as if
-     * the neighbour had no effect.
+     * A leaf carries the values of its own declared shape — the same rule S8
+     * put under the pair probe. A LEVEL BLOCK carries the band pair its own
+     * level declares: `class: {}` is an empty mapping and means "omitted", so
+     * a block written empty would measure nothing and read as if the
+     * neighbour had no effect.
      *
-     * @return array<string, mixed>|string
+     * @return non-empty-list<array<string, mixed>>|string the candidate writes
+     *                                                     in the order {@see self::neighbourSide()} tries them
      */
     private function neighbourWrite(NeighbourhoodRow $row): array|string
     {
         if (!$row->neighbourIsBlock()) {
             try {
-                return [$row->neighbour => $this->canonicalWriteFor($row->rule, $row->neighbour)];
+                return array_map(
+                    static fn(mixed $value): array => [$row->neighbour => $value],
+                    $this->effectWritesFor($row->rule, $row->neighbour),
+                );
             } catch (LedgerError $error) {
                 return 'the neighbour has no declared shape to write: ' . $error->getMessage();
             }
@@ -916,17 +922,50 @@ final class Stand
             return 'key-pairs.tsv declares no band pair under the block "' . $block . '", so it cannot be written with an effect';
         }
 
-        $written = [];
+        $perKey = [];
 
         foreach ($band as $key) {
             try {
-                $written[$key] = $this->canonicalWriteFor($row->rule, $key);
+                $perKey[$key] = $this->effectWritesFor($row->rule, $key);
             } catch (LedgerError $error) {
                 return 'a key of the block "' . $block . '" has no declared shape: ' . $error->getMessage();
             }
         }
 
-        return $written;
+        return self::zip($perKey);
+    }
+
+    /**
+     * The neighbour written with a value the object can be seen to carry.
+     *
+     * The same search {@see self::pairSide()} runs, for the same reason: this
+     * axis asks whether `~` beside a neighbour costs the NEIGHBOUR its effect,
+     * and a neighbour written with what the product does anyway has no effect
+     * to lose. The classifier already reads that case as NOT OBSERVABLE, so a
+     * blind write does not produce a wrong verdict here — it produces a row
+     * that measures nothing while looking like a measurement.
+     *
+     * @param non-empty-list<array<string, mixed>> $candidates
+     *
+     * @return array{0: array<string, mixed>, 1: Observation, 2: string}
+     */
+    private function neighbourSide(string $rule, array $candidates, Observation $omitted): array
+    {
+        $canonical = $this->neighbourhoodWrite($rule, $candidates[0]);
+
+        if ($canonical->accepted() && $canonical->text !== $omitted->text) {
+            return [$candidates[0], $canonical, 'canonical magnitude'];
+        }
+
+        foreach (\array_slice($candidates, 1) as $candidate) {
+            $taken = $this->neighbourhoodWrite($rule, $candidate);
+
+            if ($taken->accepted() && $taken->text !== $omitted->text) {
+                return [$candidate, $taken, 'alternate magnitude'];
+            }
+        }
+
+        return [$candidates[0], $canonical, 'canonical magnitude, which no declared value here can improve on'];
     }
 
     /**
@@ -1239,9 +1278,7 @@ final class Stand
      */
     private function hitFor(string $option): string
     {
-        $leaf = str_contains($option, '.') ? substr($option, (int) strrpos($option, '.') + 1) : $option;
-
-        return $this->declarations->axisAHits[$leaf] ?? '';
+        return $this->declarations->axisAHits[self::leafOf($option)] ?? '';
     }
 
     /**
@@ -1276,25 +1313,67 @@ final class Stand
 
     /**
      * Both halves of a pair probe, written into one document, which is what
-     * `same-source` means. The value at each key is searched rather than
-     * assumed: a pair row names two keys and says nothing about their forms.
+     * `same-source` means.
      *
-     * @param array<string, int> $keys
+     * @param array<string, mixed> $values key => the value chosen for it
      *
      * @return array{door: Observation, merged: Observation, object: Observation}
      */
-    private function pairWrite(string $rule, array $keys): array
+    private function pairWrite(string $rule, array $values): array
     {
         $options = [];
 
-        foreach ($keys as $key => $seed) {
-            $options = self::place($options, explode('.', rtrim($key, ':')), $this->pairValue($rule, rtrim($key, ':'), $seed));
+        /** @var mixed $value */
+        foreach ($values as $key => $value) {
+            $options = self::place($options, explode('.', rtrim($key, ':')), $value);
         }
 
         return $this->inProcess->take($options === [] ? [] : ['rules' => [$rule => $options]], [], [], $rule);
     }
 
-    private function pairValue(string $rule, string $key, int $seed): mixed
+    /**
+     * One side of a pair, written with a value the product can be seen to read
+     * differently from the key being absent.
+     *
+     * The canonical magnitude is tried first and its observation is the one
+     * kept, so the search costs a second probe only where that magnitude turns
+     * out to be what the product already does. Where NOTHING declared moves
+     * the object the canonical write stands and the observation is stored as
+     * it came: the stand does not decide here that the row is unmeasurable —
+     * {@see Classifier::pair()} reads that off the four stored sides, so the
+     * frozen half is judged by the same rule as the live one.
+     *
+     * @return array{0: mixed, 1: array{door: Observation, merged: Observation, object: Observation}, 2: string}
+     */
+    private function pairSide(string $rule, string $key, Observation $omitted): array
+    {
+        $written = rtrim($key, ':');
+        $candidates = $this->pairCandidates($rule, $written);
+        $canonical = $this->pairWrite($rule, [$written => $candidates[0]]);
+
+        if ($canonical['object']->accepted() && $canonical['object']->text !== $omitted->text) {
+            return [$candidates[0], $canonical, 'canonical magnitude'];
+        }
+
+        /** @var mixed $candidate */
+        foreach (\array_slice($candidates, 1) as $candidate) {
+            $taken = $this->pairWrite($rule, [$written => $candidate]);
+
+            if ($taken['object']->accepted() && $taken['object']->text !== $omitted->text) {
+                return [$candidate, $taken, 'alternate magnitude'];
+            }
+        }
+
+        return [$candidates[0], $canonical, 'canonical magnitude, which no declared value here can improve on'];
+    }
+
+    /**
+     * The ordered values one pair member may be written with: the canonical
+     * magnitude of its declared shape first, then the declared alternates.
+     *
+     * @return non-empty-list<mixed>
+     */
+    private function pairCandidates(string $rule, string $key): array
     {
         // A block key — `callable:`, `class:` — is written as the map of every
         // leaf the ledger names under it for this rule, so the block carries a
@@ -1308,31 +1387,42 @@ final class Stand
 
             foreach ([$pair->keyA, $pair->keyB] as $candidate) {
                 if (str_starts_with($candidate, $key . '.') && !str_contains(substr($candidate, \strlen($key) + 1), '.')) {
-                    $children[substr($candidate, \strlen($key) + 1)] = $seed;
+                    $children[] = substr($candidate, \strlen($key) + 1);
                 }
             }
         }
 
-        if ($children !== []) {
-            // 66 wrote `class: {max_warning, max_error}`, not the whole block:
-            // a block carrying `threshold` BESIDE a band key is a mix the
-            // product refuses, and a probe refused on its own write would read
-            // MISCOMPOSED for the stand's reason, not the product's.
-            $bands = array_diff(array_keys($children), ['threshold']);
+        // 66 wrote `class: {max_warning, max_error}`, not the whole block: a
+        // block carrying `threshold` BESIDE a band key is a mix the product
+        // refuses, and a probe refused on its own write would read MISCOMPOSED
+        // for the stand's reason, not the product's.
+        $children = array_values(array_unique($children));
+        $bands = array_diff($children, ['threshold']);
 
-            if ($bands !== []) {
-                unset($children['threshold']);
-            }
-
-            return $children;
+        if ($bands !== []) {
+            $children = array_values($bands);
         }
 
-        return $this->canonicalWriteFor($rule, $key);
+        if ($children === []) {
+            return $this->effectWritesFor($rule, $key);
+        }
+
+        $perChild = [];
+
+        foreach ($children as $child) {
+            // Each child gets its own shape's magnitudes: a block whose
+            // `enabled` leaf was written with the band magnitude is refused
+            // for the stand's spelling, which is the defect S8 removed from
+            // leaf keys and this branch used to keep.
+            $perChild[$child] = $this->effectWritesFor($rule, $key . '.' . $child);
+        }
+
+        return self::zip($perChild);
     }
 
     /**
-     * The value written for one pair member, taken from the shape declared
-     * for it rather than from the spelling of its own name.
+     * The ordered values one key may be written with, taken from the shape
+     * declared for it rather than from the spelling of its own name.
      *
      * The key set that answers is found through exactly the same two-depth
      * walk {@see CrossCheck::resolveKey()} already asks of axis A: the rule's
@@ -1356,8 +1446,10 @@ final class Stand
      * `architecture.layer-violation` removed-severity keys) are accepted and
      * refused respectively either way, because their answer does not depend
      * on the value at all.
+     *
+     * @return non-empty-list<mixed>
      */
-    private function canonicalWriteFor(string $rule, string $key): mixed
+    private function effectWritesFor(string $rule, string $key): array
     {
         $class = $this->inProcess->optionsClasses[$rule] ?? null;
 
@@ -1385,24 +1477,89 @@ final class Stand
 
         $shape = $set->shapeOf($normalized);
 
-        return $shape === null ? false : $this->canonicalWriteForShape($shape);
+        if ($shape === null) {
+            return [false];
+        }
+
+        $writes = [$this->writeForShape($shape, $this->literals(null), $rule . '.' . $key)];
+        $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
+
+        if ($leaf !== null) {
+            /** @var mixed $declared */
+            $declared = self::parse($leaf);
+
+            if (!$shape->matches($declared)) {
+                throw new LedgerError(
+                    'effect-magnitudes.tsv declares "' . $leaf . '" for the leaf "' . self::leafOf($key)
+                    . '", which the shape of "' . $rule . '.' . $key . '" refuses',
+                );
+            }
+
+            $writes[] = $declared;
+        }
+
+        /** @var mixed $alternate */
+        $alternate = $this->writeForShape($shape, $this->literals($this->declarations->formAlternates), null);
+
+        if ($alternate !== null) {
+            $writes[] = $alternate;
+        }
+
+        $unique = [];
+
+        /** @var mixed $write */
+        foreach ($writes as $write) {
+            if (!\in_array($write, $unique, true)) {
+                $unique[] = $write;
+            }
+        }
+
+        return $unique;
+    }
+
+    /**
+     * The literal each form is written with: `forms.tsv`'s own spelling, or
+     * that form's counter-default alternate where one is declared. Forms the
+     * alternate table does not name are dropped rather than defaulted — a
+     * fallback to the canonical spelling would hand the search the value it
+     * has already been told does not move the object.
+     *
+     * @param array<string, string>|null $alternates
+     *
+     * @return array<string, string>
+     */
+    private function literals(?array $alternates): array
+    {
+        if ($alternates === null) {
+            return array_map(static fn(FormSpelling $form): string => $form->yamlWrite, $this->declarations->forms);
+        }
+
+        return $alternates;
     }
 
     /**
      * The eight declared forms of {@see Declarations::$forms}, asked of the
      * shape in the shape's own words — the same question
      * {@see CrossCheck::accepts()} asks for axis A, with the container
-     * offered filled when the canonical magnitude on its own does not match
+     * offered filled when the magnitude on its own does not match
      * (`listOf(nonEmptyText())` refuses `[7331]` while still being a list).
+     *
+     * The forms are walked in `forms.tsv` order for BOTH magnitude sets, so a
+     * shape answers with the same form whichever set it is asked with, and the
+     * alternate is a second value of that form rather than a second form.
+     *
+     * @param array<string, string> $literals form name => the spelling to write
+     * @param string|null $subject the key to name when nothing matches, or null to answer null instead
      */
-    private function canonicalWriteForShape(RuleOptionShape $shape): mixed
+    private function writeForShape(RuleOptionShape $shape, array $literals, ?string $subject): mixed
     {
         foreach ($this->declarations->formNames() as $form) {
-            if ($form === 'null') {
+            if ($form === 'null' || !isset($literals[$form])) {
                 continue;
             }
 
-            $candidate = self::parse($this->declarations->forms[$form]->yamlWrite);
+            /** @var mixed $candidate */
+            $candidate = self::parse($literals[$form]);
 
             if ($shape->matches($candidate)) {
                 return $candidate;
@@ -1410,11 +1567,12 @@ final class Stand
         }
 
         foreach ($this->declarations->formNames() as $form) {
-            if ($form === 'null' || $form === 'list' || $form === 'map') {
+            if ($form === 'null' || $form === 'list' || $form === 'map' || !isset($literals[$form])) {
                 continue;
             }
 
-            $scalar = self::parse($this->declarations->forms[$form]->yamlWrite);
+            /** @var mixed $scalar */
+            $scalar = self::parse($literals[$form]);
 
             if ($shape->matches([$scalar])) {
                 return [$scalar];
@@ -1425,9 +1583,65 @@ final class Stand
             }
         }
 
+        if ($subject === null) {
+            return null;
+        }
+
         throw new LedgerError(
-            'pair probe: the declared shape "' . $shape->describe() . '" accepts none of the eight forms this stand can write',
+            'pair probe: the declared shape "' . $shape->describe() . '" of "' . $subject
+            . '" accepts none of the eight forms this stand can write',
         );
+    }
+
+    private static function leafOf(string $key): string
+    {
+        return str_contains($key, '.') ? substr($key, (int) strrpos($key, '.') + 1) : $key;
+    }
+
+    /**
+     * Per-key candidate lists turned into candidate DOCUMENTS: the first entry
+     * writes every key its own first candidate, the second entry every key its
+     * second one, and a key with fewer candidates repeats its last. One
+     * document per rank rather than the product of all of them — the question
+     * asked of a block or a neighbour is whether IT carries an effect, not
+     * which of its leaves does.
+     *
+     * @param non-empty-array<string, non-empty-list<mixed>> $perKey
+     *
+     * @return non-empty-list<array<string, mixed>>
+     */
+    private static function zip(array $perKey): array
+    {
+        $depth = max(array_map(\count(...), $perKey));
+        $documents = [self::rank($perKey, 0)];
+
+        for ($rank = 1; $rank < $depth; ++$rank) {
+            $document = self::rank($perKey, $rank);
+
+            if (!\in_array($document, $documents, true)) {
+                $documents[] = $document;
+            }
+        }
+
+        return $documents;
+    }
+
+    /**
+     * @param non-empty-array<string, non-empty-list<mixed>> $perKey
+     *
+     * @return array<string, mixed>
+     */
+    private static function rank(array $perKey, int $rank): array
+    {
+        $document = [];
+
+        foreach ($perKey as $key => $candidates) {
+            /** @var mixed $value */
+            $value = $candidates[min($rank, \count($candidates) - 1)];
+            $document[$key] = $value;
+        }
+
+        return $document;
     }
 
     /**

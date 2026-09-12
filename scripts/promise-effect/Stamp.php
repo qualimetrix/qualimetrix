@@ -54,6 +54,10 @@ final class Stamp
         // enumeration, which axis C reads for a triple's graduated partner and
         // axis E reads for its whole population. Both produce cells.
         'promise-effect/composition-magnitudes.tsv',
+        // The counter-default magnitudes axes B and E fall back to: a row
+        // added or withdrawn changes which value a probe writes, and therefore
+        // whether the row measures anything at all.
+        'promise-effect/effect-magnitudes.tsv',
         'docs/internal/plans/promise-effect/measurement/key-pairs.tsv',
         'scripts/promise-effect.php',
         'scripts/promise-effect/RunDeclaration.php',

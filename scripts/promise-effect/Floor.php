@@ -109,30 +109,6 @@ final class Floor
     }
 
     /**
-     * The floor as `01-promise.md` states it, over the pre-cure half: every
-     * declared row is a defect there, cured or not. The `cure` column is not
-     * read here — a row the round repaired was still a defect on the tree the
-     * frozen half measures, and reading the cure would make this half agree
-     * with the after half by construction.
-     *
-     * @param list<Cell> $cells
-     *
-     * @return list<string>
-     */
-    public function missesOnTheFrozenHalf(array $cells): array
-    {
-        $misses = [];
-
-        foreach ($this->judge($cells) as [$row, $held, $actual]) {
-            if (!$held) {
-                $misses[] = $row->row . ': the pre-cure half must call this ' . $row->verdict . ', it reads ' . $actual;
-            }
-        }
-
-        return $misses;
-    }
-
-    /**
      * The live grid against the round's own claim about what it cured.
      *
      * @param list<Cell> $cells

@@ -23,25 +23,26 @@ second list is started here), raw observations stored rather than verdicts, and
 
 ## What is here
 
-| file                                                                   | what it is                                                                                                                  | written by         |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1308 rows, frozen product of stage 01                                                                         | stage 01, a person |
-| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                               | a person           |
-| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                                 | a person           |
-| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                         | a person           |
-| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                       | a person           |
-| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                                 | a person           |
-| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist     | a person           |
-| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                           | a person           |
-| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                      | a person           |
-| `floor.tsv`                                                            | the rows the stand is required to call defective                                                                            | a person           |
-| `run-declaration.tsv`                                                  | the axes the grid spans, which of them own the exit code, and the commit the pre-cure shot is taken on                      | a person           |
-| `composition-magnitudes.tsv`                                           | the two distinguishable values axis C writes with, and the framework patterns and witnesses its second point uses           | a person           |
-| `../docs/internal/plans/promise-effect/measurement/key-pairs.tsv`      | stage 01's frozen pair enumeration — read by axis C for a triple's graduated partner and by axis E for its whole population | stage 01, a person |
-| `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak    | a person           |
-| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                        | the stand          |
-| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                        | the stand          |
-| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** pre-cure observations                                                                                    | the stand          |
+| file                                                                   | what it is                                                                                                                   | written by         |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `../docs/internal/plans/promise-effect/measurement/promise-ledger.tsv` | the promise — 1308 rows, frozen product of stage 01                                                                          | stage 01, a person |
+| `forms.tsv`                                                            | the eight forms of a value and the literal each door is given                                                                | a person           |
+| `axis-d-envelopes.tsv`                                                 | how a placeholder path outside `rules:` is actually written                                                                  | a person           |
+| `axis-d-observables.tsv`                                               | where a hit is visible per root, what it shadows, and what a hit is                                                          | a person           |
+| `cli-root-flags.tsv`                                                   | which CLI flag writes which root, and what it shadows                                                                        | a person           |
+| `axis-a-hits.tsv`                                                      | the option leaves whose canonical magnitude names nothing in the fixture, and what a hit is                                  | a person           |
+| `witness-envelopes.tsv`                                                | the seven producers whose subject does not exist under an empty document, and the smallest document that makes it exist      | a person           |
+| `pair-kind-scope.tsv`                                                  | which source coordinates a pair row of each kind owes — the column `key-pairs.tsv` does not carry                            | a person           |
+| `door-normalization.tsv`                                               | what each door hands the DECLARATION for each form — the dictionary the four sets are compared through                       | a person           |
+| `floor.tsv`                                                            | the rows the stand is required to call defective                                                                             | a person           |
+| `run-declaration.tsv`                                                  | the axes the grid spans, which of them own the exit code, and the commit the pre-cure shot is taken on                       | a person           |
+| `composition-magnitudes.tsv`                                           | the two distinguishable values axis C writes with, and the framework patterns and witnesses its second point uses            | a person           |
+| `effect-magnitudes.tsv`                                                | the counter-default value axes B and E fall back to where the canonical one is what the product already does without the key | a person           |
+| `../docs/internal/plans/promise-effect/measurement/key-pairs.tsv`      | stage 01's frozen pair enumeration — read by axis C for a triple's graduated partner and by axis E for its whole population  | stage 01, a person |
+| `fixtures/probe/**`                                                    | the small project every process run is taken against — twenty files, every one of them there to make some producer speak     | a person           |
+| `../docs/internal/generated/promise-effect/verdicts.tsv`               | the verdict grid of the current tree                                                                                         | the stand          |
+| `../docs/internal/generated/promise-effect/inputs.stamp.tsv`           | the sha256 of every input the grid was measured from                                                                         | the stand          |
+| `../docs/internal/generated/promise-effect/observations-before/**`     | the frozen **raw** pre-cure observations                                                                                     | the stand          |
 
 ## The row key
 
@@ -104,20 +105,29 @@ Two more questions need two more probes, for the same reason. "Whose value
 survived" is not "what form may this value take": axis C writes one path from
 up to three layers and compares `onlyLow / onlyHigh / both`. And "what does
 `~` do BESIDE a neighbour" is asked by neither — axes A and D write a key
-alone, axis B writes two keys at the canonical magnitude and never at `~` — so
-axis E writes `omitted / neighbour / nullAlone / both` into one document.
+alone, axis B writes two keys and never `~` — so axis E writes
+`omitted / neighbour / nullAlone / both` into one document.
 
-| verdict          | condition                                                   |
-| ---------------- | ----------------------------------------------------------- |
-| `OK`             | matched the promise **and** a reachability witness exists   |
-| `INERT`          | `value == omitted` where the ledger promised an effect      |
-| `COLLAPSED`      | `value` equals the canonical write of another form          |
-| `REFUSES`        | exit 3 **and** the product's `Configuration error:` framing |
-| `MALFORMED`      | a refusal without that framing, `exit 1`, a crash           |
-| `NOT OBSERVABLE` | `omitted == equivalent`: this stand is not sensitive here   |
-| `UNPROMISED`     | no ledger row: the grid grew and nobody said so             |
-| `COEXISTENCE_OK` | `both` matched the ledger's `coexistence`                   |
-| `MISCOMPOSED`    | `both` did something else                                   |
+Axes B and E write a key with the canonical magnitude of its declared shape,
+and fall back to the alternate of `effect-magnitudes.tsv` where that magnitude
+turns out to be what the product does with the key ABSENT. Both axes compare
+against an omitted side, so a write equal to it answers their question
+vacuously; the fallback is taken on the measurement, never on the spelling of
+the key, and a key no declared value can tell from an omitted one reads
+`NOT OBSERVABLE`.
+
+| verdict          | condition                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `OK`             | matched the promise **and** a reachability witness exists                                  |
+| `INERT`          | `value == omitted` where the ledger promised an effect                                     |
+| `COLLAPSED`      | `value` equals the canonical write of another form                                         |
+| `REFUSES`        | exit 3 **and** the product's `Configuration error:` framing                                |
+| `MALFORMED`      | a refusal without that framing, `exit 1`, a crash                                          |
+| `NOT OBSERVABLE` | `omitted == equivalent`: this stand is not sensitive here                                  |
+| `UNPROMISED`     | no ledger row: the grid grew and nobody said so                                            |
+| `COEXISTENCE_OK` | `both` matched the ledger's `coexistence`                                                  |
+| `MISCOMPOSED`    | `both` did something else                                                                  |
+| `NOT OBSERVABLE` | a side alone leaves the object as an omitted key does, so no survival could be asked of it |
 
 Axis C, where the ledger's sixth column names `low`, `high`, `refuse` or
 `unpromised`:

@@ -443,17 +443,21 @@ if (isset($arguments['before'])) {
         \count($limitConflicts),
     );
 
-    // The floor belongs HERE. It is a claim about the classifier reading a
-    // known pre-cure tree — `01-promise.md` states it of the snapshot BEFORE —
-    // and on this half it is meaningful whether or not the product was since
-    // repaired. Judging it on the live grid instead made every successful cure
-    // a floor miss, which is how a cured product came to exit 1.
-    $floorMisses = Floor::load($root)->missesOnTheFrozenHalf($frozen);
+    // The floor belongs HERE, but not in the shape it had. It used to claim
+    // "every declared row is a defect on this half, cured or not", which held
+    // only while the frozen half predated every cure. X19 rebased the snapshot
+    // onto the product of 02a6ca66 — after X18's cure — so twenty-one declared
+    // rows are lawfully green there, and the old claim turned each of them into
+    // a miss. The half is now judged through the same `cure` column the live
+    // grid uses: a row without a cure must still be a defect, a row with one
+    // must read as repaired, and a cure that names a commit the snapshot does
+    // not contain is the lie this catches.
+    [$floorMisses] = Floor::load($root)->cureMisses($frozen);
 
     printf(
         "  %-22s %s\n",
         'defect floor',
-        $floorMisses === [] ? 'reproduced on the pre-cure half' : \count($floorMisses) . ' row(s) not recognised',
+        $floorMisses === [] ? 'reproduced on the frozen half' : \count($floorMisses) . ' row(s) not recognised',
     );
 
     foreach ($floorMisses as $miss) {

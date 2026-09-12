@@ -296,6 +296,14 @@ final class Classifier
             $winner = substr($coexistence, \strlen('one-wins:'));
             $expected = $winner === 'a' ? $onlyA : $onlyB;
 
+            // Which key won is a question about telling them apart. Two sides
+            // that render the same — because the winner's own write is what
+            // the product does anyway, or because both keys were written the
+            // same value — make `both === expected` true whatever won.
+            if ($onlyA->text === $onlyB->text || $expected->text === $omitted->text) {
+                return new Judgement(Verdict::NOT_OBSERVABLE, 'the two sides render the same, so nothing here could say which key won');
+            }
+
             return $both->text === $expected->text
                 ? new Judgement(Verdict::COEXISTENCE_OK, 'the promised key won')
                 : new Judgement(Verdict::MISCOMPOSED, 'a different key won', true);
@@ -318,16 +326,40 @@ final class Classifier
         }
 
         $lost = [];
+        $inert = [];
 
         foreach (['A' => $onlyA, 'B' => $onlyB] as $side => $alone) {
+            // A side whose own write leaves the object exactly as an omitted
+            // key does has no effect, so "its effect survived" is true of every
+            // possible merge. Counting that as composition is the vacuum this
+            // gate exists to name — measured once at 117 of 117 `enabled`
+            // sides, where the canonical `true` is the product's own default.
+            if ($alone->text === $omitted->text) {
+                $inert[] = $side;
+
+                continue;
+            }
+
             if (!self::effectSurvives($omitted->text, $alone->text, $both->text)) {
                 $lost[] = $side;
             }
         }
 
-        return $lost === []
-            ? new Judgement(Verdict::COEXISTENCE_OK, 'both effects present')
-            : new Judgement(Verdict::MISCOMPOSED, 'the effect of ' . implode(' and ', $lost) . ' is absent when both are written', true);
+        // Loss before inertness, and the order is the whole point: a row where
+        // A is inert and B is genuinely dropped is a real defect, and a gate
+        // asked first would hide it behind the half that measures nothing.
+        if ($lost !== []) {
+            return new Judgement(Verdict::MISCOMPOSED, 'the effect of ' . implode(' and ', $lost) . ' is absent when both are written', true);
+        }
+
+        if ($inert !== []) {
+            return new Judgement(
+                Verdict::NOT_OBSERVABLE,
+                implode(' and ', $inert) . ' alone leaves the object as an omitted key does, so no survival could be asked of it',
+            );
+        }
+
+        return new Judgement(Verdict::COEXISTENCE_OK, 'both effects present');
     }
 
     /**

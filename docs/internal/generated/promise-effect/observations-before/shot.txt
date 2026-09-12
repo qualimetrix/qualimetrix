@@ -1,5 +1,5 @@
 product-commit	02a6ca66
-tree-commit	606750f3033ec57538a89cb79068919f10ae945e
+tree-commit	458d22ccb5f76ff40df9c1381a28d64d78597b9e
 taken	2026-09-12
 axes	A,B,C,D,E
-reason	X19 baseline: the product of 02a6ca66 measured through the repaired stand. The X18 half is retired from live comparison — its pair observations were written by the pre-S8 generator and its layer envelope by the pre-S10 one, so they answer different questions. Axes C and E have no earlier half at all.
+reason	the pair and neighbour generators changed: axes B and E now write the counter-default magnitudes declared in the new effect-magnitudes.tsv wherever the canonical one is what the product already does without the key. The canonical bool write `true` is the standing value of almost every `enabled` key, and 117 of 117 pair sides writing that key had stopped moving the object; three enumerated keys (scope, unused-directive-severity, mode) were refused or silently defaulted for a spelling the row is not about. An input moved, so the shot is retaken against the same product (02a6ca66, src/ identical) rather than left to be compared across two different stands.
