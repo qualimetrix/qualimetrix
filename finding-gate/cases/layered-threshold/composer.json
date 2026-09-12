@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/layered-threshold",
+    "description": "Corpus case: a threshold shorthand written in one layer and half-rewritten by the layer above",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\LayeredThreshold\\": "src/"
+        }
+    }
+}

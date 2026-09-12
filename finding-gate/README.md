@@ -205,6 +205,37 @@ option shape exercised: the rules whose options hold several boundaries, or
 whose `withOverride()` writes something other than a threshold, are untested
 here.
 
+`layered-threshold` is the one whose input is the LAYERING itself. Before it, no
+case passed `--preset`, and the single case combining a config file with
+`--rule-opt` rewrote BOTH halves of every band from the command line — so no
+half of a band was ever left for a lower layer to supply, and a product that
+lost one compared equal. It was added straight after the round that cured
+exactly that, because a green gate over the old corpus was evidence about
+nothing the round had touched.
+
+Its three layers each write a different thing: a preset writes the graduated
+pair, `qmx.yaml` replaces both halves with a `threshold` shorthand, and
+`--rule-opt` rewrites `warning` alone. Two fixtures witness the outcome:
+
+- **the half the top layer did not rewrite must carry the middle layer's
+  value.** `Tangled::score` is complexity 6, above the shorthand's 5 and below
+  the 20 this rule compiles in, so it reports `error` while that half survives
+  and `warning` once it does not.
+- **a subject that reports the same either way is the control.**
+  `Middling::classify` is complexity 3: above the `warning` the command line
+  wrote, below the shorthand's `error`. A change that moved BOTH fixtures would
+  be something other than the loss this case is about.
+
+Measured to bite against the product at `1210b037`, which still had the defect:
+**24 surfaces go red**, the text surface reading `error ... threshold of 5`
+against `warning ... threshold of 2`, and the process exit code moving 2
+against 0.
+
+What it does not witness: only one of the two merge boundaries is exercised with
+a shorthand below and a graduated key above — the reverse direction, and the
+`~`-above-a-written-value rule settled in the same round, are closed by tests
+rather than here.
+
 Every run uses the case directory as its working directory, so no path in any
 artifact depends on where the tree is checked out. The `check` runs add
 `--workers=0 --no-cache --no-ansi --fail-on=error`. `baseline:generate` and

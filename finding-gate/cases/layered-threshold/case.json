@@ -1,0 +1,23 @@
+{
+    "id": "layered-threshold",
+    "description": "The only case whose configuration is written across three layers with a `threshold` shorthand in the middle one and a single graduated key rewriting half of it from the command line. Without it the corpus never leaves half a band for a lower layer to supply, so a product that lost that half again would compare equal: `Tangled` reports `error` at the shorthand's 5 while the half survives and `warning` at the rule's compiled 20 once it does not, and `Middling` reports the same severity either way as the control beside it.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--preset=preset.yaml",
+        "--rule-opt=complexity.ccn:callable.warning=2",
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "complexity.ccn@callable"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\LayeredThreshold\\Tangled::score@src/Tangled.php"
+    ]
+}

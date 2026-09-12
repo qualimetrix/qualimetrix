@@ -1,0 +1,11 @@
+# The LOWEST of the three layers. It writes the graduated pair; the config file
+# above it replaces both halves with a shorthand, and the command line above
+# that rewrites one half only. What this file contributes to the result is
+# therefore nothing at all — which is the point: the case exists to pin which
+# layer each half of the band comes from, and a band that took its `error` from
+# here would be as wrong as one that took it from a compiled default.
+rules:
+  complexity.ccn:
+    callable:
+      warning: 2
+      error: 3

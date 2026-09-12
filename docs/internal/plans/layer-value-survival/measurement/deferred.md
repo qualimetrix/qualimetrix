@@ -194,15 +194,22 @@ in the corpus at all.
 The safety net that exists to prove a change altered no finding is blind to the
 one thing this change altered.
 
-**What closing it takes:** a corpus case whose fixture is configured across two
-layers with a `threshold` on the lower one and a single graduated key on the
-higher, named in that case's `channels`, plus — because the reference product
-still has the defect — the resulting difference DECLARED in
-`finding-gate/declared-delta.tsv` rather than left to read as a regression. That
-declaration is the record that the behaviour changed on purpose, which is what
-the gate is for. It is first in the queue after this round, not inside it,
-because a corpus edit moves the gate's input and this round has already spent
-its instrument changes on the stand.
+**Closed by the `layered-threshold` corpus case**, added straight after the round
+merged. Its fixture is configured across all three layers — a preset writing the
+graduated pair, a config file replacing both halves with `threshold: 5`, and a
+`--rule-opt` rewriting `warning` alone — and its `Tangled` subject reports
+`error` at the shorthand's 5 only while the half the command line did not
+rewrite still carries the middle layer's value. Measured against the pre-cure
+product at `1210b037`: **24 surfaces go red**, the text surface showing
+`error ... threshold of 5` against `warning ... threshold of 2` and the exit code
+moving 2 against 0.
+
+One correction to what this entry first said. It called for the difference to be
+declared in `finding-gate/declared-delta.tsv`, which would have been right only
+had the case landed inside the round. Added after the cure merged, the case
+compares a cured product against a cured reference and there is no difference to
+declare; what it buys is forward protection, and the 24 red surfaces above are
+the proof that the protection is real rather than a case that merely runs.
 
 ## Two docblocks that promise what their code does not do
 
