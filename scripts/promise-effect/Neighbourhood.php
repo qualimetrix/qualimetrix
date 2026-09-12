@@ -40,7 +40,12 @@ final readonly class NeighbourhoodRow
 
     public function key(): string
     {
-        return 'neighbourhood|' . $this->rule . '|' . $this->nullKey . '|' . $this->neighbour;
+        // The kind belongs in the key for the reason the pair axis already
+        // learned: two keys of one rule can interact in more than one way, and
+        // a key without the kind silently folds those contexts onto one cell.
+        // There the collision hid because the colliding cells happened to
+        // agree; here it cost 38 cells of population before review found it.
+        return 'neighbourhood|' . $this->rule . '|' . $this->nullKey . '|' . $this->neighbour . '|' . $this->pairKind;
     }
 
     /** A neighbour spelled `class:` is a level BLOCK, not a leaf that carries a value. */
