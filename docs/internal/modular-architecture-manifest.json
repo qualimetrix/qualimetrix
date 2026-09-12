@@ -71,6 +71,11 @@
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParser",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdShorthand",
+          "closes_in": null
         }
       ]
     },
@@ -416,6 +421,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis",
           "closes_in": null
         },
@@ -715,6 +725,11 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions",
           "closes_in": null
         },
         {
@@ -10170,6 +10185,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShapeCompoundForms": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionShapeCompoundForms.php",
+      "kind": "trait",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionWordSet": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionWordSet.php",
       "kind": "class",
@@ -11476,8 +11499,16 @@
       "closure_package": "P6-A",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdModeResolver": {
-      "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php",
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdShorthand": {
+      "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdShorthand.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionValueWrittenness": {
+      "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionValueWrittenness.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",

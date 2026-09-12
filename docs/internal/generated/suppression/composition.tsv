@@ -3,7 +3,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	error	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	Qualimetrix\Analysis\Evidence\Measurement\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/AcceptedLevel.php	Qualimetrix\Analysis\Finding\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/ChannelDeclaration.php	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	error	1

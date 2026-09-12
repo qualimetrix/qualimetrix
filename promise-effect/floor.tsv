@@ -64,12 +64,43 @@
 # called twenty-one repaired rows a miss on a half that agrees with the grid
 # cell for cell. Both halves are therefore read through the dispositions above.
 #
-# That holds only while every commit in `cure` pre-dates the baseline's own
+# That held only while every commit in `cure` pre-dated the baseline's own
 # `observations-before/shot.txt`. The first cure a round lands AFTER its
 # baseline breaks it: the row is then correctly a defect on the frozen half and
-# correctly repaired on the live grid, and one column cannot say both. Re-take
-# the baseline at the start of the round, as X19 did, or give the floor a way
-# to compare the cure's commit against the shot.
+# correctly repaired on the live grid, and a plain `cure` cannot say both.
+#
+# THE `pending: <text>` SENTINEL
+#
+# So a THIRD value of `cure`, for exactly that case: `pending: <text>` says
+# still a defect on the frozen half, not a defect on the live grid — the one
+# claim a bare `cure` cannot express, because it means the same thing on both
+# halves. Both directions redden: a `pending` row already green on the frozen
+# half claims the snapshot postdates the cure, so the witness this floor
+# exists to keep is gone; a `pending` row still defective on the live grid is
+# a false claim about the round, exactly as a plain `cure` would be.
+#
+# Re-taking the snapshot is NOT the fix — a fresh snapshot precedes every cure
+# by construction and would only move the problem to the next round's first
+# cure. Git ancestry cannot decide it either: the three commits already
+# standing in `cure` above (`7fe879f6`, `b9fd87d3`, `f20bd708`) are NOT
+# ancestors of `origin/main` — the repository squash-merges its branches, so
+# an ancestry check would redden all twenty-one rows they cover on a fresh
+# clone. So the commit a `pending` row is later converted to is documentation,
+# not a checked fact: nothing here or in `Floor::cureMisses()` verifies it, and
+# nothing can, because the only hash that will exist after the round is the
+# squash commit `main` receives at merge — which does not exist while the
+# round is open. What IS checked is the DISPOSITION, a property of the two
+# halves the floor already reads.
+#
+# A `pending` row is honest only while it stands: the moment a later round
+# re-takes the snapshot, every `pending` row becomes a lie of the opposite
+# kind. `--freeze-before` therefore refuses to run while any `pending` row
+# stands, and names them — converting them to a plain `cure` is that retake's
+# own first step.
+#
+# A row the grid does not carry AT ALL is a miss under every disposition
+# above, `pending` included: absence is never evidence about the product, and
+# reading it as proof of repair is the hole a bare `!held` check used to open.
 #
 # WHY `withdrawn` IS NOT A SECOND SPELLING OF `cure`
 #
@@ -115,7 +146,7 @@ form|yaml|computed_metrics|null	any-defect	non-rules-roots: a refusal on `~`	7fe
 form|yaml|exclude_health|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|architecture|null	any-defect	non-rules-roots: a refusal on `~`	7fe879f6 (one meaning for a null value): `~` takes the default instead of being refused
 form|yaml|computed_metrics.<name>.enabled|null	any-defect	non-rules-roots: a refusal on `~`		omitted == equivalent: the envelope wrote the metric name `probe_metric`, which the product's own NAME_TEMPLATE rejects before any leaf is read, so the pre-cure verdict was a refusal of the NAME. Under the corrected name `computed.probe-metric` the row is unmeasurable for a second reason of the stand's own: `enabled: true` is the default, so the canonical write equals an omitted key and the sensitivity probe is blind. Nothing here is a statement about the product
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
-composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value		
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value	pending: X20 stage 2 unfolds the threshold shorthand in every layer before merging (RuleOptionThresholdShorthand::unfold), so the layer that only rewrote half the band no longer loses the other half to the constructor default	
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value	pending: X20 stage 2 unfolds the threshold shorthand in every layer before merging (RuleOptionThresholdShorthand::unfold), so the layer that only rewrote half the band no longer loses the other half to the constructor default	
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value	pending: X20 stage 2 unfolds the threshold shorthand in every layer before merging (RuleOptionThresholdShorthand::unfold), so the layer that only rewrote half the band no longer loses the other half to the constructor default	
+composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	LOST_SIBLING	X19 axis C: the half the top layer did not rewrite falls through to the constructor default instead of keeping the middle layer's value	pending: X20 stage 2 unfolds the threshold shorthand in every layer before merging (RuleOptionThresholdShorthand::unfold), so the layer that only rewrote half the band no longer loses the other half to the constructor default	

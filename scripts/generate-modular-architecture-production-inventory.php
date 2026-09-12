@@ -2580,6 +2580,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0054-an-oracle-for-effect-diverging-from-promise.md',
         'docs/adr/0056-source-composition-is-measured-and-left-alone.md',
         'docs/adr/0057-probing-composition-and-adjacency.md',
+        'docs/adr/0058-a-layers-value-survives-the-layers-above-it.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

@@ -1832,7 +1832,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itChecksWhetherLevelIsEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsClassCboScopeToAll
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsInvalidScopeToAll
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itDefaultsNamespaceMinClassCountToThree
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itEmitsNoFindingWhenCboBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itFallsBackToBaseMessageWithEmptyDependencyList
@@ -1856,6 +1855,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itPropagatesTopLevelScopeToClassOptions
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReadsCouplingPresentationMetricsThroughTheAnalysisContext
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itRefusesAnUnknownScopeEvenWhenFromArrayIsCalledDirectly
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itRespectsCboThresholdBoundaries"above error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itRespectsCboThresholdBoundaries"above warning, below error"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itRespectsCboThresholdBoundaries"at error threshold"
@@ -4043,7 +4043,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRefusesTheRetiredChannelPairSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAnEmptyCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRendersAsItsName
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itFoldsRuleSourcesWithThresholdModeEvictionAndSelectorSemantics
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itAppliesTheHigherLayersHalfOfTheBandOverTheLowerLayersThreshold
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itFoldsRuleSourcesUnfoldingBothLayersAndSelectorSemantics
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itKeepsBothHalvesOfTheBandWhenTheOverlaysNullTargetsAnUnfoldedHalf
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itLeavesTheLowerLayersBandAloneWhenTheOverlaysThresholdIsUnwritten
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itLeavesTheLowerLayersWarningAloneWhenTheOverlayWritesNullOverIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itLeavesTheLowerLayersWholeRuleConfigAloneWhenTheOverlayWritesNullOverTheRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itStillLetsAnExplicitFalseSwitchOffARuleWithConfiguredOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itCoversEveryStageInTheMembershipTable
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"baseline"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"git scope"
@@ -4298,6 +4304,25 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"no branch of a union matches"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAnEmptyClosedSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"empty string"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"false"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"null (the `~` case)"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"zero"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAsksOnlyAboutTheValueNotAboutWhichSpellingCarriesIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itTreatsFalseZeroAndEmptyStringAsWritten
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itTreatsNullAsUnwritten
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAcceptsEveryEnumWordExactlyAsWritten"annotation.directive unused-directive-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAcceptsEveryEnumWordExactlyAsWritten"architecture.layer-violation severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAcceptsEveryEnumWordExactlyAsWritten"architecture.unassigned-class mode"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAgreesWithItsReaderOnACaseFlippedSpelling"annotation.directive unused-directive-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAgreesWithItsReaderOnACaseFlippedSpelling"architecture.layer-violation severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itAgreesWithItsReaderOnACaseFlippedSpelling"architecture.unassigned-class mode"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itDeclaresExactlyTheWordsTheEnumHolds"annotation.directive unused-directive-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itDeclaresExactlyTheWordsTheEnumHolds"architecture.layer-violation severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itDeclaresExactlyTheWordsTheEnumHolds"architecture.unassigned-class mode"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"annotation.directive unused-directive-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"architecture.layer-violation severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionWordSetDeclarationAgreementTest::itRefusesAWordOutsideTheDeclaredSet"architecture.unassigned-class mode"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsANullLevelSlotAsAnOmittedOne
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsAWholeNumberWrittenAsANumber
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheBareThresholdInsideALevelSlotAndAppliesIt
@@ -4306,6 +4331,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheThresholdShorthandOnTypeCoverage
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAcceptsTheVoThresholdShorthandOnLongParameterList
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesBothHalvesWhenTheCliOnlyOverridesOneHalfOfAConfigFileThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesFlatThresholdShorthandThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itAppliesNestedThresholdShorthandThroughTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itClearsTheExclusionProviderOnReset
@@ -4324,6 +4350,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExtractsSuppressNamespacesWrittenInCamelCase
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExtractsSuppressNamespacesWrittenInSnakeCase
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExtractsTypeBasedDefaultsForRequiredParameters
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itFoldsAnUnnormalizedGraduatedKeyBeforeMergingAgainstAnUnfoldedOverlay
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itGetsCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itGetsConfigFileOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itHandlesArrayMergeWithScalarOverwrite
@@ -4348,12 +4375,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itKeepsTheRuleEnabledWhenOnlyExcludePathsIsConfiguredInTheFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLeavesAKeyTheClassAnswersAboutToItsOwnWords
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLeavesAnUnrelatedVoGroupUntouchedByACliThresholdOverride
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictConfigFileWarningAndError
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdEvictPresetSuppliedWarningAndError
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdOverrideConfigFilePrefixedGraduatedKeys
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdOverrideConfigFileWarningAndError
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsACliThresholdOverridePresetSuppliedWarningAndError
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsAKeyTheClassAnswersForReachThatClassUnchallenged
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliPrefixedGraduatedKeysEvictAConfigFileThreshold
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliWarningAndErrorEvictAConfigFileThreshold
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliPrefixedGraduatedKeysOverrideAConfigFileThreshold
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itLetsCliWarningAndErrorOverrideAConfigFileThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itMergesConfigWithTypeBasedDefaults
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itMergesPartialConfigFileOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itMergesPriorityCorrectly
@@ -4373,6 +4400,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesABooleanOptionWrittenAsAString
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFalseLevelSlotWithTheSpellingThatSwitchesOneLevelOff
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFractionWhereAWholeNumberWasDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAFractionalThresholdNamingThresholdRatherThanWarning
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAGenuinelyUnknownKeyAtTheRulesOwnDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAListWhereABooleanSwitchWasDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
@@ -4398,8 +4426,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itResetsClearsAllState
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itResetsCliOptionsWithoutAffectingConfigFileOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itResetsState
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itScopesTheCliThresholdEvictionToItsOwnNestedLevel
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itScopesThePrefixedGraduatedKeyEvictionToItsOwnNestedLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itScopesTheCliThresholdUnfoldingToItsOwnNestedLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itScopesThePrefixedGraduatedKeyUnfoldingToItsOwnNestedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itSetsCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillAppliesConstructorDefaultsWhenRuleIsEntirelyUnconfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itStillSwitchesARuleOffWithAnExplicitBoolean
@@ -4470,6 +4498,105 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itStopsAProducerWhoseEveryDeclaredLevelIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itSupportsAnExplicitFullChannelSelector
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itValidatesAgainstAnExplicitSnapshotAndResetsRunChannels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"code-smell.constructor-overinjection::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"code-smell.long-parameter-list::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"code-smell.unreachable-code::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"cohesion.lcom::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.ccn::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.ccn::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.ccn::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.cognitive::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.cognitive::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.cognitive::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.npath::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.npath::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.npath::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"complexity.wmc::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.cbo::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.cbo::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.cbo::namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.class-rank::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.distance::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.instability::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.instability::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"coupling.instability::namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.dit::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.noc::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.param::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.property::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.return::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"duplication.clone::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"maintainability.mi::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.class-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.method-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.property-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itDeclaresLoneThresholdExceptionsForEveryEmptyPairGroup
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"code-smell.constructor-overinjection::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"code-smell.long-parameter-list::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"code-smell.long-parameter-list::(top)#1"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"code-smell.unreachable-code::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"cohesion.lcom::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.ccn::callable#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.ccn::class#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.cognitive::callable#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.cognitive::class#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.npath::callable#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.npath::class#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"complexity.wmc::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.cbo::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.cbo::class#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.cbo::namespace#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.class-rank::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.distance::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.instability::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.instability::class#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"coupling.instability::namespace#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.dit::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.noc::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.param::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.property::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.return::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"duplication.clone::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"maintainability.mi::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.class-count::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.method-count::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.property-count::(top)#0"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsTheLoneThresholdExceptionTrue"complexity.ccn::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsTheLoneThresholdExceptionTrue"complexity.cognitive::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsTheLoneThresholdExceptionTrue"complexity.npath::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itLeavesNoThresholdParserCallSiteOutsideTheDiscoveredOptionsClasses
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"code-smell.constructor-overinjection::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"code-smell.long-parameter-list::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"code-smell.unreachable-code::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"cohesion.lcom::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.ccn::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.ccn::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.ccn::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.cognitive::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.cognitive::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.cognitive::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.npath::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.npath::callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.npath::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"complexity.wmc::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.cbo::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.cbo::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.cbo::namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.class-rank::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.distance::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.instability::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.instability::class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"coupling.instability::namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.dit::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.noc::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.param::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.property::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.return::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"duplication.clone::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"maintainability.mi::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.class-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.method-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.property-count::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"code-smell.constructor-overinjection::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"code-smell.long-parameter-list::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"code-smell.unreachable-code::"
@@ -5406,6 +5533,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\CoverageDiagnosticsTest::itReportsAnIsolatedUncoveredClassWithoutDependencyEdges
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\CoverageDiagnosticsTest::itSkipsUncoveredClassMaterializationInIgnoreModeWithoutSkippingLayerEvidence
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itDefaultsToEnabledWithWarningSeverity
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itLeavesTheDefaultWhenSeverityIsWrittenNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesAnEmptyArrayIntoTheConstructorDefaults
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesAnExplicitSeverityWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesEnabledFalse
@@ -5476,6 +5604,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itAcceptsAnEnabledFalseThatAgreesWithTheDefaultMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itDerivesEnablementFromTheModeAndAcceptsNoOtherKey
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itIsTheOptionsClassOfItsOwnRule
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itLeavesTheDefaultWhenModeIsWrittenNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itLeavesTheGateOffByDefault
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itParsesTheMode#0
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itParsesTheMode#1
@@ -6143,6 +6272,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAnAlreadyResolvedSeverity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsTheDocumentedSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itDefaultsToInfoWhenNoSeverityIsGiven
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itLeavesTheDefaultWhenSeverityIsWrittenNull
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesANonStringValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesAValueItCannotHonour
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForADirectiveWrittenAsAnExplicitChannelPair
@@ -8286,6 +8416,37 @@ Available tests:
  - Qualimetrix\Tests\Unit\PhpStan\Rules\BannedStringPathPropertyRuleTest::itIgnoresHtmlTreeNodeStylePathProperty
  - Qualimetrix\Tests\Unit\PhpStan\Rules\BannedStringPathPropertyRuleTest::itIgnoresPropertiesInUnscopedNamespace
  - Qualimetrix\Tests\Unit\PhpStan\Rules\BannedStringPathPropertyRuleTest::itReportsBannedStringPathPropertiesInScopedNamespace
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itAllowsAnInertMiddleLayerToLeaveTheLowHighDisputeCheckedNormally
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCallsAMergeComposedAsPromisedWhenEverySlotCarriesItsTopmostWritersValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCallsAMergeFrankensteinWhenAHighOnlySlotCarriesAThirdStaleValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCallsAMergeFrankensteinWhenALowOnlySlotCarriesNeitherSidesValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCallsAnUntouchedSlotComposedAsPromisedWhenBothCarryTheOmittedValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCallsTheRealComplexityCcnTripleFixtureComposedAsPromisedWhenTheMiddleLayersValueSurvives
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itCatchesALostMiddleLayerValueEvenWhenLowAndHighRenderAlike
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itDetectsAMiddleLayersSurvivalEvenWhenLowAndHighRenderAlike
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itReadsNotObservableWhenTheMiddleLayerAloneWasRefused
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itRefusesToPassAsPromisedWhenNoMiddleObservationIsSupplied
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itStaysADefectWhenBothDoesNotCarryTheMiddleLayersOwnValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\ClassifierTest::itStaysNotObservableWhenAllThreeLayersRenderAlike
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itAcceptsABeforeSnapshotWhoseAxesCoverTheCanonicalList
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itAcceptsAPendingRowThatChangedNameAndIsNoLongerADefect
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itAcceptsFreezeBeforeOverTheWholeCanonicalList
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itLeavesACommitValuedCureUnchangedInBothDirections
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPendingRowAlreadyCleanOnTheFrozenHalfAndSaysTheSnapshotPostdatesTheCure
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPendingRowReadAsNotObservableOnTheLiveGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPendingRowStillDefectiveOnTheLiveGridAndNamesTheGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPendingRowThatSwappedOneDefectForAnotherOnTheLiveGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPlainCureRowReadAsNotObservableOnTheLiveGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesAPlainCureRowThatSwappedOneDefectForAnotherOnTheLiveGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itMissesEveryDispositionWhenTheRowIsAbsentFromTheGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itNamesEveryPendingRowForTheRetakeGuard
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itPassesAPendingRowStillDefectiveOnTheFrozenHalfAndCleanOnTheLiveGrid
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesABeforeSnapshotWhoseAxesDoNotCoverTheCanonicalList
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesAPendingRowWithNoClaimAfterTheSentinel
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesARowDeclaredBothCuredAndWithdrawn
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesFreezeBeforeNarrowedByAxis
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesFreezeBeforeWhenADuplicateAxisStandsInForAMissingOne
+ - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itReportsNoPendingRowsWhenNoneStands
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itExcludesFindingByClassWhenNoType
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector

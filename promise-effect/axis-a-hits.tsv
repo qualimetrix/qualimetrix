@@ -30,3 +30,7 @@ suppress-paths	[src/Sub]	the value is a path prefix; 7331 is not a path in this 
 suppress_paths	[src/Sub]	the same leaf in its snake spelling
 suppress-namespaces	[Probe\Sub]	the value is a namespace prefix
 suppress_namespaces	[Probe\Sub]	the same leaf in its snake spelling
+unused-directive-severity	warning	the value is one of three words; `abc` is not one, so the write asks about the value set and not about the form the carrier speaks of (`warning` differs from the reader's default `info`)
+unused_directive_severity	warning	the same leaf in its snake spelling
+mode	warn	the value is one of `ignore`/`warn`/`error`; `abc` is none of them, and `warn` differs from the reader's default `ignore`
+severity	error	the value is one of `info`/`warning`/`error`; `abc` is none of them, and `error` differs from the reader's default `warning`

@@ -408,14 +408,6 @@
         "count": 1
       }
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdModeResolver::evictUsingHeuristic@src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php": [
-      {
-        "channel": "complexity.ccn",
-        "magnitudes": [
-          11
-        ]
-      }
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Finding\\Rule\\Override\\StandardOverrideValidator::validate@src/Analysis/Finding/Rule/Override/StandardOverrideValidator.php": [
       {
         "channel": "code-smell.boolean-argument",

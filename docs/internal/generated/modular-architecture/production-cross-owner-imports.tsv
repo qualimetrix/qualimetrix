@@ -559,6 +559,8 @@ Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualim
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract	P3
+Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	contract	P6-A
@@ -1335,6 +1337,7 @@ Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract	P3
+Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdShorthand	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	contract	P3

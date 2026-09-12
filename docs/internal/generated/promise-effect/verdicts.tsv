@@ -29,7 +29,7 @@ A	form|cli-alias|rules.architecture.layer-violation.severity|int	int	optionsObje
 A	form|cli-alias|rules.architecture.layer-violation.severity|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.layer-violation.severity|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.layer-violation.severity|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|cli-alias|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.architecture.layer-violation.severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -37,7 +37,7 @@ A	form|cli-alias|rules.architecture.unassigned-class.mode|int	int	optionsObject	
 A	form|cli-alias|rules.architecture.unassigned-class.mode|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -653,7 +653,7 @@ A	form|rule-opt|rules.annotation.directive.unused-directive-severity|int	int	opt
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.architecture.circular-dependency.direct-as-error|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.architecture.circular-dependency.direct-as-error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -709,7 +709,7 @@ A	form|rule-opt|rules.architecture.layer-violation.severity|int	int	optionsObjec
 A	form|rule-opt|rules.architecture.layer-violation.severity|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -733,7 +733,7 @@ A	form|rule-opt|rules.architecture.unassigned-class.mode|int	int	optionsObject	R
 A	form|rule-opt|rules.architecture.unassigned-class.mode|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2349,7 +2349,7 @@ A	form|yaml|rules.annotation.directive.unused-directive-severity|int	int	options
 A	form|yaml|rules.annotation.directive.unused-directive-severity|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.annotation.directive.unused-directive-severity|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.annotation.directive.unused-directive-severity|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|yaml|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.annotation.directive.unused-directive-severity|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.circular-dependency.direct-as-error|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.architecture.circular-dependency.direct-as-error|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -2429,7 +2429,7 @@ A	form|yaml|rules.architecture.layer-violation.severity|int	int	optionsObject	RE
 A	form|yaml|rules.architecture.layer-violation.severity|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.severity|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.severity|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|yaml|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.severity|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -2477,7 +2477,7 @@ A	form|yaml|rules.architecture.unassigned-class.mode|int	int	optionsObject	REFUS
 A	form|yaml|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5279,15 +5279,15 @@ A	form|yaml|rules.suppression.configuration.suppress-paths|map	map	optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at optionsObject
-B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
+B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
 B	pair|architecture.circular-dependency|direct-as-error|max-cycle-size|same-source|6-gate-vs-severity	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|architecture.circular-dependency|enabled|max-cycle-size|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude, which no declared value here can improve on
-B	pair|architecture.layer-violation|enabled|severity|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	PROMISED	refused where the ledger promised composition: refused-framed; A wrote the alternate magnitude, B the canonical magnitude, which no declared value here can improve on
-B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude, which no declared value here can improve on
-B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude, which no declared value here can improve on
-B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the alternate magnitude
+B	pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
+B	pair|architecture.layer-violation|enabled|severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
+B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
+B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude, which no declared value here can improve on
+B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
 B	pair|code-smell.boolean-argument|allowed-prefixes|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the canonical magnitude, B the alternate magnitude
 B	pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|code-smell.boolean-argument|enabled|flag-promoted-properties|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
@@ -5761,10 +5761,10 @@ C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|cli-alia
 C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|cli-alias|80-alias-restricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
 C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|rule-opt|unrestricted|frameworkKeys	both	frameworkKeys	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high; observed through the registry predicate, because the factory drains this key before fromArray(); at optionsObject the same two writes are indistinguishable, which is the whole reason for this point
 C	composition|composition-path|rules.size.method-count.warning|qmx.yaml|rule-opt|unrestricted|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	PROMISED	the promised side won; promised high
-C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	both	optionsObject	LOST_SIBLING	yes	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
-C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	both	optionsObject	LOST_SIBLING	yes	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
-C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	both	optionsObject	LOST_SIBLING	yes	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
-C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	both	optionsObject	LOST_SIBLING	yes	DECIDED	the slot /options/callable/warning, written by the low side alone, is back to its unwritten value; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/cli-bucket|T2|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
+C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
 D	form|cli-root|cache.dir|bool	bool	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|float	float	report	COLLAPSED	yes	DECIDED	equal to the canonical write of another form
 D	form|cli-root|cache.dir|int	int	report	COLLAPSED	yes	DECIDED	accepted an unpromised form, target unnamed
@@ -6309,7 +6309,7 @@ D	form|yaml|suppress_paths|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|suppress_paths|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|string-number	string-number	report	REFUSES	no	PROMISED	refused
-E	neighbourhood|annotation.directive|enabled|unused-directive-severity|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
+E	neighbourhood|annotation.directive|enabled|unused-directive-severity|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|annotation.directive|unused-directive-severity|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.circular-dependency|direct-as-error|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.circular-dependency|direct-as-error|max-cycle-size|6-gate-vs-severity	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate-vs-severity; the neighbour wrote the canonical magnitude
@@ -6317,7 +6317,7 @@ E	neighbourhood|architecture.circular-dependency|enabled|direct-as-error|6-gate	
 E	neighbourhood|architecture.circular-dependency|enabled|max-cycle-size|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|architecture.circular-dependency|max-cycle-size|direct-as-error|6-gate-vs-severity	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate-vs-severity; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.circular-dependency|max-cycle-size|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
-E	neighbourhood|architecture.layer-violation|enabled|severity|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
+E	neighbourhood|architecture.layer-violation|enabled|severity|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|architecture.layer-violation|severity|empty-template-severity|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|architecture.layer-violation|severity|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.layer-violation|severity|potential-shadow-severity|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused; the neighbour wrote the canonical magnitude, which no declared value here can improve on
