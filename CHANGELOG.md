@@ -24,6 +24,13 @@ formatter reads — previously accepted and ignored). `graph:export
 --exclude-namespace` deliberately keeps its silence: a missed exclusion leaves
 the picture whole.
 
+**`coupling.cbo` refuses an unknown `scope` instead of silently measuring the
+other one.** `scope:` accepts `all` and `application`; anything else — a typo
+like `applicaton`, or any other word — used to fall back to `all` without a
+word, so the run measured the opposite of what the configuration asked for. It
+now exits 3 naming both accepted spellings. Migration: fix the spelling; a
+configuration that meant `all` can also just omit the key.
+
 **`debug:layer-assignment` refuses a class the run never analysed** (exit 3)
 instead of answering "(no layer)" — the same words it uses for a real class
 that no layer matched.
@@ -36,10 +43,9 @@ selecting the flat form of a hierarchical rule.** The keys are `threshold:` on
 to count as writing it, with two consequences, both gone:
 
 - *the level blocks beside it were discarded in silence.* `warning: ~` above a
-  `class:` block on `coupling.cbo` — which is also what
-  `--rule-opt 'coupling.cbo:warning='` hands the rule since the CLI door started
-  folding an empty value to `~` — left the rule completely unconfigured and
-  exited 0. The blocks are read now.
+  `class:` block on `coupling.cbo` left the rule completely unconfigured and
+  exited 0. The blocks are read now. (A command line stopping after `=` used to
+  reach the same reading; it is refused outright now — see below.)
 - *`threshold: ~` beside `warning:`/`error:` was refused* with `Cannot mix
   "threshold" with "warning"/"error"`, naming a mix of one written value with
   nothing. It is accepted now and the graduated mode applies. Two keys that each
