@@ -356,6 +356,29 @@ function readRaw(string $path): array
     return $rows;
 }
 
+/** @return array<string, string> the `key\tvalue` lines of `shot.txt`, verbatim */
+function readShot(string $path): array
+{
+    $lines = file($path, \FILE_IGNORE_NEW_LINES);
+
+    if ($lines === false) {
+        throw new LedgerError('cannot read ' . $path . ' — the "before" half was never frozen');
+    }
+
+    $shot = [];
+
+    foreach ($lines as $line) {
+        if ($line === '') {
+            continue;
+        }
+
+        [$key, $value] = array_pad(explode("\t", $line, 2), 2, '');
+        $shot[$key] = $value;
+    }
+
+    return $shot;
+}
+
 /**
  * @param list<Cell> $cells
  *
@@ -410,7 +433,51 @@ try {
 
 $axes = isset($arguments['axis']) ? explode(',', $arguments['axis']) : $canonicalAxes;
 
+if (isset($arguments['freeze-before'])) {
+    // Checked here, before the 200-second grid is paid for, rather than
+    // inside the `--freeze-before` block below: a snapshot is of the whole
+    // grid or it is not a snapshot, and that is true regardless of what the
+    // run measures.
+    $narrowedFreezeProblem = Floor::narrowedFreezeProblem($axes, $canonicalAxes);
+
+    if ($narrowedFreezeProblem !== null) {
+        fwrite(\STDERR, 'promise-effect: ' . $narrowedFreezeProblem . "\n");
+
+        exit(3);
+    }
+
+    // A `pending` row is honest only while the frozen half predates its cure.
+    // The moment this run retakes the snapshot, every `pending` row becomes a
+    // lie of the opposite kind — so converting them to a plain `cure` is the
+    // retaking round's own first step, not something this run can do for it.
+    $pendingRows = Floor::load($root)->pendingRows();
+
+    if ($pendingRows !== []) {
+        fwrite(\STDERR, "promise-effect: --freeze-before refuses while a `pending` cure stands — converting it to a commit is this retake's first step:\n");
+
+        foreach ($pendingRows as $pendingRow) {
+            fwrite(\STDERR, '  ' . $pendingRow->row . ': ' . $pendingRow->cureText() . "\n");
+        }
+
+        exit(3);
+    }
+}
+
 if (isset($arguments['before'])) {
+    // A snapshot taken under a narrowed `--axis`, or one taken before an axis
+    // existed, would otherwise let a dropped axis fall through Floor's
+    // absent-row rule and read as CURED rather than as unmeasured — see
+    // `Floor::incompleteSnapshotProblem()`.
+    $shot = readShot($snapshotDirectory . '/observations-before/shot.txt');
+    $shotAxes = ($shot['axes'] ?? '') === '' ? [] : explode(',', $shot['axes']);
+    $snapshotProblem = Floor::incompleteSnapshotProblem($shotAxes, $canonicalAxes);
+
+    if ($snapshotProblem !== null) {
+        fwrite(\STDERR, 'promise-effect: ' . $snapshotProblem . "\n");
+
+        exit(3);
+    }
+
     // Re-judged, never replayed: the frozen file holds raw observations, and
     // today's classifier is applied to them. Editing the classifier therefore
     // moves BOTH halves of the pair, which is the property the freeze exists
@@ -450,9 +517,13 @@ if (isset($arguments['before'])) {
     // rows are lawfully green there, and the old claim turned each of them into
     // a miss. The half is now judged through the same `cure` column the live
     // grid uses: a row without a cure must still be a defect, a row with one
-    // must read as repaired, and a cure that names a commit the snapshot does
-    // not contain is the lie this catches.
-    [$floorMisses] = Floor::load($root)->cureMisses($frozen);
+    // must read as repaired, and a `pending: …` row must still be a defect
+    // HERE and not one on the live grid. What is NOT checked: the commit a
+    // `pending` row is converted to. Git ancestry cannot decide it — the three
+    // commits already standing in `cure` are not ancestors of `main` (the
+    // repository squash-merges), so an ancestry check would redden all of
+    // them on a fresh clone. The column's commit is documentation.
+    [$floorMisses] = Floor::load($root)->cureMisses($frozen, frozenHalf: true);
 
     printf(
         "  %-22s %s\n",
@@ -762,26 +833,33 @@ $whole = \count($axes) === \count($canonicalAxes);
 // is no longer a defect, so the pre-cure list applied here turned a successful
 // cure into a red run. What the live grid is held to instead is the round's
 // own claim, row by row: still defective where nothing claims a cure, and no
-// longer defective where the `cure` column names one. See `Floor`.
-[$misses, $standing, $cured] = $whole
-    ? Floor::load($root)->cureMisses($cells)
-    : [[], [], []];
+// longer defective where the `cure` column names one — a `pending: …` row
+// included, which must read clean HERE and still defective on the frozen
+// half. See `Floor`.
+[$misses, $standing, $cured, , $pending] = $whole
+    ? Floor::load($root)->cureMisses($cells, frozenHalf: false)
+    : [[], [], [], [], []];
 
 printf(
     "  %-22s %s\n",
     'defect floor',
     $whole
         ? \sprintf(
-            '%d row(s) still defective, %d cured as declared%s',
+            '%d row(s) still defective, %d cured as declared%s%s',
             \count($standing),
             \count($cured),
+            $pending === [] ? '' : ', ' . \count($pending) . ' pending',
             $misses === [] ? '' : ', ' . \count($misses) . ' row(s) neither',
         )
         : 'not judged (narrowed run)',
 );
 
 foreach ($cured as $row) {
-    printf("    cured  %s — %s\n", $row->row, $row->cure);
+    printf("    cured    %s — %s\n", $row->row, $row->cure);
+}
+
+foreach ($pending as $row) {
+    printf("    pending  %s — %s\n", $row->row, $row->cureText());
 }
 
 $limitConflicts = limitProblems(Limits::load($root), $stand, $cells, $ledger, $root);

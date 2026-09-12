@@ -626,7 +626,10 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
                 $cells[] = $plant($row) ?? floorCellAsDeclared($row);
             }
 
-            [$misses] = $floor->cureMisses($cells);
+            // Cells built by `floorCellAsDeclared()` are the live-grid
+            // reading (`declaredCured()` flips `defect`, not the frozen
+            // half's stronger claim), so this case judges them as such.
+            [$misses] = $floor->cureMisses($cells, frozenHalf: false);
 
             return $misses;
         };
@@ -848,7 +851,9 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
         $tree = $workspace->checkout();
         $floorRow = 'form|yaml|rules.complexity.ccn.callable.warning|bool';
         $floor = Floor::load($tree);
-        [$unplanted] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
+        // `frozenCells()` reads the FROZEN half (`Stand::before()`), which
+        // the floor must judge by its stronger, name-carrying claim.
+        [$unplanted] = $floor->cureMisses(frozenCells($tree, $inProcess, $process), frozenHalf: true);
         $failures = $unplanted === []
             ? []
             : ['F1: the floor does not reproduce on the unplanted frozen half: ' . implode('; ', $unplanted)];
@@ -865,7 +870,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             [],
         ));
 
-        [$misses] = $floor->cureMisses(frozenCells($tree, $inProcess, $process));
+        [$misses] = $floor->cureMisses(frozenCells($tree, $inProcess, $process), frozenHalf: true);
 
         if (\count($misses) !== 1 || !str_starts_with($misses[0], $floorRow . ':')) {
             $failures[] = 'F1: the planting should have left exactly one floor miss naming ' . $floorRow
@@ -892,7 +897,9 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             $cells[] = floorCellAsDeclared($row);
         }
 
-        [$misses] = $floor->cureMisses($cells);
+        // Cells synthesized by `floorCellAsDeclared()` are the live-grid
+        // reading, same as F3 above.
+        [$misses] = $floor->cureMisses($cells, frozenHalf: false);
 
         if ($misses !== []) {
             $failures[] = 'F2: the declared shape of the floor is not the one the rule reads: ' . implode('; ', $misses);
@@ -919,7 +926,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
                 $planted[] = floorCellAsDeclared($row);
             }
 
-            [$plantedMisses] = $floor->cureMisses($planted);
+            [$plantedMisses] = $floor->cureMisses($planted, frozenHalf: false);
 
             if (\count($plantedMisses) !== 1 || $moved === null || !str_starts_with($plantedMisses[0], $moved . ':')) {
                 $failures[] = 'F2: flipping the ' . $side . ' side should have left exactly one miss naming ' . ($moved ?? '(no such row)')

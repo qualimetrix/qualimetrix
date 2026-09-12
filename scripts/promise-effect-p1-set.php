@@ -131,10 +131,19 @@ final class PromiseEffectP1Set
     /**
      * Frozen whole files: none of them may appear in P1 (`03-cure.md`).
      *
+     * The first entry was named `RuleOptionThresholdModeResolver.php` when this
+     * list was written and is the same file under the name its subject took in
+     * X20 — it stopped evicting a mode and started unfolding a shorthand. The
+     * path is updated rather than the entry dropped: the claim this list makes
+     * is about a file that was frozen whole during that round, and a rename
+     * does not retire it. A path naming nothing would make the check pass by
+     * matching nothing, which is the failure mode this whole programme keeps
+     * finding.
+     *
      * @var list<string>
      */
     private const array FROZEN_FILES = [
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php',
+        'src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdShorthand.php',
         'src/Analysis/Finding/Configuration/FindingConfigurationResolver.php',
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php',
         'src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php',

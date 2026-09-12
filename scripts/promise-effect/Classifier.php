@@ -369,11 +369,17 @@ final class Classifier
      * composition and the triples measure nothing. {@see CompositionComparison}
      * carries both wrong orders so a control can show the difference.
      *
-     * @param string $promised `low`, `high`, `refuse` or `unpromised`, out of
-     *                         the ledger's own sixth column
+     * @param string $promised `low`, `high`, `refuse`, `unpromised` or
+     *                         `survives`, out of the ledger's own sixth column
      * @param bool $highRewritesEveryLowKey when true the sides dispute the
      *                                      same keys, so there is no slot for the low side
      *                                      to lose and the sibling question is not asked
+     * @param ?Observation $middle a composition-triple's middle layer (L2)
+     *                             written alone, for `promised_survival=survives` only. `null` for
+     *                             every pair (a pair has no third layer) and for a triple whose
+     *                             probe did not carry one — the frozen half predates this
+     *                             observation for every row {@see Floor} still calls `pending`, and
+     *                             that absence is read here, not assumed by the caller.
      */
     public static function composition(
         Observation $omitted,
@@ -383,22 +389,41 @@ final class Classifier
         string $promised,
         bool $highRewritesEveryLowKey = false,
         CompositionComparison $how = CompositionComparison::Leaves,
+        ?Observation $middle = null,
     ): Judgement {
         // A side that cannot be written is a question about the DOOR, which
         // axis A owns. "Both applied" has no meaning when one of them was
         // never applied on its own, and calling it a composition defect would
         // publish a form fact under a composition label.
-        if (!$low->accepted() || !$high->accepted()) {
+        if (!$low->accepted() || !$high->accepted() || ($middle !== null && !$middle->accepted())) {
             return new Judgement(
                 Verdict::NOT_OBSERVABLE,
-                'one side alone is not writable: ' . $low->outcome . '/' . $high->outcome,
+                'one side alone is not writable: ' . $low->outcome . '/' . $high->outcome
+                    . ($middle === null ? '' : '/' . $middle->outcome),
             );
         }
 
         // The sensitivity gate of this axis, and the reason the two magnitudes
         // are declared rather than assumed: a probe whose two sides render
         // identically cannot say whose value survived, whatever came back.
-        if ($low->text === $high->text) {
+        //
+        // For `promised_survival=survives` this gate must not ask about `low`
+        // and `high` alone: a triple's third layer, `middle`, can differ from
+        // both while `low` and `high` happen to render alike, and that IS
+        // observable — `survives()` below can still tell whether `middle`'s
+        // value made it into `$both`. Declaring the row NOT_OBSERVABLE on
+        // `low`/`high` agreement alone, without asking whether `middle` also
+        // agrees, would silently stop testing exactly the layer this promise
+        // is about. `middle` writing nothing on its own (equal to `omitted`)
+        // is not the same failure — a triple whose middle layer legitimately
+        // contributes no value to a given leaf combination still lets
+        // `survives()` check the low/high dispute correctly, so that case is
+        // left to the normal per-leaf rule below, not refused here.
+        $sidesAlike = $promised === 'survives' && $middle !== null
+            ? $low->text === $high->text && $middle->text === $low->text
+            : $low->text === $high->text;
+
+        if ($sidesAlike) {
             return new Judgement(Verdict::NOT_OBSERVABLE, self::SIDES_ALIKE);
         }
 
@@ -429,6 +454,34 @@ final class Classifier
                 // layer's, in the half the top layer never rewrote.
                 return new Judgement(Verdict::LOST_SIBLING, $lost, $promised === 'lost' ? false : $defect);
             }
+        }
+
+        // `promised_survival=survives` (the composition-triple rows): the
+        // slot the sibling check above did not lose is not a two-way
+        // dispute between `low` and `high` alone -- a triple has a THIRD
+        // layer, `middle`, disputing slots of its own -- so it is not asked
+        // whether one whole side won. It is asked leaf by leaf: every slot
+        // ANY of the three wrote must carry the value of whichever of the
+        // three wrote it LAST, and a slot none of them wrote must still read
+        // as `omitted`. Not a stamp: {@see survives()} rejects a merge that
+        // is clean of eviction (the case above) yet still substitutes the
+        // wrong layer's value on a slot more than one of them touches.
+        if ($promised === 'survives') {
+            if ($middle === null) {
+                // A triple's promise cannot be checked with the middle layer
+                // unobserved -- that is not "nothing to say", it is the one
+                // input `survives()` needs and does not have, and reading its
+                // absence as a pass would let a row miss the observation its
+                // own promise depends on and still cure silently. This is
+                // reached only by a frozen snapshot taken before this
+                // observation existed; every fresh probe supplies `middle`
+                // for every composition-triple row (`CompositionPlan::$middle`).
+                return new Judgement(Verdict::FRANKENSTEIN, 'promised_survival=survives has no middle-layer observation to judge against', $defect);
+            }
+
+            return self::survives($omitted, $low, $middle, $high, $both)
+                ? new Judgement(Verdict::COMPOSED_AS_PROMISED, 'every slot carries its topmost writer\'s value, and the untouched slot the omitted one')
+                : new Judgement(Verdict::FRANKENSTEIN, 'a slot did not carry the value its promised survival required', $defect);
         }
 
         $same = $how === CompositionComparison::WholeText
@@ -491,6 +544,60 @@ final class Classifier
         }
 
         return '';
+    }
+
+    /**
+     * Whether every leaf of `$both` carries the value `promised_survival=survives`
+     * promises: the value of the highest of the THREE layers that wrote it —
+     * `$high` (L3), else `$middle` (L2), else `$low` (L1) — or `$omitted`'s
+     * where none of the three touched it.
+     *
+     * This is a per-leaf check, not a whole-document one, on purpose: a
+     * triple's `both` mixes three layers, and a merge that correctly keeps
+     * one leaf from `high` and another from `middle` equals none of the three
+     * as a whole text or as a whole leaf set -- which is exactly why the
+     * promise needs its own comparison instead of reusing {@see sameLeaves()}.
+     *
+     * `middle` is what tells this check apart from a plain two-sided one: a
+     * slot only `low` writes and `high` never rewrites is not automatically
+     * "carries `low`'s value" -- if `middle` also writes it (a mode key that
+     * expands to the same slot, the exact case the triples exist to probe),
+     * `middle` is the higher of the two writers and its value is what must
+     * survive, not `low`'s stale one. Without observing `middle` on its own
+     * this distinction is unavailable, which is why {@see composition()}
+     * refuses to call this with `middle === null`.
+     */
+    private static function survives(Observation $omitted, Observation $low, Observation $middle, Observation $high, Observation $both): bool
+    {
+        $unwritten = self::leaves($omitted->text);
+        $lowLeaves = self::leaves($low->text);
+        $middleLeaves = self::leaves($middle->text);
+        $highLeaves = self::leaves($high->text);
+        $together = self::leaves($both->text);
+
+        foreach (array_keys($unwritten + $lowLeaves + $middleLeaves + $highLeaves + $together) as $pointer) {
+            $before = $unwritten[$pointer] ?? null;
+            $lowValue = $lowLeaves[$pointer] ?? null;
+            $middleValue = $middleLeaves[$pointer] ?? null;
+            $highValue = $highLeaves[$pointer] ?? null;
+
+            $highWrote = $highValue !== null && $highValue !== $before;
+            $middleWrote = $middleValue !== null && $middleValue !== $before;
+            $lowWrote = $lowValue !== null && $lowValue !== $before;
+
+            $expected = match (true) {
+                $highWrote => $highValue,
+                $middleWrote => $middleValue,
+                $lowWrote => $lowValue,
+                default => $before,
+            };
+
+            if (($together[$pointer] ?? null) !== $expected) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

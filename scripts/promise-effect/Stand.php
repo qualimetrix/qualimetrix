@@ -353,6 +353,12 @@ final class Stand
                 $objectLow = $sides['C' . "\0" . $cellKey . "\0" . 'objectLow'] ?? null;
                 $objectHigh = $sides['C' . "\0" . $cellKey . "\0" . 'objectHigh'] ?? null;
                 $blindness = $objectLow === null || $objectHigh === null ? null : self::objectBlindness($objectLow, $objectHigh);
+                // Absent, not fabricated, on a snapshot taken before this
+                // side existed: a triple's `middle` was never stored under
+                // that key, and `Classifier::composition()` is the one place
+                // that decides what a missing middle observation means for
+                // `promised_survival=survives` — never assumed here as a pass.
+                $middle = $sides['C' . "\0" . $cellKey . "\0" . 'middle'] ?? null;
                 $judgement = Classifier::composition(
                     $omitted,
                     $low,
@@ -360,6 +366,7 @@ final class Stand
                     $both,
                     $row->promised,
                     $plan instanceof CompositionPlan && $plan->highRewritesEveryLowKey(),
+                    middle: $middle,
                 );
                 $cells[] = new Cell(
                     'C',
@@ -658,6 +665,10 @@ final class Stand
                 $low = $this->compositionWrite($plan, $plan->low, $member);
                 $high = $this->compositionWrite($plan, $plan->high, $member);
                 $both = $this->compositionWrite($plan, $plan->both, $member);
+                // Only a composition-triple plan carries a middle layer to
+                // probe alone; a pair's dispute is already fully described by
+                // `low` and `high`. See `CompositionPlan::$middle`.
+                $middle = $plan->middle === [] ? null : $this->compositionWrite($plan, $plan->middle, $member);
 
                 // The evidence that the second point is not decoration: the
                 // SAME two writes, read at `optionsObject`. Recorded as sides
@@ -673,7 +684,7 @@ final class Stand
                     $blindness = self::objectBlindness($objectLow, $objectHigh);
                 }
 
-                $judgement = Classifier::composition($omitted, $low, $high, $both, $row->promised, $plan->highRewritesEveryLowKey());
+                $judgement = Classifier::composition($omitted, $low, $high, $both, $row->promised, $plan->highRewritesEveryLowKey(), middle: $middle);
                 $cells[] = new Cell(
                     'C',
                     $cellKey,
@@ -692,6 +703,10 @@ final class Stand
                 $this->record('C', $cellKey, 'onlyLow', $low);
                 $this->record('C', $cellKey, 'onlyHigh', $high);
                 $this->record('C', $cellKey, 'both', $both);
+
+                if ($middle !== null) {
+                    $this->record('C', $cellKey, 'middle', $middle);
+                }
             }
         }
 
