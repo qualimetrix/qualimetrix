@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry
 use ReflectionClass;
 use ReflectionClassConstant;
 use RuntimeException;
+use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -338,8 +339,12 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     }
 
     /**
-     * Scans the complete explicit union of capability-owned rule roots, so extraction cannot silently
-     * remove a threshold rule from this drift guard.
+     * Scans the whole of `src/` for `*Rule.php` files, so extraction — of a
+     * threshold rule from ANY capability, not only the ones a hand-typed
+     * root list happened to name — cannot silently remove it from this
+     * drift guard. The FQN is derived from each file's path via the
+     * project's single PSR-4 root (`Qualimetrix\` => `src/`), the same
+     * mapping Composer's own autoloader uses.
      *
      * @return list<class-string<RuleDefinitionInterface>>
      */
@@ -352,41 +357,45 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
         $classes = [];
         $srcDir = \dirname(__DIR__, 4) . '/src';
-        $roots = [
-            [$srcDir . '/Analysis/Evidence/Duplication', 'Qualimetrix\\Analysis\\Evidence\\Duplication\\'],
-            [$srcDir . '/Analysis/Evidence/CodeSmell', 'Qualimetrix\\Analysis\\Evidence\\CodeSmell\\'],
-            [$srcDir . '/Analysis/Evidence/Cohesion', 'Qualimetrix\\Analysis\\Evidence\\Cohesion\\'],
-            [$srcDir . '/Analysis/Evidence/Complexity', 'Qualimetrix\\Analysis\\Evidence\\Complexity\\'],
-            [$srcDir . '/Analysis/Evidence/Coupling', 'Qualimetrix\\Analysis\\Evidence\\Coupling\\'],
-            [$srcDir . '/Analysis/Evidence/Design', 'Qualimetrix\\Analysis\\Evidence\\Design\\'],
-            [$srcDir . '/Analysis/Evidence/Maintainability', 'Qualimetrix\\Analysis\\Evidence\\Maintainability\\'],
-            [$srcDir . '/Analysis/Evidence/Security', 'Qualimetrix\\Analysis\\Evidence\\Security\\'],
-            [$srcDir . '/Analysis/Evidence/Size', 'Qualimetrix\\Analysis\\Evidence\\Size\\'],
-        ];
 
-        foreach ($roots as [$rulesDir, $namespace]) {
-            $finder = (new Finder())->files()->in($rulesDir)->name('*Rule.php')->notName('AbstractRule.php');
+        $finder = (new Finder())->files()->in($srcDir)->name('*Rule.php');
 
-            foreach ($finder as $file) {
-                $class = $namespace . str_replace('/', '\\', substr($file->getRelativePathname(), 0, -4));
+        foreach ($finder as $file) {
+            $absolutePath = self::realOrPathname($file);
+            $relative = str_starts_with($absolutePath, $srcDir . '/')
+                ? substr($absolutePath, \strlen($srcDir) + 1)
+                : throw new RuntimeException(\sprintf('%s is not under %s.', $absolutePath, $srcDir));
+            $class = 'Qualimetrix\\' . str_replace('/', '\\', substr($relative, 0, -4));
 
-                if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
-                    continue;
-                }
-
-                // Matches the service-registration Abstract*.php exclusion,
-                // generalized via reflection so nested abstract bases are
-                // skipped without a second name catalog.
-                if ((new ReflectionClass($class))->isAbstract()) {
-                    continue;
-                }
-
-                /** @var class-string<RuleInterface> $class */
-                $classes[] = $class;
+            if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
+                continue;
             }
+
+            // Matches the service-registration Abstract*.php exclusion,
+            // generalized via reflection so nested abstract bases are
+            // skipped without a second name catalog.
+            if ((new ReflectionClass($class))->isAbstract()) {
+                continue;
+            }
+
+            /** @var class-string<RuleInterface> $class */
+            $classes[] = $class;
         }
 
         return $cache = $classes;
+    }
+
+    /**
+     * `SplFileInfo::getRealPath()` returns `false` only when the path cannot
+     * be resolved (a dangling symlink, a file removed mid-scan) — never for
+     * a real file `Finder` just found, but the return type carries the
+     * possibility regardless.
+     */
+    private static function realOrPathname(SplFileInfo $file): string
+    {
+        $real = $file->getRealPath();
+
+        return $real !== false ? $real : $file->getPathname();
     }
 
     /**

@@ -85,11 +85,11 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     private const string RULE_THRESHOLD_KEY_GROUP_REASON =
         'Declared, audited hand-kept copy of a rule\'s ThresholdParser::parse() key'
         . ' spelling. Its own docblock argues why it cannot be derived at'
-        . ' configuration-merge time: RuleOptionThresholdModeResolver runs before'
+        . ' configuration-merge time: RuleOptionThresholdShorthand runs before'
         . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
         . ' with their owning rule capability, which Configuration may not depend'
         . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
-        . ' ConfigurationMergerTest. See'
+        . ' RuleThresholdKeyGroupRegistryCompletenessTest. See'
         . ' docs/internal/plans/sarif-channel-descriptions.md, "Two sites checked'
         . ' and cleared".';
 
