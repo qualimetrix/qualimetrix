@@ -114,6 +114,7 @@ docs/internal/plans/layer-value-survival/02-unfolding.md	Architecture.Governance
 docs/internal/plans/layer-value-survival/03-writtenness.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/layer-value-survival/04-words.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/layer-value-survival/05-acceptance.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/internal/plans/layer-value-survival/measurement/deferred.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/layer-value-survival/measurement/observations.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/modular-architecture.md	Architecture.Governance	P2	"Move or update atomically with the named migration package."
 docs/internal/plans/modular-architecture/decisions-and-target.md	Architecture.Governance	P2	"Move or update atomically with the named migration package."

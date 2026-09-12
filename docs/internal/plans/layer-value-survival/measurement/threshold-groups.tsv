@@ -1,0 +1,52 @@
+rule_name	path	group_idx	warning_keys	error_keys	threshold_keys	qualifies	reason_if_not	call_site_file:line	call_site_warningKey	call_site_errorKey	call_site_thresholdKey(default)	call_site_legacyKeys	spelling_match_verdict
+design.type-coverage.param	''	1	[warning]	[error]	[threshold]	YES		TypeCoverageOptions.php:50 (shared by param/return/property)	RuleOptionKey::WARNING (='warning')	RuleOptionKey::ERROR (='error')	threshold (default)	none	MATCH
+design.type-coverage.return	''	1	[warning]	[error]	[threshold]	YES		TypeCoverageOptions.php:50 (shared, same call site as param)	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH (shared call site)
+design.type-coverage.property	''	1	[warning]	[error]	[threshold]	YES		TypeCoverageOptions.php:50 (shared, same call site as param)	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH (shared call site)
+complexity.ccn	''	1	[] EMPTY	[] EMPTY	[threshold]	NO	LONE_THRESHOLD: empty warning/error by design — see note below	ComplexityOptions.php:48	RuleOptionKey::WARNING (literal 'warning')	RuleOptionKey::ERROR (literal 'error')	threshold (default)	none	INTENTIONAL DEVIATION: call site literally names WARNING/ERROR as $warningKey/$errorKey, but acceptedOptionKeys() for this class declares ONLY 'enabled'/'threshold' at top level -- bare warning/error here are refused at the option-key seam (depth 1) before eviction/merge ever runs, so the registry omits them per its own documented exception (docblock lines 20-23). Not a real discrepancy.
+complexity.ccn	callable	1	[warning]	[error]	[threshold]	YES		MethodComplexityOptions.php:39	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+complexity.ccn	class	1	[max_warning]	[max_error]	[threshold]	YES		ClassComplexityOptions.php:55	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH (registry canonical snake_case mirrors literal $warningKey/$errorKey; legacyKeys camelCase aliases are redundant under normalize() but harmless)
+complexity.cognitive	''	1	[] EMPTY	[] EMPTY	[threshold]	NO	LONE_THRESHOLD, same reason as complexity.ccn ''	CognitiveComplexityOptions.php:48	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	INTENTIONAL DEVIATION (same as complexity.ccn '')
+complexity.cognitive	callable	1	[warning]	[error]	[threshold]	YES		MethodCognitiveComplexityOptions.php:34	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+complexity.cognitive	class	1	[max_warning]	[max_error]	[threshold]	YES		ClassCognitiveComplexityOptions.php:50	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH
+complexity.npath	''	1	[] EMPTY	[] EMPTY	[threshold]	NO	LONE_THRESHOLD, same reason	NpathComplexityOptions.php:48	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	INTENTIONAL DEVIATION (same as complexity.ccn '')
+complexity.npath	callable	1	[warning]	[error]	[threshold]	YES		MethodNpathComplexityOptions.php:34	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+complexity.npath	class	1	[max_warning]	[max_error]	[threshold]	YES		ClassNpathComplexityOptions.php:34	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH
+coupling.cbo	''	1	[warning]	[error]	[threshold]	YES		CboOptions.php:66	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH -- unlike complexity, acceptedOptionKeys() HERE declares bare warning/error/threshold at top level, so the branch genuinely reaches ThresholdParser; registry entry is a true mirror, not an intentional omission
+coupling.cbo	class	1	[warning]	[error]	[threshold]	YES		ClassCboOptions.php:63	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+coupling.cbo	namespace	1	[warning]	[error]	[threshold]	YES		NamespaceCboOptions.php:58	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+coupling.instability	''	1	[max_warning]	[max_error]	[threshold]	YES		InstabilityOptions.php:54	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH -- verified acceptedOptionKeys() (InstabilityOptions.php:96-103) declares 'max-error'/'max-warning'/'threshold' at top level (same reasoning as coupling.cbo ''), so this branch genuinely reads bare max_warning/max_error too; confirmed real, not another LONE_THRESHOLD
+coupling.instability	class	1	[max_warning]	[max_error]	[threshold]	YES		ClassInstabilityOptions.php:58	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH
+coupling.instability	namespace	1	[max_warning]	[max_error]	[threshold]	YES		NamespaceInstabilityOptions.php:44	'max_warning'	'max_error'	threshold (default)	warning:[maxWarning], error:[maxError]	MATCH
+coupling.distance	''	1	[max_distance_warning]	[max_distance_error]	[threshold]	YES		DistanceOptions.php:65	'max_distance_warning'	'max_distance_error'	threshold (default)	warning:[maxDistanceWarning], error:[maxDistanceError]	MATCH
+coupling.class-rank	''	1	[warning]	[error]	[threshold]	YES		ClassRankOptions.php:45	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+code-smell.long-parameter-list	''	1(bare)	[warning]	[error]	[threshold]	YES		LongParameterListOptions.php:61	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+code-smell.long-parameter-list	''	2(vo)	[vo_warning]	[vo_error]	[vo_threshold]	YES		LongParameterListOptions.php:62	'vo-warning' (kebab)	'vo-error' (kebab)	'vo-threshold' (kebab)	warning:[voWarning], error:[voError], threshold:[voThreshold]	MATCH -- literal call-site spelling is kebab-case ('vo-warning'), registry canonical is snake_case ('vo_warning'); both normalize identically (separator-insensitive), no functional discrepancy, only a cosmetic spelling-convention difference worth flagging
+code-smell.constructor-overinjection	''	1	[warning]	[error]	[threshold]	YES		ConstructorOverinjectionOptions.php:44	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+code-smell.unreachable-code	''	1	[warning]	[error]	[threshold]	YES		UnreachableCodeOptions.php:42	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+maintainability.mi	''	1	[warning]	[error]	[threshold]	YES		MaintainabilityOptions.php:46	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+size.method-count	''	1	[warning]	[error]	[threshold]	YES		MethodCountOptions.php:44	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+size.class-count	''	1	[warning]	[error]	[threshold]	YES		ClassCountOptions.php:44	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+size.property-count	''	1	[warning]	[error]	[threshold]	YES		PropertyCountOptions.php:40	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+design.dit	''	1	[warning]	[error]	[threshold]	YES		InheritanceOptions.php:45 (InheritanceRule::NAME='design.dit')	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+design.noc	''	1	[warning]	[error]	[threshold]	YES		NocOptions.php:48 (NocRule::NAME='design.noc')	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+cohesion.lcom	''	1	[warning]	[error]	[threshold]	YES		LcomOptions.php:51	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+complexity.wmc	''	1	[warning]	[error]	[threshold]	YES		WmcOptions.php:47	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+duplication.clone	''	1	[warning]	[error]	[threshold]	YES		CodeDuplicationOptions.php:33	RuleOptionKey::WARNING	RuleOptionKey::ERROR	threshold (default)	none	MATCH
+
+# FOOTER NOTE (see spelling.md for full derivation):
+# write-spelling for the expansion = ConfigKeySpelling::normalize(canonical registry key), i.e. camelCase,
+# because deepMerge()/mergeRuleOptions() collide overlay keys onto base by LITERAL string equality, and
+# every door (YAML loader, --rule-opt, #[CliAlias]) folds real user keys to camelCase before either merge
+# call site ever runs. Writing the registry's literal snake_case form instead creates a phantom key that
+# SHADOWS a later layer's camelCase override (ThresholdParser checks the primary spelling before legacyKeys).
+# This only matters for rows whose canonical spelling has a separator (8 of 29 qualifying pairs):
+# complexity.ccn/class, complexity.cognitive/class, complexity.npath/class (max_warning/max_error),
+# coupling.instability/'', coupling.instability/class, coupling.instability/namespace (max_warning/max_error),
+# coupling.distance/'' (max_distance_warning/max_distance_error),
+# code-smell.long-parameter-list/'' vo-group (vo_warning/vo_error/vo_threshold).
+# For the other 21 qualifying pairs (bare warning/error/threshold), camelCase == snake_case == the word itself,
+# so the distinction is moot.
+# EXCEPTION: this write-spelling rule applies to the two named merge call sites only. CboOptions.php:60-71 and
+# InstabilityOptions.php:53-66 build their OWN $levelConfig array (snake_case, matching their own call-site
+# spelling) and hand it directly to the child Options::fromArray(), bypassing evictOverriddenMode() and the
+# merge machinery for that hop -- unaffected by, and irrelevant to, the expansion's write-spelling choice.
