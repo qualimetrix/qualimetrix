@@ -8447,6 +8447,11 @@ Available tests:
  - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesFreezeBeforeNarrowedByAxis
  - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itRefusesFreezeBeforeWhenADuplicateAxisStandsInForAMissingOne
  - Qualimetrix\Tests\Unit\PromiseEffect\FloorTest::itReportsNoPendingRowsWhenNoneStands
+ - Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest::itAcceptsTheOneWinsFormWhichCarriesItsWinnerInTheValue
+ - Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest::itLoadsTheRepositorysOwnLedger
+ - Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest::itRefusesACoexistenceTheClassifierWouldSilentlyReadAsCompose
+ - Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest::itRefusesACompositionPromiseNoClassifierBranchAwards
+ - Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest::itRefusesAnEmptyCoexistenceOnARowThatReachesTheClassifier
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itExcludesFindingByClassWhenNoType
  - Qualimetrix\Tests\Unit\Reporting\Filter\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
