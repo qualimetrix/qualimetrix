@@ -23,10 +23,30 @@
 # decision of the round and not a property of an axis, which is why it is
 # declared rather than written into the summary loop:
 #   A, D  cured by this programme, so a defect blocks;
-#   B     pair semantics have no owner holding a mandate (X17's decision);
-#   C, E  the subject this round is measuring in order to cure later — a stage
-#         that must produce their grid cannot also demand it be green.
+#   C, E  cured now too, so they block from X20 on. C's one mechanism is
+#         repaired and E stands at zero; the reason they were excluded — a
+#         stage that must produce their grid cannot also demand it be green —
+#         expired with the round that produced them. Four floor rows are not a
+#         substitute for an exit code.
+#   B     81 cells over four mechanisms, and what a top-level shorthand MEANS
+#         beside the nested block it is shorthand for is one undecided
+#         question, taken whole by the round that owns it. The earlier reason
+#         recorded here — that the rule layer has no notion of "channel
+#         boundary", citing `channel-identity-substrate.md` — does not survive
+#         reading that document: it is about finding identity across
+#         suppression, threshold, selector and exclusion consumers and never
+#         mentions this axis, pairs or coexistence. X17's actual recorded
+#         reason was that no owner held a mandate over pair semantics.
+#
+# WHAT A BLOCKING AXIS IS WORTH, so the word is not read as more than it is:
+# nothing automatic consumes this script's exit code. `composer check` reaches
+# the stand only through `promise-effect:grid:check`, which compares the
+# committed artifact against its declarations and takes no probe of its own,
+# and no workflow runs the stand. A blocking axis is therefore protected at a
+# round's own validation step and nowhere else. Automating it would put a
+# ~200-second run into `composer check`, against roughly 150 seconds for the
+# whole test suite; that is the number, and X20 did not spend it.
 key	value
 before-commit	02a6ca66
 axes	A,B,C,D,E
-blocking-axes	A,D
+blocking-axes	A,C,D,E

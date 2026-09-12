@@ -261,6 +261,47 @@ key were never written. Each now exits 3 naming what it expected.
 the default. Each now exits 3 and lists what it accepts. Omit the option to get
 the default.
 
+**A threshold written in one configuration layer now survives the layer above
+it, and that can change the severity of findings you already have.** A
+`threshold: N` is shorthand for both halves of a `warning`/`error` band. When a
+higher layer rewrote only one half — a preset setting `warning`/`error` under a
+`qmx.yaml` `threshold`, or either under a `--rule-opt` — the half the higher
+layer did not rewrite used to fall back to the rule's compiled default instead
+of keeping the value the shorthand meant. It now keeps it.
+
+What to re-check after upgrading: any rule configured across two layers where
+one of them writes `threshold`. Compare finding SEVERITIES, not counts. A
+preset `threshold: 25` under a `qmx.yaml` `warning: 10` used to yield
+`warning 10` with the rule's compiled `error` (20 for the complexity rules) and
+now yields `warning 10, error 25`, so findings scoring 20-24 move from error to
+warning — and a run with `--fail-on=error` can change colour with no
+configuration change.
+
+Two narrower consequences of the same change. A layer that wrote `threshold`
+and `warning` together was illegal already, and the old cross-layer cleanup hid
+it whenever a higher layer wrote the other mode; it is now refused, as it is
+when a single layer writes it. And a rule with no entry in the internal
+threshold-group catalogue no longer has its grouping guessed from a key's
+spelling — the guess is gone, so such a rule refuses a cross-layer mode change
+rather than silently guessing at it.
+
+**A key written `~` no longer erases what a lower layer wrote.** `~` means the
+author left the value to what it would otherwise be, which is what it already
+meant beside a populated alias. Across layers it used to mean something else:
+`qmx.yaml` writing `warning: ~` over a preset's `warning: 2` dropped the 2 and
+the rule fell to its compiled default, and `threshold: ~` dropped the lower
+layer's whole band. The same held one level up, where `rules: {some.rule: ~}`
+erased everything a preset had configured for that rule. In every case the
+lower layer's value now stands. An explicit `false` or `true` for a rule still
+switches it off or on.
+
+**`annotation.directive`'s `unused_directive_severity`, `architecture.unassigned-class`'s
+`mode` and `architecture.layer-violation`'s `severity` now declare the words they
+accept.** The words themselves, and the fact that they ignore letter case, are
+unchanged; `~` still selects the default. What changes is where a wrong value is
+refused: at the option seam rather than inside the rule, so the message names the
+accepted set in the seam's wording and arrives before the rule is built.
+
 ### Changed
 
 - Configuration that binds to nothing is now reported instead of passing

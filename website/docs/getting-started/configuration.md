@@ -719,6 +719,48 @@ vendor/bin/qmx check src/ --suppress-path='src/Generated/*'
 
 This makes it easy to experiment without editing the config file.
 
+### What a higher layer replaces, and what it leaves alone
+
+A layer replaces the keys it writes, and nothing else.
+
+`threshold: N` is shorthand for both halves of a `warning`/`error` band, so a
+higher layer that rewrites only one half keeps the shorthand's value in the
+other:
+
+```yaml
+# preset
+rules: {complexity.ccn: {callable: {threshold: 5}}}
+```
+
+```bash
+vendor/bin/qmx check src/ --preset=my-preset.yaml \
+  --rule-opt='complexity.ccn:callable.warning=2'
+```
+
+The result is `warning 2` from the command line and `error 5` from the preset's
+shorthand — not the rule's compiled default.
+
+A key written `~` writes nothing: it leaves the value to whatever it would
+otherwise be, which across layers means the layer below.
+
+```yaml
+# preset sets warning 2 / error 3; this leaves both of them standing
+rules: {complexity.ccn: {callable: {warning: ~}}}
+
+# and this leaves the whole rule's configuration standing
+rules: {complexity.ccn: ~}
+```
+
+To switch a rule off, write `false` rather than `~`:
+
+```yaml
+rules: {complexity.ccn: false}
+```
+
+Mixing `threshold` with `warning`/`error` in the SAME layer is still refused —
+they are two spellings of one thing, and writing both says nothing about which
+was meant.
+
 ---
 <!-- llms:skip-end -->
 

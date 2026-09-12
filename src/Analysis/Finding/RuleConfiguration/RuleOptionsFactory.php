@@ -324,20 +324,27 @@ final class RuleOptionsFactory
     /**
      * Deep merges arrays recursively.
      *
-     * Before merging, evicts `threshold` vs `warning`/`error` mode
-     * conflicts across the merge boundary — see
-     * {@see RuleOptionThresholdModeResolver} for why a later layer's
-     * `threshold` must displace an earlier layer's `warning`/`error` (and
-     * vice versa) instead of letting both survive into the array
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::fromArray()}
-     * receives. Applied recursively, so hierarchical rule levels (e.g.
-     * `callable:`/`class:`) get eviction scoped to the level the conflicting
-     * keys actually live at — `$path` tracks the dot-joined nesting (`''`,
-     * `'method'`, `'class'`, ...) consulted by
-     * {@see RuleThresholdKeyGroupRegistry}. A conflict where $override
-     * itself sets both keys (same source) is left untouched, since only
-     * $base is ever modified, and still surfaces as a genuine configuration
-     * error.
+     * Before merging, unfolds a `threshold` shorthand into the graduated
+     * `warning`/`error` pair it stands for — in EACH layer, independently —
+     * see {@see RuleOptionThresholdShorthand} for why a shorthand must be
+     * gone from both sides before they merge rather than evicted from one of
+     * them. Applied recursively, so hierarchical rule levels (e.g.
+     * `callable:`/`class:`) get unfolded at the level the shorthand actually
+     * lives at — `$path` tracks the dot-joined nesting (`''`, `'method'`,
+     * `'class'`, ...) consulted by {@see RuleThresholdKeyGroupRegistry}. A
+     * conflict where $override itself sets both a shorthand and a graduated
+     * key (same source) is left untouched by unfolding and still reaches
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser} as a genuine
+     * configuration error.
+     *
+     * $override is always the CLI layer here (see {@see self::create()}), and
+     * no CLI door can write a bare `null`: `--rule-opt`'s
+     * {@see RuleOptionsParser::parseRuleOption()} and every short alias's
+     * `refuseEmptyAliasValue()` both refuse an empty value before a value
+     * ever reaches this method. So "does an overlay's `~` erase a value the
+     * layer below wrote" is not this merge site's question to answer — it is
+     * answered once, at {@see \Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver},
+     * where a YAML `~` genuinely can reach a layer this way.
      *
      * @param array<string, mixed> $base
      * @param array<string, mixed> $override
@@ -346,15 +353,17 @@ final class RuleOptionsFactory
      */
     private function deepMerge(array $base, array $override, string $ruleName, string $path = ''): array
     {
-        $result = RuleOptionThresholdModeResolver::evictOverriddenMode($base, $override, $ruleName, $path);
+        $result = RuleOptionThresholdShorthand::unfold($base, $ruleName, $path);
+        $override = RuleOptionThresholdShorthand::unfold($override, $ruleName, $path);
 
         foreach ($override as $key => $value) {
             if (\is_array($value) && isset($result[$key]) && \is_array($result[$key])) {
                 $childPath = $path === '' ? (string) $key : $path . '.' . $key;
                 $result[$key] = $this->deepMerge($result[$key], $value, $ruleName, $childPath);
-            } else {
-                $result[$key] = $value;
+                continue;
             }
+
+            $result[$key] = $value;
         }
 
         return $result;

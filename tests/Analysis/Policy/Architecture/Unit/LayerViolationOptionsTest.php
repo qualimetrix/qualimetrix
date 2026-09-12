@@ -57,6 +57,18 @@ final class LayerViolationOptionsTest extends TestCase
         self::assertSame(Severity::Warning, $options->severity);
     }
 
+    /**
+     * A written `~` is left to the reader's own default, the same as an
+     * unwritten key — it is not a narrower declaration refusing a legal value.
+     */
+    #[Test]
+    public function itLeavesTheDefaultWhenSeverityIsWrittenNull(): void
+    {
+        $options = LayerViolationOptions::fromArray(['severity' => null]);
+
+        self::assertSame(Severity::Warning, $options->severity);
+    }
+
     #[Test]
     public function itParsesSeverityCaseInsensitively(): void
     {

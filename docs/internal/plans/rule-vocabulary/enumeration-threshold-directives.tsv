@@ -80,7 +80,7 @@ src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	28	coupling
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
-src/Analysis/Evidence/Coupling/ClassCboOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	30	coupling.instability	warning=0.84 -- The docblock this annotation replaced
 src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	23	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	24	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	27	coupling.instability	warning=0.81 -- The eighth efferent edge is

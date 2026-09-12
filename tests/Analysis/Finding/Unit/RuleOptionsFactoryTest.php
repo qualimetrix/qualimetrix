@@ -1732,12 +1732,17 @@ final class RuleOptionsFactoryTest extends TestCase
     // Options::fromArray(), which ThresholdParser::parse() then rejected as
     // "cannot mix" — even though the CLI (or a preset, which arrives here
     // pre-merged into "config file options" the same way) clearly meant to
-    // switch modes, not combine them. Reproduces both CLI repros from the
-    // review: `--rule-opt=size.method-count:threshold=25` on top of a
+    // switch modes, not combine them. Cured by unfolding the `threshold`
+    // shorthand into the graduated pair in EACH layer before they merge
+    // (`RuleOptionThresholdShorthand`) — an earlier design evicted the
+    // lower layer's stale keys instead, which only ever fixed this
+    // direction; see the "reverse direction" tests below for the one it
+    // could not. Reproduces both CLI repros from the review:
+    // `--rule-opt=size.method-count:threshold=25` on top of a
     // preset/config-file `warning`/`error` pair.
 
     #[Test]
-    public function itLetsACliThresholdEvictConfigFileWarningAndError(): void
+    public function itLetsACliThresholdOverrideConfigFileWarningAndError(): void
     {
         // Reproduces: qmx.yaml sets `warning`/`error`,
         // `--rule-opt=size.method-count:threshold=25` on top.
@@ -1755,7 +1760,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itLetsACliThresholdEvictPresetSuppliedWarningAndError(): void
+    public function itLetsACliThresholdOverridePresetSuppliedWarningAndError(): void
     {
         // Reproduces: --preset=strict sets `warning`/`error` for this rule
         // (arrives here as "config file options", since presets are merged
@@ -1774,7 +1779,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itLetsCliWarningAndErrorEvictAConfigFileThreshold(): void
+    public function itLetsCliWarningAndErrorOverrideAConfigFileThreshold(): void
     {
         $this->registry->setConfigFileOptions([
             'size.method-count' => ['threshold' => 25],
@@ -1789,9 +1794,9 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itScopesTheCliThresholdEvictionToItsOwnNestedLevel(): void
+    public function itScopesTheCliThresholdUnfoldingToItsOwnNestedLevel(): void
     {
-        // Hierarchical rule (complexity.ccn): eviction must be
+        // Hierarchical rule (complexity.ccn): unfolding must be
         // scoped to the `callable:` nesting level, not the rule's top level.
         $this->registry->setConfigFileOptions([
             'complexity.ccn' => [
@@ -1815,8 +1820,8 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itStillThrowsWhenThresholdAndWarningComeFromTheSameLayer(): void
     {
         // Both keys set by the SAME source (CLI) must still be reported as
-        // a genuine configuration error — only the *other* side of a merge
-        // is ever evicted.
+        // a genuine configuration error — unfolding never touches a layer
+        // that already carries a graduated key of the same group.
         $this->registry->setCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
 
         self::expectException(ConfigurationRefusal::class);
@@ -1830,7 +1835,7 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         // code-smell.long-parameter-list has two independent dimensions:
         // bare warning/error/threshold, and the vo-prefixed variant.
-        // A CLI override of one must not evict the other.
+        // A CLI override of one group must not unfold the other.
         $this->registry->setConfigFileOptions([
             'code-smell.long-parameter-list' => ['warning' => 4, 'error' => 6, 'voWarning' => 8, 'voError' => 12],
         ]);
@@ -1859,7 +1864,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // `warning`/`error` spelling.
 
     #[Test]
-    public function itLetsACliThresholdEvictConfigFilePrefixedGraduatedKeys(): void
+    public function itLetsACliThresholdOverrideConfigFilePrefixedGraduatedKeys(): void
     {
         $this->registry->setConfigFileOptions([
             'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
@@ -1874,7 +1879,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itLetsCliPrefixedGraduatedKeysEvictAConfigFileThreshold(): void
+    public function itLetsCliPrefixedGraduatedKeysOverrideAConfigFileThreshold(): void
     {
         // Symmetric direction: config file sets the bare `threshold`
         // shorthand, CLI switches to the prefixed graduated pair.
@@ -1909,17 +1914,56 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory->create('coupling.distance', DistanceOptions::class);
     }
 
+    /**
+     * Regression for condition 5 of `RuleOptionThresholdShorthand::unfold()`
+     * relying on an unproven invariant ("every door folds separators away
+     * before either merge site runs"): the config file writes the class
+     * level's graduated pair in the PRIMARY spelling `ThresholdParser::parse()`
+     * itself is called with (`max_warning`/`max_error`), and the CLI writes a
+     * `threshold` shorthand at the same level, unfolding to the FOLDED
+     * spelling (`maxWarning`/`maxError`). Before this method folded a
+     * group's own graduated keys unconditionally, this left both spellings
+     * alive side by side after the merge, and `ThresholdParser::candidateKeys()`'s
+     * primary-before-legacy order let the config file's stale `max_warning`
+     * win over the CLI's `threshold` — the higher-priority layer silently lost.
+     */
     #[Test]
-    public function itScopesThePrefixedGraduatedKeyEvictionToItsOwnNestedLevel(): void
+    public function itFoldsAnUnnormalizedGraduatedKeyBeforeMergingAgainstAnUnfoldedOverlay(): void
     {
-        // Hierarchical rule with a prefix-mismatched nested level:
-        // coupling.instability's `class:` dimension uses max_warning/
-        // max_error paired with a bare `threshold` — eviction must be
-        // scoped to the `class:` level.
         $this->registry->setConfigFileOptions([
             'coupling.instability' => [
-                'class' => ['max_warning' => 0.8, 'max_error' => 0.95],
-                'namespace' => ['max_warning' => 0.7, 'max_error' => 0.9],
+                'class' => ['max_warning' => 0.7, 'max_error' => 0.9],
+            ],
+        ]);
+        $this->registry->addCliOption('coupling.instability', 'class.threshold', 0.85);
+
+        /** @var InstabilityOptions $options */
+        $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
+
+        self::assertSame(0.85, $options->class->maxWarning);
+        self::assertSame(0.85, $options->class->maxError);
+    }
+
+    #[Test]
+    public function itScopesThePrefixedGraduatedKeyUnfoldingToItsOwnNestedLevel(): void
+    {
+        // Hierarchical rule with a prefix-mismatched nested level:
+        // coupling.instability's `class:` dimension uses maxWarning/
+        // maxError paired with a bare `threshold` — unfolding must be
+        // scoped to the `class:` level.
+        //
+        // Nested keys are written camelCase here, as every real door
+        // (YamlConfigLoader's recursive fold for the `rules:` section, the
+        // `--rule-opt` parser) already produces by the time this array
+        // reaches the factory — unfolding writes the SAME folded spelling
+        // (`RuleOptionThresholdShorthand`'s condition 5), so a hand-built
+        // fixture using an unfolded snake_case spelling here would not be
+        // reachable through any real door and would wrongly appear to leave
+        // two keys (`max_warning` and `maxWarning`) alive side by side.
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => [
+                'class' => ['maxWarning' => 0.8, 'maxError' => 0.95],
+                'namespace' => ['maxWarning' => 0.7, 'maxError' => 0.9],
             ],
         ]);
         $this->registry->addCliOption('coupling.instability', 'class.threshold', 0.85);
@@ -1932,6 +1976,66 @@ final class RuleOptionsFactoryTest extends TestCase
         // Untouched sibling level keeps its own config-file values.
         self::assertSame(0.7, $options->namespace->maxWarning);
         self::assertSame(0.9, $options->namespace->maxError);
+    }
+
+    // --- Round X20: unfolding both layers, and the completeness of the
+    // scalar-form guard -------------------------------------------------
+    //
+    // `measurement/observations.md` §3's exact fixture, through the real
+    // hierarchical Options class: a config-file `threshold` shorthand on a
+    // nested level, a CLI override of only ONE half of the graduated pair.
+    // Eviction only ever rewrote the config-file (lower) layer, so this
+    // exact shape — the higher layer contributing only half the band — used
+    // to survive with the untouched half falling to the constructor default
+    // (10/20) instead of the config file's 5. Both halves are asserted, per
+    // this round's DoD: no fixture here checks one half of a band alone.
+
+    #[Test]
+    public function itAppliesBothHalvesWhenTheCliOnlyOverridesOneHalfOfAConfigFileThreshold(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.ccn' => ['callable' => ['threshold' => 5]],
+        ]);
+        $this->registry->addCliOption('complexity.ccn', 'callable.warning', 2);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.ccn', ComplexityOptions::class);
+
+        self::assertSame(2, $options->callable->warning);
+        self::assertSame(5, $options->callable->error);
+    }
+
+    // The mirror question — does an overlay's `~` erase a value the lower
+    // layer wrote — is not asked at this merge site: $override here is
+    // always the CLI layer (see RuleOptionsFactory::create()), and no CLI
+    // door (`--rule-opt`, a short alias) can ever produce a bare `null` —
+    // both refuse an empty value before RuleOptionsFactory ever sees it. The
+    // question only has a real door on the OTHER merge site, where a YAML
+    // `~` genuinely reaches a layer this way — see
+    // FindingConfigurationResolverTest::itKeepsBothHalvesOfTheBandWhenTheOverlaysNullTargetsAnUnfoldedHalf().
+
+    /**
+     * Condition 2 of `RuleOptionThresholdShorthand::unfold()`: a `threshold`
+     * whose value is not the group's declared scalar form must be left under
+     * its own name. `size.method-count`'s group declares `integer()` (whole
+     * number only, matching `RuleOptionShape::integer()` in
+     * `MethodCountOptions::acceptedOptionKeys()`); `10.5` unfolded would
+     * reach the recognition seam as `warning: 10.5` and refuse the author
+     * for a key they never wrote. This is the same defect class as
+     * `threshold: abc`, for a value that merely has the wrong NUMBER form
+     * rather than the wrong TYPE.
+     */
+    #[Test]
+    public function itRefusesAFractionalThresholdNamingThresholdRatherThanWarning(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['threshold' => 10.5],
+        ]);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Option "threshold" of rule "size.method-count" must be a whole number');
+
+        $this->factory->create('size.method-count', MethodCountOptions::class);
     }
 
     /**
@@ -2019,7 +2123,8 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
-            'Option "severity" of rule "architecture.layer-violation" must be a string or null, got a whole number.',
+            'Option "severity" of rule "architecture.layer-violation" must be one of "info", "warning", "error" or'
+            . ' null, got a whole number.',
         );
 
         $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);

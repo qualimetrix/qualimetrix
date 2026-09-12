@@ -971,6 +971,12 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Unit/RuleVocabulary/')) {
         return ['Architecture.Governance', 'P8'];
     }
+    // The promise-effect stand is repository tooling for the same reason, and
+    // its floor is the part of it that has unit tests: the classifier that
+    // decides which grid rows a round is required to call defective.
+    if (str_starts_with($path, 'tests/Unit/PromiseEffect/')) {
+        return ['Architecture.Governance', 'P8'];
+    }
     if (str_starts_with($path, 'tests/Unit/Core/')) {
         return ['Core', 'permanent'];
     }

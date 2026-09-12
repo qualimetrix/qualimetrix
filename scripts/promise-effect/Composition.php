@@ -39,6 +39,15 @@ final readonly class CompositionWrite
  * A triple's `both` carries three writes and its two sides carry one each,
  * which is the same shape and the reason the probe has one contract.
  *
+ * A triple has a THIRD side a pair does not: `middle`, the layer that writes
+ * the mode key alone (L2). A pair's dispute is fully described by `low` and
+ * `high` — there is nothing else written — so `middle` stays empty there. A
+ * triple's is not: `promised_survival=survives` asks which of the layers that
+ * touched a slot wrote it LAST, and a slot only `low` and `middle` dispute
+ * (the middle layer's own expansion of a key the top layer never rewrites)
+ * has no answer without observing `middle` on its own — `low` and `high`
+ * alone make it indistinguishable from a slot `low` disputes with nobody.
+ *
  * @phpstan-type WriteList list<CompositionWrite>
  */
 final readonly class CompositionPlan
@@ -48,6 +57,8 @@ final readonly class CompositionPlan
      * @param list<CompositionWrite> $high
      * @param list<CompositionWrite> $both
      * @param list<string> $pathWitnesses
+     * @param list<CompositionWrite> $middle empty for a pair (composition-path,
+     *                                       composition-bucket): there is no third layer to probe alone
      */
     public function __construct(
         public string $rule,
@@ -56,6 +67,7 @@ final readonly class CompositionPlan
         public array $both,
         public array $pathWitnesses,
         public string $note,
+        public array $middle = [],
     ) {}
 
     /**
@@ -249,6 +261,7 @@ final class CompositionPlanner
             $writes,
             [],
             'L1 writes ' . $slotKey . ' and ' . $partner . ', L2 writes ' . $mode . ', L3 writes ' . $partner . ' alone',
+            middle: [$writes[2]],
         );
     }
 

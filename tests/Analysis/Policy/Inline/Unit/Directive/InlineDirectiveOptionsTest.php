@@ -30,6 +30,19 @@ final class InlineDirectiveOptionsTest extends TestCase
         self::assertSame(Severity::Info, InlineDirectiveOptions::fromArray([])->unusedDirectiveSeverity);
     }
 
+    /**
+     * A written `~` is left to the reader's own default, the same as an
+     * unwritten key — it is not a narrower declaration refusing a legal value.
+     */
+    #[Test]
+    public function itLeavesTheDefaultWhenSeverityIsWrittenNull(): void
+    {
+        self::assertSame(
+            Severity::Info,
+            InlineDirectiveOptions::fromArray(['unused_directive_severity' => null])->unusedDirectiveSeverity,
+        );
+    }
+
     #[Test]
     public function itAcceptsTheDocumentedSpelling(): void
     {

@@ -52,7 +52,7 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
     {
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean()->orNull(),
-            'unused-directive-severity' => RuleOptionShape::text()->orNull(),
+            'unused-directive-severity' => RuleOptionShape::oneOfIgnoringCase('info', 'warning', 'error')->orNull(),
         ]);
     }
 

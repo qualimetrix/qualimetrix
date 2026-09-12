@@ -160,6 +160,23 @@ side; a stand comparing whole texts has nowhere to put that but "the other
 side won". Comparison is leaf by leaf, sorted, and control case `CP6` reddens
 if it ever stops being.
 
+**A triple has a THIRD side a pair does not, and one ledger value needs it.**
+`low` and `high` are the sides written ALONE — L1 and L3 in `CompositionPlan`
+— and that is everything a pair disputes. A composition-triple also has L2,
+the layer that writes the mode key alone and switches the group's spelling,
+and it stays unobserved on its own for most of the table above: `LOST_SIBLING`,
+`FRANKENSTEIN` and the rest are all decidable from `low`, `high` and `both`.
+One ledger value is the exception. `promised_survival=survives` asks which of
+the layers that touched a slot wrote it **last**, and a slot only L1 and L2
+dispute — L2's own expansion of a key L3 never rewrites — is indistinguishable
+from a slot L1 disputes with nobody unless L2's write is observed by itself.
+`CompositionPlan::$middle` carries exactly that observation (empty for a pair,
+where there is no third layer to probe alone), and the classifier refuses to
+judge `survives` without it — a triple's promise is not checked, and the row
+reads `FRANKENSTEIN` with its own `decided_by` saying so, rather than being
+silently skipped or guessed at from two observations that cannot tell the two
+cases apart.
+
 Axis E, whose claim is narrow and is about the **neighbour**: writing `~` must
 be worth exactly as much as leaving the key out.
 
@@ -390,6 +407,17 @@ sixteen-cell caveat is retired along with the shot it was about.
 - **That the ledger is right.** The stand judges the tree against the ledger. A
   ledger written to a known floor passes that floor and stays tautological
   outside it (`01-promise.md`).
+- **That every promise value in the ledger has a branch in the classifier
+  that can award it.** `promised_survival=survives` sat in the ledger for
+  part of this round with no branch able to judge it: every row that promised
+  it stopped at the `middle === null` refusal (`FRANKENSTEIN`), so nothing
+  ever reached the code path that was missing, and the gap was invisible
+  until the fixture that reaches it was built. Nothing in the stand
+  enumerates the ledger's promise values against the classifier's branches in
+  either direction, so a promise value with the opposite problem — a branch
+  that awards it and a ledger column that never writes it — is exactly as
+  unobservable as this one was, until something forces the code path that
+  would show it.
 - **Completeness over placeholder paths.** Each `<name>`, `<layer>` and `[*]` has
   exactly one hand-written instantiation, and the claim is about that one.
 - **Anything about the `inline` door.** It is deferred whole, and out of the
@@ -849,7 +877,32 @@ the `cure` column (and, for a row the probe itself was wrong about, in
 - a row with a `cure` must **no longer** be one — the round's own claim about
   what it repaired, checked rather than asserted;
 - a row `withdrawn` must read `NOT OBSERVABLE`, and for the declared reason —
-  a claim about the STAND having lost the row, not about the product.
+  a claim about the STAND having lost the row, not about the product;
+- a row `pending: <text>` must **still** be a defect on the frozen half and
+  must **no longer** be one on the live grid — the one shape a plain `cure`
+  cannot express, because `cure` means the same thing on both halves and this
+  claim is true on one and false on the other by design. See "the `pending:`
+  sentinel" below.
+
+A row the grid does not carry AT ALL is a **miss under every one of these
+dispositions**, `pending` included: absence is never evidence about the
+product. `cureMisses()` reads that `false` "observed" flag before it ever asks
+whether the row is held, precisely because a bare `!held` check reads an
+absent row the same way it reads a repaired one, and a row that quietly
+vanished from the grid would then count as CURED with nothing having
+repaired it.
+
+A `cure` (plain or `pending`) is also compared by the defect **bit**, never by
+the verdict's **name**. The two came apart inside this very round: four axis-C
+rows moved from `LOST_SIBLING` to a different label while the round's cure was
+still in flight, and stayed defects the whole time — a floor comparing labels
+would have read the new name as proof of repair, exactly backwards. `judge()`'s
+own docblock states the rule for the row that still asserts a specific
+pre-cure defect ("wrongness is the bit, not the word"); the `cure` and
+`pending` branches apply the same rule in the direction that protects a
+repair claim instead of a reproduction claim — a row a `cure` declares no
+longer defective is checked on the `defect` bit alone, not on which verdict
+now names the cell.
 
 Both directions redden, and the second is why this is worth more than the
 floor it replaces. A row that quietly stops being defective with nothing
@@ -858,35 +911,57 @@ cured that is still defective is a false claim about the round, which is
 worse. At the last read of `floor.tsv` against `verdicts.tsv`
 (`Floor::cureMisses()`'s own logic, no run needed to check it — figures like
 this are pinned to one read, never assumed to hold past it) the grid read
-**1 row still defective, 21 cured as declared, 1 withdrawn, 0 misses**. The
-one standing row is `pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block`,
-`MISCOMPOSED`; the cured and withdrawn rows are printed by name, with the
-commit whose own subject covers each cure.
+**1 row still defective, 21 cured as declared, 1 withdrawn, 4 pending as
+declared, 0 misses**. The one standing row is
+`pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block`,
+`MISCOMPOSED`; the cured, withdrawn and pending rows are printed by name,
+with the commit whose own subject covers each cure.
 
-**Axis C's four `LOST_SIBLING` triples were floor rows for part of this round,
-and are not any more — removed, not cured, and the difference matters.** X19
-first declared them defective on the reading that a slot only the lowest
-layer writes, and no higher layer disputes, must survive a triple's middle
-layer un-rewritten. External review refuted that reading from the code:
+### The `pending:` sentinel
+
+**Axis C's four `LOST_SIBLING` triples were floor rows once already, then
+removed, and are floor rows again — under a THIRD disposition, not either of
+the first two.** X19 first declared them defective on the reading that a slot
+only the lowest layer writes, and no higher layer disputes, must survive a
+triple's middle layer un-rewritten. Review refuted that reading from the code:
 `ThresholdParser` returns `[warning => v, error => v]` for a bare `threshold:`
 write, so the middle layer's `threshold` shorthand rewrites BOTH slots of the
-pair, not one — the triples are lawful composition, and the four floor rows
-asserted a bug that was never there. `floor.tsv` deleted them outright rather
-than marking them cured or `withdrawn`: `cure` claims the PRODUCT was
-repaired, `withdrawn` claims the STAND lost the row, and neither is true here
-— the reasoning that put them on the floor was wrong from the start, about a
-tree that never had the defect. The correction lives in `floor.tsv`'s own
-header comment rather than in a row, so a later round does not rediscover the
-same wrong reading and plant the same four rows again. **The grid still
-emits `LOST_SIBLING` on these four cells at the last read of `verdicts.tsv`**
-— the classifier has not yet been re-run against the `ThresholdParser` fix —
-so for now the floor and the grid disagree on exactly these four cells by
-design: the floor no longer asks the question, the grid has not yet been
-asked to answer it differently. `docs/internal/plans/source-composition/02-stand.md`
-(and possibly `05-composition.md`) still describe the reading review
-refuted; they have not been reconciled with `floor.tsv` as of this writing.
+pair — on THAT reading the triples were lawful composition, and `floor.tsv`
+deleted the four rows outright. A fixture built to tell the two readings apart
+(L1 writes both slots, L2 writes `threshold`, L3 rewrites only one slot back)
+showed the second reading wrong too: the slot L3 never rewrites falls through
+to the constructor default instead of keeping L2's value — the loss is real,
+just not the one X19 first described. The rows went back onto the floor for
+this, their second and correct reason.
 
-**This is judged on BOTH halves, and only since this round.** Before X19,
+By the time they were re-declared, this round's own cure for that loss — ADR
+0058: unfold the `threshold` shorthand in every layer before merging,
+`RuleOptionThresholdShorthand::unfold()` — had not landed yet, and the shot in
+`observations-before/` predates it. A plain `cure` cannot hold both halves to
+one claim here: the row is correctly still a defect on the frozen half (which
+predates the fix) and correctly repaired on the live grid (which carries it),
+and `cure` means the same thing on both. `pending: <text>` says which half is
+which instead of forcing one answer: still a defect on the frozen half, not a
+defect on the live grid.
+
+Git ancestry cannot decide which half a `pending` row belongs to, and is not
+asked to: the repository squash-merges its branches, so the commits already
+standing in `cure` (`7fe879f6`, `b9fd87d3`, `f20bd708`) are **not** ancestors
+of `origin/main`, and an ancestry check would redden all twenty-one of those
+rows on a fresh clone. What `pending` is later converted to a plain `cure` for
+is documentation, not a checked fact — nothing here or in `Floor::cureMisses()`
+verifies it, because the hash that will cover it is the squash commit `main`
+receives at merge, which does not exist while the round is still open. What
+**is** checked is the disposition itself, on both halves, exactly as every
+other row is.
+
+A `pending` row is honest only while it stands: the moment a later round
+retakes the snapshot, every `pending` row becomes a lie of the opposite kind
+(green on a frozen half that never saw the cure, or the reverse). So
+`--freeze-before` refuses to run while any `pending` row stands, and names
+them — converting them to a plain `cure` is that retake's own first step.
+
+**This is judged on BOTH halves, and only since X19.** Before X19,
 `composer promise-effect:before` held the frozen half to the bare pre-cure
 list — every declared row simply had to still be a defect, because the shot
 that stood before X19's rebase (`6a833ab8`) predated every cure the `cure`
@@ -896,17 +971,16 @@ half carries 21 cures the bare list would have called misses. So `:before`
 was taught (`a1438c9b`) to run the SAME `Floor::cureMisses()` the live grid
 does, and the floor's positive requirement — "must still be a defect" —
 shrank from 26 rows to 5 on the frozen half at that commit's own reading (its
-message says so), and to 1 once the four `LOST_SIBLING` rows were withdrawn —
-in exchange for a negative requirement (the `withdrawn` row) the floor never
-carried before either change.
+message says so), and to 1 once the four `LOST_SIBLING` rows were (at that
+time) withdrawn — in exchange for a negative requirement (the `withdrawn`
+row) the floor never carried before either change.
 
 **That dual reading holds only while every commit named in `cure` pre-dates
 the shot's own commit.** The moment a round's cure lands AFTER its shot is
-taken, the row it repairs is correctly still a defect on the frozen half and
-correctly repaired on the live grid, and one `cure` column cannot assert both
-— `floor.tsv`'s own header names this as the one place the mechanism breaks,
-and the fix is procedural: retake the "before" shot at the start of a round,
-as X19 did, rather than mid-round.
+taken, a plain `cure` cannot assert "still a defect on the frozen half, not a
+defect on the live grid" — the exact shape the four `LOST_SIBLING` rows took
+this round, and exactly what the `pending:` sentinel above exists to say
+instead of forcing a retake mid-round.
 
 ## The controls
 

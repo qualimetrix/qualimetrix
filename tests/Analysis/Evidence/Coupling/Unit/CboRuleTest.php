@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions;
@@ -1140,13 +1141,20 @@ final class CboRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDefaultsInvalidScopeToAll(): void
+    public function itRefusesAnUnknownScopeEvenWhenFromArrayIsCalledDirectly(): void
     {
-        $options = ClassCboOptions::fromArray([
+        // The option-key seam (RuleOptionsFactory/RuleOptionKeyRecognition)
+        // already refuses an unknown `scope` word before fromArray() runs on
+        // the door path; this proves the same refusal holds for a caller
+        // that reaches fromArray() directly, bypassing that seam — a silent
+        // fallback to 'all' would be exactly the silent-acceptance defect
+        // closed word sets exist to remove.
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('coupling.cbo');
+
+        ClassCboOptions::fromArray([
             'scope' => 'invalid',
         ]);
-
-        self::assertSame('all', $options->scope);
     }
 
     #[Test]

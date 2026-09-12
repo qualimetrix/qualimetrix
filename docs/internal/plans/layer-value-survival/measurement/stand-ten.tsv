@@ -1,0 +1,25 @@
+row_group	rows_in_group	source_line_axis	row_key_pattern	verdict	file_to_edit	input_or_classifier	requires_retake	notes
+cache.dir single observation point	4	D	form|cli-root|cache.dir|{bool,float,int,string-nonnumber}	COLLAPSED	promise-effect/axis-d-observables.tsv	INPUT (Stand.php:1067-1069 $observable consumed inside every rootProbe() call in axisD())	YES — changes what the probe reads from the product for every cache.dir cell on both halves	the row's own `note` in axis-ad-remainder.tsv says the fix is in this file "вне границ пакета"; confirmed by code trace, matches brief bullet 5
+include_generated single observation point	1	D	form|cli-root|include_generated|bool	COLLAPSED	promise-effect/axis-d-observables.tsv	INPUT (same mechanism as cache.dir, same file/lines)	YES	same cause as the 4 cache.dir rows; 5 rows total for this mechanism, matching brief's "5"
+Domain-envelope regex rejection, patterns	2	D	form|yaml|architecture.layers[*].patterns|{string-nonnumber,string-number}	REFUSES	promise-effect/axis-d-envelopes.tsv (line 70, base layer name "Domain")	INPUT (Declarations.php loads envelope; Stand.php axisD() uses envelope->base to build every write)	YES — the document written for every architecture.layers[*].* row changes	measured: with name "domain" (lowercase) the same document is accepted (exit 2, per the remainder table's own `why` column); LayerDefinition::NAME_REGEX is the product-side check that rejects the capital letter first
+Domain-envelope regex rejection, suffix	2	D	form|yaml|architecture.layers[*].suffix|{string-nonnumber,string-number}	REFUSES	promise-effect/axis-d-envelopes.tsv (line 71, same base)	INPUT	YES	same envelope, same fix (change "Domain" to "domain" for THIS base, or reuse the already-lowered "domain" that lines 78-83 (`.exclude.*` rows) already use)
+# --- DISCREPANCY WITH BRIEF, measured against verdicts.tsv and axis-d-envelopes.tsv, not assumed ---
+# Brief text: "верхнеуровневые базы: patterns/suffix/attributes/implements/extends/match" (6 bases).
+# axis-d-envelopes.tsv lines 70-75 DO all carry the literal "Domain" (confirmed by direct read) — so
+# the brief is correct that 6 base lines share the un-lowered literal. But only 2 of those 6 bases
+# (patterns, suffix) actually produce a STAND-class defect in axis-ad-remainder.tsv (4 rows = 2 bases
+# x 2 string forms). Checked directly against the live verdicts.tsv: architecture.layers[*].attributes,
+# .extends, .implements string-nonnumber/string-number rows ALSO read REFUSES today, but their `defect`
+# column is "no" and ledger_status is plain "refused" (not "refused a form it promised") -- because the
+# promise-ledger only promises `list` for those three bases (not a string form), so a scalar-string
+# refusal is CORRECT product behaviour there, not a stand defect, and it was never counted into the
+# 67/49-row remainder table in the first place. `match` never even reaches a string-nonnumber/string-
+# number REFUSES-as-defect state either (verdicts.tsv shows match|string-* both REFUSES, defect=no).
+# So the brief's 6-base framing conflates "shares the literal" with "is a STAND defect because of it" --
+# only patterns/suffix satisfy both. BLAST RADIUS of the minimal required fix: 2 lines edited (70, 71),
+# 4 defect cells cleared. Optionally also lowering lines 72-75 for internal consistency with the already-
+# lowered "domain" on lines 78-83 touches 0 additional defect cells (cosmetic only) and would still be an
+# INPUT change requiring a retake for zero remainder-table benefit -- not recommended to bundle with the
+# required fix.
+
+computed_metrics.formula canonical value is not a formula	1	D	form|yaml|computed_metrics.<name>.formula|string-nonnumber	REFUSES	promise-effect/axis-a-hits.tsv (a declared hit for this leaf) — NOT forms.tsv, which stays frozen	INPUT (Stand.php axisA()-style hit substitution mechanism, mirrored for axis D at Stand.php:1076-1090 via $hit/$unit[3])	YES — the hit changes the magnitude actually written into the string-nonnumber cell	the row's canonical string-nonnumber write is the frozen magnitude "7331"-derived text "abc", which is refused not because string-nonnumber is the wrong form but because "abc" answers no valid Symfony ExpressionLanguage formula grammar — same mechanism the README documents for axis-a-hits.tsv generally ("a generic magnitude answers about the domain, not about the form")
