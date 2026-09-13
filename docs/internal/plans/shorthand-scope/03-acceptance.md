@@ -2,11 +2,13 @@
 
 What each instrument must say, and what would falsify the round.
 
-Revision 3. Revision 1's account was refuted in four places by review and in two
-more by the row-by-row measurement it asked for. The largest correction is not to
-a number but to the instrument: **the stand cannot today tell which of two keys
-won, so any axis-B number about this cure would come out right for a reason that
-has nothing to do with the cure.**
+Revision 4. Revision 1's account was refuted in four places by review and in two
+more by the row-by-row measurement it asked for; revision 3 was refuted again, in
+its own correction. The largest finding is not a number but the instrument: **the
+stand cannot today tell which of two keys won, so any axis-B number about this cure
+would come out right for a reason unconnected to the cure** — and P0, which repairs
+that, invalidates the very table this file predicts from, so the table is
+re-derived as part of it.
 
 ## P0 — the instrument, before anything else
 
@@ -52,7 +54,8 @@ after the cure, the assigned value, and the verdict that value gives. Read it
 rather than this summary.
 
 Of 465 axis-B cells, 128 are within the cure's radius and all 81 of today's
-defects lie inside those 128. The 124 judged cells take:
+defects lie inside those 128. The 128 cells in the radius take — 124 judged, plus the four `refuse` rows C4
+leaves alone:
 
 | value               | cells | when                                                                         |
 | ------------------- | ----- | ---------------------------------------------------------------------------- |
@@ -74,6 +77,13 @@ requires leaf-wise **equality** with the deep side. The weaker form ("the moved
 leaves survived") was measured blind on exactly ten `6-gate` rows where a block
 writes `enabled: true`, which equals the default.
 
+One clause is still missing from that definition and must be added before the
+branch lands: the deep key must have **no effect outside its own region**. As
+stated, the branch constrains the shallow key everywhere and the deep key only
+inside the overlap, so a deep key that reached further than its region would pass.
+Nothing in the population does that today, which is exactly why the gap is
+invisible — and why it is written down instead of discovered later.
+
 Cost, named: the constant in `Ledger::COEXISTENCE_VALUES`, the branch in
 `Classifier::pair()`, the key→side translation in `Stand.php` (two places —
 without it the live path reads the new value as "the second key won", which is
@@ -92,8 +102,7 @@ rows, `deeper-wins:` for the eight coupling rows) and disappear from the count.
 Naming them matters anyway: neither revision 1, nor the gate corpus, nor any
 earlier measurement of this subject saw them.
 
-**Fifteen cells read NOT OBSERVABLE after the cure, and that is the honest
-reading.** Named in full rather than summarised, because a count without names is
+**Fifteen cells read NOT OBSERVABLE after the cure at today's magnitudes.** Named in full rather than summarised, because a count without names is
 what the last revision was caught doing:
 
 | rule                               | pair                                                    | kind                                                              |
@@ -104,13 +113,26 @@ what the last revision was caught doing:
 | `complexity.npath`                 | `callable × enabled`, `class × enabled`                 | 6-gate                                                            |
 | `coupling.cbo`                     | `class.scope × scope`                                   | 2-same-name, 6-precedence-fill-in                                 |
 
-For the three `callable: × threshold` rows this is a property of the contract, not
-of the magnitudes: after the cure the top band does not touch a `callable` band
-the block wrote, so the two sides become identical documents and no comparison
-can distinguish them. `deeper-wins:` was measured and does not help. The row keeps
-`one-wins:callable:`, which is the value that tells the truth; NOT OBSERVABLE then
-says "the promise is right, the stand cannot see it", where `compose` would go
-green for a reason unrelated to the contract.
+**Revision 3 gave these the wrong cause, and the correction matters more than the
+number.** It said the three `callable: × threshold` rows are NOT OBSERVABLE "by a
+property of the contract, not of the magnitudes". The measurement it cited says
+the opposite in so many words: `Stand::effectWritesFor()` returns one canonical
+literal per declared shape, so a block's band and a shorthand's unfolded band are
+equal **by construction**, and the block's `enabled: true` equals the level default
+and adds nothing. The two sides are identical because of the magnitudes,
+systematically rather than by coincidence, and the cure lives where P0 lives.
+
+The assignment stands on semantics and does not move: `one-wins:callable:` is the
+value that says what the contract says, and `deeper-wins:` was measured and
+declines rather than greens. What moves is the verdict it is given once the stand
+can tell the two sides apart.
+
+**Six of the fifteen survive P0.** Four `complexity.npath | *.enabled × enabled`
+and two `coupling.cbo | class.scope × scope`: `bool` has two values and one is the
+level default, and the `scope` enum's `all` is the default too, so no third
+magnitude exists to make the sides differ. These six are NOT OBSERVABLE by the
+shape of their values — the one case in this file where the verdict is permanent
+rather than an artefact.
 
 **The eighteen `cross-source` rows stay `DEFERRED`.** Revision 1 proposed deciding
 them, on the ground that the deferral's stated reason — a frozen
@@ -131,11 +153,23 @@ none of this changes the stand's exit code, which will keep coming from axes A
 (4) and D (37). The evidence is the number, and each number must be attributable
 to one movement:
 
-| after | expected                                                                                                             |
-| ----- | -------------------------------------------------------------------------------------------------------------------- |
-| P0    | the count the row-by-row table predicts for **today's** values on distinguishable magnitudes, on the unfixed product |
-| P2    | axis B **rises**: the ledger now states what the product ought to do and the product does not                        |
-| cure  | 0 defects and 15 NOT OBSERVABLE, on the population as P0 left it                                                     |
+| after | expected                                                                                                    |
+| ----- | ----------------------------------------------------------------------------------------------------------- |
+| P0    | the count the **regenerated** table gives for today's ledger values, on the unfixed product                 |
+| P2    | axis B rises to the count the regenerated table gives for the assigned values, still on the unfixed product |
+| cure  | the count the regenerated table gives for the assigned values on the cured product                          |
+
+Each of the three is a number the regenerated table produces BEFORE the run, not
+a direction. "Rises" and "0" are not acceptance criteria; revision 3 wrote both,
+and wrote "15 NOT OBSERVABLE" from a table P0 invalidates.
+
+One row-wise exception, measured rather than assumed: on four
+`complexity.npath | *.enabled × enabled` rows the stand's own choice of magnitude
+moves with the product, because `pairSide()` takes the canonical value only when it
+differs from the omitted case on the current build — and B3 is exactly what makes
+`enabled: true` stop being inert there. Those four rows are about different
+documents on run #1 and run #3, so their numbers are not compared row-wise. Named
+here rather than discovered later as a discrepancy.
 
 A single run taken after two of these steps proves nothing about either.
 `axis-b-mechanisms.tsv` is corrected before it is used as a denominator: it

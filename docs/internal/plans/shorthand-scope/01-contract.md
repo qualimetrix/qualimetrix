@@ -5,10 +5,14 @@ with the cost of each answer. Nothing here is derived by analogy from ADR 0058:
 that ADR settled whether one layer's value survives a higher layer, key by key.
 Depth against layer is a second question and is decided here, explicitly.
 
-Revision 2, after review. Four HIGH findings against revision 1 are folded in
-rather than appended: the orientation table now separates the two families, the
-top-level `enabled` is named as a third breaking change, `scope` is placed, and
-the fill unit is stated as three units rather than one.
+Revision 3, after two rounds of review. Round 1's four HIGH are folded in — the
+orientation table separates the two families, the top-level `enabled` is named as
+a third breaking change, and the fill unit is stated honestly. Round 2 added two
+more: `scope` is pushed down at the seam rather than left composing layer-blind
+inside `fromArray()`, and C4 says where the top-level mix refusal has to move,
+because the cure deletes the branch that carries it today. Sections are rewritten
+rather than appended to; a plan patched paragraph by paragraph argues with
+itself.
 
 ## Vocabulary
 
@@ -50,8 +54,8 @@ that is itself only half written pushes down only the half that was written.
 *What the push-down may never touch — everything else.* **The push-down only
 ADDS keys to a level. It never removes, replaces or rebuilds any key the level
 wrote.** Level keys outside the two groups above — `min_afferent`,
-`min_class_count`, `scope`, and anything a later rule adds — are the level's own
-and survive untouched, without needing to be enumerated here.
+`min_class_count`, and anything a later rule adds — are the level's own and
+survive untouched, without needing to be enumerated here.
 
 This half is not decoration. Measured: `coupling.instability: {class:
 {min_afferent: 0}}` reports 2 findings, and the same block with `threshold: 1.01`
@@ -75,6 +79,21 @@ layer.** No new refusal is introduced, and — this is the part revision 1 left
 unguarded — no existing one is removed. A top-level band beside a level block is
 not the refused shape: the two address different depths, so they compose under
 C2.
+
+**Where that refusal lives has to move, and revision 3 did not notice.** Today
+`coupling.cbo: {threshold: 30, warning: 10}` exits 3, and the mechanism is
+indirect: the seam's condition 3 deliberately declines to unfold a layer that
+wrote both spellings, so both survive into `fromArray()`, whose flat branch calls
+`ThresholdParser::parse()` at the top level and refuses there. That flat branch is
+the one this round deletes — and the only top-level `parse()` call of both
+coupling rules is inside it. Measured on two builds of the product: pristine
+exits 3 with `Cannot mix "threshold" with "warning"/"error"`; with the flat branch
+removed the same document exits 2 with four findings and both keys silently gone.
+
+So the refusal moves to the seam, which already detects the mix and today only
+defers it to a reader that will no longer exist. It must name the top-level keys
+the author wrote and keep the message and exit code it has now. This is what makes
+the next sentence true rather than declarative:
 
 `fromArray()` receives a document in which no top-level band survives. Its early
 returns therefore have nothing left to return on and are removed, not repaired.
@@ -135,11 +154,11 @@ product rejects an inverted band nowhere: it collapses the band into a solid
 granularity would also place a `threshold` key beside a written `warning` inside
 one level array, which is the one shape the product does refuse.
 
-`scope` is the counter-case that proves the unit belongs to the group and not to
-the contract: `CboOptions::fromArray()` already composes it by key today — the
-top-level value reaches `class` only when the block did not name it. That
-behaviour is kept exactly as it is, and P3 must not push `scope` down at the
-seam: doing both would apply it twice.
+`scope` shows that the unit belongs to the group rather than to the contract: it
+is one key, so it fills by key. `CboOptions::fromArray()` composes it that way
+today — but layer-blind, which is why the cure moves that composition to the seam
+rather than leaving it. Doing both would apply it twice; doing neither would leave
+one key under exactly the regime this round removes.
 
 ### Q4 — `class: {}`, `class: ~`, `class: {enabled: ~}`
 
@@ -193,16 +212,29 @@ rather than this summary when checking completeness.
 
 | rule                   | levels               | top-level band                          | reach of the band | `enabled` reach | pushed down at the seam? |
 | ---------------------- | -------------------- | --------------------------------------- | ----------------- | --------------- | ------------------------ |
-| `complexity.ccn`       | `callable`, `class`  | `threshold` / `warning`+`error`         | `callable`        | both levels     | band, `enabled`          |
-| `complexity.cognitive` | `callable`, `class`  | `threshold` / `warning`+`error`         | `callable`        | both levels     | band, `enabled`          |
-| `complexity.npath`     | `callable`, `class`  | `threshold` / `warning`+`error`         | `callable`        | both levels     | band, `enabled`          |
-| `coupling.cbo`         | `class`, `namespace` | `threshold` / `warning`+`error`         | both              | both levels     | band, `enabled`          |
+| `complexity.ccn`       | `callable`, `class`  | `threshold` only                        | `callable`        | both levels     | band, `enabled`          |
+| `complexity.cognitive` | `callable`, `class`  | `threshold` only                        | `callable`        | both levels     | band, `enabled`          |
+| `complexity.npath`     | `callable`, `class`  | `threshold` only                        | `callable`        | both levels     | band, `enabled`          |
+| `coupling.cbo`         | `class`, `namespace` | `threshold` / `warning`+`error`         | both              | both levels     | band, `enabled`, `scope` |
 | `coupling.instability` | `class`, `namespace` | `threshold` / `max_warning`+`max_error` | both              | both levels     | band, `enabled`          |
 
-`coupling.cbo` also accepts a top-level `scope` reaching `class`. It is **not**
-pushed down at the seam: it is composed by key inside `CboOptions::fromArray()`
-today and stays there. P4 must preserve that composition when it removes the
-early returns around it.
+`coupling.cbo` also accepts a top-level `scope` reaching `class`, and it **is**
+pushed down like the other two groups. Revision 2 left it inside
+`CboOptions::fromArray()`, where it composes by key today — and that is precisely
+the defect this round exists to remove, one key over: `fromArray()` cannot see
+layers, so a lower layer's `class: {scope: …}` beats a higher layer's top-level
+`scope`, which is C3 violated in the orientation nobody would notice. Leaving one
+key under the old regime because its old regime looks reasonable is how the
+original defect survived five rounds. P4 therefore removes that composition when
+it removes the early returns; P3 declares `scope`'s reach and pushes it.
+
+The complexity family accepts no graduated pair at its own top level — the
+registry declares `LONE_THRESHOLD_SHAPE` there, with an empty warning list, and
+`unfold()`'s condition 4 skips the group for exactly that reason. Revision 3's
+table said `threshold / warning+error` for all five rules, which is a spelling the
+product refuses at recognition for three of them. The push-down therefore has to
+enter through a gate that today exists to make the group a no-op, and P3 names
+that as the line it changes.
 
 Why pushing the band into a level is enough, and enabling it is not also needed:
 of the ten level options classes only `ClassNpathComplexityOptions` defaults to
@@ -325,14 +357,17 @@ it were not named by any prior measurement of this subject.
 ## What this answer does NOT change
 
 - The same-depth mode mix still refuses (`{threshold: 30, warning: 10}`), with
-  the message and exit code it has today.
+  the message and exit code it has today — but at the seam rather than inside
+  `fromArray()`, because the cure deletes the branch that carries it. See C4.
 - The malformed-level refusal still refuses (`class: 5` — "takes a map of
   options, got int"), guarded by K5.
 - `~` still means silence, at every depth and across layers.
 - Nested `threshold` inside a level (`callable: {threshold: 5}`) keeps its
   current meaning; the gate's `layered-threshold` case writes exactly that shape
   and must not move.
-- `scope` keeps composing by key inside `CboOptions::fromArray()`.
+- `scope` keeps its meaning — the top-level value reaches `class` only when the
+  block did not name it. What changes is where that is decided: at the seam, per
+  layer, so a higher layer's `scope` is no longer beaten by a lower layer's block.
 - Inline `@qmx-threshold` and its `withOverride()` path are untouched: it is
   applied to an already-built level object, never through `fromArray()`.
 - The inverted band (`error < warning`) is accepted today and stays accepted.

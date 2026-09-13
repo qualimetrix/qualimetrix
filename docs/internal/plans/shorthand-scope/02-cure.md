@@ -1,13 +1,18 @@
 # Stage 2 — the cure, as packages
 
-Base: `main` at `c755fe00`. Every package below names its own file set; the sets
-do not overlap. P1, P2 and P5 are independent of each other and of the code;
-P3 must land before P4; P6 closes the accounting and can only run after P4.
+Base: `main` at `c755fe00`. Every package below names its own file set. The sets
+of packages that may run AT THE SAME TIME do not overlap; `scripts/promise-effect/Stand.php`
+is written by both P0 and P2 and therefore belongs to one owner across two strictly
+sequential packages — P2 may not start until P0 has landed. P1 and P5 are
+independent of each other and of the code; P3 must land before P4; P6 closes the
+accounting and can only run after P4.
 
-Revision 2, after review: K5 is new, K1 now says which path's form is checked,
-`scope` is excluded from the push-down, and the floor edit has been moved out of
-P2 into its own package because the two would otherwise write the same file at
-different times.
+Revision 3, after two rounds of review. Round 1: K5 is new, K1 says which path's
+form is checked, the floor edit moved into its own package. Round 2: K5 is
+generalised from one instance to the requirement, with the top-level spelling mix
+as its second and measured instance; `scope` is pushed down rather than excluded;
+P0's DoD is split into the three different requirements it had run together; and
+P3 names the `LONE_THRESHOLD` gate it has to open for the complexity family.
 
 ## Constraints the cure has to satisfy
 
@@ -48,14 +53,22 @@ case; the implementation must make that structural, not incidental.
 named but did not complete takes that level's default, never the top-level value
 and never a sibling level's.
 
-**K5. The cure must not remove a refusal that exists today.** A level key whose
-value is neither a map nor `~` refuses now — `complexity.ccn: {threshold: 5,
-class: 5}` exits 3 with `Level "class" … takes a map of options, got int`, and
-the refusal rests on recognition alone, because `fromArray()` silently turns the
-scalar into an empty map. A push-down that overwrites the slot with a map
-deletes that refusal without anyone noticing. The push-down therefore writes only
-into a level key that is absent, `~`, or a map, and leaves every other value
-exactly where it stands.
+**K5. The cure must remove no refusal that exists today.** Revision 2 stated this
+about one case and was caught missing a second, so it is stated as the general
+requirement with both instances named — and the acceptance case is a run of every
+refusing document in the population against the cured build, not an argument.
+
+- *A level slot of the wrong form.* `complexity.ccn: {threshold: 5, class: 5}`
+  exits 3 with `Level "class" … takes a map of options, got int`, and the refusal
+  rests on recognition alone, because `fromArray()` silently turns the scalar into
+  an empty map. The push-down therefore writes only into a level key that is
+  absent, `~`, or a map, and leaves every other value where it stands.
+- *Two spellings of one band at the TOP level.* `coupling.cbo: {threshold: 30,
+  warning: 10}` exits 3 today through the flat branch P4 deletes. Measured on two
+  builds: with that branch gone the same document exits 2 and loses both keys in
+  silence. P3 therefore carries this refusal at the seam, naming the top-level keys
+  the author wrote, with today's message and exit code. The form is absent from
+  both population files, which is why neither measurement saw it; P3's DoD adds it.
 
 K1 and K5 are the same class of defect in opposite directions: one invents a
 refusal about a key nobody wrote, the other deletes a refusal about a key
@@ -73,7 +86,30 @@ comparison can say which won. At those magnitudes `compose` goes green after the
 cure on all eighteen rows of this round's own kind — the prediction would come
 true for a reason unrelated to the cure. The second half: nineteen triples are
 judged twice, under two kinds, so ten of axis B's defects are second copies.
-`03-acceptance.md` carries the measurement and the DoD.
+
+Three requirements, which revision 3 ran together into one phrase:
+
+1. **the two sides of a pair write different values.** Not expressible in
+   `effect-magnitudes.tsv` as it stands: its two selectors (`form`, `option_leaf`)
+   both answer "what SECOND value to write instead of the canonical one", not
+   "what value to write for THIS side". A third selector is a new mechanism, and
+   its price — a column in the file, a read in `Declarations`, a branch in
+   `pairSide()`, a guard — must be costed the way `deeper-wins:` was.
+2. **the choice of magnitude must not depend on the product under test.**
+   `pairSide()` picks the canonical value only when the object differs from the
+   omitted case *on the current build*, and falls back otherwise. So the document
+   written is a function of the behaviour being measured, and the product changes
+   between this round's runs. Whether the observational fallback survives is a
+   decision P0 must take explicitly; if it does, the rows where inertness moves
+   with the product are not comparable between runs and must be named.
+3. **two forms admit no third value at all.** `bool` has two, one of which is the
+   level default; the `scope` enum is `all`/`application`, and `all` is the
+   default. These are the six cells that stay NOT OBSERVABLE after P0 — four
+   `complexity.npath | *.enabled × enabled` and two `coupling.cbo |
+   class.scope × scope`. A DoD stated as a property to reach is not reachable on
+   them, and run #1 is judged without them rather than despite them.
+
+`03-acceptance.md` carries the measurement and the numeric DoD.
 
 Nothing else in this round may start before P0 lands, because every number the
 other packages are judged by is produced by this instrument.
@@ -139,7 +175,10 @@ change; the classifier probe's negative controls are carried into
 unit tests, and `RuleThresholdKeyGroupRegistryCompletenessTest`.
 
 **What changes.** The registry gains the concept it describes in prose today and
-cannot express: which levels a top-level key reaches. `unfold()` gains the
+cannot express: which levels a top-level key reaches. The complexity family enters
+through `unfold()`'s condition 4, which today makes its group a no-op because the
+registry declares `LONE_THRESHOLD_SHAPE` with an empty graduated pair — that
+condition is the line P3 changes for those three rules. `unfold()` gains the
 cross-path step — for each top-level group with a declared reach, push the value
 into every reached level whose own group this layer left unwritten, then remove
 the top-level key. `enabled` is declared and pushed the same way. **`scope` is
@@ -168,8 +207,12 @@ spelling the door produces, not the spelling of the table.
 classes if their callers need it, and the six unit tests that assert today's
 discard.
 
-**What changes.** Both early branches go. `fromArray()` reads every level from a
-document that no longer carries a top-level band; the six tests that assert "the
+**What changes.** Both early branches go — but only because P3 has already taken
+over what the flat branch was doing besides discarding blocks: the top-level
+`ThresholdParser::parse()` call that refuses a same-layer spelling mix lives
+inside it, and is the only top-level `parse()` call either coupling rule has. P4
+may not land before that refusal is demonstrably carried at the seam. `fromArray()`
+then reads every level from a document that no longer carries a top-level band; the six tests that assert "the
 block is discarded" become tests that assert composition, one per class. The
 `scope` composition inside `CboOptions::fromArray()` is preserved deliberately,
 with a test that fails if it is dropped along with the branches around it.
