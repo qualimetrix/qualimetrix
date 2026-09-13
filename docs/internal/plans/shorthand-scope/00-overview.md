@@ -1,8 +1,17 @@
 # A shorthand beside the block it is shorthand for
 
-**Status:** planned. The semantics were decided in a previous round; the plan
-built on them was withdrawn on seven HIGH findings before any code existed. This
-round answers the five questions that withdrawal left open, and then cures.
+**Status:** planned and reviewed; **not implemented**. The semantics were decided
+in a previous round and the plan built on them was withdrawn on seven HIGH
+findings before any code existed. This round answers the five questions that
+withdrawal left open and puts the answers through three rounds of review — again
+before any code.
+
+It deliberately stops there. Not because the packages are unclear, but because
+review established that the instrument cannot yet tell which of two keys won, so a
+cure landed now would be judged by a grid that goes green for reasons unconnected
+to it. P0 is the first executable package and its own deliverable includes
+re-deriving the accounting table it invalidates. Everything after P0 is written and
+waiting.
 
 **Base:** `main` at `c755fe00` (PR #68, the ledger's closed promise vocabulary).
 

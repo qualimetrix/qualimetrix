@@ -34,6 +34,18 @@ distinct requirements follow, and revision 1 only stated the first:
   the product say `Option "warning" of rule "complexity.ccn" at level
   "callable"` — a key and a level the author never mentioned.
 
+**K1b. Pushing an enum needs a check the pushing mechanism does not have.**
+`unfold()`'s condition 2 guards the value's form through `RuleOptionValueForm` —
+boolean, whole number, number, text, block — and a closed set of words is not one
+of them; it lives in `RuleOptionShape::oneOf()`. So a typo in a top-level `scope`
+would be pushed into `class` and refused there, printing `… at level "class"`, a
+level the author never wrote. Measured: today the same typo prints `Option "scope"
+of rule "coupling.cbo" must be one of …` at the top level. The push must consult
+the target's declared shape, not only its form, and leave a non-member where the
+author wrote it. Price, named the way P0's was: one more predicate on the gate,
+reading the shape the registry entry already points at, plus a case per enum key —
+today exactly one.
+
 **K2. Feeding a level must not shadow the author's own key through an alias.**
 Every door normalises nested keys recursively, so an author's `max_warning:`
 arrives as `maxWarning`, while the existing shorthand branch writes the literal
@@ -67,7 +79,12 @@ refusing document in the population against the cured build, not an argument.
   warning: 10}` exits 3 today through the flat branch P4 deletes. Measured on two
   builds: with that branch gone the same document exits 2 and loses both keys in
   silence. P3 therefore carries this refusal at the seam, naming the top-level keys
-  the author wrote, with today's message and exit code. The form is absent from
+  the author wrote, with today's message and exit code **for a document whose only
+  defect is the mix**. That qualifier is measured, not cautious: refusals are
+  ordered, and the mix is last today (step 6) and first after the move (step 2), so
+  a document carrying both a mix and an unknown key prints the unknown key today
+  and would print the mix afterwards. Both exit 3, and the population contains only
+  single-defect documents, which is why no measurement of this round saw it. The form is absent from
   both population files, which is why neither measurement saw it; P3's DoD adds it.
 
   **This one widens the refusal set in exactly one way, and B4 names it.** Today

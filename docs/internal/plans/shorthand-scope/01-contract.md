@@ -38,13 +38,20 @@ options class actually builds, and is not inferred from key names.
 fills only what that layer left unwritten.** Two halves, and the second is the
 one revision 2 left implicit:
 
-*What the top-level key may fill.* Two groups are pushed down, and each has its
-own fill unit:
+*What the top-level key may fill.* Three groups are pushed down, and each has its
+own fill unit. This table is the norm; the prose elsewhere in this file explains
+it and does not extend it.
 
-| group     | fill unit | "already written" means                           | fallback when the level wrote half of it    |
-| --------- | --------- | ------------------------------------------------- | ------------------------------------------- |
-| the band  | the band  | the level carries any written key of its own band | that level's own default for the other half |
-| `enabled` | the key   | the level carries its own `enabled`               | not applicable — one key                    |
+| group                    | fill unit | "already written" means                            | fallback when the level wrote half of it    |
+| ------------------------ | --------- | -------------------------------------------------- | ------------------------------------------- |
+| the band                 | the band  | the level carries any written key of its own band  | that level's own default for the other half |
+| `enabled`                | the key   | the level carries its own `enabled`                | not applicable — one key                    |
+| `scope` (`coupling.cbo`) | the key   | the level carries its own `scope`, written not `~` | not applicable — one key                    |
+
+`scope: ~` at a level means the level did not write one, and the top-level value
+fills it. That is not a new rule but the one ADR 0058 already gave `~`, and it
+matches what the product does today: `ClassCboOptions::parseScope()` reads `~` as
+absent and `CboOptions::fromArray()` tests `isset()`, which `~` fails.
 
 A level that wrote half a band has chosen the graduated mode for that band; the
 top-level band does not reach into it, and the half it did not name takes that
@@ -53,7 +60,7 @@ that is itself only half written pushes down only the half that was written.
 
 *What the push-down may never touch — everything else.* **The push-down only
 ADDS keys to a level. It never removes, replaces or rebuilds any key the level
-wrote.** Level keys outside the two groups above — `min_afferent`,
+wrote.** Level keys outside the three groups above — `min_afferent`,
 `min_class_count`, and anything a later rule adds — are the level's own and
 survive untouched, without needing to be enumerated here.
 
@@ -327,7 +334,10 @@ it were not named by any prior measurement of this subject.
 
 - **A block writing only a non-band key is discarded by a top-level band.**
   `coupling.instability: {threshold: 1.01, class: {min_afferent: 0}}` reports 0
-  where the block alone reports 2; the same for `scope` and `min_class_count`.
+  where the block alone reports 2; the same for `min_class_count`, and today the
+  same for `scope` — which stops being an example of this category once it is
+  pushed down, and is listed here only as one of the measurements that found the
+  hole.
   This is the document revision 2's C2 answered with neither half of its rule,
   and it is why C2 now says what the push-down may never touch. The form exists
   only in the coupling family: the complexity levels declare no non-band key
