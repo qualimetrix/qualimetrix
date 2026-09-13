@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -34,6 +35,7 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\ExitPolicy;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
@@ -52,8 +54,41 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 #[CoversClass(ResultPresenter::class)]
+#[CoversClass(OutputHelper::class)]
 final class ResultPresenterTest extends TestCase
 {
+    #[Test]
+    #[DataProvider('provideSerializedPayloads')]
+    public function itWritesSerializedPayloadsByteForByte(string $payload): void
+    {
+        $output = new BufferedOutput();
+
+        OutputHelper::write($output, $payload);
+
+        self::assertSame($payload, $output->fetch());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideSerializedPayloads(): iterable
+    {
+        yield 'HTML' => ["<!DOCTYPE html><html><body><finding id=\"1\">literal <tag></finding></body></html>\n"];
+        yield 'Checkstyle XML' => ["<?xml version=\"1.0\"?><checkstyle><file name=\"src/<literal>.php\"/></checkstyle>\n"];
+        yield 'JSON' => ["{\"message\":\"literal <tag>\",\"node\":\"<element/>\"}\n"];
+        yield 'DOT' => ["digraph Dependencies { \"<literal>\" -> \"Target\"; }\n"];
+        yield 'text' => ["Finding: literal <tag> must remain verbatim\n"];
+    }
+
+    #[Test]
+    public function itLeavesDiagnosticsOnSymfonyFormattedOutput(): void
+    {
+        $output = new BufferedOutput();
+
+        OutputHelper::write($output, '<payload>literal</payload>');
+        $output->writeln('<info>Diagnostic</info>');
+
+        self::assertSame('<payload>literal</payload>Diagnostic' . "\n", $output->fetch());
+    }
+
     #[Test]
     public function itUsesTheExplicitResolvedFormatAndProjectRoot(): void
     {

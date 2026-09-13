@@ -25,6 +25,7 @@ foreach (
         'Fs',
         'Tsv',
         'Process',
+        'ProcessHandle',
         'Surfaces',
         'MetricVocabulary',
         'SubjectLevel',
@@ -50,6 +51,7 @@ foreach (
         'ChannelWitness',
         'ChannelCoverage',
         'TreeRun',
+        'CaseScheduler',
         'ReferenceTree',
         'Gate',
         'SelfTest',
@@ -82,6 +84,7 @@ function main(array $argv): int
 
         return match ($options->mode) {
             Options::MODE_SELF_TEST => selfTest($options),
+            Options::MODE_CASE_WORKER => runCaseWorker($options),
             Options::MODE_DERIVE_TUPLE => deriveTuple($options),
             Options::MODE_DERIVE_NORMALIZATION => deriveNormalization($options),
             Options::MODE_DERIVE_DECLARED_DELTA => deriveDeclaredDelta($options),
@@ -92,6 +95,37 @@ function main(array $argv): int
 
         return 3;
     }
+}
+
+/** Runs one independent corpus case for the bounded parent scheduler. */
+function runCaseWorker(Options $options): int
+{
+    if ($options->caseWorker === null || $options->workerOutput === null || $options->workerLabel === null || $options->workerTree === null) {
+        throw new GateError('The internal case worker is missing its required arguments.');
+    }
+
+    $case = Corpus::load($options->candidateRoot, [$options->caseWorker])->cases[0];
+    $vocabulary = MetricVocabulary::ofTree($options->candidateRoot);
+    $maps = RenameMaps::load($options->candidateRoot . '/finding-gate/maps', $vocabulary);
+    $temporaryDirectory = Fs::temporaryDirectory('finding-gate-case-worker-');
+
+    try {
+        $run = new TreeRun(
+            $options->workerTree,
+            $temporaryDirectory,
+            $options->workerLabel,
+            $maps,
+            $options->workerReverseInput,
+        );
+        Fs::write(
+            $options->workerOutput,
+            json_encode($run->forCase($case), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES),
+        );
+    } finally {
+        Fs::removeRecursively($temporaryDirectory);
+    }
+
+    return 0;
 }
 
 function compare(Options $options): int

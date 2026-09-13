@@ -269,9 +269,14 @@ final class Gate
         $run = new TreeRun($treeRoot, $this->temporaryDirectory, $label, $this->maps, $reverseInput);
         $artifacts = $run->rules();
 
-        foreach ($this->corpus->cases as $case) {
-            $artifacts += $run->forCase($case);
-        }
+        $artifacts += (new CaseScheduler(
+            $this->options->candidateRoot,
+            $treeRoot,
+            $this->temporaryDirectory,
+            $label,
+            $reverseInput,
+            $this->options->jobs,
+        ))->run($this->corpus->cases);
 
         return $artifacts;
     }

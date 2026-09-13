@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
+use FilesystemIterator;
 use LogicException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+use Throwable;
 
 final class ModularArchitectureGovernanceIntegrationTest extends TestCase
 {
+    #[Group('live-freshness')]
     #[Test]
     public function itChecksEveryGeneratedProjectionWithoutWriting(): void
     {
@@ -20,6 +27,44 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         ]);
 
         self::assertSame(0, $exitCode, $output);
+    }
+
+    #[Test]
+    public function itRoutesFreshnessOraclesExactlyOnceThroughAggregateCheck(): void
+    {
+        $this->assertFreshnessScriptGraph($this->composer());
+    }
+
+    /** @param array{scripts: array<string, string|list<string>>} $composer */
+    private function assertFreshnessScriptGraph(array $composer): void
+    {
+        $scripts = $composer['scripts'];
+
+        self::assertSame(
+            ['Composer\\Config::disableProcessTimeout', 'phpunit --no-coverage --exclude-group=benchmark'],
+            $scripts['test'],
+            'Standalone composer test must retain its full freshness coverage.',
+        );
+        self::assertSame(
+            [
+                'Composer\\Config::disableProcessTimeout',
+                'python3 scripts/phpunit-aggregate.py',
+            ],
+            $scripts['test:aggregate'],
+        );
+        self::assertSame(['@architecture:check', '@selfcheck:analysis'], $scripts['selfcheck']);
+        self::assertSame(
+            'php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M',
+            $scripts['selfcheck:analysis'],
+        );
+        self::assertSame('@test:aggregate', $this->scriptSteps($scripts, 'check:code')[2]);
+        self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
+        self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
+        self::assertContains(
+            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'",
+            $this->scriptSteps($scripts, 'test:cross-tool'),
+        );
+        self::assertSame(['@gate:self-test', '@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
     }
 
     #[Test]
@@ -105,71 +150,52 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     }
 
     /**
-     * `currentSuite()` is a closed literal enumeration per directory, so a
-     * test class under an unlisted directory is classified as `none` and
-     * silently omitted from `composer test`. Plant a temporary class under
-     * such a directory and assert that the inventory check names it and
-     * fails.
+ * `currentSuite()` is a closed literal enumeration per directory, so a
+ * test class under an unlisted directory is classified as `none` and
+ * silently omitted from `composer test`. Plant a temporary class in an
+ * isolated project under such a directory and assert that the inventory
+ * check names it and fails.
      */
     #[Test]
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
     {
-        $directory = $this->root() . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
-        $probePath = $directory . '/GuardProbeTest.php';
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $directory = $projectRoot . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
+            $probePath = $directory . '/GuardProbeTest.php';
 
-        // The plant goes into the real tree, and the `finally` below takes it
-        // out again — except when the run is killed rather than finished, which
-        // is what a composer process timeout during a loaded suite does. What
-        // survives then reddens PHPStan on a file nobody wrote and stops this
-        // case here, and only a hand can clear it.
-        //
-        // Clearing it here instead is not available: this directory is one
-        // name in one tree, so a leftover of a killed run and the live plant of
-        // a suite running beside this one are the same bytes, and removing the
-        // one removes the other.
-        self::assertDirectoryDoesNotExist($directory, \sprintf(
-            'A probe directory is already at %s. Either a run of this case was killed before its cleanup — '
-            . 'delete it — or a second suite is planting there right now, in which case neither run can be '
-            . 'believed. It is not removed automatically, because those two cases are indistinguishable.',
-            $directory,
-        ));
+            self::assertDirectoryDoesNotExist($directory);
+            self::assertTrue(mkdir($directory));
+            self::assertNotFalse(file_put_contents($probePath, <<<'PHP'
+                <?php
 
-        mkdir($directory);
-        file_put_contents($probePath, <<<'PHP'
-            <?php
+                declare(strict_types=1);
 
-            declare(strict_types=1);
+                namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
 
-            namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
+                use PHPUnit\Framework\Attributes\Test;
+                use PHPUnit\Framework\TestCase;
 
-            use PHPUnit\Framework\Attributes\Test;
-            use PHPUnit\Framework\TestCase;
-
-            final class GuardProbeTest extends TestCase
-            {
-                #[Test]
-                public function itIsNeverActuallyRun(): void
+                final class GuardProbeTest extends TestCase
                 {
-                    self::assertTrue(true);
+                    #[Test]
+                    public function itIsNeverActuallyRun(): void
+                    {
+                        self::assertTrue(true);
+                    }
                 }
-            }
 
-            PHP);
+                PHP));
 
-        try {
             [$exitCode, $output] = $this->runProcess([
                 \PHP_BINARY,
-                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
                 '--check',
-            ]);
+            ], $projectRoot);
 
             self::assertNotSame(0, $exitCode, $output);
             self::assertStringContainsString('classified as suite "none"', $output);
             self::assertStringContainsString('tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe/GuardProbeTest.php', $output);
-        } finally {
-            unlink($probePath);
-            rmdir($directory);
-        }
+        });
     }
 
     /**
@@ -180,31 +206,29 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
      * the classifier for a directory that was never created, and let
      * `tests/Infrastructure/Console/Functional/` claim suite Functional while
      * phpunit.xml.dist actually runs it under the recursive Infrastructure
-     * directory. It perturbs the real phpunit.xml.dist by dropping one
-     * declared <directory> the classifier still names, runs the real
-     * inventory script's `--check` against the real tree, and restores the
-     * file in `finally` regardless of outcome.
+     * directory. It perturbs an isolated phpunit.xml.dist by dropping one
+     * declared <directory> the classifier still names and runs the inventory
+     * script's `--check` against that fixture.
      */
     #[Test]
     public function itFailsWhenACurrentSuiteLiteralHasNoDeclaredDirectory(): void
     {
-        $configurationPath = $this->root() . '/phpunit.xml.dist';
-        $original = file_get_contents($configurationPath);
-        self::assertIsString($original);
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $configurationPath = $projectRoot . '/phpunit.xml.dist';
+            $original = file_get_contents($configurationPath);
+            self::assertIsString($original);
 
-        $needle = "            <directory>tests/Analysis/Policy/Baseline/Functional</directory>\n";
-        self::assertStringContainsString($needle, $original, 'fixture assumes this declared <directory> line is present verbatim');
-        $perturbed = str_replace($needle, '', $original, $replacements);
-        self::assertSame(1, $replacements);
-
-        try {
-            file_put_contents($configurationPath, $perturbed);
+            $needle = "            <directory>tests/Analysis/Policy/Baseline/Functional</directory>\n";
+            self::assertStringContainsString($needle, $original, 'fixture assumes this declared <directory> line is present verbatim');
+            $perturbed = str_replace($needle, '', $original, $replacements);
+            self::assertSame(1, $replacements);
+            self::assertNotFalse(file_put_contents($configurationPath, $perturbed));
 
             [$exitCode, $output] = $this->runProcess([
                 \PHP_BINARY,
-                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
                 '--check',
-            ]);
+            ], $projectRoot);
 
             self::assertNotSame(0, $exitCode, $output);
             self::assertStringContainsString(
@@ -212,9 +236,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
                 . ' but is not declared under that <testsuite> in phpunit.xml.dist',
                 $output,
             );
-        } finally {
-            file_put_contents($configurationPath, $original);
-        }
+        });
     }
 
     #[Test]
@@ -236,6 +258,32 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         self::assertIsArray($manifest);
 
         return $manifest;
+    }
+
+    /** @return array{scripts: array<string, string|list<string>>} */
+    private function composer(): array
+    {
+        $contents = file_get_contents($this->root() . '/composer.json');
+        self::assertIsString($contents);
+        $composer = json_decode($contents, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($composer);
+        self::assertArrayHasKey('scripts', $composer);
+        self::assertIsArray($composer['scripts']);
+
+        return $composer;
+    }
+
+    /**
+     * @param array<string, string|list<string>> $scripts
+     *
+     * @return list<string>
+     */
+    private function scriptSteps(array $scripts, string $name): array
+    {
+        self::assertArrayHasKey($name, $scripts);
+        $steps = $scripts[$name];
+
+        return \is_string($steps) ? [$steps] : $steps;
     }
 
     /** @return list<array<string, string>> */
@@ -269,9 +317,9 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     /** @param list<string> $command
      * @return array{int, string}
      */
-    private function runProcess(array $command): array
+    private function runProcess(array $command, ?string $workingDirectory = null): array
     {
-        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->root());
+        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $workingDirectory ?? $this->root());
         self::assertIsResource($process);
         $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
         fclose($pipes[1]);
@@ -300,5 +348,104 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     private function relativePath(string $path): string
     {
         return ltrim(substr($path, \strlen($this->root())), '/');
+    }
+
+    /** @param callable(string): void $test */
+    private function withIsolatedProject(callable $test): void
+    {
+        $projectRoot = $this->createIsolatedProject();
+
+        try {
+            $test($projectRoot);
+        } finally {
+            $this->removeDirectory($projectRoot);
+            self::assertDirectoryDoesNotExist($projectRoot, 'The isolated project fixture must be removed after every negative control.');
+        }
+    }
+
+    private function createIsolatedProject(): string
+    {
+        $projectRoot = sys_get_temp_dir() . '/qmx-modular-architecture-' . bin2hex(random_bytes(16));
+        self::assertTrue(mkdir($projectRoot, 0700));
+
+        try {
+            $sourceRoot = $this->root();
+            $this->copyDirectory($sourceRoot . '/tests', $projectRoot . '/tests');
+            $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
+            $this->copyDirectory(
+                $sourceRoot . '/docs/internal/generated/modular-architecture',
+                $projectRoot . '/docs/internal/generated/modular-architecture',
+            );
+            self::assertTrue(mkdir($projectRoot . '/scripts'));
+            self::assertTrue(copy(
+                $sourceRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+            ));
+            self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
+            self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
+            self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));
+
+            [$exitCode, $output] = $this->runProcess(['git', 'init', '--quiet'], $projectRoot);
+            self::assertSame(0, $exitCode, $output);
+            [$exitCode, $output] = $this->runProcess([
+                'git',
+                'add',
+                '--',
+                'phpunit.xml.dist',
+                'tests',
+                'scripts',
+                'src/Reporting/Template',
+            ], $projectRoot);
+            self::assertSame(0, $exitCode, $output);
+
+            return $projectRoot;
+        } catch (Throwable $exception) {
+            $this->removeDirectory($projectRoot);
+
+            throw $exception;
+        }
+    }
+
+    private function copyDirectory(string $source, string $destination): void
+    {
+        self::assertTrue(is_dir($source), 'Fixture source directory is missing: ' . $source);
+        self::assertTrue(mkdir($destination, 0700, true));
+
+        $entries = new FilesystemIterator($source, FilesystemIterator::SKIP_DOTS);
+        foreach ($entries as $entry) {
+            self::assertInstanceOf(SplFileInfo::class, $entry);
+            $target = $destination . '/' . $entry->getFilename();
+            if ($entry->isDir()) {
+                $this->copyDirectory($entry->getPathname(), $target);
+
+                continue;
+            }
+
+            self::assertTrue(copy($entry->getPathname(), $target));
+        }
+    }
+
+    private function removeDirectory(string $path): void
+    {
+        if (!file_exists($path) && !is_link($path)) {
+            return;
+        }
+
+        $entries = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($entries as $entry) {
+            self::assertInstanceOf(SplFileInfo::class, $entry);
+            $entryPath = $entry->getPathname();
+            if ($entry->isDir() && !$entry->isLink()) {
+                self::assertTrue(rmdir($entryPath));
+
+                continue;
+            }
+
+            self::assertTrue(unlink($entryPath));
+        }
+        self::assertTrue(rmdir($path));
     }
 }

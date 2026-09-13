@@ -74,6 +74,7 @@ use Throwable;
 // the outcome the codes below promise not to produce. Enumerating `throw` in
 // this file could not have seen it.
 require __DIR__ . '/finding-gate/GateError.php';
+require __DIR__ . '/finding-gate/ProcessHandle.php';
 require __DIR__ . '/finding-gate/Process.php';
 
 foreach ([

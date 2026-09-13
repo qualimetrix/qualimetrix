@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -19,6 +20,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class SuppressionSnapshotFreshnessTest extends TestCase
 {
+    #[Group('live-freshness')]
     #[Test]
     public function itMatchesAFreshSelfAnalysisOfSrc(): void
     {
