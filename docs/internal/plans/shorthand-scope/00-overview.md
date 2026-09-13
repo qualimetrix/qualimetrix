@@ -1,116 +1,134 @@
-# A shorthand beside the block it is shorthand for — the question, and where its answer has to live
+# A shorthand beside the block it is shorthand for
 
-**Status:** the semantics are decided; the round is NOT planned. A first plan was
-written, reviewed by two reviewers before any code existed, and withdrawn on
-seven HIGH findings. This file records what survived that review, so the next
-round starts from the question as it actually is rather than from the shape it
-looks like.
+**Status:** planned. The semantics were decided in a previous round; the plan
+built on them was withdrawn on seven HIGH findings before any code existed. This
+round answers the five questions that withdrawal left open, and then cures.
 
-**Base:** `main` at `409fdf39`.
+**Base:** `main` at `c755fe00` (PR #68, the ledger's closed promise vocabulary).
 
-## What was stuck, and what unstuck it
+## The question
 
-Axis B of the promise-effect stand carries 81 defects, 61 of them one
-copy-pasted shape in five sibling options classes: a bare `threshold` at a
-hierarchical rule's top level makes `fromArray()` return before it reads the
-`callable:` / `class:` / `namespace:` block written beside it. X17 deferred it
-because "no owner holds a mandate over pair semantics", and four rounds read that
-governance sentence as a technical blocker. It is not one.
+Five rules implement `HierarchicalRuleOptionsInterface`. Each accepts a band at
+the rule's own top level — `threshold`, or the graduated pair it is shorthand
+for — and a nested per-level block beside it. Today the top-level band makes
+`fromArray()` return before it reads the block: the block is validated at the
+recognition seam and then discarded for effect.
 
-**The answer was already in the ledger, written by the round that measured it and
-used by nobody.** The note on `pair complexity.ccn class: threshold same-source`:
+Measured on this tree, with the product binary (`measurement/user-documents.md`,
+`measurement/seams.md`):
 
-> What it is NOT is `compose`: the carrier positively denies that both apply. It
-> is not `refuse` either — the carrier insists the drop is silent. **The
-> coexistence column has no value for «the shorthand replaces, silently»**.
+- `coupling.cbo: {class: {warning: 1, error: 1}}` reports 27 findings. The same
+  block with `threshold: 50` written beside it reports **none**.
+- `complexity.ccn: {threshold: 3}`, alone, reports **no class-level finding**
+  where the rule's own default reports one. The shorthand does not leave the
+  class level at its default — it switches the level off.
 
-Measured: `coexistence` carries exactly `compose` (380 rows), `refuse` (85) and
-empty (108). The website states the discard precisely, with a workaround, down to
-the word "silently" — so the product keeps a documented promise, and what
-diverges is the MEASURING VOCABULARY. The row says `compose` because there was
-nothing else to write, and the grid bills the difference to the product.
+## What was already decided, and stands
 
-That splits one question into two, and conflating them is what kept it closed:
+**Silence goes.** A written block that changes nothing is not configuration.
+This rests on the programme's thesis (a recognised key does what its name
+promises), on the website's own phrasing — which flags the discard down to the
+word "silently" — and on the two measurements above.
 
-1. Can the ledger say "replaces"?
-2. Should a written key ever be dropped in silence?
+**`threshold` beside `warning`/`error` at the SAME depth stays refused.** Two
+spellings of one value in one slot is a contradiction. That refusal ships today
+and this round does not touch it.
 
-## What is decided
+## What this round decides — the contract in one sentence
 
-**Silence goes.** Not on taste — on the programme's own thesis (a recognised key
-does what its name promises), on the website's own phrasing flagging the silence,
-and on measurement: an identical `class:` block reports three errors alone and
-nothing at all with a shorthand beside it (`measurement/user-documents.md`,
-doc5/doc6). A written block that changes nothing is not configuration.
+**A top-level band covers the levels it declares and nothing else; within one
+layer the deeper key wins for what it names and the top-level band fills only
+the levels whose band that layer left unwritten; across layers nothing composes
+at all, because every layer is made unambiguous before the merge and the merge
+is then plain key-for-key priority.**
 
-**Composition, not refusal.** Refusing punishes a document nobody wrote: a preset
-writes the shorthand, a `qmx.yaml` writes the block, and the contradiction exists
-only after the merge.
+The five questions the withdrawal left open are answered in
+[`01-contract.md`](01-contract.md), each with the measurement that decides it and
+the cost of the answer. Two of the answers are breaking changes and are named as
+such there, not derived by analogy from ADR 0058 — which settled a different
+axis (the integrity of one layer's value across layers, key by key).
 
-**`threshold` beside `warning`/`error` at the SAME level stays refused.** Two
-spellings of one value in one slot is a contradiction; a shorthand and a block
-addressing different slots is not.
+## Where the cure lives, and why not where the withdrawn plan put it
 
-## What the review destroyed, and why it matters more than what it confirmed
+The withdrawn plan put it in `fromArray()`. By then both merges have happened
+(`FindingConfigurationResolver::mergeRuleOptions()` for preset↔config,
+`RuleOptionsFactory::deepMerge()` for config↔CLI), so two documents with
+opposite intent arrive as the same array and "the more specific key wins"
+silently becomes "wins regardless of layer" — reversing the priority the product
+already promises.
 
-The withdrawn plan put the cure in `fromArray()` and derived its rule from
-ADR 0058 by analogy. Both reviewers independently showed the analogy does not
-transfer, and the measurements they brought are the reason this file exists.
+The cure therefore lives where ADR 0058 put its own: in the per-layer unfold
+that runs before either merge. Measured (`measurement/seams.md`, Q1/Q4):
 
-**The cure cannot live in `fromArray()`, because by then the layers are gone.**
-`RuleOptionsFactory::deepMerge()` unfolds and merges both layers into one array,
-and the single `fromArray()` call cannot tell which key came from where. So a
-rule phrased as "the more specific key wins" silently becomes "the more specific
-key wins REGARDLESS OF LAYER" — and that reverses the priority the product
-already promises. Measured: a preset writing
-`complexity.npath: {class: {enabled: true, max_warning: 2, max_error: 3}}` under a
-CLI writing `threshold=50` gives the CLI the whole rule today; the withdrawn plan
-would have left the preset's block standing at 2/3 against a higher layer that
-explicitly asked for 50.
+- `RuleOptionsFactory::deepMerge()` calls `RuleOptionThresholdShorthand::unfold()`
+  on **every** layer unconditionally, including a run with no preset and no CLI
+  layer, so the single-layer document does reach the seam;
+- at `path=''` the array the seam receives carries the nested block as a value
+  (`in={"threshold":3,"class":{…}}`), so the seam can see what it must now act
+  on. Today's `unfold()` only inspects top-level keys — that is the gap, not a
+  blindness of the seam;
+- for `coupling.cbo`/`coupling.instability` the top-level `threshold` is already
+  unfolded into the top-level graduated pair before `fromArray()` — and that
+  pair is exactly what opens the flat branch that drowns the block. So the cure
+  must remove the top-level band once it has been pushed down, not merely add a
+  reader for the block.
 
-**ADR 0058 is about a different axis.** It settled the integrity of ONE layer's
-value across layers — key by key. Level-vs-key granularity is a second question,
-and "the same sentence one level down" is a slogan, not a derivation.
+The registry already describes the missing shape in prose: the
+`LONE_THRESHOLD_SHAPE` comment says the shorthand of these rules "is cross-path
+and disables the neighbouring level". That is a form the registry has no way to
+declare. This round gives it one.
 
-**The M1/M2 split was wrong, and it was wrong the way this programme keeps
-finding.** The withdrawn plan argued that `enabled: false` beside a block is the
-author's instruction rather than the product's silence, because the outcome is
-identical either way. That was generalised from ONE observation. Measured
-properly: `class: {enabled: true, warning: 1, error: 1}` under a top-level
-`enabled: false` moves three findings to none, and the block is NOT inert at the
-recognition seam either — an unknown key inside it still exits 3. So the block is
-read for validation and discarded for effect, which is a state nothing defends.
+## Stages
 
-**The ledger arithmetic was wrong too.** 7 of the 18 shorthand-vs-block rows
-promise `refuse`, so "axis B falls by 61" was unreachable as written.
+| stage             | file                                       | produces                                                                                                    |
+| ----------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 1. Contract       | [`01-contract.md`](01-contract.md)         | the five answers, the per-rule reach table, the breaking changes named                                      |
+| 2. Corpus witness | [`02-cure.md`](02-cure.md), package P1     | a finding-gate case that carries the subject, proved to redden against the pre-cure product                 |
+| 3. Cure           | [`02-cure.md`](02-cure.md), packages P2-P4 | declared reach in the registry, cross-path unfold, five `fromArray()` implementations without early returns |
+| 4. Accounting     | [`03-acceptance.md`](03-acceptance.md)     | ledger rows, floor, grid, declared gate delta, website in both languages, ADR, CHANGELOG                    |
 
-## What the next round has to settle first
+Stage 1 goes to review before a line of stage 3 is written. On the two previous
+rounds of this programme, review of the plan found two product defects that five
+measurement axes had not, and stopped a round that would have been wrong three
+independent ways. The price both times was one run of two reviewers.
 
-Not implementation — these, in this order:
+## What is measured and must not be re-derived
 
-1. **Specificity against layer priority, both orientations, named explicitly.**
-   Higher-layer shorthand over lower-layer block, and lower-layer shorthand under
-   higher-layer block. This is a breaking decision in its own right and cannot be
-   inherited from ADR 0058.
-2. **Therefore: the cure belongs at the merge seams**, where provenance still
-   exists — the same place ADR 0058 put its own. What `fromArray()` then receives
-   is a document whose meaning is already unambiguous.
-3. **Granularity, once.** Does a block that names one half of a band take the
-   shorthand's value for the other half, or the rule's default? The withdrawn
-   plan answered both ways in two files.
-4. **The shapes nothing classifies yet:** an empty `class: {}`, a `class: ~`, and
-   a `class: {enabled: ~}` — `isset()` folds the second into absence today.
-5. **`enabled: false` beside a block** as its own decision, now that it is known
-   not to be inert.
+`measurement/` holds: the branch enumeration by file and line
+(`branches.tsv`); eight live observations of documents a user could write
+(`user-documents.md`); what the website says today (`docs-today.md`); the three
+candidate semantics with the cost of each (`candidates.md`); the `enabled: false`
+question with the facts on both sides (`enabled-question.md`); the two review
+files that withdrew the previous plan (`review-native.md`, `review-codex.md`);
+this round's seam measurements (`seams.md`) and the population enumeration with
+today's outcome per cell (`population.tsv`, `population.md`).
 
-## What is already measured, and should not be re-derived
+## Premises this round re-measured, and what changed
 
-`measurement/` — the branch enumeration by file and line; eight live `bin/qmx`
-observations of documents a user could reasonably write, including the two pairs
-that pin the loss; the three candidate semantics with what each breaks (6 tests,
-3 site pages, 0 presets, 0 gate corpus cases); what the website says today; and
-the `enabled: false` question with the facts on both sides.
+The brief's numbers were re-taken rather than inherited. What held: the grid
+(122 defects — A 4, B 81, C 0, D 37, E 0), cell for cell; the controls (42
+cases, 0 failures); the ledger's `kind=3-shorthand-vs-level-block` split (7
+`refuse`, 11 `compose`, 18 cross-source `DEFERRED`). What did not:
 
-The two review files that withdrew the plan are worth reading before writing the
-next one: seven HIGH findings, four of them carrying measurements the plan did
-not have.
+1. **Axis B does not block.** `run-declaration.tsv` declares
+   `blocking-axes = A,C,D,E`. The 81 cells this round cures redden nothing
+   today; the run's exit 1 comes from axes A and D.
+2. **Axis B needs no new `coexistence` value.** The brief states it will. Under
+   the contract in `01-contract.md` every affected row lands on `compose`, which
+   the vocabulary already carries — see `03-acceptance.md` for the seven rows
+   that move and why.
+3. **The floor holds 27 rows, not 26.** One is `withdrawn`
+   (`form|yaml|computed_metrics.<name>.enabled|null`), a disposition mutually
+   exclusive with `cure`.
+4. **The four `pending:` rows cannot be converted on their own.** `floor.tsv`
+   says so itself: the retake is not the fix, and converting them is that
+   retake's first step. This round does not retake — see `03-acceptance.md`.
+5. **`380 / 85 / 108` describes the `pair` population, not the ledger.** Over
+   the whole file column 6 reads 380 / 88 / 271.
+6. **`axis-b-mechanisms.tsv` is stale in two places.** It carries four
+   mechanisms summing to 82 while the live axis is 81: M4 counts a cell that no
+   longer exists, and M2 absorbs one `npath|class.enabled|enabled` cell its own
+   text does not describe.
+7. **The website is six locations, not three.** Each of the three pages has a
+   `.ru.md` counterpart carrying the same claim, and the project requires both
+   to move together.
