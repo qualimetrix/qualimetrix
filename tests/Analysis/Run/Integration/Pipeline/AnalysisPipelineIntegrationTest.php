@@ -256,22 +256,22 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     #[Test]
     public function itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns(): void
     {
-        $fixtureRoot = sys_get_temp_dir() . '/qmx-p4-sequential-' . bin2hex(random_bytes(6));
+        $fixtureRoot = sys_get_temp_dir() . '/qmx-run-reset-sequential-' . bin2hex(random_bytes(6));
         $cyclicRoot = $fixtureRoot . '/cyclic';
         $cleanRoot = $fixtureRoot . '/clean';
         mkdir($cyclicRoot, 0o755, true);
         mkdir($cleanRoot, 0o755, true);
         file_put_contents(
             $cyclicRoot . '/Controller.php',
-            "<?php\nnamespace P4Reset\\First\\Controller;\nfinal class A { public function __construct(private readonly \\P4Reset\\First\\Repository\\B \$b) {} }\n",
+            "<?php\nnamespace RunResetFixture\\First\\Controller;\nfinal class A { public function __construct(private readonly \\RunResetFixture\\First\\Repository\\B \$b) {} }\n",
         );
         file_put_contents(
             $cyclicRoot . '/Repository.php',
-            "<?php\nnamespace P4Reset\\First\\Repository;\nfinal class B { public function __construct(private readonly \\P4Reset\\First\\Controller\\A \$a) {} }\n",
+            "<?php\nnamespace RunResetFixture\\First\\Repository;\nfinal class B { public function __construct(private readonly \\RunResetFixture\\First\\Controller\\A \$a) {} }\n",
         );
         file_put_contents(
             $cleanRoot . '/Independent.php',
-            "<?php\nnamespace P4Reset\\Second;\nfinal class Independent {}\n",
+            "<?php\nnamespace RunResetFixture\\Second;\nfinal class Independent {}\n",
         );
 
         $container = (new ContainerFactory())->create();
@@ -292,8 +292,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             'source' => 'test',
             'values' => ['architecture' => [
                 'layers' => [
-                    ['name' => 'controller', 'patterns' => ['P4Reset\\First\\Controller\\**']],
-                    ['name' => 'repository', 'patterns' => ['P4Reset\\First\\Repository\\**']],
+                    ['name' => 'controller', 'patterns' => ['RunResetFixture\\First\\Controller\\**']],
+                    ['name' => 'repository', 'patterns' => ['RunResetFixture\\First\\Repository\\**']],
                 ],
                 'allow' => ['controller' => [], 'repository' => []],
                 'coverage-gap' => 'ignore',

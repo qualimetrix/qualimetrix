@@ -2,12 +2,21 @@
 *.phar binary
 *.php diff=php
 
+# The source inventory encodes absent terminal TSV cells with a trailing tab.
+promise-effect/config-paths.tsv whitespace=-blank-at-eol
+promise-effect/promise-ledger-frozen-ranges.tsv whitespace=-blank-at-eol
+promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
+
 # Exclude from composer dist package
 /.github/               export-ignore
 /.githooks/             export-ignore
 /docs/                  export-ignore
 /tests/                 export-ignore
 /scripts/               export-ignore
+/directive-audit/**     export-ignore
+/finding-gate/**        export-ignore
+/input-doors/**         export-ignore
+/promise-effect/**      export-ignore
 /benchmark-results/     export-ignore
 /coverage/              export-ignore
 /.gitattributes         export-ignore

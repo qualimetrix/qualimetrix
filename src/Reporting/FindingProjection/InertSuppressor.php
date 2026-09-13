@@ -18,8 +18,8 @@ namespace Qualimetrix\Reporting\FindingProjection;
  * {@see SuppressionMechanism::NamespaceSuppression} and their per-rule ledger
  * counterparts — because those are the only ones a configured entry
  * enumerates independently of whether it fired. A `@qmx-ignore` directive
- * that silenced nothing is a different question (`annotation.unused-directive`,
- * Ш8's audit); a baseline entry nothing measured is already reported as a
+ * that silenced nothing is a different question (`annotation.unused-directive`);
+ * a baseline entry nothing measured is already reported as a
  * stale entry (ADR 0017) with its own remediation story.
  */
 final readonly class InertSuppressor

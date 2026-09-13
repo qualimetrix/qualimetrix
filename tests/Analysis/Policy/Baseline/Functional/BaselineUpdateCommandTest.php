@@ -291,7 +291,7 @@ final class BaselineUpdateCommandTest extends TestCase
     {
         $entry = self::entryData($this->baselinePath, $channelKey);
 
-        // A magnitude-shaped entry no longer writes "count" (P1.1) — derive it
+        // A magnitude-shaped entry does not write "count" — derive it
         // from the magnitude list it does carry, exactly as the format does.
         if (isset($entry['magnitudes']) && \is_array($entry['magnitudes'])) {
             return \count($entry['magnitudes']);

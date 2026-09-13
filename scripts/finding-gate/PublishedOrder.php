@@ -56,8 +56,8 @@ final class PublishedOrder
      * through {@see \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection::sort()},
      * and the baseline file is laid out by
      * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryOrder}. Under the
-     * six renames of Х12П4 no other surface of the corpus moved a record — none
-     * of their keys is the channel code. Checkstyle and the verbose text report
+     * the observed six-name rename set, no other corpus surface moves a record
+     * because none of their keys is the channel code. Checkstyle and the verbose text report
      * group by file; the default text report and the summary's top issues sort
      * by severity/impact; SARIF, GitLab Code Quality and the GitHub Actions
      * annotations format publish `$report->findings` in the rule engine's

@@ -127,7 +127,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itTreatsAttributeAsAStandaloneTokenNotAnAlias(): void
     {
-        // `attribute` is intentionally NOT grouped under any alias — ADR 0007
+        // `attribute` is intentionally NOT grouped under any alias — ADR 0059
         // marks it as a distinct metadata category. Confirm the token round-trips
         // through the direct-value path (no expansion).
         $result = AllowAliasExpander::expand(['attribute'], 'architecture.allow.app[0]');
@@ -191,7 +191,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itDedupesAcrossOverlappingAliasMembers(): void
     {
-        // Aliases never overlap as of Phase 2 ADR 0007, but the expander must
+        // Aliases do not overlap under ADR 0059, but the expander must
         // remain correct if a future alias accidentally shares a member.
         // Simulate that with two known aliases plus the shared `attribute`
         // direct value to pin the dedup invariant explicitly.

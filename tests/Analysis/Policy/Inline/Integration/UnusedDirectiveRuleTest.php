@@ -55,7 +55,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     private const string FILE = 'src/Foo.php';
 
     /**
-     * A rule name is not a channel. Since Ш5c a level is no longer a name, so
+     * A rule name is not a channel. A level is not part of a channel name, so
      * the rules whose name is not also a channel are the ones emitting several
      * *judgements* — the inline-directive producer among them. Silence here is
      * what the old prefix matcher gave and is the defect being removed.
@@ -351,11 +351,9 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * Type coverage has been spelled three ways and only the third resolves.
-     * Ш4b split the single `design.type-coverage` into three producers, and
-     * Ш5e3 moved the aspect to the end of the name; both retired spellings are
-     * pinned here, because a directive naming one of them must say so rather
-     * than resolve to whichever producer is textually nearest.
+     * Only the current type-coverage spelling resolves. Both retired spellings
+     * are pinned here, because a directive naming one must be rejected rather
+     * than resolved to whichever producer is textually nearest.
      */
     #[Test]
     #[DataProvider('retiredTypeCoverageSpellings')]
@@ -375,8 +373,8 @@ final class UnusedDirectiveRuleTest extends TestCase
      */
     public static function retiredTypeCoverageSpellings(): iterable
     {
-        yield 'before the Ш4b split' => ['design.type-coverage'];
-        yield 'before the Ш5e3 rename' => ['design.param-type-coverage'];
+        yield 'former aggregate name' => ['design.type-coverage'];
+        yield 'former aspect-first name' => ['design.param-type-coverage'];
     }
 
     /** One dimension, one rule, one threshold that addresses it. */

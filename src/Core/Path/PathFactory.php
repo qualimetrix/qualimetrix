@@ -40,8 +40,8 @@ final class PathFactory
     /**
      * Never throws. For absolute inputs outside $projectRoot returns null;
      * for relative inputs that would escape via leading `..`, also returns
-     * null (RelativePath::fromString would otherwise throw — the asymmetry
-     * surprised callers in the Phase 6 review).
+     * null. RelativePath::fromString would otherwise throw, making this
+     * non-throwing boundary depend on which input form the caller used.
      */
     public static function tryProjectRelative(string $raw, AbsolutePath $projectRoot): ?RelativePath
     {
@@ -62,7 +62,7 @@ final class PathFactory
      * Used at file-result boundaries where the caller wants a structurally
      * meaningful {@see RelativePath} for any input — including symlinked
      * sources and the rare file that lies outside the configured project
-     * root. The basename-only fallback used in earlier Phase-6 drafts
+     * root. A basename-only fallback
      * collapsed distinct out-of-root files (`/a/X.php` and `/b/X.php`) to
      * the same key, silently breaking suppression maps and repository
      * indexing. This helper preserves directory structure instead.

@@ -18,7 +18,7 @@ use InvalidArgumentException;
  * contains a `{var}` placeholder). A variable that appears only in the name
  * has no source of binding values — expansion would be non-deterministic.
  *
- * **D7 carve-out (locked in ADR 0007).** Capture-producing criteria are
+ * **Capture-filter invariant (see ADR 0059).** Capture-producing criteria are
  * combined per {@see MembershipSpec::$mode} ({@code match: any|all}).
  * Non-capturing criteria (suffix, attributes, implements, extends, and any
  * non-capture patterns) ALWAYS act as an AND-filter, regardless of the
@@ -27,7 +27,7 @@ use InvalidArgumentException;
  *
  * **Captures are allowed only in patterns and the name template.** Suffix,
  * attribute, implements, and extends entries are fixed strings — adding
- * captures to them is out of scope for Step D and would require a new
+ * captures to them would require a new
  * grammar for short-name suffixes, which is not motivated by any documented
  * test case.
  *
@@ -53,7 +53,7 @@ final readonly class TemplateLayerDefinition
      *                                  capture-producing pattern, or the
      *                                  exclude clause references a variable
      *                                  not declared by the template's
-     *                                  name/pattern variables (Step F).
+     *                                  name/pattern variables.
      */
     public function __construct(
         public string $nameTemplate,

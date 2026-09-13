@@ -227,8 +227,8 @@ printf(
 // fail the run through the ordinary channel every other probe would fail
 // through — only the staleness check can catch it here, which is what makes
 // this construction, and not a planted breakage on any other probe, able to
-// tell the current `Report` apart from the one before X7 that had no
-// staleness check at all.
+// distinguish the current `Report` from an implementation with no staleness
+// check at all.
 $staleName = 'Qualimetrix.Tests.Nowhere.NoSuchTest::itWasRenamedOrDeletedLongAgo';
 $positive = array_values(array_filter($probes, static fn(Probe $probe): bool => $probe->isPositive()));
 

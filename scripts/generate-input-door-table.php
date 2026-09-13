@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Generates the input-door grid — the denominator of the silent-acceptance
- * oracle (`docs/internal/plans/silent-acceptance/01-oracle.md` §3).
+ * oracle.
  *
  * Row key is `surface|command|door|site`, and no part of it is constant: a CLI
  * door is multiplied over every command whose `InputDefinition` declares it, a
@@ -30,7 +30,7 @@ require __DIR__ . '/input-doors-bootstrap.php';
 
 const GRID_PATH = 'docs/internal/generated/input-doors/doors.tsv';
 const ANNOTATIONS_PATH = 'input-doors/door-annotations.tsv';
-const RECONCILED_PATH = 'docs/internal/plans/silent-acceptance/measurement/doors-reconciled.tsv';
+const RECONCILED_PATH = 'input-doors/doors-reconciled.tsv';
 const OPTIONS_PATH = 'docs/internal/generated/input-doors/command-options.tsv';
 
 /**

@@ -42,8 +42,8 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * {@see RankedOffenderLevels} names — never for a File or a Callable. Adding
  * those canonical names too made a value that matches nothing else count as
  * bound: the refusal this class exists to raise was withheld and the empty
- * report went out unexplained, which is the same silent loss the other way
- * round.
+ * report went out unexplained, causing the same silent loss in the opposite
+ * direction.
  *
  * Stateless by construction — the run is an argument, not a collaborator — so a
  * caller that already holds the run needs no wiring to ask.

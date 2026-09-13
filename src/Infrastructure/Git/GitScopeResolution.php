@@ -16,7 +16,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
  * The explicit {@see $projectRoot} replaces the previous indirection through
  * {@see GitClient}, where a `getProjectRoot()` accessor invited the same VO
  * to be re-extracted from a downstream service and silently mismatched with
- * a different injected value (Phase 3 deferred contract collapse).
+ * a different injected value.
  */
 final readonly class GitScopeResolution
 {

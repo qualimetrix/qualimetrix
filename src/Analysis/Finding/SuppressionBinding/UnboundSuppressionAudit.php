@@ -46,8 +46,8 @@ use Qualimetrix\Core\Util\PathMatcher;
  * `enabled: true` after the configuration said otherwise. Declared lazy, the
  * audit is constructed at its first call, which is after the run.
  *
- * **Two gates keep this quiet where it cannot judge, and both are the
- * round's own.** The caller asks the project-wide one
+ * **Two gates keep this quiet where it cannot judge.** The caller asks the
+ * project-wide one
  * ({@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}) before
  * calling at all: on a run narrowed below the project's production autoload
  * roots, or on one whose manifest declares no readable production autoload,

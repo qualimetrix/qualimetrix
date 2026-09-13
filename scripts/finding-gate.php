@@ -7,8 +7,8 @@ namespace QmxFindingGate;
 /**
  * The finding-equivalence gate.
  *
- * Proves that a step of docs/internal/plans/rule-vocabulary/PLAN.md changed
- * nothing observable except what a declared map says it changed. See
+ * Proves that a declared vocabulary change altered nothing observable except
+ * what a declared map says it changed. See
  * finding-gate/README.md for the corpus layout and the surface list.
  *
  * Deliberately outside `src/`: it is not product code, it must run against two

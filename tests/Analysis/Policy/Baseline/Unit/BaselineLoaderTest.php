@@ -104,9 +104,8 @@ final class BaselineLoaderTest extends TestCase
     /**
      * Version 11 is the immediate predecessor, not a historical format: it
      * has exact declaration subjects already. It is still refused rather than
-     * converted, because P1 has no converter for the "count" and
-     * occurrence-key changes either — the plan states this baseline
-     * compatibility is not maintained.
+     * converted because there is no converter for the redundant "count" field
+     * or the occurrence-key change. Baseline compatibility is not maintained.
      */
     #[Test]
     public function itRejectsVersionElevenAndRequiresARegeneratedV13Baseline(): void

@@ -19,11 +19,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * for a family of user-fixable inputs that fail safely, and this class pins the
  * five that were previously misclassified as generic failures.
  *
- * Every case here runs under `--format=json`, so P01-3 moves the refusal from
- * stderr to the `{error, exit_code}` envelope on stdout
- * (`01-refusal-envelope.md` §2.1): a machine-readable format must never pair
- * exit code 3 with zero bytes of parseable stdout, which is the defect this
- * round exists to close.
+ * Every case here runs under `--format=json`: a machine-readable format must
+ * never pair exit code 3 with zero bytes of parseable stdout.
  */
 final class CheckCommandConfigErrorExitCodeTest extends TestCase
 {

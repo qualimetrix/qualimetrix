@@ -132,7 +132,7 @@ final readonly class CompositionRow
 
 final class Ledger
 {
-    public const string PATH = 'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv';
+    public const string PATH = 'promise-effect/promise-ledger.tsv';
 
     /**
      * @param list<FormRow> $forms
@@ -186,8 +186,8 @@ final class Ledger
                 continue;
             }
 
-            // Stage 01's axis-C promise rows (`docs/internal/plans/source-composition/01-promise.md`):
-            // who wins between two or three writers of one path. Recognised by
+            // Composition rows state who wins between two or three writers of
+            // one path. Recognised by
             // name rather than by "anything unmatched", so a genuine typo in
             // `kind` stays the `LedgerError` below.
             if ($kind === 'composition-path' || $kind === 'composition-triple' || $kind === 'composition-bucket') {

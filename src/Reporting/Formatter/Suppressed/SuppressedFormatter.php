@@ -17,7 +17,7 @@ use Qualimetrix\Reporting\Report;
 /**
  * The machine-readable composition of what a run suppressed — a separate
  * format rather than a section of `json`, so an ordinary `check` payload
- * never moves for a feature it did not ask for (ADR-to-be, Ш6 decision (а)).
+ * never moves for a feature it did not ask for (ADR 0037).
  *
  * Not registered as a `--show-suppressed`-only view: selecting this format
  * is itself the request, and {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}

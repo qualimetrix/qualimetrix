@@ -23,28 +23,20 @@ use ReflectionClass;
 use RuntimeException;
 
 /**
- * X10 (`01-freeze-kind.md`) froze `OccurrenceKey`'s discriminator away from
- * the channel code in six families, and X16 added four more: each carries a
- * private `OCCURRENCE_KIND` constant, pinned as a **literal** and **not**
- * reading `NAME`/`code`, so that a future rename of the channel does not move
- * `occurrence` for every already-accepted baseline entry on it. The first six
- * pinned the channel spelling as it stood at freeze time; the four added later
- * pin a description of what one finding is about, because one of them serves
- * three channels at once and no single channel code could name it. What is
- * frozen is the literal, not which words it uses. `NAME` moving
- * out from under a pinned `OCCURRENCE_KIND` — as the X12 rename already did
- * for `duplication.code-duplication` — is the freeze working as designed, not
- * a drift to correct.
+ * Each family carries a private `OCCURRENCE_KIND` constant, pinned as a plain
+ * **literal**, never derived from `NAME`/`code`, so a channel rename does not move
+ * `occurrence` for every already-accepted baseline entry on it. Some pins use
+ * the channel spelling, while others describe the finding because one
+ * producer serves three channels at once and no single channel code could
+ * name it. The literal stays fixed even when its wording differs from the
+ * channel name.
  *
- * Nothing that runs on every `composer test` re-proves the freeze holds after
- * today. The per-family pin tests (`itKeysOccurrenceToTheFrozenChannelSpelling*`)
+ * Per-family pin tests (`itKeysOccurrenceToTheFrozenChannelSpelling*`)
  * each exercise one family's own production wiring; none of them would catch
  * every family regressing to `self::NAME` at once, and none would notice a
- * seventh family added without its own freeze. This guard re-derives the
- * frozen set from source text on every run — the same
- * `OCCURRENCE_KIND = '<literal>'` declaration shape
- * `scripts/generate-rename-enumeration.php` scans for when it flags these
- * occurrences as protected — rather than trusting a hand-kept class list, so
+ * family added without its own freeze. This guard derives the set from the
+ * `OCCURRENCE_KIND = '<literal>'` declarations rather than trusting only a
+ * hand-kept class list, so
  * a class silently losing its literal form (rewritten as `self::NAME`, or as
  * any other expression) drops out of the measured set instead of quietly
  * passing.
@@ -64,7 +56,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
-     * any rule's current `NAME`. A channel rename on the future rename step
+     * any rule's current `NAME`. A channel rename
      * changes `NAME` and must NOT change these values — that divergence is
      * the freeze working as designed, not a defect to chase. Comparing
      * against `NAME` instead of a pin was the trap this guard used to set:
@@ -73,8 +65,8 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
      * silently retire the freeze via the exact channel the freeze exists to
      * survive — moving `occurrence` under every baseline entry, GitLab
      * fingerprint and SARIF `partialFingerprints` value already accepted
-     * against these six findings. Changing a value here is a breaking change
-     * to all three; it needs its own CHANGELOG entry, not a quiet update.
+     * against these findings. Changing a value here is a breaking change to
+     * baseline identities, fingerprints and SARIF partial fingerprints.
      *
      * @var array<class-string, string>
      */
@@ -85,7 +77,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         IdenticalSubExpressionRule::class => 'code-smell.identical-subexpression',
         CodeDuplicationRule::class => 'duplication.code-duplication',
         LayerViolationFinding::class => 'architecture.layer-violation',
-        // X16 froze four more, and these four do not spell a channel code.
+        // These pins do not spell a channel code.
         // Three of them belong to producers whose finding carries the value
         // that makes it distinct — an exclude pattern, a suppression value, a
         // framework prefix — and one of those producers publishes three
@@ -109,10 +101,10 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
             $declarations,
             \sprintf(
                 "Expected exactly %d declarations shaped `private const string OCCURRENCE_KIND = '<literal>';` under"
-                . ' src/ — the families 01-freeze-kind.md names. Found %d: %s. A class that rewrites the'
+                . ' src/. Found %d: %s. A class that rewrites the'
                 . ' constant as an expression (e.g. `self::NAME`) drops out of this count instead of failing loudly'
                 . ' elsewhere, which is exactly what this assertion exists to catch. If a new family was'
-                . ' deliberately frozen, update this expectation and 01-freeze-kind.md\'s table together.',
+                . ' deliberately frozen, update this expectation and FROZEN_SPELLING together.',
                 self::EXPECTED_FROZEN_COUNT,
                 \count($declarations),
                 $declarations === [] ? '(none)' : implode(', ', array_column($declarations, 'file')),
@@ -163,8 +155,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
                 $mismatches[] = \sprintf(
                     '%s: declares OCCURRENCE_KIND but is not in FROZEN_SPELLING — a family was added, removed or'
                     . ' renamed without updating the pin. If this is a deliberate new freeze, add it to'
-                    . ' FROZEN_SPELLING with its current spelling (not derived from NAME) and record it in'
-                    . ' 01-freeze-kind.md\'s table.',
+                    . ' FROZEN_SPELLING with its current spelling (not derived from NAME).',
                     $class,
                 );
 

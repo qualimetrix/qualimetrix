@@ -57,8 +57,7 @@ final class Process
             // Breaking on it stopped draining with pipes still open, which is
             // a truncated capture: a JSON artifact that stops mid-object,
             // parses as nothing, and used to reach Fingerprints::publishedInSarif()
-            // / ::publishedInGitLab() as an uncaught JsonException (the Ш4c
-            // долг in docs/internal/plans/rule-vocabulary/PLAN.md). Retrying
+            // / ::publishedInGitLab() as an uncaught JsonException. Retrying
             // is the standard EINTR-safe idiom; a truly broken descriptor
             // still terminates the loop the next time `fread()` reports EOF.
             if (stream_select($read, $write, $except, 1) === false) {

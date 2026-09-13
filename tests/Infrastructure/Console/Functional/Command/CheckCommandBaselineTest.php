@@ -265,8 +265,8 @@ final class CheckCommandBaselineTest extends TestCase
 
         self::mutateEntries(static function (array $entry): array {
             // Dropping "count" keeps the scenario purely the shape mismatch
-            // the docblock names, rather than also tripping the unrelated
-            // rejection of "count" alongside "magnitudes" (P1.1).
+            // the docblock names, rather than also tripping the separate
+            // rule that rejects "count" alongside "magnitudes".
             unset($entry['count']);
             $entry['magnitudes'] = [1];
 

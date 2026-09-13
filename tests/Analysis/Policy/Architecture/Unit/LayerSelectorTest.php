@@ -342,7 +342,7 @@ final class LayerSelectorTest extends TestCase
         // Without this guard a dangling backslash would silently be appended
         // to the literal buffer, producing a regex that requires a `\` in the
         // layer name — which the layer-name regex forbids. Result: the entry
-        // silently never matches. ADR 0007 D4 rejects this kind of silent
+        // silently never matches. ADR 0059 rejects this kind of silent
         // fall-through.
         $this->expectException(InvalidSelectorException::class);
         $this->expectExceptionMessage("dangling '\\'");

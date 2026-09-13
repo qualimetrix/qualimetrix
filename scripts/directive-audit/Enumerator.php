@@ -20,7 +20,7 @@ use RuntimeException;
  */
 final class Enumerator
 {
-    private const string ARTIFACT = 'docs/internal/plans/rule-vocabulary/enumeration-threshold-directives.tsv';
+    private const string ARTIFACT = 'directive-audit/enumeration-threshold-directives.tsv';
 
     private const int FAILURE = 1;
 

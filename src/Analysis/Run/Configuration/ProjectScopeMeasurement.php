@@ -37,9 +37,9 @@ final readonly class ProjectScopeMeasurement
      * at all: absent, unparseable, without an `autoload` section, or with
      * every production section in it empty or malformed.
      *
-     * Superseded (X16 F4): a `classmap`, `psr-0` or `files` section used to
-     * reach this answer too. Those are ordinary path targets now — see
-     * {@see ProjectScopeCoverage} for the measurement that reversed it.
+     * A `classmap`, `psr-0` or `files` section does not make the manifest
+     * unreadable; those are ordinary path targets. See
+     * {@see ProjectScopeCoverage} for the owning measurement.
      */
     public static function unreadable(): self
     {

@@ -1,4 +1,4 @@
-# 50. The Configuration Refusal Carrier: Placement and Contract
+# 0050. The Configuration Refusal Carrier: Placement and Contract
 
 **Date:** 2026-09-09
 **Status:** Accepted
@@ -110,4 +110,4 @@ sake. The forms themselves are unchanged, and the class still has no public
 constructor.
 
 The wider decision this sits under — what shape the product gives a value that
-binds to nothing — is [ADR 0052](0052-the-shape-of-a-signal-about-a-miss.md).
+binds to nothing — is [ADR 0061](0061-configuration-miss-and-refusal-semantics.md).

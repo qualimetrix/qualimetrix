@@ -211,7 +211,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     /**
-     * ADR 0031 / Р3: shape moved off {@see ChannelDeclaration} onto the
+     * ADR 0031: shape moved off {@see ChannelDeclaration} onto the
      * producer. Registry assembly is the one place left that can catch a
      * producer whose declared {@see ChannelShape} disagrees with the
      * direction its own channel carries.

@@ -11,26 +11,14 @@ use RuntimeException;
 /**
  * The controls, as a list.
  *
- * Twenty negative controls — the four the Ш1 DoD names, the four Ш4a adds for
- * the declared delta and the reference's vocabulary, the one Ш4b adds for
- * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
- * the two Ш5b0 adds for the fingerprint mechanism, the two Ш5d0 adds for the
- * split mechanism, the one Ш5e3-0 adds for a moved aggregated spelling and the
- * two Х5-1 adds for the licensed field move and for a derivation that failed,
- * the one Х5-G adds for the other half of that — a derivation that *passed*,
- * which must write the declaration back — and the one Х9-A1 adds for a report
- * value renamed with no `report-values.tsv` row to translate it —
- * plus five green ones: the positive control, without which nineteen reds could
- * all be reds for an environmental reason, Ш5b0's declared rename, which asserts
- * that a change the maps declare is absorbed by the declaration and by nothing
- * else, the two Х9-A1 adds for the same reason on the step's other two
- * shapes — a root configuration key translated by the fourth `inputs.tsv` form,
- * and a report value translated by `report-values.tsv` — and the one Х10-B adds
- * for the identity shape none of them reached: a declared rename of a channel
- * whose findings carry an `occurrence` hash, which the rename must leave where
- * it is ({@see occurrenceFrozenUnderDeclaredRename()}), and the one Х12П4-J adds
- * for the class no control could reach until a permutation became something the
- * gate does anything about at all ({@see publishedOrderPermuted()}).
+ * The suite combines negative controls for declared deltas, reference
+ * vocabulary, excessive deltas, lost multi-level coverage, fingerprints,
+ * splits, aggregate spellings, licensed field moves, derivation failures and
+ * undeclared report-value renames. Green controls prove the environment works
+ * and that declared renames are absorbed only by their declarations. They also
+ * cover root configuration keys, report-value translations, occurrence hashes
+ * that must remain stable ({@see occurrenceFrozenUnderDeclaredRename()}), and
+ * published-order permutations ({@see publishedOrderPermuted()}).
  *
  * {@see deriveRefusesBrokenRun()} and {@see deriveWritesOnAGreenRun()} are the
  * only controls whose subject is not in the report at all. A derivation that
@@ -39,10 +27,8 @@ use RuntimeException;
  * prints what it wrote, and what had to be checked was whether it wrote it
  * ({@see Control::rewriting()}).
  *
- * `delta-too-large` was the one class of the five that no control had ever seen
- * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
- * the count, which is the worst moment to still be relying on the name of a
- * class nobody has watched fire.
+ * `delta-too-large` must be observed red by a control because the code computes
+ * its count; merely naming the failure class does not prove that branch works.
  *
  * Every expectation — required and tolerated alike — pins the surface it must
  * land on. An unpinned class would let an unrelated failure elsewhere in the
@@ -201,8 +187,7 @@ final class Controls
      * the corpus stays balanced in both directions.
      *
      * A third was declared and DID fire, on the opposite reading from the one
-     * that named it. Two things moved between the 2026-08-24 measurement and
-     * Х9: `RulesCommand` now also prints each producer's own channels —
+     * that named it. `RulesCommand` now also prints each producer's own channels —
      * `cohesion.lcom4 judges cohesion.lcom` — so the renamed half of that line
      * moves `tree|rules` too where it did not before; and the tree that
      * measurement ran against had a declared delta for `tree|rules`
@@ -211,8 +196,8 @@ final class Controls
      * whether the reach is tolerated at all. The 2026-08-24 omission was
      * correct for ITS tree, where the declaration covered the reach; it is not
      * a false premise being corrected, but a fact whose value changed on both
-     * axes. Re-measured at Х9-A1 with the delta gone: {@see
-     * producerListingToleration()} is reused rather than a plain `Expectation`
+     * axes. With the delta absent, {@see producerListingToleration()} is reused
+     * rather than a plain `Expectation`
      * hardcoded here — its docblock's premise ("only a control renaming a
      * producer needs this") was true of the two controls it was written for
      * and false of this one, but its actual *logic* — the reach is
@@ -391,8 +376,8 @@ final class Controls
      * have to be re-typed each time the declaration changes. When a round
      * empties the declaration the assertion still holds — a derivation with
      * nothing to declare writes the header alone, and the comment is gone from
-     * that too. Where the round retires the declaration entirely, as Х9's setup
-     * step did, {@see declaredDeltaIndexOrHeader()} reads the same header the
+     * that too. When the declaration is retired entirely,
+     * {@see declaredDeltaIndexOrHeader()} reads the same header the
      * loader would: `Mutation::append()` requires an existing target, so the
      * comment is appended to that header via
      * {@see declaredDeltaIndexWrite()} rather than to a file this repository
@@ -430,10 +415,10 @@ final class Controls
      *
      * A `map-stale` toleration comes and goes with the step's own map, and it is
      * gone again. It sits here only while some declared row is translated by
-     * this fixture alone: Ш5e3 declared a row per metric key, and
+     * this fixture alone: the map declares a row per metric key, and
      * `unreachableCode.firstLine` is published by this fixture and by nothing
-     * else, so removing the fixture left that row translating nothing. Ш5c's ten
-     * rows never named the channel, and Ш6 renames nothing at all, so under an
+     * else, so removing the fixture leaves that row translating nothing. Other
+     * rows do not name the channel, and an empty map renames nothing, so under an
      * empty map no row can go stale — and a toleration nothing matches fails the
      * control, because it claims a blast radius the run did not prove. Add it
      * back when a step's map declares a row this fixture alone translates.
@@ -493,7 +478,7 @@ final class Controls
      * arise. The claim, written by hand in `case.json`, is the only place the
      * loss shows. For a *static* channel the two do not move together: the levels
      * come from product code and the fixtures from the corpus, and there a lost
-     * level is a `coverage-shortfall`. That is the case Ш5c creates, and the
+     * level is a `coverage-shortfall`. The control therefore
      * control for it needs a static multi-level channel, which this corpus does
      * not have yet.
      */
@@ -668,8 +653,8 @@ final class Controls
      * limit, and only it is required. The rest are tolerated.
      *
      * Derived from the corpus rather than listed, and that is the whole point:
-     * the list was written by hand, Ш6 added the `rule-exclusion-ledger` case,
-     * and the control failed on a surface the mutation explains perfectly well —
+     * a hand-written list omitted `rule-exclusion-ledger`, causing the control
+     * to fail on a surface the mutation explains perfectly well —
      * "failure(s) the mutation does not explain" pointing at a case the
      * declaration had simply never heard of. A case is a directory holding a
      * `case.json`, the same definition {@see \QmxFindingGate\Corpus::load()}
@@ -714,8 +699,8 @@ final class Controls
      * diffs and an empty findings section, which reads as a product change.
      *
      * **Why a CHANNEL of a multi-channel rule, and not a rule.** This control
-     * used to rename `design.noc`, and Ш5d made that unrunnable: the step
-     * declares a delta on `tree|rules`, a renamed producer moves that listing,
+     * cannot rename `design.noc` when the declaration already covers a delta on
+     * `tree|rules`: a renamed producer moves that listing,
      * and an expectation pinned to a surface a declaration covers can never be
      * met — the harness refuses such a control before it clones anything
      * ({@see Control::assertNotPinnedToDeclaredDelta()}). Repinning onto a
@@ -805,8 +790,8 @@ final class Controls
      *
      * The mutation is a channel rename, and the point of this control is *where*
      * the required failure is pinned: on the two surfaces that publish the
-     * fingerprint. Ш5b0 stopped comparing the GitLab hash as hex and started
-     * comparing the identity it hashes, and a substitution that quietly redacted
+     * fingerprint. The guard compares the identity behind the GitLab hash, so a
+     * substitution that quietly redacted
      * instead of substituting would leave that surface agreeing with itself
      * under any rename. That is the guard, and this is what watches it.
      *
@@ -817,7 +802,7 @@ final class Controls
      *
      * **Why this control stopped sharing the lcom mutation.** Both required
      * expectations name an exact surface, and one of them named
-     * `case:complexity|format:sarif` — which Ш5c declares a delta for. A declared
+     * `case:complexity|format:sarif`, for which a delta is already declared. A declared
      * surface is compared against that exact diff and never for equality, so the
      * rename arrived there as `delta-mismatch` and the sarif half of the pair
      * could not fire at all. Two repairs were possible and only one keeps the
@@ -902,10 +887,9 @@ final class Controls
      * declared row is what makes that green. Registered under "no undeclared
      * deltas" so that a delta creeping back in fails it.
      *
-     * **The channel is chosen, not incidental, and Ш5c changed what the choice
-     * has to satisfy.** Two constraints, both measured:
+     * **The channel is chosen, not incidental.** Two measured constraints apply:
      *
-     * - *the case must declare no delta of its own.* Ш5c declares one on
+     * - *the case must declare no delta of its own.* Existing declarations cover
      *   `case:complexity|format:sarif` and one on `case:coupling|format:sarif`
      *   — SARIF publishes one rule descriptor per channel, so collapsing the
      *   level pairs removes descriptors and renumbers every `ruleIndex`. A
@@ -915,8 +899,8 @@ final class Controls
      *   control no longer lives on `complexity.cyclomatic`, where it used to;
      * - *the code and the published `rule` field must move together.* They used
      *   to be told apart by the level suffix: renaming only the code half was
-     *   expressible because the rule half was a shorter, different string. After
-     *   Ш5c no static channel's code differs from its rule field, so the only
+     *   expressible because the rule half was a shorter, different string. No
+     *   static channel's code now differs from its rule field, so the only
      *   rename a whole-name row can absorb is one that moves both — which is
      *   what renaming the rule's own `NAME` does, in one place, and which one
      *   row then translates on the reference side. Renaming the code alone
@@ -943,7 +927,7 @@ final class Controls
      * SARIF surface, its twelve findings publish four identities of the form
      * `channel:subject`, three findings to each class. So the substitution is
      * exercised on the two-part shape, and the shape *with* an occurrence is
-     * exercised by {@see occurrenceFrozenUnderDeclaredRename()}, which Х10-B adds over
+     * exercised by {@see occurrenceFrozenUnderDeclaredRename()} over
      * `security.sensitive-parameter` for exactly that reason.
      *
      * The claim and the tracked declaration fixture move with the rename because
@@ -980,8 +964,8 @@ final class Controls
      * publish the two-part identity `channel:subject`, so no control had ever
      * watched a rename cross an identity that *has* a third part. The third
      * part is the interesting one: `OccurrenceKey::semantic()` hashes a
-     * discriminator plus the evidence, and until X10 six families passed their
-     * channel code in as that discriminator — so a rename silently moved the
+     * discriminator plus the evidence. Six families once passed their channel
+     * code as that discriminator, so a rename silently moved the
      * `occurrence` of every finding on the channel, and no consumer can
      * recompute it, because an accepted baseline entry stores the digest and
      * never the evidence.
@@ -1457,9 +1441,8 @@ final class Controls
      * then match nothing and fail the control as an unmeasured radius
      * ({@see Outcome::idleTolerations()}). A step that declares nothing gets the
      * plain surface diff, which without a toleration is an unexplained failure.
-     * Both readings were reached by measurement, one step apart: Ш5d declared
-     * the delta, Ш5e1 withdrew it, and a toleration pinned to either answer is
-     * wrong on the other step.
+     * Both readings occur on valid inputs: a delta may be declared or absent,
+     * and a toleration pinned to either answer is wrong for the other.
      *
      * So the answer is read from the step's own tracked declaration, the way
      * {@see trackedChannelMapPlus()} reads its rows — through the gate's own
@@ -1577,11 +1560,11 @@ final class Controls
      * The channel rename, shared by the map control and the overreach control.
      *
      * The declaration-side fragment was `ChannelDeclaration::magnitude(` when
-     * this control was written; a later step (before Х9) moved `LcomRule` onto
+     * this control was written; `LcomRule` later moved onto
      * `ChannelDeclaration::judging(` without changing the shape this control
      * relies on — the key is still `self::NAME` on its own line, immediately
      * before the factory call. `LcomRule.php` is the only file this mutation
-     * touches; `LcomVisitor.php`, the subject of X9's own D1 package, declares
+     * touches; `LcomVisitor.php` declares
      * neither `self::NAME` nor `ChannelDeclaration`, so a future rename there
      * cannot collide with this fragment.
      */
@@ -1650,8 +1633,8 @@ final class Controls
     {
         // `control-` prefixed on purpose: a step may track a diff for the very
         // surface a control plants one for, and Mutation refuses to CREATE a
-        // file the repository already has — measured on Ш5d, whose
-        // `case:health|format:json` diff collided with delta-too-large's slug
+        // file the repository already has. A tracked
+        // `case:health|format:json` diff can collide with delta-too-large's slug
         // and would have crashed that control at mutation time.
         $slug = trim((string) preg_replace('~[^A-Za-z0-9]+~', '-', $surface), '-');
         $file = 'declared-delta/control-' . $slug . '.diff';

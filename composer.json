@@ -126,6 +126,7 @@
         ],
         "promise-ledger:freeze": "python3 scripts/promise-ledger-freeze.py",
         "promise-ledger:freeze:check": "python3 scripts/promise-ledger-freeze.py --check",
+        "promise-effect:p1-set:check": "php scripts/promise-effect-p1-set.php",
         "promise-effect:controls": "php scripts/promise-effect-controls.php",
         "promise-effect:grid": "php scripts/promise-effect-grid.php",
         "promise-effect:grid:check": "php scripts/promise-effect-grid.php --check",
@@ -189,6 +190,7 @@
             "@enumeration:directives:check",
             "@suppression-snapshot:check",
             "@input-doors:grid:check",
+            "@promise-effect:p1-set:check",
             "@promise-effect:grid:check"
         ],
         "check:self": [
@@ -213,7 +215,7 @@
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "architecture:generate": "Regenerate modular-architecture governance projections and inventories",
         "architecture:check": "Validate the manifest and generated modular-architecture artifacts without writing",
-        "enumeration:renames": "Regenerate docs/internal/plans/rule-vocabulary/enumeration-renames.tsv from the production container and MetricName",
+        "enumeration:renames": "Regenerate finding-gate/enumeration-renames.tsv from the production container and MetricName",
         "enumeration:directives": "Regenerate the authored @qmx-threshold enumeration from src",
         "enumeration:directives:check": "Fail when that enumeration and the tree disagree, so the count is never repeated in prose",
         "enumeration:renames:check": "Fail if enumeration-renames.tsv is stale against a fresh measurement, without writing",

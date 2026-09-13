@@ -14,8 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * End-to-end regression guard for Ш6 decision (д): capture of the per-rule
- * exclusion ledger — and therefore the `suppressed` format's completeness —
+ * End-to-end regression guard: capture of the per-rule exclusion ledger —
+ * and therefore the `suppressed` format's completeness —
  * must arm on `--show-suppressed` OR on the resolved format being
  * `suppressed`, from either the CLI flag or `qmx.yaml`'s `format:` key. A
  * unit test against {@see RuntimeConfigurator} in isolation cannot see a
@@ -66,8 +66,7 @@ final class SuppressedFormatWiringTest extends TestCase
 
     /**
      * The per-rule ledger's `excludedFindings` is opt-in
-     * ({@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}), and
-     * before Ш6 the only thing that turned it on was `--show-suppressed`.
+     * ({@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}).
      * Selecting `--format=suppressed` alone must arm it too, or the format
      * would silently publish an empty ledger half.
      */
@@ -142,8 +141,8 @@ final class SuppressedFormatWiringTest extends TestCase
 
     /**
      * `--show-suppressed` on the ordinary text format is a separate route
-     * that must keep working unchanged — Ш6 decision (д) is a disjunction,
-     * not a migration off the flag.
+     * that must keep working unchanged; format selection and this flag are
+     * independent ways to request the ledger.
      */
     #[Test]
     public function itKeepsShowSuppressedWorkingOnTextFormat(): void

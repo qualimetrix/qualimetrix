@@ -6,7 +6,7 @@
 collection, phase ordering, run coverage, and run-level results. It is a
 navigation leaf, not a home for evidence, policy, or reporting state.
 
-The only P3 phase extension point is
+The only generic phase extension point is
 `Contract\\FileSetInspectionParticipantInterface`. It is intentionally narrow:
 Run supplies the eligible `list<SplFileInfo>`, resets the participant before a
 run, and invokes it only when its producer rule is selected. It neither reads
@@ -100,7 +100,7 @@ and stores no computed-metric state or result payload.
 - `DependencyTraversalParticipantInterface` belongs to DependencyModel, not
   Run: it promises extraction to its named consumers.
 - `LayerPolicyPreparationInterface` and
-  `CircularDependencyPreparationInterface` are capability-specific P4
+`CircularDependencyPreparationInterface` are capability-specific
   contracts, not a generic lifecycle or graph-participant registry.
 - `RuleProducerPreparation` coordinates their rule selection, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the

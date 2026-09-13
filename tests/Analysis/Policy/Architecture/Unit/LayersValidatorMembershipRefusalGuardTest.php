@@ -17,8 +17,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
 
 /**
  * `LayersValidator::buildMembershipDefinition()`'s `try`/`catch` is the one
- * named exception to normalization-in-place (plan `03-normalization-verdicts.md`
- * §4.1): its `catch` clause names `InvalidArgumentException` alongside
+ * named exception to normalization-in-place: its `catch` clause names
+ * `InvalidArgumentException` alongside
  * `InvalidLayerDefinitionException`, so any product defect that throws a bare
  * `InvalidArgumentException` inside the `try` would also become a
  * {@see ConfigurationRefusal} with exit code 3 — masking a bug as user input.
@@ -33,9 +33,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
  * widening what "input" means). So this class asserts, from the AST rather
  * than by reading the file, that the `try` is exactly one call and that the
  * three files in its call tree throw `InvalidArgumentException` exactly
- * 0 / 1 / 2 times — the count the plan measured. A fourth occurrence
- * anywhere in the tree is the return-to-orchestrator trigger named in the
- * plan, not something this guard could quietly wave through.
+ * 0 / 1 / 2 times. A fourth occurrence anywhere in the tree would need a
+ * deliberate review because it would widen the set of defects caught as
+ * invalid user input.
  *
  * A `LogicException` cannot be constructed for a behavioural test here:
  * `LayerDefinition` and `MembershipSpec` are `final` and never throw one.

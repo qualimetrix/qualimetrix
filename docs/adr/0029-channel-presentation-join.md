@@ -14,8 +14,8 @@ fell back to a humanised placeholder; `duplication.*` was mapped to
 `website/docs/rules/architecture.md`. The unit test that should have caught
 this asserted the table against violation codes it invented itself
 (`'complexity.cyclomatic'`), so it stayed green while the product emitted none
-of them. See `docs/internal/plans/sarif-channel-descriptions.md` for the full
-measurement.
+of them. The defect was confirmed by comparing emitted channels with the
+descriptions presented for those channels.
 
 The fix requires joining three facts for a violation code: which rule produces
 it, that rule's description, and where it is documented. No single existing
@@ -114,7 +114,7 @@ import inventory that would have answered it directly.
 - Every rule declares its documentation page as a reflection-readable class
   constant (`DOCS_PAGE`, read by `RuleDocsPageReader`), the same idiom as
   `NAME`. The two channels whose page is not `rules/{prefix}` —
-  `cohesion.lcom` (renamed from `design.lcom`, see ADR 0028, documented at
+  `cohesion.lcom` (renamed from `design.lcom`, see ADR 0060, documented at
   `rules/cohesion.md`) and `computed.health` (documented at
   `reference/health-scores.md`, outside `/rules/` entirely) — are why the
   constant holds a full relative path rather than being derived from

@@ -61,7 +61,7 @@ Artefacts: `rows.tsv` (the table), `assignment.php` (the same assignment, machin
 
 ```bash
 awk -F'\t' '$1=="pair" && $9 ~ /kind=3-shorthand-vs-level-block/ && $5=="same-source"' \
-  docs/internal/plans/promise-effect/measurement/promise-ledger.tsv | wc -l   # 18
+  promise-effect/promise-ledger.tsv | wc -l   # 18
 ```
 
 The verdict on a row is decided by two facts and nothing else, both read out of
@@ -281,7 +281,7 @@ Measured as a working patch: `patch.diff`, 300 lines of diff over three files.
 | the winner-key → side translation, BOTH sites                   | `Stand.php:316-318` (frozen half) and `:599-601` (live half). I folded them into one `Stand::sideOfWinner()`: adding a prefix to one and forgetting the other is precisely the defect class this programme keeps finding                                                                                                                                                                                         |
 | the vocabulary test                                             | `tests/Unit/PromiseEffect/LedgerVocabularyTest.php` — one case mirroring `itAcceptsTheOneWinsFormWhichCarriesItsWinnerInTheValue` (`:94-106`), and a SECOND case for the suffix guard, which does not exist today for `one-wins:` either                                                                                                                                                                         |
 | the stand's own controls                                        | `scripts/promise-effect-controls/Cases.php` — a `JudgementCase` for axis B with the new value beside PR1-PR3 (`:390-425`); without it the branch is not covered by `promise-effect:controls`. Note these call `Classifier::pair()` directly (`scripts/promise-effect-controls.php:1066-1071`), so they pass `a`/`b` literally and never exercise the translation — the translation stays uncontrolled either way |
-| prose listing the vocabulary                                    | `docs/adr/0054-an-oracle-for-effect-diverging-from-promise.md:94`; `docs/internal/plans/promise-effect/01-promise.md:55`; `docs/internal/plans/promise-effect/02-oracle.md:47`; this round's `measurement/stand-and-ledger.md:229,235,248-252`                                                                                                                                                                   |
+| prose listing the vocabulary                                    | `promise-effect/README.md:94`; `promise-effect/README.md:55`; `promise-effect/README.md:47`; this round's `measurement/stand-and-ledger.md:229,235,248-252`                                                                                                                                                                                                                                                      |
 | the 18 ledger cells                                             | `promise-ledger.tsv:1577-1594`, column 6, plus their notes: the notes of the seven `refuse` rows carry the reason "the coexistence column has no value meaning …", which stops being true                                                                                                                                                                                                                        |
 
 Not touched by this assignment: `promise-effect/floor.tsv`. Its single standing row is
@@ -424,7 +424,7 @@ and under C2 the level's namesake wins that level outright, so the top key's lea
 there does not survive. Correct value: `one-wins:<level key>` when the top key
 reaches only that level (complexity's band, and `scope`), `deeper-wins:<level
 key>` when it also reaches the sibling (all of coupling, and `enabled`
-everywhere). ADR 0052 row 3's "both apply at their own depth" is true of the
+everywhere). the independent-key composition rule's "both apply at their own depth" is true of the
 OUTCOME and false of the vocabulary word `compose` — the two had been treated as
 the same thing.
 

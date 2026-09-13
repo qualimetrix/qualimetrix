@@ -25,7 +25,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 
 /**
- * Executable proof for the P0 fail-closed modular-topology contract.
+ * Executable proof for the fail-closed modular-topology contract.
  *
  * Taxonomy directories are deliberately absent from every registry below.
  * Only leaf owners and their exact Contract/Internal surfaces are layers.

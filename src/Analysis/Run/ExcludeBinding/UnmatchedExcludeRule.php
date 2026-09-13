@@ -44,15 +44,6 @@ final class UnmatchedExcludeRule extends AbstractRule
 {
     public const string NAME = UnmatchedExcludeOptions::CHANNEL;
 
-    /**
-     * Interim, and the interim is the point: the channel's own group page
-     * (`rules/discovery.md`) cannot be created here, because a new group page
-     * also needs an inventory prefix and a nav entry, and those three must
-     * land in one change owned by the round's consolidating package. The
-     * catalog page carries this rule's anchor until then, so the guarantee
-     * "every rule's name is documented where its reports point" holds without
-     * a gap.
-     */
     public const string DOCS_PAGE = 'rules/discovery.md';
 
     /** Deleting one line of configuration, plus checking what the tree really contains. */

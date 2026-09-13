@@ -1,10 +1,7 @@
-# 39. The directive audit is a separate contract, and its verdicts are four
+# 0039. The Directive Audit Is a Separate Contract, and Its Verdicts Are Four
 
-Date: 2026-09-01
-
-## Status
-
-Accepted
+**Date:** 2026-09-01
+**Status:** Accepted; Decision 4 is partially superseded by [ADR 0041](0041-no-directive-may-silence-the-unused-directive-channel.md), and exclusion vocabulary by [ADR 0047](0047-suppression-is-not-exclusion.md)
 
 ## Context
 

@@ -251,7 +251,7 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
     }
 
     /**
-     * The precondition ADR 0052 states for every channel of this row, which
+     * The precondition ADR 0061 states for every channel of this row, which
      * this one shipped without: on a run narrowed below the project's
      * production autoload roots the layer's positive criteria can match inside
      * the slice while the classes the clause was written for sit outside it.

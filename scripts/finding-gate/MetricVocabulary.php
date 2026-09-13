@@ -32,9 +32,9 @@ namespace QmxFindingGate;
  * its reach is worse than one that states it. `MetricName`'s constants are 71 of
  * the 82 published base keys; the other eleven are collector-owned literals
  * (`getterCount`, the three `methodCount*`, …) that no single file declares, and
- * the step that gives them constants is Ш5e3 itself. So the overlap check below
- * covers every key the product names in one place, and cannot see one it does
- * not.
+ * their constants are introduced by the same vocabulary migration. The overlap
+ * check therefore covers every key the product names in one place, but cannot
+ * see a key with no single declaration.
  */
 final class MetricVocabulary
 {

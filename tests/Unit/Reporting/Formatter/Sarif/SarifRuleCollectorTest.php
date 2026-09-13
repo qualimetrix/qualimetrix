@@ -21,9 +21,8 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
  * against finding codes the product never emitted (the code carried the level
  * then, so `complexity.ccn` named nothing), so it validated the table
  * against itself. This version drives the collector against codes the real
- * container's {@see ChannelPresentationInterface} actually resolves — see
- * `docs/internal/plans/sarif-channel-descriptions.md`, package P4, for the
- * broader guard that sweeps every channel of the real universe.
+ * container's {@see ChannelPresentationInterface} actually resolves. The
+ * integration coverage sweeps every channel of the real universe.
  */
 #[CoversClass(SarifRuleCollector::class)]
 final class SarifRuleCollectorTest extends TestCase
@@ -272,7 +271,7 @@ final class SarifRuleCollectorTest extends TestCase
     }
 
     /**
-     * Demonstrates the fallback's own discriminating power (plan P4 DoD): an
+     * Demonstrates the fallback's own discriminating power: an
      * empty `ComputedMetricDefinition::$description` resolves to `null` per
      * {@see ChannelPresentationInterface}'s own contract — indistinguishable
      * here from "no channel at all" — so the collector must fall back rather

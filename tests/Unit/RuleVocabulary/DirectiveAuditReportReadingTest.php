@@ -370,7 +370,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
      * The population below carries every name the floor asks for and is still
      * degenerate: its only `inert` sits on a `@qmx-ignore`, which is judged by
      * what it silenced rather than by re-executing a rule, so the two sweeps
-     * agree on it by construction. Review built this and the floor accepted it.
+     * agree on it by construction, so the floor must reject this population.
      */
     #[Test]
     public function itRefusesAVerdictCarriedOnlyByASuppression(): void

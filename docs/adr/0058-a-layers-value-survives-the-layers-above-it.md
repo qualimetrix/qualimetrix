@@ -1,4 +1,4 @@
-# 58. A Layer's Value Survives the Layers Above It
+# 0058. A Layer's Value Survives the Layers Above It
 
 **Date:** 2026-09-12
 **Status:** Accepted
@@ -113,9 +113,7 @@ highest of THREE layers that wrote it.
 - **The sample is still the narrow one ADR 0056 described.** Four triples, one
   scalar path, `#[CliAlias]` never in the L3 position. This round cured what
   that sample found; it did not widen it.
-- **Four things are deferred with their price named as a number**, and the
-  enumerations behind them are banked in
-  `docs/internal/plans/layer-value-survival/measurement/deferred.md`: axis F
+- **Four things are deferred with their price named as a number**: axis F
   (its population must be rebuilt — of eight canonical forms in a map key, five
   are refused by the YAML parser and two collapse into one), axis B (four
   mechanisms, 81 of 82 cells one copy-pasted early return, nothing blocking

@@ -17,7 +17,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * The three questions a seam may ask about an authored `channel:level` pair,
  * and the one place their answers are worded.
  *
- * The universe below is the counterexample from round 11 in miniature:
+ * The universe below exercises mixed level declarations in one family:
  * `coupling.cbo` reports at two levels, `coupling.class-rank` at one, and both
  * live under the same `coupling.*` wildcard.
  */

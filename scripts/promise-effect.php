@@ -512,10 +512,10 @@ if (isset($arguments['before'])) {
 
     // The floor belongs HERE, but not in the shape it had. It used to claim
     // "every declared row is a defect on this half, cured or not", which held
-    // only while the frozen half predated every cure. X19 rebased the snapshot
-    // onto the product of 02a6ca66 — after X18's cure — so twenty-one declared
-    // rows are lawfully green there, and the old claim turned each of them into
-    // a miss. The half is now judged through the same `cure` column the live
+    // only while the frozen half predated every correction. After the snapshot
+    // was rebased onto a corrected product, twenty-one declared rows became
+    // lawfully green and the old claim turned each into a miss. The half is now
+    // judged through the same `cure` column the live
     // grid uses: a row without a cure must still be a defect, a row with one
     // must read as repaired, and a `pending: …` row must still be a defect
     // HERE and not one on the live grid. What is NOT checked: the commit a

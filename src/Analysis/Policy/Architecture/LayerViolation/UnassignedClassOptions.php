@@ -29,10 +29,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * own gate. `--disable-rule=architecture.layer-violation` never silenced this
  * rule — that is the selector, and it addresses the two producers separately.
  *
- * @qmx-threshold coupling.instability warning=0.81 -- This one moved by three project edges, not
- * one: it traded a bare `InvalidArgumentException` for `ConfigurationRefusal` and
- * `RefusedPosition` (the P4 refusal framing X18 introduces) and gained `RuleOptionShape` with the rest. Measured
- * against 72f18239, those three are the whole difference in its import list. Ca=2, Ce=8 puts this
+ * @qmx-threshold coupling.instability warning=0.81 -- Three necessary edges carry the typed
+ * refusal and option-shape contracts: `ConfigurationRefusal`, `RefusedPosition`, and
+ * `RuleOptionShape`. Ca=2, Ce=8 puts this
  * at exactly 0.800 against an inclusive 0.800 ceiling, so it is reported for reaching the limit
  * rather than passing it. A rule options class is efferent by construction: it names the option
  * vocabulary it accepts and almost nothing names it back. The sibling options classes that carry

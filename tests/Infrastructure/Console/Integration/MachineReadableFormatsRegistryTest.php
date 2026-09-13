@@ -13,8 +13,8 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 
 /**
  * Ties `MachineReadableFormats`'s "closed and measured" claim to the actual
- * `FormatterRegistry`, instead of leaving the two lists free to drift
- * (comprehensive-06 / X15 review): formatters are registered automatically
+ * `FormatterRegistry`, instead of leaving the two lists free to drift:
+ * formatters are registered automatically
  * by name (CLAUDE.md §7 "Adding a new formatter"), so a new one never
  * touches `MachineReadableFormats.php` or its unit test by construction —
  * only this test, which boots the real DI container, catches a format that

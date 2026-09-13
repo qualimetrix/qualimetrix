@@ -72,8 +72,8 @@ final class RulesCommandTest extends TestCase
      * empty", which no group is. The failure names the groups that do exist,
      * because the reader who typed it needs the list, not the refusal.
      *
-     * The command has no machine format and no catch-ladder of its own
-     * (`01-refusal-verdicts.md` §5.7): it throws the round's carrier and
+     * The command has no machine format and no catch-ladder of its own: it
+     * throws the refusal carrier and
      * leaves it to `Application`'s ladder to turn into exit code 3, so under
      * `CommandTester` — which runs `Command::run()` directly, with nothing
      * above it to catch — the carrier flies out of `execute()` rather than

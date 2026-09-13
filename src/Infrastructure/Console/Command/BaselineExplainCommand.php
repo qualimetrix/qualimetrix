@@ -110,8 +110,7 @@ final class BaselineExplainCommand extends BaselineCommand
         // and a channel absent from the registry can still be legitimate —
         // baseline:rename-channels exists precisely because a file outlives a
         // rename, so a channel the registry no longer knows is a valid input
-        // when the loaded baseline still carries it (`01-refusal-verdicts.md`
-        // §5.3).
+        // when the loaded baseline still carries it.
         if ($channel !== null && $this->declarations->declarationFor($channel) === null
             && !self::channelInBaseline($channel, $baseline)) {
             throw ConfigurationRefusal::aboutCommandLineInput(
@@ -180,7 +179,7 @@ final class BaselineExplainCommand extends BaselineCommand
      * exactly {@see \Qualimetrix\Analysis\Policy\Baseline\InertEntryReason::UndeclaredChannel} when the registry
      * has already forgotten the channel a rename map has not yet carried the
      * file onto, which is precisely the legitimate case this check exists
-     * for (`01-refusal-verdicts.md` §5.3).
+     * for.
      */
     private static function channelInBaseline(FindingChannel $channel, ?Baseline $baseline): bool
     {

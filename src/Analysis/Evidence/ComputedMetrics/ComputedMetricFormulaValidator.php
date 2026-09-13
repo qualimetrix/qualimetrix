@@ -71,7 +71,7 @@ final class ComputedMetricFormulaValidator
                     // is the exact family that call's contract names. Widening this
                     // to Throwable/InvalidArgumentException would let a product
                     // defect from inside ExpressionLanguage masquerade as a user
-                    // refusal (`00-overview.md` rule 2).
+                    // refusal.
                     throw $this->refuse(
                         $definition->name,
                         $levelKey,
@@ -259,12 +259,9 @@ final class ComputedMetricFormulaValidator
      *
      * The catalog is read via reflection over {@see MetricName}'s public
      * constants rather than a hand-kept list, so it cannot drift from the
-     * names collectors actually use.
-     * `X9-gate-holes/enumeration-c1-catalog.tsv` re-measured the
-     * runtime-published universe against these constants and found the gap
-     * empty — every base key a collector emits (outside
+     * names collectors actually use. Every base key a collector emits (outside
      * `health.*`/`computed.*`, which this validator's fourth check already
-     * owns) has a constant here — so the constant list is the catalog rather
+     * owns) has a constant here, so the constant list is the catalog rather
      * than a narrower stand-in for it. A future collector that publishes a
      * key with no `MetricName` constant would reopen that gap and this check
      * would need to read the wider, republished universe instead.

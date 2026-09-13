@@ -10,9 +10,8 @@ use JsonException;
  * Proves that the candidate and the reference tree produce equivalent findings
  * over the corpus, modulo the declared maps and the declared normalization.
  *
- * Not byte-identical artifacts: that gate was rejected, and why is written in
- * docs/internal/plans/rule-vocabulary/PLAN.md. Equivalence is the property that
- * still holds across a step that deliberately renames something.
+ * Artifacts need not be byte-identical: a declared rename changes their
+ * spelling while preserving their observable meaning.
  */
 final class Gate
 {
@@ -624,11 +623,10 @@ final class Gate
      * Decodes one fingerprint surface, or reports RUN_FAILED and returns
      * `null` when it cannot be decoded.
      *
-     * Ш4b left this uncaught: a non-parsing artifact threw `JsonException` out
-     * of {@see Fingerprints::publishedInSarif()} / {@see Fingerprints::publishedInGitLab()}
-     * and killed the whole gate process without writing a report, so the
-     * harness could not tell a broken product from a broken instrument (see
-     * the Ш4c entry in docs/internal/plans/rule-vocabulary/PLAN.md). Every
+     * A non-parsing artifact used to throw `JsonException` out of
+     * {@see Fingerprints::publishedInSarif()} / {@see Fingerprints::publishedInGitLab()}
+     * and kill the whole gate process without writing a report, so the
+     * harness could not tell a broken product from a broken instrument. Every
      * decode now goes through here, named by the artifact and the exit code
      * of the `check` invocation that produced it — the same two facts
      * {@see checkBaselineSurface()} already reports for a missing baseline

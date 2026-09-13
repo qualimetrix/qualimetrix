@@ -25,18 +25,16 @@ use RuntimeException;
  * No channel code carries a level at all: a level is a coordinate beside the
  * name, read off the subject of each finding.
  *
- * **What an earlier version of this guard got wrong, because it matters.**
- * It counted syntax: `Concat` nodes with a `SymbolLevel` `->value` operand,
- * asserting there was exactly one. Three reviewers found the same hole
- * independently — a second assembly written with `sprintf()`, with string
+ * A syntax-only scan for `Concat` nodes with a `SymbolLevel` `->value` operand
+ * would miss a second assembly written with `sprintf()`, with string
  * interpolation, or through a local variable passed unnoticed. Widening the
  * count to every `->value` read then measured 90 places, and every one of
  * them was legitimate: a level's string is the key of an aggregation map and
  * a token in exception messages all over Measurement. So "how many places
  * spell a level" is both hard to count and not the question.
  *
- * Ш5c answers it by removing the question. A channel's name and its declared
- * level cannot disagree once the name carries no level — `CboRule`'s
+ * A channel's name and its declared level cannot disagree once the name
+ * carries no level — `CboRule`'s
  * historical `$level === Namespace_ ? '.namespace' : '.class'`, which would
  * have labelled a third level `.class`, has nothing left to be wrong about.
  * So this guard asserts the absence: no statically declared code ends in a

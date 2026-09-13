@@ -102,7 +102,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     /**
      * A key naming a channel that never reports at namespace level is accepted
      * and excludes nothing: the validator judges production, not applicability
-     * (ADR 0025). Without this, the fix would refuse exactly the keys it is
+     * (ADR 0060). Without this, the fix would refuse exactly the keys it is
      * written for — `code-smell.boolean-argument` declares `callable` only.
      */
     #[Test]

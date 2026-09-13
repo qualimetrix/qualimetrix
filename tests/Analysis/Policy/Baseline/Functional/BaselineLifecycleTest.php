@@ -79,9 +79,8 @@ final class BaselineLifecycleTest extends TestCase
     }
 
     /**
-     * Round 3's CRITICAL: a normal repair removes one of two copies. It must
-     * not turn a clean baseline run red merely because a group became
-     * smaller.
+     * A normal repair removes one of two copies. It must not turn a clean
+     * baseline run red merely because a group became smaller.
      */
     #[Test]
     public function itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks(): void
@@ -203,7 +202,7 @@ final class BaselineLifecycleTest extends TestCase
 
         foreach (self::entries($baselinePath) as $entry) {
             if ($entry['channel'] === $channel && isset($entry['magnitudes'])) {
-                // A magnitude-shaped entry no longer writes "count" (P1.1) — its
+                // A magnitude-shaped entry does not write "count" — its
                 // count is the length of the list it already carries.
                 $count += \count($entry['magnitudes']);
                 $magnitudes = [...$magnitudes, ...$entry['magnitudes']];

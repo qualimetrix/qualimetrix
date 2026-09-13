@@ -216,7 +216,7 @@ final class ClassCountRuleTest extends TestCase
 
     /**
      * ADR 0046 declares the channel judges the recursive `.sum`, not the
-     * namespace's own count (`AUDIT.md`, X9 followup E5): a corpus run
+     * namespace's own count: a corpus run
      * cannot distinguish the two because the rule skips every non-leaf
      * subject where they diverge. Here the divergence is injected directly
      * into the `MetricBag`, so a rule that regressed to reading the base

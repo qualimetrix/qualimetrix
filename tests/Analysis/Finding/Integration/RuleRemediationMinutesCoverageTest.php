@@ -19,9 +19,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * "Every rule declares its remediation estimate" is only an invariant if
- * something checks it on every registered rule, not just on the ones a human
- * remembered to look at — mirrors {@see RuleDocsPageCoverageTest}, and see
- * `docs/internal/plans/sarif-channel-descriptions.md`, package P5.
+ * something checks it on every registered rule, not just on a hand-picked
+ * subset — mirrors {@see RuleDocsPageCoverageTest}.
  *
  * The sweep has two halves, because a producer is no longer the same thing as
  * a rule class: the computed-metric family runs in one class and publishes

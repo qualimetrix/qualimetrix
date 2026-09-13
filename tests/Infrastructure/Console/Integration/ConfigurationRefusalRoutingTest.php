@@ -52,11 +52,10 @@ use Symfony\Component\Console\Tester\CommandTester;
 use Throwable;
 
 /**
- * P01-2 — the blocker package: `catch (ConfigurationRefusal)` must be the
- * first clause in every ladder that can reach it, and `RefusalPresenter`
- * must be wired into every command whose ladder catches it. Landed before
- * the round's throw sites exist, so the only way to prove either half is a
- * substituted configuration resolver that throws the carrier directly.
+ * `catch (ConfigurationRefusal)` must be the first clause in every ladder
+ * that can reach it, and `RefusalPresenter` must be wired into each such
+ * command. A substituted configuration resolver makes the routing testable
+ * without depending on a particular refusal-producing input.
  *
  * Two independent things are proven, on purpose kept apart:
  *
@@ -172,9 +171,8 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInDebugLayerAssignment(): void
     {
-        // `AnalysisPreflight` reduces the command to three constructor
-        // arguments (P01-5's fix for the `code-smell.constructor-overinjection`
-        // finding its former eight-parameter constructor tripped): the same
+        // `AnalysisPreflight` reduces the command's constructor arguments;
+        // the same
         // helper `itAnswersTheCarrierWithExitThreeInDirectives` already
         // builds, reused here rather than duplicated. `resolve()` reaches the
         // throwing `ConfigurationInputAdapter` before any of the run/cache/
@@ -315,8 +313,8 @@ final class ConfigurationRefusalRoutingTest extends TestCase
      * `CheckCommand::execute()` was dead code — the alias collision it names
      * is built by `RuleRegistry` from rule classes' own declarations, not
      * from anything a CLI invocation supplies, so the CLI path this test
-     * drives can never throw it (`01-refusal-verdicts.md` §6.2). P01-3 removed
-     * the clause; this case now proves the exception falls all the way to
+     * drives can never throw it. The clause is absent; this case proves the
+     * exception falls all the way to
      * `catch (Throwable)` and answers as a product defect, code 1, not 3 —
      * the behaviour the removal is supposed to have, not a regression of it.
      */

@@ -1,7 +1,7 @@
 # 0016. Subject Cohesion As The Directory Layout Rule
 
 **Date:** 2026-08-04
-**Status:** Accepted
+**Status:** Accepted; the role-bucket inventory was superseded by [ADR 0022](0022-capability-oriented-modular-monolith.md)
 
 ## Context
 
@@ -37,8 +37,9 @@ an interface.
 
 Cohesion by *subject* and cohesion by *role* are different properties that share
 a word. `src/Reporting/` is cohesive by subject — every file is about turning
-results into output. `src/Rules/` is cohesive only by role: cyclomatic
-complexity and SQL-injection detection share an interface and nothing else.
+results into output. The former `src/Rules/` bucket was cohesive only by role:
+cyclomatic complexity and SQL-injection detection shared an interface and
+nothing else. ADR 0022 subsequently removed that bucket.
 
 ### Three tests
 
@@ -65,23 +66,23 @@ stay layered while `Architecture/` did not.
 
 ### Contracts shared by several subjects
 
-A contract produced or consumed by many subjects belongs in the shared
-primitives directory — and the justification must be **subject-based** ("this is
-a cross-cutting primitive"), not **constraint-based** ("nothing else may be
-depended upon").
+A contract stays with the subject that promises its behaviour to named
+consumers. It belongs in shared primitives only when its semantics are genuinely
+neutral and it has no natural subject owner; many consumers do not make it
+neutral. The justification must be **subject-based** ("this is a cross-cutting
+primitive"), not **constraint-based** ("nothing else may be depended upon").
 
 When the dependency constraint and the subject point at the same location, the
 layout is right. When they disagree — when a type lands somewhere only because
 the layer rules forbid every honest alternative — **the layout is wrong, not the
 constraint.** Treat the disagreement as a signal to reconsider the decomposition.
 
-Worked example (Baseline v7): the debt-observation contract is constructed by
-every rule and consumed by both Baseline and Reporting. The constraint
-(`rules: [core]`) permits only `Core`. The subject test agrees independently:
-"measured debt of a symbol" is a cross-cutting primitive of the same kind as
-`SymbolPath` and `Violation`. Both point at `Core/Observation`, so the placement
-is sound — and Baseline needs no vertical slice, because once the contract is in
-Core what remains is exactly the existing `src/Baseline/` content.
+Historical example (Baseline v7): the debt-observation contract was constructed
+by every rule and consumed by both Baseline and Reporting. The dependency
+constraint permitted only `Core`, but the placement was accepted only after the
+subject test independently classified "measured debt of a symbol" as neutral.
+Later baseline work removed that contract; the example demonstrates the test,
+not the current Baseline layout.
 
 > **Note:** [ADR 0017](0017-baseline-ceiling.md) retired the
 > debt-observation contract itself (`DebtObservation`, `AxisObservation`,
@@ -106,24 +107,22 @@ slice, because the adapters do not move into it.
 The rule applies recursively: a subject that grows is split into sub-subjects,
 and each is subject to the same three tests.
 
-Boundaries at **every** level are enforced mechanically, via the layer topology
-in `qmx.yaml`, never by convention alone. A sub-subject whose edges are
-unchecked is a subject only by intention, and intentions erode.
+Boundaries at **every** level are enforced mechanically. The versioned owner
+manifest is the exact authority; its generated qmx projection enforces the
+coarser topology. A sub-subject whose edges are unchecked is a subject only by
+intention, and intentions erode.
 
 Internal freedom is a **temporary grant**, not a property of slices. It is
 appropriate while a subject is being migrated or built out, because pinning
 boundaries that are still moving creates churn for no benefit. Every grant must
 name the condition that closes it.
 
-This resolves an inconsistency in the current tree. `analysis` has its internals
-expanded into enforced sub-layers; `architecture` is a single layer, because ADR
-0010 granted it internal freedom during the pilot migration. That migration has
-landed, so the grant has expired and Architecture's internals are to be expanded
-into enforced sub-layers. Verified when this ADR was written, its internal
-dependencies already form a clean DAG — `Domain` depends on nothing,
-`Configuration → Domain`, `Processing → Domain`, `Rules → Domain + Processing` —
-so enforcement pins an existing shape rather than forcing a refactor. ADR 0010
-Part 5 is superseded on this point.
+This rule exposed an inconsistency in the tree at the time: Architecture still
+held the internal-freedom grant of its pilot. The capability migration later
+closed that grant. Current ownership and the internal zone DAG are recorded by
+the manifest and the Architecture capability README; the old
+`Domain/Configuration/Processing/Rules` layout is historical. ADR 0010 Part 5
+is superseded on this point.
 
 ### Anti-patterns
 
@@ -136,11 +135,9 @@ Part 5 is superseded on this point.
 - Borderline layout questions are decided by applying the tests, not by counting
   checklist items. ADR 0010's two criteria remain valid as a fast path for
   rule-bearing features; when they disagree with the tests here, these tests win.
-- `src/Rules/` and `src/Metrics/` fail test 1 and are known, accepted
-  violations. ADR 0012 declined to migrate them on cost grounds, and that
-  decision stands — but it is now recorded as a deliberate exception to a stated
-  rule rather than as an unexamined default. Should either directory be split by
-  subject in the future, this ADR is the justification.
+- The former `src/Rules/` and `src/Metrics/` buckets failed test 1. ADR 0022
+  later dissolved them into subject-owned capabilities; this ADR is the rule
+  that justified that migration.
 - Test 2 is measurable. This project analyses code for a living; a co-change
   metric over git history is a plausible future feature, and it would make the
   rule enforceable rather than advisory.

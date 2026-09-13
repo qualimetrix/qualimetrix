@@ -76,9 +76,9 @@ final readonly class FifthSetReport
 
 final class FifthSet
 {
-    private const string INVENTORY = 'docs/internal/plans/promise-effect/measurement/form-deciding-sites.tsv';
+    private const string INVENTORY = 'promise-effect/form-deciding-sites.tsv';
 
-    private const string RESOLUTION = 'docs/internal/plans/promise-effect/measurement/form-deciding-sites-resolution.tsv';
+    private const string RESOLUTION = 'promise-effect/form-deciding-sites-resolution.tsv';
 
     /** The inventory's own word for "this site decides the form of whatever key arrives". */
     private const string ANY_KEY = 'любой';

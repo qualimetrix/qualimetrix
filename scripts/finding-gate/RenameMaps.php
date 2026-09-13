@@ -25,7 +25,7 @@ namespace QmxFindingGate;
  * one name the reference knows, which is a function. Forwards there is no
  * function to apply, so the row is not applied forwards at all: an occurrence of
  * the old token on the way out stops the run instead of silently taking the
- * first image. Measured 2026-08-24: after Ш4b `design.type-coverage` is three
+ * first image. `design.type-coverage` now maps to three
  * producers (`design.param-type-coverage`, `design.property-type-coverage`,
  * `design.return-type-coverage`), so a case addressing the old name through a
  * selector had no writable row at all and was `reference-input-untranslated`
@@ -145,8 +145,8 @@ final class RenameMaps
      * complexity.cognitive complexity is 29" — a rename leaking into text the
      * step never touched, and reported against the step as a mismatch.
      *
-     * The restriction is a measurement, not a convenience: Ш5e3 measured which
-     * surfaces publish a metric key at all — `format:metrics` (282 spellings),
+     * The restriction follows the measured publishing surface: metric keys
+     * appear in `format:metrics` (282 spellings),
      * `format:json` (13) and the HTML report, which embeds the JSON payload.
      * The other nine formats, the baseline, `baseline:explain` and the `rules`
      * listing publish none. A key that later reaches one of those is therefore
@@ -1172,8 +1172,8 @@ final class RenameMaps
             // and "there" means BOTH rows travel backwards. A reversible row
             // sharing its target with a forward-only one is still a function
             // backwards, because the forward-only row is not consulted in that
-            // direction at all. Ш5e3 makes that arrangement the normal case: a
-            // metric key and the channel checking it are one name on purpose,
+            // direction at all. This arrangement is normal when a metric key
+            // and the channel checking it deliberately share one name,
             // so `typeCoverage.param` (forward-only) and
             // `design.param-type-coverage` (reversible, the corpus addresses it
             // in --rule-opt) both arrive at `design.type-coverage.param`.

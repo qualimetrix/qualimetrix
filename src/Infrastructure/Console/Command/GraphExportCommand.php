@@ -101,11 +101,11 @@ final class GraphExportCommand extends Command
     }
 
     /**
-     * Owns its own catch ladder rather than relying on `Application`'s
-     * (`01-refusal-exit-ladder.md` §2.4): `--format=json` renders a JSON
+     * Owns its own catch ladder rather than relying on `Application`'s:
+     * `--format=json` renders a JSON
      * document exactly like `check --format=json` does, so a refusal here
-     * must arrive as the same `{error, exit_code}` envelope
-     * (`01-refusal-envelope.md` §2.1) — which `Application`'s ladder cannot
+     * must arrive as the same `{error, exit_code}` envelope — which
+     * `Application`'s ladder cannot
      * do, because it never learns this command's `--format`.
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -118,8 +118,8 @@ final class GraphExportCommand extends Command
         } catch (ConfigurationRefusal $refusal) {
             return $this->refusalPresenter->refusal($output, $rawFormat, $refusal);
         } catch (InvalidArgumentException $failure) {
-            // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
-            // §2.6): an `InvalidArgumentException` that never became a
+            // Named secondary signal for code 3: an
+            // `InvalidArgumentException` that never became a
             // carrier — e.g. from the path value objects below.
             return $this->refusalPresenter->fallbackRefusal($output, $rawFormat, $failure);
         } catch (Throwable $failure) {
@@ -129,11 +129,11 @@ final class GraphExportCommand extends Command
 
     private function doExecute(InputInterface $input, OutputInterface $output, string $rawFormat): int
     {
-        // Every check in this method runs before `analyzeDependencyGraph()`
-        // — the round's `--direction`/`--format`/`--output` refusals must
+        // Every check in this method runs before `analyzeDependencyGraph()`:
+        // `--direction`/`--format`/`--output` refusals must
         // not pay for a Discovery+Collection run that their own answer
-        // throws away (`01-refusal-packages.md`, P01-5 DoD: a bogus
-        // `--direction`/`--format` reaches the analyzer zero times).
+        // throws away. A bogus `--direction` or `--format` must reach the
+        // analyzer zero times.
         $format = self::resolveFormat($rawFormat);
 
         /** @var string $rawDirection */
@@ -159,8 +159,7 @@ final class GraphExportCommand extends Command
         ]);
 
         if ($result->coverage->discoveredFiles() === 0) {
-            // An analysis outcome, not an input refusal — the round does not
-            // touch it (`01-refusal-verdicts.md` §5.7).
+            // An analysis outcome, not an input refusal.
             $output->writeln('<error>No files found to analyze</error>');
 
             return self::FAILURE;
@@ -200,7 +199,7 @@ final class GraphExportCommand extends Command
     /**
      * An include namespace matching nothing renders a graph the caller cannot
      * tell apart from a genuinely empty one, so it is refused rather than
-     * drawn (`docs/internal/plans/silent-acceptance/02-cure.md` §2). The
+     * drawn. The
      * excluding sibling `--exclude-namespace` deliberately keeps its silence:
      * a miss there leaves the graph exactly as it would have been, and the
      * caller loses nothing.
@@ -293,9 +292,7 @@ final class GraphExportCommand extends Command
     {
         // The pre-check in doExecute() catches most cases before analysis
         // runs; this catches the race (writability changed since) and a
-        // `rename()`/write failure `@`-silenced before the round
-        // (`01-refusal-verdicts.md` §5.2, the `check --output` sibling
-        // of this check at §5.4).
+        // `rename()` or write failure suppressed by `@` below.
         if (@file_put_contents($outputFile, $content) === false) {
             throw ConfigurationRefusal::aboutCommandLineInput(
                 '--output',

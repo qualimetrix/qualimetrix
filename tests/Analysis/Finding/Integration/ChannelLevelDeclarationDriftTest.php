@@ -32,13 +32,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * construction; this one runs the product and reads the answer out of real
  * findings.
  *
- * The oracle for the observation is
- * `docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv` — 63
- * rows measured in Ш0 by two independent witnesses over six purpose-built
- * corpora, which is a stronger measurement than any single run here, plus a
- * row per channel added since, each naming the round that measured it. A row
- * that stops reproducing means the corpus lost a fixture, not that the row
- * was wrong.
+ * The observation oracle is a test-owned fixture, independent of the product
+ * declaration. A row that stops reproducing means the corpus lost a fixture
+ * or the product's reported level changed.
  *
  * Only the open `computed.*` / `health.*` family may appear beyond those
  * rows: its vocabulary comes from a user's own configuration, so no fixture
@@ -55,7 +51,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelLevelDeclarationDriftTest extends TestCase
 {
-    private const string OBSERVATION_ORACLE = 'docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv';
+    private const string OBSERVATION_ORACLE = 'tests/Analysis/Finding/Fixtures/Channels/observed-levels.tsv';
 
     private const string DECLARED_CHANNELS = 'tests/Analysis/Finding/Fixtures/Channels/declared.txt';
 
@@ -187,10 +183,9 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 
     /**
      * `levelOf()` is a hand-written parser kept deliberately independent of
-     * the product's own subject-to-level derivation (rejected as
-     * `r10-claude-04`, see Ш5c′ PLAN.md): a parser built from the same code
-     * as what it checks would agree with it by construction and stop being a
-     * witness. Independence has no guard of its own otherwise, so this test
+     * the product's own subject-to-level derivation: a parser built from the
+     * same code as what it checks would agree with it by construction and
+     * stop being a witness. Independence has no guard of its own otherwise, so this test
      * is that guard — not a test of a finding, but of the oracle's fitness to
      * report one. It fails if the corpus stops reaching a form `levelOf()`
      * recognises: that is exactly the condition under which deleting the
@@ -237,19 +232,15 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 
             $fields = explode("\t", $line);
 
-            // The header row is skipped by its own first field, not by a
-            // prefix match: the previous spelling used single quotes around
-            // "channel\t", compared against a literal backslash, and the
-            // row was only ever skipped by the check below it.
+            // Skip the header by its exact first field so a channel name that
+            // shares its prefix cannot be mistaken for the header.
             if (\count($fields) < 2 || $fields[0] === 'channel') {
                 continue;
             }
 
             $channel = self::channelNameOf($fields[0]);
-            // Ш5c collapsed ten level-suffixed channels into five, so two rows
-            // of the enumeration now describe one channel at two levels. Their
-            // levels are unioned rather than one overwriting the other: what
-            // the measurement recorded is that this channel reports at both.
+            // Several rows may normalize to one channel; union their levels
+            // instead of allowing a later row to overwrite an earlier one.
             $oracle[$channel] = self::canonical([
                 ...($oracle[$channel] ?? []),
                 ...explode(' ', $fields[1]),
@@ -271,18 +262,12 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     /**
-     * The channel a row of the Ш0 enumeration names, in today's vocabulary.
+     * Normalize the fixture's `rule#channel` key to the channel code used by
+     * current findings. A recognized trailing level segment is part of the
+     * observed level, not the channel name.
      *
-     * The enumeration was measured while a channel was a `rule#code` pair
-     * whose code could end in a level, and it is left in the vocabulary it was
-     * measured in: the measurement is what the row is worth, and rewriting 63
-     * rows would restate it rather than preserve it. Two translations happen
-     * here instead, both of them removals — the rule half (Ш5b) and a trailing
-     * level segment (Ш5c) — so the comparison stays a comparison of names.
-     *
-     * A trailing segment that is not a {@see SymbolLevel} is left alone: an
-     * aspect (`design.type-coverage.param`, before ADR 0030) is part of the
-     * name, not a level.
+     * A trailing segment that is not a {@see SymbolLevel} remains part of the
+     * name; for example, `design.type-coverage.param` names an aspect.
      */
     private static function channelNameOf(string $row): string
     {
@@ -448,18 +433,15 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 
     /**
      * The level a finding reports at, read from its subject — the same place
-     * every formatter reads it from, and the only place 53 of the 63
-     * channels carry it at all.
+     * every formatter reads it from.
      *
      * Deliberately its own parser rather than a call into the product's
      * subject-to-level derivation: a derivation sharing code with what it
      * checks would agree with the product by construction, not by
      * observation, and stop being a witness. There is also no such product
      * path to call — `SymbolLevelProjection` maps a `SymbolType`, not this
-     * text — so sharing it would mean writing one to serve this test. See
-     * Ш5c′ in `docs/internal/plans/rule-vocabulary/PLAN.md` for the rejected
-     * alternative (`r10-claude-04`) and {@see RECOGNISED_FORMS} for this
-     * parser's own completeness guard.
+     * text — so sharing it would mean writing one to serve this test. The
+     * {@see RECOGNISED_FORMS} guard checks that every subject form is reached.
      */
     private static function levelOf(string $subject): string
     {

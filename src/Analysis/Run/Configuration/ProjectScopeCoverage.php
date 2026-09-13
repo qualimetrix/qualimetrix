@@ -50,8 +50,8 @@ use RuntimeException;
  * there is no denominator, the gate closes, and no scope warning is printed
  * because there is no uncovered target to name.
  *
- * **Superseded (X16 F4): `classmap`, `psr-0` and `files` used to close the
- * gate.** Treating a manifest that declares production code through any of
+ * `classmap`, `psr-0` and `files` are ordinary production targets. Treating a
+ * manifest that declares production code through any of
  * them as unjudgeable was measured to silence every scope-conditioned channel
  * on 51 of the 125 packages in `benchmarks/vendor` — most often a `files`
  * section of polyfills or helpers standing beside an ordinary `psr-4` one.

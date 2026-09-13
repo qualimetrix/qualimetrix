@@ -23,12 +23,12 @@ use RuntimeException;
  * notices damage, not that the claim it broke is guarded.
  *
  * Twenty of those declarations moved from a cascade ({@see Probe::alsoReddens()})
- * straight into a probe's own `reddens` on 2026-09-04, once the coverage
- * condition (package B, X7-tails) made every such case matter on its own
- * rather than through the claim its cascade belonged to. Each of the twenty
+ * straight into a probe's own `reddens` on 2026-09-04, once coverage required
+ * every such case to matter on its own rather than through the claim its
+ * cascade belonged to. Each of the twenty
  * was checked by running that probe alone and confirming it still reddens
  * exactly the declared set — the adjudication for each line, not repeated
- * here, is `docs/internal/plans/rule-vocabulary/X7-tails/enumeration-unguarded-cases.tsv`.
+ * here, is `directive-audit/enumeration-unguarded-cases.tsv`.
  */
 final class Probes
 {
@@ -1364,7 +1364,7 @@ final class Probes
     /**
      * The two cases about `--sweep` that no breakage among the probes
      * elsewhere in this list happened to reach — measured empty in
-     * `enumeration-unguarded-cases.tsv` (package B, X7-tails) — plus a third,
+     * `directive-audit/enumeration-unguarded-cases.tsv` — plus a third,
      * `sweep-request-ignored`, added because `itAcceptsAnExplicitFullSweep`
      * carries two assertions and `removal-removes-nothing` (the only other
      * probe naming it in `alsoReddens`) denies only the second
@@ -1591,7 +1591,7 @@ final class Probes
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                     // `duplication.clone` is the second banned
-                    // channel this same loop refuses (X9 D2): one `foreach`,
+                    // channel this same loop refuses: one `foreach`,
                     // no branch per channel, so emptying it accepts both
                     // equally and both belong to this one probe rather than a
                     // second copy of it — measured directly (patched the
@@ -1613,7 +1613,7 @@ final class Probes
                 'ban-spreads-to-configuration-errors',
                 'the ban creeps onto the three neighbouring channels, which are accepted and judged inert',
                 self::BAN,
-                // Re-pointed for X9 D2: `covers()` grew a second branch
+                // `covers()` has a second branch
                 // (`duplication.clone`, unrelated to this claim),
                 // so the exact-match line this mutation used to target no
                 // longer stands on its own. Only the `annotation.*` branch is
@@ -1629,7 +1629,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
                     // Measured directly (applied the widened `covers()`,
-                    // reran): X9 D2 gave `problemWith()` a per-channel
+                    // reran): `problemWith()` has a per-channel
                     // `message()` dispatch instead of one hardcoded string, so
                     // a group selector that expands to a wrongly-covered
                     // neighbour before it reaches `annotation.unused-directive`
@@ -1749,12 +1749,9 @@ final class Probes
             Probe::breaking(
                 'command-errors-in-prose-under-json',
                 'an error under --format=json is written as an <error> line rather than an envelope',
-                // Re-pointed by P01-5 (`01-refusal-evidence.md` §13.1). Both
-                // declared cases used to reach the `if ($format === 'json')`
-                // branch of the command's own `reportError()`; P01-5 moved
-                // both underlying refusals (a missing `--config` file, an
-                // unrecognised `--sweep`) onto the `ConfigurationRefusal`
-                // carrier, so they now leave the command through the single
+                // Both declared cases reach the `ConfigurationRefusal`
+                // carrier rather than the command's `reportError()` branch,
+                // so they now leave the command through the single
                 // `catch (ConfigurationRefusal)` clause and
                 // `RefusalPresenter::refusal()` instead. The old fragment
                 // still stands (`reportError()` still serves the one
@@ -1777,14 +1774,10 @@ final class Probes
             Probe::breaking(
                 'unreadable-config-is-not-a-config-error',
                 'a configuration that failed to load is reported as an internal failure',
-                // Re-pointed by P01-5 (`01-refusal-evidence.md` §13.1, and the
-                // measurement behind this move in
-                // `docs/internal/plans/configuration-refusal/`): both
-                // declared cases now reach `DirectivesCommand`'s
+                // Both declared cases reach `DirectivesCommand`'s
                 // `catch (ConfigurationRefusal)` before the retired
                 // configuration-failure taxonomy class this probe used to
-                // target is ever consulted — 03/P2 already turned a missing
-                // `--config` path into the round's carrier. Mutating that
+                // target is ever consulted. Mutating that
                 // retired class's exception recognition no longer reaches
                 // either case (measured: `directives:controls
                 // --only=unreadable-config-is-not-a-config-error` missed both,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Runs the product over every legitimately-authored configuration document
- * tracked in this tree (`docs/internal/plans/promise-effect/measurement/legitimate-configs.tsv`)
+ * tracked in this tree as the promise-effect corpus inventory
  * and counts how many of them the product now refuses.
  *
  * The round's default is inverted: "does not recognize a value's form" now

@@ -24,9 +24,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * Functional tests for {@see LayerAssignmentCommand}.
  *
- * Tests cover the exit-code contract documented in `docs/internal/plans/architecture-rules-followup.md`
- * (Step 6) as narrowed by `docs/internal/plans/configuration-refusal/01-refusal-verdicts.md`
- * §4: SUCCESS for any informational outcome about an analysed class
+ * Tests cover the exit-code contract: SUCCESS for any informational outcome
+ * about an analysed class
  * (including "no layer matches"), `ConsoleExitCode::Refusal` (3) for
  * malformed input, an FQN naming no analysed class, or a configuration-load
  * error recognised as the user's to fix, FAILURE for anything else the
@@ -355,8 +354,8 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * X15 review, mechanism A (comprehensive-01 / codex-01): the empty-FQN
-     * check used to write through the command's own `writeln()`/`reportError()`
+     * The empty-FQN check used to write through the command's own
+     * `writeln()`/`reportError()`
      * at the default verbosity, which `-q` (`VERBOSITY_QUIET`) suppresses —
      * exit 3, zero bytes on both streams. Now routed through
      * `RefusalPresenter::fallbackRefusal()`, whose write survives `-q` like
@@ -435,16 +434,12 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame(ConsoleExitCode::Refusal->value, $exit);
         // This route is the `ConfigurationRefusal` carrier caught by the
         // command's own clause and handed to `RefusalPresenter::refusal()`,
-        // which writes the human form to stderr (`01-refusal-envelope.md`
-        // §2.1) — the same presenter every early-return route above now goes
-        // through too (X15 review, mechanism A), so stdout is empty here for
+        // which writes the human form to stderr. The shared presenter also
+        // handles the early-return routes above, so stdout is empty here for
         // the same reason it is empty on those.
         self::assertSame('', $tester->getDisplay());
-        // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
-        // a per-command spelling of it) — pinned here because this command's
-        // own assertion of it was the one `01-refusal-packages.md` P01-7
-        // found missing when the shared baseline test that used to cover it
-        // was trimmed to baseline's own commands.
+        // Pin the presenter's exact frame here: this command has its own
+        // refusal route and must not rely on coverage from another command.
         self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
         self::assertStringContainsString($missing, $tester->getErrorOutput());
     }
@@ -574,14 +569,14 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * Regression test for Phase 7 Round 1 Fix 1 — the command must apply
+     * The command must apply
      * `paths.excludes` AND filter `@generated` files during its own Discovery
      * phase, exactly like {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::analyze()}.
      *
      * Without these filters the command's class set drifts from `qmx check`'s,
      * which silently changes template-layer expansion: excluded/generated
-     * classes spawn extra layers, breaking the byte-for-byte parity contract
-     * Phase 4.5 advertised.
+     * classes spawn extra layers, breaking byte-for-byte parity with the
+     * analysis command.
      *
      * The probe uses a template layer (`name: 'mod-{module}'` with
      * `pattern: 'App\\{module}\\**'`) so layer existence is observable per
@@ -682,9 +677,7 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * Regression test for the Phase 7 Step E HIGH-severity bug.
-     *
-     * Phase 4.5 made `debug:layer-assignment` run a full Discovery + Collection
+     * `debug:layer-assignment` runs a full Discovery + Collection
      * pass (matching `qmx check` byte-for-byte), but the per-run
      * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configure()}
      * hook — which applies the YAML `memory_limit` to the PHP runtime before
@@ -992,7 +985,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * Writes a qmx.yaml with the given ordered list of layers to the temp
      * directory and returns its absolute path.
      *
-     * Uses the post-Step-0 schema: `architecture.layers` is an ordered list
+     * Uses the current schema: `architecture.layers` is an ordered list
      * of `{name, patterns}` entries (declaration order matters), with a
      * matching `allow: { name: [] }` map and `coverage-gap: ignore`.
      *

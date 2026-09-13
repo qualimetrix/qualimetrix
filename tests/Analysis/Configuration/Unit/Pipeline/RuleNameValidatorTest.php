@@ -174,7 +174,7 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     /**
-     * Regression for the rename in ADR 0028: `design.lcom` is 3 Levenshtein
+     * Regression for the rename in ADR 0060: `design.lcom` is 3 Levenshtein
      * edits from the unrelated `design.noc` but 4 from the rule it was
      * actually renamed to, `cohesion.lcom`. Raw distance alone suggested
      * `design.noc`; the leaf (`lcom`) match must win instead.

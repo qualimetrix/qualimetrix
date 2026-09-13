@@ -203,7 +203,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $entries = [];
 
         foreach ($baseline->entries as $entry) {
-            // Mirrors BaselineWriter (P1.1): "count" is derived from
+            // Mirrors BaselineWriter: "count" is derived from
             // "magnitudes" and is not written alongside it.
             $entries[$entry->identity->subjectKey][] = $entry->toArray();
         }

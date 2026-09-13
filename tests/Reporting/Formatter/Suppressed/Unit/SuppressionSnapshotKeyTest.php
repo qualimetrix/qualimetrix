@@ -10,9 +10,8 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 
 /**
  * The pure key/normalization logic of `scripts/generate-suppression-snapshot.php`,
- * exercised directly rather than through the slow self-analysis subprocess —
- * see PLAN.md, rule-vocabulary Ш6 decision (м) for the two probes this
- * defends: a directive's own line number must not enter the key (a line
+ * exercised directly rather than through the slow self-analysis subprocess.
+ * A directive's own line number must not enter the key (a line
  * shift with no decision change must not redden), while everything the
  * snapshot's key is actually built from must (a removed directive/threshold,
  * or a severity change on an already-suppressed finding, must redden). The
@@ -100,10 +99,10 @@ final class SuppressionSnapshotKeyTest extends TestCase
     }
 
     /**
-     * Severity is part of the key (native F4): a config change that raises
+     * Severity is part of the key: a config change that raises
      * or lowers an already-suppressed finding's level is a changed decision
-     * — `--fail-on` reads severity — and Ш5e2b's precedent is exactly a
-     * decision change no field of the key caught. Without this, 26 findings
+     * — `--fail-on` reads severity — and a decision change no field of the
+     * key caught must still invalidate the snapshot. Without this, findings
      * moving warning -> error left the snapshot byte-for-byte identical.
      */
     #[Test]

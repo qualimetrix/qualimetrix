@@ -81,7 +81,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
 
     /**
      * The only one of the five `baseline:*` commands with a `--format`
-     * option of its own (`01-refusal-packages.md`, P01-4): the shared ladder
+     * option of its own: the shared ladder
      * asks the concrete command rather than reading the option itself, so
      * the other four are never asked for an option they never declared.
      */
@@ -166,14 +166,12 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     /** @throws ConfigurationRefusal */
     private function carryBaseline(string $baselinePath, ChannelRenameMap $map): ChannelRenameReport
     {
-        // `ChannelRenameRefusal` is a plain `RuntimeException` (`01-refusal-verdicts.md`
-        // §7, decision on `rename-channels`'s exit codes): the carry
+        // `ChannelRenameRefusal` is a plain `RuntimeException`, but the carry
         // understood the baseline envelope and declined, which is the user's
         // to fix, so it is normalized here rather than left for the shared
         // ladder's generic `RuntimeException` clause to answer with code 1.
-        // This `catch` goes dead the day 03/P5 converts the throw sites in
-        // `BaselineChannelRenamer` itself to the carrier directly — a
-        // deliberate, named residual rather than an oversight.
+        // Keep this normalization until `BaselineChannelRenamer` throws the
+        // shared carrier directly.
         try {
             return $this->renamer->carry($baselinePath, $map);
         } catch (ChannelRenameRefusal $e) {

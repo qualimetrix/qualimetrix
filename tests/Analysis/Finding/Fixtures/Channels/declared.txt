@@ -59,13 +59,10 @@
 # run-time resolution cases) because its vocabulary is open-ended and no
 # fixture line could enumerate it.
 #
-# P1a of the ADR 0017's P1 declared three static channels end
-# to end to prove the mechanism (code-smell.goto, complexity.ccn,
-# maintainability.mi). P1b fills in every other static emission point in
-# violation-magnitude-inventory.md, per the shape mapping and the four named
-# families of ADR 0017. One emission point remains deliberately outside this
-# file: annotation.unsupported-threshold / annotation.invalid-threshold(.*),
-# excluded outright by ADR 0017 — see excluded.txt.
+# The fixture covers every static declaration except the two threshold
+# configuration diagnostics below. Those are excluded by ADR 0017 and listed
+# in excluded.txt because they describe invalid configuration, not findings
+# that can be assigned a magnitude.
 #
 # code-smell.unused-private has no gating threshold comparison (the rule
 # fires on any nonzero count; severity is a fixed constant) but is declared

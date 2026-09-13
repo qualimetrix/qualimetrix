@@ -107,9 +107,9 @@ final class Workspace
         'promise-effect/door-normalization.tsv',
         'promise-effect/observability-limits.tsv',
         'promise-effect/floor.tsv',
-        'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv',
-        'docs/internal/plans/promise-effect/measurement/config-paths.tsv',
-        'docs/internal/plans/promise-effect/measurement/key-pairs.tsv',
+        'promise-effect/promise-ledger.tsv',
+        'promise-effect/config-paths.tsv',
+        'promise-effect/key-pairs.tsv',
         'docs/internal/generated/promise-effect/verdicts.tsv',
         'docs/internal/generated/promise-effect/observations-before/raw.tsv',
     ];
@@ -168,7 +168,7 @@ final class Planter
 {
     private const string RAW = 'docs/internal/generated/promise-effect/observations-before/raw.tsv';
 
-    private const string LEDGER = 'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv';
+    private const string LEDGER = 'promise-effect/promise-ledger.tsv';
 
     public function __construct(private readonly string $tree) {}
 

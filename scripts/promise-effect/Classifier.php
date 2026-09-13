@@ -245,8 +245,8 @@ final class Classifier
      *
      * This once served two ledger values: `default`, and a narrower
      * `default-value-present-key` for keys inside `rules:`, where writing a
-     * key with no value still chose the rule's flat form. X19 removed that
-     * distinction from the product -- branch selection now asks whether a
+     * key with no value still chose the rule's flat form. That distinction no
+     * longer exists: branch selection now asks whether a
      * value was written, not whether a key was -- so the carrier dropped the
      * carve-out, the ledger rows moved to `default`, and the second branch
      * here became unreachable and went with them.

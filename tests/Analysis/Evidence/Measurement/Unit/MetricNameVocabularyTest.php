@@ -26,7 +26,7 @@ final class MetricNameVocabularyTest extends TestCase
      * `cohesion.pure-method-count` all end in `-count`. One future key spelled
      * `….count` would make `base()` cut a real segment off, and the failure
      * would be a collector requirement silently unsatisfied rather than an
-     * error — which is exactly what it was before Ш5e3 fixed the cut.
+     * error.
      */
     #[Test]
     public function itRejectsAKeyWhoseLastSegmentIsAnAggregationStrategyWord(): void

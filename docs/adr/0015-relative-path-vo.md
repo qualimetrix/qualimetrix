@@ -159,9 +159,8 @@ acquires a dependency on raw I/O through this namespace.
 
 ## References
 
-- Concept plan: [`docs/internal/plans/relative-path-vo-concept.md`](../internal/plans/relative-path-vo-concept.md)
-- Bug origin: `[[backlog_attention_items]]` #1 (T10 follow-up,
-  2026-03-29 backlog execution session)
+- Bug origin: an ambiguous-path follow-up identified during the March 2026
+  path-boundary review.
 - Affected boundary today: `src/Core/Util/PathNormalizer.php`,
   `src/Infrastructure/Git/GitScopeFilter.php:74`,
   `src/Baseline/BaselineWriter.php:86-100`,

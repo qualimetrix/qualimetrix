@@ -31,7 +31,7 @@ A metric key is `family.metric`, in lower-case kebab, where the family is the
 subject the metric belongs to and not the collector that happens to produce it.
 `MethodCountCollector` lives under `Size` and publishes seven `design.*` facts
 about a class's shape; the family follows the meaning, and the layout defect is
-recorded in `AUDIT.md` rather than encoded in a name.
+kept separate rather than encoded in a name.
 
 Three things follow, and all three are decisions rather than consequences.
 
@@ -39,8 +39,8 @@ Three things follow, and all three are decisions rather than consequences.
 `complexity.ccn`, not `complexity.cyclomatic`. The step is about grammar; a
 change of word is a change of vocabulary with its own radius, and the direction
 of that change is not obvious — the cheaper fix for `ccn`/`cyclomatic` is
-renaming the channel, not the metric. Three such pairs remain and are recorded
-in `FOLLOWUPS.md` with both costs.
+renaming the channel, not the metric. The final word choices are governed by
+[ADR 0060](0060-published-vocabulary-and-name-ownership.md).
 
 **A metric and the rule checking it may be the same string, and often are.**
 `size.method-count` is a key and a producer; so are `cohesion.lcom`,
@@ -61,8 +61,8 @@ in `CHANGELOG.md` and in the gate's `finding-gate/maps/metric-keys.tsv`.
 
 `RuleIdentifierLiteralGuardTest` loses coverage exactly on the names in the
 overlap: a literal that is both a key and a code no longer proves a channel
-reference. The cost is stated in the test and in `FOLLOWUPS.md`; nothing textual
-can recover it, because both readings are the same string in the same file.
+reference. The cost is stated in the test; nothing textual can recover it,
+because both readings are the same string in the same file.
 
 The gate's key map applies only to the surfaces that publish keys. Half the
 metric vocabulary is an ordinary English word — `cognitive`, `distance`,

@@ -420,7 +420,7 @@ final class LayersValidatorTest extends TestCase
      */
     public static function selectorMetacharsInLayerNameProvider(): iterable
     {
-        // Phase 2 Step C / ADR 0007: selector metachars (`* ? [ { }`) reserved
+        // ADR 0059 reserves selector metachars (`* ? [ { }`)
         // for the allow-list grammar must NOT appear in layer names. The
         // existing layer-name regex {@code [a-z][a-z0-9_-]*} already enforces
         // this; the dataset pins each individual metachar so a future regex

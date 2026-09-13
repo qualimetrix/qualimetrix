@@ -75,7 +75,7 @@ use Throwable;
  * default output stays a single sentence — nobody wants a trace for a typo'd
  * path — and `-v` is what it was asked for.
  *
- * {@see self::provideRefusals()} covers the round's own carrier and its
+ * {@see self::provideRefusals()} covers the command's refusal carrier and its
  * named secondary signal separately: both give code 3 on stderr, and neither
  * ever carries a trace, which is the opposite trade from the rest of this
  * file's cases.
@@ -134,8 +134,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
     }
 
     /**
-     * The round's own carrier and its named secondary signal
-     * (`00-overview.md` rule 1, `01-refusal-exit-ladder.md` §2.6): both give
+     * The command's refusal carrier and its named secondary signal both give
      * code 3 on stderr, and neither ever carries a trace — a refusal is the
      * user's to fix, not ours to explain with a stack.
      *

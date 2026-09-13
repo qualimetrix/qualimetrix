@@ -90,13 +90,11 @@ final class BaselineRenameChannelsCommandTest extends TestCase
 
     /**
      * A malformed baseline envelope is the user's to fix — the version they
-     * pointed the command at, not a defect this tool caused
-     * (`01-refusal-verdicts.md` §7, decision on `rename-channels`'s exit
-     * codes). Distinct from `BaselineConflictException` and from
+     * pointed the command at, not a defect this tool caused. This is distinct
+     * from `BaselineConflictException` and from
      * `ChannelRenameRefusal`'s own docblock, which groups it with an
-     * unreadable file under one exit code the other four `baseline:*`
-     * commands never use for either — that grouping is what this round
-     * changes for the case it can reach without editing 03/P5's files.
+     * unreadable file under one exit code the other `baseline:*` commands do
+     * not use for either condition.
      */
     #[Test]
     public function itAnswersAContentRefusalWithThree(): void

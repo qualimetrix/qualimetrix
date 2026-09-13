@@ -210,8 +210,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     /**
-     * The position pins the split rule of `02-computed-metric-keys.md` §2: a
-     * `health.*` name is sliced at the reserved prefix, so the position's last
+     * A `health.*` name is sliced at the reserved prefix, so the position's last
      * segment is the short dimension name, not the whole `health.typying`.
      */
     #[Test]
@@ -319,7 +318,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     /**
      * A level is a coordinate beside the channel name, addressed via
      * `channel:level`, never a word inside the name itself — the same
-     * invariant Ш5c enforces for statically declared channels
+     * invariant enforced for statically declared channels
      * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest}).
      * A user-defined metric name is the one place that invariant can still be
      * broken at runtime, since the user picks the name.
@@ -749,8 +748,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     /**
-     * The two measured crashes `02-computed-metric-keys.md` §9 names as the
-     * regression this stage exists to close: what used to be a `TypeError`
+     * What used to be a `TypeError`
      * out of `mapLevel(string)` is now a refusal raised before `array_map()`
      * ever runs, and `mapLevel()` is provably never called with a non-string.
      */

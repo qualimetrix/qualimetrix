@@ -21,7 +21,7 @@ one static channel is hyphenated. The real population is the open vocabulary it
 was written for: the name validator for `health.*` / `computed.*` **requires**
 lower-case kebab, and computed metrics report at `namespace` and `project` by
 default — so the option was unreachable for every computed metric a user can
-define. The group form `X.*` and the `channel:namespace` pair form of ADR 0025
+define. The group form `X.*` and the `channel:namespace` pair form of ADR 0060
 broke the same way.
 
 ## Decision
@@ -49,7 +49,7 @@ Alternatives considered and rejected:
   error rather than the spelling, so the author cannot tell what went wrong.
 
 Nothing else about the option moves. A key must still name a channel its rule
-produces — production, not applicability, per ADR 0025.
+produces — production, not applicability, per ADR 0060.
 
 ## Consequences
 

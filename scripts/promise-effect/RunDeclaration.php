@@ -82,8 +82,8 @@ final readonly class RunDeclaration
      * A declared commit is not a guess this stand fills in when it looks
      * wrong. An objectively malformed value is refused before a single git
      * process runs, so a typo cannot silently defeat this check by making
-     * every later comparison agree with it vacuously — the X18 lesson of a
-     * guard whose own constants named paths that did not exist, and so could
+     * every later comparison agree with it vacuously. A guard whose own
+     * constants name nonexistent paths can never redden, so those paths are
      * never redden.
      *
      * The declared commit must then exist as a real object in THIS

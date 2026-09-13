@@ -24,9 +24,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Filter;
  * contract because the stage vocabulary must be reachable from `Baseline`,
  * which is permitted to depend on it; naming a stage is not depending on the
  * component that implements it, and no case here implies an edge onto
- * `Infrastructure`. The docblock said `Core` until Ш6: the enum has not been
- * there since the capability layout landed, and the reason it gave outlived
- * the address it named.
+ * `Infrastructure`.
  *
  * **The price, stated so it is not rediscovered later as a defect.**
  * `GitScope` is named here and implemented in `Infrastructure`, so this enum

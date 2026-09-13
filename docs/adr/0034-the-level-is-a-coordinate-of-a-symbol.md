@@ -68,10 +68,9 @@ and the one that addresses findings — only read it.
 exclusions, and both point thresholds on `SymbolLevel` are kept with it. Such
 a threshold no longer decides the published report or the exit code; it decides
 whether the hub is reported at all, hence whether it appears under
-`--show-suppressed` and in the suppression count. Whether to narrow the
-exclusion to point thresholds and make this namespace measurable again is an
-open owner question, with its cost measured in
-`docs/internal/plans/rule-vocabulary/PLAN.md`.
+`--show-suppressed` and in the suppression count. Narrowing the exclusion to
+point thresholds and making this namespace measurable again remains an owner
+question; it is not decided by this ADR.
 
 ## Consequences
 

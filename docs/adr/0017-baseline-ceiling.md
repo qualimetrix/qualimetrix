@@ -1,7 +1,11 @@
 # 0017. Baseline Reported-Magnitude Ceiling
 
 **Date:** 2026-08-07
-**Status:** Accepted
+**Status:** Accepted; file identity and the live format version were updated by [ADR 0026](0026-assigned-declaration-ordinal.md)
+
+The ceiling semantics below remain current. The `v10` envelope described by
+this historical decision has since been replaced by version 13; only version 13
+is loadable on the current tree.
 
 ## Context
 

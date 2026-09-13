@@ -1,4 +1,4 @@
 surface	locator	kind	gate_owned	reason
-format:summary	~, \d+\.\d+s$~m	line-regex	yes	the gate row anchors on 'analyzed, ', which every header insertion breaks — the echo of --namespace/--class and the literal (scoped); measured in 01-oracle-packages-measurements.md §19.8, and only the duration is normalized so the file counter stays load-bearing
+format:summary	~, \d+\.\d+s$~m	line-regex	yes	the gate row anchors on 'analyzed, ', which every header insertion breaks — the echo of --namespace/--class and the literal are scoped; only the duration is normalized so the file counter stays load-bearing
 stdout	~\d+\.\d+s~	line-regex	no	elapsed time printed by the non-check commands; the gate owns no stdout row
 stdout	~\b[0-9a-f]{7,40}\b~	line-regex	no	git object names printed by the report doors; the fixture repository is built per run

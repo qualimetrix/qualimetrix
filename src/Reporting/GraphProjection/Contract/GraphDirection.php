@@ -10,8 +10,7 @@ namespace Qualimetrix\Reporting\GraphProjection\Contract;
  * The single owner of the four-word vocabulary: before this enum existed the
  * same four values were written three times over with no shared source —
  * the option's help text, {@see \Qualimetrix\Reporting\GraphProjection\DotExporterOptions}'s
- * docblock, and the DOT `rankdir` attribute itself
- * (`docs/internal/plans/configuration-refusal/01-refusal-verdicts.md` §5.1).
+ * docblock, and the DOT `rankdir` attribute itself.
  */
 enum GraphDirection: string
 {

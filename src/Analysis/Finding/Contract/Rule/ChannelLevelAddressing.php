@@ -13,8 +13,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * judgement are written in {@see ChannelLevelRefusalWording}, which is the
  * other half of this same seam and has no other caller.
  *
- * Ш5c widened the addressing vocabulary from three values to five, and a
- * level a channel does not report at is now a thing a user can write. There
+ * The addressing vocabulary has five values, so a level a channel does not
+ * report at is something a user can write. There
  * was no seam that could refuse it: the configuration one
  * ({@see \Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator})
  * throws, but only on the option whose key is a channel, and the inline one
@@ -30,8 +30,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * `baseline:explain` used to give, where a level nobody reports at looked like
  * a selector that simply matched nothing.
  *
- * Round 11 found what a single *existence* question is not enough for, so the
- * seam answers three questions rather than one:
+ * A single *existence* question is insufficient, so the seam answers three
+ * questions rather than one:
  *
  * - {@see problemWith()} — can the pair exist **anywhere**? For seams with no
  *   candidate set of their own: CLI selection selectors, inline directives.

@@ -1,10 +1,7 @@
-# 38. An options class names its own warning boundary
+# 0038. An Options Class Names Its Own Warning Boundary
 
-Date: 2026-08-30
-
-## Status
-
-Accepted
+**Date:** 2026-08-30
+**Status:** Accepted
 
 ## Context
 

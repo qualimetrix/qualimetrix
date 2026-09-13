@@ -35,8 +35,7 @@ final class ComputedMetricEntryKeysTest extends TestCase
     /**
      * Six names, sorted — the sixth is `health.overall` itself, which is
      * absent from today's printed list because it used to be built from
-     * `HealthDimension::subDimensions()` rather than `::cases()`
-     * (`02-computed-metric-keys.md` §2, the named side effect).
+     * `HealthDimension::subDimensions()` rather than `::cases()`.
      */
     #[Test]
     public function itDeclaresSixSortedHealthNamesIncludingOverall(): void
@@ -48,8 +47,8 @@ final class ComputedMetricEntryKeysTest extends TestCase
     }
 
     /**
-     * The one slicing rule of `02-computed-metric-keys.md` §2: the reserved
-     * `health.` prefix is always its own segment, a user-chosen name is one
+     * The reserved `health.` prefix is always its own segment, a user-chosen
+     * name is one
      * opaque segment — the test that pins the two cases stay distinguishable
      * by segment count and closedness downstream.
      */

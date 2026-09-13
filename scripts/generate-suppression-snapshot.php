@@ -7,11 +7,10 @@ declare(strict_types=1);
  * Regenerates the versioned snapshot of what a self-analysis run of `src/`
  * suppresses — `docs/internal/generated/suppression/{composition,inert}.tsv`.
  *
- * See PLAN.md, rule-vocabulary Ш6 decision (м)/(н). Nothing today compares
- * this composition run to run: Ш5e2b's precedent is that removing one
- * point threshold shifted the suppressed count 55 -> 56 and no test, no
- * format and no exit code noticed. This script is the oracle `--check`
- * compares a fresh measurement against.
+ * The snapshot makes suppression-composition drift visible: `--check`
+ * compares a fresh measurement with the versioned oracle. This is necessary
+ * because changing a point threshold can alter suppressed counts without
+ * affecting ordinary output, exit codes, or unrelated tests.
  *
  * **Run parameters are fixed here, not left to a caller.** The composition
  * is a function of them, and a forgotten flag would make the snapshot
@@ -21,26 +20,23 @@ declare(strict_types=1);
  *     directory;
  *   - no `--baseline`: an evolving `qmx-baseline.json` must not change what
  *     this snapshot measures, and the `baseline` mechanism simply reports
- *     zero here as a result — that is the documented cost of decision (м),
- *     not a bug in this script;
- *   - `--format=suppressed`, which by decision (д) arms the same per-rule
- *     ledger capture `--show-suppressed` would, so both halves of the
- *     mechanism vocabulary are populated;
+ *     zero here as a result — that is the cost of measuring suppression
+ *     independently of a mutable baseline, not a bug in this script;
+ *   - `--format=suppressed`, which enables the same per-rule ledger capture
+ *     as `--show-suppressed`, so both halves of the mechanism vocabulary are
+ *     populated;
  *   - `--workers=0 --no-cache` for one deterministic, single-threaded pass.
  *
  * **The key, and why only one mechanism needs its suppressor normalized.**
- * Decision (м) fixes the key as mechanism x suppressor x channel x
- * canonical subject x severity, ordered by that key rather than by
- * encounter order. Severity joined the key after review found a suppressed
+ * The key is mechanism x suppressor x channel x canonical subject x severity,
+ * ordered by that key rather than by encounter order. Severity is part of the
+ * key because a suppressed
  * finding's level (which decides `--fail-on` outcomes) could change while
- * every other field held — the same "decision changed, nothing reddens"
- * shape Ш5e2b's precedent describes, just for level instead of count. The
- * two probes the DoD names are, concretely:
+ * every other field remains stable. The guard must distinguish two cases:
  *   (a) removing an `@qmx-ignore` directive, or an `@qmx-threshold`
  *       override that only tightens or loosens the level of an
  *       *already-suppressed* finding, must change some row's count (or
- *       remove/add a row) — the very thing Ш5e2b's precedent says nothing
- *       catches today. A `@qmx-threshold` override whose removal surfaces a
+ *       remove/add a row). A `@qmx-threshold` override whose removal surfaces a
  *       finding no other mechanism holds back is outside this snapshot's
  *       domain by construction — see the note on scope below.
  *   (b) renaming a local (non-subject) symbol, or shifting line numbers by

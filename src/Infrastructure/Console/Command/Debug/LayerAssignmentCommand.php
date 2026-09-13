@@ -114,12 +114,11 @@ final class LayerAssignmentCommand extends Command
         /** @var string $format */
         $format = $input->getOption('format');
         if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
-            // §4 of `01-refusal-verdicts.md` moves this route from 2 to 3:
-            // malformed CLI input is the round's Refusal code, not
+            // Malformed CLI input is a refusal (exit 3), not
             // `Command::INVALID`. Routed through the shared presenter (not a
             // local `writeln()`) so the framing, the stream and the
             // `-q`/`--silent` survival contract are the same one every other
-            // command's refusal gets (`01-refusal-envelope.md` §2.1).
+            // command's refusal gets.
             return $this->refusalPresenter->fallbackRefusal($output, $format, new InvalidArgumentException(\sprintf(
                 'Unknown format "%s". Supported formats: %s.',
                 $format,
@@ -160,11 +159,11 @@ final class LayerAssignmentCommand extends Command
         } catch (ConfigurationRefusal $refusal) {
             // First clause: the carrier is a RuntimeException, and the
             // `catch (Exception)` below would otherwise catch it and answer
-            // with FAILURE (1) instead of the round's Refusal code.
+            // with FAILURE (1) instead of the shared refusal code.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $e) {
-            // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
-            // §2.6): an `InvalidArgumentException` that never became a
+            // Named secondary signal for code 3: an
+            // `InvalidArgumentException` that never became a
             // carrier, caught here rather than falling through to the
             // `Exception` branch below and answering with 1.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);

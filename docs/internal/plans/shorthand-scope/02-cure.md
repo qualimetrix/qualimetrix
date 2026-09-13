@@ -171,8 +171,8 @@ evidence and is not accepted.
 **Why before the product changes.** These are the stand's input. Editing them
 after the cure would leave no witness of what the cure moved.
 
-**Files:** `docs/internal/plans/promise-effect/measurement/promise-ledger.tsv`,
-`docs/internal/plans/layer-value-survival/measurement/axis-b-mechanisms.tsv`,
+**Files:** `promise-effect/promise-ledger.tsv`,
+`docs/internal/plans/shorthand-scope/measurement/axis-b-mechanisms.tsv`,
 `scripts/promise-effect/Ledger.php`, `scripts/promise-effect/Classifier.php`,
 `scripts/promise-effect/Stand.php`, `tests/Unit/PromiseEffect/LedgerVocabularyTest.php`.
 

@@ -50,7 +50,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Covers the three reporting facts P4-D2 adds on top of the existing stale
+ * Covers the three reporting facts added on top of the existing stale
  * / `--show-resolved` reporting in {@see FindingFilterOrchestratorTest}:
  *
  * - ADR 0017 — a group that shrank without vanishing is not "resolved".

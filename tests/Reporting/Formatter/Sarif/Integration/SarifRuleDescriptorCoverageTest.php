@@ -22,8 +22,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 
 /**
- * The guard `docs/internal/plans/sarif-channel-descriptions.md` (package P4)
- * exists for: every real channel must resolve to its producer's own
+ * Every real channel must resolve to its producer's own
  * description and to a documentation page carrying *that producer's* `Rule
  * ID:` anchor — not merely a page that exists. "The page exists" is exactly
  * what today's fixed `duplication -> rules/architecture.md` mis-mapping would
@@ -130,10 +129,10 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
 
         if ($presentation === null) {
             // A channel the universe itself declares must resolve — see
-            // ChannelPresentationCoverageTest (P2), which already sweeps this
+            // ChannelPresentationCoverageTest, which already sweeps this
             // for the plain description/docs-page-exists check. Failing loud
             // here rather than skipping is what makes this branch a guard
-            // instead of a silent no-op — see the P4 DoD's "must fail the
+            // instead of a silent no-op — the contract requires it to fail the
             // oracle" requirement. A `computed.*` / `health.*` definition with a
             // blank `description:` does NOT land here — see
             // {@see \Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty()} —

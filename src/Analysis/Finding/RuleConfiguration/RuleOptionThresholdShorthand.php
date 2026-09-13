@@ -69,8 +69,7 @@ final class RuleOptionThresholdShorthand
      *
      * 1. The group's `threshold` key must be WRITTEN — carry a non-null value
      *    — not merely present: a `threshold: ~` selects no mode and leaves
-     *    the layer alone (`ThresholdParser` has treated `~` this way since
-     *    X19).
+     *    the layer alone, matching `ThresholdParser`.
      * 2. Its value must be of the group's declared `form`
      *    ({@see RuleThresholdKeyGroupRegistry} — the SAME scalar form the
      *    graduated pair itself declares, verified by

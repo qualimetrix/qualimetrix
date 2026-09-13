@@ -73,7 +73,7 @@ final class ProjectScopeCoverageTest extends TestCase
     }
 
     /**
-     * Superseded (X16 F4): a manifest declaring production code through
+     * A manifest declaring production code through
      * `classmap`, `psr-0` or `files` used to be unjudgeable, which silenced
      * every scope-conditioned channel on 51 of the 125 packages in
      * `benchmarks/vendor` — a cure inert on half of real projects, and
@@ -168,8 +168,8 @@ final class ProjectScopeCoverageTest extends TestCase
      * is none to name, which is why the warning list and the verdict are taken
      * from one measurement rather than from each other.
      *
-     * A *missing* manifest is one of these, reversing the second half of the
-     * X16 F1 answer: it used to read as "covers" on the ground that its
+     * A *missing* manifest is one of these. It used to read as "covers" on
+     * the ground that its
      * absence is separately warned about. It is warned about still — by
      * `CheckCommand::warnIfComposerJsonMissing()` — but a project that never
      * said which of its directories hold production code cannot tell a slice

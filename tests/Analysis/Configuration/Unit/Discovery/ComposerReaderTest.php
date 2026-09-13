@@ -217,11 +217,8 @@ final class ComposerReaderTest extends TestCase
      * every production section contributes its paths, and everything that is
      * not a production declaration contributes none.
      *
-     * Superseded (X16 F4): `classmap`, `psr-0` and `files` used to be
-     * reported as unreadable, which made the gate close on any manifest
-     * carrying one — 51 of the 125 packages in `benchmarks/vendor`. They are
-     * ordinary path targets here; `null` is now reserved for a manifest that
-     * declares no production autoload at all.
+     * `classmap`, `psr-0` and `files` are production path targets like PSR-4.
+     * `null` is reserved for a manifest that declares no production autoload.
      *
      * @param array<string, mixed> $manifest
      * @param ?list<string> $expected

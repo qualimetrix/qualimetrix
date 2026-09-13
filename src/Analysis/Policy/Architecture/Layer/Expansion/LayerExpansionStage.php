@@ -35,8 +35,8 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
  * never together produces zero layers, not the cartesian {@code AcmeCorp×Order}
  * combinations.
  *
- * **Failure modes** (all surface as {@see ConfigurationRefusal} — the round's
- * decision is that they are refusals fixed by the author of the template
+ * **Failure modes** (all surface as {@see ConfigurationRefusal} because they
+ * are configuration defects fixed by the author of the template
  * layer, not runtime crashes, even though the triggering condition is only
  * discoverable once the project's class set is known):
  * - Cumulative expansion exceeds {@code architecture.max_expanded_layers}.
@@ -45,8 +45,8 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
  * - Substitution produces an invalid name (binding contains a character
  *   the relaxed expansion-mode regex does not accept).
  *
- * **Collaborator decomposition (Phase 4.1).** The two heavy concerns
- * — walking the class set to gather observed tuples and instantiating a
+ * **Collaborator decomposition.** The two heavy concerns — walking the class
+ * set to gather observed tuples and instantiating a
  * concrete {@see LayerDefinition} from a tuple — live in
  * {@see TupleExtractor} and {@see LayerInstantiator} respectively. This
  * class is the orchestrator: it iterates entries, calls the helpers, and

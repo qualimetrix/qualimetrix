@@ -148,8 +148,8 @@ final class RuleOptionKeySetTest extends TestCase
 
     /**
      * The guard that keeps `levelOptionsClasses()` the single source of a
-     * slot: writing the slot by hand as well is the duplication codex-05
-     * found, and it now fails loudly instead of going quietly out of step.
+     * slot: writing the slot by hand as well duplicates the declaration and
+     * fails loudly instead of going quietly out of step.
      */
     #[Test]
     public function itRefusesALevelSlotThatWasAlreadyDeclaredByHand(): void

@@ -117,8 +117,8 @@ It generates
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest: 789 declarations in 787 files and 37 owners. The generator
-projects that intent into a coarse qmx owner block and review inventories.
+internal manifest. The generator projects that intent into a coarse qmx owner
+block and review inventories; generated summaries carry the current counts.
 Open-ended owner templates such as a category wildcard are prohibited because a
 new sibling would be silently enrolled. A permanent composition binding names
 one exact DI source, internal target, and observed container operation; the
@@ -126,12 +126,12 @@ manifest checker, not qmx, enforces that exactness.
 
 ### Fail-closed project topology
 
-The manifest has 37 semantic-owner layers, zero singleton enforcement seams,
-and 64 permanent exact composition bindings collapsing to 13 required coarse
-owner pairs. The generated qmx projection has 227 declared allow edges;
-generated output is not a second source of truth.
-The published topology also records 659 governed test/support/fixture artifacts,
-102 fixture directories, 518 PHPUnit classes, and 7,036 semantic test IDs.
+The manifest has one semantic-owner layer per owner, no singleton enforcement
+seams, and explicit permanent composition bindings for private DI wiring. The
+generated qmx projection records the required coarse owner pairs and allow
+edges; generated output is not a second source of truth. The published topology
+also records governed tests, support files, fixture directories, PHPUnit
+classes, and semantic test IDs without copying their changing counts here.
 `external` excludes `Qualimetrix\**`, and `coverage: error`
 includes every analysed logical class outside all declared layers even when it
 has no dependency edges, as well as unclassified dependency endpoints. The qmx
@@ -189,5 +189,5 @@ architectural allow edge must be removed or pointed in the dependency direction.
 
 - [ADR 0010 — Architecture as Vertical Slice](0010-architecture-vertical-slice.md)
 - [ADR 0016 — Subject Cohesion](0016-subject-cohesion.md)
-- [Modular architecture migration plan](../internal/plans/modular-architecture.md)
+- [ADR 0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md)
 - [Module README template](../internal/MODULE_README_TEMPLATE.md)

@@ -11,7 +11,7 @@ use Throwable;
  * A configuration refusal caused by user input: a key, a value, a file, a
  * selector, a form — anything the configuration's author is responsible for.
  *
- * The single carried kind for exit code 3 (see `00-overview.md`). There is no
+ * The single carried kind for exit code 3. There is no
  * public constructor: every refusal is one of the three named forms below, and
  * every form is built through a named factory rather than a shared one with a
  * boolean flag, so an impossible combination (a closed position with nothing
@@ -28,12 +28,12 @@ use Throwable;
  * @qmx-threshold coupling.class-rank warning=0.024 error=0.024 -- ClassRank
  * measures how much of the graph flows into a type, and for the one carried
  * kind of exit code 3 that number is a count of places the product refuses
- * BAD INPUT rather than accepting it. It rose in X19 for that exact reason:
- * two CLI doors stopped folding an empty value into a default and started
- * refusing it. Splitting the kind to lower the rank would buy a number with a
+ * bad input rather than accepting it. CLI doors must use this carrier instead
+ * of folding empty values into defaults. Splitting the kind to lower the rank
+ * would buy a number with a
  * second way to spell a refusal, which is what the single-kind design exists
  * to prevent. The headroom is deliberate and finite -- it covers the doors
- * this programme still has to teach, and the round that spends it says so.
+ * remaining bad-input doors that still need to adopt the carrier.
  */
 final class ConfigurationRefusal extends RuntimeException
 {

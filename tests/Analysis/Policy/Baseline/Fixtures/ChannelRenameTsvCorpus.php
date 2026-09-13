@@ -16,9 +16,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
  * the five cases where the two deliberately disagree say why in the same
  * place.
  *
- * The rules the corpus has to cover, and the five divergences with their
- * reasons, are enumerated in
- * `docs/internal/plans/rule-vocabulary/X10-freeze-and-carry/enumeration-channel-rename-tsv-rules.tsv`.
+ * The cases state the expected behavior and explain the deliberate
+ * differences between the readers.
  */
 final class ChannelRenameTsvCorpus
 {
@@ -37,35 +36,35 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'one-row',
-                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn\tfixture reason\n",
                 'product' => true,
                 'gate' => true,
                 'note' => 'The ordinary row.',
             ],
             [
                 'id' => 'crlf-line-endings',
-                'contents' => "old\tnew\treason\r\ncomplexity.cyclomatic\tcomplexity.ccn\tX10\r\n",
+                'contents' => "old\tnew\treason\r\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\r\n",
                 'product' => true,
                 'gate' => true,
                 'note' => 'A trailing \r is stripped per line: a CRLF checkout is not a defect.',
             ],
             [
                 'id' => 'comment-and-blank-lines',
-                'contents' => "old\tnew\treason\n\n# a note\ncomplexity.cyclomatic\tcomplexity.ccn\tX10\n\n",
+                'contents' => "old\tnew\treason\n\n# a note\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\n\n",
                 'product' => true,
                 'gate' => true,
                 'note' => 'Blank lines and # comments are skipped.',
             ],
             [
                 'id' => 'wrong-header',
-                'contents' => "from\tto\treason\ncomplexity.cyclomatic\tcomplexity.ccn\tX10\n",
+                'contents' => "from\tto\treason\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'The header names the columns; a different one is a different file.',
             ],
             [
                 'id' => 'header-with-extra-column',
-                'contents' => "old\tnew\treason\tnote\ncomplexity.cyclomatic\tcomplexity.ccn\tX10\tn\n",
+                'contents' => "old\tnew\treason\tnote\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\tn\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'Four columns is not this format.',
@@ -79,42 +78,42 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'leading-space-in-old',
-                'contents' => "old\tnew\treason\n complexity.ccn\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\n complexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'Matching is exact equality, so an invisible edge matches nothing.',
             ],
             [
                 'id' => 'trailing-space-in-new',
-                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn \tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn \ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'The same rule on the other half of the row.',
             ],
             [
                 'id' => 'renames-nothing',
-                'contents' => "old\tnew\treason\ncomplexity.ccn\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'Both sides equal: a declaration that states no rename.',
             ],
             [
                 'id' => 'two-rows-for-one-old',
-                'contents' => "old\tnew\treason\na.b\tc.d\tX10\na.b\te.f\tX10\n",
+                'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\na.b\te.f\ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'What the old name carries to is then undecidable.',
             ],
             [
                 'id' => 'chain',
-                'contents' => "old\tnew\treason\na.b\tc.d\tX10\nc.d\te.f\tX10\n",
+                'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\nc.d\te.f\ttest reason\n",
                 'product' => false,
                 'gate' => false,
                 'note' => 'The result would depend on the order the rows were applied in.',
             ],
             [
                 'id' => 'collapse-two-olds-onto-one-new',
-                'contents' => "old\tnew\treason\na.b\tc.d\tX10\ne.f\tc.d\tX10\n",
+                'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\ne.f\tc.d\ttest reason\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence. The gate applies channels.tsv forwards only, and forwards a collapse '
@@ -123,7 +122,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'the-same-row-twice',
-                'contents' => "old\tnew\treason\na.b\tc.d\tX10\na.b\tc.d\tX10\n",
+                'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\na.b\tc.d\ttest reason\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence. The gate groups rows by (old, new) so that one name may be declared '
@@ -132,7 +131,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'retired-pair-spelling',
-                'contents' => "old\tnew\treason\ncomplexity#complexity.ccn\tcomplexity.ccn\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity#complexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence. The gate still expands the retired rule#code spelling, because a '
@@ -141,7 +140,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'empty-new-field',
-                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\t\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\t\ttest reason\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence. The gate checks a field for whitespace edges, not for being a name; '
@@ -149,7 +148,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'name-carrying-a-level-separator',
-                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn:method\tX10\n",
+                'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn:method\ttest reason\n",
                 'product' => false,
                 'gate' => true,
                 'note' => 'Divergence, same shape as the one above: ":" addresses a level beside a channel '

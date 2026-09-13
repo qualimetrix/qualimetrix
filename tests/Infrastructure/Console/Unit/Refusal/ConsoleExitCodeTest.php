@@ -11,15 +11,14 @@ use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use ReflectionEnum;
 
 /**
- * The round owns exactly two codes (`00-overview.md`): a refusal by user
- * input, and an internal error. A third case here would be a third code the
- * overview never granted.
+ * The public exit-code vocabulary has two cases: a refusal by user input and
+ * an internal error. A third enum case would widen that contract.
  */
 #[CoversClass(ConsoleExitCode::class)]
 final class ConsoleExitCodeTest extends TestCase
 {
     #[Test]
-    public function itCarriesExactlyTheTwoCodesTheRoundOwns(): void
+    public function itCarriesExactlyTheTwoPublicExitCodes(): void
     {
         self::assertSame(3, ConsoleExitCode::Refusal->value);
         self::assertSame(1, ConsoleExitCode::InternalError->value);

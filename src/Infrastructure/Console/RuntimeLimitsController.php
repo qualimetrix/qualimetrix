@@ -34,8 +34,8 @@ final readonly class RuntimeLimitsController
     /**
      * Applies a `memory_limit` the run's configuration requested. A value
      * that is syntactically valid but rejected by the runtime is the
-     * configuration author's problem to fix (`01-refusal-verdicts.md` §6.2,
-     * route 16), so failure here carries a {@see ConfigurationRefusal}.
+     * configuration author's problem to fix, so failure here carries a
+     * {@see ConfigurationRefusal}.
      */
     public function apply(RuntimeLimits $limits): void
     {

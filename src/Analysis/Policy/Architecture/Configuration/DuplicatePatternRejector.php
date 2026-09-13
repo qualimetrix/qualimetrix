@@ -37,8 +37,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * pattern overlap is NOT necessarily unreachable: the narrowing entry
  * only claims the subset of pattern matches that also satisfy the extra
  * criteria, leaving room for the sibling entry to legitimately catch the
- * residue. The check is skipped in that case to avoid the false-positive
- * documented in the architecture-rules remediation plan (Phase 1.2).
+ * residue. The check is skipped in that case to avoid rejecting valid
+ * narrowing configurations.
  *
  * Trade-off: a {@code match: any} entry sitting AFTER a {@code match: all}
  * narrowing entry on the same pattern is technically reachable, while a

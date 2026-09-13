@@ -130,10 +130,9 @@ final class DeclarationControlBindingsTest extends TestCase
     }
 
     /**
-     * Under P1's `DeclarationPath`, two producers could disagree about which
-     * ordinal a declaration carried and still be treated as one identity: the
-     * old comparison used the bare logical symbol, ordinal excluded. P2 makes
-     * the ordinal part of identity, so this exact disagreement — same file
+     * Two producers disagreeing about which ordinal a declaration carries
+     * must not be treated as one identity. The ordinal is part of identity,
+     * so this disagreement — same file
      * position, same symbol, different ordinal — is now what the guard exists
      * to catch, and it must reject rather than merge the two into a binding
      * list.

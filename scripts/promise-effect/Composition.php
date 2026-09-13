@@ -345,7 +345,7 @@ final class CompositionPlanner
  */
 final class KeyPairGroups
 {
-    public const string PATH = 'docs/internal/plans/promise-effect/measurement/key-pairs.tsv';
+    public const string PATH = 'promise-effect/key-pairs.tsv';
 
     private const string COMPOSES = 'compose within one group';
 

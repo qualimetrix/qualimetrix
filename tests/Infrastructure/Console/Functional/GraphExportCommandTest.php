@@ -356,9 +356,8 @@ final class GraphExportCommandTest extends TestCase
 
     /**
      * `--direction`/`--format` are refused before `analyzeDependencyGraph()`
-     * runs at all (`01-refusal-packages.md`, P01-5 DoD): the evidence is a
-     * call counter on a substituted analyzer, not a timing comparison —
-     * `01-refusal-evidence.md` §10 names the counter as the required proof.
+     * runs at all: the evidence is a call counter on a substituted analyzer,
+     * not a timing comparison.
      * The positive case at the end of this test is what makes the counter
      * meaningful: a spy that is never shown to fire proves nothing.
      */
@@ -394,8 +393,8 @@ final class GraphExportCommandTest extends TestCase
 
     /**
      * `--direction=bogus --format=json` must give a parseable envelope on
-     * stdout, not zero bytes — this is the defect the round exists to fix,
-     * reproduced in the command P01-5 owns (`01-refusal-packages.md` DoD).
+     * stdout, not zero bytes. The assertion verifies the refusal envelope,
+     * not just the exit code.
      */
     #[Test]
     public function itRefusesABogusDirectionWithAParseableJsonEnvelope(): void
@@ -526,9 +525,8 @@ final class GraphExportCommandTest extends TestCase
 
     /**
      * The neighbouring door stays silent on purpose: a missed exclusion leaves
-     * the graph exactly what it would have been, so the caller loses nothing
-     * (`docs/internal/plans/silent-acceptance/00-overview.md`, the third row of
-     * the rule). This is the regression guard against the refusal spreading.
+     * the graph exactly what it would have been, so the caller loses nothing.
+     * This is the regression guard against the refusal spreading.
      */
     #[Test]
     #[DataProvider('provideExportFormats')]
@@ -629,7 +627,7 @@ final class GraphExportCommandTest extends TestCase
 /**
  * Counts `analyze()` calls without changing what it returns — the DoD's
  * evidence for "refused before analysis runs" is a call count, not a timing
- * comparison (`01-refusal-packages.md`).
+ * comparison.
  *
  * @internal
  */

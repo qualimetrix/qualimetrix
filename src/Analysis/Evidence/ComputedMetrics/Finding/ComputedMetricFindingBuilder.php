@@ -71,9 +71,8 @@ final class ComputedMetricFindingBuilder
      * A separator inside the leaf is a word break, not a character to print:
      * `computed.branch-load` reads "Branch load". It used to print the leaf
      * verbatim, so the separator the name happened to use leaked into a
-     * sentence — and Ш5e3, which changed that separator from `_` to `-`, would
-     * have moved a published recommendation without renaming anything a reader
-     * addresses.
+     * sentence. Changing a separator would then move a published
+     * recommendation without renaming anything a reader addresses.
      */
     private static function title(string $dimensionName): string
     {

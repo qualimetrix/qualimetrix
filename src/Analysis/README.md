@@ -29,9 +29,9 @@ boundaries.
 | [`Policy/Inline`](Policy/Inline/README.md)                             | source annotation extraction and suppression controls                     | extraction and suppression contracts                    |
 | [`Run`](Run/README.md)                                                 | discovery, collection, phase ordering, coverage, and run results          | Pipeline and FileSet inspection contracts               |
 
-P1-P7 have published their accepted capability boundaries. P7 distributed the
-former Metrics and Rules role buckets among the eight evidence leaves listed
-above. Architecture, Baseline, and Inline are current Policy leaves. Their
+The accepted capability boundaries distribute the former Metrics and Rules
+role buckets among the evidence leaves listed above. Architecture, Baseline,
+and Inline are current Policy leaves. Their
 runtime state and configuration projections remain with their named owners;
 the taxonomy itself owns neither.
 
@@ -50,7 +50,7 @@ Configuration resolution
 ```
 
 Run sequencing never creates a generic capability registry or transports
-capability result payloads. Its only P3 participant port is file-set inspection:
+capability result payloads. Its only generic participant port is file-set inspection:
 a capability receives the eligible file set and keeps its result privately.
 Dependency traversal is separately a DependencyModel promise, not a Run port.
 
@@ -59,7 +59,7 @@ Dependency traversal is separately a DependencyModel promise, not a Run port.
 Read the leaf README before changing a type beneath it. Tests follow the same
 subject-first layout under `tests/Analysis/`; a moved production capability moves
 its owned tests, fixtures, and support with it. External tests remain with their
-semantic owner even when P3 rewrites their imports.
+semantic owner when imports change.
 
 ## Definition of Done
 

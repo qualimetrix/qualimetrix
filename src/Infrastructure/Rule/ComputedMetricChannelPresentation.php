@@ -53,10 +53,9 @@ final readonly class ComputedMetricChannelPresentation implements ChannelPresent
         // keeps that page instead of discarding it — the symmetry this used to
         // draw with an unknown code doesn't hold, because an unknown code has no
         // real page to lose and a configured metric always does. Humanising the
-        // metric's own name instead was rejected: that would reintroduce, in this
-        // class, exactly the kind of privately-derived text
-        // `docs/internal/plans/sarif-channel-descriptions.md` exists to remove —
-        // whereas the inner presentation is a fact this capability already owns.
+        // metric's own name instead was rejected: that would reintroduce
+        // privately-derived presentation text here, whereas the inner
+        // presentation is a fact its capability already owns.
         return $definition->description === ''
             ? $presentation
             : new ChannelPresentation($definition->description, $presentation->docsPage);

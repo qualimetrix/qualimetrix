@@ -46,15 +46,9 @@ final class BaselineEntryValuesTest extends TestCase
     }
 
     /**
-     * Regression: run in isolation against the code before P1.1 (`git apply -R`
-     * on just `BaselineEntry.php`/`BaselineEntryValues.php`), this test fails —
-     * not with a different exception, but because it never throws at all.
-     * Verified 2026-08-20: the pre-fix `decode()` read `count` and `magnitudes`
-     * independently and, since 2 already agreed with the length of the list,
-     * accepted the redundant pair silently and returned normally, reaching
-     * `self::fail()`. That silent acceptance is exactly the redundancy P1.1
-     * removes: a file could carry two numbers that happened to agree with no
-     * way to tell they were required to.
+     * The count is derivable from the magnitude list, so accepting both fields
+     * would create redundant state. The decoder rejects the pair even when the
+     * supplied count matches the list length.
      */
     #[Test]
     public function itRejectsCountAlongsideMagnitudes(): void

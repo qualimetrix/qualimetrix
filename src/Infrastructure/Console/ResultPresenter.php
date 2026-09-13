@@ -34,7 +34,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Raw 9 gets one-edge
  *                headroom. `RuleConfigurationInterface` is the eighth collaborator, added so this
  *                class can build {@see \Qualimetrix\Reporting\FindingProjection\SuppressionComposition}
- *                (Ш6) without a second, separately-wired service reaching the same per-rule
+ *                without a second, separately-wired service reaching the same per-rule
  *                exclusion predicates {@see \Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder}
  *                needs. The ninth, {@see ErrorStream}, did not add a collaborator: this class always
  *                had one for its six stderr messages and built it privately, which is precisely what
@@ -148,8 +148,8 @@ final class ResultPresenter
      * These are presentation filters, so a value naming a subtree the run never
      * saw does not make the analysis incomplete — it empties the report, which
      * reads exactly like a clean subtree. The check runs before the report is
-     * built, and the refusal travels the same route every other one does
-     * (`02-cure.md` Б7, Б8): {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::execute()}
+     * built, and the refusal travels the same route every other one does:
+     * {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::execute()}
      * wraps the whole run, so a refusal raised after the analysis still exits 3.
      *
      * The mutually-exclusive pair is settled earlier, by
@@ -237,8 +237,8 @@ final class ResultPresenter
     }
 
     /**
-     * Refuses an unwritable `--output` target before analysis runs
-     * (`01-refusal-verdicts.md` §5.4). Not a guarantee: the path can still
+     * Refuses an unwritable `--output` target before analysis runs. This is
+     * not a guarantee: the path can still
      * become unwritable between this check and the write, which
      * {@see self::writeOutput()} catches on its own.
      */
@@ -290,7 +290,7 @@ final class ResultPresenter
      * unwritable in the race, or `rename()` itself failed — carries a
      * {@see ConfigurationRefusal} rather than reporting success with an
      * undelivered report: the refusal beats whatever exit code the analysis
-     * findings would otherwise have produced (`01-refusal-verdicts.md` §5.4),
+     * findings would otherwise have produced,
      * which is why this method throws instead of returning a status for the
      * caller to reconcile with `ExitCodeResolver`.
      */

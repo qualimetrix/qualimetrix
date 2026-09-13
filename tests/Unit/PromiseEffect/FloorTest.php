@@ -12,11 +12,10 @@ use Qualimetrix\PromiseEffect\FloorRow;
 use Qualimetrix\PromiseEffect\LedgerError;
 
 /**
- * `Floor` judges a round's own claim about a defect on both halves of the
- * before/after pair — `docs/internal/plans/layer-value-survival/01-floor.md`
- * (X20), which adds the `pending:` sentinel for a cure that lands after its
- * own snapshot and closes two pre-existing holes: an absent row read as proof
- * of repair, and a narrowed or stale snapshot judged as if it were whole.
+ * `Floor` checks each claimed defect against both the frozen and live result.
+ * The `pending:` disposition distinguishes a cure that lands after the frozen
+ * snapshot and prevents absent, narrowed, or stale evidence from proving a
+ * repair.
  *
  * `scripts/promise-effect.php` is not required here — it runs on include and
  * exits — so `Floor` and the two files it depends on for `Cell` and
@@ -52,7 +51,7 @@ final class FloorTest extends TestCase
     #[Test]
     public function itPassesAPendingRowStillDefectiveOnTheFrozenHalfAndCleanOnTheLiveGrid(): void
     {
-        $floor = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: fixed in PR#1\t\n"));
+        $floor = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: awaiting verification\t\n"));
 
         [$frozenMisses] = $floor->cureMisses([self::cell('r1', true)], frozenHalf: true);
         [$liveMisses] = $floor->cureMisses([self::cell('r1', false)], frozenHalf: false);
@@ -64,7 +63,7 @@ final class FloorTest extends TestCase
     #[Test]
     public function itMissesAPendingRowStillDefectiveOnTheLiveGridAndNamesTheGrid(): void
     {
-        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: fixed in PR#1\t\n"))
+        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: awaiting verification\t\n"))
             ->cureMisses([self::cell('r1', true)], frozenHalf: false);
 
         self::assertCount(1, $misses);
@@ -78,7 +77,7 @@ final class FloorTest extends TestCase
     #[Test]
     public function itMissesAPendingRowAlreadyCleanOnTheFrozenHalfAndSaysTheSnapshotPostdatesTheCure(): void
     {
-        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: fixed in PR#1\t\n"))
+        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: awaiting verification\t\n"))
             ->cureMisses([self::cell('r1', false)], frozenHalf: true);
 
         self::assertCount(1, $misses);
@@ -121,7 +120,7 @@ final class FloorTest extends TestCase
         // verdict NAMES, so the mismatched name made `held` false and the
         // row read as cured — the exact silent-success class the floor
         // exists to catch, now on its own `pending`/`cure` half.
-        [$misses] = Floor::load($this->floorRoot("r1\tLOST_SIBLING\tsrc\tpending: fixed in PR#1\t\n"))
+        [$misses] = Floor::load($this->floorRoot("r1\tLOST_SIBLING\tsrc\tpending: awaiting verification\t\n"))
             ->cureMisses([self::cellVerdict('r1', 'FRANKENSTEIN', true)], frozenHalf: false);
 
         self::assertCount(1, $misses, 'a pending row that swapped one defect for another must miss, not cure silently');
@@ -142,7 +141,7 @@ final class FloorTest extends TestCase
     {
         // The bit is what matters: a different name AND `defect=false` is a
         // legitimate cure, not a miss.
-        [$misses, , , , $pending] = Floor::load($this->floorRoot("r1\tLOST_SIBLING\tsrc\tpending: fixed in PR#1\t\n"))
+        [$misses, , , , $pending] = Floor::load($this->floorRoot("r1\tLOST_SIBLING\tsrc\tpending: awaiting verification\t\n"))
             ->cureMisses([self::cellVerdict('r1', 'COMPOSED_AS_PROMISED', false)], frozenHalf: false);
 
         self::assertSame([], $misses);
@@ -168,7 +167,7 @@ final class FloorTest extends TestCase
     #[Test]
     public function itMissesAPendingRowReadAsNotObservableOnTheLiveGrid(): void
     {
-        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: fixed in PR#1\t\n"))
+        [$misses] = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: awaiting verification\t\n"))
             ->cureMisses([self::cellVerdict('r1', 'NOT OBSERVABLE', false)], frozenHalf: false);
 
         self::assertCount(1, $misses, 'a pending row read as NOT OBSERVABLE must miss, not cure silently');

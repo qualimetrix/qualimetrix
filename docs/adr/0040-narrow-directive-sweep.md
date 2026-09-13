@@ -1,4 +1,4 @@
-# 40. A threshold directive is judged by re-executing the rule it addresses
+# 0040. A Threshold Directive Is Judged by Re-executing the Rule It Addresses
 
 **Date:** 2026-09-02
 **Status:** Accepted
@@ -78,9 +78,8 @@ The map itself has readers outside the rule layer — `AnalysisContext` owns it,
 and `ThresholdDirectiveAudit` reads and rewrites it directly to build each
 counterfactual, which is this feature doing its job. The guard names both as
 declared exceptions rather than missing them by accident; it is a textual
-check, not a type solver, so it cannot see every shape a read could take
-(`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md` carries what a type-aware
-successor would close). What the guard does hold is the shape that matters: a
+check, not a type solver, so it cannot see every shape a read could take.
+What the guard does hold is the shape that matters: a
 rule's own `analyze(AnalysisContext $context)` parameter, which is the only
 form a rule has ever used to reach the map.
 
@@ -118,8 +117,8 @@ documented as what it is: an expensive re-measurement of a cheap answer.
   agreeing, the only run in which the coalition and `Overrun` branches have
   executed under the control at all. **That tree is not in the repository and
   the control cannot be pointed at another one**, so the run is a session
-  record rather than evidence anyone can repeat; `FOLLOWUPS.md` carries what
-  would close it. Verdicts this tree does not produce are held by tests.
+  record rather than evidence anyone can repeat. Verdicts this tree does not
+  produce are held by tests.
 - Per-directive cost is now the addressed rule's own cost, so a directive on an
   expensive rule costs more than one on a cheap rule. The population figure that
   would reopen the question is no longer directive count alone.
