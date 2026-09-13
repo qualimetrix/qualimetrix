@@ -25,7 +25,18 @@ declare(strict_types=1);
  *   - `--format=suppressed`, which enables the same per-rule ledger capture
  *     as `--show-suppressed`, so both halves of the mechanism vocabulary are
  *     populated;
- *   - `--workers=0 --no-cache` for one deterministic, single-threaded pass.
+ *   - `--workers=4 --no-cache` for the bounded, cache-free measurement. The
+ *     output is normalized and sorted below, so worker encounter order cannot
+ *     change the snapshot.
+ *
+ * The parallel measurement is coupled to a standing equivalence control over
+ * the compact `NarrowControl` directive corpus. Every invocation measures that
+ * corpus once with `--workers=0` and once with the same bounded parallelism,
+ * then compares the normalized composition, inert suppressors, and measured
+ * exit code. That fixture is deliberately not `src/`: repeating the full
+ * source-tree pass would erase the speed-up the parallel snapshot provides,
+ * while the fixture has live and inert inline directives under an explicit
+ * configuration and exercises the same suppressed formatter/projection path.
  *
  * **The key, and why only one mechanism needs its suppressor normalized.**
  * The key is mechanism x suppressor x channel x canonical subject x severity,
@@ -98,6 +109,10 @@ declare(strict_types=1);
  * seven values itself.
  */
 
+const SUPPRESSION_SNAPSHOT_WORKERS = 4;
+const SUPPRESSION_SNAPSHOT_CONTROL_TARGET = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl';
+const SUPPRESSION_SNAPSHOT_CONTROL_CONFIG = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml';
+
 function generateSuppressionSnapshot(): int
 {
     $arguments = array_slice($_SERVER['argv'] ?? [], 1);
@@ -118,7 +133,15 @@ function generateSuppressionSnapshot(): int
     $compositionPath = $root . '/docs/internal/generated/suppression/composition.tsv';
     $inertPath = $root . '/docs/internal/generated/suppression/inert.tsv';
 
-    $measurement = measureSuppressionComposition($root);
+    $controlFailure = verifyParallelSuppressionMeasurement($root);
+
+    if ($controlFailure !== null) {
+        fwrite(STDERR, $controlFailure);
+
+        return 2;
+    }
+
+    $measurement = measureSuppressionComposition($root, 'src', SUPPRESSION_SNAPSHOT_WORKERS);
 
     if (is_string($measurement)) {
         fwrite(STDERR, $measurement);
@@ -154,21 +177,35 @@ function generateSuppressionSnapshot(): int
 }
 
 /**
- * Composition TSV, inert TSV, row count, inert count — or an error message
+ * Composition TSV, inert TSV, row count, inert count, measured exit code — or an error message
  * on infrastructure failure (process could not start, output was not the
  * expected JSON), never a finding-level exit code, which `bin/qmx check`
  * uses even on a clean, fully measured run.
  *
- * @return array{0: string, 1: string, 2: int, 3: int}|string
+ * @return array{0: string, 1: string, 2: int, 3: int, 4: int}|string
  */
-function measureSuppressionComposition(string $root): array|string
-{
+function measureSuppressionComposition(
+    string $root,
+    string $target,
+    int $workers,
+    ?string $configuration = null,
+): array|string {
     $qmxBin = $root . '/bin/qmx';
-    $cmd = sprintf(
-        '%s %s check src --format=suppressed --workers=0 --no-cache',
-        escapeshellarg(\PHP_BINARY),
-        escapeshellarg($qmxBin),
-    );
+    $arguments = [
+        \PHP_BINARY,
+        $qmxBin,
+        'check',
+        $target,
+        '--format=suppressed',
+        '--workers=' . $workers,
+        '--no-cache',
+    ];
+
+    if ($configuration !== null) {
+        $arguments[] = '--config=' . $configuration;
+    }
+
+    $cmd = implode(' ', array_map(escapeshellarg(...), $arguments));
 
     $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
 
@@ -237,7 +274,76 @@ function measureSuppressionComposition(string $root): array|string
         renderInert(array_keys($inertKeys)),
         count($counts),
         count($inertKeys),
+        $exitCode,
     ];
+}
+
+/**
+ * The small control is intentionally run on every snapshot operation: it is
+ * the evidence that enabling workers did not change this normalized oracle's
+ * result, without paying for a second full `src/` self-analysis.
+ */
+function verifyParallelSuppressionMeasurement(string $root): ?string
+{
+    $sequential = measureSuppressionComposition(
+        $root,
+        SUPPRESSION_SNAPSHOT_CONTROL_TARGET,
+        0,
+        SUPPRESSION_SNAPSHOT_CONTROL_CONFIG,
+    );
+
+    if (is_string($sequential)) {
+        return "Sequential suppression equivalence control failed:\n" . $sequential;
+    }
+
+    $parallel = measureSuppressionComposition(
+        $root,
+        SUPPRESSION_SNAPSHOT_CONTROL_TARGET,
+        SUPPRESSION_SNAPSHOT_WORKERS,
+        SUPPRESSION_SNAPSHOT_CONTROL_CONFIG,
+    );
+
+    if (is_string($parallel)) {
+        return "Parallel suppression equivalence control failed:\n" . $parallel;
+    }
+
+    return describeSuppressionMeasurementDifference($sequential, $parallel);
+}
+
+/**
+ * @param array{0: string, 1: string, 2: int, 3: int, 4: int} $sequential
+ * @param array{0: string, 1: string, 2: int, 3: int, 4: int} $parallel
+ */
+function describeSuppressionMeasurementDifference(array $sequential, array $parallel): ?string
+{
+    if ($sequential === $parallel) {
+        return null;
+    }
+
+    [$sequentialComposition, $sequentialInert, $sequentialRows, $sequentialInertCount, $sequentialExitCode] = $sequential;
+    [$parallelComposition, $parallelInert, $parallelRows, $parallelInertCount, $parallelExitCode] = $parallel;
+
+    $differences = [];
+    if ($sequentialComposition !== $parallelComposition) {
+        $differences[] = 'normalized composition differs';
+    }
+    if ($sequentialInert !== $parallelInert) {
+        $differences[] = 'normalized inert suppressors differ';
+    }
+    if ($sequentialExitCode !== $parallelExitCode) {
+        $differences[] = sprintf('exit code differs (%d sequential, %d parallel)', $sequentialExitCode, $parallelExitCode);
+    }
+    if ($sequentialRows !== $parallelRows || $sequentialInertCount !== $parallelInertCount) {
+        $differences[] = sprintf(
+            'normalized counts differ (%d/%d sequential, %d/%d parallel)',
+            $sequentialRows,
+            $sequentialInertCount,
+            $parallelRows,
+            $parallelInertCount,
+        );
+    }
+
+    return 'Sequential and parallel suppression measurements disagree: ' . implode('; ', $differences) . ".\n";
 }
 
 /**

@@ -73,12 +73,17 @@
             "Composer\\Config::disableProcessTimeout",
             "phpunit --no-coverage --exclude-group=benchmark"
         ],
+        "test:aggregate": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/phpunit-aggregate.py"
+        ],
         "test:coverage": "phpunit --coverage-html coverage --coverage-clover coverage/clover.xml",
         "phpstan": "phpstan analyse --memory-limit=512M",
         "test:js": "cd src/Reporting/Template && npm test",
         "test:cross-tool": [
             "python3 --version",
-            "python3 -m unittest discover -s tests/Analysis/Evidence/Measurement/Tests -p 'test_*.py'"
+            "python3 -m unittest discover -s tests/Analysis/Evidence/Measurement/Tests -p 'test_*.py'",
+            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'"
         ],
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
@@ -140,8 +145,9 @@
         ],
         "selfcheck": [
             "@architecture:check",
-            "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
+            "@selfcheck:analysis"
         ],
+        "selfcheck:analysis": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
         "gate:self-test": "php scripts/finding-gate.php --self-test",
         "gate": [
@@ -176,7 +182,7 @@
         "check:code": [
             "@cs-check",
             "@phpstan",
-            "@test",
+            "@test:aggregate",
             "@test:js",
             "@test:cross-tool"
         ],
@@ -195,13 +201,14 @@
         ],
         "check:self": [
             "@gate:self-test",
-            "@selfcheck",
+            "@selfcheck:analysis",
             "@directives:audit"
         ]
     },
     "scripts-descriptions": {
         "setup-hooks": "Configure git to use project hooks from .githooks/",
         "test": "Run PHPUnit tests",
+        "test:aggregate": "Run verified PHPUnit suite shards for composer check, excluding live freshness oracles that check:artifacts runs",
         "test:coverage": "Run PHPUnit tests with HTML and clover coverage reports (needs an active coverage driver)",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
@@ -222,6 +229,7 @@
         "suppression-snapshot": "Regenerate docs/internal/generated/suppression/{composition,inert}.tsv from a self-analysis of src/",
         "suppression-snapshot:check": "Fail if the suppression snapshot is stale against a fresh self-analysis, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
+        "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
         "check": "Everything below, in the order a failure is cheapest to read",
         "check:code": "What a code change invalidates: style, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",

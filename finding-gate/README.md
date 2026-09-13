@@ -308,6 +308,27 @@ A run is `PARTIAL`, never `GREEN`, when `--cases=` restricted the corpus or when
 `GREEN` full-corpus run is evidence of finding-equivalence; a step's Definition
 of Done may not cite anything else.
 
+## Execution and liveness
+
+The gate runs its three tree waves in order: candidate verification 1,
+candidate verification 2, then the reference. Within a wave, each corpus case
+is independent because it owns a different working directory and the gate
+removes that directory's `.qmx-cache` around every command. The default pool is
+four cases; pass `--jobs=1` to reproduce the serial schedule, or choose a value
+from 1 through 16 for a bounded pool. Commands within one case always remain in
+their declared order, and the parent merges completed maps in corpus order, not
+completion order, so parallel execution cannot make the compared artifact map
+nondeterministic.
+
+Progress is written to stderr only. A worker has a 20-minute deadline, while a
+single product command has a five-minute deadline and emits a 30-second
+heartbeat. These limits turn a stuck child into exit 3 instead of an unbounded
+Composer wait; they do not change a product command's captured stdout or stderr
+surface. The gate fails before starting a child unless PHP's POSIX extension and
+the `pgrep` executable are available, because without both it cannot guarantee
+that a timed-out product process leaves no worker descendants behind. Both are
+present in the supported macOS and Ubuntu development environments.
+
 `--incomplete-corpus` exists for a corpus that does not yet claim the whole
 declared channel set — while cases are being written, and for a one-case
 development loop such as `--cases=annotations --incomplete-corpus`. It turns the

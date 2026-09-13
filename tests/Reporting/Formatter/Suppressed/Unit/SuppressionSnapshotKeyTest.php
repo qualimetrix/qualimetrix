@@ -171,4 +171,30 @@ final class SuppressionSnapshotKeyTest extends TestCase
     {
         self::assertSame("mechanism\tsuppressor\n", renderInert([]));
     }
+
+    #[Test]
+    public function itAcceptsEquivalentSequentialAndParallelMeasurements(): void
+    {
+        $measurement = [
+            "suppression\tsrc/Foo.php\texample.channel\tsrc/Foo.php\tApp\\Foo\twarning\t1\n",
+            "mechanism\tsuppressor\n",
+            1,
+            0,
+            1,
+        ];
+
+        self::assertNull(describeSuppressionMeasurementDifference($measurement, $measurement));
+    }
+
+    #[Test]
+    public function itRejectsAParallelMeasurementWithADifferentExitCode(): void
+    {
+        $sequential = ["composition\n", "inert\n", 1, 1, 1];
+        $parallel = ["composition\n", "inert\n", 1, 1, 2];
+
+        self::assertSame(
+            "Sequential and parallel suppression measurements disagree: exit code differs (1 sequential, 2 parallel).\n",
+            describeSuppressionMeasurementDifference($sequential, $parallel),
+        );
+    }
 }

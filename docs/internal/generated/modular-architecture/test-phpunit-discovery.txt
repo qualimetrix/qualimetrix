@@ -4894,6 +4894,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itPublishesOnlyPermanentExactCompositionBindingsForDiInternals
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRoutesFreshnessOraclesExactlyOnceThroughAggregateCheck
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\Phase1ConfigCompatibilityTest::itKeepsTheFindingSetAndOmitsTheCoverageDiagnosticWhenFullyCovered
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\Phase1ConfigCompatibilityTest::itProducesThePinnedFindingSetForAPhase1ShapeConfig
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itAcceptsEveryEdgeKindForABareTargetWithoutRelations
@@ -7198,6 +7199,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itBindsANamespaceTheTreeKnowsAndTheMetricsDoNot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itKeepsTheMutuallyExclusivePairRefusedByItsOwnMessage
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itLeavesDiagnosticsOnSymfonyFormattedOutput
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itPresentsAClassThatExistsAndIsClean
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itPresentsANamespaceThatExistsAndIsClean
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itReachesBothVerdictsWithoutANamespaceTree
@@ -7207,6 +7209,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"Checkstyle XML"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"DOT"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"HTML"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"JSON"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"text"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsARuleOptionPairThatCarriesAValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itIgnoresAnAbsentWorkersOption
@@ -7593,11 +7600,13 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itAcceptsEquivalentSequentialAndParallelMeasurements
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itBuildsADifferentKeyWhenOnlySeverityChanges
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itBuildsTheSameKeyForTwoDirectiveLocatorsAtDifferentLines
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itDistinguishesANullFileFromTheNoFilePlaceholderString
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itLeavesASuppressorWithoutAColonUnchanged
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itLeavesEveryOtherMechanismsSuppressorUnchanged
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRejectsAParallelMeasurementWithADifferentExitCode
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyCompositionAsJustTheHeader
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts

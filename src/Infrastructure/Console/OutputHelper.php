@@ -33,6 +33,8 @@ final class OutputHelper
             stream_set_blocking($output->getStream(), true);
         }
 
-        $output->write($content);
+        // Payload formatters already serialized their content; Symfony markup
+        // parsing would corrupt literal tags in HTML, XML, JSON, DOT and text.
+        $output->write($content, false, OutputInterface::OUTPUT_RAW);
     }
 }

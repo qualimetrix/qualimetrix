@@ -43,6 +43,8 @@ final class SelfTest
         $this->verdicts();
         $this->surfaces();
         $this->removal();
+        $this->processDeadline();
+        $this->processGroupTermination();
 
         return $this->failures;
     }
@@ -2476,6 +2478,67 @@ final class SelfTest
         $this->assert(is_file($outside . '/keep.txt'), 'a symlinked directory is unlinked, not walked into and emptied');
 
         Fs::removeRecursively($root);
+    }
+
+    /** A child that closes its pipes before hanging is still covered by the deadline. */
+    private function processDeadline(): void
+    {
+        $startedAt = microtime(true);
+        $message = null;
+
+        try {
+            Process::run(
+                [\PHP_BINARY, '-r', 'fclose(STDOUT); fclose(STDERR); usleep(2000000);'],
+                $this->candidateRoot,
+                0.1,
+            );
+        } catch (GateError $error) {
+            $message = $error->getMessage();
+        }
+
+        $this->assert(
+            $message !== null && str_contains($message, 'Timed out after 0.1 seconds'),
+            'a process that closes both pipes before hanging is refused by the deadline',
+        );
+        $this->assert(
+            microtime(true) - $startedAt < 1.5,
+            'the process deadline does not fall through to an unbounded proc_close',
+        );
+    }
+
+    /** A child spawned by a TERM handler remains inside the supervised group. */
+    private function processGroupTermination(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-process-group-');
+        $pidPath = $root . '/late-child.pid';
+        $script = <<<'SH'
+            trap 'sleep 30 & echo $! > "$1"; exit 0' TERM
+            while :; do sleep 1; done
+            SH;
+
+        try {
+            try {
+                Process::run(['/bin/sh', '-c', $script, 'finding-gate-self-test', $pidPath], $this->candidateRoot, 0.1);
+            } catch (GateError) {
+                // The deadline is the trigger under test.
+            }
+
+            $deadline = microtime(true) + 0.5;
+            while (!is_file($pidPath) && microtime(true) < $deadline) {
+                usleep(10_000);
+            }
+
+            $pid = (int) (is_file($pidPath) ? Fs::read($pidPath) : '0');
+            $this->assert($pid > 1, 'the TERM handler spawned the late child used by the process-group control');
+
+            $deadline = microtime(true) + 0.5;
+            while ($pid > 1 && @posix_kill($pid, 0) && microtime(true) < $deadline) {
+                usleep(10_000);
+            }
+            $this->assert($pid < 2 || !@posix_kill($pid, 0), 'the process deadline leaves no late child behind');
+        } finally {
+            Fs::removeRecursively($root);
+        }
     }
 
     private static function throws(callable $callback): bool

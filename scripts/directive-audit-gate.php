@@ -15,6 +15,8 @@ declare(strict_types=1);
  * loads its own parts.
  */
 
+require __DIR__ . '/finding-gate/GateError.php';
+require __DIR__ . '/finding-gate/ProcessHandle.php';
 require __DIR__ . '/finding-gate/Process.php';
 
 foreach ([

@@ -102,5 +102,6 @@ tests/Analysis/Run/Fixtures/CouplingProject/Service	Analysis/Run	P3	"Move atomic
 tests/Fixtures	Infrastructure/Ast,Reporting/Sarif	permanent	"Split by file owner and closure package."
 tests/Fixtures/Ast	Infrastructure/Ast	permanent	"Move atomically with the owning subject."
 tests/Fixtures/Schema	Reporting/Sarif	permanent	"Move atomically with the owning subject."
+tests/System/TestRunnerConfiguration/Tests/Fixtures	System/TestRunnerConfiguration	P8	"Move atomically with the owning subject."
 tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures	TestSupport/ArchitectureStaticAnalysis	P8	"Move atomically with the owning subject."
 tests/Unit/RuleVocabulary/Fixtures	Architecture.Governance	P8	"Move atomically with the owning subject."
