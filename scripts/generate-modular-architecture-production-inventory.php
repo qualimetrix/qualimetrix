@@ -2628,6 +2628,8 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/shorthand-scope/measurement/candidates.md',
         'docs/internal/plans/shorthand-scope/measurement/docs-today.md',
         'docs/internal/plans/shorthand-scope/measurement/enabled-question.md',
+        'docs/internal/plans/shorthand-scope/measurement/population-gap.md',
+        'docs/internal/plans/shorthand-scope/measurement/population-gap.tsv',
         'docs/internal/plans/shorthand-scope/measurement/population.md',
         'docs/internal/plans/shorthand-scope/measurement/population.tsv',
         'docs/internal/plans/shorthand-scope/measurement/review-codex.md',
