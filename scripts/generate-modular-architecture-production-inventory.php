@@ -2624,6 +2624,8 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/shorthand-scope/01-contract.md',
         'docs/internal/plans/shorthand-scope/02-cure.md',
         'docs/internal/plans/shorthand-scope/03-acceptance.md',
+        'docs/internal/plans/shorthand-scope/measurement/axis-b-rows.tsv',
+        'docs/internal/plans/shorthand-scope/measurement/axis-b-values.md',
         'docs/internal/plans/shorthand-scope/measurement/branches.tsv',
         'docs/internal/plans/shorthand-scope/measurement/candidates.md',
         'docs/internal/plans/shorthand-scope/measurement/docs-today.md',

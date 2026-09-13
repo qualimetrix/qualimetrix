@@ -1,109 +1,170 @@
 # Stage 3 — accounting
 
-What each instrument must say after the cure, and what would falsify the round.
+What each instrument must say, and what would falsify the round.
 
-## The ledger: twenty-five rows move, no new value is added
+Revision 3. Revision 1's account was refuted in four places by review and in two
+more by the row-by-row measurement it asked for. The largest correction is not to
+a number but to the instrument: **the stand cannot today tell which of two keys
+won, so any axis-B number about this cure would come out right for a reason that
+has nothing to do with the cure.**
 
-The brief states that axis B will need a new `coexistence` value for "the first
-key legitimately makes the second inert". It will not — because that reading is
-the one the round removes. Every affected row lands on `compose`, which the
-vocabulary already carries and the classifier already awards.
+## P0 — the instrument, before anything else
 
-**The seven `same-source` rows promising `refuse`** (`complexity.{ccn,cognitive,
-npath} | callable: × threshold`; `coupling.{cbo,instability} | class: × threshold`
-and `namespace: × threshold`) carry their own reason, verbatim:
+**The defect.** `Stand::pairCandidates()`/`effectWritesFor()` write one canonical
+magnitude per numeric key. When a pair's two keys contend for the same pointer —
+which is exactly what "a top-level key beside the level key it reaches" means —
+both sides write **the same value**, and the leaf-wise comparison that decides
+`compose`, `one-wins:` and `deeper-wins:` cannot say who won. Measured on the
+product's own frozen observations: at those magnitudes `compose` goes green after
+the cure on all eighteen `3-shorthand-vs-level-block` rows. The prediction "axis B
+→ 0" would therefore come true **tautologically**, and so would most of the
+prediction below.
 
-> the carrier … says a top-level shorthand of THESE two rules applies to both
-> levels at once, so a level key written beside it is disputed and the carrier
-> does not say which wins; ADR 0052 row 4 -> refuse rather than pick silently
+This is the sibling of a defect the stand already knows about. `effect-magnitudes.tsv`
+exists because "a write indistinguishable from the key being omitted answers that
+question vacuously" — its own words. A write indistinguishable from *the other
+side's write* answers "which key won" vacuously in the same way, and nothing
+declares a second magnitude for that.
 
-and, appended later:
+**The second half of P0: one document is judged twice.** Nineteen triples
+`(rule, key_a, key_b)` appear in the ledger under two kinds at once —
+`2-same-name-top-vs-level` and `4-cross-level` — so ten of axis B's eighty-one
+defects are second copies of a document already counted. `pair-kind-scope.tsv`
+checks that every kind is covered; nothing checks that a document is counted
+once. Visible directly in the table below: `complexity.ccn | callable.threshold ×
+threshold` occurs under both kinds.
 
-> The winner this row recorded as unnamed is therefore named. The round decision
-> is kept only because the coexistence column has no value meaning «the
-> shorthand wins and the block is silently dropped»
+**DoD.** Distinguishable magnitudes per side, declared rather than computed, in
+the file whose subject this already is; the duplicate documents counted once. The
+proof is a stand run **on the unfixed product**, before P2 and before the cure,
+whose axis-B number matches the number the row-by-row measurement predicts for
+today's values on distinguishable magnitudes. A repair that moves the number in
+an unpredicted direction is not accepted on the ground that the direction looks
+better.
 
-Both grounds are removed by this round rather than worked around: the carrier is
-rewritten to name composition, so row 4's "no winner named" no longer holds, and
-the value nobody could write is no longer needed because nothing is silently
-dropped any more. The rows move to `compose` and their notes are rewritten to
-say that — not amended beside the old text, which would leave the file arguing
-with itself.
+Until P0 lands, no axis-B number in this file is evidence about anything.
 
-Note the asymmetry the current rows encode and the contract keeps: for the
-complexity family `callable: × threshold` promises `refuse` while
-`class: × threshold` promises `compose`, because the top-level band reaches
-`callable` and not `class`. Under C2 neither is a refusal any more — the deeper
-key wins for what it names — so the seven move and the eleven stay.
+## The ledger, row by row
 
-**The eighteen `cross-source` rows** are `DEFERRED` with an empty `coexistence`,
-on the ground that the cross-source coordinate is "routed through
-RuleOptionThresholdModeResolver / RuleThresholdKeyGroupRegistry, which this
-round freezes whole". `RuleOptionThresholdModeResolver` was deleted by X20 and
-this round changes the registry, so the deferral's stated reason no longer
-exists. They are decided as `compose`: C3 makes the cross-layer case plain
-priority, and a layer whose keys all survive where the higher layer was silent
-is composition by the ledger's own definition.
+The assignment is not a formula but a table: `measurement/axis-b-rows.tsv`, one
+row per axis-B cell, with today's verdict, the verdict today's value would give
+after the cure, the assigned value, and the verdict that value gives. Read it
+rather than this summary.
 
-**Consequence to watch, not to assume away.** Rows leave `DEFERRED` and start
-reaching the classifier, so axis B's cell count grows. A cell that was never
-judged may land anywhere. The stand is run before the product change (P2's DoD)
-precisely so this movement is attributable to the ledger edit rather than to the
-cure.
+Of 465 axis-B cells, 128 are within the cure's radius and all 81 of today's
+defects lie inside those 128. The 124 judged cells take:
 
-## The grid
+| value               | cells | when                                                                         |
+| ------------------- | ----- | ---------------------------------------------------------------------------- |
+| `deeper-wins:<key>` | 80    | the top key loses the level the other key names and keeps the sibling level  |
+| `compose`           | 27    | the two keys name different groups, or the top key does not reach this level |
+| `one-wins:<key>`    | 17    | the top key reaches only the level the other names, and lands nowhere        |
+| `refuse`            | 4     | two spellings of one band at one depth — C4 leaves these alone               |
 
-Axis B is **not** a blocking axis (`run-declaration.tsv`:
-`blocking-axes = A,C,D,E`), so this cure cannot change the stand's exit code.
-Exit 1 will still come from axes A (4) and D (37). The evidence is the number,
-not the colour: the round is judged by axis B's defect count against the count
-P2 records, and by no cell moving on the other four axes.
+These counts stand **at canonical magnitudes** and may shift once P0 makes the
+sides distinguishable: cells that are NOT OBSERVABLE today because the two sides
+write the same value become judged. They are a prediction to check, not a fact.
 
-Prediction, to be checked rather than assumed: axis B's 81 defects — 20 from the
-`enabled: false` gate, 25 from the complexity shorthand disabling the sibling
-level, 36 from the coupling shorthand applying uniformly — all three mechanisms
-are the subject of C1/C2/Q5, so the expectation is 0 on the grown population.
-Any residual is this round's finding and is reported as such.
+**The new value.** `deeper-wins:<key>` means: both keys act, their reaches
+overlap, inside the overlap the deeper key wins, and outside it the top key's
+effect survives whole. The classifier takes the deep key's region from the
+pointers it moved on its own — the longest common prefix, backed off to a path
+segment — rather than from the spelling of a name, and inside that region it
+requires leaf-wise **equality** with the deep side. The weaker form ("the moved
+leaves survived") was measured blind on exactly ten `6-gate` rows where a block
+writes `enabled: true`, which equals the default.
 
-`axis-b-mechanisms.tsv` is corrected in P2 before it is used as a denominator:
-it declares four mechanisms summing to 82 against a live axis of 81, because M4
-counts a cell that no longer exists, and M2's count absorbs one
-`npath | class.enabled × enabled` cell that M2's own text does not describe.
+Cost, named: the constant in `Ledger::COEXISTENCE_VALUES`, the branch in
+`Classifier::pair()`, the key→side translation in `Stand.php` (two places —
+without it the live path reads the new value as "the second key won", which is
+the defect `claude-07` named for `one-wins:`), and a case in
+`LedgerVocabularyTest`. The branch is proven on distinguishable magnitudes
+(5/6 against level defaults of 10/20 and 30/50), with eight negative controls: a
+block losing on its own level, a top key losing its sibling level, a swapped
+winner, and the value on a row with no overlap all read MISCOMPOSED or NOT
+OBSERVABLE. A branch that greens everything cannot pass those.
+
+**The fourteen rows that today's values would turn red are not regressions of the
+accounting.** They are `4-cross-level` rows of one shape — a level key writing
+half a band against a top-level `threshold` — whose current value stops being
+true under the contract. They are reassigned (`one-wins:` for the six complexity
+rows, `deeper-wins:` for the eight coupling rows) and disappear from the count.
+Naming them matters anyway: neither revision 1, nor the gate corpus, nor any
+earlier measurement of this subject saw them.
+
+**Fifteen cells read NOT OBSERVABLE after the cure, and that is the honest
+reading.** Named in full rather than summarised, because a count without names is
+what the last revision was caught doing:
+
+| rule                               | pair                                                    | kind                                                              |
+| ---------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| `complexity.{ccn,cognitive,npath}` | `callable: × threshold`                                 | 3-shorthand-vs-level-block                                        |
+| `complexity.{ccn,cognitive,npath}` | `callable.threshold × threshold`                        | 2-same-name (and again under 4-cross-level — see P0's duplicates) |
+| `complexity.npath`                 | `callable.enabled × enabled`, `class.enabled × enabled` | 2-same-name                                                       |
+| `complexity.npath`                 | `callable × enabled`, `class × enabled`                 | 6-gate                                                            |
+| `coupling.cbo`                     | `class.scope × scope`                                   | 2-same-name, 6-precedence-fill-in                                 |
+
+For the three `callable: × threshold` rows this is a property of the contract, not
+of the magnitudes: after the cure the top band does not touch a `callable` band
+the block wrote, so the two sides become identical documents and no comparison
+can distinguish them. `deeper-wins:` was measured and does not help. The row keeps
+`one-wins:callable:`, which is the value that tells the truth; NOT OBSERVABLE then
+says "the promise is right, the stand cannot see it", where `compose` would go
+green for a reason unrelated to the contract.
+
+**The eighteen `cross-source` rows stay `DEFERRED`.** Revision 1 proposed deciding
+them, on the ground that the deferral's stated reason — a frozen
+`RuleOptionThresholdModeResolver` — no longer exists. The reason is stale but the
+deferral is not: `Stand::axisB()` skips every row whose `sourceScope` is not
+`same-source`, in two places, and `PairRow` carries no orientation at all, so a
+decided row would produce no cell and no expected key. Deciding them would move
+eighteen unmeasurable promises into `DECIDED` and measure none of them — the
+tautological mode `floor.tsv` warns about. Their notes are corrected to name the
+real blocker instead: the axis-B probe is same-source only. Whether axis B should
+grow a cross-source input is a separate subject with its own price, and it cannot
+be a side effect of this round.
+
+## The grid: three numbers, not one
+
+Axis B is **not** blocking (`run-declaration.tsv`: `blocking-axes = A,C,D,E`), so
+none of this changes the stand's exit code, which will keep coming from axes A
+(4) and D (37). The evidence is the number, and each number must be attributable
+to one movement:
+
+| after | expected                                                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------------------------- |
+| P0    | the count the row-by-row table predicts for **today's** values on distinguishable magnitudes, on the unfixed product |
+| P2    | axis B **rises**: the ledger now states what the product ought to do and the product does not                        |
+| cure  | 0 defects and 15 NOT OBSERVABLE, on the population as P0 left it                                                     |
+
+A single run taken after two of these steps proves nothing about either.
+`axis-b-mechanisms.tsv` is corrected before it is used as a denominator: it
+declares four mechanisms summing to 82 against a live axis of 81, because M4
+counts a cell that no longer exists and M2 absorbs an `npath | class.enabled ×
+enabled` cell its own text does not describe.
 
 ## The floor
 
-The single standing row is the subject of this round:
-`pair|complexity.ccn|class:|threshold|same-source|3-shorthand-vs-level-block`,
-expected `MISCOMPOSED`.
+The single standing row — `pair|complexity.ccn|class:|threshold|same-source|
+3-shorthand-vs-level-block`, expected `MISCOMPOSED` — becomes a fifth `pending:`
+row, not a `cure`. The floor's own header settles it: a plain `cure` "means the
+same thing on both halves", and the first cure a round lands after the baseline
+`02a6ca66` is correctly a defect on the frozen half and correctly repaired on the
+live grid.
 
-It becomes `pending:`, not `cure`. The floor's own header settles this: a plain
-`cure` "means the same thing on both halves", and the first cure a round lands
-after the baseline `02a6ca66` is correctly a defect on the frozen half and
-correctly repaired on the live grid. So this round **adds a fifth `pending:`
-row** rather than converting the four that stand.
-
-It follows that this round does **not** retake the snapshot and does not convert
-the four `pending:` rows of axis C. The header rules that out directly: "Re-taking
-the snapshot is NOT the fix — a fresh snapshot precedes every cure by
-construction and would only move the problem to the next round's first cure."
-`--freeze-before` is therefore not run, and its refusal while a `pending:` row
-stands is not an obstacle this round has to clear.
-
-Sequencing note: the floor row's text names a commit that does not exist until
-the cure is committed, so the floor edit is the cure's follow-up commit, not
-part of P2.
+This round therefore does **not** retake the snapshot and does not convert the
+four standing `pending:` rows. The header rules that out directly: "Re-taking the
+snapshot is NOT the fix — a fresh snapshot precedes every cure by construction and
+would only move the problem to the next round's first cure."
 
 ## The gate
 
 The corpus carries no case writing a top-level band beside a level block, so the
-gate would run GREEN across this cure while seeing nothing of it. P1 adds the
-case and proves it reddens against the pre-cure product; only then does a GREEN
-run mean anything.
-
-After the cure, the case's surfaces move by construction — that is the point of
-it — so `finding-gate/declared-delta.tsv` gains rows naming each moved surface
-and the reason. The file is empty today, so these are its first rows: an
-undeclared move is red, and a declared move that moved nothing is red too.
+gate would run GREEN across this cure while seeing nothing of it. P1 adds the case
+and proves it reddens against the pre-cure product; only then does a GREEN run
+mean anything. After the cure, `finding-gate/declared-delta.tsv` — empty today —
+gains one row per moved surface with its reason. An undeclared move is red; a
+declared move that moved nothing is red too.
 
 ## The website, in both languages
 
@@ -125,23 +186,29 @@ recommended after the defect it worked around is gone.
 
 ## ADR and CHANGELOG
 
-ADR 0059 records what is not derivable from the code: that depth-against-layer
-was decided explicitly and not inherited from ADR 0058; that reach is declared
-per rule because the registry's prose already described a form it could not
-express; and the rejected alternative for B1 with the reason it was rejected.
+ADR 0059 records what is not derivable from the code: that depth-against-layer was
+decided explicitly rather than inherited from ADR 0058; that reach is declared per
+rule because the registry's prose already described a form it could not express;
+that the push-down may only add; the rejected alternative for B1; and — separately,
+because it is about the instrument and not the product — why a probe that writes
+one magnitude per key cannot judge which of two keys won.
 
-`CHANGELOG.md` gets two `Breaking` entries, written from the consumer's side:
-B1 (a bare `complexity.*` shorthand no longer switches the class level off, with
-the per-rule difference — `ccn`/`cognitive` gain class findings, `npath` does
-not) and B2 (a top-level band beside a level block now composes).
+`CHANGELOG.md` gets `Breaking` entries for B1, B2 and B3, each with a migration
+recipe written from the consumer's side: what a document relying on the old
+behaviour looks like, what to write instead, and how to tell whether a given
+`qmx.yaml` is affected. B1's entry must carry its cross-layer face by name —
+`--preset=strict` plus a top-level shorthand now reports class-level findings at
+the preset's thresholds.
 
 ## What would falsify this round
 
-- A document in `measurement/population.tsv` whose outcome under the cure is
-  neither the contract's nor a named exception.
-- Axis B's defect count not reaching the predicted number, with the residual
-  unexplained by a named cell.
-- Any cell moving on axes A, C, D or E.
-- The gate case failing to redden against the pre-cure product — that would mean
-  the corpus still does not carry the subject.
-- A refusal whose message names a key the author did not write (K1).
+- Axis B's number after P0 differing from the row-by-row prediction for today's
+  values — that would mean the instrument repair changed something else too.
+- Axis B not rising after P2: the ledger would then not be saying anything the
+  product fails.
+- A cell moving on axes A, C, D or E at any of the three runs.
+- A document in `measurement/population.tsv` or `population-gap.tsv` whose outcome
+  under the cure is neither the contract's nor a named exception.
+- The gate case failing to redden against the pre-cure product.
+- A refusal naming a key the author did not write (K1), or a refusal that exists
+  today and no longer fires (K5).

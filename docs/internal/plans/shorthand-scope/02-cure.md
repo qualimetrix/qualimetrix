@@ -61,6 +61,23 @@ K1 and K5 are the same class of defect in opposite directions: one invents a
 refusal about a key nobody wrote, the other deletes a refusal about a key
 somebody did.
 
+## P0 — the instrument, before every other package
+
+**Files:** `promise-effect/effect-magnitudes.tsv`,
+`scripts/promise-effect/Stand.php`, `promise-effect/pair-kind-scope.tsv`, and the
+stand's own tests.
+
+The stand writes one canonical magnitude per numeric key, so the two keys of a
+pair that contend for the same pointer write the same value and no leaf-wise
+comparison can say which won. At those magnitudes `compose` goes green after the
+cure on all eighteen rows of this round's own kind — the prediction would come
+true for a reason unrelated to the cure. The second half: nineteen triples are
+judged twice, under two kinds, so ten of axis B's defects are second copies.
+`03-acceptance.md` carries the measurement and the DoD.
+
+Nothing else in this round may start before P0 lands, because every number the
+other packages are judged by is produced by this instrument.
+
 ## P1 — the corpus witness (finding-gate)
 
 **Why first.** The corpus contains no case writing a top-level band beside a
@@ -94,7 +111,13 @@ after the cure would leave no witness of what the cure moved.
 **Files:** `docs/internal/plans/promise-effect/measurement/promise-ledger.tsv`,
 `docs/internal/plans/layer-value-survival/measurement/axis-b-mechanisms.tsv`,
 `scripts/promise-effect/Ledger.php`, `scripts/promise-effect/Classifier.php`,
-`tests/Unit/PromiseEffect/LedgerVocabularyTest.php`.
+`scripts/promise-effect/Stand.php`, `tests/Unit/PromiseEffect/LedgerVocabularyTest.php`.
+
+`Stand.php` is in the set because the key→side translation lives there in two
+places: without it the live path reads the new value as "the second key won",
+which is the defect `claude-07` named for `one-wins:`. A green
+`LedgerVocabularyTest` over a live path that reads the value backwards is the
+same false witness one layer up.
 
 **Content.** The row-by-row account in `03-acceptance.md` — which rows take
 `compose`, which take `one-wins:<key>`, which need the new `deeper-wins:<key>`
@@ -194,11 +217,15 @@ P1's case moves, with the reason.
 ## Order and parallelism
 
 ```
-P1 ─┐
-P2 ─┼─ (independent, any order, parallel)
-P5 ─┘
-        P3 ──▶ P4 ──▶ P6 ──▶ stand, gate, composer check
+P0 ──▶ stand run #1 (unfixed product, distinguishable magnitudes)
+        P1 ─┐
+        P2 ─┼─ (independent, any order, parallel) ──▶ stand run #2 (axis B rises)
+        P5 ─┘
+                P3 ──▶ P4 ──▶ P6 ──▶ stand run #3, gate, composer check
 ```
+
+Three stand runs, each attributable to one movement. A single run taken after two
+of them proves nothing about either.
 
 P5 describes the contract, not the implementation, so it does not wait for P3.
 Its review, however, happens with the code: prose that survives review while the
