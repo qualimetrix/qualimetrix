@@ -70,6 +70,16 @@ refusing document in the population against the cured build, not an argument.
   the author wrote, with today's message and exit code. The form is absent from
   both population files, which is why neither measurement saw it; P3's DoD adds it.
 
+  **This one widens the refusal set in exactly one way, and B4 names it.** Today
+  the refusal rides inside a branch the `enabled: false` early return jumps over:
+  measured on the shipped binary, `{enabled: false, threshold: 30, warning: 10}`
+  exits 2 while the same document without `enabled` exits 3. A seam that refuses
+  unconditionally starts refusing the first. The alternative — reproducing "unless
+  the rule is off in this layer" at the seam — would keep a document's validity
+  depending on a key that has nothing to do with its contradiction, which is the
+  shape this round removes elsewhere. So the widening is taken, not avoided, and
+  it is a breaking change with an entry of its own.
+
 K1 and K5 are the same class of defect in opposite directions: one invents a
 refusal about a key nobody wrote, the other deletes a refusal about a key
 somebody did.
@@ -181,9 +191,11 @@ registry declares `LONE_THRESHOLD_SHAPE` with an empty graduated pair — that
 condition is the line P3 changes for those three rules. `unfold()` gains the
 cross-path step — for each top-level group with a declared reach, push the value
 into every reached level whose own group this layer left unwritten, then remove
-the top-level key. `enabled` is declared and pushed the same way. **`scope` is
-not**: `CboOptions::fromArray()` composes it by key already, and pushing it here
-too would apply it twice.
+the top-level key. `enabled` and `scope` are declared and pushed the same way —
+`scope` by key, since it is one key, and with its enum semantics unchanged. It
+moves here from `CboOptions::fromArray()`, which composes it correctly by key but
+layer-blind, so a lower layer's block beats a higher layer's `scope` today. P4
+removes that composition in the same change; leaving both would apply it twice.
 
 **What the completeness guard becomes.** Today it proves every rule/path where
 the code calls `ThresholdParser::parse()` has a registry entry. After P4 the
@@ -212,10 +224,13 @@ over what the flat branch was doing besides discarding blocks: the top-level
 `ThresholdParser::parse()` call that refuses a same-layer spelling mix lives
 inside it, and is the only top-level `parse()` call either coupling rule has. P4
 may not land before that refusal is demonstrably carried at the seam. `fromArray()`
-then reads every level from a document that no longer carries a top-level band; the six tests that assert "the
-block is discarded" become tests that assert composition, one per class. The
-`scope` composition inside `CboOptions::fromArray()` is preserved deliberately,
-with a test that fails if it is dropped along with the branches around it.
+then reads every level from a document that no longer carries a top-level band;
+the six tests that assert "the block is discarded" become tests that assert
+composition, one per class. The `scope` composition inside `CboOptions::fromArray()`
+is **removed** here, because P3 now performs it at the seam — with a cross-layer
+acceptance case, since the point of moving it is the orientation `fromArray()`
+cannot see: a lower layer's `class: {scope: …}` must no longer beat a higher
+layer's top-level `scope`.
 
 **DoD.** The six named tests assert the new outcome; `doc5`/`doc6`, the
 `complexity.ccn` control/bare pair, and B3's `E1`/`E2` pair are acceptance cases
@@ -240,7 +255,7 @@ rather than deleted: it is the shape both shipped presets use and stays
 recommended. `complexity.md` gains what it never had — its own rules' top-level
 shorthand and what it reaches.
 
-B1, B2 and B3 get `Breaking` entries **with a migration recipe written from the
+B1 through B4 get `Breaking` entries **with a migration recipe written from the
 consumer's side**, which the project's policy requires and revision 1 omitted:
 what a document that relied on the old behaviour looks like, what to write
 instead, and how to tell whether a given `qmx.yaml` is affected. B1's entry must

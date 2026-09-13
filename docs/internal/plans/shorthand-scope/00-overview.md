@@ -82,15 +82,21 @@ declare. This round gives it one.
 
 | stage             | file                                       | produces                                                                                                    |
 | ----------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| 1. Contract       | [`01-contract.md`](01-contract.md)         | the five answers, the per-rule reach table, the breaking changes named                                      |
-| 2. Corpus witness | [`02-cure.md`](02-cure.md), package P1     | a finding-gate case that carries the subject, proved to redden against the pre-cure product                 |
-| 3. Cure           | [`02-cure.md`](02-cure.md), packages P2-P4 | declared reach in the registry, cross-path unfold, five `fromArray()` implementations without early returns |
-| 4. Accounting     | [`03-acceptance.md`](03-acceptance.md)     | ledger rows, floor, grid, declared gate delta, website in both languages, ADR, CHANGELOG                    |
+| 1. Contract       | [`01-contract.md`](01-contract.md)         | the five answers, the per-rule reach table, the four breaking changes named                                 |
+| 2. Instrument     | [`02-cure.md`](02-cure.md), package P0     | a stand that can say which of two keys won, and the accounting table re-derived on it                       |
+| 3. Corpus witness | [`02-cure.md`](02-cure.md), package P1     | a finding-gate case that carries the subject, proved to redden against the pre-cure product                 |
+| 4. Cure           | [`02-cure.md`](02-cure.md), packages P2-P4 | declared reach in the registry, cross-path unfold, five `fromArray()` implementations without early returns |
+| 5. Accounting     | [`03-acceptance.md`](03-acceptance.md), P6 | ledger rows, floor, grid, declared gate delta, website in both languages, ADR, CHANGELOG                    |
 
-Stage 1 goes to review before a line of stage 3 is written. On the two previous
-rounds of this programme, review of the plan found two product defects that five
-measurement axes had not, and stopped a round that would have been wrong three
-independent ways. The price both times was one run of two reviewers.
+Stage 1 went to review before a line of any other stage was written, three times.
+Eighteen findings came back, every one verified by reading code or by running the
+product, and they cost four reviewer runs. What they bought, in order of size: the
+instrument cannot say which of two keys won, so the cure's own measurement would
+have been tautological; the cure as planned deleted a refusal it promises to keep,
+shown by building the product without that branch and running it; and a claim of
+mine about the measuring vocabulary was wrong in the direction that would have
+silenced fifteen rows. None of the three is visible in the code that does not yet
+exist.
 
 ## What is measured and must not be re-derived
 
@@ -113,10 +119,14 @@ cases, 0 failures); the ledger's `kind=3-shorthand-vs-level-block` split (7
 1. **Axis B does not block.** `run-declaration.tsv` declares
    `blocking-axes = A,C,D,E`. The 81 cells this round cures redden nothing
    today; the run's exit 1 comes from axes A and D.
-2. **Axis B needs no new `coexistence` value.** The brief states it will. Under
-   the contract in `01-contract.md` every affected row lands on `compose`, which
-   the vocabulary already carries — see `03-acceptance.md` for the seven rows
-   that move and why.
+2. **Axis B needs a new `coexistence` value after all — and revision 1 of this
+   file said it did not.** The claim was mine, it cited a stale note in the
+   ledger, and this round's own measurement had already contradicted it. The
+   classifier's `compose` branch requires both sides' leaves to survive leaf by
+   leaf, which the contract deliberately denies on the level a block names, so
+   `compose` would award MISCOMPOSED to fifteen rows of eighteen. The value is
+   designed and proven in `03-acceptance.md`; the premise the brief carried was
+   right.
 3. **The floor holds 27 rows, not 26.** One is `withdrawn`
    (`form|yaml|computed_metrics.<name>.enabled|null`), a disposition mutually
    exclusive with `cure`.

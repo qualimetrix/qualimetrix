@@ -74,9 +74,10 @@ values of the two layers are of course assembled into one document; what does
 not happen is any rule reading depth against layer, which is what revision 1
 called "nothing composes".)
 
-**C4. Refusal is unchanged: two spellings of one band, in one array, in one
-layer.** No new refusal is introduced, and — this is the part revision 1 left
-unguarded — no existing one is removed. A top-level band beside a level block is
+**C4. Refusal is two spellings of one band, in one array, in one layer — and that
+set moves in exactly one direction, once.** No existing refusal is removed — the
+part revision 1 left unguarded — and one document starts refusing that does not
+today, named as B4 rather than discovered later. A top-level band beside a level block is
 not the refused shape: the two address different depths, so they compose under
 C2.
 
@@ -242,7 +243,7 @@ of the ten level options classes only `ClassNpathComplexityOptions` defaults to
 default to `true`, and both coupling rules' levels default to `true`. Verified
 by reading all ten constructors.
 
-## The three breaking changes, named
+## The four breaking changes, named
 
 **B1. A bare `complexity.*` shorthand no longer switches the class level off.**
 Today `complexity.ccn: {threshold: 3}` forces `class` to `enabled: false`; under
@@ -280,6 +281,19 @@ the one level of ten whose default runs the other way, and generalising over the
 five rules is what hid it in revision 1. Measured: E1 `{enabled: true}` → 0
 class findings today, E2 `{class: {enabled: true}}` → 1, and under Q5 E1 must
 equal E2.
+
+**B4. A same-layer spelling mix now refuses even when the rule is switched off in
+that layer.** Today the refusal lives inside a branch that the `enabled: false`
+early return jumps over, so the contradiction is judged or not judged depending on
+an unrelated key. Measured on the shipped binary: `coupling.cbo: {enabled: false,
+threshold: 30, warning: 10}` exits 2, the same document without `enabled` exits 3.
+Once the early returns are gone and the refusal lives at the seam, both refuse.
+
+This is the smallest of the four and the only one that makes the product stricter.
+It is taken rather than avoided because the alternative — teaching the seam to skip
+the check when the rule is off — would keep a document's validity depending on a
+key unrelated to its contradiction, which is the shape this round removes
+everywhere else.
 
 ## Cells the enumeration found that no earlier round named
 

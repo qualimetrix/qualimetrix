@@ -36,15 +36,29 @@ checks that every kind is covered; nothing checks that a document is counted
 once. Visible directly in the table below: `complexity.ccn | callable.threshold ×
 threshold` occurs under both kinds.
 
-**DoD.** Distinguishable magnitudes per side, declared rather than computed, in
-the file whose subject this already is; the duplicate documents counted once. The
-proof is a stand run **on the unfixed product**, before P2 and before the cure,
-whose axis-B number matches the number the row-by-row measurement predicts for
-today's values on distinguishable magnitudes. A repair that moves the number in
-an unpredicted direction is not accepted on the ground that the direction looks
-better.
+**DoD, in two parts, because the second is what revision 3 got wrong.**
 
-Until P0 lands, no axis-B number in this file is evidence about anything.
+First: distinguishable magnitudes per side **wherever a third value exists**,
+declared rather than computed, in the file whose subject this already is; the
+duplicate documents counted once. "Wherever a third value exists" is not a hedge —
+a `bool` has two values and one of them is the level default, and the `scope`
+enum's `all` is the default too, so six cells cannot be made distinguishable by any
+declaration. They are excluded from the DoD by name rather than left to fail it.
+
+Second: **P0 invalidates the table below and must re-derive it.** Every verdict in
+`measurement/axis-b-rows.tsv` was measured at the canonical magnitudes P0 removes,
+and the cell count treats 465 rows as 465 documents where 19 triples are one
+document counted twice. So regenerating the assignment table at the new magnitudes
+is part of P0's own deliverable, and only the regenerated table is an oracle. The
+pre-P0 table is kept as the witness of what P0 changed, not as a prediction.
+
+The proof P0 worked is a stand run **on the unfixed product**, before P2 and before
+the cure, whose axis-B number matches the regenerated table's count for today's
+ledger values. A repair that moves the number in an unpredicted direction is not
+accepted on the ground that the direction looks better.
+
+Until P0 lands, no axis-B number in this file is evidence about anything —
+including the three in the grid section below.
 
 ## The ledger, row by row
 
@@ -227,7 +241,7 @@ that the push-down may only add; the rejected alternative for B1; and — separa
 because it is about the instrument and not the product — why a probe that writes
 one magnitude per key cannot judge which of two keys won.
 
-`CHANGELOG.md` gets `Breaking` entries for B1, B2 and B3, each with a migration
+`CHANGELOG.md` gets `Breaking` entries for B1 through B4, each with a migration
 recipe written from the consumer's side: what a document relying on the old
 behaviour looks like, what to write instead, and how to tell whether a given
 `qmx.yaml` is affected. B1's entry must carry its cross-layer face by name —
