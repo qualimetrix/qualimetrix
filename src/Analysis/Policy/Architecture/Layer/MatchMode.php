@@ -14,9 +14,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * kind to match. A criterion that is empty/unset is trivially satisfied
  * under {@see All}.
  *
- * For template layers (Phase 2 direction 2), this enum controls only how
+ * For template layers, this enum controls only how
  * capture-producing criteria combine. Non-capturing criteria always act as
- * AND-filters regardless of mode — see ADR 0007, locked decision D7.
+ * AND-filters regardless of mode; see ADR 0059.
  */
 enum MatchMode: string
 {

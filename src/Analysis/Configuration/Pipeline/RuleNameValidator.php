@@ -121,9 +121,8 @@ final class RuleNameValidator
      * short unrelated name sharing the old prefix can score closer than the
      * renamed rule itself — `design.lcom` is 3 edits from `design.noc` but 4
      * from `cohesion.lcom`, so plain Levenshtein suggested the wrong one
-     * after `cohesion.lcom` was renamed from `design.lcom` (see
-     * `docs/internal/plans/sarif-channel-descriptions.md`, "Breaking",
-     * ADR 0028). A known name whose leaf (the segment after the last `.`)
+     * after `cohesion.lcom` was renamed from `design.lcom` (ADR 0060). A
+     * known name whose leaf (the segment after the last `.`)
      * matches the unknown name's leaf exactly is preferred over one merely
      * closer by raw distance; ties are resolved by the existing distance
      * rule.

@@ -119,8 +119,8 @@ final readonly class FindingFilterOrchestrator
      * from the path and namespace filters, and a finding about
      * `suppress_paths: [Gone]` cannot be removed by that very pattern.
      *
-     * **The coverage precondition is asked here, and it is asked of the one
-     * predicate the round uses.** A value that names nothing binds nothing on a
+     * **The coverage precondition is asked here, using the same predicate as
+     * the rest of the run.** A value that names nothing binds nothing on a
      * run narrowed below the project's production autoload roots for a reason
      * its author did not choose, so on such a run there is nothing to judge and
      * the audit is not called at all.
@@ -191,7 +191,7 @@ final readonly class FindingFilterOrchestrator
      * selects on a different predicate — whether the `file:` a key names is
      * gone — so for a `callable:`, `class:`, `ns:` or `project:` entry it is a
      * guaranteed no-op, and advising it would send a user round a loop with
-     * no exit. Removal by identity arrives with `cleanup --remove` in P4.
+     * no exit. Removal must address the complete entry identity.
      */
     private function reportBaselineEntries(
         FindingProjectionResult $filterResult,

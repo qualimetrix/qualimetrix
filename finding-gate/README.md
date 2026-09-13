@@ -2,10 +2,7 @@
 
 **Subject:** proving that a vocabulary change (channel names, symbol names,
 metric keys) changed *nothing observable except what a declared map says it
-changed*. Everything a step of
-[`docs/internal/plans/rule-vocabulary/PLAN.md`](../docs/internal/plans/rule-vocabulary/PLAN.md)
-needs in order to be provable lives here; the executable is
-`scripts/finding-gate.php`.
+changed*. The executable is `scripts/finding-gate.php`.
 
 The corpus is **external code by construction**. We dogfood ourselves, so a
 corpus containing `src/` would move its own input with every step it is
@@ -42,8 +39,38 @@ finding-gate/
 │                          # licensing a compared field to move inside a
 │                          # declared diff. Typed, not derived
 ├── normalization.tsv      # fields excluded from comparison, each with its reason
-└── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
+├── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
+├── enumeration-js-metric-keys.tsv # generated Reporting Template metric-key catalog
+├── enumeration-renames.tsv        # current measured vocabulary and pending decisions
+├── enumeration-renames-executed.tsv # retired rename decisions retained as control input
+├── enumeration-runtime-channels.tsv # generated dynamic channel families
+└── enumeration-static-channels.tsv  # static channel inventory used by universe checks
 ```
+
+| artifact                                                         | producer                                                      | consumer                                                  |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
+| `enumeration-js-metric-keys.tsv`                                 | `node src/Reporting/Template/scripts/collect-metric-keys.mjs` | `src/Reporting/Template/tests/metric-key-catalog.test.js` |
+| `enumeration-renames.tsv` and `enumeration-renames-executed.tsv` | `composer enumeration:renames`                                | `composer enumeration:renames:check`                      |
+| `enumeration-runtime-channels.tsv`                               | `composer enumeration:runtime-channels`                       | `composer enumeration:runtime-channels:check`             |
+| `enumeration-static-channels.tsv`                                | repository inventory                                          | `composer enumeration:channel-universe`                   |
+
+The catalog inventories family-shaped literals in the Reporting Template's
+JavaScript source and tests; the corresponding test independently requires
+every source literal to be a member of the PHP metric-key catalog.
+
+## Declared compared-field moves
+
+`declared-field-moves.tsv` licenses one exact
+`surface, field, from, to, reason` tuple. It is literal rather than a wildcard:
+a row licenses a value change in that compared field only; it never licenses a
+set change or a structural delta. The affected surface remains byte-compared
+outside the declared move and remains subject to the normal size limit.
+
+The gate rejects an unused declaration as `field-move-stale`. Keep a row through
+the change that uses it; the next reference comparison consumes it, so a row
+that remains after the move is evidence of an obsolete exception. The self-test
+covers exact matching, direction, duplicate rows, missing reasons, missing
+moves, and stale declarations.
 
 ## `case.json`
 
@@ -209,9 +236,8 @@ here.
 case passed `--preset`, and the single case combining a config file with
 `--rule-opt` rewrote BOTH halves of every band from the command line — so no
 half of a band was ever left for a lower layer to supply, and a product that
-lost one compared equal. It was added straight after the round that cured
-exactly that, because a green gate over the old corpus was evidence about
-nothing the round had touched.
+lost one compared equal. It exists because a green gate over a corpus that
+does not exercise this composition is evidence about nothing in that path.
 
 Its three layers each write a different thing: a preset writes the graduated
 pair, `qmx.yaml` replaces both halves with a `threshold` shorthand, and
@@ -233,7 +259,7 @@ against 0.
 
 What it does not witness: only one of the two merge boundaries is exercised with
 a shorthand below and a graduated key above — the reverse direction, and the
-`~`-above-a-written-value rule settled in the same round, are closed by tests
+`~`-above-a-written-value rule, are closed by tests
 rather than here.
 
 Every run uses the case directory as its working directory, so no path in any

@@ -331,8 +331,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      * Canonicalizes via realpath() in both branches so symlinked source trees
      * relativize correctly against the canonicalized {@see $projectRoot}
      * (StrategySelector calls `canonicalize()` on the root for cache-key
-     * stability — a Phase-6 review HIGH surfaced the asymmetry when the
-     * pathname branch skipped canonicalization).
+     * stability). Canonicalizing only the root breaks relativization for a
+     * pathname reached through a symlink.
      */
     private function absolutePath(SplFileInfo $file): AbsolutePath
     {

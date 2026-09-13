@@ -200,7 +200,7 @@ its own `enabled`. It is not a gate and gets no exception.
   class level on. Today it reports zero findings where the block alone reports
   three (`review-native.md`, claude-04 of the previous round).
 - The ledger already promises this: all five `enabled × class.enabled` rows read
-  `compose`, "both apply at their own depth" (ADR 0052 row 3).
+  `compose`, "both apply at their own depth" (the independent-key composition rule).
 
 The withdrawn plan called this a ledger correction rather than a product change,
 on the ground that the outcome is identical either way. It is not: the outcome

@@ -48,9 +48,9 @@ test pins them equal.
 
 **Why the vocabulary is not owned here.** This capability owns the *traversal*
 of the aggregation tree — `all()`, the aggregators, the indexes — while the
-vocabulary of steps is a coordinate of a symbol, and it moved to `Core\Symbol`
-next to `SymbolType`, `SymbolPath` and `MetricSubject` (rule-vocabulary plan
-Ш5e2b). What settled it is that no change to the level stayed inside this
+vocabulary of steps is a coordinate of a symbol, and it belongs in `Core\Symbol`
+next to `SymbolType`, `SymbolPath` and `MetricSubject`. What settles that
+ownership is that no change to the level stays inside this
 capability: the level is read by Finding, Policy/Inline, Reporting,
 Infrastructure and twelve evidence capabilities, and `Finding::level()` does not
 store it but computes it from the symbol. Reading the vocabulary is not owning

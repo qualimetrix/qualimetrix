@@ -21,8 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * The three outcomes a run can end on, and where each one is written.
  *
- * `01-refusal-exit-ladder.md` §3 fixes the contract this proves: a
- * {@see ConfigurationRefusal} and a bare `InvalidArgumentException`-shaped
+ * A {@see ConfigurationRefusal} and a bare `InvalidArgumentException`-shaped
  * fallback both answer exit code 3, an internal error answers 1; a JSON
  * format gets the `{error, exit_code}` envelope on stdout, anything else gets
  * one framed sentence on stderr; every write survives `-q`; a trace is added
@@ -76,8 +75,7 @@ final class RefusalPresenterTest extends TestCase
     public function itAnswersAFallbackRefusalWithTheCaughtMessageUnframed(): void
     {
         // No "Configuration error:" prefix — this path carries no carrier and
-        // no summary(), only the exception's own message
-        // (`01-refusal-exit-ladder.md` §2.6).
+        // no summary(), only the exception's own message.
         $output = self::terminalOutput();
 
         $exit = $this->presenter()->fallbackRefusal($output, null, new RuntimeException('bad value'));
@@ -149,9 +147,8 @@ final class RefusalPresenterTest extends TestCase
     #[Test]
     public function itKeepsTheRefusalSentenceVisibleUnderQuiet(): void
     {
-        // The message that ends the run is not payload `-q` may swallow
-        // (`01-refusal-envelope.md` §2.3) — only the report and the progress
-        // frame are.
+        // The message that ends the run is not payload `-q` may swallow — only
+        // the report and the progress frame are.
         $output = self::terminalOutput(OutputInterface::VERBOSITY_QUIET);
         $refusal = ConfigurationRefusal::aboutInput(
             ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--group'),
@@ -182,7 +179,7 @@ final class RefusalPresenterTest extends TestCase
     }
 
     /**
-     * X15 review, mechanism B2: a refusal message can embed raw CLI input the
+     * A refusal message can embed raw CLI input the
      * user typed (an option value quoted back into the message, e.g.
      * `graph:export --direction=<garbage>`), and PHP argv bytes are not
      * guaranteed valid UTF-8. Before the fix, `json_encode(...,

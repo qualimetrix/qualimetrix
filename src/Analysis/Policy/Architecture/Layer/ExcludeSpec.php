@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 /**
  * Immutable specification of the criteria that DISQUALIFY a class from a
- * layer (Phase 2 direction 3 — see ADR 0007). Attached to a
+ * layer (see ADR 0059). Attached to a
  * {@see MembershipSpec} via its {@code exclude} field; evaluated by
  * {@see LayerDefinition::matches()} as a hard filter AFTER the positive
  * criteria succeed.

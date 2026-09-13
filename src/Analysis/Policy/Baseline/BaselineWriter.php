@@ -207,7 +207,7 @@ final readonly class BaselineWriter
      * which one survived would depend on assembly order. Normalizing the key
      * on the way into the object instead would need the project root at every
      * construction site, including {@see BaselineLoader}, which has no reason
-     * to know it; that plumbing belongs with P3's measured-set seam, not with
+     * to know it; that plumbing belongs with the measured-set seam, not with
      * the file format.
      */
     private function portableKey(string $canonical, AbsolutePath $projectRoot): string

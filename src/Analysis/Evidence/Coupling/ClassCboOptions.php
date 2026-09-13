@@ -84,9 +84,9 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
     }
 
     /**
-     * `threshold` is read unguarded through `ThresholdParser::parse()`'s
-     * default `$thresholdKey`, named by no constructor parameter; it is
-     * documented and working (plan pair #33).
+     * Keep `threshold` here even though no constructor parameter names it:
+     * `ThresholdParser::parse()` reads that key through its default
+     * `$thresholdKey`.
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {

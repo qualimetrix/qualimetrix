@@ -7,13 +7,9 @@ declare(strict_types=1);
  * subclass of it) still sit outside the configuration-refusal carrier, across
  * `src/` and `bin/`.
  *
- * This is the fallback recognised by the round's own rule 1
- * (`docs/internal/plans/configuration-refusal/00-overview.md`): a general
- * `catch (InvalidArgumentException) -> exit 3` stays in every command, named as
- * a secondary signal and a named debt rather than an oversight, because the set
- * of throw sites is open (three independent enumeration attempts each missed a
- * different subset — see the same file, "Полнота и остаток"). This script
- * counts that debt's upper bound so a later change can be compared against it.
+ * A general `catch (InvalidArgumentException) -> exit 3` remains a secondary
+ * refusal signal because the set of throw sites is open. This script counts
+ * that debt's upper bound so a later change can be compared against it.
  *
  * **What it counts.** Two syntactic forms only, by AST:
  *   - `throw new InvalidArgumentException(...)` or `throw new <subclass>(...)`;
@@ -28,8 +24,7 @@ declare(strict_types=1);
  *   - a throw of a variable reassigned across branches, or assigned from
  *     anything but a literal `new` expression (a ternary, a method call, a
  *     parameter) — the single-assignment-of-a-`new`-expression form is what the
- *     round measured `03-catch-clauses.md` against, and a wider heuristic would
- *     move the number without changing what the plan's prose describes;
+ *     tracked measurement uses; a wider heuristic would change the population;
  *   - **reachability from the CLI.** A throw site counted here may be dead code,
  *     may sit behind a branch no configuration can reach, or may never run
  *     under the product's own entry points. This script has no call graph and

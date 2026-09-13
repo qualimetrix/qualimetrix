@@ -98,9 +98,7 @@ use RuntimeException;
  *   {@see LEGITIMATE_DIRECT_READERS} is where such a case would be answered.
  *
  * Closing the general case needs a different contract (overrides delivered to
- * a rule already filtered by its own name), not a better tokenizer;
- * `docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`, "Х3-D", carries the three
- * measurements that ruled out holding this invariant with a type instead.
+ * a rule already filtered by its own name), not a better tokenizer.
  */
 final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
 {
@@ -298,8 +296,8 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     }
 
     /**
-     * Every form a prior review round proved this guard's first version let
-     * through: a nullsafe call, a comment splitting the operator from the
+     * Every form that could bypass a syntactic guard: a nullsafe call, a
+     * comment splitting the operator from the
      * method name, dynamic dispatch through a brace expression, dynamic
      * dispatch through `call_user_func`, a first-class callable, a static
      * reference, and a call on a context reached through a field carrier. Each

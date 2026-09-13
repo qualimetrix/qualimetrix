@@ -9,13 +9,13 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  *
  * A key is `family.metric` in kebab, where the family is the subject the metric
  * belongs to rather than the collector that happens to produce it: the seven
- * class-shape facts below are `design.*` although Size writes them, and that
- * mismatch is a defect of the layout recorded in AUDIT.md, not of the name.
+ * class-shape facts below are `design.*` although Size writes them; producer
+ * placement does not change the published metric family.
  *
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
  *
- * @qmx-threshold coupling.cbo 73 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 72 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges. The two adopters that took it to 71 are ChannelDeclarationCompilerPass, which reads these constants by reflection to check that a channel's declared judged metric exists, and HealthDimensionCatalog, which stopped spelling its class-level keys as literals. The third, which took it to 72 (Х9 C1), is ComputedMetricFormulaValidator, which reads these constants by the same reflection mechanism to check that a computed-metric formula's addressed key exists; removing that one import counterfactually measures raw CBO back at 71.
+ * @qmx-threshold coupling.cbo 73 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 72 gets one-edge headroom. ChannelDeclarationCompilerPass and ComputedMetricFormulaValidator read these constants by reflection to validate published metric keys; HealthDimensionCatalog uses them instead of spelling class-level keys as literals. Centralizing these readers prevents private copies of the metric vocabulary from drifting.
  */
 final class MetricName
 {

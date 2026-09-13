@@ -9,17 +9,12 @@ use PHPUnit\Framework\TestCase;
 use QmxDirectiveAuditControls\Suite;
 
 /**
- * Before this fix, the negative-controls stand keyed a JUnit case by `name`
- * alone. Two test classes that happen to share a method name then collapsed
- * to the same key, and a red recorded against one read as a red against both
- * — the collision named in
- * `docs/internal/plans/rule-vocabulary/X7-tails/01-stand-truth.md` (package
- * C). This test guards `Suite::fromJUnit()`'s `classname::name` key against
- * that regression.
+ * A JUnit method name is not unique across test classes. This test guards
+ * `Suite::fromJUnit()`'s `classname::name` key so a result for one class
+ * cannot be attributed to another.
  *
- * The log used here imitates that collision rather than adding a same-named
- * pair of classes to `Suite::FILES`: this bench's cases are the controls
- * stand's own coverage list, not a place to plant unrelated fixtures.
+ * The synthetic log reproduces the collision without changing the suite's
+ * actual test inventory.
  */
 final class DirectiveAuditControlsSuiteKeyTest extends TestCase
 {

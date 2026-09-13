@@ -197,13 +197,13 @@ final class RulesCommandWiringTest extends TestCase
     }
 
     /**
-     * The debt Ш5e2 pinned as fail-open, taken by Ш5e3: an unknown group, and a
-     * known group in the wrong case, are refused instead of answered with an
+     * An unknown group, and a known group in the wrong case, are refused
+     * instead of answered with an
      * empty listing and exit 0. Checked against the real container, so the
      * groups the failure offers are the ones the listing actually prints.
      *
-     * `RulesCommand` throws the round's carrier and has no ladder of its own
-     * (`01-refusal-verdicts.md` §5.7); under `CommandTester` that carrier
+     * `RulesCommand` throws the carrier and has no ladder of its own; under
+     * `CommandTester` that carrier
      * flies out of `execute()` rather than settling as a status code, so each
      * group gets its own try/catch — `expectException()` would only survive
      * the first iteration of the loop.

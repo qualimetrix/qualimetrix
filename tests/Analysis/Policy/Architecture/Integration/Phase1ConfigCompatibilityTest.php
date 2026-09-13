@@ -31,9 +31,8 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolation
  * Regenerate the snapshot with {@code QMX_GOLDEN_UPDATE=1} after an
  * intentional behaviour change.
  *
- * Per ADR 0007 (D6) every Stage 2 step is required to leave this test
- * green; a failure signals an unintended regression in Phase-1-shape
- * config handling.
+ * ADR 0059 keeps the original configuration shape supported; a failure here
+ * signals an unintended compatibility regression.
  */
 #[Group('integration')]
 final class Phase1ConfigCompatibilityTest extends TestCase

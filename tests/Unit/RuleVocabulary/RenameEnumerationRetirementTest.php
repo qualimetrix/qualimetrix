@@ -9,15 +9,11 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * The retirement predicate of `scripts/generate-rename-enumeration.php`, branch
- * by branch.
- *
- * Every branch of it is fail-closed, and a fail-closed branch nobody has seen
- * fire is a branch nobody has tested: its whole evidence used to be one hand-run
- * over `design.type-coverage`, a split into three names that did not exist
- * before — precisely the shape that hides the defect review found (a target that
- * already existed satisfying the predicate). The script is include-safe so this
- * can call the predicate directly instead of round-tripping a repository copy.
+ * `scripts/generate-rename-enumeration.php` retires a decision only when its
+ * targets are fully represented by the current measurement. These tests pin
+ * fail-closed handling for missing, pre-existing, wildcard, wrong-kind, and
+ * stale targets. The script is include-safe, so the predicate can be tested
+ * directly.
  */
 final class RenameEnumerationRetirementTest extends TestCase
 {
@@ -34,26 +30,25 @@ final class RenameEnumerationRetirementTest extends TestCase
     public function itRetiresARenameWhoseTargetsAppeared(): void
     {
         $retired = retireExecutedRows(
-            ['old.name' . "\t" . 'producer' => ['new' => 'new.name', 'step' => 'Ш4b']],
+            ['old.name' . "\t" . 'producer' => ['new' => 'new.name', 'step' => 'rename-a']],
             [self::measured('new.name', 'producer')],
             [],
             ['producer' => ['old.name' => true]],
         );
 
         self::assertSame(
-            [['old' => 'old.name', 'kind' => 'producer', 'new' => 'new.name', 'step' => 'Ш4b']],
+            [['old' => 'old.name', 'kind' => 'producer', 'new' => 'new.name', 'step' => 'rename-a']],
             $retired,
         );
     }
 
     /**
-     * A split retires only when *every* promised name appeared — the case this
-     * step actually landed.
+     * A split retires only when *every* promised name appeared.
      */
     #[Test]
     public function itRetiresASplitOnlyWhenAllThreeTargetsAppeared(): void
     {
-        $decision = ['old.name' . "\t" . 'producer' => ['new' => 'a.one|a.two', 'step' => 'Ш4b']];
+        $decision = ['old.name' . "\t" . 'producer' => ['new' => 'a.one|a.two', 'step' => 'rename-a']];
         $previous = ['producer' => ['old.name' => true]];
 
         $retired = retireExecutedRows(
@@ -71,10 +66,9 @@ final class RenameEnumerationRetirementTest extends TestCase
     }
 
     /**
-     * The defect review found: a target that existed *before* cannot have
-     * appeared from this rename, so the row is a lost identity rather than an
-     * executed one. This is the shape of Ш5's collapses — two identities into
-     * one — where the second half would otherwise retire without being merged.
+     * A target that existed *before* cannot have appeared from this rename,
+     * so the row is a lost identity rather than an executed one. When two
+     * identities converge on one target, both rows must be merged explicitly.
      */
     #[Test]
     public function itRefusesToRetireWhenATargetExistedBeforeTheMeasurement(): void
@@ -83,7 +77,7 @@ final class RenameEnumerationRetirementTest extends TestCase
         $this->expectExceptionMessageMatches('/did not appear from this rename: survivor\.name/');
 
         retireExecutedRows(
-            ['lost.name' . "\t" . 'producer' => ['new' => 'survivor.name', 'step' => 'Ш5']],
+            ['lost.name' . "\t" . 'producer' => ['new' => 'survivor.name', 'step' => 'rename-b']],
             [self::measured('survivor.name', 'producer')],
             [],
             ['producer' => ['lost.name' => true, 'survivor.name' => true]],
@@ -97,7 +91,7 @@ final class RenameEnumerationRetirementTest extends TestCase
         $this->expectExceptionMessageMatches('/not measured: computed\.\*/');
 
         retireExecutedRows(
-            ['computed.health' . "\t" . 'producer' => ['new' => 'health.one|computed.*', 'step' => 'Ш5']],
+            ['computed.health' . "\t" . 'producer' => ['new' => 'health.one|computed.*', 'step' => 'rename-b']],
             [self::measured('health.one', 'producer')],
             [],
             ['producer' => ['computed.health' => true]],
@@ -115,7 +109,7 @@ final class RenameEnumerationRetirementTest extends TestCase
         $this->expectExceptionMessageMatches('/not measured: new\.name/');
 
         retireExecutedRows(
-            ['old.name' . "\t" . 'producer' => ['new' => 'new.name', 'step' => 'Ш4b']],
+            ['old.name' . "\t" . 'producer' => ['new' => 'new.name', 'step' => 'rename-a']],
             [self::measured('new.name', 'channel')],
             [],
             ['producer' => ['old.name' => true]],
@@ -130,7 +124,7 @@ final class RenameEnumerationRetirementTest extends TestCase
     #[Test]
     public function itRefusesExecutedHistoryThatNoLongerDescribesTheMeasurement(): void
     {
-        $executed = [['old' => 'old.name', 'kind' => 'producer', 'new' => 'new.name', 'step' => 'Ш4b']];
+        $executed = [['old' => 'old.name', 'kind' => 'producer', 'new' => 'new.name', 'step' => 'rename-a']];
 
         try {
             retireExecutedRows([], [self::measured('old.name', 'producer'), self::measured('new.name', 'producer')], $executed, []);
@@ -149,12 +143,21 @@ final class RenameEnumerationRetirementTest extends TestCase
     #[Test]
     public function itLeavesAWildcardTargetInHistoryAlone(): void
     {
-        $executed = [['old' => 'computed.health', 'kind' => 'producer', 'new' => 'health.one|computed.*', 'step' => 'Ш5']];
+        $executed = [['old' => 'computed.health', 'kind' => 'producer', 'new' => 'health.one|computed.*', 'step' => 'rename-b']];
 
         self::assertSame(
             $executed,
             retireExecutedRows([], [self::measured('health.one', 'producer')], $executed, []),
         );
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownRenameStep(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/Unknown rename batch.*unregistered-batch/');
+
+        emitMapsForStep([], 'unregistered-batch');
     }
 
     /**

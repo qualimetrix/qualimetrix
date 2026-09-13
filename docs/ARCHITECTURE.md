@@ -19,50 +19,32 @@
 
 ### 1. Capability Boundaries and Current Dependency Graph
 
-The accepted target is a capability-oriented modular monolith
+The current architecture is a capability-oriented modular monolith
 ([ADR 0022](adr/0022-capability-oriented-modular-monolith.md)). Leaf capabilities
-own behaviour, configuration, state, tests and documentation. They
-expose `Contract` only to named external owner-consumers. P3 proved one
-consumer-owned Run port,
-`Analysis\Run\Contract\FileSetInspectionParticipantInterface`: it receives an
-eligible file set and owns no capability result. P4 adds only the two
-capability-specific preparation contracts for Architecture policy and circular
-dependency evidence. Generic lifecycle, graph-preparation, and
-metric-derivation ports remain unapproved.
+own behaviour, configuration, state, tests and documentation. They expose
+`Contract` only to named external owner-consumers. Ports are subject-specific:
+Run owns FileSet inspection, DependencyModel owns traversal, and Architecture
+and CircularDependency own their preparation contracts. Generic lifecycle,
+graph-preparation, and metric-derivation ports remain unapproved.
 
 `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
 taxonomies, never modules or allow-list targets. `Core` is limited to neutral
 primitives, `Infrastructure` to delivery/composition, and `Reporting` to output
-projection. P1 has landed `Analysis\Evidence\Duplication` as the first migrated
-leaf: it owns detection, its run-scoped result provider, entities, options,
-rule, tests and documentation. P3 removed its temporary inspection contract;
-the internal detector now implements Run's FileSet participant port. P2 also landed
-`Analysis\Evidence\DependencyModel` and `Reporting\GraphProjection`: graph
-consumers use the model's six contracts, while Console uses Reporting's two
-public projection types and cannot import exporter internals. P3 moved Run,
-Measurement, and Configuration to their current physical boundaries. P4
-separated declared-layer policy into `Analysis\Policy\Architecture` and SCC
-evidence into `Analysis\Evidence\CircularDependency`; each leaf owns its own
-prepared state and capability-specific preparation contract. Run owns
-discovery, collection and ordering; Measurement owns collection facts,
-repository, namespace attribution and aggregation; Configuration owns document
-resolution through its concrete ordered `ConfigurationDocument`; owner-specific
-resolvers and runtime stores keep mutable state local. P5 landed
-`Analysis\Evidence\ComputedMetrics` plus its Health subdomain: definitions are
-instance-owned, Run invokes only the evaluation contract, and Reporting
-consumes immutable Health contracts. P6 implementation has published
-`Analysis\Finding`, peer Inline and Baseline policy capabilities,
-`Analysis\Evidence\Prioritization`, and Reporting's `FindingProjection`;
-Infrastructure keeps the Console, Git, DI, and worker adapters behind those
-public contracts. P6 and P7 are complete. P7 distributed the former Metrics and
-Rules role buckets among CodeSmell, Cohesion, Complexity, Coupling, Design,
-Maintainability, Security, and Size. The resulting locality model has no
-universal invocation context, generic runtime store, or generic collector
-configuration carrier.
+projection. Evidence is split among DependencyModel, Duplication,
+CircularDependency, ComputedMetrics, CodeSmell, Cohesion, Complexity, Coupling,
+Design, Maintainability, Measurement, Prioritization, Security, and Size.
+Configuration, Finding, Run, Architecture, Baseline, and Inline each retain
+their named policy or orchestration subject. Reporting owns GraphProjection and
+FindingProjection; Infrastructure owns Console, Git, DI, workers, and other
+delivery/composition adapters. Context and runtime state stay with their named
+owners as specified by
+[ADR 0023](adr/0023-p8-context-locality-and-composition-bindings.md). The current
+layout has no universal invocation context, generic runtime store, or generic
+collector configuration carrier.
 
-P0 governance implements the current enforcement model. The versioned internal
-manifest covers every production declaration, names its semantic owner, and has
-no singleton enforcement seam. Permanent exact composition bindings retain the
+The versioned internal manifest implements the current enforcement model. It
+covers every production declaration, names its semantic owner, and has no
+singleton enforcement seam. Permanent exact composition bindings retain the
 coarse owner pairs the qmx projection would otherwise lose; a permanent binding
 is one observed DI source-to-private target reference, neither a public contract
 nor an owner-wide permission. Generated artifacts are deterministic projections

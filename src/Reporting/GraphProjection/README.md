@@ -9,7 +9,7 @@ types by: `Contract\GraphDirection` (DOT `rankdir`) and
 enum — before they existed the same four-word and two-word vocabularies were
 written out separately in the command's option help, `DotExporterOptions`'s
 docblock, and the DOT `rankdir` attribute, with no shared source
-(`docs/internal/plans/configuration-refusal/01-refusal-verdicts.md` §5.1).
+of truth.
 The Console adapter validates a raw `--direction`/`--format` against these
 enums *before* running the analysis, then supplies a typed request and
 receives bytes; DOT and JSON exporters, their options, and the dispatcher

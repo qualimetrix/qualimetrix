@@ -48,12 +48,11 @@ use SplFileInfo;
  * character list that *grows* reads further than the product does, and no
  * narrowing catches that.
  *
- * One authored form is deliberately absent. The product's separator between the
- * tag and its target is `\s+`, which crosses a line break, so a tag alone at
- * the end of a line takes the next line's docblock star as its target — a
+ * One authored form is deliberately absent. The product's separator between
+ * the tag and its target is `\s+`, which crosses a line break, so a tag alone
+ * at the end of a line takes the next line's docblock star as its target. A
  * target of `*` is not something an author wrote, and reproducing that defect
- * in the second measure would make the pair agree about a bug. It is recorded
- * in `FOLLOWUPS.md` instead.
+ * in the second measure would make the pair agree about a bug.
  *
  * The library has no PSR-4 entry, the same as `scripts/finding-gate/`, so this
  * test loads it the way its own scripts do.
@@ -284,8 +283,8 @@ final class ThresholdPopulationAgreementTest extends TestCase
      *
      * A form nobody wrote a row for is measured by one case only — the
      * whole-fixture one, which compares the two measures against each other.
-     * That is the self-confirming pair this package exists to remove, and it
-     * would grow back silently with the next form added to the fixture.
+     * Without one row per form, the whole-fixture comparison could remain
+     * self-confirming when a new form is added.
      */
     #[Test]
     public function itNamesEveryFormTheFixtureDeclares(): void

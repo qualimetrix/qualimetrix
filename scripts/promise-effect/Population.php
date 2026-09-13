@@ -235,7 +235,7 @@ final class Population
     {
         $members = [];
 
-        foreach (self::rows($this->root . '/docs/internal/plans/promise-effect/measurement/config-paths.tsv') as $row) {
+        foreach (self::rows($this->root . '/promise-effect/config-paths.tsv') as $row) {
             $members[] = new Member('config-path', $row[0], 'config-paths.tsv');
         }
 
@@ -257,7 +257,7 @@ final class Population
     {
         $members = [];
 
-        foreach (self::rows($this->root . '/docs/internal/plans/promise-effect/measurement/key-pairs.tsv') as $row) {
+        foreach (self::rows($this->root . '/promise-effect/key-pairs.tsv') as $row) {
             $members[] = new Member('same-source-pair', $row[0] . '|' . $row[3] . '|' . $row[4] . '|' . $row[5], 'key-pairs.tsv');
         }
 
@@ -284,7 +284,7 @@ final class Population
     {
         $owed = [];
 
-        foreach (self::rows($this->root . '/docs/internal/plans/promise-effect/measurement/key-pairs.tsv') as $row) {
+        foreach (self::rows($this->root . '/promise-effect/key-pairs.tsv') as $row) {
             $kind = $row[5];
 
             if (!isset($declared[$kind])) {

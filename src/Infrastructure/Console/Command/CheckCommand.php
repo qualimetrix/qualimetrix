@@ -145,7 +145,7 @@ final class CheckCommand extends Command
      * binding, which is also why {@see self::execute()} uses this instead of
      * `getOption('format')` — a `--format` value is available for the
      * envelope even when everything after it in `doExecute()` throws before
-     * resolving one itself (`01-refusal-envelope.md` §2.1-2.2).
+     * resolving one itself.
      */
     private static function formatOption(InputInterface $input): ?string
     {
@@ -166,7 +166,7 @@ final class CheckCommand extends Command
             // swallow it as a plain exception.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $e) {
-            // The named secondary signal for code 3 (`00-overview.md` rule 1):
+            // The named secondary signal for code 3:
             // an `InvalidArgumentException` that never became a carrier.
             // Printed verbatim, unlike the clauses above — its message is
             // already the whole sentence.
@@ -185,8 +185,8 @@ final class CheckCommand extends Command
     {
         $this->runtimeConfigurator->resetRunState();
 
-        // Refuse an unwritable `--output` before analysis starts — a fast,
-        // named precheck, not a guarantee (`01-refusal-verdicts.md` §5.4).
+        // Refuse an unwritable `--output` before analysis starts. This fast
+        // precheck is not a guarantee because writability can change later.
         $this->resultPresenter->assertOutputIsWritable($input);
 
         // Resolve configuration through pipeline

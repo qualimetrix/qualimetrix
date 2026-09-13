@@ -159,7 +159,7 @@ final class ResultPresenterTest extends TestCase
     }
 
     /**
-     * `01-refusal-verdicts.md` §5.4: an unwritable `--output` target is
+     * An unwritable `--output` target is
      * refused before analysis runs, not discovered afterward. The counter
      * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::doExecute()},
      * which calls this precheck before `runAnalysis()` — this test pins the
@@ -232,7 +232,7 @@ final class ResultPresenterTest extends TestCase
     }
 
     /**
-     * `02-cure.md` Б7: `--namespace` selects what the report shows, so a value
+     * `--namespace` selects what the report shows, so a value
      * naming nothing empties the report instead of failing the run — the same
      * `No violations found.` a genuinely clean subtree produces. The pair below
      * is the discriminator: one exit code each, and the refusal says which.
@@ -255,7 +255,7 @@ final class ResultPresenterTest extends TestCase
         self::assertSame(0, $this->drillDownExit('--namespace', 'Demo\\Alpha'));
     }
 
-    /** `02-cure.md` Б8, the same pair for the class door. */
+    /** The same refusal behavior applies to the class selector. */
     #[Test]
     public function itRefusesAClassThatSelectsNothingInTheRun(): void
     {

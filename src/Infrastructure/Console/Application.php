@@ -23,16 +23,16 @@ use Throwable;
  * Supports `--working-dir` / `-d` global option to change the effective
  * working directory before any command runs (same pattern as Composer).
  *
- * {@see self::doRun()} is the round's outermost exit-code ladder
- * (`01-refusal-exit-ladder.md` §2.4): it wraps the *entire* body, not just
+ * {@see self::doRun()} is the outermost exit-code ladder. It wraps the
+ * *entire* body, not just
  * `parent::doRun()`, because the `--working-dir` checks below throw *above*
  * the parent call — a ladder around only the parent call would let `-d
  * <file>` escape into Symfony's own `Application::run()`, which takes its
  * exit code from the caught exception's `getCode()` (0 for
- * `InvalidArgumentException`, giving 1 instead of the 3 this round promises).
+ * `InvalidArgumentException`, giving 1 instead of the promised refusal code 3).
  * It does not cover the `configureIO()` window inside `run()`: that stays on
- * Symfony's own `catchExceptions` handling, unreached by any input this round
- * has a carrier for (`01-refusal-exit-ladder.md` §2.4).
+ * Symfony's own `catchExceptions` handling; no accepted input can raise a
+ * {@see ConfigurationRefusal} in that window.
  */
 final class Application extends BaseApplication
 {
@@ -66,8 +66,7 @@ final class Application extends BaseApplication
     }
 
     /**
-     * The round's outermost exit-code ladder (`01-refusal-exit-ladder.md`
-     * §2.4). It assigns the process exit code itself and ignores
+     * The outermost exit-code ladder assigns the process exit code itself and ignores
      * `getCode()` on whatever it catches — Symfony's own convention would
      * turn a `JsonException(..., JSON_ERROR_SYNTAX)` (code 4) into exit code
      * 4, indistinguishable from `directives`' documented "run incomplete"
@@ -90,11 +89,10 @@ final class Application extends BaseApplication
      * finds the current set), reachable only by a bug in this project's own
      * command wiring, never by anything a user typed. That makes it a
      * product defect, not a refusal, so it gets exit code 1 like any other
-     * one — rule 2 of `00-overview.md` ("an internal error stays internal").
+     * internal error.
      *
      * `ConsoleExceptionInterface` and the bare `InvalidArgumentException`
-     * clause are named secondary signals for exit code 3
-     * (`01-refusal-exit-ladder.md` §2.5/§2.6): a caught console-argument
+     * clause are named secondary signals for exit code 3: a caught console-argument
      * error (unknown command, unknown option) or an
      * `InvalidArgumentException` with no {@see ConfigurationRefusal} behind
      * it — most reachably one thrown from a command's `configure()` or
@@ -103,8 +101,7 @@ final class Application extends BaseApplication
      * Once caught here, Symfony's own `run()` never sees the throwable and
      * therefore never calls {@see self::renderThrowable()} — this ladder
      * prints instead, through the presenter, with `format: null` because the
-     * output format is not known at this level (`01-refusal-exit-ladder.md`
-     * §3).
+     * output format is not known at this level.
      */
     public function doRun(InputInterface $input, OutputInterface $output): int
     {
@@ -174,9 +171,8 @@ final class Application extends BaseApplication
      * call, whatever verbosity it asked for, compares greater and is
      * dropped: there is no verbosity value a message can carry that survives
      * it. That includes {@see RefusalPresenter}'s `VERBOSITY_QUIET` writes,
-     * the ones this round built specifically so a run-ending message
-     * survives `-q` (rule 3, `00-overview.md`: "the reason a run refused is
-     * delivered always"). Symfony's own docs read `--silent` as "no output
+     * the run-ending writes that must survive `-q`. Symfony's own docs read
+     * `--silent` as "no output
      * at all", which is a legitimate request for the report — just not for
      * the message that has to explain why there is no report. Treating it
      * as `-q` keeps that promise and still drops everything `-q` already

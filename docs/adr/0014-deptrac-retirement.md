@@ -1,10 +1,9 @@
 # 0014. Retire deptrac, Own Architecture Enforcement via qmx.yaml
 
 **Date:** 2026-05-17
-**Status:** Accepted
-**Related:** [0005 — Architecture Rules](0005-architecture-rules.md),
-[0006 — Architecture Rules Declaration Order](0006-architecture-rules-declaration-order.md),
-[0007 — Architecture Rules Phase 2 Design](0007-architecture-rules-phase-2-design.md),
+**Status:** Accepted; architecture-governance details superseded by [ADR 0022](0022-capability-oriented-modular-monolith.md) and [ADR 0059](0059-declared-layer-policy-and-architecture-governance.md)
+**Related:** [0006 — Architecture Rules Declaration Order](0006-architecture-rules-declaration-order.md),
+[0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md),
 [0010 — Architecture as Vertical Slice](0010-architecture-vertical-slice.md)
 
 ## Context
@@ -37,8 +36,10 @@ for us first.
 Drop the `deptrac/deptrac` dev-dependency, delete `deptrac.yaml`,
 remove the `composer check` step that invoked it, and re-declare the
 full 27-layer topology directly in `qmx.yaml`'s `architecture:` block.
-`composer check` becomes `cs-check + test + phpstan + selfcheck` —
-`selfcheck` (`bin/qmx check src/`) is the sole architecture gate.
+At that point `composer check` became `cs-check + test + phpstan + selfcheck`,
+and `selfcheck` was the sole architecture gate. Today the versioned owner
+manifest is the exact authority checked by `composer architecture:check`; its
+generated qmx projection remains the coarse product-level gate.
 
 The dogfooded `qmx.yaml` topology:
 

@@ -71,8 +71,6 @@ final readonly class DirectiveLevels
         // collection and is not carried into the directive. Returning nothing
         // says exactly that, and {@see \Qualimetrix\Analysis\Finding\Contract\LevelActivity::ranAtAnyOf()}
         // then answers at producer granularity rather than inventing a level.
-        // The cost is measured and recorded in
-        // `docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`.
         return [];
     }
 }

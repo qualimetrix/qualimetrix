@@ -2,11 +2,10 @@
 
 What each user-input door does when the value it is given points at nothing.
 
-The decisions, the claim boundary and the guards live in
-[`docs/internal/plans/silent-acceptance/01-oracle.md`](../docs/internal/plans/silent-acceptance/01-oracle.md)
-and its two companions. This file is the operating manual for the artifacts in
-this directory: what each column means, what the stand keeps constant, and what
-the oracle does **not** cover.
+This file is the operating manual for the artifacts in this directory: what
+each column means, what the stand keeps constant, and what the oracle does
+**not** cover. The completed planning record remains history; live input-door
+data is owned here with the generator and stand that read it.
 
 ## The promise, in one sentence
 
@@ -26,8 +25,9 @@ is not an oracle, it is permission not to fix.
 | `../docs/internal/generated/input-doors/doors.tsv`              | the denominator: the grid `command × door × site`                            | generator  |
 | `../docs/internal/generated/input-doors/command-options.tsv`    | every option each command declares, valueless flags included                 | generator  |
 | `door-annotations.tsv`                                          | the handwritten input of the generator: non-referentiality, sites, shadowing | a person   |
+| `doors-reconciled.tsv`                                          | the reconciliation measurement that bounds the declared matching-site count  | a person   |
 | `probes.tsv`                                                    | the handwritten declarations: miss, hit, empty hit, observable, signal, echo | a person   |
-| `cure-sites.tsv`                                                | the fifteen rows this round sets out to cure, keyed by grid row              | a person   |
+| `cure-sites.tsv`                                                | rows declared for repair, keyed by grid row                                  | a person   |
 | `command-observables.tsv`                                       | the default observable and the preconditions of each command                 | a person   |
 | `normalization-supplement.tsv`                                  | the surfaces the finding gate does not own, plus one named override          | a person   |
 | `fixtures/**`                                                   | the trees the probes run against                                             | a person   |
@@ -82,6 +82,22 @@ another observable instead. A probe submitted with its shadowing neighbour still
 in place proves nothing: a YAML `failOn` was measured to exit 0 only because a
 CLI `--fail-on=none` stood next to it.
 
+## Oracle protocol
+
+The denominator is reflected from `InputDefinition` and `ConfigSchema`, then
+expanded over every command that exposes the input. Each declared site has a
+miss, a hit, and an omitted-value observation where the input form permits one.
+The raw observations are frozen before classification; normalization comes from
+`finding-gate/normalization.tsv` plus the named supplement, never from a second
+implicit rule.
+
+`REFUSES` and `SPEAKS` require a declared, specific signal and a verified hit.
+`SILENT` is the referential default, including an undeclared site or a signal
+that cannot be shown to be caused by the miss. `NOT OBSERVABLE` remains a
+separate result: it is not folded into either verdict or used to improve a
+summary. Claims apply at the submitted input boundary, not to an unrelated
+substring inside the rendered document.
+
 ## Configuration probes are documents
 
 For `surface=config`, `miss` and `hit` are inline YAML mappings merged into the
@@ -124,8 +140,7 @@ in a stored text.
   formulas. A green door table is compatible with silence in every one of them.
 - **That "refuses" means "refuses always".** The verdict is taken under one
   order of configuration sources.
-- **That silence is a defect.** That is this round's judgement, not a
-  measurement.
+- **That silence is a defect.** It is a policy judgement, not a measurement.
 - **That a miss of the form "matched the wrong thing" is handled.** One form of
   miss is measured: "matched nothing at all".
 - **That `NOT OBSERVABLE` means the product is silent.** It means this fixture

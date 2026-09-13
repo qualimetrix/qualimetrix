@@ -23,7 +23,7 @@ Both halves of that argument have expired.
 
 **The declared property is no longer a future cost — it landed in ADR 0024
 itself.** Whether a channel's findings are file-scoped is declared per channel
-(`ChannelFileScope`); ADR 0031 moved shape onto the producer; ADR 0025 keyed
+(`ChannelFileScope`); ADR 0031 moved shape onto the producer; ADR 0060 keeps
 exclusions by channel selector. Nothing behavioural is waiting on the category
 any more, so "removal would still have required the separate declared
 property" no longer describes a choice between two costs. The property exists;

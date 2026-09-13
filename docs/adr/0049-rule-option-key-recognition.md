@@ -1,4 +1,4 @@
-# 49. A Rule Option Key Is Recognised at Every Depth, or Refused
+# 0049. A Rule Option Key Is Recognised at Every Depth, or Refused
 
 **Date:** 2026-09-09
 **Status:** Accepted
@@ -179,13 +179,9 @@ sentence still identifies the key the user meant. The *allowed* set is printed
 in the canonical kebab spelling classes declare, because that is the spelling
 users type.
 
-This is a limit of mechanism M3 of
-`docs/internal/plans/rule-option-key-recognition/measurement/merged-enumeration.md`
-(spelling normalisation asymmetry), which this decision deliberately does not
-treat. It does not reopen ADR 0044's rule that identifier-keyed options keep
-the author's spelling: a rule option key is not identifier-keyed. The subject's
-share of that follow-up is recorded in
-`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`.
+This is a spelling-normalisation asymmetry that this decision deliberately does
+not treat. It does not reopen ADR 0044's rule that identifier-keyed options keep
+the author's spelling: a rule option key is not identifier-keyed.
 
 One consequence of the same mechanism, in the opposite direction: snake, camel
 and kebab spellings of one option key are equivalent on input at both depths

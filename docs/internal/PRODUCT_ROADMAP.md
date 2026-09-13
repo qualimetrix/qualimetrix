@@ -1,6 +1,6 @@
 # Qualimetrix Product Roadmap
 
-**Updated:** 2026-07-28
+**Updated:** 2026-09-13
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
 NDepend, CodeScene, RuboCop, Ruff, ArchUnit), triple expert evaluation (Gemini + Codex, 2026-03-25)
 
@@ -192,14 +192,112 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ---
 
+## Deferred Obligations and Unscheduled Candidates
+
+These entries preserve user value and unresolved decisions that would otherwise
+be easy to lose. They are backlog records, not approved implementation plans.
+Replanning starts only when the stated condition is met and the current code is
+rechecked. A count from a frozen inventory locates deferred scope; it is not a
+count of confirmed product defects.
+
+### PHPDoc-Derived Dependency Edges
+
+**Value:** Include declared type relationships in dependency evidence.
+**Owner:** `Analysis.Evidence.DependencyModel`; Configuration owns consumer
+policy. **Current state / decision:** Native syntax is extracted; no PHPDoc
+parser or edges exist. A reviewed design records choices, but there is no ADR
+or scheduled implementation, so this remains a candidate. **Replan when:**
+Dependency-graph completeness is prioritized; reconfirm supported forms,
+false-positive boundaries, and default behavior. **ADR:** None.
+
+### New-Findings-Only Regression Gate
+
+**Value:** Let CI distinguish findings introduced by a change from findings
+merely located in touched files, without requiring trend history. **Owner:**
+`Analysis.Policy.Baseline`, `Infrastructure.Git`, and Console. **Current state /
+decision:** Git reporting narrows file scope but does not classify new findings.
+Variant C is accepted as a design direction, not scheduled or specified by an
+ADR; it remains distinct from history-backed trends. **Replan when:** A CI use
+case needs a no-history new-findings gate; decide comparison source and
+incomparable cases first. **ADR:** None.
+
+### Baseline Memory-Bounded Revalidation
+
+**Value:** Keep baseline comparison viable as accepted state grows without
+changing verdicts. **Owner:** `Analysis.Policy.Baseline`. **Current state /
+decision:** `Baseline::staleEntries()` materializes a complete stale-entry
+array. Revalidate only; no streaming or no-materialization implementation is
+approved, and the old goal alone does not prove a current performance defect.
+**Replan when:** Current workloads make baseline size or peak memory a
+constraint; confirm callers and result lifetime before choosing a contract.
+**ADR:** ADRs 0017 and 0026 define identity context, not materialization.
+
+### Configuration Content-Form Coverage
+
+**Value:** Make acceptance and refusal reproducible for forms users can
+actually supply, without confusing parser normalization with product behavior.
+**Owner:** `Analysis.Configuration` and consuming capability owners.
+**Current state / decision:** Axis F remains explicitly deferred; some forms
+are refused or collapse before reaching the product, and controls do not fully
+guard the axis. No content-form contract is accepted. **Replan when:** Owners
+decide which parsed forms must differ observably; rebuild coverage through YAML
+and CLI and prove its controls fail closed. **ADR:** ADR 0058 covers related
+precedence, not this axis.
+
+### Promise-versus-Effect Deferred Cases
+
+**Value:** Ensure layered configuration honors each source's promise rather
+than silently dropping an option. **Owner:** `Analysis.Configuration` and
+owning rule-option classes. **Current state / decision:** Accepted key-shape and
+selected layer-precedence behavior are implemented. The frozen ledger retains
+115 deferred cases (including cross-source axis-B pairs and scope-wide cases),
+not 115 confirmed defects; source composition (axis C), inline input, and
+cross-layer conflicts remain outside the accepted contract. ADR 0055 accepts
+only bounded behavior. **Replan when:** A supported use case depends on
+a deferred interaction and owners first decide precedence/refusal semantics;
+refresh evidence from current code. **ADR:** ADR 0055; ADRs 0058 and 0061 are related.
+
+### Conditional Duplicate-FQN Semantics
+
+**Value:** Make metrics predictable when valid mutually exclusive declarations
+share one fully qualified name. **Owner:** `Analysis.Evidence.Measurement` owns
+the stored projections; DependencyModel and metric owners consume them.
+**Current state / decision:** Exact declarations and their findings remain
+independently addressable. Class aggregation and graph metrics deliberately
+deduplicate the logical name and project one logical score back to each
+declaration. Whether conditional variants represent one semantic symbol or
+independent alternatives is not decided; disagreement with a tool that retains
+duplicates is not by itself a defect. **Replan when:** A representative PHP use
+case makes the distinction material; freeze fixtures and decide the product
+contract before changing aggregation or graph semantics. **ADR:** ADR 0021
+leaves this semantic question open; ADR 0026 governs declaration keys only.
+
+### Rule and Metric Residuals
+
+**Value:** Keep findings actionable and metric descriptions accurate. **Owner:**
+`Analysis.Evidence.CodeSmell`, `Analysis.Evidence.Size`, project-configuration
+owners, and website documentation. **Current state / decision:** Both
+parameter-count rules still inspect constructors and their intended overlap is
+unsettled. The public size-rule page omits the accessor exclusion documented by
+the owning capability. Broad CBO and ClassRank suppressions for Finding
+contracts remain in project configuration without a current justification
+established here and need explicit owner confirmation. These need owner
+decisions, not blanket behavior changes; only the wording correction is clearly
+required. Older audit records mix closed and open findings, so other claims are
+not carried forward without revalidation.
+**Replan when:** Preparing the documentation correction, reviewing rule overlap,
+or next calibrating project configuration. **ADR:** ADRs 0035 and 0060 govern
+names; ADR 0047 governs suppression versus exclusion, not these decisions.
+
+---
+
 ## Identified Gaps (not yet in backlog, need design)
 
 Items surfaced during expert evaluation that don't fit existing phases but deserve tracking:
 
-| Gap                       | Description                                                                                                                                                      | Potential Value | Notes                                                                                                                                                                 |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Diff-based regression** | "Did this PR make things worse?" without SQLite history — compare violations in changed files against baseline or previous commit                                | High            | Lighter alternative to full Trend Analysis (1). Partially covered by `--report=git:staged` / `--report=git:main..HEAD`, but lacks explicit "new violations only" mode |
-| **Explainability depth**  | Per-violation "what to do" recommendations beyond current `humanMessage` — e.g., "extract method X to reduce CCN", "introduce interface to break coupling cycle" | Medium          | Partially exists; evaluate coverage and quality of current recommendations before investing                                                                           |
+| Gap                      | Description                                                                                                                                                      | Potential Value | Notes                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------- |
+| **Explainability depth** | Per-violation "what to do" recommendations beyond current `humanMessage` — e.g., "extract method X to reduce CCN", "introduce interface to break coupling cycle" | Medium          | Partially exists; evaluate coverage and quality of current recommendations before investing |
 
 ---
 
@@ -222,8 +320,8 @@ Goal: Qualimetrix replaces **phpmd + phpmetrics + phpcpd + deptrac** and offers 
 
 **Where we stand:** the deptrac leg of that claim is settled — architecture layer rules shipped in v0.18 and the project
 removed `deptrac/deptrac` from its own dev-dependencies on 2026-05-17 ([ADR 0014](../adr/0014-deptrac-retirement.md);
-design in [ADR 0005](../adr/0005-architecture-rules.md) / [0006](../adr/0006-architecture-rules-declaration-order.md) /
-[0007](../adr/0007-architecture-rules-phase-2-design.md)). The remaining differentiator on this list is quality gates
+current design in [ADR 0059](../adr/0059-declared-layer-policy-and-architecture-governance.md), with declaration order detailed in
+[ADR 0006](../adr/0006-architecture-rules-declaration-order.md)). The remaining differentiator on this list is quality gates
 (Tier 1 #1); everything else is depth, not positioning.
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."

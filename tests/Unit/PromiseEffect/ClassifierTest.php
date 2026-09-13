@@ -11,8 +11,8 @@ use Qualimetrix\PromiseEffect\Observation;
 use Qualimetrix\PromiseEffect\Verdict;
 
 /**
- * `Classifier::composition()` under `promised_survival=survives` (X20, axis C
- * composition-triple rows): a slot the sibling check already found un-lost is
+ * `Classifier::composition()` under `promised_survival=survives`: a slot the
+ * sibling check already found un-lost is
  * not asked whether one whole side won — a triple's `both` legitimately mixes
  * values from up to three layers, so it is asked leaf by leaf instead, against
  * `low` (L1), `middle` (L2, a triple's third layer, probed alone) and `high`
@@ -112,9 +112,8 @@ final class ClassifierTest extends TestCase
     #[Test]
     public function itCallsTheRealComplexityCcnTripleFixtureComposedAsPromisedWhenTheMiddleLayersValueSurvives(): void
     {
-        // The actual measured axis-C triple (T1-T4, `complexity.ccn`
-        // `callable@warning`, live tree with the X20 threshold-shorthand
-        // cure): L1 (`low`) writes the graduated pair explicitly, L2
+        // The actual measured triple (`complexity.ccn`
+        // `callable@warning`): L1 (`low`) writes the graduated pair explicitly, L2
         // (`middle`) writes `callable.threshold`, which the cure unfolds
         // WITHIN L2's own layer into both slots, and L3 (`high`) rewrites
         // only `error`. `warning` is written by `low` AND `middle` (not by

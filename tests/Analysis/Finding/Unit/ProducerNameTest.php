@@ -17,9 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName;
  *
  * One case per malformed shape rather than a list in one case: a single
  * assertion over several names passes as soon as the FIRST of them throws, so a
- * pattern that stopped refusing three of the four would still be green. Every
- * shape below was accepted before Ш5e3 and is named in the compiler pass that
- * used to accept it.
+ * pattern that stopped refusing three of the four would still be green.
  */
 #[CoversClass(ProducerName::class)]
 final class ProducerNameTest extends TestCase
@@ -66,7 +64,7 @@ final class ProducerNameTest extends TestCase
         yield 'trailing separator' => ['complexity.', 'the trailing segment is empty'];
         yield 'doubled separator' => ['complexity..cyclomatic', 'the middle segment is empty'];
         yield 'upper case' => ['Complexity.Foo', '--group=complexity would not find it, the filter being case-sensitive'];
-        yield 'underscore' => ['computed.branch_load', 'snake was the encoding vocabulary Ш5e3 removed'];
+        yield 'underscore' => ['computed.branch_load', 'underscores are not valid producer-name characters'];
         yield 'space inside a segment' => ['complexity.ccn complexity', 'a space is not part of any name'];
         yield 'leading digit' => ['complexity.2ndpass', 'a segment starts with a letter'];
         yield 'doubled hyphen' => ['code--smell.eval', 'kebab separates with one hyphen'];

@@ -28,8 +28,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * the project is never that declaration; a file or next-line directive is
  * matched against the finding's `Location`, which the rule sets to the
  * block's first occurrence — an implementation detail of which copy the
- * duplicate scan visits first, not a stable target. Measured on a two-file
- * fixture (`bin/qmx check` + `bin/qmx directives`, `docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/d2.md`):
+ * duplicate scan visits first, not a stable target. On a two-file fixture:
  * a symbol directive on either copy's declaration never suppresses the
  * finding; a file or next-line directive suppresses it only when placed in
  * whichever file happens to hold the first occurrence, and does nothing —

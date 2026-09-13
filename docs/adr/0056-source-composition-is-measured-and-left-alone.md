@@ -1,7 +1,7 @@
-# 56. Source Composition Loses the Middle Layer's Value
+# 0056. Source Composition Loses the Middle Layer's Value
 
 **Date:** 2026-09-12
-**Status:** Accepted
+**Status:** Superseded by [ADR 0058](0058-a-layers-value-survives-the-layers-above-it.md)
 
 ## Context
 
@@ -78,8 +78,7 @@ means, before merging, leaves nothing to evict and nothing to fall through.
 **The cure is not in this round, and the reason is not cost.** A round that
 measures a mechanism should not also change it: the grid that would judge the
 cure is the grid the cure moves. So the direction is fixed here, four floor rows
-must redden until it is fixed, and the enumeration the next round needs is in
-`measurement/axis-c-surface.tsv`. What is known about the price: the unfolding
+must redden until it is fixed. What is known about the price: the unfolding
 lives in `ThresholdParser::parse()`, **31 call sites in 30 files**, so the cheap
 shape is to unfold inside the resolver rather than move the parser.
 

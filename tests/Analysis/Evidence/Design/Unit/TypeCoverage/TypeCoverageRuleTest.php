@@ -133,10 +133,10 @@ final class TypeCoverageRuleTest extends TestCase
 
     /**
      * The option a user types is not derived from the producer's name, and has
-     * not been since Ш5e3 renamed the producer without renaming the option:
+     * is not derived from the producer's name:
      * `design.type-coverage.param` is addressed by `--param-type-coverage-warning`.
      * The alias is therefore a literal of this table rather than a substring of
-     * the name — deriving it would assert the coupling the step removed.
+     * the name — deriving it would assert a coupling that does not exist.
      *
      * @param Dimension $dimension
      */

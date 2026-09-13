@@ -33,9 +33,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
 /**
- * `doRun()`'s ladder (`01-refusal-exit-ladder.md` §2.4), exercised in-process
- * against a plain {@see RefusalPresenter} — no container needed, because the
- * presenter's own framing is not this class's contract to prove.
+ * `doRun()`'s exception handling, exercised in-process against a plain
+ * {@see RefusalPresenter}. No container is needed because this class verifies
+ * application-level handling, not presenter framing.
  *
  * `--working-dir` refusals never reach the final `Throwable` clause on their
  * own (they are thrown as a {@see ConfigurationRefusal}, caught by the first
@@ -130,8 +130,7 @@ final class ApplicationTest extends TestCase
 
             self::assertSame(ConsoleExitCode::Refusal->value, $exitCode);
             // A refusal from the is_readable() guard never calls chdir(), so
-            // the process working directory is untouched — the boundary this
-            // clause exists to prove (`01-refusal-exit-ladder.md` §2.4).
+            // the process working directory is untouched.
             self::assertNotSame($unreadable, getcwd());
         } finally {
             chmod($unreadable, 0o755);
@@ -145,8 +144,8 @@ final class ApplicationTest extends TestCase
         // Commands load lazily through a command loader
         // (`ContainerCommandLoader` in production); a refusal thrown while
         // building one — from a constructor or `configure()` — has no
-        // command-level ladder on the stack yet, so it is this outermost
-        // ladder that must catch it (`01-refusal-exit-ladder.md` §2.4).
+        // command-level handler on the stack yet, so the application must
+        // catch it.
         $app = self::application();
         $app->setAutoExit(false);
         $app->setCommandLoader(new FactoryCommandLoader([
@@ -209,14 +208,12 @@ final class ApplicationTest extends TestCase
     }
 
     /**
-     * X15 review, mechanism C: {@see ConsoleLogicException}
+     * {@see ConsoleLogicException}
      * implements {@see \Symfony\Component\Console\Exception\ExceptionInterface}
      * (the same interface `CommandNotFoundException`/`InvalidOptionException`
      * implement) but is thrown only on a malformed command *declaration* — a
      * defect in this project's own command wiring, never something a user's
-     * input could trigger. Before the fix it was caught by the broad
-     * `ConsoleExceptionInterface` clause and answered with the round's
-     * user-input code (3); it must answer with the internal-error code (1)
+     * input could trigger. It must answer with the internal-error code (1)
      * instead, same as any other product defect.
      */
     #[Test]
@@ -237,15 +234,14 @@ final class ApplicationTest extends TestCase
     }
 
     /**
-     * X15 review, mechanism B1: Symfony's `--silent` sets
+     * Symfony's `--silent` sets
      * `OutputInterface::VERBOSITY_SILENT` (8), a level `Output::write()`
      * cannot address — its bitmask lookup only recognises
      * `VERBOSITY_QUIET|NORMAL|VERBOSE|VERY_VERBOSE|DEBUG`, so once the
      * output's verbosity is silent, nothing written at any verbosity
      * survives, including {@see RefusalPresenter}'s `VERBOSITY_QUIET`
      * writes. `Application::configureIO()` demotes it to `VERBOSITY_QUIET`
-     * so the run-ending message keeps the guarantee rule 3 of
-     * `00-overview.md` makes for it.
+     * so the run-ending message remains visible.
      */
     #[Test]
     public function itDemotesSilentVerbosityToQuiet(): void
@@ -293,8 +289,7 @@ final class ApplicationTest extends TestCase
         // `JsonException('x', JSON_ERROR_UTF8)` carries a non-zero code — 5,
         // not 1 — which Symfony's own convention would surface as the process
         // exit code: exactly the collision with `directives`' "run
-        // incomplete" (4) this ladder exists to avoid
-        // (`01-refusal-exit-ladder.md` §2.4). The assertion below checks the
+        // incomplete" (4) that this handling avoids. The assertion checks the
         // exact value (1), which is what makes this a claim about the code
         // rather than merely that some code came back.
         $app = self::application();
@@ -315,8 +310,7 @@ final class ApplicationTest extends TestCase
         // The exemption the presenter carries for the message that ends a
         // run (`RefusalPresenter::writeStderr()`, `ErrorStream::boundWriter()`):
         // an embedder bound to a single-channel output still gets the
-        // sentence, rather than exit code 1 and zero bytes anywhere
-        // (`00-overview.md` rule 3).
+        // sentence rather than exit code 1 and zero bytes anywhere.
         $app = self::application();
         $app->setAutoExit(false);
         $app->addCommand(self::commandThatThrows(new RuntimeException('not dropped, folded into the one channel')));
@@ -330,13 +324,8 @@ final class ApplicationTest extends TestCase
     #[Test]
     public function itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame(): void
     {
-        // A refusal reaching the ladder while a progress frame is still on
-        // screen — the case `01-refusal-exit-ladder.md` §3 moved
-        // `stopProgress()` into the presenter for. `RefusalPresenterTest`
-        // (P01-1) proves the presenter's own contract in isolation; this
-        // proves the wiring this package adds does not lose it — the same
-        // frame `Application` was constructed with is the frame the ladder's
-        // presenter clears.
+        // A refusal reaching the application while a progress frame is still
+        // on screen must clear that same frame before printing the refusal.
         $output = new SplitStreamConsoleOutput(stderrDecorated: true);
         $errorStream = new ErrorStream();
 
@@ -373,9 +362,8 @@ final class ApplicationTest extends TestCase
     {
         $errorStream ??= new ErrorStream();
 
-        // One shared instance, matching production wiring
-        // (`01-refusal-exit-ladder.md` §3, "Как предъявитель попадает в
-        // Application"): two independent `ErrorStream`s would let the
+        // One shared instance, matching production wiring: two independent
+        // `ErrorStream`s would let the
         // presenter clear a progress frame Application never drew on, or
         // vice versa.
         return new Application($errorStream, new RefusalPresenter($errorStream));

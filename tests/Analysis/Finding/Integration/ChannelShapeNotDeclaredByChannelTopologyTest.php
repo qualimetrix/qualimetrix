@@ -22,7 +22,7 @@ use RecursiveIteratorIterator;
 use RuntimeException;
 
 /**
- * ADR 0031 / Р3 (rule-vocabulary plan): {@see ChannelShape} moved off
+ * ADR 0031: {@see ChannelShape} moved off
  * {@see ChannelDeclaration} onto the producer. This guard is the durability
  * of that move — it does not re-check that `ChannelDeclaration` has no
  * `$shape` property (a constructor signature already makes that unstatable,

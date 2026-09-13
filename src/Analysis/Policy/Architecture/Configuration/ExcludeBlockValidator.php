@@ -14,7 +14,7 @@ use Throwable;
 
 /**
  * Parses and validates the optional {@code exclude:} block inside a single
- * {@code architecture.layers[*]} entry (Phase 2 direction 3 — see ADR 0007).
+ * {@code architecture.layers[*]} entry (see ADR 0059).
  *
  * Mirrors {@see LayersValidator}'s positive-criteria validator: each
  * criterion list goes through the same per-kind shape and FQN/suffix

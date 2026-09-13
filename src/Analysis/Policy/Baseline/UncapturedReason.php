@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 /**
  * Why a group of findings did not become an entry.
  *
- * Both values are the plan's fail-safe direction — an entry that could never
- * be applied is worse than none — but neither is something a user should have
+ * Both values preserve the fail-safe direction: an entry that could never be
+ * applied is worse than none. Neither is something a user should have
  * to infer from a later run's output (ADR 0017).
  */
 enum UncapturedReason: string

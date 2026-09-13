@@ -5,8 +5,8 @@
 > its capability-specific contracts; see [ADR 0022](0022-capability-oriented-modular-monolith.md).
 
 **Date:** 2026-05-15
-**Status:** Accepted
-**Builds on:** [0005 — Architecture Layer Rules](0005-architecture-rules.md), [0006 — Declaration-Order Matching](0006-architecture-rules-declaration-order.md), [0007 — Phase 2 Flexibility & Expressiveness](0007-architecture-rules-phase-2-design.md)
+**Status:** Superseded by [ADR 0022](0022-capability-oriented-modular-monolith.md)
+**Current policy:** [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md), with declaration order detailed in [0006](0006-architecture-rules-declaration-order.md)
 
 ## Context
 
@@ -128,5 +128,5 @@ The alias is required for rule injection: `LayerViolationRule` declares the inte
 - DI configurator (alias registration): `src/Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php`
 - Rule integration: `src/Architecture/Rules/LayerViolationRule.php`
 - Debug command: `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`
-- Builds on: [ADR 0005](0005-architecture-rules.md), [ADR 0006](0006-architecture-rules-declaration-order.md), [ADR 0007](0007-architecture-rules-phase-2-design.md)
+- Current layer policy: [ADR 0059](0059-declared-layer-policy-and-architecture-governance.md), with declaration order detailed in [ADR 0006](0006-architecture-rules-declaration-order.md)
 - Related: [ADR 0010](0010-architecture-vertical-slice.md) (namespace placement under `src/Architecture/Processing/`)

@@ -89,7 +89,7 @@ final class RuleOptionsFactory
         // not to fall back to defaults — the rule then received `[]` in
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
-        // rule off. This was a real regression, caught by external review.
+        // rule off.
         RetiredSuppressionOptions::refuseRuleOption($userConfig, ConfigurationOrigin::of(ConfigurationSource::Resolved));
         RuleOptionKeyRecognition::refuseMalformedFrameworkKeys($userConfig, $ruleName);
         $this->extractSuppressNamespaces($ruleName, $userConfig);

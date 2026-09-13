@@ -87,9 +87,8 @@ final class FormatOptionKeyRefusalTest extends TestCase
     }
 
     /**
-     * The boundary the round drew: one option set run through several formats is
-     * a real workflow, so a key another formatter reads passes here rather than
-     * being refused as a typo.
+     * One option set can run through several formats; a key another formatter
+     * reads must pass rather than be refused as a typo.
      */
     #[Test]
     public function itAcceptsAKeyReadOnlyByAnotherFormatter(): void

@@ -321,8 +321,8 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
      *
      * What is left is rendered in constant case, underscores and all, because
      * that is what an upper-cased identifier is written as. Upper-casing the
-     * key's own separator instead made the label carry a spelling decision —
-     * `CE_PACKAGES` became `CE-PACKAGES` when Ш5e3 moved the key to kebab.
+     * key's own separator instead would make the label carry a spelling
+     * decision: renaming a key from snake to kebab would change the label.
      */
     private static function displayKey(string $key): string
     {

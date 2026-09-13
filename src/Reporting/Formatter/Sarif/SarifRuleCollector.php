@@ -15,9 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * Builds the rules array for the SARIF tool driver, including human-readable
  * names, descriptions, and documentation URLs. Both the description and the
  * `helpUri` are derived from the channel's producing rule via
- * {@see ChannelPresentationInterface} — see
- * `docs/internal/plans/sarif-channel-descriptions.md` ("Decision") for why
- * this class holds no table of its own: the two tables it used to carry
+ * {@see ChannelPresentationInterface}. This class holds no table of its own:
+ * the two tables it used to carry
  * (`getRuleDescription()`'s `match`, `CATEGORY_DOCS_MAP`) had already drifted
  * from the rules they were copying.
  */
@@ -28,8 +27,7 @@ final class SarifRuleCollector
     /**
      * Site root, not `/rules/`: the computed-metric family documents outside `rules/`
      * entirely (`reference/health-scores`), which no `/rules/`-rooted base
-     * could ever address. See `docs/internal/plans/sarif-channel-descriptions.md`,
-     * the "helpUri" section.
+     * could ever address.
      */
     private const DOCS_BASE_URI = 'https://qualimetrix.dev/';
 

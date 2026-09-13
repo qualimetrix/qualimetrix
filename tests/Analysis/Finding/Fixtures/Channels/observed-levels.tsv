@@ -1,0 +1,70 @@
+channel	observed_levels
+annotation.invalid-threshold#annotation.invalid-threshold	file
+annotation.unresolved-directive#annotation.unresolved-directive	file
+annotation.unsupported-threshold#annotation.unsupported-threshold	file
+annotation.unused-directive#annotation.unused-directive	file
+architecture.circular-dependency#architecture.circular-dependency	project
+architecture.coverage-gap#architecture.coverage-gap	project
+architecture.empty-template#architecture.empty-template	project
+architecture.layer-violation#architecture.layer-violation	class
+architecture.pending-layer-matched#architecture.pending-layer-matched	project
+architecture.potential-shadow#architecture.potential-shadow	project
+architecture.unassigned-class#architecture.unassigned-class	project
+architecture.unmatched-exclude#architecture.unmatched-exclude	project
+architecture.unreachable-layer#architecture.unreachable-layer	project
+code-smell.boolean-argument#code-smell.boolean-argument	callable
+code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable
+code-smell.count-in-loop#code-smell.count-in-loop	callable
+code-smell.debug-code#code-smell.debug-code	callable
+code-smell.empty-catch#code-smell.empty-catch	callable
+code-smell.error-suppression#code-smell.error-suppression	callable
+code-smell.eval#code-smell.eval	callable
+code-smell.exit#code-smell.exit	callable
+code-smell.goto#code-smell.goto	callable
+code-smell.identical-subexpression#code-smell.identical-subexpression	callable
+code-smell.long-parameter-list#code-smell.long-parameter-list	callable
+code-smell.superglobals#code-smell.superglobals	callable
+code-smell.unreachable-code#code-smell.unreachable-code	callable
+code-smell.unused-private#code-smell.unused-private	class
+cohesion.lcom#cohesion.lcom	class
+complexity.cognitive#complexity.cognitive.callable	callable
+complexity.cognitive#complexity.cognitive.class	class
+complexity.ccn#complexity.ccn.callable	callable
+complexity.ccn#complexity.ccn.class	class
+complexity.npath#complexity.npath.callable	callable
+complexity.npath#complexity.npath.class	class
+complexity.wmc#complexity.wmc	class
+computed.health#health.cohesion	class namespace project
+computed.health#health.complexity	class namespace project
+computed.health#health.coupling	class namespace project
+computed.health#health.maintainability	class namespace project
+computed.health#health.overall	class namespace project
+computed.health#health.typing	class namespace project
+coupling.cbo#coupling.cbo.class	class
+coupling.cbo#coupling.cbo.namespace	namespace
+coupling.class-rank#coupling.class-rank	class
+coupling.distance#coupling.distance	namespace
+coupling.instability#coupling.instability.class	class
+coupling.instability#coupling.instability.namespace	namespace
+coupling.unmatched-framework-namespace#coupling.unmatched-framework-namespace	project
+design.data-class#design.data-class	class
+design.god-class#design.god-class	class
+design.dit#design.dit	class
+design.noc#design.noc	class
+design.type-coverage.param#design.type-coverage.param	class
+design.type-coverage.property#design.type-coverage.property	class
+design.type-coverage.return#design.type-coverage.return	class
+discovery.unmatched-exclude#discovery.unmatched-exclude	project
+duplication.clone#duplication.clone	project
+maintainability.mi#maintainability.mi	callable
+security.command-injection#security.command-injection	callable
+security.hardcoded-credentials#security.hardcoded-credentials	class
+security.sensitive-parameter#security.sensitive-parameter	callable
+security.sql-injection#security.sql-injection	callable
+security.xss#security.xss	callable
+size.class-count#size.class-count	namespace
+size.method-count#size.method-count	class
+size.property-count#size.property-count	class
+suppression.unmatched-namespace#suppression.unmatched-namespace	project
+suppression.unmatched-path#suppression.unmatched-path	project
+suppression.unmatched-rule-ledger#suppression.unmatched-rule-ledger	project

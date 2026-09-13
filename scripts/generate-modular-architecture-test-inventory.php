@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * Generates the P0 test-topology evidence for the modular-architecture migration.
+ * Generates test-topology evidence for modular-architecture governance.
  *
  * The inventory is intentionally based on the committable worktree (tracked
  * plus non-ignored untracked files) and PHPUnit's own discovery output. It
@@ -72,7 +72,7 @@ const P4_IGNORED_FIXTURE_PATHS = [
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations.json',
 ];
 
-/** @var list<string> Exact Measurement artifacts materialized by P7. */
+/** @var list<string> Exact Measurement artifacts governed as one closed set. */
 const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/AnonymousClassContext.php',
     'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-collision.xml',
@@ -93,7 +93,7 @@ const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php',
 ];
 
-/** @var list<string> Exact P3 test classes; future siblings require an ownership decision. */
+/** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
 const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php',
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
@@ -169,7 +169,7 @@ const P3_TEST_PATHS = [
     'tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php',
 ];
 
-/** @var list<string> Exact P6-A Finding test closure; future siblings require an ownership decision. */
+/** @var list<string> Exact Finding test closure; future siblings require an ownership decision. */
 const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
     'tests/Analysis/Finding/Fixtures/Channels/excluded.txt',
@@ -207,13 +207,13 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/FindingTest.php',
 ];
 
-/** @var list<string> Exact P6-B additions to the Finding test closure. */
+/** @var list<string> Exact Inline additions to the Finding test closure. */
 const P6_B_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/AnalysisContextThresholdTest.php',
     'tests/Analysis/Finding/Unit/ThresholdOverrideTest.php',
 ];
 
-/** @var list<string> Exact P6-B Inline test closure; future siblings require an ownership decision. */
+/** @var list<string> Exact Inline test closure; future siblings require an ownership decision. */
 const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller/PolicedController.php',
     'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller/SilencedController.php',
@@ -236,12 +236,12 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 
-/** @var list<string> Exact P6-D subject-owned test moves. */
+/** @var list<string> Exact subject-owned test moves. */
 const P6_D_REPORTING_TEST_PATHS = [
     'tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php',
 ];
 
-/** @var list<string> Exact P6-D Prioritization subject-unit moves. */
+/** @var list<string> Exact Prioritization subject-unit moves. */
 const P6_D_PRIORITIZATION_TEST_PATHS = [
     'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtCalculatorTest.php',
     'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtSummaryTest.php',
@@ -251,7 +251,7 @@ const P6_D_PRIORITIZATION_TEST_PATHS = [
     'tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php',
 ];
 
-/** @var list<string> Exact P6-D Infrastructure Git adapter authorities. */
+/** @var list<string> Exact Infrastructure Git adapter authorities. */
 const P6_D_GIT_TEST_PATHS = [
     'tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php',
     'tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php',

@@ -17,9 +17,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * Instantiates a concrete {@see LayerDefinition} from a
  * {@see TemplateLayerDefinition} and a single observed binding tuple.
  *
- * Extracted from {@see LayerExpansionStage} in Phase 4.1 of the remediation
- * (ADR 0008). Behavior-preserving — the substitution rules, validation, and
- * error messages are unchanged.
+ * Keeping this operation separate from {@see LayerExpansionStage} gives the
+ * substitution rules, validation, and error messages one owner.
  *
  * Surfaces a {@see ConfigurationRefusal} when:
  * - The tuple is incomplete (a variable referenced by the template is not

@@ -14,7 +14,7 @@ cli	_complete	--symfony	no	Symfony completion internals
 cli	baseline:rename-channels	map	yes		map-file,map-row		
 cli	check	--cache-dir	yes		whole-value	the directory path is matched as a whole	invariant:no-cache
 cli	check	--fail-on	yes		whole-value	the severity name is matched as a whole	invariant:fail-on
-cli	check	--format-opt	yes		pair-key	the value half of the pair is a site the round leaves out (00-overview.md); only the key half is declared	invariant:format
+cli	check	--format-opt	yes		pair-key	the value half is outside the declared pair-key scope; only the key half is declared	invariant:format
 cli	check	--report	yes		ref-and-scheme,empty-range		
 config	*	architecture	yes		unknown-subkey,layer-patterns,layer-exclude-patterns		
 config	*	cache.dir	yes		whole-value	the directory path is matched as a whole	invariant:no-cache

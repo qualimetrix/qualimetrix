@@ -12,8 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
  * exercise SARIF JSON shape (fingerprints, locations, schema conformance),
  * never description or `helpUri` text, so a single deterministic answer is
  * enough. Coverage of the real join lives in
- * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`
- * (P4).
+ * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`.
  */
 final class StubChannelPresentation implements ChannelPresentationInterface
 {

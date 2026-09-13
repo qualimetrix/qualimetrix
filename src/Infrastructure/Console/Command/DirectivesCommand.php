@@ -131,8 +131,7 @@ final class DirectivesCommand extends Command
                 // A refusal like any other in this command's `--sweep`,
                 // `paths` and empty-scope checks below: the carrier lets one
                 // `catch` clause own presentation instead of every check
-                // duplicating the json/text branch inline
-                // (`01-refusal-envelope.md` §2.1).
+                // duplicating the JSON/text branch inline.
                 throw ConfigurationRefusal::aboutCommandLineInput(
                     '--format',
                     \sprintf(
@@ -158,8 +157,8 @@ final class DirectivesCommand extends Command
             // falls through to stderr only for the other six.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
-            // Named secondary signal for code 3 (`01-refusal-exit-ladder.md`
-            // §2.6): an `InvalidArgumentException` that never became a
+            // Named secondary signal for code 3: an
+            // `InvalidArgumentException` that never became a
             // carrier. Read as the caller's mistake, exactly as `check` reads
             // it — the path and symbol value objects throw the same class on
             // a violated invariant, and one of those is a bug in the tool
@@ -174,7 +173,7 @@ final class DirectivesCommand extends Command
             // failures CI exists to surface. Routed through the shared
             // presenter's `internalError()` — the same envelope and
             // `-q`/`--silent` survival every other command's internal error
-            // gets, not a local `reportError()` (`01-refusal-envelope.md` §2.1).
+            // gets, not a local `reportError()`.
             return $this->refusalPresenter->internalError($output, $format, $failure);
         }
     }

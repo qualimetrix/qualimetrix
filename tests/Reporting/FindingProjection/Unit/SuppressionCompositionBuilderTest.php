@@ -33,10 +33,9 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 
 /**
- * One test per mechanism (a) — a green test over a list would already pass
- * the moment the first mechanism worked, which is exactly the shape Ш6's
- * test plan calls out as insufficient for a corpus with all seven live at
- * once. Each case here isolates its mechanism and asserts the pair the
+ * One test per mechanism — a green test over a list would already pass
+ * when only the first mechanism worked. Each case here isolates its mechanism
+ * and asserts the pair the
  * `suppressed` format actually publishes: {@see SuppressionMechanism} and
  * `suppressor`.
  */
@@ -228,8 +227,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     }
 
     /**
-     * Reproduces Ш6's own motivating example measured against this project's
-     * `qmx.yaml`: a per-rule `suppress_paths` entry naming a file that does
+     * A per-rule `suppress_paths` entry naming a file that does
      * not exist excludes nothing, and the composition keyed by what fired
      * cannot tell that apart from a pattern that was never written at all.
      */

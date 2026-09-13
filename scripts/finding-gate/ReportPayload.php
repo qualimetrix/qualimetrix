@@ -12,8 +12,8 @@ use JsonException;
  * An HTML report is three things in one file: a shell, the report application's
  * own JavaScript bundle, and the payload the bundle renders. Only the payload
  * is a published finding surface; the other two are the tool. Comparing the file
- * whole makes every rebuild of the bundle a surface difference — Ш5e3 renamed
- * the metric keys the bundle reads, and 31.8 KB of minified JavaScript came back
+ * whole makes every rebuild of the bundle a surface difference. A metric-key
+ * rename once returned 31.8 KB of minified JavaScript
  * as fourteen mismatches that said nothing about findings, on top of which the
  * minifier had reallocated its own variable names.
  *

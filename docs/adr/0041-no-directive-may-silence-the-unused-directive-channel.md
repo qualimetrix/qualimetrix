@@ -174,8 +174,7 @@ be satisfied trivially: those guards assert verdicts the ban itself changes
    `::itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint` (plus a generated
    artifact going stale, because removing the call left an import unused).
    Neither moves a byte of `bin/qmx check src/` — no directive on this tree used
-   the loophole. Recorded in
-   `docs/internal/plans/rule-vocabulary/X4-directive-ban/measurement-ban-seams.md`, §5.
+   the loophole.
 
 2. **Neither device ever changed its own answer**, on the tree where the ban
    stands and the devices are still in place. The predicate matters here and the

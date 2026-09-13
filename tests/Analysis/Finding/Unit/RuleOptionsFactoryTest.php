@@ -1267,7 +1267,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     // --- retired `exclude*` spelling refuses instead of warning ---
     //
-    // Regression coverage for Х8: an unknown option key on a rule only ever
+    // An unknown option key on a rule only ever
     // produced a logged warning (RuleOptionsFactory::warnAboutUnknownKeys()),
     // so a config still using the pre-rename spelling would keep the rule
     // running with its suppression silently switched off. Each of the five
@@ -1978,17 +1978,18 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(0.9, $options->namespace->maxError);
     }
 
-    // --- Round X20: unfolding both layers, and the completeness of the
+    // --- Threshold shorthand across both option layers, and the completeness of the
     // scalar-form guard -------------------------------------------------
     //
-    // `measurement/observations.md` §3's exact fixture, through the real
-    // hierarchical Options class: a config-file `threshold` shorthand on a
-    // nested level, a CLI override of only ONE half of the graduated pair.
+    // Through the real hierarchical Options class, combine a config-file
+    // `threshold` shorthand on a nested level with a CLI override of only ONE
+    // half of the graduated pair.
     // Eviction only ever rewrote the config-file (lower) layer, so this
     // exact shape — the higher layer contributing only half the band — used
     // to survive with the untouched half falling to the constructor default
     // (10/20) instead of the config file's 5. Both halves are asserted, per
-    // this round's DoD: no fixture here checks one half of a band alone.
+    // Both halves are asserted so the untouched value cannot fall back to a
+    // constructor default unnoticed.
 
     #[Test]
     public function itAppliesBothHalvesWhenTheCliOnlyOverridesOneHalfOfAConfigFileThreshold(): void

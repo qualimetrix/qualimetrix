@@ -12,8 +12,6 @@ other decision in ADR 0021 stands.
 **Related:** [ADR 0017](0017-baseline-ceiling.md) (the ceiling whose entries are
 keyed by this identity)
 
-**Plan:** [Durable declaration identity and entry-value compaction](../internal/plans/baseline-compaction/PLAN-IDENTITY.md)
-
 ## Context
 
 ADR 0021 defined a declaration key as the logical `SymbolPath`, the

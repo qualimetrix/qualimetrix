@@ -18,7 +18,7 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
  *
  * @qmx-threshold coupling.cbo warning=31 error=31 -- Report is the transport VO every formatter's
  *                `format(Report, FormatterContext)` signature depends on, and the type every
- *                pipeline consumer that builds one depends on in turn; Ш6's `SuppressionComposition`
+ *                pipeline consumer that builds one depends on in turn; the `SuppressionComposition`
  *                field and its eleventh formatter consumer (`SuppressedFormatter`) are the intentional
  *                cause of the two-point rise from the previously baseline-accepted 28. A point
  *                threshold replaces that baseline entry rather than raising it, per the same reasoning

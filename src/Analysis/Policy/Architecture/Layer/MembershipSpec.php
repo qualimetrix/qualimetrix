@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Immutable specification of the criteria a class must satisfy to belong to
  * a layer.
  *
- * Five criterion kinds (Phase 2 direction 1 — see ADR 0007):
+ * Five criterion kinds (see ADR 0059):
  *
  * | Field        | Semantics                                                                                |
  * | ------------ | ---------------------------------------------------------------------------------------- |
@@ -48,9 +48,8 @@ final readonly class MembershipSpec
      * @param list<string> $extends Parent-class FQNs. Same FQN requirement
      *                              as {@code attributes}.
      * @param MatchMode $mode Cross-kind combination strategy. Defaults to
-     *                        {@see MatchMode::Any} (migration-friendly).
-     * @param ExcludeSpec|null $exclude Optional hard-filter clause (Phase 2
-     *                                  direction 3). When set, evaluated by
+     *                        {@see MatchMode::Any}.
+     * @param ExcludeSpec|null $exclude Optional hard-filter clause. When set, evaluated by
      *                                  {@see LayerDefinition::matches()}
      *                                  AFTER the positive criteria succeed
      *                                  — if exclude fires, the class does

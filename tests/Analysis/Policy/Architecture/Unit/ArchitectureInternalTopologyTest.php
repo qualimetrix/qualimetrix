@@ -108,7 +108,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     ];
 
     #[Test]
-    public function itValidatesEveryMaterializedP4ArchitectureDeclarationAgainstTheFrozenZoneDag(): void
+    public function itValidatesEveryMaterializedArchitectureDeclarationAgainstTheFrozenZoneDag(): void
     {
         $root = $this->repositoryRoot();
         $manifest = json_decode((string) file_get_contents($root . '/docs/internal/modular-architecture-manifest.json'), true, flags: \JSON_THROW_ON_ERROR);

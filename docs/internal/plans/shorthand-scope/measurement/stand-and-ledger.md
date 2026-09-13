@@ -103,7 +103,7 @@
 
 ---
 
-## 4. Леджер — `docs/internal/plans/promise-effect/measurement/promise-ledger.tsv`
+## 4. Леджер — `promise-effect/promise-ledger.tsv`
 
 Файл полиморфный: колонка 1 — `kind`, колонки 2-6 значат разное на разных kind. Колонка 6 — `equivalences` для `form`, **`coexistence` для `pair`**, `promised_winner` для `composition-path`, `promised_outcome` для `composition-bucket`, `promised_survival` для `composition-triple`. Всего 1322 строки данных: `form` 728, `pair` 573, `deferred` 7, `composition-path` 7, `composition-triple` 4, `composition-bucket` 3.
 
@@ -111,7 +111,7 @@
 
 ### 4.1 Строки `kind=3-shorthand-vs-level-block` — 36, поимённо
 
-    grep -v '^#' docs/internal/plans/promise-effect/measurement/promise-ledger.tsv | tail -n +2 | awk -F'\t' '
+    grep -v '^#' promise-effect/promise-ledger.tsv | tail -n +2 | awk -F'\t' '
      {k=""; if(match($9,/kind=[^;]*/)) k=substr($9,RSTART+5,RLENGTH-5);
       if(k=="3-shorthand-vs-level-block") printf "%s\t%s\t%s\t%s\t%s\t%s\n",$2,$3,$4,$5,($6==""?"<EMPTY>":$6),$8}'
 
@@ -168,9 +168,9 @@
 В леджере это **пять строк** (по одной на правило), а не одна. Все пять идентичны: `scope=same-source`, **`coexistence=compose`**, `status=DECIDED`, `carrier` ПУСТ, `kind=2-same-name-top-vs-level`, `path=(top)|class`.
 
 Примечание (одинаковое у всех пяти):
-«the carrier (`website/docs/getting-started/configuration.md:185-217`) speaks only about the bare `threshold` shorthand and says nothing about this key at either depth. **ADR 0052 row 3**: nothing is missed when a top-level key and its namesake inside a slot are both written -> both apply at their own depth».
+«the carrier (`website/docs/getting-started/configuration.md:185-217`) speaks only about the bare `threshold` shorthand and says nothing about this key at either depth. **the independent-key composition rule**: nothing is missed when a top-level key and its namesake inside a slot are both written -> both apply at their own depth».
 
-То есть `compose` здесь — решение раунда по ADR 0052 при молчащем носителе (`carrier` пуст именно поэтому), а не показание документации.
+То есть `compose` здесь — решение самого ledger при молчащем носителе (`carrier` пуст именно поэтому), а не показание документации.
 
 Живая сетка по этим пяти плюс пяти сестринским (`callable.enabled` / `namespace.enabled`): **девять из десяти `COEXISTENCE_OK`, одна — дефект**: `pair|complexity.npath|class.enabled|enabled|same-source|2-same-name-top-vs-level` -> `MISCOMPOSED`, «the effect of A is absent when both are written». Эта одна ячейка объясняет вторую устарелость `axis-b-mechanisms.tsv` — см. §5.
 
@@ -185,10 +185,10 @@
 
 ---
 
-## 5. Разбивка оси B — `docs/internal/plans/layer-value-survival/measurement/axis-b-mechanisms.tsv`
+## 5. Разбивка оси B — `docs/internal/plans/shorthand-scope/measurement/axis-b-mechanisms.tsv`
 
     awk -F'\t' 'NR>1{print $1"\t"$2; s+=$2} END{print "SUM\t"s}' \
-      docs/internal/plans/layer-value-survival/measurement/axis-b-mechanisms.tsv
+      docs/internal/plans/shorthand-scope/measurement/axis-b-mechanisms.tsv
 
 -> `M1 20, M2 25, M3 36, M4 1, SUM 82`.
 

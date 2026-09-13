@@ -105,9 +105,8 @@ final readonly class RuleInputValidator
                 );
             }
 
-            // The subject goes into the seam rather than in front of its answer:
-            // prefixing one sentence with another's subject is the defect
-            // r11-claude-07 named on the suppression seam, and it survived here.
+            // The subject goes into the seam so it composes one diagnostic;
+            // prefixing the returned sentence here would duplicate context.
             $pairProblem = $levels->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
 
             if ($pairProblem !== null) {

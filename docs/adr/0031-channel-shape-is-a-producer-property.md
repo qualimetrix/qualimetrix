@@ -6,10 +6,8 @@
 ## Context
 
 `ChannelDeclaration` carried a `ChannelShape` (`magnitude` | `occurrence`)
-alongside `direction`, `levels` and `configurationError`. The enumeration this
-plan's Ш4c step drew from
-(`docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv`) found
-exactly one producer with a mixed shape across its channels —
+alongside `direction`, `levels` and `configurationError`. An enumeration of all
+producer declarations found exactly one producer with a mixed shape across its channels —
 `architecture.layer-violation` — and that mix was already resolved by ADR 0030:
 the two judgements it named (`architecture.layer-violation`,
 `architecture.unassigned-class`) now sit on separate rule classes, each with a

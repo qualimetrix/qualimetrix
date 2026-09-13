@@ -15,13 +15,13 @@ use Throwable;
  *
  * Three outcomes, each with its own factory-shaped method rather than one
  * method with a kind flag, so a caller cannot pass the wrong exit code for
- * the throwable it caught (`01-refusal-exit-ladder.md` §3):
+ * the throwable it caught:
  *
- * - {@see self::refusal()} — {@see ConfigurationRefusal}, the round's carrier
- *   for exit code 3.
+ * - {@see self::refusal()} — {@see ConfigurationRefusal}, the carrier for
+ *   exit code 3.
  * - {@see self::fallbackRefusal()} — a caught `InvalidArgumentException` that
- *   never became a carrier. A named secondary signal for code 3
- *   (`00-overview.md` rule 1), kept separate so how many inputs still take
+ *   never became a carrier. A named secondary signal for code 3, kept
+ *   separate so how many inputs still take
  *   this path is a call count, not an inference.
  * - {@see self::internalError()} — anything else: a product defect, exit
  *   code 1.
@@ -29,14 +29,14 @@ use Throwable;
  * Framing lives here and only here: callers pass an unframed `summary()` or
  * `getMessage()`, never a pre-built `<error>…</error>` string. Every write
  * happens at {@see OutputInterface::VERBOSITY_QUIET}: the message that ends a
- * run is not payload `-q` is allowed to swallow (`01-refusal-envelope.md`
- * §2.3) — only the progress frame and the report are.
+ * run is not report payload that `-q` is allowed to swallow — only the
+ * progress frame and the report are.
  */
 final class RefusalPresenter
 {
     public function __construct(private readonly ErrorStream $errorStream) {}
 
-    /** A refusal by user input: a config key, a value, a file, a selector — see `00-overview.md`. */
+    /** A refusal caused by user input: a configuration key, value, file, or selector. */
     public function refusal(OutputInterface $output, ?string $format, ConfigurationRefusal $refusal): int
     {
         $this->present($output, $format, \sprintf('Configuration error: %s', $refusal->summary()), ConsoleExitCode::Refusal);
@@ -46,8 +46,7 @@ final class RefusalPresenter
 
     /**
      * A caught `InvalidArgumentException` with no {@see ConfigurationRefusal}
-     * behind it — the named secondary signal for code 3
-     * (`01-refusal-exit-ladder.md` §2.6). A separate method rather than a
+     * behind it — the named secondary signal for code 3. A separate method rather than a
      * shared one, precisely so this path is visible as a call count.
      */
     public function fallbackRefusal(OutputInterface $output, ?string $format, Throwable $failure): int
@@ -62,7 +61,7 @@ final class RefusalPresenter
      * through valid input. Carries a trace at
      * {@see OutputInterface::VERBOSITY_VERBOSE} and above — the one thing a
      * refusal never gets, because a refusal is the user's problem to fix and
-     * an internal error is ours (`01-refusal-exit-ladder.md` §3).
+     * an internal error is ours.
      */
     public function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
     {
@@ -79,8 +78,7 @@ final class RefusalPresenter
     private function present(OutputInterface $output, ?string $format, string $message, ConsoleExitCode $code): void
     {
         // Erase the progress frame first: printed on top of a live frame, the
-        // message is destroyed by the frame's next redraw
-        // (`01-refusal-exit-ladder.md` §3).
+        // message is destroyed by the frame's next redraw.
         $this->errorStream->stopProgress();
 
         if (MachineReadableFormats::carriesJson($format)) {
@@ -100,7 +98,7 @@ final class RefusalPresenter
      * the exemption on `boundWriter()`'s own docblock. Calling `boundWriter()`
      * alone, unbound, would resolve its fallback against `$output` itself
      * rather than against `$output`'s error channel: the callers here (a
-     * command's `execute()`, this round's own ladder) hand in the console
+     * command's `execute()` and the shared exit ladder) hand in the console
      * output, not an already-resolved error stream the way
      * `Application::renderThrowable()` receives one. Binding first is what
      * lets `boundWriter()` fall back only when `$output` truly has no
@@ -115,8 +113,7 @@ final class RefusalPresenter
 
     /**
      * Writes the `{error, exit_code}` envelope to stdout — the shape every
-     * command's refusal and internal-error path now shares
-     * (`01-refusal-envelope.md` §2.1). `origin()`/`position()` are not
+     * command's refusal and internal-error path shares. `origin()`/`position()` are not
      * structural fields here; they reach the reader through the wording of
      * `$message` instead.
      *

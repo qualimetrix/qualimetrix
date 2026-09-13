@@ -3677,7 +3677,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelShapeNotDeclaredByChannelTopologyTest::itRefusesAMethodThatBuildsAChannelDeclarationWhileAlsoReferencingChannelShape
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itConfirmsATieIsReachableBetweenTheThreeTypeCoverageChannels
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itFindsNoInputThatTiesTheMovedChannelAgainstAnythingItMovedPast
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itFindsNoInputThatTiesTheSelectedChannelAgainstOtherArchitectureChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::itYieldsTheTiedTypeCoverageChannelsInTheDeclaredOrder
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itAgreesWithTheRuleClassesReadDirectlyAboutTheAssembledUniverse
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itAgreesWithTheTrackedFixtureAboutTheChannelEnumeration
@@ -4914,7 +4914,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentWhenTheExcludeClauseRemovedAClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itLeavesNoValidationNamespaceOrDirectoryInTheArchitectureLeaf
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itRejectsInjectedReverseAndUnknownCrossZoneEdgesWithoutWildcardWidening
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itValidatesEveryMaterializedP4ArchitectureDeclarationAgainstTheFrozenZoneDag
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureInternalTopologyTest::itValidatesEveryMaterializedArchitectureDeclarationAgainstTheFrozenZoneDag
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"catch"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"class_const_fetch"
@@ -6227,8 +6227,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAMisspelledChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdInTheRetiredChannelPairForm
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"before the Ш4b split"
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"before the Ш5e3 rename"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"former aggregate name"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"former aspect-first name"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheSplitTypeCoverageRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
@@ -7161,7 +7161,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTypedProfileStatistics
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itIsANoOpByDefaultAndAfterReset
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\ConsoleExitCodeTest::itCarriesExactlyTheTwoCodesTheRoundOwns
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\ConsoleExitCodeTest::itCarriesExactlyTheTwoPublicExitCodes
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#0
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#1
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRecognisesEveryJsonDocumentFormat#2
@@ -7254,53 +7254,53 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
  - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itLetsTwoTranslatedPositionsReadAlikeOnlyWhenTheyNameTheSameSubject
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"30 an unrecognised depth-1 key"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"31 a level this rule does not have"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"32 another level this rule does not have"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"34 a level slot in upper case"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"35 a typo on a rule with no levels"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"36 an option belonging to another rule"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"37 a threshold on a rule that takes none"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"38 a pluralised option name"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"40 the switch spelled without its d"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"41 a severity key the rule does not take"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"43 a suppression key with a dropped letter"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"48 a retired option at depth 2"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"52 the depth-1 typo under a machine-readable format"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"53 a typo inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"54 two typos inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"55 two abbreviations inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"56 level options in upper case"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"57 the option names of the other level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"58 one level options written at the other level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"59 a scalar where a level takes a map"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"72 a level this rule does not have, through the flag"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"73 a typo inside a level, through the flag"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesTheSubjectOfEveryTranslatedPositionInItsOwnAnswer"74 a level option written at depth 1, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"abbreviated-level-options"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"cross-level-options"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"flag-level-option-at-rule-depth"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"flag-typo-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"flag-unsupported-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"json-unrecognised-depth-1-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"misspelled-enabled-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"misspelled-suppression-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"option-owned-by-another-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"options-for-another-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"pluralised-option-name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"retired-level-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"scalar-for-level-options-map"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"two-typos-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"typo-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"typo-on-rule-without-levels"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"unrecognised-depth-1-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"unsupported-method-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"unsupported-namespace-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"unsupported-severity-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"unsupported-threshold-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"uppercase-level-name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itNamesEachCasesSubjectInItsOwnAnswer"uppercase-level-options"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itRunsToCompletionWhenTheSameOptionsAreSpelledCorrectly
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"30 an unrecognised depth-1 key"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"31 a level this rule does not have"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"32 another level this rule does not have"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"34 a level slot in upper case"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"35 a typo on a rule with no levels"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"36 an option belonging to another rule"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"37 a threshold on a rule that takes none"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"38 a pluralised option name"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"40 the switch spelled without its d"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"41 a severity key the rule does not take"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"43 a suppression key with a dropped letter"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"48 a retired option at depth 2"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"52 the depth-1 typo under a machine-readable format"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"53 a typo inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"54 two typos inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"55 two abbreviations inside a level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"56 level options in upper case"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"57 the option names of the other level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"58 one level options written at the other level"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"59 a scalar where a level takes a map"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"72 a level this rule does not have, through the flag"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"73 a typo inside a level, through the flag"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryTranslatedPositionWithExitThree"74 a level option written at depth 1, through the flag"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"abbreviated-level-options"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"cross-level-options"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"flag-level-option-at-rule-depth"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"flag-typo-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"flag-unsupported-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"json-unrecognised-depth-1-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"misspelled-enabled-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"misspelled-suppression-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"option-owned-by-another-rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"options-for-another-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"pluralised-option-name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"retired-level-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"scalar-for-level-options-map"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"two-typos-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"typo-inside-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"typo-on-rule-without-levels"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"unrecognised-depth-1-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"unsupported-method-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"unsupported-namespace-level"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"unsupported-severity-key"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"unsupported-threshold-option"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"uppercase-level-name"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\TranslatedRefusalVocabularyTest::itStillEndsEveryCaseWithExitThree"uppercase-level-options"
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
@@ -7491,8 +7491,11 @@ Available tests:
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsAllCliAliasesInConfigurationReadme
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsAllRuleNamesInDefaultThresholds
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsLayerViolationCliAliasesInWebsiteCliReferences
+ - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itIndexesEveryActivePlanDirectory
+ - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itKeepsExecutableSourcesIndependentFromPlanningRecords
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itListsAllRulesInLlmsOnlyRuleCatalog
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itPublishesTheDerivedBaselineCountTupleExactlyOnce
+ - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itRecognizesPlanningChronologyOnlyInsideComments
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itRejectsBaselineOnlyBaselineCountDrift
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itRejectsDocumentationOnlyBaselineCountDrift
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itRejectsExtraBaselineCountPublicationsInSemanticReadmeAndAdr
@@ -9053,6 +9056,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowWhoseLineIsNotANumber
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnUnknownVerdictOnTheSuppressionHalf
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesAnUnknownRenameStep
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesExecutedHistoryThatNoLongerDescribesTheMeasurement
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireADecisionWhoseTargetIsAWildcard
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireWhenATargetExistedBeforeTheMeasurement

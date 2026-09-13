@@ -662,8 +662,8 @@ final class Cases
                 //
                 // There used to be a third bucket here: the alias door promised
                 // nothing, so it lost a WIDER line instead of gaining a
-                // LEDGER_ONLY one. X19 documented the two class-rank aliases
-                // that the product had registered and no page listed, so that
+                // LEDGER_ONLY one. Once the two registered class-rank aliases
+                // were added to the documented promise, that
                 // door now promises what the others do and answers like them.
                 // The asymmetry this case once demonstrated was a gap in the
                 // documentation, and closing it is what removed the bucket.
@@ -698,7 +698,7 @@ final class Cases
                 'config-path',
                 'a new path outside `rules:` is inventoried and the grid does not carry it',
                 [
-                    'docs/internal/plans/promise-effect/measurement/config-paths.tsv',
+                    'promise-effect/config-paths.tsv',
                     "planted_root\tplanted_root\tboth\t--planted-root\tPlanted\t—\t—\t—\t—\tUNENUMERATED\t—\t—\n",
                 ],
                 'config-path planted_root',
@@ -708,7 +708,7 @@ final class Cases
                 'same-source-pair',
                 'a new interacting key pair is inventoried and the grid does not carry it',
                 [
-                    'docs/internal/plans/promise-effect/measurement/key-pairs.tsv',
+                    'promise-effect/key-pairs.tsv',
                     "complexity.ccn\tPlantedOptions\t(top)\tplanted-a\tplanted-b\t1-threshold-group-declared\tcompose\tplanted\n",
                 ],
                 'same-source-pair complexity.ccn|planted-a|planted-b|1-threshold-group-declared',

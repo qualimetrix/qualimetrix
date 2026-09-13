@@ -2,7 +2,7 @@
 #
 # It checks the classifier, not completeness. A ledger written to a known list
 # of defects passes that list and stays tautological outside it — that is said
-# in `01-promise.md` and is not softened here.
+# in the promise ledger and is not softened here.
 #
 # The 21 rows outside `rules:` come from `measurement/non-rules-roots.tsv`, and
 # they are an INPUT, not evidence: that artifact was measured with the broken

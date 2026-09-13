@@ -6,7 +6,7 @@
 > [ADR 0022](0022-capability-oriented-modular-monolith.md).
 
 **Date:** 2026-05-15
-**Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) on Part 5 (internal freedom). Other parts remain in force.
+**Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) and [ADR 0022](0022-capability-oriented-modular-monolith.md)
 **Builds on:** [0008 — `ArchitectureProcessor` Service](0008-architecture-processor-service.md)
 **Related:** [0012 — Project Architectural Direction](0012-hybrid-architectural-direction.md) (Architecture is the pilot for the hybrid direction)
 
@@ -123,4 +123,4 @@ Inside `src/Architecture/`, sub-namespaces (`Domain`, `Configuration`, `Processi
 - Debug adapter (outside slice): `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`
 - Builds on: [ADR 0008](0008-architecture-processor-service.md) (processor service contract)
 - Direction context: [ADR 0012](0012-hybrid-architectural-direction.md) (Architecture as pilot of hybrid model)
-- Prior decisions inherited: [ADR 0005](0005-architecture-rules.md), [ADR 0006](0006-architecture-rules-declaration-order.md), [ADR 0007](0007-architecture-rules-phase-2-design.md)
+- Current layer policy: [ADR 0059](0059-declared-layer-policy-and-architecture-governance.md), with declaration order detailed in [ADR 0006](0006-architecture-rules-declaration-order.md)

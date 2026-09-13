@@ -9,7 +9,7 @@
 - **Owned paths:** `src/Analysis/Evidence/DependencyModel/` and
   `tests/Analysis/Evidence/DependencyModel/`.
 - **Non-goals:** collection sequencing remains with `Analysis.Run`; cycle
-  detection is prepared by its own P4 leaf and is not DependencyModel state.
+  detection belongs to its own leaf and is not DependencyModel state.
 
 ## Structure
 

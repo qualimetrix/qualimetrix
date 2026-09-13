@@ -132,8 +132,8 @@ final class RuntimeConfigurator
      * read here is cheaper than wiring a Reporting contract into this class
      * for one string.
      *
-     * The per-rule exclusion ledger's `--show-suppressed`-gated capture
-     * (decision (д), Ш6) must also arm for `--format=suppressed` /
+     * The per-rule exclusion ledger's `--show-suppressed`-gated capture must
+     * also arm for `--format=suppressed` /
      * `format: suppressed`: the format's payload reads
      * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats::$excludedFindings},
      * and that field is opt-in precisely because most runs never display it.

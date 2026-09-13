@@ -625,9 +625,8 @@ final class DirectivesCommandTest extends TestCase
      * the duplicate scan visits first — not the file the directive happens to
      * be written in.
      *
-     * Measured pre-fix on this same two-file shape
-     * (`docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/d2.md`): a
-     * symbol directive never suppressed the finding regardless of which copy
+     * On this two-file shape, a symbol directive never suppressed the finding
+     * regardless of which copy
      * carried it; a file or next-line directive suppressed it only when
      * placed in whichever copy happened to be the first occurrence, and did
      * nothing — silently, reported as `annotation.unused-directive` — when
@@ -911,9 +910,9 @@ final class DirectivesCommandTest extends TestCase
      * anywhere in discovery: `RecursiveDirectoryIterator` throws a bare
      * `UnexpectedValueException` (a `RuntimeException`, so neither of the
      * two named clauses above it), landing in the generic `catch (Exception)`
-     * branch, which now hands the throwable to
+     * branch, which hands the throwable to
      * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
-     * (X15 review, mechanism A) instead of a local `reportError()` — same
+     * instead of a local `reportError()` — same
      * "Internal error:" wording and stream every other command's internal
      * error uses, not a `DirectivesCommand`-only dialect.
      */
@@ -1048,11 +1047,8 @@ final class DirectivesCommandTest extends TestCase
         ]);
 
         self::assertSame(3, $tester->getStatusCode());
-        // The exact "Configuration error: " frame (`RefusalPresenter`'s, not
-        // a per-command spelling of it) — pinned here because this command's
-        // own assertion of it was the one `01-refusal-packages.md` P01-7
-        // found missing when the shared baseline test that used to cover it
-        // was trimmed to baseline's own commands.
+        // Pin the presenter's exact frame here: this command has its own
+        // refusal route and must not rely on coverage from another command.
         self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
     }
 
@@ -1189,9 +1185,9 @@ final class DirectivesCommandTest extends TestCase
         self::assertInstanceOf(DirectivesCommand::class, $command);
 
         $tester = new CommandTester($command);
-        // Every refusal this command throws now flows through
+        // Every refusal this command throws flows through
         // `RefusalPresenter`, which writes the human (`text`) form to
-        // stderr (`01-refusal-envelope.md` §2.1) — separately captured so a
+        // stderr — separately captured so a
         // human-format assertion can read it from `getErrorOutput()` rather
         // than the now-empty `getDisplay()`.
         $tester->execute($input, ['capture_stderr_separately' => true]);

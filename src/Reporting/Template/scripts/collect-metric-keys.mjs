@@ -1,4 +1,4 @@
-// Writes docs/internal/plans/rule-vocabulary/X9-gate-holes/enumeration-js-metric-keys.tsv:
+// Writes finding-gate/enumeration-js-metric-keys.tsv:
 // every family-shaped string literal in src/Reporting/Template/{src,tests}/*.js,
 // separated into code/comment/test buckets, checked against the MetricName
 // catalog. Run by hand (`node scripts/collect-metric-keys.mjs`) — this is a
@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_FILE = resolve(
   __dirname,
   '..', '..', '..', '..',
-  'docs/internal/plans/rule-vocabulary/X9-gate-holes/enumeration-js-metric-keys.tsv',
+  'finding-gate/enumeration-js-metric-keys.tsv',
 );
 
 const HEADER = `# method: rollup's bundled AST parser (rollup/dist/parseAst.js, the same

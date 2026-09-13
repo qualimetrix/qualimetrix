@@ -11,8 +11,7 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
  * `suppressed`. `text`, `text-verbose`, `summary`, `checkstyle`, `github` and
  * `html` are excluded — their stdout contract is human-readable, XML, or
  * workflow-command text, and a JSON envelope in that stream would be worse
- * than the empty stdout it replaces (`01-refusal-envelope.md` §2.1,
- * "Отвергнуто: конверт во всех двенадцати").
+ * than leaving stdout empty and the failure available only on stderr.
  *
  * "Closed" is enforced, not just claimed: both lists together are the
  * complete classification this class promises, and

@@ -229,8 +229,7 @@ the universe is assembled). It cannot depend on `ComputedMetricDefinition` to
 prefer a configured `computed.*`/`health.*` channel's own description without
 closing a dependency cycle back onto this capability; that preference is
 layered on by `Infrastructure\Rule\ComputedMetricChannelPresentation`, a
-decorator registered in front of the public alias. See
-`docs/internal/plans/sarif-channel-descriptions.md`, package P2.
+decorator registered in front of the public alias.
 
 
 ## Locality

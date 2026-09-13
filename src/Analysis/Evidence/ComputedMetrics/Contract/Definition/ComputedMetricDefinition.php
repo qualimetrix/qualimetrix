@@ -147,8 +147,8 @@ final readonly class ComputedMetricDefinition
      * admit `_`. A formula now addresses a metric by its published key, and
      * that key is kebab like every other name the product publishes.
      *
-     * Checking the template as a whole is what closes the Ш5e2 gap: a name
-     * whose family was right and whose leaf was not — `computed.Branch_Load` —
+     * Checking the template as a whole rejects a name whose family is right
+     * but whose leaf is not — `computed.Branch_Load` —
      * used to pass and then fall out of its own group in the report.
      */
     private function validateName(): void

@@ -1,4 +1,4 @@
-# 55. A Rule Option Declares the Shape of Its Value
+# 0055. A Rule Option Declares the Shape of Its Value
 
 **Date:** 2026-09-11
 **Status:** Accepted
@@ -120,11 +120,8 @@ Three questions were left open, together and on purpose:
 
 Each is a decision about *which source wrote a value and which one wins*, not
 about what form the value may take. Deciding any one of them alone would fix an
-answer the other two could contradict, and all three route through structures
-this round froze whole. They are taken together by the round that owns source
-composition; its denominator is already measured and frozen in
-`docs/internal/plans/promise-effect/measurement/writer-applicability.tsv`, so
-that round begins with the enumeration rather than with reconnaissance.
+answer the other two could contradict. They were subsequently resolved together
+by [ADR 0058](0058-a-layers-value-survives-the-layers-above-it.md).
 
 ## Consequences
 

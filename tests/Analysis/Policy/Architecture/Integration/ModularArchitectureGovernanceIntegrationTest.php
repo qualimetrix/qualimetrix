@@ -105,18 +105,11 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     }
 
     /**
-     * Ш5e2b's precedent, generalized into a standing guard: `currentSuite()`
-     * is a closed literal enumeration per directory, so a PHPUnit test class
-     * whose directory nobody added there is classified `none` and silently
-     * never runs under `composer test` -- the exact shape that let
-     * SuppressedFormatterTest.php (5 methods) and
-     * tests/Reporting/Unit/OutputFormatResolverTest.php (1 method, dormant
-     * since the modular-architecture migration) sit green in `composer
-     * check` without executing. This plants a real, untracked test class
-     * under a directory no `<testsuite>` in phpunit.xml.dist covers and
-     * asserts `generate-modular-architecture-test-inventory.php --check`
-     * names it and fails -- proving the guard added to `validateInventory()`
-     * actually bites rather than only reading well.
+     * `currentSuite()` is a closed literal enumeration per directory, so a
+     * test class under an unlisted directory is classified as `none` and
+     * silently omitted from `composer test`. Plant a temporary class under
+     * such a directory and assert that the inventory check names it and
+     * fails.
      */
     #[Test]
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
@@ -180,9 +173,8 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     }
 
     /**
-     * The map disagreement Ш5e2b guarded against is one-directional: a
-     * phpunit.xml.dist <directory> currentSuite() cannot place. This proves
-     * the opposite direction bites too -- a currentSuite() literal with no
+     * A `phpunit.xml.dist` directory may also lack a matching `currentSuite()`
+     * classification. This proves that direction fails too -- a literal with no
      * matching <directory> declared for that suite, the shape that let
      * `tests/Architecture/Unit/` and `tests/Architecture/Integration/` sit in
      * the classifier for a directory that was never created, and let

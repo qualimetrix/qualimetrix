@@ -11,8 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 
 /**
- * Regression guard for the closed vocabulary Ш6 publishes the `suppressed`
- * format against: seven values, five derived one-to-one from
+ * Regression guard for the closed vocabulary the `suppressed` format uses:
+ * seven values, five derived one-to-one from
  * {@see FindingFilterStage} plus the two per-rule ledger halves.
  *
  * `itMapsEveryStageToADistinctMechanism()` is what actually fails the build

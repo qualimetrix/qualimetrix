@@ -34,8 +34,8 @@ use Throwable;
  * 4. a mutation that no longer applies is a refusal, not a skip. `Mutation`
  *    enforces that itself, by demanding exactly one occurrence of what it
  *    rewrites; this harness only has to let the refusal through rather than
- *    reading "reddened nothing" as a result. The P2 prototype read it as a
- *    result three times.
+ *    reading "reddened nothing" as a result. A prior implementation read it
+ *    as a result three times.
  */
 final class Harness
 {

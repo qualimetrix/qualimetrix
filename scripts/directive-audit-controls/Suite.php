@@ -20,7 +20,7 @@ use RuntimeException;
  * about a verdict, so nothing else is run.
  *
  * **Both halves of the subject, and the command that renders them.** The list
- * held only the threshold half for one package, and that gap was not academic:
+ * held only the threshold half of the subject, and that gap was not academic:
  * a defect in the suppression half — a whole channel missing from the universe
  * it judges against — reached a release candidate with this bench reporting a
  * full table of probes and no uncovered case. A bench that covers half a

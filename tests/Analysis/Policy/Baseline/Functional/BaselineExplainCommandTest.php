@@ -243,8 +243,8 @@ final class BaselineExplainCommandTest extends TestCase
 
         // 'renamed.channel' is declared by no rule this test registers, so
         // the entry loads inert (`InertEntryReason::UndeclaredChannel`) and
-        // addressability comes from the loaded baseline alone
-        // (`01-refusal-verdicts.md` §5.3): a channel a rename map has
+        // addressability comes from the loaded baseline alone: a channel a
+        // rename map has
         // already carried a baseline onto is a legitimate `--channel` before
         // the release declaring it lands, even though an inert entry has no
         // accepted magnitude of its own to print.

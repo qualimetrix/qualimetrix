@@ -339,7 +339,7 @@ final class CheckCommandInputValidationTest extends TestCase
     }
 
     /**
-     * Route 6 (`m6-routes-merged.md`): an option `check`'s own definition
+     * An option absent from `check`'s own definition
      * never declared. `CommandTester` cannot show this — it runs the command
      * directly and the `InvalidOptionException` comes out of `Command::run()`
      * uncaught, never touching a `catch` clause — so this goes through the
@@ -432,7 +432,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
     /**
      * Parses the `{error, exit_code}` envelope every `--format=json` refusal
-     * carries on stdout (`01-refusal-envelope.md` §2.1) and returns its message.
+     * carries on stdout and returns its message.
      */
     private static function envelopeError(CommandTester $tester): string
     {

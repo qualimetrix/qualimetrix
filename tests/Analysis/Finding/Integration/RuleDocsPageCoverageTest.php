@@ -18,9 +18,8 @@ use ReflectionClass;
 
 /**
  * "Every rule declares its documentation page" is only an invariant if
- * something checks it on every registered rule, not just on the ones a human
- * remembered to look at — see `docs/internal/plans/sarif-channel-descriptions.md`,
- * package P1.
+ * something checks it on every registered rule, not just on a hand-picked
+ * subset.
  *
  * The sweep has two halves, because a producer is no longer the same thing as
  * a rule class. The class half checks that each class declares its own

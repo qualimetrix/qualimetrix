@@ -119,9 +119,8 @@ final class SourceControlExtractorTest extends TestCase
     }
 
     /**
-     * P1's identity comparison excluded the ordinal, so two producers giving
-     * one physical declaration two different ordinals were merged into one
-     * binding. P2 makes the ordinal part of identity ({@see
+     * Two producers giving one physical declaration different ordinals must
+     * not be merged into one binding. The ordinal is part of identity ({@see
      * DeclarationControlBindings::assertCompatibleSourceMetadata()}), so the
      * same disagreement is now rejected outright rather than silently
      * applying one control to both.

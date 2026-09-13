@@ -12,9 +12,9 @@ use QmxFindingGate\CommandLine;
  * A gate is only evidence if it is known to go red. Each control below plants
  * one breakage in a scratch clone of this working tree, runs *that clone's own*
  * gate against the same reference, and asserts both that the gate failed and
- * which failure class it produced. Ш5 rewrites the comparator itself
- * (`Violation` -> `Finding`), so a transcript of a past run proves nothing
- * about the rewritten gate: this is a command, not a report.
+ * which failure class it produced. Because comparator changes can invalidate
+ * earlier evidence, a transcript of a past run proves nothing about the
+ * current gate: this is a command, not a report.
  *
  * A control that goes red for an unexpected reason is a failed control: only
  * the classes a control declares count as behaving as declared, and the

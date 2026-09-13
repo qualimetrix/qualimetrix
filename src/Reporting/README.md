@@ -517,10 +517,9 @@ channel to its producing rule's own description
 (`RuleInterface::getDescription()`) and declared documentation page
 (`RuleDocsPageReader`). A code no channel carries — including a configured
 computed metric whose own description is blank — falls back to a humanised
-rendering of the code and the repository URL rather than throwing. See
-`docs/internal/plans/sarif-channel-descriptions.md` for why this replaced the
-previous hand-kept `match`/category-prefix tables (they had drifted from the
-rules they duplicated).
+rendering of the code and the repository URL rather than throwing. This
+replaces hand-kept `match` and category-prefix tables, which had drifted from
+the rules they duplicated.
 
 ### GitHub Actions Integration
 

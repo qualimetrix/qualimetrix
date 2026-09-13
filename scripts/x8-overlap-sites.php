@@ -3,14 +3,13 @@
 declare(strict_types=1);
 
 /**
- * X8 packages P4a and P4b: take the population of overlap-spelling literal
- * sites with the guard's own optics.
+ * Enumerates overlap-spelling literal sites using the guard's own optics.
  *
  * The guard this measures is
  * `tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php`. It
  * used to subtract every `MetricName` value from its ownership map, so every
  * literal whose spelling is both a channel code and a metric key was invisible
- * to it. P4a enumerated those sites; P4b removed the subtraction, cured every
+ * to it. The overlap census exposed those sites; removing the subtraction cured every
  * site that read a metric and allowed the three files whose sites cannot be
  * cured. What this script prints is therefore no longer a pending population:
  * it is the standing census of overlap-spelling literal sites, and every site
@@ -217,7 +216,7 @@ foreach ($files as $absolutePath) {
         ];
     }
 
-    // The optics package P4a exists to replace: a raw substring count over the
+    // The obsolete optic this census replaces: a raw substring count over the
     // file text, single-quoted form, ignoring tokens entirely.
     $source = file_get_contents($absolutePath);
 

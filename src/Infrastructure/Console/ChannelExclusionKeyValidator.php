@@ -54,7 +54,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * **Production, not applicability.** A level-free key naming an occurrence or
  * class-only channel of the right rule passes here and still excludes nothing.
  * Refusing those would need a declared "can appear as a namespace aggregate"
- * property that `ChannelDeclaration` does not carry — see ADR 0025, which
+ * property that `ChannelDeclaration` does not carry — see ADR 0060, which
  * records why a half-built version of that check was not worth having.
  */
 final readonly class ChannelExclusionKeyValidator

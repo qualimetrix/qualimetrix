@@ -18,29 +18,28 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * Walks a {@see ClassSet} once and collects the distinct observed binding
  * tuples for a {@see TemplateLayerDefinition}.
  *
- * Extracted from {@see LayerExpansionStage} in Phase 4.1 of the remediation
- * (ADR 0008). The algorithm and its public output (deduplicated list of
- * binding tuples, lex-sorted) are unchanged. Phase 5 of the remediation
- * tightens two semantic gaps:
+ * Its public output is a deduplicated, lexicographically sorted list of
+ * binding tuples. Two semantic constraints keep observation aligned with
+ * runtime matching:
  *
- * - **M1 (exclude during observation).** The template's {@see ExcludeSpec}
+ * - **Exclude during observation.** The template's {@see ExcludeSpec}
  *   is evaluated AFTER capture binding succeeds, using the substituted
  *   bindings — a class that would be removed from the concrete layer
  *   at runtime is also removed from tuple observation, so excluded classes
  *   do not contribute "phantom" concrete layers.
  *
- * - **M2 Path B (mode-aware non-pattern criteria).** Non-pattern criteria
+ * - **Mode-aware non-pattern criteria.** Non-pattern criteria
  *   ({@code suffix}, {@code attributes}, {@code implements}, {@code extends})
  *   now respect the membership's {@see MatchMode}: under
  *   {@see MatchMode::Any} they act as OR alongside the capture-producing
  *   pattern (a class with a binding from the capture pattern is observed
  *   even if none of the non-pattern criteria match); under
  *   {@see MatchMode::All} every declared non-pattern criterion must match
- *   (the previous AND behavior). This aligns template expansion with the
- *   runtime D2 membership semantics implemented by
+ *   (the AND behavior). This aligns template expansion with the runtime
+ *   membership semantics implemented by
  *   {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}.
  *
- * **Capture-producing vs non-capturing criteria (D7 carve-out).** Within
+ * **Capture-producing vs non-capturing criteria.** Within
  * {@see MembershipSpec::$patterns}, patterns are classified: a pattern that
  * contains at least one `{var}` placeholder is capture-producing; a plain
  * glob is non-capturing. {@see MembershipSpec::$mode} (`match: any|all`)
@@ -189,12 +188,10 @@ final class TupleExtractor
      * Returns true if the class context satisfies every declared non-pattern
      * criterion (suffix / attributes / implements / extends).
      *
-     * **M2 Path B (Phase 5.2).** Pre-remediation, this method enforced AND
-     * across every declared non-pattern criterion regardless of the
-     * membership's {@see MatchMode} — a deviation from the D2 runtime
-     * semantics in
+     * **Match-mode consistency.** Non-pattern criteria follow the membership's
+     * {@see MatchMode}, matching the runtime semantics in
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}.
-     * The remediation aligns the two:
+     * That requires two distinct paths:
      *
      * - {@see MatchMode::Any}: a class that already binds via the
      *   capture-producing pattern passes regardless of the non-pattern

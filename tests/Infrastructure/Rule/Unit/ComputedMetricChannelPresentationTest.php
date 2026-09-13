@@ -15,8 +15,7 @@ use Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation;
 
 /**
  * The `computed.*` / `health.*` description preference this decorator layers
- * onto {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView} — see
- * `docs/internal/plans/sarif-channel-descriptions.md`, package P2, and that
+ * onto {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView}, and that
  * view's own docblock for why the preference cannot live in `Analysis\Finding`
  * itself (it would close a dependency cycle onto
  * `Analysis\Evidence\ComputedMetrics`).

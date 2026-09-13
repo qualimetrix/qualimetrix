@@ -15,9 +15,8 @@ final class ConfigurationSourceTest extends TestCase
     #[Test]
     public function itHasExactlyFiveCases(): void
     {
-        // Five, not seven: Defaults and ComposerJson have no ConfigurationRefusal
-        // producer (03-carrier-and-normalization.md §2). Adding a sixth case here
-        // is a contract change frozen by this package for stages 01/02.
+        // Defaults and ComposerJson do not produce ConfigurationRefusal.
+        // Adding a sixth case would change the source contract.
         self::assertSame(
             ['ConfigFile', 'Preset', 'CommandLine', 'BaselineFile', 'Resolved'],
             array_map(static fn(ConfigurationSource $case): string => $case->name, ConfigurationSource::cases()),

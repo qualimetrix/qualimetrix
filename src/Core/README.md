@@ -362,7 +362,7 @@ A key is in exactly one of three states, disjoint and exhaustive:
   that forces the state to exist)
 - **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a
   `ConfigurationRefusal` at whichever depth it was written (exit 3 under `check`, uniformly
-  across commands — see `docs/internal/plans/configuration-refusal/00-overview.md`)
+  across commands)
 
 Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
 through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay
@@ -528,8 +528,7 @@ The level is a coordinate of a symbol, which is why it is owned here rather than
 by the capability that walks the aggregation tree: it is declared by rules, read
 off the symbol in `Finding::level()`, spelled right of the colon in an inline
 directive and in a selector, and filtered on by namespace-channel exclusions.
-`Analysis\Evidence\Measurement` owns the traversal, not the vocabulary
-(rule-vocabulary plan Ш5e2b).
+`Analysis\Evidence\Measurement` owns the traversal, not the vocabulary.
 
 ### SymbolLevelProjection
 
@@ -686,9 +685,9 @@ Finding.
 
 ## Dependency Contracts
 
-Dependency edges, types, graph queries, location and builder contracts moved to
-[`Analysis/Evidence/DependencyModel`](../Analysis/Evidence/DependencyModel/README.md)
-in P2. P4 moved cycle values and their preparation to
+Dependency edges, types, graph queries, location and builder contracts belong to
+[`Analysis/Evidence/DependencyModel`](../Analysis/Evidence/DependencyModel/README.md).
+Cycle values and their preparation belong to
 [`Analysis/Evidence/CircularDependency`](../Analysis/Evidence/CircularDependency/README.md).
 
 ---

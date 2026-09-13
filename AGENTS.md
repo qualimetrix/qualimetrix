@@ -50,16 +50,20 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 ## Project Structure
 
-The project's current architectural direction is the **capability-oriented
-modular monolith** accepted in
-[ADR 0022](docs/adr/0022-capability-oriented-modular-monolith.md). It supersedes
-ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
-Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
+The project's current architecture is the **capability-oriented modular
+monolith** accepted in
+[ADR 0022](docs/adr/0022-capability-oriented-modular-monolith.md), with context
+locality governed by [ADR 0023](docs/adr/0023-p8-context-locality-and-composition-bindings.md)
+and declared-layer policy separated from project governance by
+[ADR 0059](docs/adr/0059-declared-layer-policy-and-architecture-governance.md).
+ADR 0012's substantial/thin hybrid direction is superseded; ADR 0010 is the
+historical Architecture pilot and ADR 0016 remains the governing
+subject-cohesion rule.
 
-The accepted capability boundaries distribute the former Metrics and Rules role
-buckets among eight evidence capabilities. The tree below describes the current
-physical layout. P0 governance remains live: the versioned internal manifest is
-authoritative for every production declaration and its semantic owner. It
+The former Metrics and Rules role buckets are distributed among subject-owned
+capabilities. The tree below is the current physical layout. Governance is
+manifest-first: the versioned internal manifest is authoritative for every
+production declaration and its semantic owner. It
 generates a coarse qmx projection with one layer per owner, no singleton
 enforcement seams, final `external`, and permanent exact composition bindings
 that retain the coarse owner pairs the projection would otherwise lose. Counts
@@ -72,10 +76,10 @@ src/
 │   ├── Configuration/       # ordered configuration document resolution
 │   ├── Finding/             # rule language, execution, findings and filtering
 │   ├── Evidence/
-│   │   ├── DependencyModel/     # graph model plus P3 extraction/traversal contract
+│   │   ├── DependencyModel/     # graph model plus extraction/traversal contract
 │   │   ├── Duplication/         # detection, result and rule; implements the Run-owned FileSet port
-│   │   ├── CircularDependency/  # P4 SCC evidence, rule and preparation contract
-│   │   ├── ComputedMetrics/      # P5 formulas, instance-owned catalog and Health semantics
+│   │   ├── CircularDependency/  # SCC evidence, rule and preparation contract
+│   │   ├── ComputedMetrics/      # formulas, instance-owned catalog and Health semantics
 │   │   ├── CodeSmell/            # code-smell collection and rules
 │   │   ├── Cohesion/             # class cohesion evidence and rules
 │   │   ├── Complexity/           # cyclomatic, cognitive and NPath evidence and rules
@@ -87,10 +91,10 @@ src/
 │   │   ├── Security/             # security evidence and rules
 │   │   └── Size/                 # size evidence and rules
 │   ├── Policy/
-│   │   ├── Architecture/        # P4 declared-layer policy and debug contracts
+│   │   ├── Architecture/        # declared-layer policy and debug contracts
 │   │   ├── Baseline/            # accepted-finding ceiling lifecycle
 │   │   └── Inline/              # source annotations and suppression controls
-│   └── Run/                 # P3 discovery, collection, phase ordering and FileSet port
+│   └── Run/                 # discovery, collection, phase ordering and FileSet port
 ├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
@@ -124,17 +128,17 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout. P1-P7 are the
-current physical architecture; P8 is not landed:
+The following ADR 0022 rules define the current layout:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
 - Add `Contract/` only for exact types used by named external owner-consumers.
   A private leaf has no public surface.
-- A port introduced for dependency inversion belongs to its consumer. P3 proves
-  only `Analysis\Run\Contract\FileSetInspectionParticipantInterface` plus the
-  two P4 capability-specific preparation contracts; do not add a generic
-  lifecycle, graph-preparation, or metric-derivation port.
+- A port introduced for dependency inversion belongs to its consumer. Current
+  orchestration contracts are subject-specific: Run owns the FileSet inspection
+  port, DependencyModel owns traversal, and Architecture and CircularDependency
+  own their preparation contracts. Do not add a generic lifecycle,
+  graph-preparation, or metric-derivation port.
 - `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
   taxonomies only: no PHP types, state, shared contracts or qmx allow target.
 - `Core` holds only neutral primitives without a natural leaf owner. Many
@@ -146,9 +150,8 @@ current physical architecture; P8 is not landed:
 - Every production namespace has one explicit leaf owner. Do not use an
   open-ended owner template that silently enrols a future sibling.
 
-The former `Metrics/` and `Rules/` role buckets have been removed. Follow the
-manifest-backed current ownership and the migration plan; do not simulate P8
-changes before its review gates.
+The capability layout is landed. Follow the manifest-backed current ownership;
+an historical migration record does not authorize a dependency or placement.
 
 ### Adapter-exclusion principle
 
@@ -244,12 +247,11 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 
 ### 1. Dependency Graph (DO NOT VIOLATE!)
 
-- **Target leaf capabilities** would depend only on declared public contracts;
-  sibling internals and taxonomy parents are not approved targets for new
-  migration grants.
+- **Leaf capabilities** depend only on declared public contracts; sibling
+  internals and taxonomy parents are not approved targets for new imports.
 - **Core** contains neutral primitives only and has no project dependencies
   (PHP and php-parser types are allowed).
-- **Analysis\Run phase ports** are limited to the P3 FileSet inspection
+- **Analysis\Run phase ports** are limited to the FileSet inspection
   participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;
   capabilities do not depend on framework adapters.

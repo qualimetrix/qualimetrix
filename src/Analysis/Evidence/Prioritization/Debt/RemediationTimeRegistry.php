@@ -24,8 +24,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
  * that already assembles `$docsPageByRule` for
  * {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView}. A private
  * table here, kept in sync by hand across every capability that adds a rule,
- * is exactly the copy this whole plan exists to remove — co-change history
- * showed every rule-adding commit editing this table too, and it had already
+ * duplicates producer-owned metadata. Co-change history showed every
+ * rule-adding commit editing this table too, and it had already
  * drifted (`code-smell.god-class` / `code-smell.data-class`, renamed on the
  * rule but not here, until this class stopped keeping the fact at all).
  *

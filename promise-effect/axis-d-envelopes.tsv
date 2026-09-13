@@ -32,7 +32,7 @@
 # directory and no injection, and the appearance of the default `.qmx-cache`
 # is recorded rather than failing the probe.
 #
-# THE SIX `architecture.layers[*].exclude.*` ROWS (S10 02-stand.md) used to
+# THE SIX `architecture.layers[*].exclude.*` ROWS used to
 # instantiate `exclude:` with the probed leaf as its ONLY key. Writing `~` at
 # that leaf then left `exclude:` with every criterion empty, and
 # `ExcludeBlockValidator` refuses that shape regardless of which leaf is

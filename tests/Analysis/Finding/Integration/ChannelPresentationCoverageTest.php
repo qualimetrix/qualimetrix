@@ -18,8 +18,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 /**
  * "Answers for every channel" is only an invariant if the swept set comes
- * from the universe itself rather than a hand-written list — see
- * `docs/internal/plans/sarif-channel-descriptions.md`, package P2.
+ * from the universe itself rather than a hand-written list.
  */
 #[CoversClass(ChannelPresentationInterface::class)]
 final class ChannelPresentationCoverageTest extends TestCase
@@ -78,9 +77,8 @@ final class ChannelPresentationCoverageTest extends TestCase
      * `computed.*` / `health.*` channel is invisible to it — see this class's
      * own `itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel()`
      * and {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest},
-     * whose docblocks both say so. That leaves P2's own DoD — "the view
-     * answers for all 52 static channels and for a configured `computed.*` /
-     * `health.*` definition" — half-checked. This resolves the six built-in
+     * whose docblocks both say so. The static sweep alone leaves configured
+     * `computed.*` / `health.*` definitions unchecked. This resolves the six built-in
      * health-score definitions the same way a real run would (through
      * {@see ComputedMetricConfiguratorInterface::resolve()} against an empty
      * config document, i.e. defaults only) and sweeps the resulting full

@@ -63,10 +63,9 @@ final class DirectiveAddressabilityTest extends TestCase
     /**
      * A threshold naming the metric key a report prints beside the channel.
      *
-     * Before the X12 rule-vocabulary rename this fixture used
-     * `complexity.ccn`: back then the channel was named `complexity.cyclomatic`
-     * while the metric it judged was already `complexity.ccn`, so the metric
-     * key was not itself a rule name. ADR 0048 renamed the channel to
+     * A fixture using `complexity.ccn` would not keep the needed distinction:
+     * the channel and metric it judges both have that name, so the metric
+     * key was not itself a rule name. ADR 0060 records the rename to
      * `complexity.ccn` too, which made the metric key **and** the rule name
      * identical — the premise this test exists to check disappeared, and
      * `problemWithThreshold()` started returning `null` because the name now
@@ -150,7 +149,7 @@ final class DirectiveAddressabilityTest extends TestCase
     }
 
     /**
-     * Orchestrator-decided ordering (round 11, r11-claude-06): the retired
+     * The retired
      * `rule#code` spelling is refused before the pair grammar is asked about
      * the level half, because its correction is a deletion and a level
      * complaint about text that is not even a channel selector would be
@@ -168,8 +167,7 @@ final class DirectiveAddressabilityTest extends TestCase
     }
 
     /**
-     * The corpus directive fixed by codex-01/claude-11 stays GREEN only because
-     * of this ordering: `duplication.clone:class` names an
+     * `duplication.clone:class` names an
      * impossible pair (the channel reports at project level only) AND reaches
      * the ban, and {@see DirectiveAddressability::problemWithSuppression()}
      * asks the pair grammar first. Reordering the two checks would silently

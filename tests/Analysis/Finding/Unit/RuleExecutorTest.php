@@ -798,10 +798,8 @@ final class RuleExecutorTest extends TestCase
 
     /**
      * `produced()` must hold a per-rule `suppress_namespaces` casualty that
-     * `published()` drops — the Ш5e2b precedent (`AUDIT.md`) where an audit
-     * comparing `execute()`'s return value called four such directives
-     * "not deciding anything" because nothing recorded what the rule found
-     * before the ledger ran.
+     * `published()` drops. This preserves the finding observed before the
+     * exclusion ledger runs, even though it is not returned as published.
      *
      * Killed by collecting `produced` from {@see RuleExecution::published()}'s
      * `$kept` accumulator instead of from the pre-ledger `$ruleFindings`: the

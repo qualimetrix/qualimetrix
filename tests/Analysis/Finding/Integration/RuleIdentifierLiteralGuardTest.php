@@ -21,16 +21,15 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * A consumer holding a table keyed by another module's rule names or channel
- * codes is the exact defect class
- * `docs/internal/plans/sarif-channel-descriptions.md` was written to remove —
- * measured there twice: `SarifRuleCollector`'s `getRuleDescription()` `match`
+ * codes is the exact defect class: `SarifRuleCollector`'s
+ * `getRuleDescription()` `match`
  * and `CATEGORY_DOCS_MAP`, and `RemediationTimeRegistry`'s `MINUTES_BY_RULE`
  * and `INVERTED_RULES`. Both had already drifted from the rule/declaration
  * they copied before anyone noticed.
  *
  * This guard makes a third occurrence fail a build instead of drifting
- * quietly. It does not grep for a name prefix — the plan's own retrospective
- * names that as a false-positive machine (`ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES
+ * quietly. It does not grep for a name prefix, which would create false
+ * positives (`ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES
  * = 'coupling.framework_namespaces'` contains "coupling." as a mere prefix
  * of a config key, not a channel code). Instead it builds the exact set of
  * registered rule names and emitted channel codes from the live container —
@@ -89,9 +88,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
         . ' with their owning rule capability, which Configuration may not depend'
         . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
-        . ' RuleThresholdKeyGroupRegistryCompletenessTest. See'
-        . ' docs/internal/plans/sarif-channel-descriptions.md, "Two sites checked'
-        . ' and cleared".';
+        . ' RuleThresholdKeyGroupRegistryCompletenessTest.';
 
     /**
      * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
@@ -217,9 +214,8 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * the drift `fix(reporting): remove hand-spelled finding codes from
      * dev.html and docs` swept once by hand (severity suffixes mistaken for
      * sub-codes, a nonexistent `size.class-loc`, a stale
-     * `size.method-count.class` — see `docs/internal/plans/sarif-channel-descriptions.md`,
-     * package P6). Nothing stopped it from coming back the same way, so this
-     * checks existence rather than ownership for exactly the files P6 swept.
+     * `size.method-count.class`). This checks existence rather than ownership
+     * for the affected non-PHP files.
      *
      * An entry here has to keep carrying such a code:
      * {@see itRequiresEveryNamedFileToStillEarnItsEntry()} fails on a file the regexes

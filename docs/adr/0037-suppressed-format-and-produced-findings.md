@@ -11,11 +11,9 @@ of text plus a count, printed by `FindingFilterOrchestrator` when
 format published *which* findings were held back, by *what*, and the ledger
 that decides per-rule `exclude_namespaces`/`exclude_namespace_channels`/
 `exclude_paths` did not even keep the finding objects it removed — only a
-count per rule (`RuleExclusionStats`). The consequence was measured directly:
-Ш5e2b removed one point threshold inside a namespace excluded for one rule,
-and the suppression count moved 55 → 56 with no test, no format and no exit
-code noticing (`docs/internal/plans/rule-vocabulary/AUDIT.md`, "Found while
-moving the level vocabulary").
+count per rule (`RuleExclusionStats`). Removing one point threshold inside a
+namespace suppressed for one rule changed the suppression count with no test,
+format, or exit code noticing the drift.
 
 Two design questions had to be settled before that gap could be closed:
 
@@ -35,8 +33,8 @@ move by one byte for a run that never asked to see what it suppressed.
 
 This is not the more convenient shape. A section inside `json` would mean
 every `json` consumer's parser sees a new key whether or not it asked for the
-composition, and the flag that used to gate this exact kind of output has
-already broken every machine-readable format once: `AUDIT.md` item 4 recorded
+composition, and the flag that used to gate this exact kind of output had
+already broken every machine-readable format once: the audit recorded
 that `--show-suppressed`, when it printed suppressed-finding prose to stdout
 ahead of the formatter's own output, corrupted `--format=json` outright — a
 186-byte text preamble in front of the JSON document, so it failed to parse.

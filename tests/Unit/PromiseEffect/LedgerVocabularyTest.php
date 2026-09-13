@@ -10,18 +10,10 @@ use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
 
 /**
- * The ledger's promise vocabulary is closed, and the reason it has to be is a
- * defect this programme found twice.
- *
- * `promised_survival = survives` sat in the ledger for four rows with no
- * `Classifier` branch able to award it. Nothing failed: the rows were caught by
- * an earlier verdict, and the gap surfaced only once the product stopped losing
- * the slot that had been masking it — at which point a repaired product read as
- * defective. The pair path carries the same shape with the alarm removed:
- * `Classifier::pair()` reads `one-wins:` and `refuse` by name and treats
- * EVERYTHING ELSE as a promise of composition, so an unrecognised value there
- * would not even become a defect. It would quietly mean something other than
- * what it says.
+ * The ledger's promise vocabulary is closed. `Classifier` must explicitly
+ * handle every accepted value: `pair()` recognizes `one-wins:` and `refuse`,
+ * while an unrecognized value otherwise falls through to composition and
+ * silently changes the promise's meaning.
  *
  * `scripts/promise-effect.php` runs on include and exits, so `Ledger` is
  * required directly, the way `FloorTest` reaches its own subject.
@@ -176,5 +168,5 @@ final class LedgerVocabularyTest extends TestCase
         rmdir($path);
     }
 
-    private const string LEDGER = 'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv';
+    private const string LEDGER = 'promise-effect/promise-ledger.tsv';
 }

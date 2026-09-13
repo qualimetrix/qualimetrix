@@ -162,9 +162,8 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     // -- routing ---------------------------------------------------------------
 
     /**
-     * Enumeration row 52. A structured run must never be handed a broken
-     * document to parse: `json` is a machine-readable format
-     * (`01-refusal-envelope.md` §2.1), so the refusal is the `{error,
+     * A structured run must never be handed a broken document to parse:
+     * `json` is a machine-readable format, so the refusal is the `{error,
      * exit_code}` envelope on stdout, not a half-written report. stderr may
      * still carry the unrelated scope-coverage warning this fixture always
      * triggers, but never the refusal sentence — the envelope is the one
@@ -184,11 +183,8 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     }
 
     /**
-     * Enumeration row 51: `-q` silenced the old warning, and a silenced
-     * warning is why this position was invisible. `01-refusal-envelope.md`
-     * §2.3 rejects "quiet means only the exit code": the sentence that ends a
-     * run is not payload `-q` is allowed to swallow, so it survives quiet even
-     * though the progress frame and the report do not.
+     * `-q` silences progress output, not the sentence that ends a run; that
+     * message survives quiet even though the progress frame and report do not.
      */
     #[Test]
     public function itStillRefusesUnderQuiet(): void
@@ -228,7 +224,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
      * still being an `InvalidArgumentException` printed by the command itself;
      * now that {@see \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions}
      * throws the same carrier, a second framing rule for it would be exactly
-     * the per-dialect special case the round collapses. Rejected alternative:
+     * a per-dialect special case. Rejected alternative:
      * keep the retired message unframed by having the presenter pattern-match
      * on carrier content — that reopens the "framing happens at every call
      * site" problem the presenter was built to close.

@@ -7,11 +7,10 @@ namespace QmxFindingGate;
 /**
  * The gate's own mechanics, checked without running the corpus.
  *
- * The map path is the reason this exists. At Ш1 all three maps are empty, so a
- * comparison run exercises the identity case only — and the steps that populate
- * the maps must not be the ones that first discover whether mapping works. The
- * same applies to normalization: a kind with no tracked row today is still the
- * kind the deriver will emit tomorrow.
+ * The map path is the reason this exists. Empty maps exercise only the identity
+ * case, so mapping must be tested before a declaration relies on it. The same
+ * applies to normalization: a kind with no tracked row today is still the kind
+ * the deriver will emit tomorrow.
  */
 final class SelfTest
 {
@@ -62,12 +61,11 @@ final class SelfTest
         // nothing are refused — and it is the only one that stays true whoever
         // edits the file next.
         //
-        // Three spellings have now claimed more than that, and all three died on
-        // the NEXT step rather than on a defect: a named Ш5b row, then "the
-        // tracked maps are not the identity" (falsified by the repair after Ш5c,
-        // which renamed nothing and tracked four header-only files), then "the
-        // tracked rows derive no split" (falsified by Ш5d, whose producer move
-        // derives a split by construction — that is what stops the half
+        // Several stronger-sounding spellings failed on later valid inputs
+        // rather than on defects: a named row, then "the tracked maps are not
+        // the identity" despite four header-only files, then "the tracked rows
+        // derive no split" despite a producer move that derives a split by
+        // construction — which is what stops the half
         // `computed.health` being substituted textually over every reference
         // mention of it). The pattern is one mistake wearing three faces: what a
         // step happens to declare is a fact about that step, and a self-test on
@@ -441,7 +439,7 @@ final class SelfTest
     /**
      * The three shapes a channels row may take, and the spelling SARIF adds.
      *
-     * Ш5b collapses `rule#code` into one name, so the row that declares it has a
+     * A `rule#code` collapse has one name on its new side, so its declaration row has a
      * single name on its new side. The map that could not express that shape
      * refused the row at load time, which would have made the step's own
      * declaration unwritable.
@@ -1104,7 +1102,7 @@ final class SelfTest
      * reference knows, so the row is a function exactly where it is applied.
      * Forwards there is nothing to apply and the row refuses out loud. Without
      * it a case addressing a split producer by name has no writable row at all:
-     * measured after Ш4b, one old name, three new ones.
+     * one old name and three new ones.
      */
     private function multivaluedInput(): void
     {
@@ -1226,8 +1224,8 @@ final class SelfTest
 
         // A collapse is refused only where both halves travel backwards. One
         // reversible row and one forward-only row reaching the same name is the
-        // arrangement Ш5e3 creates on purpose — a metric key and the channel
-        // checking it are one name — and backwards only the reversible row is
+        // deliberate arrangement where a metric key and the channel checking
+        // it share one name; backwards only the reversible row is
         // consulted, so the translation is still a function.
         $mixed = RenameMaps::fromPairs([
             ['old' => 'typeCoverage.param', 'new' => 'design.type-coverage.param', 'source' => 'metric-keys.tsv'],
@@ -1253,8 +1251,8 @@ final class SelfTest
         );
 
         // And still refused when a forward-only row reaches the same name —
-        // the arrangement Ш5e3 makes ordinary, since a metric key and the
-        // channel checking it are one name. What this pins is that the refusal
+        // the ordinary arrangement where a metric key and the channel checking
+        // it share one name. What this pins is that the refusal
         // does not depend on the order the rows happen to load in: the check
         // remembers the last REVERSIBLE row per target rather than the last row,
         // so an intervening forward-only row cannot answer "not reversible" on
@@ -1616,7 +1614,7 @@ final class SelfTest
             'a prose surface yields nothing, which is why it is enumerated as unreadable rather than assumed read',
         );
 
-        // Exhaustiveness, both ways round. A field SARIF does not carry is not
+        // Exhaustiveness in both directions. A field SARIF does not carry is not
         // hunted for under its tuple spelling, and the JSON report's own
         // spelling still covers every field it publishes.
         $this->same(
@@ -1652,8 +1650,7 @@ final class SelfTest
     }
 
     /**
-     * The reason this diff has hunks at all, which is the repair Ш4b made to
-     * its own instrument and the one nothing covered.
+     * Produces a real hunk so the instrument's own diff path is covered.
      *
      * Two changes at opposite ends of an artifact used to be reported as one
      * hunk spanning everything between them, so `delta-too-large` counted
@@ -1746,10 +1743,9 @@ final class SelfTest
         //
         // Both halves are asserted against something that cannot go stale. The
         // empty case reads a root with no index at all rather than the tracked
-        // one: the previous spelling asserted "the tracked index is empty",
-        // which was a fact about the step that wrote it (Ш4c declared no delta)
-        // dressed up as the property, and it went red the moment a later step
-        // declared one — saying nothing about the mechanism either way.
+        // one: asserting "the tracked index is empty" confuses one observed
+        // input with the property and fails as soon as a valid delta is
+        // declared, saying nothing about the mechanism either way.
         $this->same(
             [],
             DeclaredDelta::load(sys_get_temp_dir() . '/qmx-gate-no-declared-delta')->surfaces(),

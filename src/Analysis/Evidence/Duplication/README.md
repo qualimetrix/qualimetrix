@@ -66,7 +66,7 @@ functional, so the control is no longer needed.
 
 ## Dependencies and ports
 
-P3 proves one narrow Run phase port. The generic composite invokes it without a
+There is one narrow Run phase port. The generic composite invokes it without a
 Duplication-specific branch; Duplication retains its result and emits its own
 completion log through its implementation.
 
@@ -108,7 +108,7 @@ identities. The rule's deterministic id is `duplication.clone`.
 ## Run integration
 
 The former `MetricEnricher -> DuplicationInspectionInterface` temporary import
-and the capability-owned interface are deleted in P3. The final route is Run's
+and the capability-owned interface are gone. The final route is Run's
 FileSet participant port implemented by `DuplicationDetector`. Disabling
 `duplication.clone` prevents both inspection and allocation; a second
 analysis run begins with an empty provider.

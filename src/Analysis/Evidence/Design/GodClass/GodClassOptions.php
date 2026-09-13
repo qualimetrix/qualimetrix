@@ -33,10 +33,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * thresholds.
  *
  * @qmx-threshold coupling.instability warning=0.81 -- The eighth efferent edge is
- * `RuleOptionShape`, the option-shape vocabulary X18 introduces so an options class can
- * declare the value form of each key it accepts; the counterfactual was measured, not assumed --
- * the import list against 72f18239 differs by exactly that one line, and without it Ce is 7 and
- * instability 0.778. Ca=2, Ce=8 puts this at exactly 0.800 against an inclusive 0.800 ceiling, so
+ * `RuleOptionShape`, required so an options class can declare the value form of each key it
+ * accepts. Ca=2, Ce=8 puts this at exactly 0.800 against an inclusive 0.800 ceiling, so
  * it is reported for reaching the limit rather than passing it. A rule options class is efferent
  * by construction: it names the option vocabulary it accepts and almost nothing names it back. The
  * sibling options classes that carry the same shape with a single afferent edge compute higher

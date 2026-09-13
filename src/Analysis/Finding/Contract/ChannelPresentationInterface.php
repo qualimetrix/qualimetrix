@@ -8,8 +8,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * Display text and documentation location for a channel, joined from the
  * facts its producing rule already owns.
  *
- * See `docs/internal/plans/sarif-channel-descriptions.md` ("Decision") for why
- * this join needs its own contract rather than a fourth view bolted onto
+ * This join needs its own contract rather than a fourth view bolted onto
  * {@see ChannelUniverseInterface}: rule *instances* — the only place
  * `getDescription()` can be read from — do not exist when
  * the universe is assembled, so a composing service reads them at run time

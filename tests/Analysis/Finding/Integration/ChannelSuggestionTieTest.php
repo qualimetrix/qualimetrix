@@ -22,11 +22,9 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * finding's text, but only for names close enough to tie. This test measures
  * which pairs those are, instead of assuming.
  *
- * It exists because two orders moved in one step: the three type-coverage
- * rules, whose relative order is now a decision in `DesignConfigurator`, and
- * `architecture.unassigned-class`, which moved five places when it became a
- * producer of its own. The first is reachable, the second is not, and this is
- * where both are measured rather than argued.
+ * The fixture verifies which nearby names can tie and affect published
+ * suggestion text; it also confirms the type-coverage names can tie while the
+ * architecture names tested below cannot.
  */
 #[CoversClass(ChannelUniverseInterface::class)]
 final class ChannelSuggestionTieTest extends TestCase
@@ -39,18 +37,17 @@ final class ChannelSuggestionTieTest extends TestCase
      *
      * Read, not restated: a copy of the number here would keep this test
      * passing on a radius nothing uses after the product raised it, and the
-     * guarantee it stands behind is the one the step could not close in the
-     * corpus.
+     * guarantee it stands behind is that no tied pair can alter a user's
+     * suggestion text without being covered here.
      */
     private const int SUGGESTION_DISTANCE = DirectiveNameHints::SUGGESTION_DISTANCE;
 
     /**
-     * The channel that changed position, and the ones it moved past when it
-     * stopped being a channel of the layer-violation rule.
+     * The architecture channel compared with the other architecture channels.
      */
-    private const string MOVED = 'architecture.unassigned-class';
+    private const string TARGET_CHANNEL = 'architecture.unassigned-class';
 
-    private const array MOVED_PAST = [
+    private const array COMPARED_CHANNELS = [
         'architecture.coverage-gap',
         'architecture.unreachable-layer',
         'architecture.potential-shadow',
@@ -59,24 +56,23 @@ final class ChannelSuggestionTieTest extends TestCase
     ];
 
     #[Test]
-    public function itFindsNoInputThatTiesTheMovedChannelAgainstAnythingItMovedPast(): void
+    public function itFindsNoInputThatTiesTheSelectedChannelAgainstOtherArchitectureChannels(): void
     {
         $codes = self::channelCodes();
 
-        foreach (self::MOVED_PAST as $other) {
+        foreach (self::COMPARED_CHANNELS as $other) {
             self::assertContains($other, $codes, $other);
 
-            $distance = levenshtein(self::MOVED, $other);
+            $distance = levenshtein(self::TARGET_CHANNEL, $other);
 
             self::assertGreaterThan(
                 2 * self::SUGGESTION_DISTANCE,
                 $distance,
                 \sprintf(
-                    'A string within %d edits of both "%s" and "%s" would exist (they are %d apart), so the'
-                    . ' published order between them would reach a "did you mean" answer, and moving one past the'
-                    . ' other would move a finding\'s text.',
+                    'A string within %d edits of both "%s" and "%s" would exist (they are %d apart), so their'
+                    . ' relative order could change the published "did you mean" answer.',
                     self::SUGGESTION_DISTANCE,
-                    self::MOVED,
+                    self::TARGET_CHANNEL,
                     $other,
                     $distance,
                 ),
@@ -85,35 +81,9 @@ final class ChannelSuggestionTieTest extends TestCase
     }
 
     /**
-     * The counterweight: the guard above is only worth anything if a tie is
-     * reachable in general. The three type-coverage channels are six edits
-     * apart, so a string three from two of them exists, and
-     * `design.type-coverage.propurn` is one.
-     *
-     * That string reaches a published `message` through the finding-gate
-     * corpus, which is what makes the order below observable rather than
-     * internal — and it used to be the reason the fixture could not stay there
-     * across a rename of these three channels. The two vocabularies are
-     * fourteen edits apart, so by the triangle inequality no single string is
-     * within five of a channel under both: whichever spelling the corpus
-     * holds, one side prints two suggestions and the other prints none, the
-     * `message` field moves, and nothing could license that. `message` is a
-     * compared field, and the only source of permission `delta-overreach`
-     * consulted was a declared split, which produces moves of `channel`,
-     * `rule` and `code` and of nothing else. Ш4c added the fixture once the
-     * split names were on both sides; Ш5e3 retired it again for exactly that
-     * reason.
-     *
-     * That premise no longer holds, and the fixture is no longer hostage to
-     * it. `finding-gate/declared-field-moves.tsv` licenses one exact
-     * `(surface, field, from, to)` quadruple at a time, so a step that moves
-     * this `message` declares the move instead of removing the fixture that
-     * produces it. What it costs was measured on the step that introduced the
-     * form: one record's `message`, nine surfaces declared as exact diffs, and
-     * a single licence row — `delta-overreach` reads the published
-     * `"field": value` syntax, so only the surfaces publishing it need one.
-     * The fixture therefore stays, and a renaming step pays a declaration
-     * rather than a hole in what the gate observes.
+     * The guard above is only useful if a tie is reachable in general. The
+     * three type-coverage channels are close enough for one misspelling to
+     * tie two suggestions, which makes their published order observable.
      */
     #[Test]
     public function itConfirmsATieIsReachableBetweenTheThreeTypeCoverageChannels(): void

@@ -61,16 +61,15 @@ abstract class BaselineCommand extends Command
         } catch (BaselineConflictException $e) {
             return $this->fail($output, $e->getMessage(), $e);
         } catch (InvalidArgumentException $e) {
-            // The named secondary signal for code 3 (`00-overview.md` rule 1,
-            // `01-refusal-exit-ladder.md` §2.6): an `InvalidArgumentException`
+            // The named secondary signal for code 3: an `InvalidArgumentException`
             // that never became a carrier. No trace even under -v — a refusal
             // is the user's to fix, not ours to explain with a stack.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (RuntimeException $e) {
             // The baseline loader and the v5 reader used to report every
-            // envelope problem this way; both are now carriers (03/P5), so
+            // envelope problem this way; both now use typed carriers, so
             // what still reaches here is either a genuine defect or a type
-            // this round has not normalized yet. Either way it is not a
+            // without a typed refusal carrier. Either way it is not a
             // proven refusal, so it keeps the trace-on-`-v` treatment rather
             // than the presenter's code 3.
             return $this->fail($output, $e->getMessage(), $e);
@@ -87,7 +86,7 @@ abstract class BaselineCommand extends Command
      * rather than each command reading its own `--format` option, because
      * only one of the five (`baseline:rename-channels`) declares that option
      * at all; the other four would fail on `getOption('format')` before ever
-     * reaching their own logic (`01-refusal-packages.md`, P01-4).
+     * reaching their own logic.
      */
     protected function refusalFormat(InputInterface $input): ?string
     {

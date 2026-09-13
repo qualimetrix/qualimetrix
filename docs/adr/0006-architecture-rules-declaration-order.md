@@ -14,11 +14,14 @@
 
 **Date:** 2026-05-13
 **Status:** Accepted
-**Supersedes:** [0005 — Architecture Layer Rules](0005-architecture-rules.md) on the matching-algorithm decision (Decision 3 of 0005)
+**Related:** [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md)
 
 ## Context
 
-[ADR 0005](0005-architecture-rules.md) shipped the MVP of `architecture.layer-violation` with **specificity-based** layer resolution: when two patterns match a class, the one with the longest literal prefix wins; equal-specificity ties were rejected at config-load time.
+The first implementation of `architecture.layer-violation` used
+**specificity-based** layer resolution: when two patterns matched a class, the
+one with the longest literal prefix won; equal-specificity ties were rejected
+at config-load time.
 
 Post-implementation analysis (2026-05-12) surfaced that the algorithm required **three compensation layers** to handle its own corner cases:
 
@@ -100,4 +103,4 @@ Two methods, one cache, distinct hot/cold paths:
   - [deptrac](https://github.com/qossmic/deptrac) — declaration-order matching, the closest neighbour
   - [ArchUnit](https://www.archunit.org/) — ordered predicates in `should()` chains
   - `.gitignore`, Apache `<Location>` matching, RBAC engines — same first-match-wins convention
-- Superseded decision: [0005 — Architecture Layer Rules](0005-architecture-rules.md), Decision 3
+- Current layer policy: [ADR 0059](0059-declared-layer-policy-and-architecture-governance.md)

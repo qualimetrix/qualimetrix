@@ -11,10 +11,11 @@ import { walk } from 'estree-walker';
 // from MetricName.php — a typo, a rename the JS side missed — is a silent
 // dashboard breakage (metric shows as 0/blank), not a build or type error.
 // This test re-derives every family-shaped literal the same way
-// scripts/collect-metric-keys.mjs does and asserts each one is a real
-// catalog member. See docs/internal/plans/rule-vocabulary/X9-gate-holes/
-// followups/c2.md for why this is a test guard rather than a generated
-// import.
+// src/Reporting/Template/scripts/collect-metric-keys.mjs does and asserts each
+// one is a real catalog member from
+// finding-gate/enumeration-js-metric-keys.tsv. Keeping this as a test guard
+// preserves the hand-written runtime bundle while still detecting vocabulary
+// drift.
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = resolve(__dirname, '..', 'src');

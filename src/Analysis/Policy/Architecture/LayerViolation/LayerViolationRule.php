@@ -143,7 +143,7 @@ final class LayerViolationRule extends AbstractRule
             // project's autoload roots — or one whose manifest declares no
             // readable production autoload — cannot tell an inert clause from
             // one whose classes are simply outside the slice. The gate is the
-            // round's one predicate, the same one
+            // same project-coverage predicate
             // UnmatchedFrameworkNamespaceRule asks.
             ...($context->coversProjectScope
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)

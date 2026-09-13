@@ -12,10 +12,8 @@ use QmxDirectiveAudit\Gate;
 /**
  * What `composer directives:audit` does with a report, on synthetic reports.
  *
- * The step used to be evidence about nothing: its floor and its population
- * comparison were exercised only by the live tree, where both are satisfied,
- * and no test and no control probe ever saw either refuse. A floor nobody has
- * watched refuse is a floor nobody has tested.
+ * Synthetic reports exercise both successful and refusing outcomes for the
+ * gate's floor and population comparison.
  *
  * The judgement is called directly rather than through the script, which runs
  * on include and exits.
@@ -180,8 +178,7 @@ final class DirectiveAuditGateTest extends TestCase
     /**
      * An enumeration that would not run is a refusal of this gate's own kind,
      * so the step answers 7 instead of dying with an uncaught exception. The
-     * enumeration refuses a tree it cannot read whole, which is a path the
-     * scan grew and nothing else exercises.
+     * enumeration refuses a tree it cannot read whole.
      */
     #[Test]
     public function itRefusesAnEnumerationThatWouldNotRun(): void

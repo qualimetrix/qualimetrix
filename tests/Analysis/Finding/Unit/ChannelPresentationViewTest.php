@@ -19,8 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * `ChannelPresentationView` joins {@see ChannelIdentityInterface::producerOf()}
  * with the producing rule's own {@see RuleMetadata} and its declared
- * documentation page — see
- * `docs/internal/plans/sarif-channel-descriptions.md`, package P2.
+ * documentation page.
  *
  * The `computed.*` / `health.*` description preference is layered on separately by
  * {@see \Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation}

@@ -17,8 +17,8 @@ declare(strict_types=1);
  * is read off the product's own declarations — a key whose declared shape
  * accepts `null` is a key whose `~` the reader has to decide something about.
  * The other is `key-pairs.tsv`, stage 01's frozen enumeration of which keys of
- * a rule interact at all. Picking cases by hand is how six spellings of one
- * name surfaced one per review round in X12; the size is printed instead.
+ * a rule interact at all. Hand-picked cases can miss sibling spellings of the
+ * same name, so the complete derived population and its size are printed.
  */
 
 namespace Qualimetrix\PromiseEffect;

@@ -9,10 +9,9 @@
 under one word, `exclude`, alongside root `exclude`, `exclude_health`,
 `architecture.<layer>.exclude`, and the per-rule `exclude_readonly` /
 `exclude_promoted_only` / `exclude_data_classes` / `exclude_tests` /
-`exclude_exceptions` / `exclude_methods` family. `enumeration-exclusion-vocabulary.tsv`
-(20 rows) counted every surface carrying that meaning and found six distinct
-mechanisms, not the two the record that opened this step
-(`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`, entry 366) expected.
+`exclude_exceptions` / `exclude_methods` family. The complete inventory counted
+every surface carrying that meaning and found six distinct mechanisms, not the
+two the initial hypothesis expected.
 
 The measurement cut the six a different way than the record assumed. Four
 mechanisms earn the word honestly: a candidate is removed *before* a finding
@@ -115,8 +114,7 @@ retired flag is recognized only where Symfony's binding rejects it, so a
   `architecture.<layer>.exclude`, and the `exclude_readonly` family — are
   unchanged in name and in count; this step is a rename of two mechanisms out
   of six, not a redesign of the other four.
-- A future rename of the *channel* vocabulary (rule/channel codes such as
-  `complexity.cyclomatic`) is a separate, larger, and deliberately deferred
-  step — see `docs/internal/plans/rule-vocabulary/X8-one-string-two-jobs/04-final-naming-step.md`.
-  It is not entangled with this one: this step touches configuration keys and
-  CLI flags, not channel codes or baseline subjects.
+- Channel vocabulary is governed separately by
+  [ADR 0060](0060-published-vocabulary-and-name-ownership.md). It is not
+  entangled with this decision: this ADR touches configuration keys and CLI
+  flags, not channel codes or baseline subjects.

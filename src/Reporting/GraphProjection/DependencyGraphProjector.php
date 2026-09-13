@@ -19,8 +19,7 @@ final class DependencyGraphProjector implements DependencyGraphProjectionInterfa
         // Exhaustive over `GraphExportFormat`'s two cases: the `default`
         // arm this `match` used to need is unreachable now that `$format`
         // is typed by the enum, not a bare string — an unrecognised
-        // `--format` is refused by the command before a request is ever
-        // built (`01-refusal-verdicts.md` §5.1).
+        // `--format` is refused by the command before a request is ever built.
         return match ($request->format) {
             GraphExportFormat::Dot => (new DotExporter(new DotExporterOptions(
                 direction: $request->direction,

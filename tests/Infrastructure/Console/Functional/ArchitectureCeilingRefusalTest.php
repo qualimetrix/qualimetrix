@@ -13,20 +13,10 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * Routes 13 and 18 (`m6-routes-merged.md`): an `ArchitecturePreparationException`
- * class no longer exists in this tree — {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}
- * throws {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
- * directly when the `architecture.max_expanded_layers` ceiling is exceeded
- * while expanding a template layer, and `CheckCommand` / `BaselineGenerateCommand`
- * catch that one carrier the same way every other configuration mistake is
- * caught. M6 recorded this as two distinct routes — exit 3 on `check`, exit 1
- * on `baseline:*` — because at measurement time the two commands each had
- * their own bespoke catch clause for the (then-separate) preparation
- * exception; both are exit 3 now, through the unified `ConfigurationRefusal`
- * clause, which is the round's own finding rather than a gap: the round
- * collapsed the ladder to "configuration input -> 3, internal defect -> 1",
- * and this is that collapse actually landing on the one route that used to
- * disagree between commands.
+ * Exceeding `architecture.max_expanded_layers` raises
+ * {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}.
+ * Both `CheckCommand` and `BaselineGenerateCommand` must classify it as a
+ * configuration error and return exit code 3.
  *
  * The fixture reuses {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest}'s
  * `TemplateSample` tree (3 modules) with the ceiling set to 1, which that

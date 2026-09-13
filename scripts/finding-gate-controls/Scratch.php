@@ -11,8 +11,8 @@ use RuntimeException;
  * commit.
  *
  * Two reasons it cannot be a `git worktree`. The corpus and the gate are
- * uncommitted while Ш1 is being built, so a checkout of HEAD would not contain
- * the very input under test. And a control must plant its breakage in a tree
+ * often uncommitted while controls are being developed, so a checkout of HEAD
+ * would not contain the input under test. A control must also plant its breakage in a tree
  * that is otherwise byte-identical to what the developer is looking at.
  *
  * What gets cloned is the tree's *content*, enumerated by git: tracked files

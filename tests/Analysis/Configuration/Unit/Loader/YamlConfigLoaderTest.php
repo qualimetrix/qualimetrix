@@ -479,7 +479,7 @@ YAML);
     }
 
     // The retired root-level `exclude_paths`/`exclude_namespaces` spelling
-    // must refuse by name (Х8), not fall through as a generic "unknown
+    // must refuse by name, not fall through as a generic "unknown
     // configuration key": Levenshtein suggestion isn't close enough between
     // `exclude_paths` and `suppress_paths` to name the rename on its own, and
     // the message must also point away from the unrelated top-level

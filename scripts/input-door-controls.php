@@ -98,11 +98,6 @@ final class ControlRunner
         $this->copy($this->root . '/input-doors', $this->tree . '/input-doors');
         $this->copy($this->root . '/docs/internal/generated/input-doors', $this->tree . '/docs/internal/generated/input-doors');
         copy($this->root . '/finding-gate/normalization.tsv', $this->tree . '/finding-gate/normalization.tsv');
-        mkdir($this->tree . '/docs/internal/plans/silent-acceptance/measurement', 0o775, true);
-        copy(
-            $this->root . '/docs/internal/plans/silent-acceptance/measurement/doors-reconciled.tsv',
-            $this->tree . '/docs/internal/plans/silent-acceptance/measurement/doors-reconciled.tsv',
-        );
 
         return $this->tree;
     }

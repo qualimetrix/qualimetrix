@@ -10,8 +10,7 @@ namespace Qualimetrix\Reporting\GraphProjection\Contract;
  * `$format` and `$direction` are typed by their owning enums
  * ({@see GraphExportFormat}, {@see GraphDirection}) so a projector's `match`
  * over `$format` is exhaustive by construction and a third value cannot slip
- * past the command's own `tryFrom()` refusal
- * (`docs/internal/plans/configuration-refusal/01-refusal-verdicts.md` §5.1).
+ * past the command's own `tryFrom()` refusal.
  * A caller holding a raw string resolves it through the owning enum's own
  * `from()`/`tryFrom()` before reaching this constructor — accepting the bare
  * string here as well would be a compatibility shim CLAUDE.md's backward

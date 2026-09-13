@@ -3,16 +3,16 @@
 declare(strict_types=1);
 
 /**
- * The named file set of round X18 package P1, reconciled from the two
- * populations of 205 that `03-cure.md` §P1.3 forbids gluing together.
+ * Builds the product-source file set used by the promise-effect controls from
+ * two independently measured populations.
  *
  * The two are not comparable in their own units. A site in
  * `measurement/form-deciding-sites.tsv` is a `(file, line)`; a declared pair in
  * `measurement/key-pairs.tsv` is a `(producer rule name, key path)` summed over
  * 54 producers, so one options class is counted once per rule it serves. The
  * only unit both project onto is the FILE, reached from a pair through the
- * class that declares it — which is exactly the reconciliation rule the plan
- * states: every class declaring a path from the axis-A denominator enters P1.
+ * class that declares it. Every class declaring a path from the axis-A
+ * denominator therefore enters the product-source set.
  *
  * Four sets, and every complement between them printed rather than assumed:
  *
@@ -21,15 +21,15 @@ declare(strict_types=1);
  * - `S`  files carrying a subject site, i.e. a row of `form-deciding-sites.tsv`
  *        that is neither an exception candidate nor already inside
  *        `RuleOptionsFactory`;
- * - `N`  the contract and factory files the plan names by hand;
- * - `P1 = N ∪ S ∪ D`.
+ * - `N`  the explicitly seeded contract and factory files;
+ * - the guarded set is `N ∪ S ∪ D`.
  *
  * The declared side is asked of the product, never hand-typed: the container
  * yields producers, each producer's options class states its own key set, and
  * the private halves of `RuleOptionKeySet` are read by reflection because
  * `acceptedForDisplay()` prints only one of them. Axis A counts the `accepted`
- * half alone; the `answered-by-the-class` half is reported separately so P1
- * knows it exists rather than discovering it later.
+ * half alone; the `answered-by-the-class` half is reported separately so the
+ * guard cannot overlook it.
  *
  * The script is also the package's regression guard: run without `--write` it
  * regenerates the set and compares it with the artefact on disk, exiting 1 on
@@ -52,13 +52,13 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * Builds `measurement/p1-file-set.tsv` and guards it against the tree.
+ * Builds `promise-effect/p1-file-set.tsv` and guards it against the tree.
  */
 final class PromiseEffectP1Set
 {
     private const string ROOT = __DIR__ . '/../';
 
-    private const string MEASUREMENT = 'docs/internal/plans/promise-effect/measurement/';
+    private const string MEASUREMENT = 'promise-effect/';
 
     private const string OUTPUT = self::MEASUREMENT . 'p1-file-set.tsv';
 
@@ -71,7 +71,8 @@ final class PromiseEffectP1Set
     private const string CONFIG_PATHS = self::MEASUREMENT . 'config-paths.tsv';
 
     /**
-     * Package P2's file set (`03-cure.md`), which P1 must not touch.
+     * Configuration normalization files that must remain disjoint from the
+     * product-source promise set.
      *
      * @var list<string>
      */
@@ -81,8 +82,8 @@ final class PromiseEffectP1Set
     ];
 
     /**
-     * Package P4's four named adapters; the rest of its set comes from the
-     * `owner` column of `config-paths.tsv`.
+     * Explicit configuration adapters; the rest of their ownership set comes
+     * from the `owner` column of `config-paths.tsv`.
      *
      * @var list<string>
      */
@@ -97,13 +98,13 @@ final class PromiseEffectP1Set
     private array $unresolvedP4Owners = [];
 
     /**
-     * Files the plan names by hand: the contract P1 rewrites, the two recognition
-     * sites that consume it, and the one sub-tree key set nobody was given.
+     * Explicit contract and consumer seeds that cannot be derived from the
+     * measured declarations or form-deciding sites.
      *
      * @var array<string, string>
      */
     private const array NAMED = [
-        'src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php' => 'the declaration itself: P1 absorbs value form into this set',
+        'src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php' => 'the declaration itself absorbs value form into this set',
         'src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php' => 'contract stating acceptedOptionKeys()',
         'src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php' => 'contract stating a level slot key set',
         'src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php' => 'contract stating levelOptionsClasses(), the source of slot existence',
@@ -116,9 +117,8 @@ final class PromiseEffectP1Set
     ];
 
     /**
-     * The two rows the orchestrator added by decision rather than by the
-     * plan's own list. Kept apart so the table still says which authority put
-     * each file in the set.
+     * Explicitly added ownership rows. Kept apart so the table distinguishes
+     * them from the original contract-and-consumer seeds.
      *
      * @var array<string, true>
      */
@@ -129,14 +129,13 @@ final class PromiseEffectP1Set
     ];
 
     /**
-     * Frozen whole files: none of them may appear in P1 (`03-cure.md`).
+     * Frozen whole files: none may enter the product-source promise set.
      *
      * The first entry was named `RuleOptionThresholdModeResolver.php` when this
-     * list was written and is the same file under the name its subject took in
-     * X20 — it stopped evicting a mode and started unfolding a shorthand. The
-     * path is updated rather than the entry dropped: the claim this list makes
-     * is about a file that was frozen whole during that round, and a rename
-     * does not retire it. A path naming nothing would make the check pass by
+     * list was written and is the same file under its current subject-oriented
+     * name: it unfolds a threshold shorthand rather than evicting a mode. The
+     * path is updated rather than the entry dropped because a rename does not
+     * retire a whole-file freeze. A path naming nothing would make the check pass by
      * matching nothing, which is the failure mode this whole programme keeps
      * finding.
      *
@@ -150,8 +149,8 @@ final class PromiseEffectP1Set
     ];
 
     /**
-     * The five hierarchical classes that must be in P1, whose flat branch is
-     * frozen by line instead of by file.
+     * The five hierarchical classes required in the product-source set, whose
+     * flat branch is frozen by line instead of by file.
      *
      * @var list<string>
      */
@@ -174,7 +173,7 @@ final class PromiseEffectP1Set
      * `Finding/FindingConfigurationResolver.php` for
      * `Finding/Configuration/FindingConfigurationResolver.php`. Both
      * disjointness claims are made with `array_intersect` over strings, so
-     * those two files could never enter an intersection however deeply P1 had
+     * those two files could never enter an intersection however deeply the set had
      * touched them: the guard was blind exactly where it was pointed.
      *
      * @return array<string, list<string>>
@@ -451,8 +450,8 @@ final class PromiseEffectP1Set
      * Line-granular freezes the set must carry with it: the flat branch of the
      * five hierarchical classes, and every promise-bearing docblock range.
      *
-     * The ledger side is read WHOLE rather than narrowed to the files the plan
-     * names, so that a file entering P1 for any other reason brings its freezes
+     * The ledger side is read whole rather than narrowed to the explicit seed
+     * files, so that a file entering the set for any other reason brings its freezes
      * with it instead of losing them silently; `rows()` keeps only what lands
      * in the set, and the report names the residue.
      *
@@ -508,7 +507,7 @@ final class PromiseEffectP1Set
     }
 
     /**
-     * One row per file of P1.
+     * One row per file in the product-source promise set.
      *
      * @param array{pairs: list<array{rule: string, path: string, class: class-string<RuleOptionsInterface|LevelOptionsInterface>, half: string}>, producers: int, classes: list<string>} $declared
      * @param array{perFile: array<string, int>, total: int, factory: int, exceptions: array<string, int>, missing: list<string>} $sites
@@ -546,8 +545,8 @@ final class PromiseEffectP1Set
             $reasons = [];
             if (isset(self::NAMED[$file])) {
                 $reasons[] = (isset(self::ADDED_BY_THE_ORCHESTRATOR[$file])
-                    ? 'added by the orchestrator: '
-                    : 'named by 03-cure.md: ') . self::NAMED[$file];
+                    ? 'explicit ownership addition: '
+                    : 'explicit contract-and-consumer seed: ') . self::NAMED[$file];
             }
             if ($declaredPaths !== []) {
                 $reasons[] = 'declares ' . ($byFile[$file]['pairs'] ?? 0)
@@ -675,9 +674,9 @@ final class PromiseEffectP1Set
         $out[] = '## projection onto files — the only comparable unit';
         $out[] = sprintf("D\tdeclaring files\t%d", count($declaringFiles));
         $out[] = sprintf("S\tsubject-site files\t%d", count($subjectFiles));
-        $out[] = sprintf("N\tnamed by the plan\t%d", count($named));
+        $out[] = sprintf("N\texplicit contract-and-consumer seeds\t%d", count($named));
         $out[] = sprintf("D∩S\t%d", count(array_intersect($declaringFiles, $subjectFiles)));
-        $out[] = sprintf("P1 = N∪S∪D\t%d", count($p1));
+        $out[] = sprintf("guarded = N∪S∪D\t%d", count($p1));
 
         $out[] = '';
         $out[] = '## complements';
@@ -690,7 +689,7 @@ final class PromiseEffectP1Set
 
         $out[] = '';
         $out[] = '## freezes';
-        $out[] = $this->mustBeEmpty('frozen whole files inside P1', array_intersect(self::FROZEN_FILES, $p1));
+        $out[] = $this->mustBeEmpty('frozen whole files inside guarded set', array_intersect(self::FROZEN_FILES, $p1));
         $missingHierarchical = [];
         foreach (self::HIERARCHICAL_REQUIRED as $class) {
             $found = false;
@@ -703,7 +702,7 @@ final class PromiseEffectP1Set
                 $missingHierarchical[] = $class;
             }
         }
-        $out[] = $this->mustBeEmpty('hierarchical classes absent from P1', $missingHierarchical);
+        $out[] = $this->mustBeEmpty('hierarchical classes absent from guarded set', $missingHierarchical);
         $frozenRows = array_filter($rows, static fn(array $row): bool => $row['frozen_lines'] !== '-');
         $out[] = sprintf("files carrying a line-granular freeze\t%d", count($frozenRows));
         foreach ($frozenRows as $row) {
@@ -711,9 +710,9 @@ final class PromiseEffectP1Set
         }
 
         $out[] = '';
-        $out[] = '## disjointness with the sibling packages — the proof method of stage 01';
-        $out[] = $this->mustBeEmpty('P1 ∩ P2', array_intersect(self::P2_FILES, $p1));
-        $out[] = $this->mustBeEmpty('P1 ∩ P4', array_intersect($this->p4Files(), $p1));
+        $out[] = '## disjointness with protected sibling ownership sets';
+        $out[] = $this->mustBeEmpty('guarded ∩ configuration normalization', array_intersect(self::P2_FILES, $p1));
+        $out[] = $this->mustBeEmpty('guarded ∩ configuration owners', array_intersect($this->p4Files(), $p1));
         $out[] = $this->mustBeEmpty('config-paths.tsv owners naming no loadable class', $this->unresolvedP4Owners);
 
         $out[] = '';
@@ -723,8 +722,8 @@ final class PromiseEffectP1Set
     }
 
     /**
-     * The files package P4 owns: the four adapters `03-cure.md` names, plus the
-     * class named in the `owner` column of every row of `config-paths.tsv`,
+     * The configuration ownership set: four explicit adapters plus the class
+     * named in the `owner` column of every row of `config-paths.tsv`,
      * resolved to a path through the autoloader rather than guessed. Rows whose
      * owner is a prose fragment rather than a class resolve to nothing and are
      * reported as unresolved instead of silently dropped.
@@ -857,7 +856,7 @@ final class PromiseEffectP1Set
     private function render(array $rows): string
     {
         $header = <<<'HEADER'
-            # P1 FILE SET — the named product files of round X18 package P1.
+            # PRODUCT-SOURCE PROMISE FILE SET.
             #
             # HOW OBTAINED: scripts/promise-effect-p1-set.php (this file is its output;
             #   run it without --write to have it re-measure and refuse a stale artefact).
@@ -875,35 +874,35 @@ final class PromiseEffectP1Set
             #   this table.
             #
             # COLUMNS
-            #   file           product file entering P1
+            #   file           product file entering the guarded set
             #   role           contract | consumer | options-class | options-class (no subject
             #                  site) | form-deciding, declares nothing
             #   declared_pairs axis-A pairs this file declares (a class serving N rules counts N
             #                  times, which is what makes the two 205s different numbers)
             #   declared_paths distinct key paths declared here, slot-qualified inside levels
             #   subject_sites  subject rows of form-deciding-sites.tsv carried by this file
-            #   frozen_lines   line-granular freezes P1 must respect inside this file:
+            #   frozen_lines   line-granular freezes this set must respect inside this file:
             #                  flat_branch_line:N from hierarchical-options.tsv (a START line,
             #                  not a range — the branch extent is not measured anywhere),
             #                  promise-docblock:A-B from promise-ledger-frozen-ranges.tsv
             #   why            why this row is in the set
             #
-            # CONFIRMED BY THE ORCHESTRATOR: ThresholdParser.php and RuleOptionsParser.php stay in
+            # PARSING OWNERSHIP: ThresholdParser.php and RuleOptionsParser.php stay in
             #   the set. They carry 8 of the 205 subject sites between them and declare no key of
-            #   their own, so neither is one of "the options classes" the plan's prose names; they
-            #   are the parsing side, and "the declaration is consumed by parsing" is what P1 does.
+            #   their own, so neither is one of the options classes reached from declarations;
+            #   they belong because parsing consumes those declarations.
             #
-            # ADDED BY THE ORCHESTRATOR: RuleNamespaceExclusionProvider.php,
+            # EXPLICIT OWNERSHIP: RuleNamespaceExclusionProvider.php,
             #   RulePathExclusionProvider.php and RuleOptionRefusalWording.php. The first is in no
-            #   other package's set and is the throw site behind most malformed framework-key
+            #   other guarded set and is the throw site behind most malformed framework-key
             #   observations; the second is its neighbour, which judged no form at all; the third is
             #   the existing home of every rule-option refusal's words, so the sentence about a
             #   value's form belongs there rather than beside the judgement. All three carry zero
             #   subject sites, so they enter as named rows and not through the site projection.
             #
-            # NOT CARRIED HERE: the inline door freeze of 03-cure.md (bodies of withOverride()
-            #   and the inline appliers) is by code unit, not by line, and 27 files of this set
-            #   carry such a body. It is named in the plan and deliberately absent as a column.
+            # NOT CARRIED HERE: inline override and applier bodies are frozen by code unit, not by
+            #   line. Twenty-seven files in this set carry such a body, so that separate invariant
+            #   is deliberately absent as a column.
 
             HEADER;
 

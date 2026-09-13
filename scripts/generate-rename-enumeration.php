@@ -15,12 +15,11 @@ use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Regenerates `docs/internal/plans/rule-vocabulary/enumeration-renames.tsv`.
+ * Regenerates the active rename-control inventories under `finding-gate/`.
  *
  * The identity set (which `old`/`kind` rows exist) is MEASURED from the
- * production container and from {@see MetricName} on every run — see
- * PLAN.md, "Карт три, и одна из них не про имена". The `new` column is a
- * DECISION Ш4/Ш5 make, not a measurement, so it is preserved across runs by
+ * production container and from {@see MetricName} on every run. The `new`
+ * column is a decision, not a measurement, so it is preserved across runs by
  * merging onto the existing file keyed by `old`+`kind` rather than being
  * recomputed. A row whose `new` was already filled in disappearing from the
  * measurement is either an executed rename or a lost identity, and the two are
@@ -97,8 +96,8 @@ function surfaces(): array
 /**
  * @return array<string, string> channel key => the string a consumer actually
  *                               writes (selectors, `@qmx-ignore` targets, docs,
- *                               fixtures). Since Ш5b the two are the same
- *                               string: a channel is named by one name, and the
+ *                               fixtures). The two are the same string: a
+ *                               channel is named by one name, and the
  *                               producing rule is a field beside it rather than
  *                               a half of the key.
  */
@@ -239,8 +238,7 @@ function readFileOrFail(string $path): string
  * not be immediately preceded or followed by a word character, `.` or `-`.
  * Without this boundary, a short name like "design.type-coverage" would also
  * count every occurrence of "design.type-coverage.property" — the exact
- * prefix-collision class the plan's own rename map had to be fixed against
- * (see PLAN.md, "Карта сопоставляет имя, а не подстроку").
+ * prefix-collision class that exact rename maps must avoid.
  */
 function countWholeIdentifierOccurrences(string $needle, string $haystack): int
 {
@@ -280,7 +278,7 @@ function measure(array $rows, array $surfaceContents, array $surfaceOrder): arra
 
 /**
  * Channel literals a private `OCCURRENCE_KIND` constant deliberately freezes
- * at today's spelling (X10, `01-freeze-kind.md`): the discriminator
+ * at today's spelling: the discriminator
  * `OccurrenceKey::semantic()` hashes with, kept equal to the channel's
  * current code on purpose and NOT meant to follow a future rename of that
  * channel — moving it moves `occurrence` for every already-accepted baseline
@@ -599,42 +597,40 @@ function readPreviousFile(string $path): array
 }
 
 /**
- * The steps PLAN.md actually declares, read from its headings.
+ * Rename batches persisted by the tracked inventories.
  *
- * A shape assertion stood here before and refused `Ш5e3`, whose name the plan
- * had carried for four steps: the grammar of a step name is a fact about the
- * plan, and reading it is cheaper than keeping a regex in step with it.
+ * This closed set is the authority for the routing column. Adding a batch is
+ * an explicit control change; an arbitrary label in a generated TSV must not
+ * silently create a new map route.
  *
  * @return list<string>
  */
-function planSteps(): array
+function knownRenameSteps(): array
 {
-    static $steps = null;
+    return [
+        "\u{0425}12\u{041F}4",
+        "\u{0428}4b",
+        "\u{0428}5c",
+        "\u{0428}5d",
+        "\u{0428}5e3",
+    ];
+}
 
-    if ($steps !== null) {
-        return $steps;
+function assertKnownRenameStep(string $step): void
+{
+    if (!in_array($step, knownRenameSteps(), true)) {
+        throw new RuntimeException(sprintf(
+            'Unknown rename batch "%s". Register it in knownRenameSteps() before routing maps through it.',
+            $step,
+        ));
     }
-
-    $path = dirname(__DIR__) . '/docs/internal/plans/rule-vocabulary/PLAN.md';
-    $text = file_get_contents($path);
-
-    if ($text === false) {
-        throw new RuntimeException(sprintf('Could not read "%s".', $path));
-    }
-
-    if (preg_match_all('/^#{2,4}\s+([\x{0410}-\x{044F}A-Za-z][^\s.]*)\./mu', $text, $matches) === false) {
-        throw new RuntimeException('Regex failure while reading the step headings of PLAN.md.');
-    }
-
-    $steps = array_values(array_unique($matches[1]));
-
-    return $steps;
 }
 
 /**
- * A decision has to say which step makes it, or Ш5's renames leak into the map
- * a step earlier asks for. The pair is therefore checked in both directions: a
- * decided `new` without a `step`, and a `step` on a row nobody has decided.
+ * A decision has to say which registered batch makes it, or decisions can leak
+ * into a map requested for another batch. The pair is checked in both
+ * directions: a decided `new` without a `step`, and a `step` on a row nobody
+ * has decided.
  *
  * Reads only the decided columns, so it holds a retired row to the same rule as
  * a measured one — a decision without a step is unusable wherever it lives.
@@ -645,6 +641,7 @@ function assertEveryDecisionNamesItsStep(array $rows): void
 {
     $undated = [];
     $premature = [];
+    $unknown = [];
 
     foreach ($rows as $row) {
         $decided = $row['new'] !== '?' && $row['new'] !== '';
@@ -657,13 +654,8 @@ function assertEveryDecisionNamesItsStep(array $rows): void
             $premature[] = $row['old'] . ' (' . $row['kind'] . ')';
         }
 
-        if ($row['step'] !== '' && !in_array($row['step'], planSteps(), true)) {
-            throw new RuntimeException(sprintf(
-                'Row "%s" names step "%s", which is no heading of PLAN.md. Known steps: %s.',
-                $row['old'],
-                $row['step'],
-                implode(', ', planSteps()),
-            ));
+        if ($row['step'] !== '' && !in_array($row['step'], knownRenameSteps(), true)) {
+            $unknown[] = $row['old'] . ' (' . $row['kind'] . '): ' . $row['step'];
         }
     }
 
@@ -680,13 +672,20 @@ function assertEveryDecisionNamesItsStep(array $rows): void
             . implode(', ', $premature),
         );
     }
+
+    if ($unknown !== []) {
+        throw new RuntimeException(
+            'These rows name an unknown rename batch: ' . implode(', ', $unknown)
+            . '. Register the batch in knownRenameSteps() before routing maps through it.',
+        );
+    }
 }
 
 /**
  * The map rows a step's decisions amount to, as text ready to be appended to
  * the named map file.
  *
- * The mapping from kind to map file is the one the plan's table states: a
+ * The mapping from kind to map file follows the gate's input contracts: a
  * channel key is a `channels.tsv` row, a metric key a `metric-keys.tsv` row,
  * and a producer name is an input — that is where a selector and an option key
  * write it. A decision with several targets is a split, which no map row can
@@ -702,9 +701,8 @@ function assertEveryDecisionNamesItsStep(array $rows): void
  * arguments (`reference-input-untranslated`), and a declared row that translates
  * nothing is `map-stale`. Emitting them from this file would mean teaching it a
  * second model of the world — every rule's option keys and CLI aliases — whose
- * only consumer is a map the gate already checks from both sides. Ш4b measured
- * the split: 3 of its 17 map rows are emitted here, 14 are hand-authored inputs,
- * and all 17 are held by the gate.
+ * only consumer is a map the gate already checks from both sides. Identity
+ * rows are emitted here; option and alias rows remain hand-authored inputs.
  *
  * Reads only the decided columns, so a retired row — which no longer carries a
  * measurement — is emitted the same way a measured one is. That is what keeps
@@ -714,6 +712,8 @@ function assertEveryDecisionNamesItsStep(array $rows): void
  */
 function emitMapsForStep(array $rows, string $step): string
 {
+    assertKnownRenameStep($step);
+
     $files = ['channel' => 'channels.tsv', 'metric-key' => 'metric-keys.tsv', 'producer' => 'inputs.tsv'];
     $sections = [];
 
@@ -783,7 +783,7 @@ function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
  * into the tracked executed file; the second still fails, loudly, the way it
  * always did.
  *
- * **Why retirement cannot be a flag.** A `--retire=Ш4b` switch, or a `retired`
+ * **Why retirement cannot be a flag.** A `--retire=<batch>` switch, or a `retired`
  * column somebody fills in, would let the operator assert the thing the check
  * exists to test. The whole value of this guard is that it distinguishes "the
  * step landed" from "an identity vanished", and those two states are
@@ -793,12 +793,12 @@ function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
  *
  * **Appeared, not merely present.** The first version asked only whether the
  * targets are measured now, and review showed what that lets through: a
- * collapse. Ш5 turns two identities into one, so once its first half lands the
- * target is measured — and the second half could then vanish for any reason at
- * all and retire as "executed" without ever being merged. The same hole
- * retires a row whose `old` was deleted rather than renamed, as long as its
- * target happened to exist already. So the previous generation's identity set
- * is read back (it is on disk, in the file being regenerated) and a target that
+ * collapse. When two identities become one, the target can already be measured
+ * before the second rename lands, and that second identity could then vanish
+ * for any reason at all and retire as "executed" without ever being merged.
+ * The same hole retires a row whose `old` was deleted rather than renamed, as
+ * long as its target happened to exist already. So the previous generation's
+ * identity set is read back (it is on disk, in the file being regenerated) and a target that
  * was *already there* forbids retirement. A collapse's second half therefore
  * fails, loudly, on its own account.
  *
@@ -970,13 +970,13 @@ function resolveThroughLaterRenames(string $name, string $kind, array $later): a
  *
  * A `channel` target recorded as a `rule#code` pair is held against the channel
  * half. History is left in the vocabulary it was recorded in — rewriting a
- * settled row would restate the measurement instead of preserving it — and since
- * Ш5b a channel is identified by that half alone, so this is the same identity
+ * settled row would restate the measurement instead of preserving it. A
+ * channel is identified by that half alone, so this is the same identity
  * spelled the way it was spelled then.
  *
  * A promised target that a LATER step renamed again is followed rather than
- * reported. Ш4b split `design.type-coverage` into three producers and Ш5e3
- * renamed all three; holding the older row against its literal target would
+ * reported. A producer can be split and its resulting names renamed again;
+ * holding the older row against its literal target would
  * force history to be rewritten every time a name moves twice, which is the one
  * thing this file must never do. The chain is followed through the executed
  * rows and the decided ones alike, and it is the END of the chain that has to
@@ -1133,7 +1133,7 @@ function renderExecutedTsv(array $rows): string
     }
 
     $header = <<<HEADER
-# Renames this plan has EXECUTED, and therefore stopped measuring.
+# Executed renames that no longer belong to the current-name measurement.
 #
 # A row lands here by measurement, never by a flag: its `old` identity is gone
 # from the production container (or from MetricName), and every name its `new`
@@ -1251,8 +1251,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # name itself for `producer` and `metric-key` rows) — not files. A match must
 # not be immediately preceded or followed by a word character, `.` or `-`, so
 # a short name like "design.type-coverage" does not also count every
-# occurrence of "design.type-coverage.property" (see PLAN.md, "Карта
-# сопоставляет имя, а не подстроку", for why that prefix collision matters).
+# occurrence of "design.type-coverage.property".
 #
 # BOUNDARY OF THE SET: every file under the eight surfaces above, minus
 # generated/vendored noise (src/Reporting/Template/{node_modules,dist},
@@ -1274,7 +1273,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # step that has already landed, whose maps are in git.
 #
 # `frozen_kind` AND `frozen_pin` NAME OCCURRENCES A RENAME SWEEP MUST SKIP.
-# X10 (`01-freeze-kind.md`) froze six channels' `OccurrenceKey` discriminator
+# Six channels freeze their `OccurrenceKey` discriminator
 # away from the channel code: each carries a private `OCCURRENCE_KIND`
 # constant, equal to today's spelling ON PURPOSE, that must NOT follow a
 # future rename of the channel — moving it would move `occurrence` for every
@@ -1300,7 +1299,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `@qmx-ignore` targets, other tests, docs, config) renames normally.
 # `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
 # re-derives the same frozen set independently on every `composer test` run
-# and fails if the count drifts from what 01-freeze-kind.md names, if a
+# and fails if the count drifts, if a
 # frozen constant no longer equals its own pin, or if the constant is no
 # longer what `OccurrenceKey::semantic()` is called with — so a sweep that
 # renamed a frozen occurrence by mistake is caught there, not only here. A
@@ -1510,7 +1509,7 @@ function describeMismatch(string $onDisk, string $fresh, string $path, string $c
  *    this file narrows it explicitly to the corpus the finding gate runs
  *    (`finding-gate/cases/*​/qmx.yaml`) and says so in the `origin` column.
  *
- * The `producer` column is measured, not decided: Ш5d has landed, so it is
+ * The `producer` column is measured, not decided: built-in health dimensions
  * {@see ComputedMetricChannelFamily::producerFor()}'s answer — the same arbiter
  * the universe and the emission use. The rename it records is history and lives
  * in enumeration-renames-executed.tsv; what this file states is the standing
@@ -1532,8 +1531,8 @@ function runtimeChannelRows(string $root): array
     foreach (ComputedMetricDefaults::getDefaults() as $definition) {
         if (!str_starts_with($definition->name, 'health.')) {
             throw new RuntimeException(sprintf(
-                'Built-in computed metric "%s" is not a `health.*` name, so Р5 (see PLAN.md, "Р5. Словари имён")'
-                . ' does not say what its channel becomes. Decide that before regenerating this enumeration.',
+                'Built-in computed metric "%s" is not a `health.*` name, so its channel is not enumerable.'
+                . ' Either rename the built-in or widen the explicit rule here.',
                 $definition->name,
             ));
         }
@@ -1568,7 +1567,7 @@ function runtimeChannelRows(string $root): array
         if (!str_starts_with($name, 'computed.')) {
             throw new RuntimeException(sprintf(
                 'The corpus declares computed metric "%s", which is neither a built-in `health.*` dimension nor a'
-                . ' `computed.*` user metric. Р5 names the target for those two shapes only, so this cannot be'
+                . ' `computed.*` user metric. Only those two shapes have a defined channel target, so this cannot be'
                 . ' translated without a new decision. Declared in: %s',
                 $name,
                 implode(', ', $sources),
@@ -1678,7 +1677,7 @@ function renderRuntimeChannelsTsv(array $rows): string
 #   corpus this run read. That narrowing is the `origin` column's whole point.
 # - `producer` is MEASURED, through `ComputedMetricChannelFamily::producerFor()`
 #   — the same arbiter the channel universe and the finding emission ask. Since
-#   Ш5d a built-in dimension is its own producer and every user-defined metric
+#   A built-in dimension is its own producer and every user-defined metric
 #   shares the open producer `computed`; this column is where that stops being
 #   prose. A built-in name that is not `health.*`, or an observed name that is
 #   not `computed.*`, fails the generator instead of getting an invented
@@ -1792,17 +1791,17 @@ function main(): int
     }
 
     $root = dirname(__DIR__);
-    $outputPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames.tsv';
-    $executedPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames-executed.tsv';
+    $outputPath = $root . '/finding-gate/enumeration-renames.tsv';
+    $executedPath = $root . '/finding-gate/enumeration-renames-executed.tsv';
 
     // Handled before anything touches the container, same as --runtime-channels
     // below: neither half this prints needs the compiled container, and this
     // mode never writes a file — it only reads the static half's own artifact
     // and re-derives the runtime half, then prints both plus their sum.
     if ($channelUniverse) {
-        $staticPath = $root . '/docs/internal/plans/rule-vocabulary/X8-one-string-two-jobs/enumeration-channels.tsv';
+        $staticPath = $root . '/finding-gate/enumeration-static-channels.tsv';
         $staticCount = staticChannelCount($staticPath);
-        $runtimeSourcePath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv';
+        $runtimeSourcePath = $root . '/finding-gate/enumeration-runtime-channels.tsv';
 
         fwrite(STDOUT, renderChannelUniverseReport(
             $staticCount,
@@ -1819,7 +1818,7 @@ function main(): int
     // container — and running the measured half here would rewrite
     // enumeration-renames.tsv as a side effect of asking about runtime channels.
     if ($runtimeChannels) {
-        $runtimePath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv';
+        $runtimePath = $root . '/finding-gate/enumeration-runtime-channels.tsv';
         $content = renderRuntimeChannelsTsv(runtimeChannelRows($root));
 
         if ($check) {
@@ -1854,6 +1853,14 @@ function main(): int
     if ($emitStep !== null) {
         if ($emitStep === '') {
             fwrite(STDERR, "--emit-maps=<step> needs a step, e.g. --emit-maps=\u{0428}4b.\n");
+
+            return 2;
+        }
+
+        try {
+            assertKnownRenameStep($emitStep);
+        } catch (RuntimeException $error) {
+            fwrite(STDERR, $error->getMessage() . "\n");
 
             return 2;
         }

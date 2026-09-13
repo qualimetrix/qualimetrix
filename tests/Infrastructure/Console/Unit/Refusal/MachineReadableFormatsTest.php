@@ -11,9 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 
 /**
- * The closed set measured against `FormatterRegistry` on `1513bf67`
- * (`01-refusal-envelope.md` §2.1): six of the twelve registered formats carry
- * a JSON document on stdout, and only those six get the envelope.
+ * Six of the registered formats carry a JSON document on stdout, and only
+ * those formats get a refusal envelope.
  */
 #[CoversClass(MachineReadableFormats::class)]
 final class MachineReadableFormatsTest extends TestCase

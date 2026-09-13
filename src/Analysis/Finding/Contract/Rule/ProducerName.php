@@ -11,8 +11,8 @@ use LogicException;
  *
  * {@see RuleFamily} refuses a name with no family at all, and that was as far
  * as the check could go while `computed.branch_load` was a legal producer: a
- * strict pattern would have refused a name the corpus registers. Ш5e3 made
- * every producer name lower-case kebab, so the whole form can be held here
+ * strict pattern would have refused a name the corpus registers. Every
+ * producer name is now lower-case kebab, so the whole form can be held here
  * instead of its first segment.
  *
  * What the widening buys is measured rather than assumed. `Complexity.Foo` used

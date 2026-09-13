@@ -319,8 +319,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
 
     /**
      * A count sentence that names channels but was never registered is drift
-     * waiting to happen: the previous round left one in every page nobody
-     * remembered to open.
+     * waiting to happen.
      */
     #[Test]
     public function itRegistersEveryChannelCountStatement(): void

@@ -302,9 +302,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // catches ConfigurationRefusal — `check`, the five `baseline:*`, and
         // `directives` here; `debug:layer-assignment` gets its own reference
         // in ArchitectureConfigurator. Public, like ErrorStream above: `bin/qmx`
-        // fetches this exact instance to hand `Application` (`01-refusal-exit-ladder.md`
-        // §3) — a second, container-invisible instance built there would be
-        // the second diagnostic dialect the round exists to remove.
+        // fetches this exact instance to hand `Application`; a second,
+        // container-invisible instance would create a second diagnostic dialect.
         $container->register(RefusalPresenter::class)
             ->setPublic(true)
             ->setArguments([

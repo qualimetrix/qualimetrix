@@ -19,8 +19,7 @@ use RuntimeException;
  * `doRun()` call can show. `tests/Unit/Infrastructure/Console/ApplicationTest.php`
  * covers the clause logic itself, including the live-progress-frame case
  * (`SplitStreamConsoleOutput` gives that one a decorated stream without a
- * real terminal); this file is the boundary evidence the package's DoD asks
- * for (`01-refusal-packages.md` P01-6).
+ * real terminal); this file checks the process boundary.
  */
 #[CoversClass(Application::class)]
 final class ApplicationRefusalTest extends TestCase
@@ -45,27 +44,9 @@ final class ApplicationRefusalTest extends TestCase
     }
 
     /**
-     * The measured input that used to crash both `directives` and
-     * `debug:layer-assignment` with exit code 255 — a `computed_metrics`
-     * `levels` shape a strict reader chokes on (`01-refusal-exit-ladder.md`
-     * §2.4) — no longer crashes on this tree: 02/P2 (`computed_metrics`
-     * declaration validation, `02-computed-metric-packages.md`) turned it into
-     * a proper `ConfigurationRefusal` before it ever reaches this package's
-     * ladder. Verified directly rather than assumed:
-     *
-     * ```
-     * $ bin/qmx -d <fixture> directives src
-     * exit=3  Configuration error: "levels" of computed metric "computed.myscore" must be a list of level words, got array.
-     * ```
-     *
-     * That is progress, not a gap in this test — but it means the historical
-     * fixture can no longer serve as evidence for "255 is cancelled", because
-     * that input no longer reaches a PHP fatal at all. The synthetic harness
-     * below throws a genuine, uncaught `\Error` from a real command running
-     * inside the real `Application` class through a real subprocess, which is
-     * what `setCatchErrors(true)` and the ladder's `catch (Throwable)` clause
-     * actually guard against — proving the *mechanism* rather than one
-     * instance of it that has since been fixed elsewhere.
+     * A synthetic command throws a genuine `\Error` inside the application.
+     * The subprocess proves the application catches it and returns the
+     * internal-error status instead of exposing PHP's fatal-exit behavior.
      */
     #[Test]
     public function itCancelsExitCode255ForAnUncaughtPhpError(): void
@@ -81,20 +62,9 @@ final class ApplicationRefusalTest extends TestCase
     }
 
     /**
-     * The counterfactual measured, not assumed: `setCatchErrors(true)` turns
-     * out to make **no difference** to this particular `\Error` — it is still
-     * caught (`ec=1`, no fatal) with the flag left at its default `false`.
-     * The reason is in `01-refusal-exit-ladder.md` §2.4's own reading of
-     * `vendor/symfony/console/Application.php`: `setCatchErrors()` gates only
-     * `run()`'s *own* `catch (\Throwable)` around `configureIO()` +
-     * `doRun()`, and this error is thrown from inside `Application::doRun()`
-     * — our override — whose `catch (Throwable)` clause (this ladder, not
-     * Symfony's) already catches any `\Error` a plain `catch` can, regardless
-     * of that flag. `bin/qmx` still sets it, because it is the only thing
-     * standing between a fatal and exit 255 for a throwable raised in the one
-     * window this ladder does not cover — `configureIO()`, before `doRun()`
-     * is ever entered (documented, not exercised, here: no measured input
-     * reaches that window with a non-zero code).
+     * `setCatchErrors()` controls Symfony's outer `run()` handler. This error
+     * is thrown inside `doRun()`, where the application has its own handler;
+     * the test keeps those two responsibilities distinct.
      */
     #[Test]
     public function itCatchesTheSameErrorEvenWithoutSetCatchErrors(): void
@@ -154,7 +124,7 @@ final class ApplicationRefusalTest extends TestCase
      * plain piped, non-TTY stdin: no pty is required. An empty stream is a
      * valid answer to the question (it defaults to "no", same as declining),
      * and the run then exits the way declining the alternative always has —
-     * outside this round's ladder entirely, since the question is answered
+     * outside the refusal ladder entirely, since the question is answered
      * and the command genuinely never ran; that exit code is not the subject
      * here; the reproduction of the question on stdout is.
      */
@@ -168,11 +138,9 @@ final class ApplicationRefusalTest extends TestCase
     }
 
     /**
-     * The sequential end of P01-6's own DoD: this route only turns green once
-     * both edges of `01-refusal-packages.md`'s ребро P01-6 → P01-5 are in —
-     * the carrier thrown by `RulesCommand` (P01-5) and the first clause of
-     * this ladder that catches it (P01-6). Before P01-5, this gave `ec=1,
-     * stdout 172 bytes, stderr 0 bytes`.
+     * The real `RulesCommand` refusal must reach the application ladder and
+     * exit as a user configuration error; a unit test of either side alone
+     * cannot prove the complete route.
      */
     #[Test]
     public function itRefusesAnUnknownRuleGroupThroughTheApplicationLadder(): void

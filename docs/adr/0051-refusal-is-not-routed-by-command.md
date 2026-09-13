@@ -1,4 +1,4 @@
-# 51. Refusal Is Not Routed by Command
+# 0051. Refusal Is Not Routed by Command
 
 **Date:** 2026-09-09
 **Status:** Accepted
@@ -51,8 +51,8 @@ only signal a reviewer should expect to grow. `ConsoleExceptionInterface`
 a bare `InvalidArgumentException` with no carrier behind it are named
 secondary signals for the same code, kept as separate `catch` clauses and
 separate presenter methods precisely so each stays a call count rather than
-an inference: `measurement/03-catch-clauses.md` counts 178 throw sites still
-reaching exit 3 through the bare `InvalidArgumentException` clause rather than
+an inference. The starting census counted 178 throw sites still reaching exit
+3 through the bare `InvalidArgumentException` clause rather than
 through `ConfigurationRefusal`, as of this round's start. That number is
 named debt, not tolerated design — a future round retires it by moving each
 site onto the carrier, not by widening what the fallback clause catches.
@@ -74,13 +74,11 @@ three refusal signals above.
 **`TypeError` stays code 1. It is not folded into refusal.** A `TypeError`
 reaching a user is a defect in this project's own type declarations, not a
 malformed input the configuration's author wrote — the user did nothing that
-a correct program would have rejected differently. A package that routed
-`TypeError` to exit 3 would not have closed the underlying crash, only
-relabelled it as if the user had caused it; the throw sites this round
-touches replace a `TypeError` with a thrown `ConfigurationRefusal` *before*
-the type failure can occur (see `02-computed-metric-keys.md`,
-`02-computed-metric-packages.md`), rather than catching the `TypeError`
-afterward and recolouring it.
+a correct program would have rejected differently. Routing `TypeError` to exit
+3 would not have closed the underlying crash, only relabelled it as if the user
+had caused it; affected throw sites replace a `TypeError` with a thrown
+`ConfigurationRefusal` *before* the type failure can occur, rather than
+catching the `TypeError` afterward and recolouring it.
 
 **Only an internal error prints a trace, and only above normal verbosity.**
 `RefusalPresenter::internalError()` writes the trace at
@@ -138,8 +136,7 @@ suppression, and remains open.
 **Rejected alternative: "quiet means only the exit code."** This is Symfony's
 own default — `VERBOSITY_QUIET` swallows everything a command writes,
 including its own final diagnostic — and it is a legitimate design, not a
-strawman. Before this round, position #51 in the verdict enumeration
-(`measurement/verdicts-30-75.md:81`) already lived there by accident: `-q`
+strawman. One measured refusal path already lived there by accident: `-q`
 under a bad `--rule-opt` selector produced zero bytes on both streams at exit
 **0**; after X13's earlier work it produces zero bytes at exit **3** — a
 strict improvement on the exit-code axis alone, and the existing regression
@@ -171,15 +168,14 @@ run" (not).
   own analysis outcome — `directives`' 2 (inert directive) and 4 (run
   incomplete), `check`'s and `graph:export`'s 4 (incomplete analysis) — keeps
   deciding that itself; this ADR governs only the refusal/internal-error
-  split, not analysis-outcome codes, which the round does not touch
-  (`00-overview.md`).
+  split, not analysis-outcome codes.
 - A CI wrapper that only checked `exit code != 0` sees no behavioural change.
   One that branches on the code should now read 3 as "fix the configuration
   or the input," 1 as "file a bug," and 2 or 4 as "read the command's own
   report."
 - The remaining debt this ADR names is tracked by count, not by name: a future
-  package retiring throw sites onto `ConfigurationRefusal` re-runs
-  `measurement/03-catch-clauses.md`'s method and compares the new count
+  package retiring throw sites onto `ConfigurationRefusal` repeats the same
+  throw-site census and compares the new count
   against **147** — this round's own after-count above, not the 178 the round
   started from — not against a list of which sites moved.
 - Supersedes no prior ADR. Builds on ADR 0050 (the carrier type this

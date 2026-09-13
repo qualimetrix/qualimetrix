@@ -17,16 +17,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * whether this run could tell — and this is the test that will not let the
  * seventh such channel be added without one.
  *
- * **Why a guard and not a review habit.** `architecture.unmatched-exclude`
- * shipped without the precondition its own ADR requires, one round after the
- * precondition was introduced, and nothing failed: the channel is a rule like
- * any other, so no compiler, container or test noticed the missing question.
- * A per-channel unit test would not have either — each one passes on the
- * fixture it was written for.
+ * A per-channel unit test cannot prove every scope-conditioned channel asks
+ * the question: each one can pass on its own fixture while a new channel lacks
+ * the precondition. This guard derives the population from the product.
  *
  * **The population is read from the product, not typed here.** Every channel
  * whose declared name contains `unmatched` is scope-conditioned; that is the
- * naming convention ADR 0052 fixes and this file guards, and
+ * naming convention ADR 0061 fixes and this file guards, and
  * {@see itDeclaresTheScopeConditionedPopulation} fails when the product's set
  * and the list below drift apart in either direction — a new channel not
  * listed, or a listed channel gone.
@@ -48,18 +45,14 @@ use Symfony\Component\Console\Tester\CommandTester;
  * working gate from a fixture that cannot produce the channel at all; without
  * the silent half, a channel with no gate passes.
  *
- * **Superseded (X16 F4): the silent half used to be a `classmap`-only
- * manifest.** Refusing to judge any project that declares production code
- * through `classmap`, `psr-0` or `files` was measured to silence all six
- * channels on 51 of the 125 packages in `benchmarks/vendor` — the cure inert,
- * invisibly, on half of real projects. Such a manifest now judges like any
- * other, and silence has to be earned by a target outside the run or by a
- * manifest that declares nothing readable.
+ * Production targets declared through `classmap`, `psr-0` or `files` are
+ * judged like PSR-4 targets. Silence is earned only by a target outside the
+ * run or by a manifest that declares no readable production autoload.
  */
 final class ScopeConditionedChannelGuardTest extends TestCase
 {
     /**
-     * The channels of the round, spelled out so the assertion has two sides.
+     * The channels under test, spelled out so the assertion has two sides.
      * Their producers live in five different owners, which is why the list
      * cannot be read off one class.
      */
@@ -236,7 +229,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
     /**
      * The silent half, first shape: the same tree and the same configuration
      * under a manifest declaring production code the run never analysed. The
-     * run is a slice, so no channel of the round may accuse anyone — and it
+     * run is a slice, so no channel may accuse anyone — and it
      * makes no difference which section declared the part left out.
      *
      * @param array<string, mixed> $autoload
@@ -274,7 +267,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
      * The silent half, second shape and the only remaining "cannot judge":
      * the manifest declares no production autoload this product can read at
      * all. There is no denominator, so there is no coverage verdict, so no
-     * channel of the round may accuse anyone.
+     * channel may accuse anyone.
      *
      * @param ?string $manifest raw `composer.json` content, or null for no manifest at all
      */

@@ -33,7 +33,7 @@ final class Stamp
     public const string PATH = 'docs/internal/generated/promise-effect/inputs.stamp.tsv';
 
     private const array FILES = [
-        'docs/internal/plans/promise-effect/measurement/promise-ledger.tsv',
+        'promise-effect/promise-ledger.tsv',
         'promise-effect/forms.tsv',
         'promise-effect/axis-d-envelopes.tsv',
         'promise-effect/axis-d-observables.tsv',
@@ -58,7 +58,7 @@ final class Stamp
         // added or withdrawn changes which value a probe writes, and therefore
         // whether the row measures anything at all.
         'promise-effect/effect-magnitudes.tsv',
-        'docs/internal/plans/promise-effect/measurement/key-pairs.tsv',
+        'promise-effect/key-pairs.tsv',
         'scripts/promise-effect.php',
         'scripts/promise-effect/RunDeclaration.php',
         // Only the files that PRODUCE the grid. `Population`, `FifthSet` and

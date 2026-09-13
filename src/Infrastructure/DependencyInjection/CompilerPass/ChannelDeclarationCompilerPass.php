@@ -214,10 +214,10 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      *
      * **This refuses one shape of bad name, not a name grammar.** Rejected:
      * an empty name and one starting with the separator — exactly the two
-     * that do not obey the producer grammar. Until Ш5e3 this refused only a
-     * name with no family at all, because `computed.branch_load` was a legal
-     * producer a strict pattern would have refused; with every producer name
-     * lower-case kebab the whole form is held here. What that closes is
+     * that do not obey the producer grammar. A strict pattern could not be
+     * enforced while `computed.branch_load` was a legal producer; now every
+     * producer name is lower-case kebab and the whole form is held here. What
+     * that closes is
      * measured: `Complexity.Foo` used to register, print under a heading of its
      * own, and then not be found by `--group=complexity` — the filter being
      * case-sensitive — and a trailing separator, a doubled separator and a

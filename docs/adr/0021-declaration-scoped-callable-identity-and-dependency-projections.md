@@ -4,8 +4,6 @@
 
 **Status:** Accepted. [ADR 0026](0026-assigned-declaration-ordinal.md) supersedes the `startFilePos` component of `DeclarationPath` and the sentence "Adding a sibling declaration cannot alter an existing declaration key"; every other decision here remains in force.
 
-**Plan:** [Scanner Validation Round 2](../internal/SCANNER_VALIDATION_ROUND_2_PLAN.md)
-
 ## Context
 
 The scanner currently uses a logical `SymbolPath` as both aggregate identity
