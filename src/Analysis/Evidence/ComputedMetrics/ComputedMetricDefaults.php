@@ -21,13 +21,19 @@ final class ComputedMetricDefaults
                 formulas: [
                     // Class: avg + max-method penalties. avg detects uniformly complex classes,
                     // sqrt(max) penalizes single monster methods that hide behind a low average.
+                    // The average knees are CCN 2 and cognitive 1 — the same statement at both
+                    // levels, since CCN counts decision points plus one and cognitive counts them
+                    // from zero. The cognitive maximum uses SonarSource's published default of 15,
+                    // not McCabe's 10: nesting makes the two scales disagree above a single method.
                     // Defaults: ccn=1 (baseline for methodless classes), cognitive=0 (no penalty).
-                    SymbolLevel::Class_->value => 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 4, 0) * 2.0 - max((m["complexity.cognitive.avg"] ?? 0) - 5, 0) * 2.0 - max((m["complexity.ccn.max"] ?? 0) - 10, 0) ** 0.5 * 2.0 - max((m["complexity.cognitive.max"] ?? 0) - 10, 0) ** 0.5 * 2.0, 0, 100)',
+                    SymbolLevel::Class_->value => 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 2, 0) * 2.0 - max((m["complexity.cognitive.avg"] ?? 0) - 1, 0) * 2.0 - max((m["complexity.ccn.max"] ?? 0) - 10, 0) ** 0.5 * 2.0 - max((m["complexity.cognitive.max"] ?? 0) - 15, 0) ** 0.5 * 2.0, 0, 100)',
                     // Namespace: avg (base quality) + p95 (main differentiator) + sqrt(max) (extreme outliers).
                     // p95/max thresholds calibrated for per-method values (not per-class sums).
-                    SymbolLevel::Namespace_->value => 'clamp(100 - max((m["complexity.ccn.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 3, 0) * 1.5 - max((m["complexity.cognitive.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 4, 0) * 1.5 - max((m["complexity.ccn.p95"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m["complexity.cognitive.p95"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m["complexity.ccn.max"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
+                    // Average knees: one decision point per method (CCN 2, cognitive 1). Placed at
+                    // 3 and 4 the terms were silent over most of the measured corpus.
+                    SymbolLevel::Namespace_->value => 'clamp(100 - max((m["complexity.ccn.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 2, 0) * 5.0 - max((m["complexity.cognitive.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 1, 0) * 4.0 - max((m["complexity.ccn.p95"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m["complexity.cognitive.p95"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m["complexity.ccn.max"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
-                    SymbolLevel::Project->value => 'clamp(100 - max((m["complexity.ccn.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 3, 0) * 1.5 - max((m["complexity.cognitive.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 4, 0) * 1.5 - max((m["complexity.ccn.p95"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m["complexity.cognitive.p95"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m["complexity.ccn.max"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
+                    SymbolLevel::Project->value => 'clamp(100 - max((m["complexity.ccn.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 2, 0) * 5.0 - max((m["complexity.cognitive.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 1, 0) * 4.0 - max((m["complexity.ccn.p95"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m["complexity.cognitive.p95"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m["complexity.ccn.max"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
                 ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
@@ -41,8 +47,16 @@ final class ComputedMetricDefaults
                     // Pure methods (no property access, e.g. interface contract getters) inflate
                     // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
                     // D_tcc=0.4, D_lcom=0.7. Classes with no pure methods: formula unchanged.
+                    // The LCOM span stays 5 where the namespace formula moved to 2: this input is
+                    // one class's integer LCOM4 floored at 1 after the pure-method adjustment, and
+                    // its median is 1 across the benchmark corpus (2026-09-14), so saturating at 3
+                    // moves only the lower quartile while pushing classes below a namespace parent
+                    // that is already penalised on the same evidence.
                     SymbolLevel::Class_->value => 'clamp((((m["size.method-count"] ?? 0) < 6 ? (m["cohesion.tcc"] ?? 0.5) : (m["cohesion.tcc"] ?? 0)) + (1 - ((m["size.method-count"] ?? 0) < 6 ? (m["cohesion.tcc"] ?? 0.5) : (m["cohesion.tcc"] ?? 0))) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["size.method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((m["cohesion.lcom"] ?? 0) - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 50, 0, 100)',
-                    SymbolLevel::Namespace_->value => 'clamp((m["cohesion.tcc.avg"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m["cohesion.lcom.avg"] ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    // LCOM4 half: no penalty at 1.0 (the average class is one connected
+                    // component) and saturated at 3.0 (it decomposes into three). The span was 5,
+                    // which put saturation at LCOM4 6.0 — beyond anything measured.
+                    SymbolLevel::Namespace_->value => 'clamp((m["cohesion.tcc.avg"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m["cohesion.lcom.avg"] ?? 0) - 1) / 2, 0, 1)) * 50, 0, 100)',
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
@@ -55,7 +69,12 @@ final class ComputedMetricDefaults
                 formulas: [
                     // Blend ce_packages (dependency breadth) with dampened ce (volume).
                     // K=15, W_pkg=3.0, W_raw=0.5, threshold=5.
-                    // HalsteadVisitor (ce=127, pkg≈1): ~80. ShowCommand (ce=43, pkg≈15): ~26.
+                    // Left uncalibrated deliberately: ce_packages tops out at 7 with a 99th
+                    // percentile of 2 across the seventeen benchmark projects (2026-09-14), so no
+                    // class reaches the threshold through breadth and 97% score exactly 100. The
+                    // only placement that wakes the term raises W_raw until ce leads, which drops
+                    // classes below an untouched namespace formula and breaks upward monotonicity.
+                    // Waking it is a model change to both levels at once, not a threshold move.
                     SymbolLevel::Class_->value => 'clamp(100 * 15 / (15 + max((m["coupling.ce-packages"] ?? 0) * 3.0 + (m["coupling.ce"] ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)',
                     // Efferent-only formula mirroring class-level. Bidirectional CBO at namespace
                     // level conflates Ca with Ce, which unfairly penalizes stable-contracts namespaces
@@ -100,13 +119,21 @@ final class ComputedMetricDefaults
                 name: HealthDimension::Maintainability->value,
                 formulas: [
                     // Penalty-based: avg detects uniformly poor MI, sqrt(min) penalizes worst methods.
-                    // MI=85→100, MI=75/min=50→85, MI=65/min=30→57.
-                    SymbolLevel::Class_->value => 'clamp(100 - max(85 - (m["maintainability.mi.avg"] ?? 75), 0) * 1.5 - max(50 - (m["maintainability.mi.min"] ?? 50), 0) ** 0.5 * 3.0, 0, 100)',
+                    // Both knees are published MI bounds: 85 "highly maintainable", 65 the line
+                    // below which a method reads as difficult (Oman & Hagemeister; Coleman et al.).
+                    // MI=85/min=65→100, MI=75/min=50→73, MI=65/min=30→52.
+                    SymbolLevel::Class_->value => 'clamp(100 - max(85 - (m["maintainability.mi.avg"] ?? 75), 0) * 1.5 - max(65 - (m["maintainability.mi.min"] ?? 65), 0) ** 0.5 * 3.0, 0, 100)',
                     // avg (base quality) + p5 (main differentiator) + dampened min (extreme outliers).
                     // p5/min thresholds calibrated for per-method MI values (not class-level averages).
-                    SymbolLevel::Namespace_->value => 'clamp(100 - max(82 - (m["maintainability.mi.avg"] ?? 75), 0) * 2.0 - max(55 - (m["maintainability.mi.p5"] ?? 55), 0) ** 0.5 * 4.5 - max(5 - (m["maintainability.mi.min"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
+                    // The avg knee is the published "highly maintainable" bound of 85 and the p5 knee
+                    // the "difficult" bound of 65, so the bottom twentieth of methods is asked to stay
+                    // above the line rather than merely off the floor.
+                    // The min term stays near-dead by measurement: five of seventeen benchmark
+                    // projects report mi.min = 0, so any live knee here scores one method, not the
+                    // subject. Removing the term is a model decision, not a threshold placement.
+                    SymbolLevel::Namespace_->value => 'clamp(100 - max(85 - (m["maintainability.mi.avg"] ?? 75), 0) * 2.5 - max(65 - (m["maintainability.mi.p5"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m["maintainability.mi.min"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
-                    SymbolLevel::Project->value => 'clamp(100 - max(82 - (m["maintainability.mi.avg"] ?? 75), 0) * 2.0 - max(55 - (m["maintainability.mi.p5"] ?? 55), 0) ** 0.5 * 4.5 - max(5 - (m["maintainability.mi.min"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
+                    SymbolLevel::Project->value => 'clamp(100 - max(85 - (m["maintainability.mi.avg"] ?? 75), 0) * 2.5 - max(65 - (m["maintainability.mi.p5"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m["maintainability.mi.min"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
                 ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],

@@ -234,9 +234,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $bag = $repo->get($classPath);
 
-        // health.complexity = clamp(100 - max(4-4,0)*2.0 - max(6-5,0)*2.0 - max(0-10,0)^0.5*2.0 - max(0-10,0)^0.5*2.0, 0, 100)
-        //                   = 100 - 0 - 2.0 - 0 - 0 = 98.0
-        self::assertEqualsWithDelta(98.0, $bag->get('health.complexity'), 0.01);
+        // health.complexity = clamp(100 - max(4-2,0)*2.0 - max(6-1,0)*2.0 - max(0-10,0)^0.5*2.0 - max(0-15,0)^0.5*2.0, 0, 100)
+        //                   = 100 - 4.0 - 10.0 - 0 - 0 = 86.0
+        self::assertEqualsWithDelta(86.0, $bag->get('health.complexity'), 0.01);
 
         // health.cohesion = clamp(sqrt(0.6)*50 + (1 - clamp((2-1)/5, 0, 1)) * 50, 0, 100)
         //                 = 0.7746*50 + 0.8*50 = 38.73 + 40 = 78.73
@@ -253,9 +253,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                       = 100 - 30 - 0 = 70.0
         self::assertEqualsWithDelta(70.0, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(98.0*0.35 + 78.73*0.25 + 100.0*0.25 + 80*0.15, 0, 100)
-        //                = 34.3 + 19.6825 + 25.0 + 12.0 = 90.98
-        self::assertEqualsWithDelta(90.98, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(86.0*0.35 + 78.73*0.25 + 100.0*0.25 + 80*0.15, 0, 100)
+        //                = 30.1 + 19.6825 + 25.0 + 12.0 = 86.78
+        self::assertEqualsWithDelta(86.78, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]
@@ -332,13 +332,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $bag = $repo->get($nsPath);
 
-        // health.complexity = clamp(100 - max(3-3,0)*1.5 - max(4-4,0)*1.5 - 0 - 0 - 0, 0, 100)
-        //                   = 100 (no p95/max metrics present → ?? 0, all below thresholds)
-        self::assertEqualsWithDelta(100.0, $bag->get('health.complexity'), 0.01);
+        // health.complexity = clamp(100 - max(30/10-2,0)*5.0 - max(40/10-1,0)*4.0 - 0 - 0 - 0, 0, 100)
+        //                   = 100 - 5.0 - 12.0 = 83.0 (no p95/max metrics present → ?? 0)
+        self::assertEqualsWithDelta(83.0, $bag->get('health.complexity'), 0.01);
 
-        // health.cohesion = clamp(sqrt(0.5)*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100)
-        //                 = 0.7071*50 + 0.6*50 = 35.36 + 30 = 65.36
-        self::assertEqualsWithDelta(65.36, $bag->get('health.cohesion'), 0.01);
+        // health.cohesion = clamp(sqrt(0.5)*50 + (1 - clamp((3-1)/2, 0, 1))*50, 0, 100)
+        //                 = 0.7071*50 + 0*50 = 35.36 (LCOM4 3.0 saturates the structural half)
+        self::assertEqualsWithDelta(35.36, $bag->get('health.cohesion'), 0.01);
 
         // health.coupling = 100 * 18 / (18 + dist*6
         //                              + max(ce_packages_avg*3 + sqrt(ce_avg)*0.5 - 4, 0)*4
@@ -351,13 +351,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.typing = (40+35+20) / max(50+50+25, 1) * 100 = 95/125 * 100 = 76
         self::assertEqualsWithDelta(76.0, $bag->get('health.typing'), 0.01);
 
-        // health.maintainability = clamp(100 - max(82-70,0)*2.0 - max(55-50,0)^0.5*4.5 - max(5-25,0)^0.4*1.5, 0, 100)
-        //                       = 100 - 24 - sqrt(5)*4.5 - 0 = 100 - 24 - 10.06 = 65.94
-        self::assertEqualsWithDelta(65.94, $bag->get('health.maintainability'), 0.5);
+        // health.maintainability = clamp(100 - max(85-70,0)*2.5 - max(65-50,0)^0.5*4.5 - max(5-25,0)^0.4*1.5, 0, 100)
+        //                       = 100 - 37.5 - sqrt(15)*4.5 - 0 = 100 - 37.5 - 17.43 = 45.07
+        self::assertEqualsWithDelta(45.07, $bag->get('health.maintainability'), 0.5);
 
-        // health.overall = clamp(100*0.30 + 65.36*0.20 + 90.91*0.20 + 76*0.10 + 65.94*0.20, 0, 100)
-        //                = 30.0 + 13.072 + 18.182 + 7.6 + 13.188 = 82.04
-        self::assertEqualsWithDelta(82.04, $bag->get('health.overall'), 0.5);
+        // health.overall = clamp(83*0.30 + 35.36*0.20 + 90.91*0.20 + 76*0.10 + 45.07*0.20, 0, 100)
+        //                = 24.9 + 7.071 + 18.182 + 7.6 + 9.014 = 66.77
+        self::assertEqualsWithDelta(66.77, $bag->get('health.overall'), 0.5);
     }
 
     #[Test]
@@ -658,15 +658,14 @@ final class ComputedMetricEvaluatorTest extends TestCase
         self::assertNotNull($score);
 
         // Per-method averages: CCN = 40/6 ≈ 6.67, Cognitive = 30/6 = 5.0
-        // penalty = max(6.67-3, 0)*1.5 + max(5.0-4, 0)*1.5 + 0 + 0 + 0
-        //         = 3.67*1.5 + 1.0*1.5 = 5.5 + 1.5 = 7.0
-        // score = 100 - 7.0 = 93.0
-        self::assertEqualsWithDelta(93.0, $score, 0.01);
+        // penalty = max(6.67-2, 0)*5.0 + max(5.0-1, 0)*4.0 + 0 + 0 + 0
+        //         = 4.67*5.0 + 4.0*4.0 = 23.33 + 16.0 = 39.33
+        // score = 100 - 39.33 = 60.67
+        self::assertEqualsWithDelta(60.67, $score, 0.01);
 
-        // Verify: with old formula (ccn.avg=20), score would be much worse:
-        // penalty = max(20-4, 0)*2.0 + max(15-5, 0)*2.5 + 0.25 = 32 + 25 + 0.25 = 57.25
-        // score = 100 - 57.25 = 42.75 (much lower!)
-        self::assertGreaterThan(80.0, $score, 'Per-method averaging should give a much better score than per-class WMC averaging');
+        // Verify: reading the per-class averages instead (ccn.avg=20, cognitive.avg=15) would
+        // penalise 18*5.0 + 14*4.0 = 146, clamping the score to 0.
+        self::assertGreaterThan(50.0, $score, 'Per-method averaging should give a much better score than per-class WMC averaging');
     }
 
     #[Test]
