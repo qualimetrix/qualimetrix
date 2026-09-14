@@ -11,7 +11,7 @@ Key commands:
 ```
 vendor/bin/qmx check src/                              # health summary (default)
 vendor/bin/qmx check src/ --detail                     # summary + violation list
-vendor/bin/qmx check src/ --format=text                # full violation report grouped by file
+vendor/bin/qmx check src/ --format=text                # one line per finding, ordered by file
 vendor/bin/qmx check src/ --format=metrics             # raw metric values for all symbols
 vendor/bin/qmx check src/ --format=json                # structured JSON output
 vendor/bin/qmx check src/ --format=html -o report.html   # interactive HTML report
@@ -27,7 +27,7 @@ vendor/bin/qmx graph:export src/ -o graph.dot          # dependency graph
 vendor/bin/qmx hook:install                            # pre-commit hook
 ```
 
-Output formats: `summary` (default), `text`, `metrics`, `json`, `health` (HTML), `sarif`, `checkstyle`, `gitlab`, `github`, `suppressed` (machine-readable composition of what was suppressed and why).
+Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why).
 
 Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`.
 
