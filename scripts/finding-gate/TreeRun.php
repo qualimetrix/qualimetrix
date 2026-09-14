@@ -160,7 +160,18 @@ final class TreeRun
             Fs::removeRecursively($cache);
         }
 
-        $result = Process::run([\PHP_BINARY, $this->treeRoot . '/bin/qmx', ...$command], $workingDirectory);
+        try {
+            $result = Process::run([\PHP_BINARY, $this->treeRoot . '/bin/qmx', ...$command], $workingDirectory);
+        } catch (GateError $error) {
+            // The corpus lives in the repository, so a cache left inside a case
+            // directory is scratch state left in the developer's tree. An
+            // interrupted run reaches this and the removal below does not.
+            if ($isolateCache) {
+                Fs::removeRecursively($cache);
+            }
+
+            throw $error;
+        }
 
         if ($isolateCache) {
             // Asserted on the one command that runs with the cache enabled: if

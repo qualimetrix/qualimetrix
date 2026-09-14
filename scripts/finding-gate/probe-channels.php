@@ -29,7 +29,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
-require __DIR__ . '/CommandLine.php';
+require __DIR__ . '/classes.php';
 
 [$self, $treeRoot, $caseDirectory, $configuration] = CommandLine::arguments() + [null, null, null, null];
 
