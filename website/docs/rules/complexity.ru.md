@@ -384,7 +384,7 @@ rules:
 rules:
   complexity.npath:
     callable:
-      threshold: 500   # warning=500, error=500
+      threshold: 300   # warning=300, error=300 → все нарушения становятся ошибками
 ```
 
 ```bash

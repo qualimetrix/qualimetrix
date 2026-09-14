@@ -55,8 +55,11 @@ final class Process
         return $process->reap();
     }
 
+    /** One of the three points where an interrupt is acted on; see {@see Interruption::raiseIfRequested()}. */
     private static function poll(ProcessHandle $process): void
     {
+        Interruption::raiseIfRequested();
+
         $read = $process->openStreams();
 
         if ($read !== []) {

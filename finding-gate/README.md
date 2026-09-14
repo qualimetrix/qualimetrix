@@ -296,12 +296,13 @@ the `bin/qmx rules` snapshot.
 
 ## Verdicts
 
-| Verdict   | Exit | Meaning                                                |
-| --------- | ---- | ------------------------------------------------------ |
-| `GREEN`   | 0    | Full corpus, and the two trees are finding-equivalent. |
-| `PARTIAL` | 2    | Nothing failed, but the run claims no equivalence.     |
-| `RED`     | 1    | At least one failure class fired.                      |
-| —         | 3    | The gate could not run (bad corpus, bad map, no tree). |
+| Verdict   | Exit  | Meaning                                                    |
+| --------- | ----- | ---------------------------------------------------------- |
+| `GREEN`   | 0     | Full corpus, and the two trees are finding-equivalent.     |
+| `PARTIAL` | 2     | Nothing failed, but the run claims no equivalence.         |
+| `RED`     | 1     | At least one failure class fired.                          |
+| —         | 3     | The gate could not run (bad corpus, bad map, no tree).     |
+| —         | 128+n | A signal stopped the run: 130 for SIGINT, 143 for SIGTERM. |
 
 A run is `PARTIAL`, never `GREEN`, when `--cases=` restricted the corpus or when
 `--incomplete-corpus` downgraded a coverage shortfall to a warning. Only a
@@ -328,6 +329,28 @@ surface. The gate fails before starting a child unless PHP's POSIX extension and
 the `pgrep` executable are available, because without both it cannot guarantee
 that a timed-out product process leaves no worker descendants behind. Both are
 present in the supported macOS and Ubuntu development environments.
+
+### What a run borrows, and when it hands it back
+
+A run takes two scratch directories — `finding-gate-run-*` for its artifacts and
+`finding-gate-ref-*` for the reference checkout — and it registers that checkout
+as a **git worktree of the repository under test**. The registration is the part
+that matters: a leaked directory costs disk, while a leaked registration stays in
+`git worktree list` for good and has to be cleared by hand.
+
+All of it is released on every exit path the process survives long enough to
+take: a normal exit, a failure, an interrupt, and a PHP fatal. Signals are turned
+into a stop the run takes at a decision point of its own rather than wherever the
+signal landed, because PHP's default disposition runs neither `finally` nor a
+shutdown function — which is exactly how the registration used to be left behind.
+A run therefore needs the `pcntl` extension and refuses to start without it.
+
+Two consequences worth knowing. A second Ctrl-C is ignored, so that giving the
+checkout back cannot be cut in half; `SIGQUIT` is left at its default as the
+escape hatch. And a `SIGKILL` is still a `SIGKILL` — nothing runs, so a run
+killed with `-9` can leave a registration, including the `locked` kind that
+`git worktree prune` skips. Every run prunes before it takes a checkout, and a
+release uses `git worktree remove --force --force`, which is what clears one.
 
 `--incomplete-corpus` exists for a corpus that does not yet claim the whole
 declared channel set — while cases are being written, and for a one-case

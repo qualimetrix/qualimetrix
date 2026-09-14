@@ -73,9 +73,7 @@ use Throwable;
 // start used to die with "Class not found" and a shell's 255, which is exactly
 // the outcome the codes below promise not to produce. Enumerating `throw` in
 // this file could not have seen it.
-require __DIR__ . '/finding-gate/GateError.php';
-require __DIR__ . '/finding-gate/ProcessHandle.php';
-require __DIR__ . '/finding-gate/Process.php';
+require __DIR__ . '/finding-gate/classes.php';
 
 foreach ([
     'AuditReportError',

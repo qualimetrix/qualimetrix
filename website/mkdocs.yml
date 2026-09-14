@@ -135,3 +135,7 @@ nav:
       - Remediation Time: reference/remediation-time.md
   - Changelog: changelog.md
   - GitHub: https://github.com/qualimetrix/qualimetrix
+
+validation:
+  links:
+    anchors: warn

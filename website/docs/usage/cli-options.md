@@ -158,15 +158,49 @@ still works.
 
 **JSON format options:**
 
-| Option              | Default | Description                          |
-| ------------------- | ------- | ------------------------------------ |
-| `violations=N\|all` | all     | Max violations in output (0=none)    |
-| `limit=N`           | all     | Alias for `violations`               |
-| `top=N`             | 10      | Number of worst offenders to include |
+| Option                   | Default | Description                                                                                                 |
+| ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
+| `violations=N\|all`      | all     | Max violations in output (0=none)                                                                           |
+| `limit=N`                | all     | Alias for `violations`                                                                                      |
+| `top=N`                  | 10      | Number of worst offenders to include                                                                        |
+| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by [violation density](output-formats.md#json) |
 
 ```bash
 bin/qmx check src/ --format=json --format-opt=limit=100
 bin/qmx check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --format-opt=rank-by=density
+```
+
+**Summary format options:**
+
+| Option                   | Default | Description                                                                       |
+| ------------------------ | ------- | --------------------------------------------------------------------------------- |
+| `top=N`                  | 3       | Number of worst offenders to include                                              |
+| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by violation density |
+
+```bash
+bin/qmx check src/ --format-opt=rank-by=density
+```
+
+!!! note "Two unrelated options named `top`"
+    `--format-opt=top=N` (JSON and summary formats) caps the worst-namespace/worst-class
+    offender lists. The global [`--top`](#--top) flag is a different knob: it caps the
+    separate "Top issues by impact" list. The two can be set independently.
+
+**Health format options:**
+
+| Option           | Default | Description                                              |
+| ---------------- | ------- | -------------------------------------------------------- |
+| `contributors=N` | 3       | Number of worst contributors listed per health dimension |
+
+**HTML format options:**
+
+| Option              | Default       | Description                                         |
+| ------------------- | ------------- | --------------------------------------------------- |
+| `project-name=NAME` | auto-detected | Overrides the project name shown in the HTML report |
+
+```bash
+bin/qmx check src/ --format=html --format-opt=project-name="My Project" -o report.html
 ```
 
 ### `--fail-on`
@@ -229,6 +263,29 @@ bin/qmx check src/ --detail=50
 ```
 
 Auto-enabled when `--namespace` or `--class` is used.
+
+### `--top`
+
+Number of top-impact issues to show. Default: `10`; `0` disables the section.
+
+```bash
+# Default: top 10
+bin/qmx check src/
+
+# Show the top 25
+bin/qmx check src/ --top=25
+
+# Disable the section
+bin/qmx check src/ --top=0
+```
+
+Controls the "Top issues by impact" section of the `summary` format and the
+`topIssues` key of `--format=json` — a list of findings ranked by impact
+(combining ClassRank, severity and remediation time), separate from the
+worst-namespace and worst-class offender lists. No other format renders it.
+
+This is a different knob from `--format-opt=top=N`, which caps the worst-offender
+lists instead — see the [format options tables](#--format-opt) above.
 
 ### `--all`
 
@@ -539,6 +596,32 @@ with warnings emitted during a run. Both are drawn through one owner: a
 diagnostic line pushes the bar down and stays on the screen, and the bar is
 redrawn beneath it. Raising verbosity therefore does not turn the bar off, and
 the bar does not eat log lines.
+
+### `--silent`, `-q`/`--quiet`
+
+Symfony console flags that suppress normal output. Both are accepted by every
+command:
+
+```bash
+bin/qmx check src/ --silent
+bin/qmx check src/ -q
+```
+
+!!! warning "`--silent` no longer guarantees zero bytes on every exit code"
+    `--silent` and `-q`/`--quiet` currently behave identically: both suppress the
+    report on standard output, but a configuration or input refusal (e.g. a path
+    that does not exist) is still written to **standard error**. A run refused
+    before analysis starts produces 0 bytes on stdout and a human-readable error
+    line on stderr, whichever of the two flags was passed:
+
+    ```bash
+    bin/qmx check src/DoesNotExist --silent
+    # exit code 3, empty stdout, error message on stderr
+    ```
+
+    A CI wrapper built on the older assumption that `--silent` means "zero output
+    on any exit code" will see that stderr text on a refusal. Redirect standard
+    error too (`--silent 2>/dev/null`) if that assumption must hold.
 
 ---
 

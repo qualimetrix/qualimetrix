@@ -528,7 +528,7 @@ composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
 # Finding equivalence between two revisions of the product
-composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3
+composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3, interrupted 128+signal
 composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
 # What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)

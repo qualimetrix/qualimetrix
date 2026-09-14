@@ -1,0 +1,206 @@
+Corrections to the map after review: the owner is taken from #[CoversClass], not from the dominant import.
+
+tests/Functional/Console/LayerAssignmentCommandTest.php
+  before: tests/Analysis/Policy/Architecture/Functional  (create a level)
+  after: tests/Infrastructure/Console/Functional
+tests/Integration/Architecture/MaxExpandedLayersFromYamlTest.php
+  before: tests/Analysis/Configuration/Integration
+  after: tests/Analysis/Integration  (create a level)
+tests/Integration/DependencyInjection/ContainerFactoryTest.php
+  before: tests/Analysis/Evidence/CodeSmell/Integration
+  after: tests/Infrastructure/Integration
+tests/Integration/DependencyInjection/RuleRegistrationDriftTest.php
+  before: tests/Analysis/Finding/Integration
+  after: tests/Infrastructure/Rule/Integration  (create a level)
+tests/Integration/Infrastructure/Cache/CacheKeyGeneratorVOTest.php
+  before: tests/Infrastructure/Integration
+  after: tests/Infrastructure/Cache/Integration  (create a level)
+tests/Integration/Infrastructure/Git/GitSubdirScopeTest.php
+  before: tests/Core/Path/Integration  (create a level)
+  after: tests/Infrastructure/Integration
+tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php
+  before: tests/Analysis/Finding/Integration
+  after: tests/Infrastructure/Integration
+tests/Unit/Core/Util/PathMatcherTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Core/Unit  (create a level)
+tests/Unit/Infrastructure/Ast/CachedFileParserTest.php
+  before: tests/Core/Unit  (create a level)
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Ast/FileParserFactoryTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Ast/PhpFileParserTest.php
+  before: tests/Core/Unit  (create a level)
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Cache/FileCacheTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Infrastructure/Cache/Unit
+tests/Unit/Infrastructure/Console/ApplicationTest.php
+  before: tests/Analysis/Configuration/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/CheckCommandDefinitionTest.php
+  before: tests/Analysis/Evidence/CircularDependency/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php
+  before: tests/Analysis/Run/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/CliOptionsParserTest.php
+  before: tests/Analysis/Configuration/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/FormatterContextFactoryTest.php
+  before: tests/Analysis/Configuration/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/MeasuredFindingSetTest.php
+  before: tests/Analysis/Run/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php
+  before: tests/Analysis/Configuration/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Console/ScopeWarningCheckerTest.php
+  before: tests/Analysis/Configuration/Unit
+  after: tests/Infrastructure/Console/Unit
+tests/Unit/Infrastructure/Git/ChangedFileTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Git/GitClientTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Git/GitRepositoryLocatorTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Git/GitScopeResolverTest.php
+  before: tests/Analysis/Run/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Infrastructure/Unit
+tests/Unit/Infrastructure/Parallel/FileProcessingResultWireFormatTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Core/Symbol/Unit
+tests/Unit/Infrastructure/Parallel/FileProcessingTaskFactoryTest.php
+  before: tests/Analysis/Evidence/Cohesion/Unit
+  after: tests/Infrastructure/Parallel/Unit
+tests/Unit/Infrastructure/Parallel/Strategy/AmphpParallelStrategyTest.php
+  before: tests/Analysis/Evidence/Cohesion/Unit
+  after: tests/Infrastructure/Parallel/Unit
+tests/Unit/Infrastructure/Parallel/WorkerBootstrapTest.php
+  before: tests/Analysis/Evidence/DependencyModel/Unit
+  after: tests/Infrastructure/Parallel/Unit
+tests/Unit/PromiseEffect/ClassifierTest.php
+  before: tests/PromiseEffect/Classifier/Unit  (create a subject)
+  after: tests/PromiseEffect/Unit  (create a subject)
+tests/Unit/PromiseEffect/FloorTest.php
+  before: tests/PromiseEffect/Cell/Unit  (create a subject)
+  after: tests/PromiseEffect/Unit  (create a subject)
+tests/Unit/Reporting/Filter/FindingFilterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/HealthTextFormatterTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Html/HtmlFindingPartitionerTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/HtmlFormatterTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Json/JsonFindingSectionTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Json/JsonHealthSectionTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/JsonFormatterTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/MetricsJsonFormatterTest.php
+  before: tests/Analysis/Evidence/Measurement/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Sarif/Unit  (create a level)
+tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Sarif/Unit  (create a level)
+tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Sarif/Unit  (create a level)
+tests/Unit/Reporting/Formatter/SarifFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Sarif/Unit  (create a level)
+tests/Unit/Reporting/Formatter/Summary/FindingSummaryRendererTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Summary/HealthBarRendererTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/SummaryFormatterTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Support/DetailedFindingRendererTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/Support/FindingSorterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/TextFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Formatter/Unit
+tests/Unit/Reporting/FormatterContextTest.php
+  before: tests/Core/Path/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/Health/HealthHintProjectorTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/Health/HealthScoreResolverTest.php
+  before: tests/Analysis/Evidence/ComputedMetrics/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/Health/SummaryEnricherTest.php
+  before: tests/Analysis/Evidence/Prioritization/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/ReportBuilderTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Unit
+tests/Unit/Reporting/ReportTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Reporting/Unit
+tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php
+  before: tests/Analysis/Policy/Inline/Unit
+  after: tests/Analysis/Policy/Unit  (create a level)
+tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php
+  before: tests/Analysis/Finding/Unit
+  after: tests/Core/Symbol/Unit

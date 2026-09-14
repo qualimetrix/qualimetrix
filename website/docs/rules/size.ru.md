@@ -276,7 +276,7 @@ rules:
 ```yaml
 rules:
   size.property-count:
-    threshold: 15   # warning=15, error=15
+    threshold: 18     # warning=18, error=18 → все нарушения становятся ошибками
 ```
 
 ```bash

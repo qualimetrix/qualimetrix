@@ -34,11 +34,16 @@ bin/qmx hook:install
 
 | Format       | Use Case                                                                             |
 | ------------ | ------------------------------------------------------------------------------------ |
-| `text`       | CLI, human-readable                                                                  |
+| `summary`    | CLI, human-readable overview — the default                                           |
+| `text`       | CLI, one line per finding                                                            |
 | `json`       | CI/CD integration                                                                    |
+| `metrics`    | Raw metric values for every symbol                                                   |
+| `health`     | Health-score table with worst contributors                                           |
+| `html`       | Interactive treemap report (`-o report.html`)                                        |
 | `checkstyle` | Jenkins, SonarQube                                                                   |
 | `sarif`      | GitHub Security, VS Code                                                             |
 | `gitlab`     | GitLab Code Quality                                                                  |
+| `github`     | GitHub Actions inline PR annotations                                                 |
 | `suppressed` | Auditing what a run held back and why (`--show-suppressed` for a partial prose view) |
 
 ## Configuration

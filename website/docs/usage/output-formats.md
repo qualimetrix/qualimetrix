@@ -17,35 +17,70 @@ Health-oriented overview showing project health scores, worst offenders, and vio
 
 **Key features:**
 
-- 6 health dimensions with progress bars (complexity, cohesion, coupling, typing, maintainability, overall)
-- Top-3 worst namespaces and classes with health scores
+- An overall health bar plus one bar per dimension (complexity, cohesion, coupling, typing, maintainability), each followed by a `↳` decomposition breakdown of the metrics behind that score
+- Scores as percentages, not raw point values
+- One-line `Worst namespaces` / `Worst classes` lists, each entry prefixed by its score, with a trailing `+N more (use ...)` when the list was truncated
+- A `Top issues by impact` section: a ranked list of the highest-impact individual violations, each with severity, impact score, file, estimated fix time, rule channel, message, and symbol
 - Violation count with tech debt estimate (including debt density per 1K LOC)
-- Contextual hints for next steps
+- Multiple contextual `Hints:` for next steps
 
 **Example output:**
 
 ```
-Qualimetrix — 45 files analyzed, 1.23s
+Qualimetrix 0.26.0 — 62 files analyzed, 0.8s
 
-  Complexity     ████████████████░░░░  78 Excellent
-  Cohesion       ██████████████░░░░░░  68 Fair
-  Coupling       ████████████░░░░░░░░  59 Fair
-  Typing         ██████████████████░░  88 Excellent
-  Maintainability████████████████░░░░  80 Good
-  Overall        ██████████████░░░░░░  72 Fair
+Analysis complete: 62 analyzed, 0 generated file(s) excluded.
 
-Worst namespaces:
-  App\Service           52 Poor      | App\Repository        61 Fair
-  App\Controller        55 Fair
+Health █████████████████████░░░░░░░░░ 71.4% Fair
 
-Worst classes:
-  App\Service\OrderService          38 Critical  | App\Service\UserService   45 Poor
-  App\Repository\OrderRepository    51 Poor
+  Complexity      ████████████████████████░░░░░░ 79.2% Good
+                   ↳ Cyclomatic (avg): 3.1 (target: below 4) — manageable branching
+                   ↳ Cognitive (avg): 2.4 (target: below 5) — straightforward control flow
+                   ↳ Cyclomatic: 14 (target: below 4) — too many code paths
+                   ↳ Cognitive: 18 (target: below 5) — deeply nested, hard to follow
+  Cohesion        ████████████████░░░░░░░░░░░░░░ 54.8% Poor
+                   ↳ TCC: 0.4 (target: above 0.5) — methods rarely share fields
+                   ↳ LCOM4: 3 (target: 1 or less) — class splits into unrelated clusters
+  Coupling        ███████████████████░░░░░░░░░░░ 63.1% Fair
+                   ↳ Ce (avg): 4.7 (target: below 3) — elevated outgoing coupling
+                   ↳ Ce pkg (avg): 1.8 (target: below 1) — wide package dependencies
+                   ↳ Distance: 0.52 (target: below 0.3) — poor balance of abstraction and stability
+  Typing          ███████████████████████████░░░ 91.3% Excellent
+                   ↳ Parameter types: 91 (target: 100%) — 251 of 275 typed (91.3%)
+                   ↳ Return types: 88 (target: 100%) — 231 of 262 typed (88.2%)
+                   ↳ Property types: 95 (target: 100%) — 118 of 124 typed (95.2%)
+  Maintainability █████████████████████████░░░░░ 82.0% Good
+                   ↳ MI (avg): 71.4 (target: above 65) — code is maintainable
+                   ↳ MI (p5): 52.6 (target: above 50) — even worst methods are maintainable
+                   ↳ MI: 41.8 (target: above 65) — code is hard to change safely
+  * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)
 
-Violations: 12 errors, 8 warnings | Tech debt: 4h 30m (2.1/1K LOC)
+Worst namespaces
+  48.2 App\Billing\Invoice (6 classes, 11 violations, 3.8/100 LOC)
+  55.9 App\Service\Order (4 classes, 7 violations, 2.1/100 LOC)
+  61.3 App\Repository (9 classes, 5 violations, 0.9/100 LOC)
+  +5 more (use --format=html or --format-opt=top=8)
 
-Hint: Run with --namespace=App\\Service to drill down into the worst namespace
+Worst classes
+  38.4 App\Billing\Invoice\InvoiceCalculator — low cohesion
+  45.1 App\Service\Order\OrderService — high coupling
+  52.7 App\Repository\OrderRepository
+  +9 more (use --format=html or --format-opt=top=10)
+
+
+Top issues by impact
+  1. [ERR] 4.12  src/Billing/Invoice/InvoiceCalculator.php  [45min]
+         complexity.cognitive: Cognitive complexity: 24 (threshold: 15). Top: nested if +4 L88, nested foreach +3 L74, nested if +2 L91 — deeply nested, hard to follow (InvoiceCalculator::recalculate)
+  2. [ERR] 3.65  src/Service/Order/OrderService.php  [30min]
+         coupling.cbo: CBO is 21 (threshold: 15) — too many collaborators (OrderService)
+  3. [WRN] 2.90  src/Repository/OrderRepository.php  [20min]
+         complexity.ccn: Cyclomatic complexity: 13 (threshold: 10) — too many code paths (OrderRepository::findByCriteria)
+82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
+
+Hints: --detail to see violations (top 200) | --namespace='App\Billing\Invoice' to drill down | --format=html -o report.html for full report
 ```
+
+See [CLI Options](cli-options.md) for the flag that controls how many `Top issues by impact` entries are shown.
 
 **Drill-down with `--namespace` and `--class`:**
 
@@ -84,14 +119,18 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Service/UserService.php:42: error[complexity.ccn]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
-src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
-src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
+src/Service/UserService.php:42: warning[code-smell.error-suppression]: Error suppression (@) on find() - handle errors explicitly
+src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
+src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0.041, exceeds threshold of 0.037 (scaled for 45 classes). This class is a critical hub — changes have wide impact (OrderRepository)
 
-3 error(s), 0 warning(s) in 45 file(s)
+0 error(s), 3 warning(s) in 45 file(s)
 ```
 
-**Format:** `file:line: severity[violationCode]: message (symbol)`
+**Format:** there are three line shapes, depending on what the finding is about.
+
+- A violation pinned to a specific statement carries a line number: `file:line: severity[violationCode]: message (symbol)`.
+- A class- or method-level finding whose rule judges the whole declaration rather than one statement — for example `complexity.ccn`, `complexity.wmc`, `coupling.class-rank` — omits the line segment instead: `file: severity[violationCode]: message (symbol)`, even though the same finding carries a `line` in `--format=json`.
+- A project-level finding (no owning file at all — e.g. an `architecture.unreachable-layer` finding) drops the file segment too: `[project]: severity[violationCode]: message`, with no trailing `(symbol)`. On this project's own self-analysis this third form is common, not an edge case: `bin/qmx check src/Analysis/Evidence/Complexity --format=text` prints project-level lines for a majority of the output.
 
 ---
 
@@ -118,7 +157,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+**Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -195,6 +234,20 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "healthScores": {}
         }
     ],
+    "topIssues": [
+        {
+            "rank": 1,
+            "file": "src/Service/UserService.php",
+            "line": 42,
+            "symbol": "App\\Service\\UserService::calculate",
+            "rule": "complexity.ccn",
+            "severity": "error",
+            "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
+            "impactScore": 3.71,
+            "coupling.class-rank": 0.1237,
+            "debtMinutes": 30
+        }
+    ],
     "violations": [
         {
             "file": "src/Service/UserService.php",
@@ -212,11 +265,13 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "recommendation": null,
             "metricValue": 15,
             "threshold": 10,
-            "techDebtMinutes": 30
+            "techDebtMinutes": 30,
+            "acceptedLevel": null
         }
     ],
     "violationsMeta": {
         "total": 3,
+        "shown": 3,
         "limit": null,
         "truncated": false,
         "byRule": {
@@ -231,6 +286,23 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
 
+`topIssues` is the same ranked list the `summary` format prints as "Top issues
+by impact"; no other format renders it. Each entry names the rule-specific
+`impactScore` used for ranking and the estimated `debtMinutes`. The
+`coupling.class-rank` key is always present, but its value is `null` unless the
+rule producing the issue reads a coupling-hub signal; `file` and `line` are
+nullable too, because a project-level finding has no source position.
+
+Each violation carries `acceptedLevel`: the baseline ceiling this finding was
+measured against, or `null` whenever the finding has no accepted level of its
+own. That covers two distinct cases the value cannot tell apart: no baseline
+is configured for the run at all, or a baseline is configured but this
+particular finding is new and the baseline never judged it. Neither the JSON
+payload nor `acceptedLevel` itself exposes which case applies. `violationsMeta`
+also reports `shown` — the number of violations actually included in this
+payload, which can be lower than `total` when `--format-opt=violations=N`
+truncates the list.
+
 For machine identity, use `channel + subject + optional occurrence + optional
 edge`. `symbol` is the logical display projection; source line, message, and
 display order are not stable identity. `subject` distinguishes exact
@@ -243,17 +315,17 @@ use the same tuple, so target-only edges differ by target and from a typed edge
 to the same target. Existing no-edge and fully typed fingerprints are
 unchanged.
 
-When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts (`errorCount`, `warningCount`, `violationDensity`).
+When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
+
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `__PROJECT__` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
 {
     "violationGroups": {
         "App\\Service\\UserService": {
-            "violations": [...],
-            "errorCount": 2,
-            "warningCount": 1,
-            "violationDensity": 3.5
+            "count": 3,
+            "violations": [...]
         }
     }
 }
@@ -284,11 +356,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Raw metric values for every symbol (file, class, callable, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
+Raw metric values for every symbol (file, class, namespace, method, function, project). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -296,6 +368,7 @@ Raw metric values for every symbol (file, class, callable, namespace). Unlike `j
 ```json
 {
     "version": "1.0.0",
+    "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
     "symbols": [
@@ -365,7 +438,7 @@ Checkstyle XML format. Widely supported by CI tools.
 
 **When to use:** Jenkins, SonarQube, or any tool that accepts Checkstyle XML.
 
-Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning" message="" source="qmx.<rule>"/>`.
+Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -401,39 +474,52 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 
 **When to use:** GitHub Security tab, VS Code (with SARIF Viewer extension), JetBrains IDEs, Azure DevOps.
 
-SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `level` (error/warning), `message.text`, `locations[].physicalLocation.{artifactLocation.uri,region.startLine}`.
+SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `ruleIndex` (position of the rule in `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, and `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` is not present on every result: a project-level finding with no source position (e.g. `architecture.unreachable-layer`) has no `locations` array at all.
+
+`runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI.
+
+`partialFingerprints.primaryLocationLineHash` matters beyond spec completeness:
+it is what GitHub's code-scanning alert de-duplication keys on across uploads,
+so an alert stays the same tracked alert (not a new one) as long as its
+fingerprint is stable between runs.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
 
 ```json
 {
-    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
     "version": "2.1.0",
     "runs": [
         {
             "tool": {
                 "driver": {
                     "name": "Qualimetrix",
-                    "version": "0.1.0",
+                    "version": "0.26.0",
                     "rules": [...]
                 }
             },
             "results": [
                 {
                     "ruleId": "complexity.ccn",
+                    "ruleIndex": 0,
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
+                    },
+                    "partialFingerprints": {
+                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:4e6e45ba70fb46d4"
                     },
                     "locations": [
                         {
                             "physicalLocation": {
                                 "artifactLocation": {
-                                    "uri": "src/Service/UserService.php"
+                                    "uri": "src/Service/UserService.php",
+                                    "uriBaseId": "%SRCROOT%"
                                 },
                                 "region": {
-                                    "startLine": 42
+                                    "startLine": 42,
+                                    "startColumn": 1
                                 }
                             }
                         }
@@ -468,7 +554,7 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 
 **When to use:** GitLab CI/CD with Code Quality reports.
 
-Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major.
+Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major, info → info.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -776,13 +862,13 @@ generated-only input, complete analysis, and incomplete analysis.
 
 All formats use the same exit codes:
 
-| Exit code | Meaning                                                 |
-| --------- | ------------------------------------------------------- |
-| 0         | No violations                                           |
-| 1         | At least one warning (but no errors)                    |
-| 2         | At least one error-severity violation                   |
-| 3         | Configuration or input error                            |
-| 4         | Analysis incomplete; policy result is not authoritative |
+| Exit code | Meaning                                                               |
+| --------- | --------------------------------------------------------------------- |
+| 0         | No violations (or only warnings, under the default `--fail-on=error`) |
+| 1         | At least one warning, under `--fail-on=warning`                       |
+| 2         | At least one error-severity violation                                 |
+| 3         | Configuration or input error                                          |
+| 4         | Analysis incomplete; policy result is not authoritative               |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
 

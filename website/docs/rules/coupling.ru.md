@@ -627,32 +627,24 @@ ClassRank использует алгоритм **PageRank на графе за�
 ### Пример
 
 ```php
-// Класс, от которого зависят многие другие (высокий ClassRank)
-class EventDispatcher
+// Этот класс используется (прямо или косвенно) большей частью проекта
+class DatabaseConnection
 {
-    public function dispatch(Event $event): void { /* ... */ }
+    public function query(string $sql, array $params = []): Result { /* ... */ }
+    public function beginTransaction(): void { /* ... */ }
+    public function commit(): void { /* ... */ }
+    public function rollback(): void { /* ... */ }
 }
 
-// UserService зависит от EventDispatcher -> "голосует" за него
-class UserService
-{
-    public function __construct(private EventDispatcher $dispatcher) {}
-}
-
-// OrderService тоже зависит от EventDispatcher -> ещё один "голос"
-class OrderService
-{
-    public function __construct(private EventDispatcher $dispatcher) {}
-}
-
-// PaymentService тоже -> и ещё один
-class PaymentService
-{
-    public function __construct(private EventDispatcher $dispatcher) {}
-}
-
-// EventDispatcher получает высокий ClassRank, т.к. от него зависят
-// многие важные классы. Если его ClassRank >= 0.02 -> WARNING
+// UserRepository зависит от DatabaseConnection -> голосует за него
+// OrderRepository зависит от DatabaseConnection -> голосует за него
+// PaymentService зависит от DatabaseConnection -> голосует за него
+// ReportGenerator зависит от DatabaseConnection -> голосует за него
+// AuditLogger зависит от DatabaseConnection -> голосует за него
+//
+// Если эти зависимые классы сами важны (имеют высокий ранг),
+// ClassRank DatabaseConnection растёт ещё сильнее.
+// ClassRank = 0.06 -> ERROR (против порога, отмасштабированного по числу классов проекта)
 ```
 
 <!-- llms:skip-end -->
@@ -660,9 +652,9 @@ class PaymentService
 <!-- llms:skip-begin -->
 ### Как исправить
 
-- **Извлеките интерфейс.** Выделите `EventDispatcherInterface`, чтобы зависимости шли на абстракцию, а не на конкретный класс. Это упрощает замену реализации и снижает влияние изменений.
-- **Примените инверсию зависимостей (DIP).** Убедитесь, что модули высокого уровня зависят от абстракций, а не от деталей реализации.
-- **Разделите ответственности god-класса.** Если класс имеет высокий ClassRank из-за того, что совмещает множество обязанностей, разбейте его на несколько более узкоспециализированных классов.
+- **Извлеките интерфейс.** Создайте `DatabaseConnectionInterface` и зависьте от него. Это применяет принцип инверсии зависимостей: модули высокого уровня зависят от абстракций, а не от конкретных классов.
+- **Разделите ответственности god-класса.** Если класс делает слишком много, разбейте его. Например, разделите `DatabaseConnection` на `QueryExecutor`, `TransactionManager` и т. д.
+- **Снизьте транзитивную важность.** Если зависимые от этого класса сами являются узлами, рефакторинг их в сторону абстракций снизит и ClassRank этого класса.
 
 <!-- llms:skip-end -->
 

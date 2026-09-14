@@ -198,3 +198,17 @@ rules:
 bin/qmx check src/ --rule-opt="maintainability.mi:warning=35"
 bin/qmx check src/ --rule-opt="maintainability.mi:min_statements=15"
 ```
+
+Простой порог вместо раздельных уровней warning/error
+(`threshold` нельзя сочетать с `warning` или `error` — смешение считается
+ошибкой конфигурации, и прогон останавливается с кодом 3):
+
+```yaml
+rules:
+  maintainability.mi:
+    threshold: 20   # warning=20, error=20 → все нарушения ниже 20 становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="maintainability.mi:threshold=20"
+```

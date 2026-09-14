@@ -96,7 +96,13 @@ class DatabaseConfig
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Обнаруживает потенциальные уязвимости SQL-инъекции -- использование суперглобальных переменных (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) при построении SQL-запросов через конкатенацию, интерполяцию или прямую передачу в аргументы SQL-функций.
+Обнаруживает использование суперглобальных переменных (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) в SQL-контексте, где несанитизированный пользовательский ввод может привести к SQL-инъекции.
+
+**Обнаруживаемые паттерны:**
+
+- Конкатенация строки с SQL-ключевыми словами: `"SELECT * FROM users WHERE id = " . $_GET['id']`
+- Аргумент небезопасной функции запроса: `mysql_query($_GET['q'])`, `mysqli_query($conn, $_POST['sql'])`, `pg_query($_REQUEST['q'])`
+- `sprintf()` с SQL-шаблоном: `sprintf("SELECT * FROM users WHERE id = %s", $_GET['id'])`
 
 <!-- llms:skip-end -->
 
@@ -105,8 +111,13 @@ class DatabaseConfig
 
 ```php
 // Плохо: суперглобальная переменная напрямую в SQL-запросе
-$query = "SELECT * FROM users WHERE id = " . $_GET['id'];
-$result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'");
+$result = mysqli_query($conn, "SELECT * FROM users WHERE id = " . $_GET['id']);
+
+// Плохо: суперглобальная переменная как аргумент функции запроса
+$result = pg_query("SELECT * FROM orders WHERE status = '" . $_POST['status'] . "'");
+
+// Плохо: sprintf с несанитизированным вводом
+$sql = sprintf("DELETE FROM sessions WHERE token = '%s'", $_COOKIE['session']);
 ```
 
 <!-- llms:skip-end -->
@@ -114,23 +125,21 @@ $result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'")
 <!-- llms:skip-begin -->
 ### Как исправить
 
-1. **Используйте параметризованные запросы:**
+Используйте **параметризованные запросы** (prepared statements) вместо конкатенации строк:
 
-    ```php
-    // PDO
-    $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id');
-    $stmt->execute(['id' => $_GET['id']]);
+```php
+// Хорошо: подготовленный запрос PDO
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$_GET['id']]);
 
-    // mysqli
-    $stmt = $conn->prepare('SELECT * FROM users WHERE id = ?');
-    $stmt->bind_param('i', $_GET['id']);
-    $stmt->execute();
-    ```
-
-2. **Используйте ORM** (Doctrine, Eloquent), которые автоматически экранируют параметры.
+// Хорошо: подготовленный запрос mysqli
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $_GET['id']);
+$stmt->execute();
+```
 
 !!! warning "Внимание"
-    SQL-инъекция -- одна из самых опасных уязвимостей. Она позволяет злоумышленнику читать, модифицировать или удалять данные в базе, а в некоторых случаях -- получить контроль над сервером.
+    SQL-инъекция -- одна из самых опасных и распространённых уязвимостей веб-приложений. Никогда не подставляйте пользовательский ввод в SQL-строки конкатенацией, даже если считаете его "безопасным".
 
 ---
 
@@ -144,7 +153,15 @@ $result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'")
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Обнаруживает потенциальные уязвимости межсайтового скриптинга (XSS) -- вывод суперглобальных переменных (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) через `echo`/`print` без санитизации (`htmlspecialchars`, `htmlentities`, `strip_tags`, `intval`, приведение к `int`/`float`).
+Обнаруживает операторы `echo`/`print`, выводящие суперглобальные переменные (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) без должной санитизации, что может привести к межсайтовому скриптингу (XSS).
+
+Нарушение **не** сообщается, если значение обёрнуто в функцию санитизации:
+
+- `htmlspecialchars()`
+- `htmlentities()`
+- `strip_tags()`
+- `intval()`
+- приведение типов `(int)` или `(float)`
 
 <!-- llms:skip-end -->
 
@@ -152,9 +169,13 @@ $result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'")
 ### Пример
 
 ```php
-// Плохо: вывод пользовательского ввода без экранирования
+// Плохо: несанитизированная суперглобальная переменная выводится напрямую
 echo $_GET['name'];
 print("Привет, " . $_POST['username']);
+
+// Хорошо: санитизированный вывод
+echo htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8');
+echo (int) $_GET['page'];
 ```
 
 <!-- llms:skip-end -->
@@ -162,16 +183,20 @@ print("Привет, " . $_POST['username']);
 <!-- llms:skip-begin -->
 ### Как исправить
 
-1. **Экранируйте вывод:**
+Всегда санитизируйте пользовательский ввод перед выводом в HTML:
 
-    ```php
-    echo htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8');
-    ```
+```php
+// Используйте htmlspecialchars с ENT_QUOTES и явной кодировкой
+echo htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8');
 
-2. **Используйте шаблонизатор** (Twig, Blade), который экранирует вывод автоматически.
+// Для целочисленных значений приводите к int
+echo (int) $_GET['id'];
+
+// В шаблонах используйте автоэкранирование вашего фреймворка (Twig, Blade и т.д.)
+```
 
 !!! warning "Внимание"
-    XSS позволяет злоумышленнику внедрить произвольный JavaScript в страницу, что может привести к краже сессий, перенаправлению пользователей и другим атакам.
+    XSS позволяет злоумышленнику внедрить произвольный скрипт в страницу, которую видят другие пользователи. Всегда экранируйте вывод, даже во "внутренних" админ-панелях.
 
 ---
 
@@ -185,7 +210,14 @@ print("Привет, " . $_POST['username']);
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Обнаруживает потенциальные уязвимости внедрения команд -- использование суперглобальных переменных в качестве аргументов функций выполнения команд (`exec`, `system`, `passthru`, `shell_exec`, `proc_open`, `popen`) без санитизации (`escapeshellarg`, `escapeshellcmd`).
+Обнаруживает суперглобальные переменные (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`), переданные аргументами функциям выполнения shell-команд, что может привести к внедрению команд.
+
+**Обнаруживаемые функции:** `exec()`, `system()`, `passthru()`, `shell_exec()`, `proc_open()`, `popen()`
+
+Нарушение **не** сообщается, если значение обёрнуто в:
+
+- `escapeshellarg()`
+- `escapeshellcmd()`
 
 <!-- llms:skip-end -->
 
@@ -193,9 +225,13 @@ print("Привет, " . $_POST['username']);
 ### Пример
 
 ```php
-// Плохо: суперглобальная переменная напрямую в shell-команде
-exec("ping " . $_GET['host']);
-system("ls " . $_POST['dir']);
+// Плохо: суперглобальная переменная напрямую передаётся shell-функции
+exec("convert " . $_GET['filename'] . " output.png");
+system("ping " . $_POST['host']);
+$output = shell_exec("grep " . $_REQUEST['pattern'] . " /var/log/app.log");
+
+// Хорошо: значение правильно экранировано
+exec("convert " . escapeshellarg($_GET['filename']) . " output.png");
 ```
 
 <!-- llms:skip-end -->
@@ -203,18 +239,24 @@ system("ls " . $_POST['dir']);
 <!-- llms:skip-begin -->
 ### Как исправить
 
-1. **Экранируйте аргументы:**
+1. **Используйте `escapeshellarg()`** для экранирования отдельных аргументов:
 
     ```php
-    exec("ping " . escapeshellarg($_GET['host']));
+    exec("convert " . escapeshellarg($_GET['filename']) . " output.png");
     ```
 
-2. **Используйте Process-компоненты** (Symfony Process), которые передают аргументы безопасно.
+2. **По возможности избегайте shell-команд вовсе.** Используйте встроенные функции PHP:
 
-3. **Валидируйте ввод** с помощью белого списка допустимых значений.
+    ```php
+    // Вместо: exec("ls " . escapeshellarg($dir))
+    $files = scandir($dir);
+
+    // Вместо: exec("ping " . escapeshellarg($host))
+    // Используйте сокеты или библиотеку
+    ```
 
 !!! warning "Внимание"
-    Внедрение команд позволяет злоумышленнику выполнять произвольные команды на сервере, что может привести к полной компрометации системы.
+    Внедрение команд позволяет злоумышленнику выполнять произвольные команды на вашем сервере. Даже с экранированием предпочитайте нативные для PHP альтернативы shell-командам, когда они существуют.
 
 ---
 
@@ -228,7 +270,9 @@ system("ls " . $_POST['dir']);
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Использует ту же политику сопоставления имен, что и поиск захардкоженных
+Обнаруживает параметры функций и методов с чувствительными именами, у которых отсутствует атрибут `#[\SensitiveParameter]` (доступен с PHP 8.2). Без этого атрибута чувствительные значения вроде паролей и токенов появляются в открытом виде в stack traces, логах ошибок и отчётах об исключениях.
+
+Сопоставление чувствительных параметров использует ту же политику, что и поиск захардкоженных
 учетных данных: самостоятельные слова `password`, `passwd`, `pwd`, `secret`,
 `credential` и `credentials` совпадают, а `key` и `token` требуют квалифицирующего префикса,
 например `api`, `auth`, `access`, `private` или `refresh`. Контексты

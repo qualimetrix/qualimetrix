@@ -105,7 +105,7 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 
 ## Чтение оценок здоровья
 
-Оценки здоровья доступны в трёх форматах вывода:
+Оценки здоровья доступны в нескольких форматах вывода:
 
 **summary** (по умолчанию) — прогресс-бары в терминале:
 
@@ -184,16 +184,12 @@ HTML — его нет из-за нехватки места.
 
 ### Настройка порогов
 
-Переопределите пороги warning/error для любого измерения здоровья:
-
 ```yaml
+# qmx.yaml
 computed_metrics:
   health.complexity:
-    warning: 60
-    error: 30
-  health.typing:
-    warning: 90
-    error: 70
+    warning: 60    # Stricter than default 50
+    error: 30      # Stricter than default 25
 ```
 
 ### Отключение измерения
@@ -222,74 +218,93 @@ bin/qmx check src/ --exclude-health=typing
 
 ### Переопределение формул
 
-Переопределите формулу для одного или нескольких уровней:
-
 ```yaml
 computed_metrics:
-  health.complexity:
-    formulas:
-      class: 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 5, 0) * 3.0, 0, 100)'
+  health.maintainability:
+    # Same formula for all levels
+    formula: "clamp(m['maintainability.mi.avg'], 0, 100)"
 ```
 
 Формула — это выражение, записанное строкой, а константа — тоже выражение:
 `formula: "80"` задаёт метрику, равную 80 везде. Кавычки обязательны: `80` без
 них — число, а число формулой не является.
 
-Используйте `formula` (единственное число), чтобы задать одну формулу для всех уровней:
-
 ```yaml
 computed_metrics:
-  health.complexity:
-    formula: 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 5, 0) * 3.0, 0, 100)'
+  health.maintainability:
+    # Different formulas per level
+    formulas:
+      class: "clamp(m['maintainability.mi.avg'], 0, 100)"
+      namespace: "clamp(m['maintainability.mi.avg'] * 0.7 + m['maintainability.mi.p5'] * 0.3, 0, 100)"
+      project: "clamp(m['maintainability.mi.avg'] * 0.7 + m['maintainability.mi.p5'] * 0.3, 0, 100)"
 ```
 
 ### Пользовательские вычисляемые метрики
 
-Создавайте собственные метрики с произвольными формулами. Пользовательские метрики используют префикс `computed.`:
-
 ```yaml
 computed_metrics:
-  computed.my-score:
-    description: "Custom quality score"
-    formula: 'clamp((m["health.complexity"] ?? 75) * 0.5 + (m["health.coupling"] ?? 75) * 0.5, 0, 100)'
-    levels: [class, namespace, project]
-    inverted: true
-    warning: 60
-    error: 30
+  computed.code-density:
+    formula: "clamp((m['size.lloc'] ?? 0) / max(m['size.loc'] ?? 1, 1) * 100, 0, 100)"
+    description: "Ratio of logical to physical lines (higher = denser code)"
+    levels: [namespace]   # size.lloc / size.loc — сырые ключи только на уровне namespace
+    warning: 80
+    error: 90
+    inverted: false   # Higher values trigger violations
 ```
 
 !!! note "Именование метрик"
-    Имя вычисляемой метрики — kebab-case после точки (например, `computed.my-score`); подчёркивания и заглавные буквы отвергаются.
-
-!!! tip "Всегда используйте оператор `??`"
-    Метрики могут отсутствовать для некоторых символов (например, у интерфейсов нет тела методов). Оператор `??` задаёт значение по умолчанию и предотвращает ошибки вычисления: `(m["complexity.ccn.avg"] ?? 1)`.
+    Имя пользовательской метрики обязано начинаться с `health.` или `computed.` — другие префиксы не принимаются. Рекомендуемое соглашение для собственных метрик — `computed.*`; `health.*` зарезервирован за шестью встроенными измерениями. Оба префикса требуют строчных kebab-case сегментов после точки (например, `computed.code-density`); подчёркивания и заглавные буквы отвергаются, а последний сегмент не может совпадать с именем стратегии агрегации (`sum`, `avg`, `max`, `min`, `count`, `p95`, `p5` — например, `computed.sum` отклоняется).
 
 ### Доступные переменные
 
 Формулы обращаются к метрикам через единственный массив `m`, индексированный настоящим ключом метрики: `m["complexity.ccn.avg"]`. Отдельного «имени переменной» запоминать не нужно — ключ, который вы видите в выводе `--format=metrics`/`--format=json`, и есть индекс.
 
-| Ключ метрики                                                                         | Описание                                         | Доступен на уровне         |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------- |
-| `complexity.ccn.avg`, `complexity.ccn.max`                                           | Средняя и максимальная цикломатическая сложность | class, namespace, project  |
-| `complexity.ccn.sum`, `complexity.ccn.p95`                                           | Сумма и 95-й перцентиль CCN                      | namespace, project         |
-| `complexity.cognitive.avg`, `complexity.cognitive.max`                               | Средняя и максимальная когнитивная сложность     | class, namespace, project  |
-| `complexity.cognitive.sum`, `complexity.cognitive.p95`                               | Сумма и 95-й перцентиль Cognitive                | namespace, project         |
-| `cohesion.tcc` / `cohesion.tcc.avg`                                                  | Tight Class Cohesion (0–1)                       | class / namespace, project |
-| `cohesion.lcom` / `cohesion.lcom.avg`                                                | LCOM4                                            | class / namespace, project |
-| `coupling.cbo.avg`, `coupling.cbo.max`, `coupling.cbo.p95`                           | Агрегаты Coupling Between Objects                | namespace, project         |
-| `coupling.ce`                                                                        | Efferent coupling (исходящие классы)             | class, namespace           |
-| `coupling.ce.avg`, `coupling.ce.max`                                                 | Агрегаты per-class Ce                            | namespace, project         |
-| `coupling.ce-packages`                                                               | Количество внешних пакетов                       | class                      |
-| `coupling.ce-packages.avg`                                                           | Агрегат per-class ce-packages                    | namespace, project         |
-| `coupling.distance` / `coupling.distance.avg`                                        | Distance from Main Sequence                      | namespace / project        |
-| `maintainability.mi.avg`, `maintainability.mi.min`                                   | Средний и минимальный Maintainability Index      | class, namespace, project  |
-| `maintainability.mi.p5`                                                              | 5-й перцентиль MI                                | namespace, project         |
-| `design.type-coverage.all`                                                           | Процент покрытия типами                          | class                      |
-| `design.type-coverage.param.total.sum` и аналогичные `.return.` / `.property.` суммы | Суммы typed/total по пространству имён           | namespace, project         |
-| `size.method-count`                                                                  | Количество методов в классе                      | class                      |
-| `size.symbol-method-count`                                                           | Количество методов в области видимости символа   | namespace, project         |
-| `cohesion.pure-method-count`                                                         | «Чистые» методы (без обращения к свойствам)      | class                      |
-| `health.complexity`, `health.cohesion`, ...                                          | Значения других оценок здоровья                  | class, namespace, project  |
+| Ключ метрики                              | Доступен на уровне        |
+| ----------------------------------------- | ------------------------- |
+| `complexity.ccn.avg`                      | class, namespace, project |
+| `complexity.ccn.max`                      | class, namespace, project |
+| `complexity.ccn.sum`                      | namespace, project        |
+| `complexity.ccn.p95`                      | namespace, project        |
+| `complexity.cognitive.avg`                | class, namespace, project |
+| `complexity.cognitive.max`                | class, namespace, project |
+| `complexity.cognitive.sum`                | namespace, project        |
+| `complexity.cognitive.p95`                | namespace, project        |
+| `cohesion.tcc`                            | class                     |
+| `cohesion.tcc.avg`                        | namespace, project        |
+| `cohesion.lcom`                           | class                     |
+| `cohesion.lcom.avg`                       | namespace, project        |
+| `coupling.cbo.avg`                        | namespace, project        |
+| `coupling.cbo.max`                        | namespace, project        |
+| `coupling.cbo.p95`                        | namespace, project        |
+| `coupling.ce`                             | class, namespace          |
+| `coupling.ce.avg`                         | namespace, project        |
+| `coupling.ce.max`                         | namespace, project        |
+| `coupling.ce-packages`                    | class                     |
+| `coupling.ce-packages.avg`                | namespace, project        |
+| `coupling.distance`                       | namespace                 |
+| `coupling.distance.avg`                   | project                   |
+| `maintainability.mi.avg`                  | class, namespace, project |
+| `maintainability.mi.min`                  | class, namespace, project |
+| `maintainability.mi.p5`                   | namespace, project        |
+| `design.type-coverage.all`                | class                     |
+| `design.type-coverage.param.total.sum`    | namespace, project        |
+| `design.type-coverage.param.typed.sum`    | namespace, project        |
+| `design.type-coverage.return.total.sum`   | namespace, project        |
+| `design.type-coverage.return.typed.sum`   | namespace, project        |
+| `design.type-coverage.property.total.sum` | namespace, project        |
+| `design.type-coverage.property.typed.sum` | namespace, project        |
+| `size.method-count`                       | class                     |
+| `size.symbol-method-count`                | class, namespace, project |
+| `cohesion.pure-method-count`              | class                     |
+| `size.loc`                                | namespace                 |
+| `size.lloc`                               | namespace                 |
+| `health.complexity`                       | class, namespace, project |
+| `health.cohesion`                         | class, namespace, project |
+| `health.coupling`                         | class, namespace, project |
+| `health.typing`                           | class, namespace, project |
+| `health.maintainability`                  | class, namespace, project |
+
+Частые агрегатные суффиксы у ключа: `.avg`, `.min`, `.max`, `.sum`, `.p5`, `.p95`.
 
 Это не исчерпывающий список — в формулах можно использовать любую метрику, собираемую Qualimetrix, по её ключу. Команда `bin/qmx check src/ --format=metrics` покажет все доступные метрики и их точные ключи для вашего проекта.
 
@@ -298,14 +313,17 @@ computed_metrics:
 
 ### Доступные функции
 
-| Функция                  | Описание                                   |
-| ------------------------ | ------------------------------------------ |
-| `min(a, b)`              | Минимум из двух значений                   |
-| `max(a, b)`              | Максимум из двух значений                  |
-| `abs(x)`                 | Модуль числа                               |
-| `sqrt(x)`                | Квадратный корень                          |
-| `log(x)`                 | Натуральный логарифм                       |
-| `log10(x)`               | Десятичный логарифм                        |
-| `clamp(value, min, max)` | Ограничение значения диапазоном [min, max] |
+| Функция                  | Описание                                                  |
+| ------------------------ | --------------------------------------------------------- |
+| `min(a, b)`              | Минимум из двух значений                                  |
+| `max(a, b)`              | Максимум из двух значений                                 |
+| `abs(x)`                 | Модуль числа                                              |
+| `sqrt(x)`                | Квадратный корень                                         |
+| `log(x)`                 | Натуральный логарифм                                      |
+| `log10(x)`               | Десятичный логарифм                                       |
+| `clamp(value, min, max)` | Ограничение значения диапазоном [min, max]                |
+| `??`                     | Null coalescing (значение по умолчанию, если метрики нет) |
+| `**`                     | Возведение в степень                                      |
 
-Также поддерживаются стандартные операторы Symfony Expression Language: `+`, `-`, `*`, `/`, `**` (возведение в степень), `??` (null coalescing), тернарный оператор.
+!!! tip "Всегда используйте оператор `??`"
+    Метрики могут отсутствовать для некоторых символов (например, у класса без методов нет `complexity.ccn`). Всегда задавайте значения по умолчанию через `??`: `(m["complexity.ccn.avg"] ?? 1)` вместо `m["complexity.ccn.avg"]`.

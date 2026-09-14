@@ -13,7 +13,7 @@
 | Cognitive Complexity  | `complexity.cognitive` | Метод         | 15      | 30    | Метод             |
 | Cognitive Complexity  | `complexity.cognitive` | Класс (макс.) | 30      | 50    | Класс             |
 | NPath Complexity      | `complexity.npath`     | Метод         | 200     | 1000  | Метод             |
-| NPath Complexity      | `complexity.npath`     | Класс (макс.) | 200     | 1000  | Класс (отключено) |
+| NPath Complexity      | `complexity.npath`     | Класс (макс.) | 500     | 1000  | Класс (отключено) |
 | WMC                   | `complexity.wmc`       | -             | 50      | 80    | Класс             |
 
 **Cyclomatic Complexity** подсчитывает количество независимых путей выполнения в методе. Метод с CCN равным 10 имеет 10 различных путей для тестирования.
@@ -189,21 +189,6 @@
 
 ## Как настроить пороговые значения
 
-### Сокращённая запись `threshold`
-
-Если вам нужен единый порог без разделения на warning и error (все нарушения — ошибки), используйте `threshold`:
-
-```yaml
-rules:
-  complexity.ccn:
-    callable:
-      threshold: 15   # warning=15 и error=15
-  size.method-count:
-    threshold: 25
-```
-
-Это полезно в CI, где нужен бинарный результат "прошёл/не прошёл". Нельзя смешивать `threshold` с явными ключами `warning`/`error` в одном правиле.
-
 ### С помощью YAML-файла конфигурации
 
 Создайте файл `qmx.yaml` в корне вашего проекта:
@@ -229,6 +214,47 @@ rules:
   maintainability.mi:
     warning: 30
     error: 15
+```
+
+### Сокращённая запись `threshold`
+
+Если вам нужен единый порог без разделения на warning и error (все нарушения — ошибки), используйте ключ `threshold` вместо отдельных `warning`/`error`:
+
+```yaml
+rules:
+  complexity.ccn:
+    callable:
+      threshold: 15    # equivalent to warning: 15, error: 15
+
+  size.method-count:
+    threshold: 25
+
+  coupling.cbo:
+    class:
+      threshold: 18
+```
+
+Это задаёт `warning` и `error` одним и тем же значением, так что любое нарушение на этом уровне становится ошибкой. Полезно в CI, где нужен простой бинарный результат "прошёл/не прошёл". Нельзя смешивать `threshold` с явными ключами `warning`/`error` в одном и том же уровне правила.
+
+Каждое измерение покрытия типами -- отдельное правило, и у каждого свой обычный
+`threshold`:
+
+```yaml
+rules:
+  design.type-coverage.param:
+    threshold: 90
+  design.type-coverage.return:
+    threshold: 90
+  design.type-coverage.property:
+    threshold: 80
+```
+
+Вычисляемые метрики (health scores) тоже поддерживают `threshold`:
+
+```yaml
+computed_metrics:
+  health.complexity:
+    threshold: 50      # score below 50 → error
 ```
 
 Затем запустите анализ с указанием файла конфигурации:
