@@ -21,7 +21,7 @@ namespace QmxDirectiveAuditControls;
  * the price of planting breakages one at a time; run it when the audit changes.
  */
 
-require __DIR__ . '/finding-gate/CommandLine.php';
+require __DIR__ . '/finding-gate/classes.php';
 require __DIR__ . '/finding-gate-controls/Shell.php';
 require __DIR__ . '/finding-gate-controls/Scratch.php';
 require __DIR__ . '/finding-gate-controls/Mutation.php';

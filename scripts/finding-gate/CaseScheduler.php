@@ -142,6 +142,8 @@ final class CaseScheduler
     /** @param array<int, array{case: CaseDefinition, child: ProcessHandle, output: string}> $inFlight */
     private function poll(array $inFlight): void
     {
+        Interruption::raiseIfRequested();
+
         $read = [];
 
         foreach ($inFlight as $worker) {

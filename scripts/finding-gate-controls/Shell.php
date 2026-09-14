@@ -199,11 +199,24 @@ final class Shell
             $trees = [...$trees, $pid, ...self::descendants($pid)];
         }
 
+        if ($trees === []) {
+            self::$children = [];
+
+            return;
+        }
+
         foreach ($trees as $target) {
             @posix_kill($target, \defined('SIGTERM') ? \SIGTERM : 15);
         }
 
-        usleep(300_000);
+        // Long enough for a gate to hand back what it holds, which is the whole
+        // point of signalling it before killing it. Measured 2026-09-14 on this
+        // repository: a gate SIGTERMed with seven workers and five `bin/qmx`
+        // children in flight releases everything in 0.657 s, of which 0.397 s is
+        // `git worktree remove` of a checkout with the candidate's vendor/
+        // hardlinked into it. The 0.3 s this replaces SIGKILLed the gate part-way
+        // through that removal and left the checkout registered.
+        usleep(2_000_000);
 
         foreach ($trees as $target) {
             @posix_kill($target, \defined('SIGKILL') ? \SIGKILL : 9);
