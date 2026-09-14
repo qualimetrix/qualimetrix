@@ -337,6 +337,89 @@ PHP);
         self::assertArrayNotHasKey('namespace', $baseline['projects']['project']);
     }
 
+    /**
+     * The write succeeds, and the run still exits 1.
+     *
+     * `health.typing` is expected and never produced: there is no value to seed it
+     * from, so the write leaves the recorded range standing. A zero exit here would
+     * hand the operator a baseline carrying an expectation this analysis cannot
+     * satisfy — `benchmark:check` reddens on it at the next step, and no further
+     * `--update-baselines` can clean it, because the update path only ever merges.
+     */
+    #[Test]
+    public function itExitsNonZeroWhenTheWriteLeavesAnUnmeasuredExpectationStanding(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript($fixtureRoot);
+        mkdir($fixtureRoot . '/fixtures/project', recursive: true);
+
+        $baselinePath = $this->writeBaseline($fixtureRoot, [
+            'project' => [
+                'path' => 'fixtures/project',
+                'expectations' => ['health.overall' => [0, 100], 'health.typing' => [0, 100]],
+            ],
+        ]);
+
+        $this->writeFakeQmx(
+            $fixtureRoot,
+            "\$symbols = [['type' => 'project', 'name' => 'p', 'metrics' => ['health.overall' => 70]]];",
+        );
+
+        $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
+        $process->run();
+
+        $errorOutput = $process->getErrorOutput();
+
+        self::assertSame(1, $process->getExitCode(), $errorOutput);
+        self::assertStringContainsString('EXPECTED BUT NOT MEASURED (1)', $errorOutput);
+        self::assertStringContainsString('project: metric health.typing not found', $errorOutput);
+        // Distinct from a mismatch at the project's own line too, not only in the block.
+        self::assertStringContainsString('UNMEASURED', $errorOutput);
+
+        // The write itself is not blocked: what was measured is re-seeded, and the
+        // expectation nothing could seed is left exactly as it was.
+        $written = json_decode((string) file_get_contents($baselinePath), true);
+        self::assertIsArray($written);
+        self::assertSame([60, 80], $written['projects']['project']['expectations']['health.overall']);
+        self::assertSame([0, 100], $written['projects']['project']['expectations']['health.typing']);
+    }
+
+    /**
+     * A corpus entry with no `path` used to interpolate to the empty string, making
+     * the analysed directory the repository root: it exists, it analyses (vendor/
+     * included), and under `--update-baselines` the result is seeded as that
+     * project's reference. An entry that does not say what to measure is an
+     * infrastructure refusal, not a measurement of everything.
+     */
+    #[Test]
+    public function itRefusesABaselineEntryThatDeclaresNoPath(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript($fixtureRoot);
+        mkdir($fixtureRoot . '/fixtures/project', recursive: true);
+
+        $baselinePath = $this->writeBaseline($fixtureRoot, [
+            'pathless' => ['expectations' => ['health.overall' => [0, 100]]],
+            'project' => ['path' => 'fixtures/project', 'expectations' => ['health.overall' => [0, 100]]],
+        ]);
+        $originalBaseline = (string) file_get_contents($baselinePath);
+
+        $this->writeFakeQmx(
+            $fixtureRoot,
+            "\$symbols = [['type' => 'project', 'name' => 'p', 'metrics' => ['health.overall' => 70]]];",
+        );
+
+        $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
+        $process->run();
+
+        $errorOutput = $process->getErrorOutput();
+
+        self::assertSame(1, $process->getExitCode(), $errorOutput);
+        self::assertStringContainsString('pathless: baseline entry declares no `path`', $errorOutput);
+        // An infrastructure refusal blocks the write for the whole corpus.
+        self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
     private function createFixtureRoot(): string
     {
         $fixtureRoot = sys_get_temp_dir() . '/qmx_benchmark_classification_' . bin2hex(random_bytes(6));
@@ -356,7 +439,7 @@ PHP);
         }
     }
 
-    /** @param array<string, array{path: string, expectations?: array<string, array{0: int, 1: int}>}> $projects */
+    /** @param array<string, array{path?: string, expectations?: array<string, array{0: int, 1: int}>}> $projects */
     private function writeBaseline(string $fixtureRoot, array $projects): string
     {
         $baselinePath = $fixtureRoot . '/docs/internal/benchmark-baselines.json';

@@ -24,8 +24,9 @@ declare(strict_types=1);
  *    `health.complexity` as an input to `health.overall` would make a candidate
  *    complexity formula invisible in the overall result, and the self-test
  *    would then pass tautologically.
- * 3. **Level aggregates are DERIVED from the captured children, not read.**
- *    `coupling.distance.avg` at project level is produced by
+ * 3. **The namespace-pooled aggregates are DERIVED from the captured
+ *    children, not read.** `coupling.distance.avg` at project level is produced
+ *    by
  *    {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator}
  *    before any expression runs, so it sits in the capture as a finished
  *    number. A bench that read it could not evaluate the two aggregation
@@ -35,6 +36,17 @@ declare(strict_types=1);
  *    captured namespace values under a selectable scheme, and the self-test
  *    requires the `current` scheme to reproduce the PUBLISHED aggregate. That
  *    reproduction is the one measurement that makes this instrument evidence.
+ *
+ *    The set that is re-derived is {@see PROJECT_DERIVED}, and it is small on
+ *    purpose: `coupling.distance` is the only base the product pools from
+ *    namespaces to the project. Every other project input — `complexity.ccn.p95`,
+ *    `maintainability.mi.min`, `size.symbol-method-count` and the rest — is an
+ *    aggregate of *callables and classes*, with no namespace-pooling step to vary;
+ *    re-deriving one under a namespace weighting would put a number into the
+ *    bench that no run of `bin/qmx` produces. Those inputs are therefore read from
+ *    the capture verbatim and are identical under every scheme, which is why C4
+ *    reports `n/p` rather than `0.00` for the dimensions whose formulas reach
+ *    none of the derived keys: no drift and no pooling are different facts.
  *
  * Usage:
  *
@@ -1154,13 +1166,47 @@ final readonly class MonotonicityViolation
 final class Criteria
 {
     /**
-     * C1 in its general form: every parent, every dimension, both level pairs.
+     * C1, one-sided: no parent scores ABOVE the maximum of its children, for
+     * any dimension and any parent/child level pair.
+     *
+     * The other direction is not a defect and is not reported here. A parent
+     * formula carries terms the child formula has no equivalent for — a
+     * namespace is scored on its distance from the main sequence and on its own
+     * efferent breadth, neither of which exists for a class — so a parent below
+     * all of its children is usually that, not a lost penalty.
+     * `measurement/07-monotonicity-direction.md` counted the split: coupling
+     * alone shows 604 below and exactly zero above, and the two-sided form
+     * reddens five times out of six for the explainable reason. It is kept as a
+     * printed reference figure ({@see parentsBelowChildren()}), not as a verdict.
      *
      * @param list<Evaluation> $evaluations
      *
      * @return list<MonotonicityViolation>
      */
     public static function monotonicity(array $evaluations, float $tolerance = 1.0e-9): array
+    {
+        return self::outOfRange($evaluations, above: true, tolerance: $tolerance);
+    }
+
+    /**
+     * The other direction, counted but never judged: parents scoring below the
+     * minimum of their children.
+     *
+     * @param list<Evaluation> $evaluations
+     *
+     * @return list<MonotonicityViolation>
+     */
+    public static function parentsBelowChildren(array $evaluations, float $tolerance = 1.0e-9): array
+    {
+        return self::outOfRange($evaluations, above: false, tolerance: $tolerance);
+    }
+
+    /**
+     * @param list<Evaluation> $evaluations
+     *
+     * @return list<MonotonicityViolation>
+     */
+    private static function outOfRange(array $evaluations, bool $above, float $tolerance): array
     {
         $violations = [];
 
@@ -1175,7 +1221,7 @@ final class Criteria
                 $pair = $parent->level->value . '->' . $children[0]->level->value;
 
                 foreach (DIMENSIONS as $dimension) {
-                    $violation = self::violationOf($evaluation, $parent, $children, $dimension, $pair, $tolerance);
+                    $violation = self::violationOf($evaluation, $parent, $children, $dimension, $pair, $above, $tolerance);
 
                     if ($violation !== null) {
                         $violations[] = $violation;
@@ -1196,6 +1242,7 @@ final class Criteria
         array $children,
         string $dimension,
         string $pair,
+        bool $above,
         float $tolerance,
     ): ?MonotonicityViolation {
         $parentScore = $evaluation->scoreOf($parent, $dimension);
@@ -1220,8 +1267,11 @@ final class Criteria
 
         $min = min($childScores);
         $max = max($childScores);
+        $outside = $above
+            ? $parentScore > $max + $tolerance
+            : $parentScore < $min - $tolerance;
 
-        if ($parentScore >= $min - $tolerance && $parentScore <= $max + $tolerance) {
+        if (!$outside) {
             return null;
         }
 
@@ -1282,7 +1332,14 @@ final class Criteria
      * C4: the same project number under the current rule and under a
      * size-weighted pooling of the level's members.
      *
-     * @return array<string, float> dimension => |current - weighted|
+     * A dimension whose project formula reaches none of the re-derived
+     * aggregates ({@see PROJECT_DERIVED}) is reported as null, not as 0.0. Its
+     * project inputs are read from the capture verbatim under both schemes, so a
+     * zero there is arithmetic, not evidence of insensitivity — and a criterion
+     * that cannot tell the two apart passes vacuously.
+     *
+     * @return array<string, float|null> dimension => |current - weighted|, or null
+     *                                   when no derived aggregate reaches it
      */
     public static function aggregateDrift(Evaluation $current, Evaluation $weighted): array
     {
@@ -1292,6 +1349,9 @@ final class Criteria
         if ($project === null || $weightedProject === null) {
             return [];
         }
+
+        $pooled = self::pooledKeys($current);
+        $sensitive = self::sensitiveDimensions($current, $project, $pooled);
 
         $drift = [];
 
@@ -1303,10 +1363,72 @@ final class Criteria
                 continue;
             }
 
-            $drift[$dimension] = abs($a - $b);
+            $drift[$dimension] = isset($sensitive[$dimension]) ? abs($a - $b) : null;
         }
 
         return $drift;
+    }
+
+    /**
+     * The project-level keys this run recomputed rather than read.
+     *
+     * @return array<string, true>
+     */
+    private static function pooledKeys(Evaluation $evaluation): array
+    {
+        $pooled = [];
+
+        foreach ($evaluation->derived as $aggregate) {
+            foreach (array_keys($aggregate->values) as $key) {
+                $pooled[$key] = true;
+            }
+        }
+
+        return $pooled;
+    }
+
+    /**
+     * Which dimensions the aggregation scheme can move at all.
+     *
+     * Sensitivity is transitive: `health.overall` names no metric key, only the
+     * sub-scores, and it moves exactly when one of the sub-scores it reads
+     * moves. Resolved by fixed point rather than by the declaration order, so a
+     * reordered DIMENSIONS cannot silently drop a dependent dimension.
+     *
+     * @param array<string, true> $pooledKeys
+     *
+     * @return array<string, true>
+     */
+    private static function sensitiveDimensions(Evaluation $evaluation, Subject $project, array $pooledKeys): array
+    {
+        $sensitive = [];
+
+        do {
+            $changed = false;
+
+            foreach (DIMENSIONS as $dimension) {
+                if (isset($sensitive[$dimension])) {
+                    continue;
+                }
+
+                $outcome = $evaluation->outcome($project, $dimension);
+
+                if ($outcome === null) {
+                    continue;
+                }
+
+                foreach ($outcome->referencedKeys as $key) {
+                    if (isset($pooledKeys[$key]) || isset($sensitive[$key])) {
+                        $sensitive[$dimension] = true;
+                        $changed = true;
+
+                        break;
+                    }
+                }
+            }
+        } while ($changed);
+
+        return $sensitive;
     }
 
     /**
@@ -1689,22 +1811,29 @@ function printDistribution(array $evaluations, array $levels): void
 function printMonotonicity(array $evaluations, int $top): bool
 {
     $violations = Criteria::monotonicity($evaluations);
+    $below = Criteria::parentsBelowChildren($evaluations);
 
-    echo "\n== C1 monotonicity (parent within [min(children), max(children)]) ==\n";
+    echo "\n== C1 monotonicity, one-sided (no parent above max(children)) ==\n";
 
     if ($violations === []) {
         echo "no violators\n";
+    } else {
+        echo \sprintf("%d violators; showing up to %d\n", \count($violations), $top);
 
-        return true;
+        foreach (\array_slice($violations, 0, $top) as $violation) {
+            echo $violation->toString() . "\n";
+        }
     }
 
-    echo \sprintf("%d violators; showing up to %d\n", \count($violations), $top);
+    // Printed, never judged: the below-min direction is mostly the parent
+    // formula carrying terms the child formula has none of, which is why C1 is
+    // one-sided (measurement/07-monotonicity-direction.md).
+    echo \sprintf(
+        "reference, not a verdict: %d parents below min(children)\n",
+        \count($below),
+    );
 
-    foreach (\array_slice($violations, 0, $top) as $violation) {
-        echo $violation->toString() . "\n";
-    }
-
-    return false;
+    return $violations === [];
 }
 
 /**
@@ -1848,6 +1977,10 @@ function formatCounts(array $counts): string
 function printAggregateDrift(array $current, array $weighted, ?float $tolerance): bool
 {
     echo "\n== C4 aggregate drift: current rule vs size-weighted pooling ==\n";
+    echo \sprintf(
+        "judged only where a re-derived aggregate reaches the formula (%s); n/p = not pooled, read from the capture under both schemes\n",
+        implode(', ', PROJECT_DERIVED),
+    );
     $agreed = true;
 
     foreach ($current as $index => $evaluation) {
@@ -1855,7 +1988,15 @@ function printAggregateDrift(array $current, array $weighted, ?float $tolerance)
         $parts = [];
 
         foreach ($drift as $dimension => $delta) {
-            $parts[] = \sprintf('%s=%.2f', substr($dimension, \strlen('health.')), $delta);
+            $short = substr($dimension, \strlen('health.'));
+
+            if ($delta === null) {
+                $parts[] = $short . '=n/p';
+
+                continue;
+            }
+
+            $parts[] = \sprintf('%s=%.2f', $short, $delta);
 
             if ($tolerance !== null && $delta > $tolerance) {
                 $agreed = false;

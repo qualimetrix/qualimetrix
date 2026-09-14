@@ -12,9 +12,12 @@ declare(strict_types=1);
  * Usage: php scripts/benchmark-regression.php [--update-baselines]
  *
  * Exit codes:
- *   0 — all scores within expected ranges (or --update-baselines wrote successfully)
+ *   0 — all scores within expected ranges (or --update-baselines wrote successfully and
+ *       every expected metric was measured)
  *   1 — regression detected (an expectation mismatch, or an expected metric that was
- *       not measured — see below)
+ *       not measured — see below). Both apply under --update-baselines too: a write
+ *       that left a stale expectation standing exits 1, or the operator commits a
+ *       baseline the next `benchmark:check` reddens and no further update can clean.
  *   2 — infrastructure error (missing deps, invalid baseline, a benchmark path not
  *       found, an analysis that failed to run or produced unreadable output, etc.)
  *
@@ -27,7 +30,8 @@ declare(strict_types=1);
  *   - a metric the baseline expects but the analysis did not measure is neither of the
  *     above. It cannot be re-seeded (there is no value to write), so the write leaves
  *     that one expectation untouched rather than deleting it, and it is reported
- *     distinctly from both other cases.
+ *     distinctly from both other cases — on the project's own line, in its own block
+ *     after the write's confirmation, and in the exit code.
  * A project entry carrying only `path` (no `expectations` block) is accepted: every
  * canonical health metric is measured and, if `--update-baselines` is given, seeded
  * from scratch.
@@ -169,6 +173,10 @@ $projects = $baselines['projects'];
 // the narrower list that blocks --update-baselines from writing (see the docblock above).
 $failures = [];
 $infrastructureFailures = [];
+// The list that outlives a successful write: an expectation the analysis did not
+// produce cannot be re-seeded, so the write leaves it standing — and a run that leaves
+// a stale expectation standing has to say so in --update-baselines as loudly as in a check.
+$unmeasuredAcrossRun = [];
 $results = [];
 $distributions = [];
 
@@ -190,6 +198,18 @@ fprintf(STDERR, "Benchmark regression check (%d projects)\n", count($projects));
 fprintf(STDERR, "%s\n", str_repeat('=', 80));
 
 foreach ($projects as $id => $config) {
+    // Without the key, the concatenation below would silently make $path the repository
+    // root — a directory that exists, analyses (vendor/ included) and seeds as this
+    // project's baseline.
+    if (!is_array($config) || !isset($config['path']) || !is_string($config['path']) || $config['path'] === '') {
+        fprintf(STDERR, "SKIP: %s (baseline entry declares no `path`)\n", $id);
+        $message = sprintf('%s: baseline entry declares no `path`', $id);
+        $failures[] = $message;
+        $infrastructureFailures[] = $message;
+
+        continue;
+    }
+
     $path = $rootDir . '/' . $config['path'];
 
     if (!is_dir($path)) {
@@ -359,11 +379,17 @@ foreach ($projects as $id => $config) {
         'class' => levelDistribution($symbolsForDistribution, 'class'),
     ];
 
-    if (count($projectFailures) > 0 || count($unmeasuredMetrics) > 0) {
-        fprintf(STDERR, "FAIL (%.1fs)\n", $elapsed);
-    } else {
-        fprintf(STDERR, "OK   (%.1fs)\n", $elapsed);
-    }
+    // Three outcomes, three words. An expectation this run disagrees with is not the
+    // same event as an expectation this run could not measure at all, and a line that
+    // spells both FAIL hides the second inside the first.
+    $verdict = match (true) {
+        $projectFailures !== [] && $unmeasuredMetrics !== [] => 'FAIL+UNMEASURED',
+        $unmeasuredMetrics !== [] => 'UNMEASURED',
+        $projectFailures !== [] => 'FAIL',
+        default => 'OK',
+    };
+    $unmeasuredAcrossRun = [...$unmeasuredAcrossRun, ...$unmeasuredMetrics];
+    fprintf(STDERR, "%-15s (%.1fs)\n", $verdict, $elapsed);
 }
 
 // Print summary
@@ -439,6 +465,20 @@ if ($updateBaselines && $infrastructureFailures === [] && count($results) === co
         exit(2);
     }
     fprintf(STDERR, "Namespace/class distributions written to: %s\n", $distributionFile);
+
+    if ($unmeasuredAcrossRun !== []) {
+        fprintf(
+            STDERR,
+            "\nEXPECTED BUT NOT MEASURED (%d) — left standing in the baseline, nothing to seed them from:\n",
+            count($unmeasuredAcrossRun),
+        );
+
+        foreach ($unmeasuredAcrossRun as $unmeasured) {
+            fprintf(STDERR, "  - %s\n", $unmeasured);
+        }
+
+        exit(1);
+    }
 
     exit(0);
 }

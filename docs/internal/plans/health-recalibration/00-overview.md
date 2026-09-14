@@ -135,11 +135,13 @@ writeup.
 - **The stage that invalidates an artefact regenerates it.** P3 owns the
   baselines and ratchet entries its own change moves; P6 shrinks to the guards
   no single stage owns.
-- **`health.overall` stays a canonical weighted sum.**
-  `HealthFormulaExcluder.php:167-186` parses the weights out of the formula text
-  to renormalise them for `--exclude-health`, and refuses explicitly when the
-  shape does not match. Any model change must keep that shape or change the
-  excluder and its tests in the same stage.
+- **`health.overall` stays a canonical weighted sum.** To renormalise the
+  weights for `--exclude-health`, `HealthFormulaExcluder` reads the terms off the
+  formula's parse tree through `WeightedHealthFormula::termsOf` — every term is
+  read or the answer is null, there is no partial read — and refuses explicitly
+  when the shape is not the canonical
+  `clamp((m["health.dim"] ?? fallback) * weight + …, 0, 100)`. Any model change
+  must keep that shape or change the excluder and its tests in the same stage.
 
 ## Stage map
 

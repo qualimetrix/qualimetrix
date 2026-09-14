@@ -126,10 +126,11 @@ problems; only M1 and M2 touch the latter.
   reports so, and the bench prints the coverage it used.
 - The mechanism behind M1 is written down in the stage report, not only fixed.
 - The `?? 75` fallbacks in `health.overall` have a stated, documented meaning.
-  Removing them is not an option: `WeightedHealthFormula` parses the canonical
-  `(m["health.dim"] ?? fallback) * weight` shape out of the formula text, and
-  `HealthFormulaExcluder` refuses anything else, so a formula without `??`
-  breaks `--exclude-health`. Round 1 of this stage asked for "or are gone",
+  Removing them is not an option: `WeightedHealthFormula::termsOf` reads the
+  canonical `(m["health.dim"] ?? fallback) * weight` terms off the formula's
+  parse tree, returning null rather than a partial read, and
+  `HealthFormulaExcluder` refuses anything it cannot read whole — so a formula
+  without `??` breaks `--exclude-health`. Round 1 of this stage asked for "or are gone",
   which is unsatisfiable.
 - `composer check` green, including the ratchet and baselines this stage moves —
   this stage regenerates what it invalidates rather than leaving it to P7.

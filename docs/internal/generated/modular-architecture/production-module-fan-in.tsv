@@ -33,6 +33,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOff
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	3	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	3	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor	Analysis.Evidence.ComputedMetrics.Health	1	1
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	1	1
@@ -238,7 +239,7 @@ Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	46	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	114	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	115	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	70	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11

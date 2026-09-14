@@ -209,8 +209,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder'
@@ -222,6 +224,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader'
     - name: analysis-evidence-coupling
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector'
@@ -1048,6 +1051,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer'
         - 'Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer'
         - 'Qualimetrix\Reporting\Formatter\Support\FindingSorter'
+        - 'Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator'
         - 'Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextVerboseFormatter'

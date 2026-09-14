@@ -333,6 +333,75 @@ final class MetricHintCatalog
      * @var array<string, list<array{max?: float, above?: true, text: string}>>
      */
     private const array RANGES = [
+        // An aggregate that carries its own advertised target carries its own
+        // bands: `resolveBaseKey` in the HTML report prefers an exact key and
+        // only then strips the suffix, so without an entry here the base
+        // metric's bands answer for it. That is how `maintainability.mi.avg`
+        // came to be captioned "Good maintainability" at 70 while the line
+        // beside it advertised "above 85".
+        //
+        // Two conventions, both checked by
+        // HealthDecompositionAgreesWithFormulasTest:
+        //  - a band ends at its `max` inclusive, so the boundary between the
+        //    acceptable and the unacceptable side is the advertised number
+        //    itself;
+        //  - that number is the PROJECT-level knee of the formula, the level
+        //    the advertised target describes. A key whose knee differs by level
+        //    (`complexity.ccn.max`, `maintainability.mi.min`) resolves to the
+        //    project knee, as its advertised target already does.
+        'complexity.ccn.avg' => [
+            ['max' => 2, 'text' => 'Manageable branching per method'],
+            ['max' => 4, 'text' => 'Moderate branching per method'],
+            ['max' => 10, 'text' => 'Heavy branching per method'],
+            ['above' => true, 'text' => 'Extremely branch-heavy on average'],
+        ],
+        'complexity.ccn.p95' => [
+            ['max' => 5, 'text' => 'Even the worst methods branch modestly'],
+            ['max' => 10, 'text' => 'The worst twentieth branch noticeably'],
+            ['max' => 20, 'text' => 'The worst twentieth branch heavily'],
+            ['above' => true, 'text' => 'The worst twentieth are extremely complex'],
+        ],
+        'complexity.cognitive.avg' => [
+            ['max' => 1, 'text' => 'Straightforward control flow on average'],
+            ['max' => 5, 'text' => 'Moderate nesting on average'],
+            ['above' => true, 'text' => 'Deeply nested on average'],
+        ],
+        'complexity.cognitive.p95' => [
+            ['max' => 6, 'text' => 'Even the worst methods stay readable'],
+            ['max' => 15, 'text' => 'The worst twentieth are demanding'],
+            ['above' => true, 'text' => 'The worst twentieth are hard to follow'],
+        ],
+        'coupling.cbo.avg' => [
+            ['max' => 8, 'text' => 'Reasonable coupling on average'],
+            ['max' => 14, 'text' => 'Moderate coupling on average'],
+            ['above' => true, 'text' => 'Classes depend on too many others'],
+        ],
+        'coupling.cbo.p95' => [
+            ['max' => 15, 'text' => 'Even the most coupled classes stay contained'],
+            ['max' => 25, 'text' => 'The most coupled twentieth reach widely'],
+            ['above' => true, 'text' => 'The most coupled twentieth reach everywhere'],
+        ],
+        'coupling.cbo.max' => [
+            ['max' => 30, 'text' => 'No single class dominates the graph'],
+            ['max' => 60, 'text' => 'One class is coupled very widely'],
+            ['above' => true, 'text' => 'One class is coupled to almost everything'],
+        ],
+        'maintainability.mi.avg' => [
+            ['max' => 40, 'text' => 'Hard to change safely'],
+            ['max' => 65, 'text' => 'Moderate — could benefit from simplification'],
+            ['max' => 85, 'text' => 'Short of the target the score asks for'],
+            ['above' => true, 'text' => 'Maintainable'],
+        ],
+        'maintainability.mi.p5' => [
+            ['max' => 40, 'text' => 'The worst methods are hard to maintain'],
+            ['max' => 65, 'text' => 'The worst methods are short of the target'],
+            ['above' => true, 'text' => 'Even the worst methods are maintainable'],
+        ],
+        'maintainability.mi.min' => [
+            ['max' => 5, 'text' => 'At least one method is effectively unmaintainable'],
+            ['max' => 65, 'text' => 'The worst method is hard to maintain'],
+            ['above' => true, 'text' => 'No method sits on the floor'],
+        ],
         // Complexity
         MetricName::COMPLEXITY_CCN => [
             ['max' => 4, 'text' => 'Simple, easy to test'],

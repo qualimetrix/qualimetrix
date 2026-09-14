@@ -112,4 +112,51 @@ final class HealthDecompositionCatalogTest extends TestCase
             }
         }
     }
+
+    #[Test]
+    public function itMakesEveryInputAnswerWhatItCovers(): void
+    {
+        $dimensions = array_keys($this->provider->healthDecomposition());
+        self::assertNotSame([], $dimensions);
+
+        foreach ($dimensions as $dimension) {
+            foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+                foreach ($this->provider->inputsFor($dimension, $level) as $input) {
+                    // A missing key would read as null and silently publish no
+                    // coverage, which is the state this declaration exists to
+                    // prevent; `null` has to be written out.
+                    self::assertArrayHasKey('coverage', $input, "{$dimension}/{$level->value}: {$input['key']}");
+
+                    if ($input['coverage'] === null) {
+                        continue;
+                    }
+
+                    self::assertArrayHasKey('count', $input['coverage']);
+                    self::assertArrayHasKey('unit', $input['coverage']);
+                    self::assertStringEndsWith('.count', $input['coverage']['count']);
+                }
+            }
+        }
+    }
+
+    #[Test]
+    public function itDeclaresACoverageForEveryProjectLevelInputOfAnAggregatedDimension(): void
+    {
+        foreach (['health.complexity', 'health.cohesion', 'health.coupling', 'health.maintainability'] as $dimension) {
+            $inputs = $this->provider->inputsFor($dimension, SymbolLevel::Project);
+            self::assertNotSame([], $inputs, $dimension);
+
+            foreach ($inputs as $input) {
+                self::assertNotNull($input['coverage'], "{$dimension} project input {$input['key']} states no coverage");
+            }
+        }
+    }
+
+    #[Test]
+    public function itStatesWhyTheRemainingDimensionsHaveNone(): void
+    {
+        self::assertStringContainsString('no .count is published', $this->provider->coverageAbsenceReason('health.typing'));
+        self::assertStringContainsString('composes the other dimensions', $this->provider->coverageAbsenceReason('health.overall'));
+        self::assertNotSame('', $this->provider->coverageAbsenceReason('health.unknown'));
+    }
 }

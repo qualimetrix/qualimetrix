@@ -186,6 +186,104 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
         self::assertGreaterThan(20, $checked, 'the enumeration collapsed; it is proving nothing');
     }
 
+    /**
+     * The other half of the same claim, on the other surface.
+     *
+     * The text report prints the advertised target ("target: above 85"); the
+     * HTML report prints a band caption for the very same number, resolved
+     * through `resolveBaseKey` in hints.js — exact key first, then the
+     * aggregation suffix stripped. While only the base metric carried bands,
+     * `maintainability.mi.avg` at 70 was captioned "Good maintainability" beside
+     * a line asking for 85. So: whatever bands the report resolves for an input,
+     * one of their boundaries is the number that input advertises.
+     */
+    #[Test]
+    public function itBandsTheHtmlTooltipAtTheThresholdItAdvertises(): void
+    {
+        $hints = $this->hints->metricHints();
+        $checked = 0;
+
+        foreach (self::levels() as [$dimension, $level, $formula]) {
+            if ($level !== SymbolLevel::Project) {
+                // One set of bands per key can only describe one level, and the
+                // level the advertised target describes is project — the same
+                // decision KNEE_DIFFERS_BY_LEVEL records for the target itself.
+                continue;
+            }
+
+            foreach ($this->catalog->inputsFor($dimension, $level) as $input) {
+                $key = $input['key'];
+
+                if (\in_array($key, self::WITHOUT_FORMULA_KNEE, true)) {
+                    // No knee, nothing to band at: whatever these ranges say is
+                    // editorial, and the assertion for them is in
+                    // itAdvertisesTheThresholdTheFormulaApplies.
+                    continue;
+                }
+
+                $knee = $this->knees->kneeFor($formula, $input['sources']);
+                self::assertNotNull($knee, \sprintf('%s at project: no knee found for "%s"', $dimension, $key));
+
+                $resolved = self::resolveRangesKey($hints, $key);
+                self::assertNotNull(
+                    $resolved,
+                    \sprintf('"%s" carries an advertised target but the HTML report resolves no bands for it', $key),
+                );
+
+                $boundaries = [];
+                foreach ($hints[$resolved]['ranges'] as $band) {
+                    if (isset($band['max'])) {
+                        $boundaries[] = (float) $band['max'];
+                    }
+                }
+
+                self::assertContains(
+                    $knee['knee'],
+                    $boundaries,
+                    \sprintf(
+                        '"%s" advertises %s but the bands the report resolves for it (from "%s") break at %s',
+                        $key,
+                        (string) $knee['knee'],
+                        $resolved,
+                        implode(', ', array_map(strval(...), $boundaries)),
+                    ),
+                );
+                $checked++;
+            }
+        }
+
+        self::assertGreaterThan(10, $checked, 'the enumeration collapsed; it is proving nothing');
+    }
+
+    /**
+     * `resolveBaseKey` from hints.js, in PHP.
+     *
+     * Deliberately not MetricName::base(): the report takes this path, and a
+     * test that took a different one would be checking a resolution nobody
+     * ships. The suffix list is the product's AggregationStrategy set, the same
+     * one the JS carries.
+     *
+     * @param array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}> $hints
+     */
+    private static function resolveRangesKey(array $hints, string $key): ?string
+    {
+        if (isset($hints[$key])) {
+            return $key;
+        }
+
+        foreach (['.avg', '.max', '.min', '.sum', '.count', '.p95', '.p5'] as $suffix) {
+            if (str_ends_with($key, $suffix)) {
+                $base = substr($key, 0, -\strlen($suffix));
+
+                if (isset($hints[$base])) {
+                    return $base;
+                }
+            }
+        }
+
+        return null;
+    }
+
     #[Test]
     public function itKeepsEveryDeclaredDivergenceReal(): void
     {

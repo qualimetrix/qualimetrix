@@ -13,6 +13,7 @@ use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
+use Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -257,6 +258,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             }
 
             $lines[] = $color->bold(\sprintf('  %s decomposition:', ucfirst($hs->name)));
+            $lines[] = $color->dim(HealthCoverageNarrator::describe($hs->coverage));
 
             foreach ($hs->decomposition as $item) {
                 $lines[] = $this->renderDecompositionItem($item, $color);

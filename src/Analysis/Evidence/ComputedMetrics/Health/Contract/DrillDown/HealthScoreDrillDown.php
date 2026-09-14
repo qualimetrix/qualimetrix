@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDow
 use Generator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
@@ -76,6 +77,11 @@ final readonly class HealthScoreDrillDown
                 label: $this->scoreLabel($avg, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                // A subtree score is a class-weighted mean of whole namespace
+                // scores, so the `.count` behind any one input is not the
+                // denominator of this number. The covered share is published
+                // where the aggregates are, at project level.
+                coverage: HealthCoverage::notApplicable('a subtree score is a class-weighted mean of namespace scores; coverage is published at project level'),
                 worstContributors: $contributors,
             );
         }
@@ -175,6 +181,7 @@ final readonly class HealthScoreDrillDown
                 label: $this->scoreLabel($scoreValue, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                coverage: HealthCoverage::notApplicable("a class score is computed from the class's own metrics, not from an aggregate over symbols"),
             );
         }
 

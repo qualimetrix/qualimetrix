@@ -145,6 +145,44 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame(3.0, $evaluation->derived[0]->values['coupling.distance.count']);
     }
 
+    /**
+     * C4 compares two aggregation schemes, and only `coupling.distance` is
+     * re-derived between them — every other project input is read from the
+     * capture verbatim, so its drift is zero by construction. A zero printed
+     * for those would be read as "this dimension is insensitive to the
+     * aggregation rule", which is a claim the run never tested.
+     */
+    #[Test]
+    public function itSaysNotPooledWhereNoDerivedAggregateReachesTheFormula(): void
+    {
+        $definitions = self::defaultDefinitions();
+        $capture = self::distanceCapture(publishedAggregate: 0.4);
+
+        $bench = new Bench();
+        $current = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current());
+        $weighted = $bench->run(
+            $capture,
+            $definitions,
+            [SymbolLevel::Project],
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_LOC),
+        );
+
+        $drift = Criteria::aggregateDrift($current, $weighted);
+
+        // coupling reads the derived key; overall reads coupling, transitively.
+        self::assertNotNull($drift['health.coupling']);
+        self::assertGreaterThan(0.0, $drift['health.coupling']);
+        self::assertNotNull($drift['health.overall']);
+
+        foreach (['health.complexity', 'health.cohesion', 'health.typing', 'health.maintainability'] as $dimension) {
+            self::assertArrayHasKey($dimension, $drift);
+            self::assertNull(
+                $drift[$dimension],
+                \sprintf('%s is reported as measured drift, but nothing pooled reaches its formula', $dimension),
+            );
+        }
+    }
+
     #[Test]
     public function itWeightsTheAggregateByTheSizeOfEachNamespace(): void
     {
@@ -351,25 +389,56 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame([], $violations);
     }
 
+    /**
+     * C1 is one-sided. A parent below every child is the parent formula
+     * carrying terms the child formula has no equivalent for — coupling alone
+     * shows 604 of these and zero of the other kind across the corpus
+     * (measurement/07-monotonicity-direction.md) — so it is counted as a
+     * reference figure and never returned as a violation.
+     */
     #[Test]
-    public function itReportsAParentScoringBelowEveryChildToo(): void
+    public function itDoesNotCallAParentBelowEveryChildAViolation(): void
     {
         $namespace = self::namespaceSubject('App');
         $first = self::classSubject('App\First');
         $second = self::classSubject('App\Second');
         $capture = new Capture('fixture', [$namespace, $first, $second]);
 
-        $violations = Criteria::monotonicity([self::evaluationOf($capture, [
+        $evaluations = [self::evaluationOf($capture, [
             Evaluation::key($namespace) => ['health.cohesion' => 40.0],
             Evaluation::key($first) => ['health.cohesion' => 77.0],
             Evaluation::key($second) => ['health.cohesion' => 90.0],
-        ])]);
+        ])];
 
-        self::assertCount(1, $violations);
-        self::assertSame('namespace->class', $violations[0]->pair);
-        self::assertSame(77.0, $violations[0]->min);
-        self::assertSame(90.0, $violations[0]->max);
-        self::assertSame(2, $violations[0]->children);
+        self::assertSame([], Criteria::monotonicity($evaluations));
+
+        $below = Criteria::parentsBelowChildren($evaluations);
+
+        self::assertCount(1, $below);
+        self::assertSame('namespace->class', $below[0]->pair);
+        self::assertSame(77.0, $below[0]->min);
+        self::assertSame(90.0, $below[0]->max);
+        self::assertSame(2, $below[0]->children);
+    }
+
+    /**
+     * The upward direction is the one the criterion judges, and it is not in
+     * the reference count.
+     */
+    #[Test]
+    public function itKeepsTheTwoDirectionsApart(): void
+    {
+        $namespace = self::namespaceSubject('App');
+        $only = self::classSubject('App\Only');
+        $capture = new Capture('fixture', [$namespace, $only]);
+
+        $evaluations = [self::evaluationOf($capture, [
+            Evaluation::key($namespace) => ['health.coupling' => 100.0],
+            Evaluation::key($only) => ['health.coupling' => 76.07],
+        ])];
+
+        self::assertCount(1, Criteria::monotonicity($evaluations));
+        self::assertSame([], Criteria::parentsBelowChildren($evaluations));
     }
 
     #[Test]

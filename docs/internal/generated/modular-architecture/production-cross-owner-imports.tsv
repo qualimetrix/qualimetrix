@@ -528,6 +528,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositio
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	contract	P8
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract	P2
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract	P3
@@ -2422,6 +2423,7 @@ Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Core\Ve
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	contract	P5
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract	P5
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor	Analysis.Evidence.ComputedMetrics.Health	contract	P5
+Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	contract	P5
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
 Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown	Analysis.Evidence.ComputedMetrics.Health	contract	P5
 Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	contract	P5
@@ -2458,6 +2460,7 @@ Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer	Reporting	Qualimet
 Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Support\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Support\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
+Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	contract	P5
 Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract	P8
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract	P6-D
 Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract	P6-A

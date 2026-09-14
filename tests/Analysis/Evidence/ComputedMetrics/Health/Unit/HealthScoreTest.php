@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 
 #[CoversClass(HealthScore::class)]
@@ -22,6 +23,7 @@ final class HealthScoreTest extends TestCase
             label: 'Fair',
             warningThreshold: 70.0,
             errorThreshold: 40.0,
+            coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
         );
 
         self::assertSame('health.complexity', $score->name);
@@ -50,6 +52,7 @@ final class HealthScoreTest extends TestCase
             label: 'Fair',
             warningThreshold: 70.0,
             errorThreshold: 40.0,
+            coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
             decomposition: [$item],
         );
 

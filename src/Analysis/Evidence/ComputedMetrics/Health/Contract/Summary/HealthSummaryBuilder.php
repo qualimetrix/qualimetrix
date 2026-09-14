@@ -8,12 +8,14 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -25,6 +27,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Builds health scores and offender projections from measured evidence.
+ *
+ * @qmx-threshold complexity.wmc warning=62 error=62 — Publishing what a score covers cost this class one short method, and WMC charges a method's existence: the same code inline scored 60 and the extraction that made each method simpler scored 61. One-method headroom, not a licence to grow.
  */
 final readonly class HealthSummaryBuilder
 {
@@ -32,6 +36,7 @@ final readonly class HealthSummaryBuilder
     private const int DEFAULT_TOP_CLASSES = 10;
 
     private ContributorRanker $contributorRanker;
+    private CoverageReader $coverage;
     private HealthDecompositionCatalog $decomposition;
     private WorstOffenderBuilder $offenderBuilder;
 
@@ -41,6 +46,7 @@ final readonly class HealthSummaryBuilder
     ) {
         $this->contributorRanker = new ContributorRanker();
         $this->decomposition = new HealthDecompositionCatalog();
+        $this->coverage = new CoverageReader($this->decomposition);
         $this->offenderBuilder = new WorstOffenderBuilder();
     }
 
@@ -50,7 +56,7 @@ final readonly class HealthSummaryBuilder
         NamespaceTree $tree,
         array $findings,
     ): HealthSummary {
-        $healthScores = $this->buildHealthScores($metrics);
+        $healthScores = $this->buildHealthScores($metrics, $tree);
         // The levels ranked here are published as
         // RankedOffenderLevels::LEVELS: a caller asking what a `--namespace`
         // value can select has to know which symbols get a canonical name into
@@ -68,8 +74,9 @@ final readonly class HealthSummaryBuilder
     /**
      * @return array<string, HealthScore>
      */
-    private function buildHealthScores(MetricRepositoryInterface $metrics): array
+    private function buildHealthScores(MetricRepositoryInterface $metrics, NamespaceTree $tree): array
     {
+        $leafNamespaceCount = \count($tree->getLeaves());
         $projectMetrics = $metrics->get(SymbolPath::forProject());
         $healthScores = [];
 
@@ -84,23 +91,7 @@ final readonly class HealthSummaryBuilder
             [$warnThreshold, $errThreshold] = $this->thresholds($dim);
 
             $decomposition = $this->buildDecomposition($dim->value, $projectMetrics);
-            $inputs = $this->hintProvider->getDecompositionForClasses($dim->value);
-            $contributors = $inputs === []
-                ? []
-                : $this->contributorRanker->rank(
-                    array_map(function ($symbol) use ($metrics, $inputs): array {
-                        $classMetrics = $metrics->get($symbol->symbolPath);
-                        $selection = $this->decomposition->selectContributorMetrics($inputs, $classMetrics->get(...));
-
-                        return [
-                            'symbol' => $symbol,
-                            'primaryValue' => $selection['primaryValue'],
-                            'contributorMetrics' => $selection['contributorMetrics'],
-                        ];
-                    }, iterator_to_array($metrics->all(SymbolLevel::Class_), false)),
-                    $inputs[0]['direction'],
-                );
-
+            $contributors = $this->rankContributors($dim->value, $metrics);
             $dimensionName = $dim->shortName();
             $healthScores[$dimensionName] = new HealthScore(
                 name: $dimensionName,
@@ -108,6 +99,7 @@ final readonly class HealthSummaryBuilder
                 label: $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                coverage: $this->coverage->read($dim->value, $projectMetrics->get(...), $leafNamespaceCount),
                 decomposition: $decomposition,
                 worstContributors: $contributors,
             );
@@ -123,10 +115,41 @@ final readonly class HealthSummaryBuilder
                 label: '0 classes analyzed',
                 warningThreshold: $typingWarning,
                 errorThreshold: $typingError,
+                coverage: $this->coverage->read(HealthDimension::Typing->value, $projectMetrics->get(...), $leafNamespaceCount),
             );
         }
 
         return $healthScores;
+    }
+
+    /**
+     * The classes that pushed a project score down, worst first.
+     *
+     * @return list<HealthContributor>
+     */
+    private function rankContributors(string $dimension, MetricRepositoryInterface $metrics): array
+    {
+        $inputs = $this->hintProvider->getDecompositionForClasses($dimension);
+
+        if ($inputs === []) {
+            return [];
+        }
+
+        return $this->contributorRanker->rank(
+            array_map(function ($symbol) use ($metrics, $inputs): array {
+                $selection = $this->decomposition->selectContributorMetrics(
+                    $inputs,
+                    $metrics->get($symbol->symbolPath)->get(...),
+                );
+
+                return [
+                    'symbol' => $symbol,
+                    'primaryValue' => $selection['primaryValue'],
+                    'contributorMetrics' => $selection['contributorMetrics'],
+                ];
+            }, iterator_to_array($metrics->all(SymbolLevel::Class_), false)),
+            $inputs[0]['direction'],
+        );
     }
 
     /**

@@ -312,6 +312,15 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Changed
 
+- Every health dimension now publishes what share of its subject it was
+  computed over. `--format=json` gains a `coverage` object per dimension
+  (measured count, eligible population, ratio, unit and the `.count` it came
+  from) and `--format=health` prints one line per dimension. The narrowest
+  input decides, so a cohesion score computed from the third of classes that
+  carry TCC now says so. Scores themselves are unchanged and are not damped by
+  coverage. Where coverage is undefined — `health.overall`, `health.typing`, a
+  class-level or namespace-filtered score — the field states that and why,
+  rather than reporting zero.
 - Configuration that binds to nothing is now reported instead of passing
   unnoticed, through six new channels, all `warning` at project level:
   `discovery.unmatched-exclude` (an `--exclude` value or `exclude:` entry that

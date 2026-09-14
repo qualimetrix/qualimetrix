@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
@@ -37,8 +38,8 @@ final class HealthScoreResolverTest extends TestCase
     public function itReturnsProjectHealthScoresWhenNoFilter(): void
     {
         $projectScores = [
-            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),
-            'overall' => new HealthScore('overall', 75.0, 'Good', 50.0, 25.0),
+            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 75.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ];
 
         $report = new Report(
@@ -62,7 +63,7 @@ final class HealthScoreResolverTest extends TestCase
     public function itReturnsProjectHealthScoresWhenNoMetrics(): void
     {
         $projectScores = [
-            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),
+            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ];
 
         $report = new Report(
@@ -184,7 +185,7 @@ final class HealthScoreResolverTest extends TestCase
     public function itClassFilterFallsBackToProjectWhenClassNotFound(): void
     {
         $projectScores = [
-            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),
+            'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ];
 
         $metrics = $this->createMetricRepository(new MetricBag());

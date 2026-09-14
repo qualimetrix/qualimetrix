@@ -74,8 +74,10 @@ collapses to zero is the structural one, repaired at its source above.
 A first-class "not applicable" state was considered and rejected for this work.
 The engine has no per-subject non-publication path: the only route leads to
 `health.overall`'s `?? 75` fallback, and per-subject renormalisation requires a
-non-canonical `health.overall` that `WeightedHealthFormula` does not parse and
-`HealthFormulaExcluder` refuses. Reaching it means changing the evaluator, the
+non-canonical `health.overall` that `WeightedHealthFormula::termsOf` cannot read
+off the parse tree — it reads every term of the canonical
+`clamp((m["health.dim"] ?? fallback) * weight + …, 0, 100)` shape or returns
+null, never a partial read — and that `HealthFormulaExcluder` therefore refuses. Reaching it means changing the evaluator, the
 repository, the formatters and the excluder — a feature with its own decision.
 
 ## Consequences

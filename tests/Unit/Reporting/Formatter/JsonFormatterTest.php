@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Heal
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
@@ -234,6 +235,7 @@ final class JsonFormatterTest extends TestCase
                     label: 'Fair',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
+                    coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
                     decomposition: [
                         new DecompositionItem(
                             metricKey: 'complexity.ccn.avg',
@@ -251,6 +253,7 @@ final class JsonFormatterTest extends TestCase
                     label: 'Poor',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
+                    coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
                 ),
             ],
         );
@@ -292,7 +295,7 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'complexity' => new HealthScore('complexity', 65.0, 'Fair', 50.0, 25.0),
+                'complexity' => new HealthScore('complexity', 65.0, 'Fair', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -896,6 +899,7 @@ final class JsonFormatterTest extends TestCase
                     label: 'Unknown',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
+                    coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
                     decomposition: [
                         new DecompositionItem('metric', 'Test', \INF, 'below 10', 'lower_is_better', 'bad'),
                     ],
@@ -1075,7 +1079,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -1136,7 +1140,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstClasses: [],
         );
@@ -1170,7 +1174,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 

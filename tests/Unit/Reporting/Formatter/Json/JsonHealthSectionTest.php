@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
@@ -87,6 +88,7 @@ final class JsonHealthSectionTest extends TestCase
             label: 'Good',
             warningThreshold: 60.0,
             errorThreshold: 40.0,
+            coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
             decomposition: [$decomposition],
             worstContributors: [$contributor],
         );
@@ -147,6 +149,7 @@ final class JsonHealthSectionTest extends TestCase
             label: 'N/A',
             warningThreshold: \NAN,
             errorThreshold: -\INF,
+            coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
             decomposition: [$decomposition],
             worstContributors: [$contributor],
         );
@@ -176,6 +179,7 @@ final class JsonHealthSectionTest extends TestCase
             label: 'N/A',
             warningThreshold: 60.0,
             errorThreshold: 40.0,
+            coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
         );
 
         $report = $this->buildReport(['cohesion' => $healthScore]);
@@ -199,6 +203,7 @@ final class JsonHealthSectionTest extends TestCase
                 label: 'Good',
                 warningThreshold: 60.0,
                 errorThreshold: 40.0,
+                coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
             ),
             'cohesion' => new HealthScore(
                 name: 'cohesion',
@@ -206,6 +211,7 @@ final class JsonHealthSectionTest extends TestCase
                 label: 'Fair',
                 warningThreshold: 70.0,
                 errorThreshold: 50.0,
+                coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
             ),
         ];
 

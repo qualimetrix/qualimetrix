@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Heal
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
@@ -142,9 +143,9 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 100,
             duration: 5.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
-                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
-                'cohesion' => new HealthScore('cohesion', 40.0, 'Poor', 50.0, 25.0, [
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+                'cohesion' => new HealthScore('cohesion', 40.0, 'Poor', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                     new DecompositionItem('cohesion.tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
                 ]),
             ],
@@ -263,7 +264,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 5,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -355,8 +356,8 @@ final class SummaryFormatterTest extends TestCase
                 filesAnalyzed: 10,
                 duration: 0.5,
                 healthScores: [
-                    'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
-                    'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                    'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+                    'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
                 ],
             );
 
@@ -406,7 +407,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: [
                 new WorstOffender(
@@ -461,7 +462,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: [$offenderMatch, $offenderNoMatch],
         );
@@ -598,7 +599,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstClasses: [$offenderMatch, $offenderNoMatch],
         );
@@ -634,7 +635,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: $offenders,
         );
@@ -675,7 +676,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: $offenders,
         );
@@ -761,7 +762,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', \NAN, 'Unknown', 50.0, 30.0),
+                'overall' => new HealthScore('overall', \NAN, 'Unknown', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -782,7 +783,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.0, 'Poor', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.0, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -803,7 +804,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.1, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.1, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -823,7 +824,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 30.0, 'Poor', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 30.0, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -1066,8 +1067,8 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
-                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 
@@ -1124,7 +1125,7 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstClasses: [],
         );
@@ -1154,7 +1155,7 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 

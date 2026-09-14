@@ -113,6 +113,29 @@ Health scores appear in several output formats:
 
 See [Output Formats](../usage/output-formats.md) for details.
 
+### What a Score Covers
+
+A score is only a statement about the part of the codebase its inputs could be
+measured on. Cohesion is undefined for a class with fewer than two methods, so a
+cohesion score typically describes between a quarter and a half of a project's
+classes — and said nothing about that until now.
+
+Every health dimension therefore publishes a `coverage` beside its score: the
+`.count` the narrowest input aggregate reported, the population that count is a
+share of, and which `.count` was reported (`basis`). Scores are **not** damped
+by coverage; the number is published so a reader can judge it, not folded into
+it (see [ADR 0062](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0062-health-scores-measure-what-they-cover.md)).
+
+Where coverage is undefined the field says so explicitly, with a reason, rather
+than reporting zero: `health.overall` composes the other dimensions, `health.typing`
+is computed from typed/total sums that publish no `.count`, and a class-level or
+namespace-filtered score is not an aggregate over symbols at all.
+
+Coverage appears in `--format=json` (a `coverage` object per dimension) and in
+`--format=health` (one line per dimension). The compact formats — `summary`,
+HTML — leave it out for space.
+
+
 ---
 
 ## Configuration
