@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Heal
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\FormatterContext;
@@ -26,7 +25,7 @@ final class JsonHealthSectionTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $this->section = new JsonHealthSection($resolver, new JsonSanitizer());
     }
 

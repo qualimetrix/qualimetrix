@@ -6,12 +6,14 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class HealthMetricCatalog implements HealthMetricMetadataProviderInterface
 {
     public function __construct(
         private MetricHintCatalog $metricHints = new MetricHintCatalog(),
         private HealthDimensionCatalog $dimensions = new HealthDimensionCatalog(),
+        private HealthDecompositionCatalog $decomposition = new HealthDecompositionCatalog(),
     ) {}
 
     public function getLabel(string $key): ?string
@@ -31,15 +33,15 @@ final readonly class HealthMetricCatalog implements HealthMetricMetadataProvider
         return $this->metricHints->getDirection($key);
     }
     /** @return list<string> */
-    public function getDecomposition(string $dimension): array
+    public function getDecomposition(string $dimension, SymbolLevel $level): array
     {
-        return $this->dimensions->getDecomposition($dimension);
+        return $this->decomposition->getDecomposition($dimension, $level);
     }
 
     /** @return list<array{classKey: string, label: string, direction: string}> */
     public function getDecompositionForClasses(string $dimension): array
     {
-        return $this->dimensions->getDecompositionForClasses($dimension);
+        return $this->decomposition->getDecompositionForClasses($dimension);
     }
     public function getScoreLabel(float $score, float $warning, float $error): string
     {
@@ -54,6 +56,6 @@ final readonly class HealthMetricCatalog implements HealthMetricMetadataProvider
 
     public function metadata(): HealthMetricMetadataCollection
     {
-        return new HealthMetricMetadataCollection($this->metricHints->metricHints(), $this->dimensions->healthDecomposition());
+        return new HealthMetricMetadataCollection($this->metricHints->metricHints(), $this->decomposition->healthDecomposition());
     }
 }

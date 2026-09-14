@@ -39,8 +39,7 @@ final class MetricHintCatalogTest extends TestCase
     #[Test]
     public function itGetLabelWithSuffixResolution(): void
     {
-        // ccn.max is not explicitly defined, but ccn is — should resolve via suffix stripping
-        self::assertSame('Cyclomatic', $this->provider->getLabel('complexity.ccn.max'));
+        // ccn.min is not explicitly defined, but ccn is — should resolve via suffix stripping
         self::assertSame('Cyclomatic', $this->provider->getLabel('complexity.ccn.min'));
         self::assertSame('CBO', $this->provider->getLabel('coupling.cbo.sum'));
     }
@@ -151,8 +150,8 @@ final class MetricHintCatalogTest extends TestCase
     #[Test]
     public function itGetExplanationWithSuffixResolution(): void
     {
-        // ccn.max resolves to ccn entry
-        self::assertSame('too many code paths', $this->provider->getExplanation('complexity.ccn.max', 10.0));
+        // ccn.min resolves to ccn entry
+        self::assertSame('too many code paths', $this->provider->getExplanation('complexity.ccn.min', 10.0));
     }
 
     #[Test]

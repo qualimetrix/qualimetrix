@@ -28,7 +28,7 @@ final class HealthTextFormatterTest extends TestCase
     protected function setUp(): void
     {
         $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown($hintProvider, self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
         $resolver = new HealthScoreResolver($drillDown);
         $this->formatter = new HealthTextFormatter($resolver);
     }

@@ -11,7 +11,7 @@ final readonly class HealthMetricMetadataCollection
 {
     /**
      * @param array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}> $metricHints
-     * @param array<string, array{inputs: list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>}> $healthDecomposition
+     * @param array<string, array{levels: array<string, list<array{key: string, label: string, direction: string}>>}> $healthDecomposition
      */
     public function __construct(
         public array $metricHints,

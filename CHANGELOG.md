@@ -379,6 +379,16 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Fixed
 
+- **A health score's breakdown now lists the inputs that score was computed
+  from, with the targets its own formula applies.** The breakdown carried one
+  input list per dimension for all three levels, so a project coupling score
+  built from CBO aggregates was explained by namespace-shaped inputs, and the
+  typing breakdown above class level was silently empty because the key it named
+  does not exist there. Targets came from a base-key fallback and contradicted
+  the formulas they described — the maintainability minimum advertised "above
+  65" where the formula stops penalising at 5. Inputs and targets are now
+  resolved per level and checked against the formulas by a test.
+
 - **An empty `cache.dir` no longer offers `--no-cache` as the way out.** Both
   cache refusals used to end with "or disable the cache with --no-cache".
   Against an unwritable directory that is true and it stays — the flag really

@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDow
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -21,13 +21,13 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  */
 final readonly class WorstClassDrillDown
 {
-    private HealthDimensionCatalog $dimensions;
+    private HealthDecompositionCatalog $decomposition;
 
     public function __construct(
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
         private WorstOffenderBuilder $offenderBuilder = new WorstOffenderBuilder(),
     ) {
-        $this->dimensions = new HealthDimensionCatalog();
+        $this->decomposition = new HealthDecompositionCatalog();
     }
 
     /**
@@ -45,7 +45,7 @@ final readonly class WorstClassDrillDown
     ): array {
         [$warnThreshold, $errThreshold] = $this->overallThresholds();
         $notableMetricNames = $includeNotableMetrics
-            ? $this->dimensions->notableClassMetrics()
+            ? $this->decomposition->notableClassMetrics()
             : [];
 
         $offenders = $this->offenderBuilder->buildWorstClasses(
@@ -71,12 +71,12 @@ final readonly class WorstClassDrillDown
     {
         foreach ($repository->all(SymbolLevel::Class_) as $symbol) {
             $metrics = $repository->get($symbol->symbolPath);
-            $overall = $metrics->get($this->dimensions->overallMetric());
+            $overall = $metrics->get($this->decomposition->overallMetric());
             yield [
                 'symbol' => $symbol,
                 'overall' => $overall === null ? null : (float) $overall,
                 'dimensionScores' => $this->dimensionScores($metrics->get(...)),
-                'loc' => $metrics->get($this->dimensions->classLocMetric()),
+                'loc' => $metrics->get($this->decomposition->classLocMetric()),
                 'notableMetrics' => $this->selectedMetrics($metrics->get(...), $notableMetricNames),
             ];
         }
@@ -90,7 +90,7 @@ final readonly class WorstClassDrillDown
     private function dimensionScores(callable $readMetric): array
     {
         $scores = [];
-        foreach ($this->dimensions->scoreDimensions() as $shortName => $metricName) {
+        foreach ($this->decomposition->scoreDimensions() as $shortName => $metricName) {
             $value = $readMetric($metricName);
             if ($value !== null) {
                 $scores[$shortName] = (float) $value;

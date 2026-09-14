@@ -2337,6 +2337,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php",
       "kind": "class",
@@ -4673,7 +4681,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog",
           "closes_in": null
         },
         {
@@ -16299,6 +16307,16 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthMetricCatalog",
           "closes_in": null
         },
         {

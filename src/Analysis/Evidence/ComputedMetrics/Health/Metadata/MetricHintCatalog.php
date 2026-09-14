@@ -28,7 +28,7 @@ final class MetricHintCatalog
         'complexity.ccn.avg' => [
             'label' => 'Cyclomatic (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 4',
+            'goodValue' => 'below 2',
             'badExplanation' => 'too many code paths per method',
             'goodExplanation' => 'manageable branching',
         ],
@@ -42,9 +42,41 @@ final class MetricHintCatalog
         'complexity.cognitive.avg' => [
             'label' => 'Cognitive (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 5',
+            'goodValue' => 'below 1',
             'badExplanation' => 'deeply nested, hard to follow',
             'goodExplanation' => 'straightforward control flow',
+        ],
+        // Entries below exist so the base-key fallback cannot answer for an
+        // aggregate that the formula treats differently. `maintainability.mi.min`
+        // resolved to the MI entry's "above 65" while the project formula stops
+        // penalising it at 5, and nothing noticed.
+        'complexity.ccn.p95' => [
+            'label' => 'Cyclomatic (p95)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 5',
+            'badExplanation' => 'the worst twentieth of methods branch heavily',
+            'goodExplanation' => 'even the worst methods branch modestly',
+        ],
+        'complexity.cognitive.p95' => [
+            'label' => 'Cognitive (p95)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 6',
+            'badExplanation' => 'the worst twentieth of methods are hard to follow',
+            'goodExplanation' => 'even the worst methods stay readable',
+        ],
+        'complexity.ccn.max' => [
+            'label' => 'Cyclomatic (max)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 20',
+            'badExplanation' => 'one method carries far too many paths',
+            'goodExplanation' => 'no single method dominates',
+        ],
+        'complexity.cognitive.max' => [
+            'label' => 'Cognitive (max)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 15',
+            'badExplanation' => 'one method is very hard to follow',
+            'goodExplanation' => 'no single method dominates',
         ],
         MetricName::COMPLEXITY_NPATH => [
             'label' => 'NPath',
@@ -74,6 +106,13 @@ final class MetricHintCatalog
             'badExplanation' => 'class has {value} unrelated method groups',
             'goodExplanation' => 'class is cohesive',
         ],
+        'cohesion.lcom.avg' => [
+            'label' => 'LCOM4 (avg)',
+            'direction' => 'lower_is_better',
+            'goodValue' => '1 or less',
+            'badExplanation' => 'the average class splits into unrelated method groups',
+            'goodExplanation' => 'classes are cohesive',
+        ],
         MetricName::COMPLEXITY_WMC => [
             'label' => 'WMC',
             'direction' => 'lower_is_better',
@@ -91,9 +130,23 @@ final class MetricHintCatalog
         'coupling.cbo.avg' => [
             'label' => 'CBO (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 7',
+            'goodValue' => 'below 8',
             'badExplanation' => 'classes depend on too many others',
             'goodExplanation' => 'reasonable coupling',
+        ],
+        'coupling.cbo.p95' => [
+            'label' => 'CBO (p95)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 15',
+            'badExplanation' => 'the most coupled twentieth of classes reach far',
+            'goodExplanation' => 'even the most coupled classes stay contained',
+        ],
+        'coupling.cbo.max' => [
+            'label' => 'CBO (max)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 30',
+            'badExplanation' => 'one class is coupled to almost everything',
+            'goodExplanation' => 'no single class dominates the graph',
         ],
         'coupling.ce' => [
             'label' => 'Ce',
@@ -203,16 +256,23 @@ final class MetricHintCatalog
         'maintainability.mi.avg' => [
             'label' => 'MI (avg)',
             'direction' => 'higher_is_better',
-            'goodValue' => 'above 65',
+            'goodValue' => 'above 85',
             'badExplanation' => 'code is hard to change safely',
             'goodExplanation' => 'code is maintainable',
         ],
         'maintainability.mi.p5' => [
             'label' => 'MI (p5)',
             'direction' => 'higher_is_better',
-            'goodValue' => 'above 50',
+            'goodValue' => 'above 65',
             'badExplanation' => 'worst methods are hard to maintain',
             'goodExplanation' => 'even worst methods are maintainable',
+        ],
+        'maintainability.mi.min' => [
+            'label' => 'MI (min)',
+            'direction' => 'higher_is_better',
+            'goodValue' => 'above 5',
+            'badExplanation' => 'at least one method is effectively unmaintainable',
+            'goodExplanation' => 'no method sits on the floor',
         ],
         'design.type-coverage.all' => [
             'label' => 'Type coverage',

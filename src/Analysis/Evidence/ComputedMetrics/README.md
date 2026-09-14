@@ -25,6 +25,32 @@ score/decomposition semantics, contributor ranking, namespace drill-down, and
 human explanations. Reporting owns only report assembly and output projection;
 it consumes immutable Health contracts and never imports Health internals.
 
+`Metadata` answers two questions that share no data, and holds a class for
+each: `HealthDecompositionCatalog` says which metrics a score is made of and
+under which keys they are published, `HealthDimensionCatalog` says how a
+dimension is worded. They were one class while the decomposition was a single
+flat list; once it had to answer per level, the product's own god-class rule
+said the class held two subjects.
+
+A decomposition answers per symbol level, because the formulas do: the project
+coupling score is computed from CBO aggregates where the namespace one is
+computed from Ce aggregates, and a single list described the wrong score at two
+levels out of three. `HealthDimensionCatalog::inputsFor()` resolves the project
+level from the namespace one exactly where `ComputedMetricDefinition`
+inherits the namespace formula, and the metadata projection ships every level
+resolved so the HTML report picks by the node's own level. Which class dragged a
+parent score down is a separate question with a separate list — the contributor
+keys — and the two must not be conflated.
+
+The threshold a decomposition line advertises is the knee its formula term
+applies, and nothing else. Both had drifted silently while the catalog
+transcribed the constants by hand, so
+`HealthDecompositionAgreesWithFormulasTest` now reads the formulas and fails on
+disagreement: every shown input must be one its level's formula reads, and every
+advertised target must be that formula's own knee. A term whose knee sits on a
+blend of several signals advertises nothing per key, and a term with no knee is
+declared knee-less and rechecked as such.
+
 ## Structure
 
 ```text
@@ -57,7 +83,7 @@ ComputedMetrics/
     │   ├── Score/                    # score and decomposition values
     │   └── Summary/                  # summary value and concrete builder
     ├── Configuration/                # formula exclusion
-    ├── Metadata/                     # metric hints, health dimensions, facade
+    ├── Metadata/                     # metric hints, decomposition, dimension wording, facade
     ├── Offender/                     # evidence, reasons, projection builder
     └── Score/                        # contributor ranking
 ```

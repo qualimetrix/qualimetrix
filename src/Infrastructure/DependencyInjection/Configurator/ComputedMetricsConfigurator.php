@@ -63,6 +63,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
     {
         $metricHintCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\MetricHintCatalog';
         $healthDimensionCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog';
+        $healthDecompositionCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog';
         $healthMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthMetricCatalog';
         $healthSummaryBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder';
         $healthScoreDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown';
@@ -71,9 +72,11 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
         $container->register($metricHintCatalog);
         $container->register($healthDimensionCatalog);
+        $container->register($healthDecompositionCatalog);
         $container->register($healthMetricCatalog)->setArguments([
             new Reference($metricHintCatalog),
             new Reference($healthDimensionCatalog),
+            new Reference($healthDecompositionCatalog),
         ]);
         $container->setAlias(self::METADATA_PROVIDER, $healthMetricCatalog);
         $container->register($healthSummaryBuilder)->setArguments([
@@ -81,7 +84,6 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
             new Reference(self::CATALOG),
         ]);
         $container->register($healthScoreDrillDown)->setArguments([
-            new Reference($healthMetricCatalog),
             new Reference(self::CATALOG),
         ]);
         $container->register($worstOffenderBuilder);

@@ -127,7 +127,7 @@ final class JsonShapePreservationTest extends TestCase
     {
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $healthScoreDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $healthScoreDrillDown = new HealthScoreDrillDown($definitionCatalog);
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());

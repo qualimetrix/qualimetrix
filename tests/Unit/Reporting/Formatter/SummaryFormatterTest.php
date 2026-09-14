@@ -49,7 +49,7 @@ final class SummaryFormatterTest extends TestCase
         $debtCalculator = new DebtCalculator($registry);
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
         $findingFilter = new FindingFilter();
         $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
         $this->formatter = new SummaryFormatter(

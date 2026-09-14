@@ -244,37 +244,99 @@ const hintsFixture = {
   },
   healthDecomposition: {
     'health.complexity': {
-      inputs: [
-        { key: 'complexity.ccn.avg', altKey: 'complexity.ccn.sum', label: 'CCN avg', ideal: '1-3', direction: 'lower' },
-        { key: 'complexity.cognitive.avg', altKey: 'complexity.cognitive.sum', label: 'Cognitive avg', ideal: '0-4', direction: 'lower' },
-        { key: 'complexity.ccn.p95', altKey: null, label: 'CCN p95', ideal: '≤5', direction: 'lower' },
-        { key: 'complexity.cognitive.p95', altKey: null, label: 'Cognitive p95', ideal: '≤6', direction: 'lower' },
-      ],
+      levels: {
+        class: [
+          { key: 'complexity.ccn.avg', label: 'CCN avg', direction: 'lower' },
+          { key: 'complexity.cognitive.avg', label: 'Cognitive avg', direction: 'lower' },
+          { key: 'complexity.ccn.max', label: 'CCN max', direction: 'lower' },
+          { key: 'complexity.cognitive.max', label: 'Cognitive max', direction: 'lower' },
+        ],
+        namespace: [
+          { key: 'complexity.ccn.avg', label: 'CCN avg', direction: 'lower' },
+          { key: 'complexity.cognitive.avg', label: 'Cognitive avg', direction: 'lower' },
+          { key: 'complexity.ccn.p95', label: 'CCN p95', direction: 'lower' },
+          { key: 'complexity.cognitive.p95', label: 'Cognitive p95', direction: 'lower' },
+          { key: 'complexity.ccn.max', label: 'CCN max', direction: 'lower' },
+        ],
+        project: [
+          { key: 'complexity.ccn.avg', label: 'CCN avg', direction: 'lower' },
+          { key: 'complexity.cognitive.avg', label: 'Cognitive avg', direction: 'lower' },
+          { key: 'complexity.ccn.p95', label: 'CCN p95', direction: 'lower' },
+          { key: 'complexity.cognitive.p95', label: 'Cognitive p95', direction: 'lower' },
+          { key: 'complexity.ccn.max', label: 'CCN max', direction: 'lower' },
+        ],
+      },
     },
     'health.cohesion': {
-      inputs: [
-        { key: 'cohesion.tcc.avg', altKey: 'cohesion.tcc', label: 'TCC', ideal: '1.0', direction: 'higher' },
-        { key: 'cohesion.lcom.avg', altKey: 'cohesion.lcom', label: 'LCOM', ideal: '1', direction: 'lower' },
-      ],
+      levels: {
+        class: [
+          { key: 'cohesion.tcc', label: 'TCC', direction: 'higher' },
+          { key: 'cohesion.lcom', label: 'LCOM', direction: 'lower' },
+        ],
+        namespace: [
+          { key: 'cohesion.tcc.avg', label: 'TCC', direction: 'higher' },
+          { key: 'cohesion.lcom.avg', label: 'LCOM', direction: 'lower' },
+        ],
+        project: [
+          { key: 'cohesion.tcc.avg', label: 'TCC', direction: 'higher' },
+          { key: 'cohesion.lcom.avg', label: 'LCOM', direction: 'lower' },
+        ],
+      },
     },
     'health.coupling': {
-      inputs: [
-        { key: 'coupling.cbo.avg', altKey: 'coupling.cbo', label: 'CBO', ideal: '0-7', direction: 'lower' },
-        { key: 'coupling.distance.avg', altKey: 'coupling.distance', label: 'Distance', ideal: '0.0', direction: 'lower' },
-      ],
+      levels: {
+        class: [
+          { key: 'coupling.ce-packages', label: 'Ce packages', direction: 'lower' },
+          { key: 'coupling.ce', label: 'Ce', direction: 'lower' },
+        ],
+        namespace: [
+          { key: 'coupling.distance', label: 'Distance', direction: 'lower' },
+          { key: 'coupling.ce-packages.avg', label: 'Ce pkg (avg)', direction: 'lower' },
+          { key: 'coupling.ce.avg', label: 'Ce (avg)', direction: 'lower' },
+          { key: 'coupling.ce.max', label: 'Ce max', direction: 'lower' },
+          { key: 'coupling.ce', label: 'Ce (namespace)', direction: 'lower' },
+        ],
+        project: [
+          { key: 'coupling.distance.avg', label: 'Distance', direction: 'lower' },
+          { key: 'coupling.cbo.avg', label: 'CBO (avg)', direction: 'lower' },
+          { key: 'coupling.cbo.p95', label: 'CBO p95', direction: 'lower' },
+          { key: 'coupling.cbo.max', label: 'CBO max', direction: 'lower' },
+        ],
+      },
     },
     'health.typing': {
-      inputs: [
-        { key: 'design.type-coverage.all', altKey: null, label: 'Coverage', ideal: '100%', direction: 'higher' },
-      ],
+      levels: {
+        class: [
+          { key: 'design.type-coverage.all', label: 'Coverage', direction: 'higher' },
+        ],
+        namespace: [],
+        project: [],
+      },
     },
     'health.maintainability': {
-      inputs: [
-        { key: 'maintainability.mi.avg', altKey: 'maintainability.mi', label: 'MI', ideal: '85+', direction: 'higher' },
-      ],
+      levels: {
+        class: [
+          { key: 'maintainability.mi.avg', label: 'MI avg', direction: 'higher' },
+          { key: 'maintainability.mi.min', label: 'MI min', direction: 'higher' },
+        ],
+        namespace: [
+          { key: 'maintainability.mi.avg', label: 'MI avg', direction: 'higher' },
+          { key: 'maintainability.mi.p5', label: 'MI p5', direction: 'higher' },
+          { key: 'maintainability.mi.min', label: 'MI min', direction: 'higher' },
+        ],
+        project: [
+          { key: 'maintainability.mi.avg', label: 'MI avg', direction: 'higher' },
+          { key: 'maintainability.mi.p5', label: 'MI p5', direction: 'higher' },
+          { key: 'maintainability.mi.min', label: 'MI min', direction: 'higher' },
+        ],
+      },
     },
     'health.overall': {
-      inputs: [],
+      levels: {
+        class: [],
+        namespace: [],
+        project: [],
+      },
     },
   },
 };
@@ -546,19 +608,38 @@ describe('getHealthHint', () => {
 
   it('returns null for node without metrics', () => {
     expect(getHealthHint('health.complexity', {})).toBeNull();
-    expect(getHealthHint('health.complexity', { metrics: null })).toBeNull();
+    expect(getHealthHint('health.complexity', { type: 'class', metrics: null })).toBeNull();
   });
 
   it('returns null for missing health metric', () => {
-    expect(getHealthHint('health.complexity', { metrics: {} })).toBeNull();
+    expect(getHealthHint('health.complexity', { type: 'class', metrics: {} })).toBeNull();
   });
 
   it('returns null for unknown health key', () => {
-    expect(getHealthHint('health.unknown', { metrics: { 'health.unknown': 50 } })).toBeNull();
+    expect(
+      getHealthHint('health.unknown', { type: 'class', metrics: { 'health.unknown': 50 } }),
+    ).toBeNull();
   });
 
-  it('decomposes health.complexity', () => {
+  it('returns null for a level the dimension has no inputs for', () => {
+    // A score whose level the catalog cannot describe gets no tooltip rather
+    // than another level's list: typing above class level is recomputed from
+    // typed/total sums and names no aggregate percentage metric.
     const node = {
+      type: 'project',
+      metrics: { 'health.typing': 80, 'design.type-coverage.all': 85 },
+    };
+    expect(getHealthHint('health.typing', node)).toBeNull();
+  });
+
+  it('returns null for a node whose level is unknown', () => {
+    const node = { metrics: { 'health.complexity': 72, 'complexity.ccn.avg': 8 } };
+    expect(getHealthHint('health.complexity', node)).toBeNull();
+  });
+
+  it('decomposes health.complexity at class level', () => {
+    const node = {
+      type: 'class',
       metrics: {
         'health.complexity': 72,
         'complexity.ccn.avg': 8,
@@ -574,8 +655,26 @@ describe('getHealthHint', () => {
     expect(result.details[1]).toContain('Cognitive avg = 12');
   });
 
-  it('decomposes health.cohesion with class-level keys', () => {
+  it('decomposes health.complexity at project level from the percentile inputs', () => {
     const node = {
+      type: 'project',
+      metrics: {
+        'health.complexity': 82,
+        'complexity.ccn.avg': 2.6,
+        'complexity.ccn.p95': 7,
+        'complexity.cognitive.p95': 8,
+      },
+    };
+    const result = getHealthHint('health.complexity', node);
+    expect(result).not.toBeNull();
+    expect(result.details).toHaveLength(3);
+    expect(result.details[1]).toContain('CCN p95 = 7');
+    expect(result.details[2]).toContain('Cognitive p95 = 8');
+  });
+
+  it('decomposes health.cohesion at class level', () => {
+    const node = {
+      type: 'class',
       metrics: {
         'health.cohesion': 45,
         'cohesion.tcc': 0.2,
@@ -591,12 +690,16 @@ describe('getHealthHint', () => {
     expect(result.details[1]).toContain('LCOM = 4');
   });
 
-  it('decomposes health.cohesion with namespace-level alt keys', () => {
+  it('decomposes health.cohesion at namespace level from the aggregate keys', () => {
     const node = {
+      type: 'namespace',
       metrics: {
         'health.cohesion': 60,
         'cohesion.tcc.avg': 0.45,
         'cohesion.lcom.avg': 2.5,
+        // The class-level keys are present too and must not be picked up.
+        'cohesion.tcc': 0.1,
+        'cohesion.lcom': 9,
       },
     };
     const result = getHealthHint('health.cohesion', node);
@@ -606,23 +709,52 @@ describe('getHealthHint', () => {
     expect(result.details[1]).toContain('LCOM = 2.50');
   });
 
-  it('decomposes health.coupling', () => {
+  it('decomposes health.coupling at project level from CBO, not Ce', () => {
+    // The project formula reads CBO aggregates; the namespace one reads Ce.
+    // One shared list used to print the Ce inputs under the project score.
     const node = {
+      type: 'project',
       metrics: {
         'health.coupling': 30,
-        'coupling.cbo': 18,
-        'coupling.distance': 0.4,
+        'coupling.distance.avg': 0.4,
+        'coupling.cbo.avg': 18,
+        'coupling.cbo.p95': 23,
+        'coupling.cbo.max': 125,
+        'coupling.ce.avg': 5,
+        'coupling.ce-packages.avg': 0.2,
       },
     };
     const result = getHealthHint('health.coupling', node);
     expect(result).not.toBeNull();
     expect(result.text).toBe('Coupling: 30 / 100');
-    expect(result.details[0]).toContain('CBO = 18');
-    expect(result.details[0]).toContain('high coupling');
+    expect(result.details).toHaveLength(4);
+    expect(result.details[1]).toContain('CBO (avg) = 18');
+    expect(result.details[1]).toContain('high coupling');
+    expect(result.details.join(' ')).not.toContain('Ce (avg)');
   });
 
-  it('decomposes health.typing', () => {
+  it('decomposes health.coupling at namespace level from Ce', () => {
     const node = {
+      type: 'namespace',
+      metrics: {
+        'health.coupling': 55,
+        'coupling.distance': 0.3,
+        'coupling.ce-packages.avg': 0.2,
+        'coupling.ce.avg': 5,
+        'coupling.ce.max': 24,
+        'coupling.ce': 12,
+      },
+    };
+    const result = getHealthHint('health.coupling', node);
+    expect(result).not.toBeNull();
+    expect(result.details).toHaveLength(5);
+    expect(result.details[2]).toContain('Ce (avg) = 5');
+    expect(result.details[4]).toContain('Ce (namespace) = 12');
+  });
+
+  it('decomposes health.typing at class level', () => {
+    const node = {
+      type: 'class',
       metrics: {
         'health.typing': 80,
         'design.type-coverage.all': 85,
@@ -635,22 +767,28 @@ describe('getHealthHint', () => {
     expect(result.details[0]).toContain('Coverage = 85');
   });
 
-  it('decomposes health.maintainability', () => {
+  it('decomposes health.maintainability at project level', () => {
     const node = {
+      type: 'project',
       metrics: {
         'health.maintainability': 90,
         'maintainability.mi.avg': 88,
+        'maintainability.mi.p5': 56,
+        'maintainability.mi.min': 36,
       },
     };
     const result = getHealthHint('health.maintainability', node);
     expect(result).not.toBeNull();
     expect(result.text).toBe('Maintainability: 90 / 100');
-    expect(result.details[0]).toContain('MI = 88');
+    expect(result.details).toHaveLength(3);
+    expect(result.details[0]).toContain('MI avg = 88');
     expect(result.details[0]).toContain('excellent maintainability');
+    expect(result.details[2]).toContain('MI min = 36');
   });
 
   it('decomposes health.overall with weakest area', () => {
     const node = {
+      type: 'project',
       metrics: {
         'health.overall': 35,
         'health.complexity': 70,
@@ -669,6 +807,7 @@ describe('getHealthHint', () => {
 
   it('handles partial metrics gracefully', () => {
     const node = {
+      type: 'class',
       metrics: {
         'health.complexity': 50,
         'complexity.ccn.avg': 12,
@@ -683,6 +822,7 @@ describe('getHealthHint', () => {
 
   it('returns null when no input metrics available', () => {
     const node = {
+      type: 'class',
       metrics: {
         'health.complexity': 50,
         // no ccn.avg or cognitive.avg

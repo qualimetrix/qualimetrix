@@ -47,7 +47,7 @@ final class JsonFormatterTest extends TestCase
     {
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();

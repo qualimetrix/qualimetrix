@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDime
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
@@ -32,7 +32,7 @@ final readonly class HealthSummaryBuilder
     private const int DEFAULT_TOP_CLASSES = 10;
 
     private ContributorRanker $contributorRanker;
-    private HealthDimensionCatalog $dimensions;
+    private HealthDecompositionCatalog $decomposition;
     private WorstOffenderBuilder $offenderBuilder;
 
     public function __construct(
@@ -40,7 +40,7 @@ final readonly class HealthSummaryBuilder
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
         $this->contributorRanker = new ContributorRanker();
-        $this->dimensions = new HealthDimensionCatalog();
+        $this->decomposition = new HealthDecompositionCatalog();
         $this->offenderBuilder = new WorstOffenderBuilder();
     }
 
@@ -90,7 +90,7 @@ final readonly class HealthSummaryBuilder
                 : $this->contributorRanker->rank(
                     array_map(function ($symbol) use ($metrics, $inputs): array {
                         $classMetrics = $metrics->get($symbol->symbolPath);
-                        $selection = $this->dimensions->selectContributorMetrics($inputs, $classMetrics->get(...));
+                        $selection = $this->decomposition->selectContributorMetrics($inputs, $classMetrics->get(...));
 
                         return [
                             'symbol' => $symbol,
@@ -146,7 +146,7 @@ final readonly class HealthSummaryBuilder
             return $this->buildTypingDecomposition($projectMetrics);
         }
 
-        $metricKeys = $this->hintProvider->getDecomposition($dimension);
+        $metricKeys = $this->hintProvider->getDecomposition($dimension, SymbolLevel::Project);
         $items = [];
 
         foreach ($metricKeys as $metricKey) {

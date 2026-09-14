@@ -1493,8 +1493,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itMaintainabilityContributorsRankedByLowestMi
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itOverallDimensionHasNoContributors
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itTieBreaksByClassNameAlphabetically
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDimensionCatalogTest::itGetDecompositionKnownDimension
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDimensionCatalogTest::itGetDecompositionUnknownDimension
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionAgreesWithFormulasTest::itAdvertisesTheThresholdTheFormulaApplies
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionAgreesWithFormulasTest::itKeepsEveryDeclaredDivergenceReal
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionAgreesWithFormulasTest::itShowsOnlyInputsTheFormulaAtThatLevelReads
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionAnswersPerLevel
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionKnownDimension
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionUnknownDimension
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itInheritsTheNamespaceListAtProjectLevelWhenThereIsNoProjectFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itRanksContributorsByClassLevelKeys
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itSelectsContributorMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itShipsEveryLevelResolved
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDimensionCatalogTest::itGetHealthDimensionLabelBad
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDimensionCatalogTest::itGetHealthDimensionLabelGood
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDimensionCatalogTest::itGetHealthDimensionLabelUnknown

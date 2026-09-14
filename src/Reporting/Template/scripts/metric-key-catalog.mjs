@@ -4,7 +4,7 @@
 // tests/metric-key-catalog.test.js (regression guard, run by `vitest`).
 //
 // Catalog source: MetricName.php constants + AggregationStrategy.php suffixes
-// + HealthDimensionCatalog.php dimension keys, read as text with a targeted
+// + HealthDecompositionCatalog.php dimension keys, read as text with a targeted
 // regex — not a PHP parse. This mirrors only the *shape* of those three
 // files (a constant/case list); it does not execute or type-check PHP.
 import { readFileSync, readdirSync } from 'node:fs';
@@ -24,9 +24,9 @@ const AGGREGATION_STRATEGY_PHP = join(
   REPO_ROOT,
   'src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php',
 );
-const HEALTH_DIMENSION_CATALOG_PHP = join(
+const HEALTH_DECOMPOSITION_CATALOG_PHP = join(
   REPO_ROOT,
-  'src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php',
+  'src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php',
 );
 
 const TEMPLATE_ROOT = resolve(__dirname, '..');
@@ -39,7 +39,7 @@ const TESTS_DIR = join(TEMPLATE_ROOT, 'tests');
  * Method: regex extraction of `= '...';` string values from
  * `public const string NAME = '...';` lines (MetricName), `case Name = '...';`
  * lines (AggregationStrategy), and `'health.xxx' =>` array-key lines
- * (HealthDimensionCatalog). Does not resolve `MetricName::CONST` references
+ * (HealthDecompositionCatalog). Does not resolve `MetricName::CONST` references
  * used as PHP array values elsewhere — those are inputs *of* the health
  * decomposition, not catalog entries themselves, so they are out of scope
  * here.
@@ -57,7 +57,7 @@ export function loadCatalog() {
     [...aggregationSource.matchAll(/case [A-Za-z0-9]+ = '([^']+)';/g)].map((m) => m[1]),
   );
 
-  const healthSource = readFileSync(HEALTH_DIMENSION_CATALOG_PHP, 'utf8');
+  const healthSource = readFileSync(HEALTH_DECOMPOSITION_CATALOG_PHP, 'utf8');
   const healthKeys = new Set(
     [...healthSource.matchAll(/'(health\.[a-z-]+)' => /g)].map((m) => m[1]),
   );

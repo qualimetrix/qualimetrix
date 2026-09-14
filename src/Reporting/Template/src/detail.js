@@ -86,7 +86,9 @@ function renderHealthBars(node, summary) {
 
     // Tooltip with health decomposition
     // For project nodes, health scores live in summary.healthScores, not node.metrics
-    const hintNode = source === node.metrics ? node : { metrics: { ...node.metrics, ...source } };
+    // `type` travels with the metrics: the decomposition is chosen by the
+    // node's level, and a project node reads its scores from the summary.
+    const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source } };
     const hint = getHealthHint(metric, hintNode);
     if (hint) {
       row.style.cursor = 'help';

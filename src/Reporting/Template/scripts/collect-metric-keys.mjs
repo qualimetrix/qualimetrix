@@ -25,7 +25,7 @@ const HEADER = `# method: rollup's bundled AST parser (rollup/dist/parseAst.js, 
 # spaces, then regex-scanning what remains for // and /* */ regions.
 # catalog: MetricName.php public const string values (82) + AggregationStrategy.php
 # enum case values as aggregation suffixes (sum, avg, max, min, count, p95, p5)
-# + HealthDimensionCatalog.php dimension keys (6, health.*).
+# + HealthDecompositionCatalog.php dimension keys (6, health.*).
 # what this does not see: computed/concatenated keys ("size." + metric),
 # template-literal interpolation values, any literal whose first segment is
 # not one of the known family prefixes above (so a key entirely without a

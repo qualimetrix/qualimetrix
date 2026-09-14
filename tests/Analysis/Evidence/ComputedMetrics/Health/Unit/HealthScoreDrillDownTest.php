@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -24,7 +23,7 @@ final class HealthScoreDrillDownTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->drillDown = new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $this->drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
     }
 
     // --- buildSubtreeHealthScores ---

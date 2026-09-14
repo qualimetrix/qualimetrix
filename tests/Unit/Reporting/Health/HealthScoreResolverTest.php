@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -30,7 +29,7 @@ final class HealthScoreResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new HealthScoreResolver(
-            new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
         );
     }
 

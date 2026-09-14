@@ -214,6 +214,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog'

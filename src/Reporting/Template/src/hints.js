@@ -27,9 +27,13 @@ let METRIC_HINTS = new Map();
 
 /**
  * Health score decomposition definitions.
- * Maps health metric keys to their contributing input metrics.
  *
- * @type {Map<string, {inputs: Array<{key: string, altKey: string|null, label: string, ideal: string, direction: string}>}>}
+ * Maps a health metric key to its contributing inputs *per symbol level*. The
+ * formulas differ by level — a project coupling score is computed from CBO
+ * aggregates where a namespace one is computed from Ce aggregates — so a
+ * single list would describe the wrong score for two levels out of three.
+ *
+ * @type {Map<string, {levels: Object<string, Array<{key: string, label: string, direction: string}>>}>}
  */
 let HEALTH_DECOMPOSITION = new Map();
 
@@ -109,7 +113,7 @@ export function getMetricHint(metricKey, value) {
  * Returns health score decomposition for tooltip display.
  *
  * @param {string} metricKey - Health metric key (e.g. 'health.cohesion')
- * @param {object} node - Tree node with metrics
+ * @param {object} node - Tree node with `type` (the symbol level) and `metrics`
  * @returns {{text: string, details: string[]}|null} Decomposition, or null
  */
 export function getHealthHint(metricKey, node) {
@@ -128,9 +132,14 @@ export function getHealthHint(metricKey, node) {
     return getOverallDecomposition(node, score);
   }
 
+  // The node's own level, never a neighbouring one: showing a class's inputs
+  // under a namespace score is the defect this replaced.
+  const inputs = decomp.levels?.[node.type];
+  if (!inputs) return null;
+
   const details = [];
-  for (const input of decomp.inputs) {
-    const inputValue = node.metrics[input.key] ?? node.metrics[input.altKey];
+  for (const input of inputs) {
+    const inputValue = node.metrics[input.key];
     if (inputValue == null) continue;
 
     const formatted = typeof inputValue === 'number' ? formatInputValue(inputValue) : String(inputValue);

@@ -133,7 +133,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
@@ -322,7 +322,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
     {
         $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown($hintProvider, self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
         $resolver = new HealthScoreResolver($drillDown);
         $formatter = new HealthTextFormatter($resolver);
 
@@ -342,7 +342,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $debtCalculator = new DebtCalculator($registry);
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
         $findingFilter = new FindingFilter();
         $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
         $formatter = new SummaryFormatter(
