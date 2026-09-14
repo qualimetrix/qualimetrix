@@ -239,6 +239,13 @@ final class Gate
             return [];
         }
 
+        // Same rule as the normalization list one door along: a signal in the
+        // tail of the run reaches no decision point, so without this the tree's
+        // declaration would be rewritten by a run the developer stopped.
+        if (Interruption::exitCode() !== null) {
+            return [];
+        }
+
         return $this->declaredDelta->rewrite($this->derived ?? []);
     }
 
@@ -688,6 +695,11 @@ final class Gate
         sort($keys);
 
         foreach ($keys as $key) {
+            // The third decision point. The two others are in poll loops, so
+            // without this an interrupt arriving once every child has exited
+            // would not be acted on until the run had finished anyway.
+            Interruption::raiseIfRequested();
+
             $surface = Surfaces::surfaceClass($key);
 
             if (!isset($candidate[$key]) || !isset($reference[$key])) {

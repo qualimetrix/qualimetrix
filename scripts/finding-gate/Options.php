@@ -123,7 +123,8 @@ final class Options
             Exit codes: 0 GREEN (full corpus, equivalent), 1 RED (a failure class fired),
             2 PARTIAL (nothing failed, but the run claims no equivalence), 3 the gate could not run,
             4 a declaration was written (--derive-*, never a verdict), 5 the run it would have been
-            derived from failed, so nothing was written.
+            derived from failed, so nothing was written, 128+n a signal stopped the run (130 SIGINT,
+            143 SIGTERM), which also refuses a --derive-* write.
 
               --reference=<git-ref>   The tree to prove equivalence against (required for a comparison).
               --candidate=<path>      The tree under test. Default: this checkout.

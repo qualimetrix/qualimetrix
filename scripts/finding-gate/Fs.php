@@ -98,14 +98,13 @@ final class Fs
         @rmdir($path);
     }
 
+    /**
+     * Every scratch directory the gate makes, made in the one place that also
+     * releases it. {@see Scratch::directory()} says why acquiring is what arms
+     * the release.
+     */
     public static function temporaryDirectory(string $prefix): string
     {
-        $path = sys_get_temp_dir() . '/' . $prefix . bin2hex(random_bytes(6));
-
-        if (!@mkdir($path, 0o700, true)) {
-            throw new GateError(\sprintf('Cannot create temporary directory %s.', $path));
-        }
-
-        return $path;
+        return Scratch::directory($prefix);
     }
 }

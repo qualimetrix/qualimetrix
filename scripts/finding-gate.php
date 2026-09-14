@@ -16,49 +16,7 @@ namespace QmxFindingGate;
  * being renamed under it.
  */
 
-foreach (
-    [
-        'CommandLine',
-        'FailureClass',
-        'GateError',
-        'BudgetExceeded',
-        'Fs',
-        'Tsv',
-        'Process',
-        'ProcessHandle',
-        'Surfaces',
-        'MetricVocabulary',
-        'SubjectLevel',
-        'Diff',
-        'ExactDiff',
-        'GateReport',
-        'Options',
-        'CaseDefinition',
-        'Corpus',
-        'RenameMaps',
-        'ChannelSplit',
-        'PublishedVocabulary',
-        'DeclaredDelta',
-        'DeclaredFieldMoves',
-        'NormalizationRule',
-        'Normalization',
-        'NormalizationDeriver',
-        'EquivalenceTuple',
-        'FingerprintSubstitution',
-        'Fingerprints',
-        'PublishedOrder',
-        'ReportPayload',
-        'ChannelWitness',
-        'ChannelCoverage',
-        'TreeRun',
-        'CaseScheduler',
-        'ReferenceTree',
-        'Gate',
-        'SelfTest',
-    ] as $class
-) {
-    require __DIR__ . '/finding-gate/' . $class . '.php';
-}
+require __DIR__ . '/finding-gate/classes.php';
 
 /**
  * A derive run is a write, not a verdict, and none of the three returns 0.
@@ -93,7 +51,7 @@ function main(array $argv): int
     } catch (GateError $error) {
         fwrite(\STDERR, 'finding-gate: ' . $error->getMessage() . "\n");
 
-        return 3;
+        return Interruption::stoppedRun() ? (Interruption::exitCode() ?? 3) : 3;
     }
 }
 
@@ -107,7 +65,17 @@ function runCaseWorker(Options $options): int
     $case = Corpus::load($options->candidateRoot, [$options->caseWorker])->cases[0];
     $vocabulary = MetricVocabulary::ofTree($options->candidateRoot);
     $maps = RenameMaps::load($options->candidateRoot . '/finding-gate/maps', $vocabulary);
-    $temporaryDirectory = Fs::temporaryDirectory('finding-gate-case-worker-');
+    // Beside its output, which the parent put inside the run directory it will
+    // remove. A worker therefore needs no cleanup window of its own: the parent
+    // SIGKILLs its whole process group and then removes the directory the worker
+    // was writing into. A worker scratch of its own in TMPDIR would need one,
+    // and would not get it — the parent allows 0.3 s between SIGTERM and
+    // SIGKILL, less than terminating one `bin/qmx` takes.
+    $temporaryDirectory = \dirname($options->workerOutput) . '/worker-' . bin2hex(random_bytes(6));
+
+    if (!@mkdir($temporaryDirectory, 0o700, true)) {
+        throw new GateError(\sprintf('Cannot create the case worker directory %s.', $temporaryDirectory));
+    }
 
     try {
         $run = new TreeRun(
@@ -132,10 +100,6 @@ function compare(Options $options): int
 {
     $report = new GateReport();
     $gate = new Gate($options, $report);
-
-    // A worktree left behind on a crash would be picked up as a stale checkout
-    // by the next run, so cleanup is registered before anything can fail.
-    register_shutdown_function($gate->cleanUp(...));
 
     $gate->compare();
 
@@ -172,7 +136,6 @@ function deriveNormalization(Options $options): int
     $path = $options->candidateRoot . '/finding-gate/normalization.tsv';
     $report = new GateReport();
     $gate = new Gate($options, $report);
-    register_shutdown_function($gate->cleanUp(...));
     $measured = $gate->deriveNormalization();
 
     if ($options->reportPath !== null) {
@@ -187,6 +150,17 @@ function deriveNormalization(Options $options): int
         return MEASUREMENT_FAILED;
     }
 
+    // A signal that arrived in the tail of a run reaches no decision point: the
+    // measurement is complete, the scratch is already handed back, and nothing
+    // would stop this write. Refused here, because Ctrl-C must not be the last
+    // thing a developer does before the tracked list changes under them.
+    if (($interrupted = Interruption::exitCode()) !== null) {
+        echo "The run was interrupted, so nothing was written: a declaration is only ever measured from a run that\n"
+            . "was allowed to finish.\n";
+
+        return $interrupted;
+    }
+
     Fs::write($path, $measured);
     echo 'Measured ' . $path . " from repeated runs of the candidate tree.\n";
     echo "This was a write, not a check: re-run without --derive-normalization to be judged against it.\n";
@@ -199,7 +173,6 @@ function deriveDeclaredDelta(Options $options): int
 {
     $report = new GateReport();
     $gate = new Gate($options, $report);
-    register_shutdown_function($gate->cleanUp(...));
     $written = $gate->deriveDeclaredDelta();
     echo $report->render();
 
