@@ -1587,6 +1587,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#2
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotWriteCollectedDataWhenAnyProjectIsIncomplete
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itKeepsTrackedBenchmarkConsumersOnTheCheckCommand
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itMarksAGenuinelyUnmeasuredUndeclaredMetricAsAbsentRatherThanZero
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itPrintsAndSeedsHealthTyping
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itPrintsTheMeasuredValueOfAMetricAbsentFromExpectations
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itProducesFourDistinctOutcomesInOneUpdateRun
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itRefusesToWriteWhenAProjectPathIsMissing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itSeedsAProjectEntryThatHasOnlyAPathInsteadOfFailing
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itWritesNamespaceAndClassDistributionsSeparatelyFromBaselines
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itWritesWhenTheCorpusIsCompleteAndExpectationsDisagree
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itDefaultReturnsEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesInstalledDefinitionsWhenResolutionFails
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetAndGetDefinitions
@@ -1776,6 +1784,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsInternalTopologyTest::itAcceptsTheMaterializedInternalDag
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsInternalTopologyTest::itRejectsAReverseEdge
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsInternalTopologyTest::itRejectsUnknownAndCrossOwnerInternalEdges
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itAcceptsAParentInsideTheRangeItsChildrenSpan
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itAdmitsTheGlobalNamespaceIntoTheAggregateWhenTheSchemeDoes
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itAdmitsTheGlobalNamespaceOnlyWhenTheSchemeSaysSo
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itCountsAClassUnderAnExcludedNamespaceAsUncovered
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itCountsOnlyNamespacesWithoutDescendantsAsLeaves
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itCountsPerfectScoresAndMarksTheOnesAnAbsentInputBought
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itDerivesTheProjectAggregateInsteadOfReadingTheCapturedOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itDoesNotFeedAPublishedDimensionIntoADependentFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itExpressesCoverageByLinesAsWellAsBySymbols
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itInterpolatesTheQuartilesItReports
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itJudgesTheProjectAgainstEveryNamespaceThatHoldsClasses
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itNeverPutsAPublishedDimensionIntoTheVariableMap
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itRefusesToJudgeCoverageWithoutADeclaredFraction
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itReportsADimensionAsNotApplicableBelowTheDeclaredFraction
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itReportsAParentScoringAboveEveryChild
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itReportsAParentScoringBelowEveryChildToo
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itReportsTheDerivedAggregateDisagreeingWithThePublishedOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itReproducesThePublishedAggregateUnderTheCurrentScheme
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itScoresTheProjectFromTheDerivedAggregateAndNotTheCapturedOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthCalibrationBenchTest::itWeightsTheAggregateByTheSizeOfEachNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludesMultipleDimensions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludesOneDimensionAndRemovesIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludesWithFullPrefixAlsoWorks
@@ -2692,6 +2721,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itSkipsMethodsWithTooFewStatements
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itSkipsTestFilesWhenExcluded
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itThrowsExceptionForWrongOptionsType
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itDoesNotScoreTheWholeAboveItsOnlyPart
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itPublishesAStructuralProjectAggregateForGlobalNamespaceCode
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itConfirmsHealthScoresExist
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itHandlesGlobalNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itKeepsClassDerivedTypingMetricsOnExactClassDeclarations
@@ -2832,6 +2863,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itLeavesTheRepositoryUnchangedWhenNoParentNamespaceExists
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itSumsMetricsFromDescendantLeafNamespacesIntoTheParent
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itDoesNotMakeTopLevelNamespacesChildrenOfTheGlobalOne
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itGivesTheGlobalNamespaceNoParentAndNoChildren
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itIsTheOnlyNodeWhenAProjectIsEntirelyGlobal
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itTreatsTheGlobalNamespaceAsALeaf
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAcceptsIterableOfCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAcceptsIterableOfDerivedCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAppliesDerivedCollectors
@@ -7743,7 +7778,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itDedupesRepeatedNamespacesInTheInputList
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itDiscoversEveryIntermediateNamespaceInADeepNesting
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itDiscoversTheSharedParentOfTwoSiblingNamespaces
- - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itIgnoresAnEmptyStringInTheInputList
+ - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itKeepsAnEmptyStringInTheInputListAsTheGlobalNamespace
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itListsEveryNamespaceIncludingSynthesizedParents
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itListsEveryNodeInANamespacesSubtree
  - Qualimetrix\Tests\Unit\Core\Namespace_\NamespaceTreeTest::itListsLeavesAndParentNamespacesSeparately

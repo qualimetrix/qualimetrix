@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * The offline health-score bench (P0 of the health recalibration plan).
+ * The offline health-score bench.
  *
  * A run of `bin/qmx` over the benchmark corpus costs minutes; trying a formula
  * that way is not a search, it is a vigil. This bench replays captured raw
@@ -47,7 +47,7 @@ declare(strict_types=1);
  *   --projects=a,b          restrict the run to these capture ids
  *   --levels=project,namespace,class    default: project,namespace
  *   --aggregation=SCHEME    members[:weight]; see AggregationScheme. Default
- *                           `leaves-no-global:none`, aliased `current`.
+ *                           `leaves:none`, aliased `current`.
  *   --self-test             reproduce the published aggregates and health.*
  *   --tolerance=0.1         self-test tolerance on a score (default 0.1)
  *   --candidates=FILE       a YAML document with a `computed_metrics:` section
@@ -102,7 +102,7 @@ const USAGE = <<<'TEXT'
       --levels=…              project,namespace,class (default: project,namespace)
       --aggregation=SCHEME    members[:weight]; members is leaves or
                               leaves-no-global, weight is none, classes or loc.
-                              Default `current` = leaves-no-global:none
+                              Default `current` = leaves:none
       --self-test             reproduce the published aggregates and health.*
       --tolerance=0.1         self-test tolerance on a score
       --candidates=FILE       a YAML document with a `computed_metrics:` section
@@ -351,7 +351,7 @@ final readonly class AggregationScheme
 
     public static function parse(string $spec): self
     {
-        $normalized = $spec === 'current' ? self::MEMBERS_LEAVES_NO_GLOBAL . ':' . self::WEIGHT_NONE : $spec;
+        $normalized = $spec === 'current' ? self::MEMBERS_LEAVES . ':' . self::WEIGHT_NONE : $spec;
         $parts = explode(':', $normalized);
         $members = $parts[0];
         $weight = $parts[1] ?? self::WEIGHT_NONE;
@@ -367,14 +367,19 @@ final readonly class AggregationScheme
         return new self($members, $weight);
     }
 
+    /**
+     * The rule the product applies today. The global namespace was excluded
+     * until the tree stopped skipping it; a bench that models the superseded
+     * rule reports disagreements that are its own and calls the product wrong.
+     */
     public static function current(): self
     {
-        return new self(self::MEMBERS_LEAVES_NO_GLOBAL, self::WEIGHT_NONE);
+        return new self(self::MEMBERS_LEAVES, self::WEIGHT_NONE);
     }
 
     public function isCurrent(): bool
     {
-        return $this->members === self::MEMBERS_LEAVES_NO_GLOBAL && $this->weight === self::WEIGHT_NONE;
+        return $this->members === self::MEMBERS_LEAVES && $this->weight === self::WEIGHT_NONE;
     }
 
     public function toString(): string
@@ -809,7 +814,7 @@ final class Bench
  * Two denominators, because the plan needs both: the share of symbols and the
  * share of lines. WordPress's structural aggregate covers 20 of 32 namespaces
  * and a much smaller share of its lines, and which of the two C3 is judged on
- * is P3's decision, not this instrument's.
+ * is a calibration decision, not this instrument's.
  */
 final readonly class Coverage
 {

@@ -131,16 +131,16 @@
                     95
                 ],
                 "health.coupling": [
-                    74,
-                    95
+                    73,
+                    94
                 ],
                 "health.maintainability": [
                     75,
                     96
                 ],
                 "health.overall": [
-                    74,
-                    95
+                    73,
+                    94
                 ],
                 "health.typing": [
                     89,
@@ -395,7 +395,7 @@
                     81
                 ],
                 "health.coupling": [
-                    45,
+                    44,
                     65
                 ],
                 "health.maintainability": [
@@ -453,8 +453,8 @@
                     72
                 ],
                 "health.coupling": [
-                    90,
-                    100
+                    66,
+                    87
                 ],
                 "health.maintainability": [
                     60,
@@ -465,8 +465,8 @@
                     11
                 ],
                 "health.overall": [
-                    59,
-                    80
+                    54,
+                    75
                 ]
             }
         },
@@ -494,7 +494,7 @@
                     20
                 ],
                 "health.overall": [
-                    43,
+                    44,
                     64
                 ]
             }

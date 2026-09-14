@@ -92,13 +92,14 @@ final class NamespaceTreeTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresAnEmptyStringInTheInputList(): void
+    public function itKeepsAnEmptyStringInTheInputListAsTheGlobalNamespace(): void
     {
         $tree = new NamespaceTree(['', 'App']);
 
-        self::assertFalse($tree->has(''));
+        self::assertTrue($tree->has(''));
         self::assertTrue($tree->has('App'));
-        self::assertSame(['App'], $tree->getLeaves());
+        self::assertTrue($tree->isLeaf(''));
+        self::assertSame(['', 'App'], $tree->getLeaves());
     }
 
     #[Test]

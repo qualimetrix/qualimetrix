@@ -132,8 +132,7 @@ foreach ($projects as $project) {
     // one's: $data holds a fresh value only once assignment completes, so
     // without this, the largest project's ~12.5 MB decoded array stays alive
     // while the next project's json_decode() builds its own copy — the
-    // combination is what exhausted the default 128M limit (see
-    // docs/internal/plans/health-recalibration/measurement/00-collect-oom.txt).
+    // combination is what exhausted the default 128M limit.
     unset($data, $json, $output, $namespaces, $classes, $captureSymbols, $encodedCapture, $projectResult);
 
     $path = $project['path'];

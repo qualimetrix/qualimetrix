@@ -61,7 +61,10 @@ stage cannot be quietly undone by the next.
 - **C1 — monotonicity, one-sided.** No parent scores **above** the maximum of
   its children, for any dimension and any parent/child level pair. Fails today
   on CodeIgniter: project `health.coupling` 100.0 against its only namespace's
-  76.1, and on 233 further parent/dimension pairs across the corpus.
+  76.1, and on 250 further parent/dimension pairs across the corpus (251 upward
+  violations in total, counted by name containment on the seventeen-project
+  corpus; an earlier figure of 233 in this file was taken on the fifteen-project
+  corpus before the bump and the anchors, and is withdrawn).
   "Child" is defined by **containment of symbols**, not by the namespace tree
   the product builds: the tree is what drops `(global)`, and a criterion that
   inherits the defect it is testing for is no criterion.

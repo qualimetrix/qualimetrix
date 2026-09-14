@@ -87,10 +87,12 @@ final class HealthCalibrationBenchTest extends TestCase
         $derived = $evaluation->derived[0];
 
         self::assertSame('coupling.distance', $derived->base);
-        // (0.2 + 0.6) / 2 over the two non-global leaves; the captured 0.999 is discarded.
-        self::assertEqualsWithDelta(0.4, $derived->values['coupling.distance.avg'], 1.0e-12);
-        self::assertSame(2.0, $derived->values['coupling.distance.count']);
-        self::assertSame(['App\A', 'App\B'], $derived->contributors);
+        // (0.2 + 0.6 + 1.0) / 3 over all three leaves — the global namespace is
+        // a leaf like any other under the current scheme; the captured 0.999
+        // is discarded.
+        self::assertEqualsWithDelta(0.6, $derived->values['coupling.distance.avg'], 1.0e-12);
+        self::assertSame(3.0, $derived->values['coupling.distance.count']);
+        self::assertSame(['App\A', 'App\B', '(global)'], $derived->contributors);
         self::assertSame(['coupling.distance.avg' => 0.999], $derived->publishedBefore);
     }
 
@@ -114,7 +116,7 @@ final class HealthCalibrationBenchTest extends TestCase
     public function itReproducesThePublishedAggregateUnderTheCurrentScheme(): void
     {
         $evaluation = (new Bench())->run(
-            self::distanceCapture(publishedAggregate: 0.4),
+            self::distanceCapture(publishedAggregate: 0.6),
             self::defaultDefinitions(),
             [SymbolLevel::Project],
             AggregationScheme::current(),
@@ -170,9 +172,12 @@ final class HealthCalibrationBenchTest extends TestCase
 
     /**
      * Deriving the aggregate is worth nothing if the SCORE still reads the
-     * captured one, so the score is asserted, not only the derivation: with
-     * `coupling.distance.avg` 0.4 the project formula gives 18/(18+2.4), and
-     * the captured 0.999 would give 18/(18+5.994).
+     * captured one, so the score is asserted, not only the derivation: under
+     * the current scheme `coupling.distance.avg` is 0.6 (all three leaves,
+     * global included) and the project formula gives 18/(18+3.6); the captured
+     * 0.999 would give 18/(18+5.994), and the `leaves-no-global` scheme, which
+     * derives 0.4 from the two non-global leaves, gives 18/(18+2.4) — proof
+     * that the scheme, not the capture, is what moves the score.
      */
     #[Test]
     public function itScoresTheProjectFromTheDerivedAggregateAndNotTheCapturedOne(): void
@@ -185,19 +190,19 @@ final class HealthCalibrationBenchTest extends TestCase
             [SymbolLevel::Project],
             AggregationScheme::current(),
         );
-        $withGlobal = (new Bench())->run(
+        $withoutGlobal = (new Bench())->run(
             $capture,
             self::defaultDefinitions(),
             [SymbolLevel::Project],
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES_NO_GLOBAL, AggregationScheme::WEIGHT_NONE),
         );
 
         $project = $capture->symbols[0];
 
-        self::assertEqualsWithDelta(88.2353, $current->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
+        self::assertEqualsWithDelta(83.3333, $current->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
         // The aggregation scheme has to move the score, or no candidate for it
         // could ever be judged by this bench.
-        self::assertEqualsWithDelta(83.3333, $withGlobal->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
+        self::assertEqualsWithDelta(88.2353, $withoutGlobal->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
     }
 
     /**
@@ -228,11 +233,14 @@ final class HealthCalibrationBenchTest extends TestCase
     #[Test]
     public function itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric(): void
     {
-        // The CodeIgniter shape: one namespace, `(global)`, which the current
-        // rule excludes — so the project has no structural penalty at all.
-        $capture = new Capture('codeigniter-shaped', [
+        // `App` is admitted under the current scheme — it is a leaf — but it
+        // does not carry `coupling.distance` at all, distinct from a namespace
+        // the scheme excludes (that case is
+        // itCountsAClassUnderAnExcludedNamespaceAsUncovered): no contributor
+        // exists, not merely one the scheme declined.
+        $capture = new Capture('no-carrier-shaped', [
             new Subject('', SymbolLevel::Project, ['coupling.cbo.avg' => 4.0], [], null),
-            self::namespaceSubject('(global)', ['coupling.distance' => 0.94]),
+            self::namespaceSubject('App'),
         ]);
 
         $evaluation = (new Bench())->run(
@@ -472,8 +480,12 @@ final class HealthCalibrationBenchTest extends TestCase
     }
 
     /**
-     * A class whose namespace the aggregation rule excluded is uncovered, not
-     * merely unmeasured: this is the CodeIgniter case stated as a number.
+     * A class whose namespace the aggregation scheme excluded is uncovered,
+     * not merely unmeasured. The current scheme admits `(global)` as a leaf
+     * like any other, so exercising the exclusion needs the
+     * `leaves-no-global` scheme explicitly — it is what the CodeIgniter case
+     * used to mean before the tree guard defect was fixed, and it stays a
+     * legitimate candidate scheme even though it is no longer the default.
      */
     #[Test]
     public function itCountsAClassUnderAnExcludedNamespaceAsUncovered(): void
@@ -488,13 +500,13 @@ final class HealthCalibrationBenchTest extends TestCase
             $capture,
             $capture->symbols[0],
             'coupling.distance.avg',
-            AggregationScheme::current(),
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES_NO_GLOBAL, AggregationScheme::WEIGHT_NONE),
         );
         $admitted = CoverageCalculator::forKey(
             $capture,
             $capture->symbols[0],
             'coupling.distance.avg',
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
+            AggregationScheme::current(),
         );
 
         self::assertSame(0, $excluded->carriers);

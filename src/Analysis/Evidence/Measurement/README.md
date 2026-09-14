@@ -110,6 +110,11 @@ collectors, and re-aggregation of global metric definitions. It consumes the
 DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
 
+`NamespaceTree` holds the global namespace (the empty string) as an isolated
+leaf, so `NamespaceToProjectAggregator` reads its bag like any other leaf's.
+Code written entirely in the global namespace would otherwise publish no
+project aggregate for namespace-collected metrics such as `coupling.distance`.
+
 The service receives the neutral Core profiler port through constructor
 injection. The per-container Infrastructure `ProfileSession` provides disabled
 no-op behaviour and deliberately does
