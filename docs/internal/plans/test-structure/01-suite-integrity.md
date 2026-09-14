@@ -9,100 +9,151 @@ until this is green in CI.
 `tests/Analysis/Evidence/Design/Unit/TypeCoverage/TypeCoverageRuleTest.php:143`
 — `itAliasesItsOwnTwoBoundariesOnly` carries neither `#[Test]` nor
 `#[DataProvider]`, while all 11 sibling methods carry both. PHPUnit never calls
-it. The CLI-alias contract of the three type-coverage rules is therefore
-asserted by nothing, and has been asserted by nothing since the method was
-written.
+it. The CLI-alias contract of the three type-coverage rules is asserted by
+nothing, and has been since the method was written.
 
 **Fix it before adding the guard, and run it alone first.** It has never
-executed: it may be red. A red result means either a stale test or a real defect
-in the alias contract, and which one it is decides whether this stage also
-carries a product fix. Do not assume green.
+executed: it may be red. Red means either a stale test or a real defect in the
+alias contract, and which one decides whether this stage also carries a product
+fix. Do not assume green.
+
+## D6 — the suite config stops enumerating directories by name
+
+`phpunit.xml.dist` lists 53 directories by name. **PHPUnit supports globs in
+`<directory>`** — measured on this tree with PHPUnit 12.5.25. Each suite becomes
+a set of depth globs (`tests/*/Unit`, `tests/*/*/Unit`, … to the tree's maximum
+depth of four) instead of hand-maintained paths, so a subject directory created
+by any later stage is covered the moment it exists.
+
+**The glob set alone loses 100 of the 679 test classes, and the first draft of
+this section did not say so.** Measured, not reasoned:
+
+| Config                             | Classes | Methods  |
+| ---------------------------------- | ------- | -------- |
+| current enumeration                | 679     | 9098     |
+| depth globs only                   | 579     | 7838     |
+| depth globs + transitional entries | **679** | **9098** |
+
+The 100 split into two causes, and each has its own consequence:
+
+- **96 are the legacy-bucket files.** In `tests/Unit/Core/...` the level comes
+  *first*, so `tests/*/Unit` cannot match them. They are covered by globs only
+  after stage 04 moves them. Until then the config keeps
+  `<directory>tests/Unit</directory>` and its two siblings as **transitional
+  entries**, deleted by stage 04 as its last step.
+- **4 are `tests/Infrastructure/Logging/*Test.php`, which sit under no level
+  directory at all.** They run today only because the `Infrastructure` suite
+  includes its root wholesale. Either they move into
+  `Infrastructure/Logging/Unit/` — which is what the layout says anyway — or
+  they need a permanent explicit entry. Moving them is this plan's answer, and
+  it belongs to this stage, not to stage 04, because until it happens the glob
+  set is not self-sufficient.
+
+So D6 does not delete the enumeration in one step: it replaces the parts that
+globs can express and keeps a shrinking, explicitly-named remainder. Claiming
+the hazard is simply "gone" — as the first draft did — would itself have been
+the kind of unverified promise this plan exists to remove.
+
+**Cost to state:** a glob set silently includes a directory somebody adds later.
+That is intended here (a test should run), but the config no longer documents
+what exists. G2 below is what keeps that honest.
 
 ## Three guards, and what each refuses
 
-Each guard is itself a control by D5, so each lands in the new controls root —
-which makes this stage the proof that the root works end to end before 50+ files
-migrate into it. Stage 02 creates the root; this stage may run first only if the
-root is created here instead. **Resolve that ordering when executing: either
-01 creates the root and 02 fills it, or 02 runs first. Do not let both create it.**
-
 ### G1 — every test method is reachable
 
-Refuses a method named `itXxx` that carries no `#[Test]`, and a method carrying
-`#[Test]` whose name is not `itXxx` (CLAUDE.md §9, both directions).
+Refuses a method named `itXxx` without `#[Test]`, and a method with `#[Test]`
+whose name is not `itXxx` (CLAUDE.md §9, both directions).
 
 ```
-for each *Test.php in the tree:
+for each *Test.php:
     for each public function:
-        name_is_it   = /^it[A-Z]/
-        has_attribute = #[Test] present in the preceding attribute block
-        refuse when name_is_it xor has_attribute
+        refuse when (name matches ^it[A-Z]) xor (#[Test] in its attribute block)
         # ... implementation details
 ```
 
-Blind spot to state in the guard's own docblock: a method disabled by
-`#[Group]` exclusion, by `markTestSkipped`, or by an abstract parent is
-reachable by this definition and still may not run.
+Measured today: one violation in the first direction (the defect above), zero in
+the second.
 
-### G2 — every test file is in a suite
+### G2 — every test file runs, and the count is stated
 
-Refuses a `*Test.php` under `tests/` (and, after stage 02, the controls root)
-matched by no `<directory>` entry of its config.
+Refuses a `*Test.php` reachable by no suite. **After D6 this is nearly free**,
+but it stays, because a glob set can still miss a depth, and because this is the
+X13 class: 110 tests once sat unexecuted for three runs under a green
+`composer check`.
 
 ```
-suite_dirs = every <directory> in phpunit config
-for each *Test.php:
-    refuse when no suite_dir is a path prefix of it
+executed = tests PHPUnit actually lists for the configured suites
+on_disk   = every *Test.php under the covered roots
+refuse when on_disk \ executed is non-empty
 ```
 
-This is the X13 class: 110 tests once sat unexecuted for three runs under a
-green `composer check`. Today the count is 0 — the guard protects that, and is
-the precondition for stages 02–04, each of which moves files between
-directories.
-
-**G2 has a second half, and it is the one that matters for this plan.** The
-config enumerates 53 directories by name, and 39 level-directories of existing
-capabilities are listed in none of them. A guard that only checks "no file is
-orphaned" passes today and passes again the moment a relocation lands a file in
-an unlisted directory — because that file is then *not there yet*. So G2 also
-refuses a **directory that exists under the tree and is covered by no suite**,
-whether or not it currently holds files. Without this half, 32 of the
-`category-wrong` fixes in stage 05 silently disable the tests they move.
+**Take the executed set from PHPUnit's own `--list-tests`, not from a
+reimplementation of its matching rules.** The previous draft of this plan
+specified G2 as a directory-coverage check and justified it with a claim that is
+simply false — that a file moved into an unlisted directory would not be caught
+by an orphan check "because that file is then not there yet". It is there, and
+an orphan check catches it. The real value of G2 is the count, not the
+directory inventory, and after D6 the directory inventory is meaningless.
 
 ### G3 — namespace agrees with path
 
-Refuses a file whose declared namespace does not match its directory under the
-PSR-4 root.
-
 ```
-expected = psr4_prefix + relative_dir_of(file) with / -> \
+expected = psr4_prefix + relative_dir with / -> \
 refuse when declared_namespace != expected
 ```
 
-PHPUnit discovers by file, so a wrong namespace runs but misleads every reader
-and breaks any reflection-based tooling. The tree already carries such cases —
-`RuleExclusionStatsTest` declares `Tests\Unit\Analysis\RuleExecution` while
-living under `Finding/Unit`, and the Measurement slice has more. G3 run against
-the whole tree closes those as a side effect, which is why it is written here
-and not inside stage 04.
+**This is a migration, not a side effect.** The tree currently carries 60
+`*Test.php` files whose namespace does not match their path (139 counting
+fixtures). The previous draft claimed G3 would close these "as a side effect" of
+stage 04 — it will not; they are unrelated to the 96 relocated files. G3 is
+therefore delivered in two steps: the check first, with the existing violations
+recorded as an explicit allow-list, and the allow-list emptied as its own piece
+of work. Shipping G3 red is not an option; shipping it with a silent exemption
+for 60 files would be a lie.
+
+### What the guards do not catch — the fourth axis
+
+`scripts/phpunit-aggregate.py:35-36` passes `--exclude-group=benchmark` and
+`--exclude-group=live-freshness`. Two methods carry `live-freshness`
+(`SuppressionSnapshotFreshnessTest:23`, `ModularArchitectureGovernanceIntegrationTest:19`):
+they sit in listed directories, carry `#[Test]`, are named `itXxx`, have correct
+namespaces — and do not run under `composer check`. No guard here sees that, so
+the stage title is narrower than it sounds. Either G2 grows a fourth refusal for
+groups excluded by the aggregate, or the limitation is written into the guards'
+own docblocks. Decide at execution; do not leave it unstated.
+
+(`--exclude-group=benchmark` matches nothing: zero methods carry that group.)
 
 ## Definition of Done
 
-- `TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly` executes. Its verdict
-  (green, or red with the cause named) is written into the stage report.
-- G1, G2, G3 exist, live in the controls root, and are reachable from a composer
-  script that the aggregate actually calls.
-- **Each guard is proved to bite**: plant one breakage per guard — a method
-  stripped of `#[Test]`, a directory removed from the config, a namespace
-  altered — and record that the guard reddens for its own case and only for it.
-  A guard verified only against the broken tree is verified on half its range;
-  it must also be seen green on the clean tree.
-- G2 reports the 39 uncovered directories as a number, and that number is
-  recorded here as the baseline stages 02–04 must not increase.
+- `TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly` executes; its verdict
+  is written into the stage report.
+- D6 landed: the config uses globs, and `--list-tests` returns the same test
+  count as before the change. A different count means the rewrite changed what
+  runs, which is the one thing it must not do.
+- G1, G2, G3 exist and are reachable from a composer script the aggregate calls.
+- **Each guard is proved to bite**: plant one breakage per guard, record that it
+  reddens for its own case and only for it, and that it is green on the clean
+  tree. A guard seen only on the broken tree is verified on half its range.
+- The executed-test count is recorded here as the baseline every later stage
+  compares against.
 - `composer check` green.
 
 ## Files
 
 `tests/Analysis/Evidence/Design/Unit/TypeCoverage/TypeCoverageRuleTest.php`,
-the new guard files, `phpunit.xml.dist`, `composer.json`, and — if the alias
-verdict is red — the owning rule under `src/Analysis/Evidence/Design/`.
+the new guard files, `phpunit.xml.dist`, `scripts/phpunit-aggregate.py`,
+`composer.json`, and — if the alias verdict is red — the owning rule under
+`src/Analysis/Evidence/Design/`.
+
+## Where these guards live
+
+They are repository controls by the taxonomy in
+[`measurement/controls-taxonomy.md`](measurement/controls-taxonomy.md), so they
+belong in the controls root that stage 02 creates. **That is a cycle, and it is
+resolved here rather than "at execution": stage 01 creates the root and performs
+the full registration table from stage 02 — PHPUnit, PHPStan, cs-fixer,
+`autoload-dev`, the aggregate's suite tuple, the composer group.** Stage 02 then
+only moves files into a root that already works. A stage that leaves the root
+half-registered would be green by its own DoD and would break the next one.

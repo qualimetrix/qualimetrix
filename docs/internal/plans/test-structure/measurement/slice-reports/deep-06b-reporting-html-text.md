@@ -1,10 +1,10 @@
 # Deep read — Reporting Html/Text/Summary slice (wave 2, second half)
 
-19 файлов прочитаны телами полностью (все 18 из списка + бонусный ArchitectureViolationSmokeTest.php).
-Ни один файл не пропущен, неосиленных нет.
+19 files had their bodies read in full (all 18 from the list + the bonus
+ArchitectureViolationSmokeTest.php). No file was skipped, none was too much to handle.
 
-Файлы:
-1. tests/Unit/Reporting/Formatter/HtmlFormatterTest.php (184 строки)
+Files:
+1. tests/Unit/Reporting/Formatter/HtmlFormatterTest.php (184 lines)
 2. tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php (898)
 3. tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php (175)
 4. tests/Unit/Reporting/Formatter/Html/HtmlFindingPartitionerTest.php (437)
@@ -22,80 +22,93 @@
 16. tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php (307)
 17. tests/Reporting/FindingProjection/Unit/SuppressionCompositionBuilderTest.php (488)
 18. tests/Reporting/FindingProjection/Unit/ConfigurationErrorProjectionTest.php (341)
-19. tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php (551, bonus — числился непрочитанным)
+19. tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php (551, bonus — was listed as unread)
 
-## Таблица
+## Table
 
-| Файл                    | Метод                              | Строка  | Класс дефекта | Чем подтверждается                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------------- | ---------------------------------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SummaryEnricherTest.php | `itTypingNotAddedWhenNoDimensions` | 487–509 | дубль         | Байт-в-байт идентично телу `itHealthScoresEmptyWhenNoProjectHealthMetrics` (295–317): тот же `MetricBag::fromArray(['complexity.ccn.avg' => 5.0, 'size.loc' => 1000])`, та же сборка `Report`, тот же единственный assert `self::assertSame([], $result->healthScores)`. Проверено `diff` после переименования метода — 0 расхождений. Оба имени описывают один и тот же факт («нет health.* метрик → healthScores пуст»), только под разными формулировками — дубль, а не просто похожий тест |
+| File                    | Method                             | Line    | Defect class | Confirmed by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ---------------------------------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SummaryEnricherTest.php | `itTypingNotAddedWhenNoDimensions` | 487–509 | duplicate    | Byte-for-byte identical to the body of `itHealthScoresEmptyWhenNoProjectHealthMetrics` (295–317): the same `MetricBag::fromArray(['complexity.ccn.avg' => 5.0, 'size.loc' => 1000])`, the same `Report` assembly, the same single assertion `self::assertSame([], $result->healthScores)`. Verified via `diff` after renaming the method — 0 discrepancies. Both names describe the same fact ("no health.* metrics → healthScores is empty"), just phrased differently — a duplicate, not merely a similar test |
 
-## Пограничный случай (не дефект, отмечаю отдельно)
+## A borderline case (not a defect, noted separately)
 
-`SummaryEnricherTest.php`: `itReturnsUnchangedReportWhenNoMetrics` (53–71, метрики не переданы вовсе — используется
-default) и `itNullMetricsReturnsUnchangedReport` (354–370, метрики переданы явно как `null`) — тела разные
-(второй проверяет меньше полей: только `$result === $report` и `healthScores === []`, тогда как первый
-дополнительно проверяет `worstNamespaces`, `worstClasses`, `techDebtMinutes`). Не байт-дубль, поэтому в таблицу
-дефектов не включаю, но по факту второй тест — строгое подмножество первого и не добавляет покрытия сверх
-проверки того, что явный `null` ведёт себя как default (что тоже небесполезно, но неявно пограничная зона
-между «дублирует» и «расширяет»).
+`SummaryEnricherTest.php`: `itReturnsUnchangedReportWhenNoMetrics` (53–71, metrics not passed at
+all — default is used) and `itNullMetricsReturnsUnchangedReport` (354–370, metrics passed
+explicitly as `null`) — the bodies differ (the second checks fewer fields: only
+`$result === $report` and `healthScores === []`, while the first additionally checks
+`worstNamespaces`, `worstClasses`, `techDebtMinutes`). Not a byte-for-byte duplicate, so I don't
+include it in the defect table, but in fact the second test is a strict subset of the first and
+adds no coverage beyond checking that an explicit `null` behaves like the default (which is also
+not useless, but sits implicitly in the borderline zone between "duplicates" and "extends").
 
-## Чисто
+## Clean
 
-Все остальные 18 файлов (и 17 из 18 методов SummaryEnricherTest.php) — без тавтологий, без дублей, без
-несовпадения имени и тела:
+All the other 18 files (and 17 of 18 methods in SummaryEnricherTest.php) — no tautologies, no
+duplicates, no name/body mismatch:
 
-- **HtmlFormatterTest, HtmlDebtCalculatorTest, HtmlMetricAggregatorTest, HtmlFindingPartitionerTest,
-  HtmlTreeBuilderTest** — каждый тест строит свежую фигуру (findings/metrics/tree), assert сверяет либо
-  арифметику (суммы LOC, средневзвешенное health, debt-минуты 30/60/75 через `RemediationTimeRegistry`), либо
-  структуру дерева/партиционирования, которую тест сам не подставлял константой, а получил через прогон SUT.
-  NaN/Inf-обнуление, JSON_HEX_TAG-экранирование, fallback на namespace-узел при отсутствии class-узла — везде
-  отдельные, различимые кейсы.
-- **SummaryFormatterTest.php (44 теста)** — крупнейший файл среза; каждый тест комбинирует свой набор
-  findings/healthScores/worstNamespaces/worstClasses и проверяет соответствующий фрагмент вывода
-  (`assertStringContainsString`/`NotContainsString`), включая численно выведенные значения (debt "1h 30min",
-  "2.5 min/kLOC", weighted health 45%). Цветовые пороги (`itColorsScoreBoundaryAtWarningThreshold` /
-  `...GreenAboveWarningThreshold` / `...RedAtErrorThreshold`) целенаправленно проверяют граничные значения
-  (50.0 / 50.1 / 30.0) — не дубли, а разные точки одной границы.
-- **TextFormatterTest, TextVerboseFormatterTest, HealthTextFormatterTest** — фиксация формата строки
-  (`itOmitsTheAcceptedLevelFragmentWhenAbsent` содержит явный комментарий "Regression pin: byte-for-byte") —
-  это заявленный контракт формата, не тавтология; см. правило брифа про пиннинг формулировки.
-- **HealthBarRendererTest.php** — включает проверку арифметики ширины бара (`itCalculatesBarWidthCorrectly`,
-  30 символов, 15 `#`/15 `.` при score=50) и C2-дельта фикстуру с реальным `MetricRepositoryInterface`-моком,
-  вычисляющую childScore через `2*overallScore - flatScore` — не подстава ожидаемого числа, а честный расчёт.
-- **HintRendererTest, DetailedFindingRendererTest, FindingSummaryRendererTest, TopIssuesRendererTest,
-  OffenderListRendererDensityTest** — распространённый паттерн: разные Offender/Finding фикстуры → разные
-  фрагменты текста, включая сортировку (`itReordersOffendersWhenRankingByDensity`,
-  `itSortsNullDensityOffendersLastWhenRankingByDensity`) через `strpos`-сравнение позиций, что действительно
-  проверяет порядок, а не просто наличие подстрок.
-- **SuppressionCompositionBuilderTest.php** — явно спроектирован «один тест = один механизм» (см. докблок
-  класса), плюс два защитных теста от конкретных багов (ledger-producer расхождение с `ruleName`,
-  overlapping global exclude patterns) — образцовая структура, не тавтология.
-- **ConfigurationErrorProjectionTest.php** — «один тест на каждый способ уйти из пайплайна» (Suppression,
-  PathExclusion, NamespaceExclusion, Baseline, GitScope) + отдельный тест на measuredFindings — намеренно
-  похожая структура (это разграничитель, а не тавтология: каждый тест бьёт свой этап пайплайна).
-- **ArchitectureViolationSmokeTest.php** — по одному тесту на форматтер (Text/TextVerbose/Json/MetricsJson/
-  Html/Checkstyle/Sarif/GitLab/Health/Summary/GithubActions), каждый проверяет специфичную для формата
-  структуру вывода (валидность XML, счётчики через `count($run['results'])`, regex на `::error|warning|notice`)
-  — не дубли, а honest per-format smoke coverage.
+- **HtmlFormatterTest, HtmlDebtCalculatorTest, HtmlMetricAggregatorTest,
+  HtmlFindingPartitionerTest, HtmlTreeBuilderTest** — every test builds a fresh figure
+  (findings/metrics/tree), the assertion checks either arithmetic (LOC sums, a weighted health
+  average, debt minutes 30/60/75 via `RemediationTimeRegistry`), or a tree/partitioning
+  structure that the test didn't plug in as a constant itself but obtained by running the SUT.
+  NaN/Inf zeroing, JSON_HEX_TAG escaping, falling back to a namespace node when there's no class
+  node — every case is separate and distinguishable.
+- **SummaryFormatterTest.php (44 tests)** — the largest file in the slice; every test combines
+  its own set of findings/healthScores/worstNamespaces/worstClasses and checks the
+  corresponding output fragment (`assertStringContainsString`/`NotContainsString`), including
+  numerically derived values (debt "1h 30min", "2.5 min/kLOC", weighted health 45%). The color
+  thresholds (`itColorsScoreBoundaryAtWarningThreshold` / `...GreenAboveWarningThreshold` /
+  `...RedAtErrorThreshold`) deliberately check boundary values (50.0 / 50.1 / 30.0) — not
+  duplicates, different points on the same boundary.
+- **TextFormatterTest, TextVerboseFormatterTest, HealthTextFormatterTest** — pinning a string
+  format (`itOmitsTheAcceptedLevelFragmentWhenAbsent` carries an explicit comment "Regression
+  pin: byte-for-byte") — this is a declared format contract, not a tautology; see the brief's
+  rule about pinning wording.
+- **HealthBarRendererTest.php** — includes a check of the bar-width arithmetic
+  (`itCalculatesBarWidthCorrectly`, 30 characters, 15 `#`/15 `.` at score=50) and a C2-delta
+  fixture with a real `MetricRepositoryInterface` mock, computing childScore via
+  `2*overallScore - flatScore` — not a planted expected number, an honest calculation.
+- **HintRendererTest, DetailedFindingRendererTest, FindingSummaryRendererTest,
+  TopIssuesRendererTest, OffenderListRendererDensityTest** — a common pattern: different
+  Offender/Finding fixtures → different text fragments, including sorting
+  (`itReordersOffendersWhenRankingByDensity`,
+  `itSortsNullDensityOffendersLastWhenRankingByDensity`) via a `strpos` position comparison,
+  which genuinely checks order, not merely substring presence.
+- **SuppressionCompositionBuilderTest.php** — explicitly designed as "one test = one mechanism"
+  (see the class docblock), plus two guard tests against specific bugs (a ledger-producer/
+  `ruleName` mismatch, overlapping global exclude patterns) — an exemplary structure, not a
+  tautology.
+- **ConfigurationErrorProjectionTest.php** — "one test per way to exit the pipeline"
+  (Suppression, PathExclusion, NamespaceExclusion, Baseline, GitScope) + a separate test for
+  measuredFindings — a deliberately similar structure (this is a classifier, not a tautology:
+  every test targets its own pipeline stage).
+- **ArchitectureViolationSmokeTest.php** — one test per formatter
+  (Text/TextVerbose/Json/MetricsJson/Html/Checkstyle/Sarif/GitLab/Health/Summary/GithubActions),
+  each checking a format-specific output structure (XML validity, counts via
+  `count($run['results'])`, a regex on `::error|warning|notice`) — not duplicates, honest
+  per-format smoke coverage.
 
-## Чего этот способ не видит
+## What this method cannot see
 
-- **Только тела методов**, не SUT. Я не читал сами классы `HtmlTreeBuilder`, `SummaryFormatter`,
-  `SuppressionCompositionBuilder` и т.д. — арифметика (30 мин на `complexity.ccn`, weighted average 87.5,
-  bar width 30) сверяется по комментариям в тестах и внутренней согласованности, а не по независимому
-  пересчёту от исходной формулы SUT. Если комментарий и код SUT расходятся, дефект такого рода не поймать.
-- **Дубли между файлами волны 1 и волны 2 не проверялись** — сравнение шло только внутри волны 2 (18+1
-  файлов), не против остальных ~660 файлов среза. Тот же паттерн `itFormatsWithNullMetrics` /
-  `itBuildsWithNullMetrics` мог повториться в JSON/Sarif-группе первого агента — не проверено (граница брифа:
-  "его файлов не трогай").
-- **Обнаружение дублей — построчный diff двух явно похожих кандидатов**, не систематическая нормализация
-  всех ~600 тел методов в этом срезе программно (кластеризация по хэшу нормализованного тела). Нашёлся один
-  дубль, потому что бриф прямо указал на него и я проверил файл целиком; менее очевидные пары
-  (структурно похожие, но с одним отличающимся полем) могли остаться незамеченными — как пограничный случай
-  `itReturnsUnchangedReportWhenNoMetrics`/`itNullMetricsReturnsUnchangedReport` выше показывает, что почти-дубли
-  существуют и за пределами явно найденного.
-- **Пиннинг формулировки vs контракт формата** — граница оценивалась вручную (комментарии в коде типа
-  "Regression pin"), не автоматическим критерием; в спорных случаях (например, `assertStringContainsString`
-  на конкретный текст типа "sub-namespaces raise the score" в HealthBarRendererTest) решение "это контракт
-  формата" принято по контексту, не формально доказано.
+- **Only the method bodies**, not the SUT. I did not read the classes `HtmlTreeBuilder`,
+  `SummaryFormatter`, `SuppressionCompositionBuilder`, etc. themselves — arithmetic (30 min for
+  `complexity.ccn`, a weighted average of 87.5, a bar width of 30) is checked against the tests'
+  own comments and internal consistency, not against an independent recomputation from the SUT's
+  original formula. If a comment and the SUT's code diverge, this kind of defect won't be
+  caught.
+- **Duplicates between wave 1 and wave 2 files were not checked** — the comparison ran only
+  within wave 2 (18+1 files), not against the remaining ~660 files in the slice. The same
+  `itFormatsWithNullMetrics` / `itBuildsWithNullMetrics` pattern could repeat in the first
+  agent's JSON/Sarif group — not checked (the brief's boundary: "don't touch its files").
+- **Duplicate detection was a line-by-line diff of two clearly similar candidates**, not a
+  systematic, programmatic normalization of all ~600 method bodies in this slice (clustering by
+  a hash of the normalized body). One duplicate was found because the brief pointed at it
+  directly and I checked the file in full; less obvious pairs (structurally similar but with one
+  differing field) could have gone unnoticed — as the borderline case
+  `itReturnsUnchangedReportWhenNoMetrics`/`itNullMetricsReturnsUnchangedReport` above shows,
+  near-duplicates exist beyond the one explicitly found.
+- **Wording pin vs format contract** — the boundary was assessed manually (code comments like
+  "Regression pin"), not by an automatic criterion; in disputed cases (e.g.
+  `assertStringContainsString` on specific text like "sub-namespaces raise the score" in
+  HealthBarRendererTest) the decision "this is a format contract" was made by context, not
+  formally proven.

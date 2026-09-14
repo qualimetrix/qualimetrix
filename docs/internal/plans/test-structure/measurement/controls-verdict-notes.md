@@ -1,181 +1,200 @@
 81
 
-Столько уникальных путей в объединении двух свидетелей (60 из `controls-from-category.tsv` + 21 из блока
-«только механика»; блок «только отчёты» целиком лежит внутри первых 60). Ровно столько строк в
-`controls-verdict.tsv`, заголовка в файле нет.
+This many unique paths in the union of two witnesses (60 from `controls-from-category.tsv` + 21
+from the "mechanics only" block; the "reports only" block lies entirely inside the first 60).
+Exactly this many rows in `controls-verdict.tsv`, the file has no header.
 
-## Счёт
+## Count
 
-| вердикт | сколько |
-| ------- | ------- |
-| control | 43      |
-| test    | 24      |
-| mixed   | 14      |
+| verdict | how many |
+| ------- | -------- |
+| control | 43       |
+| test    | 24       |
+| mixed   | 14       |
 
-Итого «контрольного вещества»: 43 файла целиком плюс 20 отдельных методов внутри 14 смешанных.
+Total "control substance": 43 whole files plus 20 individual methods inside 14 mixed ones.
 
-## Как разделить каждый mixed
+## How to split each mixed file
 
-Общее правило для всех четырнадцати: контроль-часть уезжает, продуктовая остаётся на месте под прежним
-именем. Имя нового файла ниже — предложение, не требование.
+The common rule for all fourteen: the control part moves out, the product part stays in place
+under its old name. The new file name below is a suggestion, not a requirement.
 
-1. `tests/Analysis/Configuration/Unit/ConfigSchemaTest.php` — `itLeavesNoConstantUnreferencedByAConsumer`
-   (L279-331) вынести как «каждая константа ConfigSchema имеет потребителя в src/». Остальное — юнит по
-   константам, зависимостей на вынесенный метод нет.
-2. `.../Identity/ClassProducerOrdinalTest.php` — `itCoversEveryClassMetricProducer` (L121-141) и
-   `itFindsTheHelperCallSiteOfEveryCoveredProducer` (L150-171) уезжают вместе: второй доказывает полноту
-   популяции первого. Остаётся один продуктовый метод на inline-исходнике.
-3. `.../Identity/RatchetKeyGrammarTest.php` — `itFindsNoPositionInAnyDeclarationKeyOfTheRepositoryRatchet`
-   (L48-58) уезжает к контролям над `qmx-baseline.json`; грамматика ключа остаётся юнитом.
-4. `.../ChannelLevelAssemblyTopologyTest.php` — уезжают
-   `itFindsNoProductionSourceThatSpellsALevelSuffixAsALiteral` (L58-81) и его самопроверка
-   `itRecognisesARetiredLevelBearingChannelName` (L123-129) вместе с приватным `levelSegmentOf()` и парой
-   `sourceRoot()`/`parse()`. Остаётся `itFindsNoDeclaredChannelCodeThatCarriesALevel` — он спрашивает реестр
-   из контейнера, но ему нужен `levelSegmentOf()`: при делении примитив придётся продублировать или поднять
-   в общий Support.
-5. `.../ConfigurationErrorClassificationTopologyTest.php` — уезжают два первых метода (L67-99, L117-154) со
-   всей файловой обвязкой (`productionFiles()`, `relative()`, `sourceRoot()`). Остаются пять
-   DI/compiler-pass-методов и фикстурные классы внизу файла.
-6. `.../RuleDocsPageCoverageTest.php` — уезжают `itRequiresEveryDeclaredDocsPageToCarryTheRulesOwnAnchor`
-   (L75-98) и `itRequiresEveryClasslessComputedMetricProducerToCarryItsAnchor` (L107-127) вместе с
-   `docsRoot()`. Обоим нужен `ruleClasses()` из контейнера — его копия потребуется и там, и тут.
-7. `.../RuleRemediationMinutesCoverageTest.php` — уезжают
-   `itRequiresEveryRulesRemediationMinutesToMatchTheReferencePage` (L79-84) и
-   `itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage` (L120-138) вместе с приватными
-   `assertReferencePageMatchesDeclaredMinutes()` (L86-118), `readFile()` и `docsRoot()`. Первый метод —
-   двухстрочный делегат, вся работа в помощнике: переносить парой, иначе уедет пустышка.
-8. `.../Exclusion/ConfiguredSuppressionTest.php` — `itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey`
-   (L78-103) уезжает целиком, остаток — чистый юнит на два метода.
+1. `tests/Analysis/Configuration/Unit/ConfigSchemaTest.php` — extract
+   `itLeavesNoConstantUnreferencedByAConsumer` (L279-331) as "every ConfigSchema constant has a
+   consumer in src/". The rest is a unit test over the constants, with no dependencies on the
+   extracted method.
+2. `.../Identity/ClassProducerOrdinalTest.php` — `itCoversEveryClassMetricProducer` (L121-141) and
+   `itFindsTheHelperCallSiteOfEveryCoveredProducer` (L150-171) move together: the second proves
+   the completeness of the first one's population. One product method on inline source is left.
+3. `.../Identity/RatchetKeyGrammarTest.php` —
+   `itFindsNoPositionInAnyDeclarationKeyOfTheRepositoryRatchet` (L48-58) moves out to the controls
+   over `qmx-baseline.json`; the key grammar stays a unit test.
+4. `.../ChannelLevelAssemblyTopologyTest.php` — `itFindsNoProductionSourceThatSpellsALevelSuffixAsALiteral`
+   (L58-81) and its self-check `itRecognisesARetiredLevelBearingChannelName` (L123-129) move out
+   together with the private `levelSegmentOf()` and the `sourceRoot()`/`parse()` pair. Left behind
+   is `itFindsNoDeclaredChannelCodeThatCarriesALevel` — it asks the registry from the container,
+   but it needs `levelSegmentOf()`: on the split, the primitive will have to be duplicated or
+   raised into a shared Support.
+5. `.../ConfigurationErrorClassificationTopologyTest.php` — the first two methods (L67-99,
+   L117-154) move out with all the file-based scaffolding (`productionFiles()`, `relative()`,
+   `sourceRoot()`). Five DI/compiler-pass methods and the fixture classes at the bottom of the
+   file stay.
+6. `.../RuleDocsPageCoverageTest.php` — `itRequiresEveryDeclaredDocsPageToCarryTheRulesOwnAnchor`
+   (L75-98) and `itRequiresEveryClasslessComputedMetricProducerToCarryItsAnchor` (L107-127) move
+   out together with `docsRoot()`. Both need `ruleClasses()` from the container — a copy of it
+   will be needed on both sides.
+7. `.../RuleRemediationMinutesCoverageTest.php` — `itRequiresEveryRulesRemediationMinutesToMatchTheReferencePage`
+   (L79-84) and `itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage` (L120-138) move
+   out together with the private `assertReferencePageMatchesDeclaredMinutes()` (L86-118),
+   `readFile()` and `docsRoot()`. The first method is a two-line delegate, all the work is in the
+   helper: move them as a pair, or an empty shell moves out instead.
+8. `.../Exclusion/ConfiguredSuppressionTest.php` —
+   `itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey` (L78-103) moves out whole, the
+   remainder is a plain two-method unit test.
 9. `.../Baseline/Functional/BaselineCommandOptionSurfaceTest.php` —
-   `itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface` (L169-203) уезжает к контролям над
-   `action.yml` / `docker-compose.yml` / `scripts/pre-commit-hook.sh`; четыре метода по поверхности команд
-   остаются.
-10. `.../Baseline/Unit/ChannelRenameMapTest.php` — `itReadsTheRepositorysOwnDeclaredChannelMap` (L65-75)
-    уезжает и логически смыкается с уже целиком контрольным `ChannelRenameTsvGateAgreementTest`; три метода
-    на корпусе строк остаются.
-11. `.../Sarif/Integration/SarifRuleDescriptorCoverageTest.php` — уезжают два coverage-метода (L57-79,
-    L90-118) с приватным помощником, который делает `is_file()` и ищет якорь `**Rule ID:**` в
-    `website/docs`. Остаётся `itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode` — чистое
-    поведение форматтера.
-12. `tests/Unit/Core/Util/GlobSyntaxTest.php` — `itIsTheOnlyPlaceInSourceThatEnumeratesTheGlobCharacters`
-    (L69-92) уезжает; два юнит-метода остаются.
+   `itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface` (L169-203) moves out to the controls
+   over `action.yml` / `docker-compose.yml` / `scripts/pre-commit-hook.sh`; four methods on the
+   command surface stay.
+10. `.../Baseline/Unit/ChannelRenameMapTest.php` — `itReadsTheRepositorysOwnDeclaredChannelMap`
+    (L65-75) moves out and logically joins the already fully-control `ChannelRenameTsvGateAgreementTest`;
+    three methods over a row corpus stay.
+11. `.../Sarif/Integration/SarifRuleDescriptorCoverageTest.php` — the two coverage methods
+    (L57-79, L90-118) move out along with the private helper that does `is_file()` and searches
+    for the `**Rule ID:**` anchor in `website/docs`. Left:
+    `itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode` — plain formatter behavior.
+12. `tests/Unit/Core/Util/GlobSyntaxTest.php` —
+    `itIsTheOnlyPlaceInSourceThatEnumeratesTheGlobCharacters` (L69-92) moves out; two unit methods
+    stay.
 13. `tests/Unit/Core/Util/NamespaceMatcherTest.php` —
-    `itLeavesPatternNormalizationToThePrimitiveOnEverySurface` (L341-382) уезжает вместе с приватным
-    `codeWithoutComments()`; тридцать юнит-методов остаются.
-14. `tests/Unit/Core/VersionTest.php` — `itDoesNotResolveTheVersionThroughTheRootPackage` (L42-56) уезжает
-    (читает исходник `Version.php` текстом); два поведенческих метода остаются.
+    `itLeavesPatternNormalizationToThePrimitiveOnEverySurface` (L341-382) moves out together with
+    the private `codeWithoutComments()`; thirty unit methods stay.
+14. `tests/Unit/Core/VersionTest.php` — `itDoesNotResolveTheVersionThroughTheRootPackage` (L42-56)
+    moves out (it reads the `Version.php` source as text); two behavioral methods stay.
 
-## Что дублирует уже существующие механизмы репозитория
+## What duplicates mechanisms the repository already has
 
-Проверено чтением `composer.json` (`scripts`) и самих тестов, не по именам.
+Checked by reading `composer.json` (`scripts`) and the tests themselves, not by name.
 
-**Дубль проверки, но НЕ дубль маршрута — удалять можно только вместе с правкой маршрута:**
+**A duplicate of the check, but NOT a duplicate of the route — deletable only together with an
+edit to the route:**
 
-Оба файла ниже помечены `#[Group('live-freshness')]`, а `scripts/phpunit-aggregate.py:36` исключает эту
-группу. То есть под `composer check` (через `check:code` → `test:aggregate`) они **не исполняются вовсе**,
-а под голым `composer test` — исполняются. Это осознанная развилка: тот же
-`ModularArchitectureGovernanceIntegrationTest::itRoutesFreshnessOraclesExactlyOnceThroughAggregateCheck`
-утверждает, что `composer test` обязан сохранить полное покрытие свежести, а агрегат — отдать его
-`check:artifacts`. Поэтому удаление обязано сопровождаться правкой этого утверждения, иначе оно покраснеет.
+Both files below are marked `#[Group('live-freshness')]`, and `scripts/phpunit-aggregate.py:36`
+excludes this group. That means under `composer check` (via `check:code` → `test:aggregate`) they
+**do not run at all**, while under a bare `composer test` they do run. This is a deliberate fork:
+the same `ModularArchitectureGovernanceIntegrationTest::itRoutesFreshnessOraclesExactlyOnceThroughAggregateCheck`
+asserts that `composer test` must keep full freshness coverage, and the aggregate hands it off to
+`check:artifacts`. So a deletion must be accompanied by an edit to this assertion, or it will turn
+red.
 
-- `tests/Reporting/Formatter/Suppressed/Integration/SuppressionSnapshotFreshnessTest.php` — его
-  единственный метод запускает `php scripts/generate-suppression-snapshot.php --check` подпроцессом и
-  утверждает `exit == 0`. Это буквально `composer suppression-snapshot:check`, уже входящий в
-  `check:artifacts`. Под `composer check` — чистый дубль.
+- `tests/Reporting/Formatter/Suppressed/Integration/SuppressionSnapshotFreshnessTest.php` — its
+  single method runs `php scripts/generate-suppression-snapshot.php --check` as a subprocess and
+  asserts `exit == 0`. This is literally `composer suppression-snapshot:check`, already part of
+  `check:artifacts`. Under `composer check` it is a plain duplicate.
 - `tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php`,
-  метод `itChecksEveryGeneratedProjectionWithoutWriting` (L21-32) — запускает
-  `php scripts/generate-modular-architecture.php --check`, то есть ровно `composer architecture:check`,
-  который уже стоит и в `check:artifacts`, и первой половиной в `selfcheck`. **Остальные шесть методов
-  этого файла дубля не образуют** (граф composer-скриптов, permanent exact composition bindings, покрытие
-  PHPUnit-сьютов, production→test импорты) — файл удалять нельзя, удалять надо этот метод.
+  method `itChecksEveryGeneratedProjectionWithoutWriting` (L21-32) — runs
+  `php scripts/generate-modular-architecture.php --check`, i.e. exactly `composer architecture:check`,
+  already present both in `check:artifacts` and as the first half of `selfcheck`. **The file's
+  other six methods do not form a duplicate** (the composer-script graph, permanent exact
+  composition bindings, PHPUnit-suite coverage, production→test imports) — the file must not be
+  deleted, only this method.
 
-Что именно теряется при удалении: способность голого `composer test` (без `composer check`) заметить
-устаревший артефакт. Решение за владельцем маршрута, не за переносом.
+What exactly is lost on deletion: the ability of a bare `composer test` (without `composer check`)
+to notice a stale artifact. The decision belongs to the route's owner, not to this relocation.
 
-**Перекрывается частично — удалять нельзя:**
+**Partially overlaps — must not be deleted:**
 
-- `tests/Analysis/Policy/Architecture/Integration/DogfoodingTopologyTest.php` — читает
-  `docs/internal/modular-architecture-manifest.json` и утверждает семантику проекции (владелец↔слой,
-  fail-closed покрытие, ацикличность, `external` только для непроектных неймспейсов). `architecture:check`
-  проверяет свежесть сгенерированного, а не эти свойства.
-- `tests/Analysis/Policy/Architecture/Unit/ArchitectureInternalTopologyTest.php` и
-  `.../ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php` — внутренний DAG капабилити;
-  манифестный чекер судит межвладельческие импорты, а не внутреннюю зонность.
-- `tests/Unit/RuleVocabulary/DirectiveAudit*Test.php` (три файла) — это юнит-тесты **читателя и гейта**
-  отчёта аудита (`scripts/directive-audit/*`), а не повторный запуск `bin/qmx directives`. Предмет другой:
-  они и есть проверка прибора. То же для `DirectiveAuditControlsSuiteKeyTest` (ключ набора контролей).
-- `tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php` — тестирует код
-  `scripts/generate-rename-enumeration.php`, а не сверяет свежесть его выхода (этим занят
-  `enumeration:renames:check`).
-- `tests/Analysis/Policy/Baseline/Unit/ChannelRenameTsvGateAgreementTest.php` и метод
-  `itReadsTheRepositorysOwnDeclaredChannelMap` из `ChannelRenameMapTest` — требуют, чтобы **продуктовый**
-  `ChannelRenameMap` читал тот же `finding-gate/maps/channels.tsv`, что и гейт. `composer gate` сравнивает
-  находки; согласия двух читателей одной таблицы он не проверяет.
-- `tests/Unit/PromiseEffect/*` (три файла) — юниты по `scripts/promise-effect/*`; `promise-effect:check`
-  гоняет сам инструмент, но не его внутренние классы.
+- `tests/Analysis/Policy/Architecture/Integration/DogfoodingTopologyTest.php` — reads
+  `docs/internal/modular-architecture-manifest.json` and asserts the projection's semantics
+  (owner↔layer, fail-closed coverage, acyclicity, `external` only for non-project namespaces).
+  `architecture:check` verifies the freshness of what's generated, not these properties.
+- `tests/Analysis/Policy/Architecture/Unit/ArchitectureInternalTopologyTest.php` and
+  `.../ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php` — the capability's internal
+  DAG; the manifest checker judges cross-owner imports, not internal zoning.
+- `tests/Unit/RuleVocabulary/DirectiveAudit*Test.php` (three files) — these are unit tests of the
+  audit report's **reader and gate** (`scripts/directive-audit/*`), not a re-run of
+  `bin/qmx directives`. The subject is different: they ARE the check on the instrument. The same
+  for `DirectiveAuditControlsSuiteKeyTest` (the controls-suite key).
+- `tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php` — tests the code of
+  `scripts/generate-rename-enumeration.php` rather than checking the freshness of its output
+  (that's `enumeration:renames:check`'s job).
+- `tests/Analysis/Policy/Baseline/Unit/ChannelRenameTsvGateAgreementTest.php` and the
+  `itReadsTheRepositorysOwnDeclaredChannelMap` method from `ChannelRenameMapTest` — require that
+  the **product's** `ChannelRenameMap` reads the same `finding-gate/maps/channels.tsv` as the
+  gate. `composer gate` compares findings; it does not check agreement between two readers of one
+  table.
+- `tests/Unit/PromiseEffect/*` (three files) — unit tests over `scripts/promise-effect/*`;
+  `promise-effect:check` runs the tool itself, but not its internal classes.
 
-## Расхождения с волной 1 (вердикт изменён)
+## Divergences from wave 1 (verdict changed)
 
-- `ChannelDeclarationFixtureDriftTest`, `ChannelOrderFixtureDriftTest`: волна 1 — control («fixture
-  drift»). Здесь — **test**: популяция берётся из собранного контейнера, а снимок для сверки лежит
-  **внутри `tests/`**. По разграничителю брифа контейнерный путь остаётся тестом. Это единственные два
-  вердикта, где разграничитель спорит со здравым смыслом: по духу они контроли дрейфа, по букве — нет.
+- `ChannelDeclarationFixtureDriftTest`, `ChannelOrderFixtureDriftTest`: wave 1 — control ("fixture
+  drift"). Here — **test**: the population is taken from the assembled container, and the
+  snapshot to compare against lives **inside `tests/`**. Under the brief's classifier, a
+  container-based path remains a test. These are the only two verdicts where the classifier
+  disagrees with common sense: they are drift controls in spirit, not in letter.
 - `LevelActivityCoversEveryDeclaredLevelTest`, `WarningBoundaryDeclarationTest`,
-  `ErrorStreamContainerIdentityTest`, `RuleRegistryTest`: волна 1 — «пограничный control-invariant». Здесь —
-  **test**: файловой системы нет вовсе, только контейнер и рефлексия по классам, которые он выдал.
-- `MetricNameVocabularyTest`: волна 1 — «спорная граница». Здесь — **test**: рефлексия по константам одного
-  класса не есть «рефлексия поверх обхода каталога».
-- `CodeSmellRuleContractTest`: волна 1 — mixed (метод 2 «integration через DI»). Здесь — **control целиком**:
-  второй метод сверяет обход каталога с реестром, то есть его предмет — согласие файловой системы и
-  контейнера, а не поведение продукта.
-- `RuleThresholdKeyGroupRegistryCompletenessTest` / `...DriftTest`, `ThresholdValidatorAssignmentTest`:
-  волна 1 колебалась («control-invariant-подобный», «кандидат»). Здесь — **control** без оговорок.
-- Блок «только механика» (21 путь): 17 подтверждены как **test** (ложные срабатывания механического
-  свидетеля), а 4 оказались контрольным веществом, которого волна 1 по категории не увидела:
-  `SuppressionSnapshotKeyTest` — control целиком, плюс три mixed —
+  `ErrorStreamContainerIdentityTest`, `RuleRegistryTest`: wave 1 — "borderline control-invariant".
+  Here — **test**: there is no filesystem access at all, only the container and reflection over
+  the classes it produced.
+- `MetricNameVocabularyTest`: wave 1 — "a disputed boundary". Here — **test**: reflection over
+  one class's constants is not "reflection layered on a directory walk".
+- `CodeSmellRuleContractTest`: wave 1 — mixed (method 2, "integration via DI"). Here — **control
+  in full**: the second method checks a directory walk against the registry, i.e. its subject is
+  agreement between the filesystem and the container, not product behavior.
+- `RuleThresholdKeyGroupRegistryCompletenessTest` / `...DriftTest`,
+  `ThresholdValidatorAssignmentTest`: wave 1 wavered ("control-invariant-like", "a candidate").
+  Here — **control**, no caveats.
+- The "mechanics only" block (21 paths): 17 confirmed as **test** (false positives from the
+  mechanical witness), and 4 turned out to be control substance that wave 1 missed by category:
+  `SuppressionSnapshotKeyTest` — control in full, plus three mixed —
   `BaselineCommandOptionSurfaceTest`, `ChannelRenameMapTest`, `SarifRuleDescriptorCoverageTest`.
-  Первого волна 1 не увидела потому, что он подтягивает код не импортом, а `require_once` из
-  `scripts/` — ровно тот класс промаха, который бриф и предсказал.
-- `LayerViolationRuleTest`, `LayersValidatorTest`, `RuleOptionsFactoryTest` — три самых больших файла
-  объединения (2194/1644/1230 строк) оказались чистыми **test**: механика сработала на слове `glob` в имени
-  продуктового `LayerSelector::glob`, на слове `require` в комментарии и на импортах фикстур из `tests/`.
+  Wave 1 missed the first one because it pulls in code not via an import but via `require_once`
+  from `scripts/` — exactly the class of miss the brief predicted.
+- `LayerViolationRuleTest`, `LayersValidatorTest`, `RuleOptionsFactoryTest` — the three largest
+  files in the union (2194/1644/1230 lines) turned out to be pure **test**: the mechanical witness
+  fired on the word `glob` in the product's `LayerSelector::glob` name, on the word `require` in a
+  comment, and on fixture imports from `tests/`.
 
-## Чего этот способ не видит
+## What this method cannot see
 
-- **Помощники.** Я собрал все импорты `Qualimetrix\Tests\*` из 24 файлов с вердиктом `test` (их ровно
-  десять: четыре фикстуры `TestRuleOptions*`, `AllowListBuilder`, `LayerVerdicts`, `ProcessorBuilder`,
-  `BaselineCliFixture`, `TempDirectory`, `PseudoTerminalRun`) и прогрепал каждый на обход дерева. Ходит в
-  файловую систему только `BaselineCliFixture::copyDirectory()` — копирует каталог фикстуры во временный
-  проект, то есть харнес, не утверждение. Вердикты держатся. Но грепом же проверены и помощники контролей
-  (`FromArrayKeyReader` читает файлы — ожидаемо): третьего уровня (помощник помощника) я не смотрел.
-- **Базовые классы.** Проверено: 79 из 81 классов наследуют `TestCase` напрямую, два —
-  `PHPStan\Testing\RuleTestCase` из vendor. Своего общего предка с `setUp()`, куда мог бы спрятаться
-  контроль, в объединении нет.
-- **`require_once` второго уровня.** Я нашёл прямые `require_once` из `scripts/`, но не проверял, не
-  подтягивает ли сам подтянутый скрипт третий файл, который ходит в `src/`.
-- **Граница «контроль над `tests/`».** Разграничитель говорит про `src/`, `docs/`, `website/`, `scripts/`,
-  конфиги и сгенерированные артефакты. Два файла (`ScratchPathsCarryRealEntropyTest`,
-  `ErrorStreamSoleOwnerTest`) сметают в том числе `tests/`; я счёл их контролями, но формально бриф на
-  этот случай молчит.
-- **Граница «контейнер против снимка в `tests/`».** Тот же молчащий случай с другой стороны: fixture-drift
-  тесты (пп. выше) по букве тесты, по назначению контроли. Решение принято по букве и может быть
-  перевёрнуто одним словом в разграничителе.
-- **Дробление по методам не проверено исполнением.** Я нигде не запускал PHPUnit (бриф запрещает), поэтому
-  предложения «вынести метод X» не доказаны сборкой: приватные помощники, общие константы (`REGISTERED_RULE_COUNT`,
-  pinned-списки) и `#[CoversClass]` могут связывать половинки сильнее, чем видно из чтения.
-- **Вердикт по файлу, а не по строке покрытия.** Там, где контроль-метод и продуктовый метод делят
-  популяцию (`ruleClasses()` из контейнера в `RuleDocsPageCoverageTest` и
-  `RuleRemediationMinutesCoverageTest`), деление создаст дубликат кода — это цена, а не дефект вердикта,
-  но она здесь не измерена.
-- **Третий класс, которого разграничитель не называет: тесты репозиторного тулинга.** Десять вердиктов
-  `control` держатся не на «узнаёт о `src/` через ФС» и не на «сверяет содержимое `scripts/`», а на том,
-  что предмет теста — код, живущий в `scripts/`, подтянутый через `require_once`:
-  `ClassifierTest`, `FloorTest`, `LedgerVocabularyTest`, `DirectiveAuditGateTest`,
-  `DirectiveAuditReportReadingTest`, `DirectiveAuditControlsSuiteKeyTest`,
-  `ChannelRenameTsvGateAgreementTest`, `RenameEnumerationRetirementTest`, `SuppressionSnapshotKeyTest`,
-  и тулинговые половины `BenchmarkConsumersCoverageTest` и `ThresholdPopulationAgreementTest`.
-  Это моё расширение разграничителя, а не его буква: одной строкой в брифе оно переворачивается для всех
-  десяти сразу.
-- **Полнота входа.** Сам вход — объединение двух свидетелей волны 1. Контроль, который проглядели оба
-  (например, тест без файловых вызовов и с категорией «unit»), в эти 81 путь не попал и этим способом не
-  ловится вовсе.
+- **Helpers.** I collected every `Qualimetrix\Tests\*` import from the 24 files with a `test`
+  verdict (there are exactly ten: four `TestRuleOptions*` fixtures, `AllowListBuilder`,
+  `LayerVerdicts`, `ProcessorBuilder`, `BaselineCliFixture`, `TempDirectory`, `PseudoTerminalRun`)
+  and grepped each for a tree walk. Only `BaselineCliFixture::copyDirectory()` touches the
+  filesystem — it copies a fixture directory into a temp project, i.e. it's a harness, not an
+  assertion. The verdicts hold. But the same grep also checked the controls' helpers
+  (`FromArrayKeyReader` reads files — expected): I did not look at a third level (a helper's
+  helper).
+- **Base classes.** Checked: 79 of the 81 classes inherit `TestCase` directly, two inherit
+  `PHPStan\Testing\RuleTestCase` from vendor. There is no shared ancestor with a `setUp()` in the
+  union where a control could hide.
+- **A second level of `require_once`.** I found the direct `require_once` calls from `scripts/`,
+  but I did not check whether the pulled-in script itself pulls in a third file that touches
+  `src/`.
+- **The "control over `tests/`" boundary.** The classifier talks about `src/`, `docs/`,
+  `website/`, `scripts/`, configs and generated artifacts. Two files
+  (`ScratchPathsCarryRealEntropyTest`, `ErrorStreamSoleOwnerTest`) sweep in `tests/` too; I counted
+  them as controls, but the brief is formally silent on this case.
+- **The "container versus a snapshot in `tests/`" boundary.** The same silent case from the other
+  side: the fixture-drift tests (items above) are tests by the letter, controls by purpose. The
+  decision was made by the letter and can be flipped by one word in the classifier.
+- **The method-level split is not verified by execution.** I never ran PHPUnit anywhere (the
+  brief forbids it), so the "extract method X" suggestions are not proven by a build: private
+  helpers, shared constants (`REGISTERED_RULE_COUNT`, pinned lists) and `#[CoversClass]` may tie
+  the halves together more tightly than reading shows.
+- **The verdict is per file, not per line of coverage.** Where a control method and a product
+  method share a population (`ruleClasses()` from the container in `RuleDocsPageCoverageTest` and
+  `RuleRemediationMinutesCoverageTest`), the split will create duplicate code — that is a cost, not
+  a defect in the verdict, but it is not measured here.
+- **A third class the classifier doesn't name: tests of in-repository tooling.** Ten `control`
+  verdicts rest not on "learns about `src/` via the filesystem" and not on "checks the contents
+  of `scripts/`", but on the fact that the test's subject is code living in `scripts/`, pulled in
+  via `require_once`: `ClassifierTest`, `FloorTest`, `LedgerVocabularyTest`,
+  `DirectiveAuditGateTest`, `DirectiveAuditReportReadingTest`, `DirectiveAuditControlsSuiteKeyTest`,
+  `ChannelRenameTsvGateAgreementTest`, `RenameEnumerationRetirementTest`,
+  `SuppressionSnapshotKeyTest`, and the tooling halves of `BenchmarkConsumersCoverageTest` and
+  `ThresholdPopulationAgreementTest`. This is my extension of the classifier, not its letter: one
+  line in the brief flips it for all ten at once.
+- **Input completeness.** The input itself is the union of two wave-1 witnesses. A control both
+  of them missed (say, a test with no file calls and a "unit" category) never entered these 81
+  paths and is not caught by this method at all.

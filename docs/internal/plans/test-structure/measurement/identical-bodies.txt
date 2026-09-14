@@ -1,4 +1,4 @@
---- группа 13 методов, РАЗНЫЕ файлы, 153 симв.
+--- group of 13 methods, DIFFERENT files, 153 chars.
     tests/Analysis/Evidence/Design/Unit/Inheritance/InheritanceDepthCollectorTest.php:536  itDeliberatelyDoesNotProvideCallableMetrics
     tests/Analysis/Evidence/Design/Unit/TypeCoverage/TypeCoverageCollectorTest.php:706  itDeliberatelyDoesNotProvideCallableMetrics
     tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsCollectorTest.php:120  itDeliberatelyDoesNotProvideCallableMetrics
@@ -12,67 +12,67 @@
     tests/Analysis/Evidence/Size/Unit/LocCollectorTest.php:574  itDeliberatelyDoesNotProvideCallableMetrics
     tests/Analysis/Evidence/Size/Unit/ClassCountCollectorTest.php:728  itDeliberatelyDoesNotProvideCallableMetrics
     tests/Analysis/Evidence/Size/Unit/MethodCountCollectorTest.php:940  itDeliberatelyDoesNotProvideCallableMetrics
---- группа 6 методов, тот же файл, 110 симв.
+--- group of 6 methods, the same file, 110 chars.
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:99  itLetsATopLevelKeySurviveNormalization
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:115  itLetsASectionSubKeySurviveNormalization
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:133  itPreservesTheIdentifierAndNormalizesOptionsInAnIdentifierSection
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:153  itFollowsTheCurrentLoaderBehaviorForAnArchitectureSubKey
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:174  itLetsAnArchitectureLayerEntryKeySurviveNormalization
     tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php:193  itPreservesSnakeCaseInTheArchitectureAllowSubtree
---- группа 3 методов, РАЗНЫЕ файлы, 194 симв.
+--- group of 3 methods, DIFFERENT files, 194 chars.
     tests/Unit/Reporting/Formatter/SarifFormatterTest.php:58  itReturnsValidJson
     tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php:42  itReturnsValidJson
     tests/Unit/Reporting/Formatter/JsonFormatterTest.php:76  itReturnsValidJson
---- группа 3 методов, тот же файл, 133 симв.
+--- group of 3 methods, the same file, 133 chars.
     tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php:236  itSkipsInvalidSyntax
     tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php:274  itSkipsWarningGreaterThanError
     tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php:303  itReturnsEmptyForDocCommentWithoutAnnotation
---- группа 3 методов, тот же файл, 170 симв.
+--- group of 3 methods, the same file, 170 chars.
     tests/Integration/DependencyInjection/ContainerFactoryTest.php:579  itRegistersAllCollectorsViaCompilerPass
     tests/Integration/DependencyInjection/ContainerFactoryTest.php:589  itInjectsRulesIntoRuleExecution
     tests/Integration/DependencyInjection/ContainerFactoryTest.php:770  itWiresGlobalContextCollectors
---- группа 2 методов, тот же файл, 366 симв.
+--- group of 2 methods, the same file, 366 chars.
     tests/Unit/Reporting/Health/SummaryEnricherTest.php:295  itHealthScoresEmptyWhenNoProjectHealthMetrics
     tests/Unit/Reporting/Health/SummaryEnricherTest.php:487  itTypingNotAddedWhenNoDimensions
---- группа 2 методов, РАЗНЫЕ файлы, 160 симв.
+--- group of 2 methods, DIFFERENT files, 160 chars.
     tests/Unit/Infrastructure/Serializer/PhpSerializerTest.php:95  itSerializesAndUnserializesFalse
     tests/Unit/Infrastructure/Serializer/IgbinarySerializerTest.php:121  itHandlesFalseValue
---- группа 2 методов, РАЗНЫЕ файлы, 163 симв.
+--- group of 2 methods, DIFFERENT files, 163 chars.
     tests/Unit/Infrastructure/Serializer/PhpSerializerTest.php:117  itSerializesAndUnserializesInteger
     tests/Unit/Infrastructure/Serializer/IgbinarySerializerTest.php:47  itSerializesAndUnserializesScalar
---- группа 2 методов, РАЗНЫЕ файлы, 140 симв.
+--- group of 2 methods, DIFFERENT files, 140 chars.
     tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:183  itDoesNotDetectForDynamicFunctionName
     tests/Analysis/Evidence/Security/Unit/SqlInjectionDetectorTest.php:85  itDoesNotDetectForDynamicFunctionName
---- группа 2 методов, тот же файл, 89 симв.
+--- group of 2 methods, the same file, 89 chars.
     tests/Analysis/Evidence/Complexity/Unit/NpathExpressionCalculatorTest.php:65  itPreservesDecisionContributionsUnderTransparentWrappers
     tests/Analysis/Evidence/Complexity/Unit/NpathExpressionCalculatorTest.php:83  itKeepsNullsafeAccessesAsZeroBasedExpressionContributions
---- группа 2 методов, тот же файл, 93 симв.
+--- group of 2 methods, the same file, 93 chars.
     tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleOptionsTest.php:16  itLoadsDefinitionsFromHolderWhenPopulated
     tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleOptionsTest.php:32  itIsEnabledByDefault
---- группа 2 методов, тот же файл, 220 симв.
+--- group of 2 methods, the same file, 220 chars.
     tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php:205  itCustomThresholds
     tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php:272  itOptionsFromArrayCustomValues
---- группа 2 методов, тот же файл, 222 симв.
+--- group of 2 methods, the same file, 222 chars.
     tests/Analysis/Evidence/CodeSmell/Unit/CodeSmellVisitorTest.php:143  itFlagsACatchBlockContainingOnlyAComment
     tests/Analysis/Evidence/CodeSmell/Unit/CodeSmellVisitorTest.php:162  itFlagsACatchBlockWithNoStatements
---- группа 2 методов, тот же файл, 81 симв.
+--- group of 2 methods, the same file, 81 chars.
     tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionVisitorTest.php:419  itDoesNotFlagShortTernaryWithDifferentBranches
     tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionVisitorTest.php:633  itDoesNotFlagShortTernaryWithDifferentOperands
---- группа 2 методов, тот же файл, 182 симв.
+--- group of 2 methods, the same file, 182 chars.
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:335  itReturnsEmptyWhenNoSuppressionTags
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:588  itIgnoreNextLineExtraWordDoesNotMatch
---- группа 2 методов, тот же файл, 212 симв.
+--- group of 2 methods, the same file, 212 chars.
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:381  itFileLevelSuppressionReturnsEmptyWhenNotPresent
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:545  itIgnoreFileSectionDoesNotMatchAsFileLevel
---- группа 2 методов, тот же файл, 182 симв.
+--- group of 2 methods, the same file, 182 chars.
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:907  itBacktickEscapedIgnoreIsNotExtracted
     tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php:971  itBacktickEscapedNextLineIsNotExtracted
---- группа 2 методов, тот же файл, 283 симв.
+--- group of 2 methods, the same file, 283 chars.
     tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php:254  itRejectsNegativeValuesAsWholeAnnotation
     tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php:399  itRejectsDottedOptionKeysAsWholeAnnotation
---- группа 2 методов, тот же файл, 385 симв.
+--- group of 2 methods, the same file, 385 chars.
     tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php:73  itAccountsForTheFileForm
     tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php:174  itAccountsForADirectiveWrittenAsAnExplicitChannelPair
---- группа 2 методов, РАЗНЫЕ файлы, 273 симв.
+--- group of 2 methods, DIFFERENT files, 273 chars.
     tests/Infrastructure/Profiler/Unit/Export/ChromeTracingExporterTest.php:205  itExportsValidJson
     tests/Infrastructure/Profiler/Unit/Export/JsonExporterTest.php:167  itExportsValidJson

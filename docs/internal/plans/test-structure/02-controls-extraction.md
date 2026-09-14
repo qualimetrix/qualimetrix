@@ -1,101 +1,120 @@
 # Stage 02 — repository controls leave `tests/`
 
-43 files assert facts about the repository rather than about product behaviour,
-and 13 more do so in part. They move out of `tests/`. The verdict per file is in
+40 files assert facts about the repository rather than about product behaviour,
+and 17 more do so in part (33 non-product methods inside them). They leave
+`tests/`. The verdict per file is in
 [`measurement/controls-verdict.tsv`](measurement/controls-verdict.tsv); the
-discriminator that produced it is D5 in the overview.
+criterion that produced it is in
+[`measurement/controls-taxonomy.md`](measurement/controls-taxonomy.md).
 
-## The root and its shape
+## The criterion, restated after review
+
+The first draft discriminated by **mechanism**: an assertion reaching the
+filesystem was a control, one reaching the compiled DI container was a test.
+Review showed the axis was wrong — it split files that make the same kind of
+claim and joined files that do not — and the plan was silently using a third,
+unwritten criterion ("the SUT lives in `scripts/`") for eleven verdicts.
+
+The criterion is now about the **subject of the assertion**, in one question:
+
+> Is the expected side invented by the test, or copied from the repository?
+
+Container, reflection, glob, parser, tracked fixture are all just reading
+devices and none of them decides anything.
+
+| Class          | Claim                                                                                                                 | Count |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- | ----- |
+| `product-test` | this named thing behaves so, on input the test built                                                                  | 15    |
+| `repo-control` | every registered X has property Y — a *census* (must be edited when the population changes) or a *law* (never edited) | 40    |
+| `tooling-test` | this repository tool behaves so (`scripts/`, `finding-gate/`, `Qualimetrix\PhpStan\Rules`)                            | 9     |
+| `mixed`        | both, split by method                                                                                                 | 17    |
+
+35 of the 81 verdicts changed. The pair that the old rule hid:
+"one named thing behaves so" is a product test; "every registered X has property
+Y" is a control, whichever device it reads through.
+
+## The root and its axis
+
+Review's charge against the first layout was that
+`Documentation/ GeneratedArtifacts/ SourceLayout/ TestSuite/` is the mechanism
+list renamed into nouns — grouping by the *carrier* of the artefact. **This was
+settled by measurement, not argument:** three real commits about the channel
+subject (`40ae4019`, `0d8ee47d`, `887c8fb6`) each touch controls whose carriers
+are simultaneously `src/`, `website/docs/` and a fixture under `tests/`. Under a
+carrier axis every such commit must visit three directories — ADR 0016's
+co-change test fails.
+
+The axis is the **guarded subject**:
 
 ```
 governance/
-├── Documentation/        # docs/ and website/ agree with code
-├── GeneratedArtifacts/   # generated files are fresh
-├── SourceLayout/         # invariants over the src/ tree
-└── TestSuite/            # the suite's own integrity — G1, G2, G3 from stage 01
+├── Channel/                 12
+├── RuleDeclaration/          7
+├── SolePrimitiveOwnership/   6
+├── ThresholdKeys/            5
+├── ModularOwnership/         4
+├── TestSuiteHygiene/         4      ← G1, G2, G3 from stage 01
+├── ConsoleComposition/       3
+├── RepositoryEntrypoints/    3
+├── RuleOptionKeys/           2
+├── Occurrence/               2
+└── (9 named singletons)
 ```
 
-Named by what is guarded, per D4. `controls/` was rejected: "this directory is
-about ___" completes as "the checks", which names a role. Each subdirectory
-completes with a noun phrase instead.
+All files of each of the three channel commits land in `Channel/`.
 
-**This is a new folder and a new namespace, so ADR 0016's three tests apply.**
-Name: passes, as above. Co-change: a change to the documentation-agreement rules
-touches `Documentation/` and nothing else — verifiable against git history after
-the move. Duplication: if the tree were decomposed by subject, none of these
-four would have to be copied into every subject; they are genuinely about the
-repository as a whole, which is what makes the root legitimate rather than a
-second `Utils/`.
-
-**Open question for the owner, not settled here:** whether `SourceLayout/` is
-one subject or two — invariants asserted over the *file tree* and invariants
-asserted over *declared ownership* (the manifest) may be different subjects that
-happen to share a mechanism. ADR 0016's evidence cannot tell two kinds of one
-thing from two things. Split only if the owner says they are two.
+**Two open points, stated rather than hidden:** `SolePrimitiveOwnership` has not
+been checked against co-change, and `DocumentationConsistencyTest` does not fit
+any single group — it is one file asserting several unrelated subjects and
+should be split by subject, not filed whole.
 
 ## Registration — the part that leaks
 
-A moved file must land in **every** set that previously held it. A file in no
-set is the failure this project has already paid for. Enumerate and verify each
-machine-side:
+**Stage 01 already created and fully registered this root** (see its closing
+section); this stage only moves files into it. The table below is what stage 01
+must have done, and what this stage verifies rather than performs:
 
-| Set                    | Current state                                                                                                  | Action                                             |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| PHPUnit config         | `phpunit.xml.dist` lists `tests/...` by name                                                                   | new config, or a suite pointing at `governance/`   |
-| PHPStan                | `phpstan.neon:13` has `tests`; line 32 ignores `tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php` | add the root; **move that ignore with the file**   |
-| PHP-CS-Fixer           | `.php-cs-fixer.dist.php` finder has `__DIR__ . '/tests'`                                                       | add the root                                       |
-| Composer autoload-dev  | `Qualimetrix\Tests\` → `tests/`; classmap for `TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/`          | new PSR-4 prefix; move the classmap entry          |
-| Composer scripts       | `check:code` runs tests; `check:self` is "what the product says about this repo"                               | see below                                          |
-| CI                     | no direct `vendor/bin/phpunit`; everything goes through composer                                               | nothing, once the scripts are right                |
-| Architecture inventory | `scripts/generate-modular-architecture-test-inventory.php:181` hardcodes a `tests/` path list                  | **must be edited or `architecture:check` reddens** |
+| Set                   | Current state                                                                                                                                                              | Requirement                                                                                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PHPUnit config        | globs after D6                                                                                                                                                             | a suite covering the root                                                                                                                                             |
+| Aggregate             | `scripts/phpunit-aggregate.py:32` hardcodes `SUITES = ("Unit","Integration","Functional","Infrastructure")`, and its docstring *proves* those four partition the aggregate | a fifth suite must be added **and** the partition proof updated, or the aggregate refuses                                                                             |
+| PHPStan               | `phpstan.neon:13` has `tests`; `:32` ignores a path that moves                                                                                                             | add the root; move the ignore with its file                                                                                                                           |
+| PHP-CS-Fixer          | finder has `/tests` and already has `/scripts`                                                                                                                             | add the root                                                                                                                                                          |
+| Composer autoload-dev | `Qualimetrix\Tests\` → `tests/`; classmap for `ArchitectureStaticAnalysis/Unit/Fixtures/`                                                                                  | new PSR-4 prefix; move the classmap entry                                                                                                                             |
+| Composer group        | four groups named by what invalidates them                                                                                                                                 | `Channel/`, `RuleDeclaration/` etc. are invalidated by a code change, not by a claim about the repo — `check:self` fits some groups and not others; choose explicitly |
+| Inventory generator   | 346 pinned `tests/` paths, **56 touched by this stage**                                                                                                                    | edit and regenerate, or `architecture:check` reddens                                                                                                                  |
 
-**Which composer group.** The four groups are named by what invalidates them.
-`Documentation/` and `GeneratedArtifacts/` fit `check:self`. `SourceLayout/`
-and `TestSuite/` do not — they are invalidated by a code change, not by a claim
-about the repo. Decide at execution between a fifth group and splitting the root
-across two existing ones; state the choice in the stage report. Inheriting
-`check:self` by default is the wrong answer for two of the four subdirectories.
+**A control's own scan scope must move with it.**
+`ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php:42` declares
+`private const ROOTS = ['tests', 'scripts'];`. After 40 controls move to a third
+root, this control silently stops covering them — narrower scope, green run.
+That is the failure mode this whole stage exists to prevent, reproduced by the
+stage itself.
 
 **One control already does not run under `composer check`.**
-`SuppressionSnapshotFreshnessTest` and the method
-`itChecksEveryGeneratedProjectionWithoutWriting` are tagged
-`#[Group('live-freshness')]`, which `scripts/phpunit-aggregate.py:36` excludes.
-They execute under a bare `composer test` and not under the aggregate. Whatever
-happens to them, the neighbouring assertion *about that routing* must be updated
-in the same change, or it reddens — a partial repair here leaves the build worse
-than either end state.
+`SuppressionSnapshotFreshnessTest:23` and
+`ModularArchitectureGovernanceIntegrationTest:19` carry
+`#[Group('live-freshness')]`, which the aggregate excludes. Whatever happens to
+them, the neighbouring assertion *about that routing* must change in the same
+commit or it reddens.
 
 ## Delete rather than move
 
-Some controls duplicate a mechanism that already exists. Deleting is better than
-relocating a second implementation of one rule, because two implementations
-disagree eventually and nothing says which is right.
-
-- Confirmed duplicates of `suppression-snapshot:check` and
-  `architecture:check` — named in
-  [`measurement/controls-verdict-notes.md`](measurement/controls-verdict-notes.md),
-  subject to the routing caveat above.
-- Confirmed **not** duplicates, keep: `DogfoodingTopologyTest`, both
-  `*InternalTopologyTest`, `DirectiveAudit*`, `RenameEnumerationRetirementTest`,
-  `ChannelRename*`, `PromiseEffect/*` — they overlap partially and cover ground
-  the composer script does not.
-
-## Splitting the 13 mixed files
-
-For each, `controls-verdict.tsv` names the control methods by line. The file
-stays where it is; the named methods move. Splitting is cheaper than exiling a
-file that is half useful — and exiling it whole would delete behavioural
-coverage, which is the opposite of this plan's purpose.
+Controls that duplicate an existing mechanism should be deleted, not relocated:
+two implementations of one rule disagree eventually and nothing says which is
+right. Candidates and the explicit keep-list are in
+[`measurement/controls-verdict-notes.md`](measurement/controls-verdict-notes.md).
+Note one correction from the re-ruling: `ChannelRenameTsvGateAgreementTest` is
+**not** a control — it drives a `scripts/finding-gate` reader over a test
+fixture and never opens the real `channels.tsv`.
 
 ## Definition of Done
 
-- Every path with verdict `control` is out of `tests/`; every path with verdict
-  `test` is still in it. Checked by script against the TSV, not by eye.
-- G2 from stage 01 reports zero orphans across **both** roots, and the count of
-  suite-uncovered directories is not above the stage-01 baseline.
-- `composer architecture:check` green — this is where the hardcoded inventory
-  path bites if it was missed.
-- `composer check` green, and the aggregate demonstrably still executes the
-  moved controls: compare the executed-test count before and after, and state
-  it. A green aggregate that silently stopped running 43 files looks identical
-  to success.
+- Every `repo-control` path is out of `tests/`; every `product-test` path is
+  still in it; every `mixed` file kept its product methods and lost its control
+  methods. Checked by script against the TSV.
+- Executed-test count: stage-01 baseline minus the moved controls, predicted
+  first and compared. A green aggregate that quietly stopped running 40 files
+  looks exactly like success.
+- `composer architecture:check` green.
+- `composer check` green — the aggregate, not a subset.

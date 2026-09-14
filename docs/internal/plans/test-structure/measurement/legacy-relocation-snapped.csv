@@ -1,97 +1,97 @@
-current,proposed
-tests/Functional/Console/Command/HookInstallCommandTest.php,tests/Infrastructure/Console/Functional
-tests/Functional/Console/Command/HookStatusCommandTest.php,tests/Infrastructure/Console/Functional
-tests/Functional/Console/Command/HookUninstallCommandTest.php,tests/Infrastructure/Console/Functional
-tests/Functional/Console/LayerAssignmentCommandTest.php,tests/Analysis/Policy/Architecture/Functional  (создать уровень)
-tests/Functional/Reporting/CoverageProjectionFormatterTest.php,tests/Infrastructure/Functional  (создать уровень)
-tests/Functional/Reporting/JsonShapePreservationTest.php,tests/Reporting/Formatter/Functional  (создать уровень)
-tests/Integration/Architecture/MaxExpandedLayersFromYamlTest.php,tests/Analysis/Configuration/Integration
-tests/Integration/DependencyInjection/ContainerConfigurationStagesTest.php,tests/Analysis/Configuration/Integration
-tests/Integration/DependencyInjection/ContainerFactoryTest.php,tests/Analysis/Evidence/CodeSmell/Integration
-tests/Integration/DependencyInjection/RuleRegistrationDriftTest.php,tests/Analysis/Finding/Integration
-tests/Integration/Infrastructure/Cache/CacheKeyGeneratorVOTest.php,tests/Infrastructure/Integration
-tests/Integration/Infrastructure/Git/GitSubdirScopeTest.php,tests/Core/Path/Integration  (создать уровень)
-tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php,tests/Analysis/Finding/Integration
-tests/Unit/Core/Namespace_/NamespaceTreeTest.php,tests/Analysis/Evidence/Measurement/Unit
-tests/Unit/Core/Observation/WorseDirectionTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Core/Util/GlobSyntaxTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Core/Util/NamespaceMatcherTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Core/Util/PathMatcherTest.php,tests/Core/Path/Unit
-tests/Unit/Core/Util/StringSetTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Core/VersionTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Infrastructure/Ast/CachedFileParserTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Infrastructure/Ast/FileParserFactoryTest.php,tests/Core/Path/Unit
-tests/Unit/Infrastructure/Ast/PhpFileParserTest.php,tests/Core/Unit  (создать уровень)
-tests/Unit/Infrastructure/Cache/CacheKeyGeneratorTest.php,tests/Infrastructure/Cache/Unit
-tests/Unit/Infrastructure/Cache/FileCacheTest.php,tests/Core/Path/Unit
-tests/Unit/Infrastructure/Console/ApplicationTest.php,tests/Analysis/Configuration/Unit
-tests/Unit/Infrastructure/Console/CheckCommandDefinitionTest.php,tests/Analysis/Evidence/CircularDependency/Unit
-tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php,tests/Analysis/Run/Unit
-tests/Unit/Infrastructure/Console/CliOptionsParserTest.php,tests/Analysis/Configuration/Unit
-tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php,tests/Infrastructure/Console/Unit
-tests/Unit/Infrastructure/Console/FilteredInputDefinitionTest.php,tests/Infrastructure/Console/Unit
-tests/Unit/Infrastructure/Console/FormatterContextFactoryTest.php,tests/Analysis/Configuration/Unit
-tests/Unit/Infrastructure/Console/MeasuredFindingSetTest.php,tests/Analysis/Run/Unit
-tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php,tests/Analysis/Configuration/Unit
-tests/Unit/Infrastructure/Console/ScopeWarningCheckerTest.php,tests/Analysis/Configuration/Unit
-tests/Unit/Infrastructure/Git/ChangedFileTest.php,tests/Core/Path/Unit
-tests/Unit/Infrastructure/Git/GitClientTest.php,tests/Core/Path/Unit
-tests/Unit/Infrastructure/Git/GitRepositoryLocatorTest.php,tests/Core/Path/Unit
-tests/Unit/Infrastructure/Git/GitScopeParserTest.php,tests/Infrastructure/Unit
-tests/Unit/Infrastructure/Git/GitScopeResolverTest.php,tests/Analysis/Run/Unit
-tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Infrastructure/Parallel/FileProcessingResultWireFormatTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Infrastructure/Parallel/FileProcessingTaskFactoryTest.php,tests/Analysis/Evidence/Cohesion/Unit
-tests/Unit/Infrastructure/Parallel/Strategy/AmphpParallelStrategyTest.php,tests/Analysis/Evidence/Cohesion/Unit
-tests/Unit/Infrastructure/Parallel/WorkerBootstrapTest.php,tests/Analysis/Evidence/DependencyModel/Unit
-tests/Unit/Infrastructure/Serializer/IgbinarySerializerTest.php,tests/Infrastructure/Unit
-tests/Unit/Infrastructure/Serializer/PhpSerializerTest.php,tests/Infrastructure/Unit
-tests/Unit/Infrastructure/Serializer/SerializerSelectorTest.php,tests/Infrastructure/Unit
-tests/Unit/PromiseEffect/ClassifierTest.php,tests/PromiseEffect/Classifier/Unit  (создать предмет)
-tests/Unit/PromiseEffect/FloorTest.php,tests/PromiseEffect/Cell/Unit  (создать предмет)
-tests/Unit/PromiseEffect/LedgerVocabularyTest.php,tests/PromiseEffect/Ledger/Unit  (создать предмет)
-tests/Unit/Reporting/Filter/FindingFilterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php,tests/Reporting/Formatter/Unit
-tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/FormatterRegistryTest.php,tests/Reporting/Formatter/Unit
-tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/HealthTextFormatterTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Html/HtmlFindingPartitionerTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Html/HtmlMetricAggregatorTest.php,tests/Reporting/Formatter/Unit
-tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/HtmlFormatterTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Json/JsonFindingSectionTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Json/JsonHealthSectionTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Json/JsonSanitizerTest.php,tests/Reporting/Formatter/Unit
-tests/Unit/Reporting/Formatter/JsonFormatterTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/MetricsJsonFormatterTest.php,tests/Analysis/Evidence/Measurement/Unit
-tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/SarifFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Summary/FindingSummaryRendererTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Summary/HealthBarRendererTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/SummaryFormatterTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Support/AnsiColorTest.php,tests/Reporting/Formatter/Unit
-tests/Unit/Reporting/Formatter/Support/DetailedFindingRendererTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/Support/FindingSorterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/TextFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/FormatterContextTest.php,tests/Core/Path/Unit
-tests/Unit/Reporting/Health/HealthHintProjectorTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Health/HealthScoreResolverTest.php,tests/Analysis/Evidence/ComputedMetrics/Unit
-tests/Unit/Reporting/Health/SummaryEnricherTest.php,tests/Analysis/Evidence/Prioritization/Unit
-tests/Unit/Reporting/ReportBuilderTest.php,tests/Analysis/Finding/Unit
-tests/Unit/Reporting/ReportTest.php,tests/Analysis/Finding/Unit
-tests/Unit/RuleVocabulary/DirectiveAuditControlsSuiteKeyTest.php,UNRESOLVED
-tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php,UNRESOLVED
-tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php,tests/Analysis/Policy/Inline/Unit
-tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php,UNRESOLVED
-tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php,tests/Analysis/Finding/Unit
+current,proposed,owner_ns,witness
+tests/Functional/Console/Command/HookInstallCommandTest.php,tests/Infrastructure/Console/Functional,Infrastructure\Console\Command,
+tests/Functional/Console/Command/HookStatusCommandTest.php,tests/Infrastructure/Console/Functional,Infrastructure\Console\Command,
+tests/Functional/Console/Command/HookUninstallCommandTest.php,tests/Infrastructure/Console/Functional,Infrastructure\Console\Command,
+tests/Functional/Console/LayerAssignmentCommandTest.php,tests/Infrastructure/Console/Functional,Infrastructure\Console,
+tests/Functional/Reporting/CoverageProjectionFormatterTest.php,tests/Infrastructure/Functional  (create a level),Infrastructure\DependencyInjection,
+tests/Functional/Reporting/JsonShapePreservationTest.php,tests/Reporting/Formatter/Functional  (create a level),Reporting\Formatter,
+tests/Integration/Architecture/MaxExpandedLayersFromYamlTest.php,tests/Analysis/Integration  (create a level),Analysis,
+tests/Integration/DependencyInjection/ContainerConfigurationStagesTest.php,tests/Analysis/Configuration/Integration,Analysis\Configuration\Pipeline,
+tests/Integration/DependencyInjection/ContainerFactoryTest.php,tests/Infrastructure/Integration,Infrastructure\DependencyInjection,
+tests/Integration/DependencyInjection/RuleRegistrationDriftTest.php,tests/Infrastructure/Rule/Integration  (create a level),Infrastructure\Rule,
+tests/Integration/Infrastructure/Cache/CacheKeyGeneratorVOTest.php,tests/Infrastructure/Cache/Integration  (create a level),Infrastructure\Cache,
+tests/Integration/Infrastructure/Git/GitSubdirScopeTest.php,tests/Infrastructure/Integration,Infrastructure\Git,
+tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php,tests/Infrastructure/Integration,Infrastructure\Git,
+tests/Unit/Core/Namespace_/NamespaceTreeTest.php,tests/Analysis/Evidence/Measurement/Unit,Analysis\Evidence\Measurement\Contract,
+tests/Unit/Core/Observation/WorseDirectionTest.php,tests/Core/Unit  (create a level),Core\Observation,
+tests/Unit/Core/Util/GlobSyntaxTest.php,tests/Core/Unit  (create a level),Core\Util,
+tests/Unit/Core/Util/NamespaceMatcherTest.php,tests/Core/Unit  (create a level),Core\Util,
+tests/Unit/Core/Util/PathMatcherTest.php,tests/Core/Unit  (create a level),Core\Util,
+tests/Unit/Core/Util/StringSetTest.php,tests/Core/Unit  (create a level),Core\Util,
+tests/Unit/Core/VersionTest.php,tests/Core/Unit  (create a level),Core,
+tests/Unit/Infrastructure/Ast/CachedFileParserTest.php,tests/Infrastructure/Unit,Infrastructure\Ast,
+tests/Unit/Infrastructure/Ast/FileParserFactoryTest.php,tests/Infrastructure/Unit,Infrastructure\Ast,
+tests/Unit/Infrastructure/Ast/PhpFileParserTest.php,tests/Infrastructure/Unit,Infrastructure\Ast,
+tests/Unit/Infrastructure/Cache/CacheKeyGeneratorTest.php,tests/Infrastructure/Cache/Unit,Infrastructure\Cache,
+tests/Unit/Infrastructure/Cache/FileCacheTest.php,tests/Infrastructure/Cache/Unit,Infrastructure\Cache,
+tests/Unit/Infrastructure/Console/ApplicationTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/CheckCommandDefinitionTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/CliOptionsParserTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console\Command,
+tests/Unit/Infrastructure/Console/FilteredInputDefinitionTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/FormatterContextFactoryTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/MeasuredFindingSetTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Console/ScopeWarningCheckerTest.php,tests/Infrastructure/Console/Unit,Infrastructure\Console,
+tests/Unit/Infrastructure/Git/ChangedFileTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Git/GitClientTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Git/GitRepositoryLocatorTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Git/GitScopeParserTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Git/GitScopeResolverTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php,tests/Infrastructure/Unit,Infrastructure\Git,
+tests/Unit/Infrastructure/Parallel/FileProcessingResultWireFormatTest.php,tests/Core/Symbol/Unit,Core\Symbol,
+tests/Unit/Infrastructure/Parallel/FileProcessingTaskFactoryTest.php,tests/Infrastructure/Parallel/Unit,Infrastructure\Parallel,
+tests/Unit/Infrastructure/Parallel/Strategy/AmphpParallelStrategyTest.php,tests/Infrastructure/Parallel/Unit,Infrastructure\Parallel\Strategy,
+tests/Unit/Infrastructure/Parallel/WorkerBootstrapTest.php,tests/Infrastructure/Parallel/Unit,Infrastructure\Parallel,
+tests/Unit/Infrastructure/Serializer/IgbinarySerializerTest.php,tests/Infrastructure/Unit,Infrastructure\Serializer,
+tests/Unit/Infrastructure/Serializer/PhpSerializerTest.php,tests/Infrastructure/Unit,Infrastructure\Serializer,
+tests/Unit/Infrastructure/Serializer/SerializerSelectorTest.php,tests/Infrastructure/Unit,Infrastructure\Serializer,
+tests/Unit/PromiseEffect/ClassifierTest.php,tests/PromiseEffect/Unit  (create a subject),PromiseEffect,
+tests/Unit/PromiseEffect/FloorTest.php,tests/PromiseEffect/Unit  (create a subject),PromiseEffect,
+tests/Unit/PromiseEffect/LedgerVocabularyTest.php,tests/PromiseEffect/Ledger/Unit  (create a subject),PromiseEffect\Ledger,
+tests/Unit/Reporting/Filter/FindingFilterTest.php,tests/Reporting/Unit,Reporting\Filter,
+tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/FormatterRegistryTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/HealthTextFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Health,
+tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Html,
+tests/Unit/Reporting/Formatter/Html/HtmlFindingPartitionerTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Html,
+tests/Unit/Reporting/Formatter/Html/HtmlMetricAggregatorTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Html,
+tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Html,
+tests/Unit/Reporting/Formatter/HtmlFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Html,
+tests/Unit/Reporting/Formatter/Json/JsonFindingSectionTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Json,
+tests/Unit/Reporting/Formatter/Json/JsonHealthSectionTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Json,
+tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Json,
+tests/Unit/Reporting/Formatter/Json/JsonSanitizerTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Json,
+tests/Unit/Reporting/Formatter/JsonFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Json,
+tests/Unit/Reporting/Formatter/MetricsJsonFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php,tests/Reporting/Formatter/Sarif/Unit  (create a level),Reporting\Formatter\Sarif,
+tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php,tests/Reporting/Formatter/Sarif/Unit  (create a level),Reporting\Formatter\Sarif,
+tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php,tests/Reporting/Formatter/Sarif/Unit  (create a level),Reporting\Formatter\Sarif,
+tests/Unit/Reporting/Formatter/SarifFormatterTest.php,tests/Reporting/Formatter/Sarif/Unit  (create a level),Reporting\Formatter\Sarif,
+tests/Unit/Reporting/Formatter/Summary/FindingSummaryRendererTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/Summary/HealthBarRendererTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/SummaryFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Summary,
+tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Support,
+tests/Unit/Reporting/Formatter/Support/AnsiColorTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Support,
+tests/Unit/Reporting/Formatter/Support/DetailedFindingRendererTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Support,
+tests/Unit/Reporting/Formatter/Support/FindingSorterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter\Support,
+tests/Unit/Reporting/Formatter/TextFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php,tests/Reporting/Formatter/Unit,Reporting\Formatter,
+tests/Unit/Reporting/FormatterContextTest.php,tests/Reporting/Unit,Reporting,
+tests/Unit/Reporting/Health/HealthHintProjectorTest.php,tests/Reporting/Unit,Reporting\Health,
+tests/Unit/Reporting/Health/HealthScoreResolverTest.php,tests/Reporting/Unit,Reporting\Health,
+tests/Unit/Reporting/Health/SummaryEnricherTest.php,tests/Reporting/Unit,Reporting\Health,
+tests/Unit/Reporting/ReportBuilderTest.php,tests/Reporting/Unit,Reporting,
+tests/Unit/Reporting/ReportTest.php,tests/Reporting/Unit,Reporting,
+tests/Unit/RuleVocabulary/DirectiveAuditControlsSuiteKeyTest.php,UNRESOLVED,,
+tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php,UNRESOLVED,,
+tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php,tests/Analysis/Policy/Unit  (create a level),Analysis\Policy,
+tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php,UNRESOLVED,,
+tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php,tests/Core/Symbol/Unit,Core\Symbol,
