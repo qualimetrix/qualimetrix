@@ -9,6 +9,20 @@ final class ProcessHandle
 {
     private const TERMINATION_GRACE_MICROSECONDS = 300_000;
 
+    /**
+     * How long a freshly started child may take to reach its own process group.
+     *
+     * Its own value, not the termination grace it used to borrow. The two only
+     * look alike: after SIGTERM the wait is a *budget* a stuck child spends in
+     * full, so it must stay small, while this one is a condition met in
+     * microseconds on an idle machine and never waited out — the loop leaves as
+     * soon as `posix_setsid()` lands. Sharing 0.3 s made a loaded machine fail
+     * to start a child at all: measured 2026-09-14 at load average 6-9 on 14
+     * cores, four of six controls died on "Cannot isolate the process group",
+     * and the same controls passed one at a time.
+     */
+    private const GROUP_ISOLATION_DEADLINE_MICROSECONDS = 5_000_000;
+
     private static bool $supervisionChecked = false;
 
     /** @var array<int, resource> */
@@ -201,7 +215,7 @@ final class ProcessHandle
      */
     private static function waitForOwnProcessGroup($handle, int $pid, array $command): void
     {
-        $deadline = microtime(true) + (self::TERMINATION_GRACE_MICROSECONDS / 1_000_000);
+        $deadline = microtime(true) + (self::GROUP_ISOLATION_DEADLINE_MICROSECONDS / 1_000_000);
 
         do {
             if (@posix_getpgid($pid) === $pid) {
