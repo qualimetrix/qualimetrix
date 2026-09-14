@@ -647,7 +647,7 @@ class DatabaseConnection
 //
 // If these dependents are themselves important (high rank),
 // DatabaseConnection's ClassRank grows even further.
-// ClassRank = 0.06 -> ERROR
+// ClassRank = 0.06 -> ERROR (against the threshold scaled for this project's class count)
 ```
 
 <!-- llms:skip-end -->

@@ -94,6 +94,20 @@ bin/qmx check src/ --rule-opt="design.noc:warning=12"
 bin/qmx check src/ --rule-opt="design.noc:error=20"
 ```
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  design.noc:
+    threshold: 12   # warning=12, error=12 → all violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.noc:threshold=12"
+```
+
 ---
 
 ## Inheritance Depth
@@ -204,6 +218,20 @@ bin/qmx check src/ --rule-opt="design.dit:warning=5"
 bin/qmx check src/ --rule-opt="design.dit:error=7"
 ```
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  design.dit:
+    threshold: 5   # warning=5, error=5 → all violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.dit:threshold=5"
+```
+
 ---
 
 ## Parameter Type Coverage
@@ -294,6 +322,20 @@ bin/qmx check src/ --rule-opt="design.type-coverage.param:warning=90"
 bin/qmx check src/ --param-type-coverage-error=60
 ```
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  design.type-coverage.param:
+    threshold: 80   # warning=80, error=80 → all violations below 80% are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.type-coverage.param:threshold=80"
+```
+
 ---
 
 ## Return Type Coverage
@@ -361,6 +403,20 @@ bin/qmx check src/ --rule-opt="design.type-coverage.return:warning=90"
 bin/qmx check src/ --return-type-coverage-error=60
 ```
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  design.type-coverage.return:
+    threshold: 80   # warning=80, error=80 → all violations below 80% are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.type-coverage.return:threshold=80"
+```
+
 ---
 
 ## Property Type Coverage
@@ -422,6 +478,20 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="design.type-coverage.property:warning=90"
 bin/qmx check src/ --property-type-coverage-error=60
+```
+
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  design.type-coverage.property:
+    threshold: 80   # warning=80, error=80 → all violations below 80% are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.type-coverage.property:threshold=80"
 ```
 
 ---
@@ -510,6 +580,11 @@ rules:
     min_members: 3
     exclude_readonly: true
     exclude_promoted_only: true
+    exclude_exceptions: true   # default: exception classes are never flagged
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.data-class:exclude_exceptions=false"
 ```
 
 ---
@@ -577,5 +652,10 @@ rules:
     tcc_threshold: 0.33
     class_loc_threshold: 300
     min_criteria: 3
+    min_methods: 3   # default: classes with fewer methods are never flagged
     exclude_readonly: true
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.god-class:min_methods=5"
 ```

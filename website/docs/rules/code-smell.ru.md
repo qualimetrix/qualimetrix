@@ -584,6 +584,20 @@ rules:
 bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 ```
 
+Простой порог вместо раздельных уровней warning/error
+(`threshold` нельзя сочетать с `warning` или `error` — смешение считается
+ошибкой конфигурации, и прогон останавливается с кодом 3):
+
+```yaml
+rules:
+  code-smell.constructor-overinjection:
+    threshold: 8   # warning=8, error=8 → все нарушения становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:threshold=8"
+```
+
 ---
 
 ## Длинный список параметров (Long Parameter List)
@@ -709,6 +723,20 @@ bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-warning=10"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-error=15"
+```
+
+Простой порог вместо раздельных уровней warning/error, независимо на каждой из осей:
+
+```yaml
+rules:
+  code-smell.long-parameter-list:
+    threshold: 6       # warning=6, error=6 → все нарушения для обычных методов становятся ошибками
+    vo_threshold: 12   # warning=12, error=12 → все нарушения для VO-конструкторов становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:threshold=6"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo_threshold=12"
 ```
 
 ---
@@ -933,6 +961,20 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.unreachable-code:warning=1"
 bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
+```
+
+Простой порог вместо раздельных уровней warning/error
+(`threshold` нельзя сочетать с `warning` или `error` — смешение считается
+ошибкой конфигурации, и прогон останавливается с кодом 3):
+
+```yaml
+rules:
+  code-smell.unreachable-code:
+    threshold: 1   # warning=1, error=1 → все нарушения становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.unreachable-code:threshold=1"
 ```
 
 ---

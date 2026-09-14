@@ -171,6 +171,8 @@ rules:
     enabled: true
     min_lines: 5
     min_tokens: 70
+    warning: 5    # дублированных строк
+    error: 50
 ```
 
 ```bash
@@ -179,6 +181,23 @@ bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
 
 # Увеличить минимальное количество строк
 bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
+
+bin/qmx check src/ --rule-opt="duplication.clone:warning=10"
+bin/qmx check src/ --rule-opt="duplication.clone:error=60"
+```
+
+Простой порог вместо раздельных уровней warning/error
+(`threshold` нельзя сочетать с `warning` или `error` — смешение считается
+ошибкой конфигурации, и прогон останавливается с кодом 3):
+
+```yaml
+rules:
+  duplication.clone:
+    threshold: 50   # warning=50, error=50 → все нарушения становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="duplication.clone:threshold=50"
 ```
 
 Также можно полностью отключить правило:

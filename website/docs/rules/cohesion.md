@@ -37,6 +37,20 @@ rules:
 list: `exclude_methods: getName` means exactly `exclude_methods: [getName]`. A
 digit string is a method name like any other.
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: 3   # warning=3, error=3 → all violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="cohesion.lcom:threshold=3"
+```
+
 ### Implementation notes
 
 Qualimetrix implements the graph-based LCOM4 algorithm. Instance methods are
