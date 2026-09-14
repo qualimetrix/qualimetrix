@@ -164,10 +164,10 @@ jobs:
   qmx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -210,6 +210,8 @@ docker run --rm -v $(pwd):/app qmx check src/ --format=json
 # docker-compose.yml
 services:
   qmx:
+    # Образ, собранный командой `docker build -t qmx .` выше, в checkout'е
+    # Qualimetrix. В реестр образ пока не публикуется.
     image: qmx:latest
     volumes:
       - .:/app:ro

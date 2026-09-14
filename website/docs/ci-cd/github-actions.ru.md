@@ -14,10 +14,10 @@ jobs:
   qmx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -25,14 +25,14 @@ jobs:
 
 ## Входные параметры
 
-| Параметр            | Описание                                                       | Обязательный | По умолчанию |
-| ------------------- | -------------------------------------------------------------- | ------------ | ------------ |
-| `paths`             | Пути для анализа (через пробел)                                | Нет          | `src/`       |
-| `baseline`          | Путь к файлу baseline                                          | Нет          | -            |
-| `config`            | Путь к файлу конфигурации                                      | Нет          | -            |
-| `format`            | Формат вывода: `text`, `json`, `sarif`, `gitlab`, `suppressed` | Нет          | `text`       |
-| `php-version`       | Используемая версия PHP                                        | Нет          | `8.4`        |
-| `working-directory` | Рабочая директория для анализа                                 | Нет          | `.`          |
+| Параметр            | Описание                                                                 | Обязательный | По умолчанию |
+| ------------------- | ------------------------------------------------------------------------ | ------------ | ------------ |
+| `paths`             | Пути для анализа (через пробел)                                          | Нет          | `src/`       |
+| `baseline`          | Путь к файлу baseline                                                    | Нет          | -            |
+| `config`            | Путь к файлу конфигурации                                                | Нет          | -            |
+| `format`            | Формат вывода: `text`, `json`, `sarif`, `gitlab`, `github`, `suppressed` | Нет          | `text`       |
+| `php-version`       | Используемая версия PHP                                                  | Нет          | `8.4`        |
+| `working-directory` | Рабочая директория для анализа                                           | Нет          | `.`          |
 
 ## Выходные параметры
 
@@ -48,7 +48,7 @@ jobs:
 
 ```yaml
 - name: Run Qualimetrix
-  uses: qualimetrix/qualimetrix@v1
+  uses: qualimetrix/qualimetrix@v0.26.0
   with:
     paths: 'src/'
     baseline: 'baseline.json'
@@ -58,7 +58,7 @@ jobs:
 
 ```yaml
 - name: Run Qualimetrix
-  uses: qualimetrix/qualimetrix@v1
+  uses: qualimetrix/qualimetrix@v0.26.0
   with:
     paths: 'src/ lib/ app/'
     config: 'qmx.yaml'
@@ -76,11 +76,11 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
         id: qmx
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           format: 'sarif'
@@ -107,7 +107,7 @@ jobs:
   qmx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -130,14 +130,14 @@ jobs:
 
 ```yaml
 - name: Run Qualimetrix
-  uses: qualimetrix/qualimetrix@v1
+  uses: qualimetrix/qualimetrix@v0.26.0
   with:
     paths: 'src/'
     format: 'json'
 
 - name: Upload results
   if: always()
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v6
   with:
     name: qmx-results
     path: qmx-results.json
@@ -148,7 +148,7 @@ jobs:
 ```yaml
 - name: Run Qualimetrix
   id: qmx
-  uses: qualimetrix/qualimetrix@v1
+  uses: qualimetrix/qualimetrix@v0.26.0
   with:
     paths: 'src/'
   continue-on-error: true
@@ -176,13 +176,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['8.3', '8.4']
+        php-version: ['8.4', '8.5']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           php-version: ${{ matrix.php-version }}
@@ -205,10 +205,10 @@ jobs:
     name: Qualimetrix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -221,11 +221,11 @@ jobs:
       security-events: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Qualimetrix
         id: qmx
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -255,7 +255,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -269,7 +269,7 @@ jobs:
         run: vendor/bin/phpstan analyse
 
       - name: Run Qualimetrix
-        uses: qualimetrix/qualimetrix@v1
+        uses: qualimetrix/qualimetrix@v0.26.0
         with:
           paths: 'src/'
 ```
@@ -324,7 +324,7 @@ with:
 
     ```yaml
     - name: Cache composer dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.composer/cache
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
