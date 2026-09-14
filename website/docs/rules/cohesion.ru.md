@@ -37,6 +37,20 @@ rules:
 элемента: `exclude_methods: getName` — это ровно `exclude_methods: [getName]`.
 Строка из цифр — такое же имя метода, как любое другое.
 
+Простой порог вместо раздельных уровней warning/error
+(`threshold` нельзя сочетать с `warning` или `error` — смешение считается
+ошибкой конфигурации, и прогон останавливается с кодом 3):
+
+```yaml
+rules:
+  cohesion.lcom:
+    threshold: 3   # warning=3, error=3 → все нарушения становятся ошибками
+```
+
+```bash
+bin/qmx check src/ --rule-opt="cohesion.lcom:threshold=3"
+```
+
 ### Особенности реализации
 
 Qualimetrix реализует основанный на графах алгоритм LCOM4. Instance-методы

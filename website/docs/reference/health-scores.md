@@ -195,14 +195,14 @@ computed_metrics:
   computed.code-density:
     formula: "clamp((m['size.lloc'] ?? 0) / max(m['size.loc'] ?? 1, 1) * 100, 0, 100)"
     description: "Ratio of logical to physical lines (higher = denser code)"
-    levels: [class, namespace, project]
+    levels: [namespace]   # size.lloc / size.loc are only raw keys at namespace level
     warning: 80
     error: 90
     inverted: false   # Higher values trigger violations
 ```
 
 !!! note "Metric naming"
-    User-defined metrics can use any name except the reserved `health.*` prefix. The recommended convention is `computed.*`. Both prefixes require lower-case kebab-case segments after the dot (e.g. `computed.code-density`); underscores and upper-case letters are rejected.
+    A user-defined metric name must start with `health.` or `computed.` — no other prefix is accepted. The recommended convention for custom metrics is `computed.*`; `health.*` is reserved for the six built-in dimensions. Both prefixes require lower-case kebab-case segments after the dot (e.g. `computed.code-density`); underscores and upper-case letters are rejected, and the last segment cannot be the name of an aggregation strategy (`sum`, `avg`, `max`, `min`, `count`, `p95`, `p5` — e.g. `computed.sum` is refused).
 
 ### Available Variables
 
@@ -243,13 +243,15 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 | `design.type-coverage.property.total.sum` | namespace, project        |
 | `design.type-coverage.property.typed.sum` | namespace, project        |
 | `size.method-count`                       | class                     |
-| `size.symbol-method-count`                | namespace, project        |
+| `size.symbol-method-count`                | class, namespace, project |
 | `cohesion.pure-method-count`              | class                     |
+| `size.loc`                                | namespace                 |
+| `size.lloc`                               | namespace                 |
 | `health.complexity`                       | class, namespace, project |
 | `health.cohesion`                         | class, namespace, project |
 | `health.coupling`                         | class, namespace, project |
 | `health.typing`                           | class, namespace, project |
-| `health.maintainability`                  | namespace, project        |
+| `health.maintainability`                  | class, namespace, project |
 
 Common aggregation suffixes on a key: `.avg`, `.min`, `.max`, `.sum`, `.p5`, `.p95`.
 

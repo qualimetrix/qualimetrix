@@ -584,6 +584,20 @@ rules:
 bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 ```
 
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  code-smell.constructor-overinjection:
+    threshold: 8   # warning=8, error=8 → all violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:threshold=8"
+```
+
 ---
 
 ## Long Parameter List
@@ -708,6 +722,20 @@ bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-warning=10"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-error=15"
+```
+
+For a simple pass/fail threshold instead of separate warning/error levels, on either axis independently:
+
+```yaml
+rules:
+  code-smell.long-parameter-list:
+    threshold: 6       # warning=6, error=6 → all standard-method violations are errors
+    vo_threshold: 12   # warning=12, error=12 → all VO-constructor violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:threshold=6"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo_threshold=12"
 ```
 
 ---
@@ -932,6 +960,20 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.unreachable-code:warning=1"
 bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
+```
+
+For a simple pass/fail threshold instead of separate warning/error levels
+(`threshold` cannot be combined with `warning` or `error` — mixing them is a
+configuration error and the run stops with exit code 3):
+
+```yaml
+rules:
+  code-smell.unreachable-code:
+    threshold: 1   # warning=1, error=1 → all violations are errors
+```
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.unreachable-code:threshold=1"
 ```
 
 ---

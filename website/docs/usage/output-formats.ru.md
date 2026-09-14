@@ -17,35 +17,70 @@ bin/qmx check src/ --format=<формат>
 
 **Основные возможности:**
 
-- 6 измерений здоровья с прогресс-барами (сложность, связность, связанность, типизация, сопровождаемость, общее)
-- Топ-3 худших пространств имён и классов с оценками здоровья
+- Общий бар здоровья плюс по одному бару на измерение (сложность, связность, связанность, типизация, сопровождаемость), за каждым — декомпозиция с `↳`, детализирующая метрики, из которых сложилась оценка
+- Оценки в процентах, а не в сырых баллах
+- Однострочные списки `Worst namespaces` / `Worst classes`, каждая запись с оценкой впереди, и хвост `+N more (use ...)`, когда список был обрезан
+- Секция `Top issues by impact`: ранжированный список самых влиятельных отдельных нарушений — severity, impact score, файл, оценка времени на исправление, канал правила, сообщение и символ
 - Количество нарушений с оценкой технического долга (включая плотность долга на 1K LOC)
-- Контекстные подсказки для следующих шагов
+- Несколько контекстных `Hints:` для следующих шагов
 
 **Пример вывода:**
 
 ```
-Qualimetrix — 45 files analyzed, 1.23s
+Qualimetrix 0.26.0 — 62 files analyzed, 0.8s
 
-  Complexity     ████████████████░░░░  78 Excellent
-  Cohesion       ██████████████░░░░░░  68 Fair
-  Coupling       ████████████░░░░░░░░  59 Fair
-  Typing         ██████████████████░░  88 Excellent
-  Maintainability████████████████░░░░  80 Good
-  Overall        ██████████████░░░░░░  72 Fair
+Analysis complete: 62 analyzed, 0 generated file(s) excluded.
 
-Worst namespaces:
-  App\Service           52 Poor      | App\Repository        61 Fair
-  App\Controller        55 Fair
+Health █████████████████████░░░░░░░░░ 71.4% Fair
 
-Worst classes:
-  App\Service\OrderService          38 Critical  | App\Service\UserService   45 Poor
-  App\Repository\OrderRepository    51 Poor
+  Complexity      ████████████████████████░░░░░░ 79.2% Good
+                   ↳ Cyclomatic (avg): 3.1 (target: below 4) — manageable branching
+                   ↳ Cognitive (avg): 2.4 (target: below 5) — straightforward control flow
+                   ↳ Cyclomatic: 14 (target: below 4) — too many code paths
+                   ↳ Cognitive: 18 (target: below 5) — deeply nested, hard to follow
+  Cohesion        ████████████████░░░░░░░░░░░░░░ 54.8% Poor
+                   ↳ TCC: 0.4 (target: above 0.5) — methods rarely share fields
+                   ↳ LCOM4: 3 (target: 1 or less) — class splits into unrelated clusters
+  Coupling        ███████████████████░░░░░░░░░░░ 63.1% Fair
+                   ↳ Ce (avg): 4.7 (target: below 3) — elevated outgoing coupling
+                   ↳ Ce pkg (avg): 1.8 (target: below 1) — wide package dependencies
+                   ↳ Distance: 0.52 (target: below 0.3) — poor balance of abstraction and stability
+  Typing          ███████████████████████████░░░ 91.3% Excellent
+                   ↳ Parameter types: 91 (target: 100%) — 251 of 275 typed (91.3%)
+                   ↳ Return types: 88 (target: 100%) — 231 of 262 typed (88.2%)
+                   ↳ Property types: 95 (target: 100%) — 118 of 124 typed (95.2%)
+  Maintainability █████████████████████████░░░░░ 82.0% Good
+                   ↳ MI (avg): 71.4 (target: above 65) — code is maintainable
+                   ↳ MI (p5): 52.6 (target: above 50) — even worst methods are maintainable
+                   ↳ MI: 41.8 (target: above 65) — code is hard to change safely
+  * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)
 
-Violations: 12 errors, 8 warnings | Tech debt: 4h 30m (2.1/1K LOC)
+Worst namespaces
+  48.2 App\Billing\Invoice (6 classes, 11 violations, 3.8/100 LOC)
+  55.9 App\Service\Order (4 classes, 7 violations, 2.1/100 LOC)
+  61.3 App\Repository (9 classes, 5 violations, 0.9/100 LOC)
+  +5 more (use --format=html or --format-opt=top=8)
 
-Hint: Run with --namespace=App\\Service to drill down into the worst namespace
+Worst classes
+  38.4 App\Billing\Invoice\InvoiceCalculator — low cohesion
+  45.1 App\Service\Order\OrderService — high coupling
+  52.7 App\Repository\OrderRepository
+  +9 more (use --format=html or --format-opt=top=10)
+
+
+Top issues by impact
+  1. [ERR] 4.12  src/Billing/Invoice/InvoiceCalculator.php  [45min]
+         complexity.cognitive: Cognitive complexity: 24 (threshold: 15). Top: nested if +4 L88, nested foreach +3 L74, nested if +2 L91 — deeply nested, hard to follow (InvoiceCalculator::recalculate)
+  2. [ERR] 3.65  src/Service/Order/OrderService.php  [30min]
+         coupling.cbo: CBO is 21 (threshold: 15) — too many collaborators (OrderService)
+  3. [WRN] 2.90  src/Repository/OrderRepository.php  [20min]
+         complexity.ccn: Cyclomatic complexity: 13 (threshold: 10) — too many code paths (OrderRepository::findByCriteria)
+82 violations (19 errors, 63 warnings) | Tech debt: 6h 20min (54.3 min/kLOC to fix)
+
+Hints: --detail to see violations (top 200) | --namespace='App\Billing\Invoice' to drill down | --format=html -o report.html for full report
 ```
+
+Флаг, управляющий числом записей в `Top issues by impact`, описан на странице [CLI Options](cli-options.md).
 
 **Детализация с `--namespace` и `--class`:**
 
@@ -84,14 +119,18 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Service/UserService.php:42: error[complexity.ccn]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
-src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
-src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
+src/Service/UserService.php:42: warning[code-smell.error-suppression]: Error suppression (@) on find() - handle errors explicitly
+src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
+src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0.041, exceeds threshold of 0.037 (scaled for 45 classes). This class is a critical hub — changes have wide impact (OrderRepository)
 
-3 error(s), 0 warning(s) in 45 file(s)
+0 error(s), 3 warning(s) in 45 file(s)
 ```
 
-**Формат строки:** `файл:строка: уровень[кодНарушения]: сообщение (символ)`
+**Формат строки:** есть три формы строк — в зависимости от того, к чему относится находка.
+
+- Нарушение, привязанное к конкретному оператору, несёт номер строки: `файл:строка: уровень[кодНарушения]: сообщение (символ)`.
+- Находка уровня класса или метода, где правило судит о декларации целиком, а не об одном операторе — например, `complexity.ccn`, `complexity.wmc`, `coupling.class-rank` — вместо этого опускает сегмент строки: `файл: уровень[кодНарушения]: сообщение (символ)`, хотя та же находка несёт `line` в `--format=json`.
+- Находка уровня проекта (у неё вообще нет владеющего файла — например, `architecture.unreachable-layer`) опускает и сегмент файла: `[project]: уровень[кодНарушения]: сообщение`, без завершающего `(символ)`. На самоанализе этого проекта третья форма — не редкий случай: `bin/qmx check src/Analysis/Evidence/Complexity --format=text` печатает строки уровня проекта для большинства вывода.
 
 ---
 
@@ -118,7 +157,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allow
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+**Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -177,6 +216,20 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allow
             "healthScores": {}
         }
     ],
+    "topIssues": [
+        {
+            "rank": 1,
+            "file": "src/Service/UserService.php",
+            "line": 42,
+            "symbol": "App\\Service\\UserService::calculate",
+            "rule": "complexity.ccn",
+            "severity": "error",
+            "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
+            "impactScore": 3.71,
+            "coupling.class-rank": 0.1237,
+            "debtMinutes": 30
+        }
+    ],
     "violations": [
         {
             "file": "src/Service/UserService.php",
@@ -194,11 +247,13 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allow
             "recommendation": null,
             "metricValue": 15,
             "threshold": 10,
-            "techDebtMinutes": 30
+            "techDebtMinutes": 30,
+            "acceptedLevel": null
         }
     ],
     "violationsMeta": {
         "total": 3,
+        "shown": 3,
         "limit": null,
         "truncated": false,
         "byRule": {
@@ -213,6 +268,24 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allow
 
 Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
 
+`topIssues` — тот же ранжированный список, что формат `summary` печатает как
+«Top issues by impact»; другие форматы его не выводят. Каждая запись называет
+`impactScore`, специфичный для правила и используемый для ранжирования, и
+оценку `debtMinutes`. Ключ `coupling.class-rank` присутствует всегда, но его
+значение равно `null`, если правило-производитель не читает сигнал коупл-хаба;
+`file` и `line` тоже могут быть `null` — у находки уровня проекта нет позиции
+в исходнике.
+
+Каждое нарушение несёт `acceptedLevel`: потолок baseline, относительно
+которого эта находка измерена, или `null`, когда у находки нет собственного
+принятого уровня. За этим значением стоят два разных случая, которые оно не
+различает: baseline вообще не настроен для прогона, либо baseline настроен,
+но именно эту находку он ещё не оценивал (новая находка). Ни JSON-payload, ни
+само поле `acceptedLevel` не говорят, какой из случаев перед вами.
+`violationsMeta` также сообщает `shown` — число нарушений, фактически
+включённых в этот payload; оно может быть меньше `total`, когда
+`--format-opt=violations=N` обрезает список.
+
 Для машинной идентичности используй `channel + subject + optional occurrence +
 optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
 сообщение и порядок вывода не являются стабильной идентичностью. `subject`
@@ -225,17 +298,17 @@ optional edge`. `symbol` — логическая проекция для ото
 отличаются от типизированного ребра к той же цели. Существующие fingerprints
 без ребра и с полностью типизированным ребром не меняются.
 
-При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики (`errorCount`, `warningCount`, `violationDensity`).
+При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`. Каждая группа — это `{count, violations}`: счётчик нарушений и их массив; собственных `errorCount`, `warningCount` или `violationDensity` у группы нет.
+
+Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `<global>` для класса без пространства имён, и `__PROJECT__` для находки уровня проекта.
 
 <!-- llms:skip-begin -->
 ```json
 {
     "violationGroups": {
         "App\\Service\\UserService": {
-            "violations": [...],
-            "errorCount": 2,
-            "warningCount": 1,
-            "violationDensity": 3.5
+            "count": 3,
+            "violations": [...]
         }
     }
 }
@@ -266,11 +339,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Необработанные значения метрик для каждого символа (файл, класс, callable, пространство имён). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
+Необработанные значения метрик для каждого символа (файл, класс, пространство имён, метод, функция, проект). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -278,6 +351,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 ```json
 {
     "version": "1.0.0",
+    "toolVersion": "0.26.0",
     "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
     "symbols": [
@@ -347,7 +421,7 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 
 **Когда использовать:** Jenkins, SonarQube или любой инструмент, принимающий Checkstyle XML.
 
-Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning" message="" source="qmx.<rule>"/>`.
+Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -383,39 +457,52 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 
 **Когда использовать:** Вкладка Security на GitHub, VS Code (с расширением SARIF Viewer), JetBrains IDE, Azure DevOps.
 
-SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.text`, `locations[].physicalLocation.{artifactLocation.uri,region.startLine}`.
+SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция правила в `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, и `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` есть не у каждой записи: у находки уровня проекта без позиции в исходнике (например, `architecture.unreachable-layer`) массива `locations` вообще нет.
+
+`runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI.
+
+`partialFingerprints.primaryLocationLineHash` важен не только для полноты
+спецификации: именно по нему де-дупликация алертов code-scanning на GitHub
+между прогонами определяет, что это один и тот же отслеживаемый алерт, а не
+новый — пока фингерпринт остаётся стабильным.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
 
 ```json
 {
-    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
     "version": "2.1.0",
     "runs": [
         {
             "tool": {
                 "driver": {
                     "name": "Qualimetrix",
-                    "version": "0.1.0",
+                    "version": "0.26.0",
                     "rules": [...]
                 }
             },
             "results": [
                 {
                     "ruleId": "complexity.ccn",
+                    "ruleIndex": 0,
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
+                    },
+                    "partialFingerprints": {
+                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:4e6e45ba70fb46d4"
                     },
                     "locations": [
                         {
                             "physicalLocation": {
                                 "artifactLocation": {
-                                    "uri": "src/Service/UserService.php"
+                                    "uri": "src/Service/UserService.php",
+                                    "uriBaseId": "%SRCROOT%"
                                 },
                                 "region": {
-                                    "startLine": 42
+                                    "startLine": 42,
+                                    "startColumn": 1
                                 }
                             }
                         }
@@ -450,7 +537,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
 
 **Когда использовать:** GitLab CI/CD с отчётами Code Quality.
 
-Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major.
+Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major, info → info.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**

@@ -98,6 +98,35 @@ Small cycles (2-3 classes) are the most actionable. A cycle like `HelperSet <-> 
 
 ---
 
+## Visualizing the Dependency Graph
+
+Health scores and violation lists tell you *that* a namespace is tangled; a
+rendered graph shows *how*. Export it and hand it to Graphviz:
+
+```bash
+# DOT format, grouped by namespace (default)
+bin/qmx graph:export src/ -o graph.dot
+dot -Tsvg graph.dot -o graph.svg
+
+# JSON format for custom tooling (aggregated adjacency list with metadata)
+bin/qmx graph:export src/ --format=json -o graph.json
+
+# Focus on one problem area
+bin/qmx graph:export src/ --namespace=App\\Domain --exclude-namespace=App\\Domain\\Generated
+```
+
+Use `--direction=TB` for a top-to-bottom layout on wide graphs, and
+`--no-clusters` to drop namespace grouping when the clusters obscure more than
+they reveal. See [CLI Options > graph:export](../usage/cli-options.md#graphexport) for
+the full option reference.
+
+For a single class rather than the whole graph, `debug:layer-assignment`
+answers a narrower question -- which architecture layer a class resolved to,
+and which other declared layers could also have matched it. See
+[Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment).
+
+---
+
 ## Analyzing Complexity
 
 Complexity metrics help you find methods that are hard to understand, hard to test, or both.
