@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "updated_at": "2026-08-08",
+    "updated_at": "2026-09-14",
     "description": "Expected health score ranges for benchmark projects. Used by scripts\/benchmark-regression.php to detect formula regressions.",
     "projects": {
         "flysystem": {
@@ -11,8 +11,8 @@
                     100
                 ],
                 "health.cohesion": [
-                    58,
-                    79
+                    60,
+                    81
                 ],
                 "health.coupling": [
                     80,
@@ -25,6 +25,10 @@
                 "health.overall": [
                     81,
                     100
+                ],
+                "health.typing": [
+                    83,
+                    100
                 ]
             }
         },
@@ -33,15 +37,15 @@
             "expectations": {
                 "health.complexity": [
                     72,
-                    92
+                    93
                 ],
                 "health.cohesion": [
-                    68,
-                    89
+                    69,
+                    90
                 ],
                 "health.coupling": [
-                    58,
-                    79
+                    55,
+                    76
                 ],
                 "health.maintainability": [
                     79,
@@ -50,6 +54,10 @@
                 "health.overall": [
                     71,
                     92
+                ],
+                "health.typing": [
+                    88,
+                    100
                 ]
             }
         },
@@ -57,24 +65,28 @@
             "path": "benchmarks\/vendor\/symfony\/dependency-injection",
             "expectations": {
                 "health.complexity": [
-                    48,
-                    69
+                    50,
+                    71
                 ],
                 "health.cohesion": [
-                    66,
-                    87
+                    69,
+                    89
                 ],
                 "health.coupling": [
-                    43,
-                    64
+                    41,
+                    62
                 ],
                 "health.maintainability": [
+                    61,
+                    81
+                ],
+                "health.overall": [
                     58,
                     79
                 ],
-                "health.overall": [
-                    57,
-                    78
+                "health.typing": [
+                    89,
+                    100
                 ]
             }
         },
@@ -82,24 +94,28 @@
             "path": "benchmarks\/vendor\/symfony\/http-foundation",
             "expectations": {
                 "health.complexity": [
-                    74,
-                    95
+                    75,
+                    96
                 ],
                 "health.cohesion": [
-                    67,
-                    88
+                    69,
+                    90
                 ],
                 "health.coupling": [
-                    71,
-                    92
+                    70,
+                    91
                 ],
                 "health.maintainability": [
-                    81,
+                    82,
                     100
                 ],
                 "health.overall": [
-                    75,
-                    96
+                    76,
+                    97
+                ],
+                "health.typing": [
+                    88,
+                    100
                 ]
             }
         },
@@ -107,24 +123,28 @@
             "path": "benchmarks\/vendor\/symfony\/http-kernel",
             "expectations": {
                 "health.complexity": [
-                    68,
-                    89
+                    67,
+                    88
                 ],
                 "health.cohesion": [
-                    66,
-                    87
+                    74,
+                    95
                 ],
                 "health.coupling": [
-                    71,
-                    92
+                    74,
+                    95
                 ],
                 "health.maintainability": [
                     75,
                     96
                 ],
                 "health.overall": [
-                    72,
-                    93
+                    74,
+                    95
+                ],
+                "health.typing": [
+                    89,
+                    100
                 ]
             }
         },
@@ -133,23 +153,27 @@
             "expectations": {
                 "health.complexity": [
                     63,
-                    83
+                    84
                 ],
                 "health.cohesion": [
-                    56,
-                    77
+                    61,
+                    82
                 ],
                 "health.coupling": [
-                    71,
-                    92
+                    70,
+                    90
                 ],
                 "health.maintainability": [
                     69,
                     90
                 ],
                 "health.overall": [
-                    67,
-                    88
+                    68,
+                    89
+                ],
+                "health.typing": [
+                    90,
+                    100
                 ]
             }
         },
@@ -157,24 +181,28 @@
             "path": "benchmarks\/vendor\/phpunit\/phpunit\/src",
             "expectations": {
                 "health.complexity": [
-                    78,
-                    99
+                    76,
+                    97
                 ],
                 "health.cohesion": [
-                    64,
-                    85
+                    56,
+                    77
                 ],
                 "health.coupling": [
-                    49,
-                    70
+                    47,
+                    68
                 ],
                 "health.maintainability": [
                     87,
                     100
                 ],
                 "health.overall": [
-                    72,
-                    93
+                    70,
+                    91
+                ],
+                "health.typing": [
+                    89,
+                    100
                 ]
             }
         },
@@ -185,12 +213,12 @@
             ],
             "expectations": {
                 "health.complexity": [
-                    79,
+                    84,
                     100
                 ],
                 "health.cohesion": [
-                    50,
-                    71
+                    53,
+                    73
                 ],
                 "health.coupling": [
                     34,
@@ -201,8 +229,12 @@
                     100
                 ],
                 "health.overall": [
-                    66,
-                    87
+                    69,
+                    89
+                ],
+                "health.typing": [
+                    80,
+                    100
                 ]
             }
         },
@@ -214,20 +246,24 @@
                     88
                 ],
                 "health.cohesion": [
-                    72,
-                    93
+                    76,
+                    97
                 ],
                 "health.coupling": [
-                    49,
-                    70
+                    48,
+                    69
                 ],
                 "health.maintainability": [
-                    72,
-                    93
+                    73,
+                    94
                 ],
                 "health.overall": [
-                    68,
-                    89
+                    69,
+                    90
+                ],
+                "health.typing": [
+                    89,
+                    100
                 ]
             }
         },
@@ -239,20 +275,24 @@
                     100
                 ],
                 "health.cohesion": [
-                    59,
-                    80
+                    62,
+                    83
                 ],
                 "health.coupling": [
                     52,
-                    72
+                    73
                 ],
                 "health.maintainability": [
                     90,
                     100
                 ],
                 "health.overall": [
-                    73,
-                    94
+                    74,
+                    95
+                ],
+                "health.typing": [
+                    89,
+                    100
                 ]
             }
         },
@@ -260,8 +300,8 @@
             "path": "benchmarks\/vendor\/composer\/composer\/src",
             "expectations": {
                 "health.complexity": [
-                    53,
-                    74
+                    54,
+                    75
                 ],
                 "health.cohesion": [
                     62,
@@ -272,12 +312,16 @@
                     46
                 ],
                 "health.maintainability": [
-                    58,
-                    79
+                    61,
+                    81
                 ],
                 "health.overall": [
-                    52,
-                    72
+                    53,
+                    73
+                ],
+                "health.typing": [
+                    67,
+                    88
                 ]
             }
         },
@@ -285,24 +329,28 @@
             "path": "benchmarks\/vendor\/monolog\/monolog\/src",
             "expectations": {
                 "health.complexity": [
-                    79,
-                    100
+                    78,
+                    99
                 ],
                 "health.cohesion": [
-                    64,
-                    85
+                    65,
+                    86
                 ],
                 "health.coupling": [
                     50,
-                    71
+                    70
                 ],
                 "health.maintainability": [
-                    81,
-                    100
+                    78,
+                    99
                 ],
                 "health.overall": [
-                    71,
-                    92
+                    70,
+                    91
+                ],
+                "health.typing": [
+                    86,
+                    100
                 ]
             }
         },
@@ -310,24 +358,28 @@
             "path": "benchmarks\/vendor\/guzzlehttp\/guzzle\/src",
             "expectations": {
                 "health.complexity": [
+                    64,
+                    85
+                ],
+                "health.cohesion": [
                     71,
                     92
                 ],
-                "health.cohesion": [
-                    67,
-                    88
-                ],
                 "health.coupling": [
-                    83,
-                    100
+                    53,
+                    74
                 ],
                 "health.maintainability": [
-                    73,
-                    94
+                    62,
+                    83
                 ],
                 "health.overall": [
-                    73,
-                    93
+                    65,
+                    85
+                ],
+                "health.typing": [
+                    82,
+                    100
                 ]
             }
         },
@@ -339,20 +391,24 @@
                     96
                 ],
                 "health.cohesion": [
-                    58,
-                    79
+                    60,
+                    81
                 ],
                 "health.coupling": [
                     45,
-                    66
+                    65
                 ],
                 "health.maintainability": [
                     87,
                     100
                 ],
                 "health.overall": [
-                    61,
-                    82
+                    62,
+                    83
+                ],
+                "health.typing": [
+                    11,
+                    31
                 ]
             }
         },
@@ -360,24 +416,28 @@
             "path": "src",
             "expectations": {
                 "health.complexity": [
-                    75,
-                    96
+                    79,
+                    99
                 ],
                 "health.cohesion": [
-                    67,
-                    88
+                    73,
+                    94
                 ],
                 "health.coupling": [
-                    37,
-                    58
+                    41,
+                    61
                 ],
                 "health.maintainability": [
-                    77,
-                    98
+                    87,
+                    100
                 ],
                 "health.overall": [
-                    68,
-                    89
+                    72,
+                    93
+                ],
+                "health.typing": [
+                    90,
+                    100
                 ]
             }
         }

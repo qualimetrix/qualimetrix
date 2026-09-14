@@ -62,6 +62,10 @@ examples/
 !/qmx-baseline.json
 /qmx-baseline.json.lock
 !/docs/internal/benchmark-baselines.json
+# The namespace/class half of the same guard. Written by the same command as
+# the baselines above; without this line the blanket *.json swallows it, the
+# guard reports a file it wrote, and nothing outside one machine is guarded.
+!/docs/internal/benchmark-namespace-class-distribution.json
 # The stand's frozen "before" side: 858 files the blanket *.json above swallowed
 # in silence, which left the round's own evidence unreproducible outside one
 # machine — the very shape of defect that round was about.
