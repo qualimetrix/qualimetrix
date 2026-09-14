@@ -78,26 +78,23 @@ stage cannot be quietly undone by the next.
   a target the judged stage sets for itself. A maximum reached because there was
   genuinely nothing to penalise is legitimate and is distinguished from one
   reached because every threshold was out of reach.
-- **C3 — coverage is stated and bounded.** For every subject and dimension the
-  bench prints the share the score was computed over, by symbol count and, at
-  the levels where symbols carry lines, by lines. A score whose coverage falls
-  below a declared fraction is damped toward the neutral value rather than
-  published at face value, and the coverage travels with the score into the
-  report. The fraction and the damping are chosen in P3 and written into this
-  file; "negligible" is not a threshold.
+- **C3 — coverage is stated.** For every subject and dimension the bench prints
+  the share the score was computed over, by symbol count and, at the levels where
+  symbols carry lines, by lines; the share travels with the score into the
+  report. A reader is entitled to know that a cohesion score describes a third of
+  the classes.
 
-  **This is deliberately not "the dimension declares itself not applicable".**
-  Round 2 established that per-subject refusal is the one candidate the engine
-  cannot express: there is no per-subject non-publication path, the only route
-  leads to `health.overall`'s `?? 75`, and per-subject renormalisation needs a
-  non-canonical `health.overall` that `WeightedHealthFormula` does not parse and
-  `HealthFormulaExcluder` refuses. Round 1 of these criteria demanded exactly
-  that and would have forced a change to the evaluator, the repository, twelve
-  formatters, the excluder and its tests under the heading of a recalibration.
-  Publishing the coverage alongside a damped score is engine-compatible, and a
-  first-class "not applicable" state remains available as its own decision with
-  its own ADR.
-
+  **Damping by coverage is withdrawn, on measurement.** Round 2 decided to damp a
+  score whose coverage fell below a declared fraction. Measured, cohesion
+  coverage runs 27% to 58% across the corpus with the two legacy anchors at the
+  *top* of that range — low coverage is a property of modern library design, not
+  of legacy code — so no threshold exists that separates anything: above 58%
+  damps all seventeen projects, below 27% damps none. The only dimension whose
+  coverage collapses to zero is the structural one, and it collapses because the
+  global namespace is dropped during aggregation, which M1 repairs at the source.
+  Damping would have been a weaker second treatment of a defect already fixed
+  properly. It stays available for a dimension shown to need it; none is.
+  `measurement/05-coverage-has-no-threshold.md`.
 - **C4 — the aggregate describes the whole.** For every dimension with a
   level aggregate, the project number computed by the current rule and the
   number computed over the pooled set of the level's members, weighted by size,

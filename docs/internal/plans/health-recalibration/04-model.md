@@ -74,14 +74,23 @@ stage, not a separate concern.
 
 ## The decision this stage takes on M2
 
-Coverage is **published alongside the score, and a score below the declared
-coverage fraction is damped toward the neutral value**. Both are expressible in
-the current engine: the `.count` keys already pass the metric catalog, and
-`health.overall` keeps its canonical weighted-sum shape.
+Coverage is **published alongside the score**. Damping is **not** applied.
 
-The fraction, the denominator (symbols or lines) and the damping are numbers
-this stage chooses and writes into `00-overview.md` under C3. A word such as
-"negligible" is not one of them.
+Round 2 chose "publish and damp"; the damping half is withdrawn on measurement
+(`measurement/05-coverage-has-no-threshold.md`). Cohesion coverage runs 27% to
+58% across the seventeen-project corpus, with doctrine-dbal lowest and the two
+legacy anchors near the top — low coverage tracks small classes, which is modern
+library design, not decay. No threshold separates anything in that range, and
+the only dimension whose coverage collapses to zero is the structural one, which
+M1 repairs at its source rather than by damping its symptom.
+
+So M2's whole content is: every score carries the share of its subject it was
+computed over, and that share reaches the report. The `.count` keys already
+exist; nothing new is collected.
+
+This also answers the question the plan left open — "the fraction, the
+denominator and the damping are numbers this stage chooses". The fraction is
+none, and the reason is a measurement rather than a preference.
 
 ## What this stage must not do
 
