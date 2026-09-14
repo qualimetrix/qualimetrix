@@ -46,6 +46,13 @@ $projects = [
     ['id' => 'guzzle', 'path' => "$benchmarkVendor/guzzlehttp/guzzle/src", 'type' => 'open-source', 'description' => 'Guzzle HTTP client'],
     ['id' => 'laravel-framework', 'path' => "$benchmarkVendor/laravel/framework/src", 'type' => 'open-source', 'description' => 'Laravel Framework'],
 
+    // Legacy anchors. The corpus is otherwise fifteen top-decile libraries, so
+    // health scores never left the top third of their own scale and the declared
+    // Poor and Critical bands were unreachable by any real project. These two are
+    // procedural, predate namespaces, and both parse cleanly under PHP 8.4.
+    ['id' => 'codeigniter', 'path' => "$benchmarkVendor/codeigniter/framework/system", 'type' => 'open-source', 'description' => 'CodeIgniter 3, procedural legacy'],
+    ['id' => 'wordpress', 'path' => "$benchmarkVendor/johnpbloch/wordpress-core/wp-includes", 'type' => 'open-source', 'description' => 'WordPress core includes, procedural legacy'],
+
     // Qualimetrix itself
     ['id' => 'qmx', 'path' => __DIR__ . '/../src', 'type' => 'open-source', 'description' => 'Qualimetrix'],
 

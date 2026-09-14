@@ -440,6 +440,64 @@
                     100
                 ]
             }
+        },
+        "codeigniter": {
+            "path": "benchmarks\/vendor\/codeigniter\/framework\/system",
+            "expectations": {
+                "health.complexity": [
+                    67,
+                    87
+                ],
+                "health.cohesion": [
+                    51,
+                    72
+                ],
+                "health.coupling": [
+                    90,
+                    100
+                ],
+                "health.maintainability": [
+                    60,
+                    81
+                ],
+                "health.typing": [
+                    0,
+                    11
+                ],
+                "health.overall": [
+                    59,
+                    80
+                ]
+            }
+        },
+        "wordpress": {
+            "path": "benchmarks\/vendor\/johnpbloch\/wordpress-core\/wp-includes",
+            "expectations": {
+                "health.complexity": [
+                    36,
+                    57
+                ],
+                "health.cohesion": [
+                    63,
+                    84
+                ],
+                "health.coupling": [
+                    58,
+                    79
+                ],
+                "health.maintainability": [
+                    42,
+                    63
+                ],
+                "health.typing": [
+                    0,
+                    20
+                ],
+                "health.overall": [
+                    43,
+                    64
+                ]
+            }
         }
     }
 }
