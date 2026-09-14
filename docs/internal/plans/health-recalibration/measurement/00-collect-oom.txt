@@ -1,0 +1,15 @@
+scripts/collect-benchmark-data.php, run 2026-09-14 with the PHP default
+memory_limit (128M). All fifteen projects analysed; the run then died while
+assembling the output and wrote nothing.
+
+    Analyzing: laravel-framework ... OK (54s, 209 ns, 1451 classes)
+    Analyzing: qmx ... PHP Fatal error:  Allowed memory size of 134217728 bytes
+    exhausted (tried to allocate 11610188 bytes) in
+    scripts/collect-benchmark-data.php on line 102
+    EXIT=255
+
+Line 102 is an implode() over one array holding every output line of every
+symbol of every project.
+
+The same command under `php -d memory_limit=2G` exits 0 and writes the file, so
+the analysis is not at fault — only the collector's assembly step.
