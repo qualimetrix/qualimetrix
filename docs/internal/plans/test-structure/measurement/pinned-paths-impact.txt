@@ -1,11 +1,16 @@
-Pinned paths in scripts/generate-modular-architecture-test-inventory.php: 346
-Every affected path requires editing the generator and regenerating docs/internal/generated/modular-architecture/.
+Pinned 'tests/...' literals in scripts/generate-modular-architecture-test-inventory.php: 346
+Each touched path needs the generator edited and
+docs/internal/generated/modular-architecture/ regenerated, or architecture:check reddens.
+A path ending in / is a directory pin: moving one file out of it does not
+necessarily invalidate the pin, so these counts are an upper bound.
 
-== stage 02 (controls): 56
+== stage 02: 45
+   tests/Analysis/Configuration/
+   tests/Analysis/Configuration/Unit/
+   tests/Analysis/Configuration/Unit/ConfigSchemaTest.php
    tests/Analysis/Evidence/ComputedMetrics/
    tests/Analysis/Evidence/ComputedMetrics/Integration/
    tests/Analysis/Evidence/ComputedMetrics/Unit/
-   tests/Analysis/Evidence/Duplication/Unit/
    tests/Analysis/Evidence/Measurement/
    tests/Analysis/Evidence/Measurement/Integration/
    tests/Analysis/Evidence/Measurement/Unit/
@@ -15,7 +20,6 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php
    tests/Analysis/Finding/RuleConfiguration/Unit/
    tests/Analysis/Finding/Unit/
-   tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php
    tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php
    tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php
    tests/Analysis/Policy/Architecture/
@@ -25,18 +29,12 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Analysis/Policy/Baseline/Functional/
    tests/Analysis/Policy/Baseline/Integration/
    tests/Analysis/Policy/Baseline/Unit/
-   tests/Analysis/Run/
-   tests/Analysis/Run/Integration/
-   tests/Analysis/Run/Integration/Pipeline/MultiNamespaceAnalysisTest.php
-   tests/Functional/
-   tests/Functional/Console/
    tests/Infrastructure/
    tests/Integration/
    tests/Integration/DependencyInjection/
    tests/Reporting/
    tests/Reporting/Formatter/Sarif/Integration/
    tests/Reporting/Formatter/Suppressed/Integration/
-   tests/Reporting/Formatter/Suppressed/Unit/
    tests/Reporting/Formatter/Unit/
    tests/System
    tests/System/DocumentationConsistency/
@@ -48,17 +46,26 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/System/TestRunnerConfiguration/
    tests/System/TestRunnerConfiguration/Unit/
    tests/System/TestRunnerConfiguration/Unit/CoverageIsRequestedExplicitlyTest.php
+   tests/Unit/
+   tests/Unit/Core/
+   tests/Unit/PromiseEffect/
+   tests/Unit/RuleVocabulary/
+
+== stage 03: 12
+   tests/Analysis/Policy/Baseline/
+   tests/Analysis/Policy/Baseline/Unit/
+   tests/Reporting/
+   tests/Reporting/Formatter/Suppressed/Unit/
    tests/TestSupport
    tests/TestSupport/ArchitectureStaticAnalysis/
    tests/TestSupport/ArchitectureStaticAnalysis/Unit/
    tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php
    tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php
    tests/Unit/
-   tests/Unit/Core/
-   tests/Unit/Infrastructure/
    tests/Unit/PromiseEffect/
    tests/Unit/RuleVocabulary/
-== stage 04 (relocations): 19
+
+== stage 04: 17
    tests/Functional/
    tests/Functional/Console/
    tests/Functional/Reporting/
@@ -73,12 +80,11 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php
    tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php
    tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php
-   tests/Unit/PromiseEffect/
    tests/Unit/Reporting/
    tests/Unit/Reporting/Filter/
    tests/Unit/Reporting/Health/
-   tests/Unit/RuleVocabulary/
-== stage 05 (defects): 103
+
+== stage 05: 108
    tests/Analysis/Configuration/
    tests/Analysis/Configuration/Integration/
    tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php
@@ -128,9 +134,11 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php
    tests/Analysis/Finding/Unit/AnalysisContextThresholdTest.php
    tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php
+   tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php
    tests/Analysis/Finding/Unit/FindingTest.php
    tests/Analysis/Finding/Unit/LocationNullFileTest.php
    tests/Analysis/Finding/Unit/LocationTest.php
+   tests/Analysis/Finding/Unit/PathExclusionFilterTest.php
    tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php
    tests/Analysis/Finding/Unit/RuleExecutorTest.php
    tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php
@@ -143,6 +151,8 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Analysis/Policy/Baseline/Unit/
    tests/Analysis/Policy/Inline/
    tests/Analysis/Policy/Inline/Unit/
+   tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php
+   tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php
    tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php
    tests/Analysis/Run/
    tests/Analysis/Run/Integration/
@@ -181,4 +191,7 @@ Every affected path requires editing the generator and regenerating docs/interna
    tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php
    tests/Unit/PromiseEffect/
    tests/Unit/Reporting/
+   tests/Unit/Reporting/Health/
    tests/Unit/RuleVocabulary/
+
+== union across stages: 125

@@ -19,7 +19,7 @@ fix. Do not assume green.
 
 ## D6 was adopted and is withdrawn
 
-The previous draft replaced `phpunit.xml.dist`'s 53 enumerated directories with
+The previous draft replaced `phpunit.xml.dist`'s 52 enumerated test directories with
 depth globs, on the strength of one measurement: a glob set plus transitional
 entries reproduced the suite exactly (679 classes, 9098 methods). **That
 measurement was too narrow and the decision was wrong.** It merged every glob
@@ -34,7 +34,7 @@ into a single suite, which is precisely the shape that hides the two costs:
   unchanged, only suite membership moves.
 - **`architecture:check` reddens.**
   `scripts/generate-modular-architecture-test-inventory.php` holds a *second*
-  copy of the suite map — `testSuitePrefixTable()`, 53 literals — and reconciles
+  copy of the suite map — `testSuitePrefixTable()`, 42 prefix literals plus two regexes — and reconciles
   it with the config in both directions, probing each declared prefix and
   requiring each table prefix to be declared literally. A glob satisfies
   neither. This was invisible to `pinned-paths-impact.txt`, which counts
@@ -120,6 +120,45 @@ own docblocks. Decide at execution; do not leave it unstated.
 
 (`--exclude-group=benchmark` matches nothing: zero methods carry that group.)
 
+## The registration checklist
+
+**A new test directory has four addresses in this repository, not one.** The
+previous draft named only `phpunit.xml.dist`, and two of the other three fail
+hard rather than quietly. Stage 04 alone creates 61 directories, so this is the
+plan's most repeated step and it lives here, once; stages 02–04 reference it
+rather than listing it from memory.
+
+For every directory created under `tests/`, the controls root, or a tool's
+`tests/`:
+
+1. **`phpunit.xml.dist`** — a `<directory>` entry under the right `<testsuite>`.
+2. **`scripts/generate-modular-architecture-test-inventory.php`,
+   `testSuitePrefixTable()` and `currentSuite()`** — the generator holds a second
+   copy of the suite map and reconciles it with the config in both directions.
+   A directory declared only in the config classifies as suite `none`, and
+   `validateInventory()` fails with "add its directory to a `<testsuite>` **and
+   to the matching branch of `currentSuite()`**".
+3. **`classifyOwner()` in the same generator** — an unrecognised path shape ends
+   in `fail('Unclassified test artifact')`. This is fatal, not a warning, and it
+   already fires today for `tests/PromiseEffect/Unit/FloorTest.php`, a target
+   this plan's own map proposes.
+4. **The generator's inventory scope**, `git ls-files -- tests scripts/tests
+   src/Reporting/Template/tests …` — anything outside those roots is simply not
+   inventoried. The controls root and every `scripts/**/tests/` destination lie
+   outside it, so ~49 files would drop out of the census **with
+   `architecture:check` still green**. That is the ownerless-files failure this
+   project has already paid for, and no DoD in stages 02–04 catches it: they
+   check G2, G3, the aggregate's suites and pinned paths, but not this scope.
+
+Then, for a new root (not for each directory): PHPStan `paths`, the cs-fixer
+finder, `autoload-dev`, and `scripts/phpunit-aggregate.py`'s `SUITES` tuple with
+its partition proof.
+
+**A guard already exists for step 2 and the plan did not know it.** A test in an
+unregistered directory reddens `architecture:check` today, through
+`validateInventory()`. G2 is still worth having — it names the file rather than
+the classification — but the tree is better defended than the plan assumed.
+
 ## Definition of Done
 
 - `TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly` executes; its verdict
@@ -139,9 +178,19 @@ own docblocks. Decide at execution; do not leave it unstated.
 ## Files
 
 `tests/Analysis/Evidence/Design/Unit/TypeCoverage/TypeCoverageRuleTest.php`,
-the new guard files, `phpunit.xml.dist`, `scripts/phpunit-aggregate.py`,
-`composer.json`, and — if the alias verdict is red — the owning rule under
-`src/Analysis/Evidence/Design/`.
+the four `tests/Infrastructure/Logging/*Test.php` files, the new guard files,
+`phpunit.xml.dist`, `scripts/phpunit-aggregate.py`,
+`scripts/generate-modular-architecture-test-inventory.php`, `phpstan.neon`,
+`.php-cs-fixer.dist.php`, `composer.json`, and — if the alias verdict is red —
+the owning rule under `src/Analysis/Evidence/Design/`.
+
+**One decision this stage must make explicitly:** the generator's
+`EXPLICIT_PATH_DISPOSITIONS` records an intention to move the Logging tests to
+`Infrastructure/Unit`, while this plan sends them to
+`Infrastructure/Logging/Unit/` — which already exists and holds
+`LoggerFactoryTest`. The plan's target is the better one by subject, but it
+overrides a recorded intention, so say so rather than letting the regenerated
+artifact quietly disagree with the file.
 
 ## Where these guards live
 

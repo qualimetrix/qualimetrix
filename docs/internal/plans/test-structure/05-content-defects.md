@@ -93,9 +93,10 @@ a move into a new one is a registration step, and G2's orphan check is what make
 a forgotten registration loud.
 
 **Re-derive this class after stages 02–04.** Of the 78 ledger files whose defect
-is `misplaced` or `category-wrong`, 24 are moved by stage 04 and 15 by stage 02
-or 03. Their ledger paths will not exist by the time this stage runs, and a third
-of the work will already be done.
+is `misplaced` or `category-wrong`, 16 are moved by stage 04 and 15 by stage 02
+or 03 — 31 of 78. Their ledger paths will not exist by the time this stage runs.
+Stage 01 moves 4 more (the `Infrastructure/Logging` files), so re-derive against
+the tree, not against the ledger's recorded paths.
 
 ## Definition of Done
 
@@ -108,7 +109,7 @@ of the work will already be done.
 - Executed-test count stated before and after. It will legitimately drop here —
   predict the drop first, compare against the observed one, and explain any
   difference. An unexplained difference is a lost test.
-- Pinned paths: this stage touches 103 of the 346 paths hardcoded in
+- Pinned paths: this stage touches 108 of the 346 paths hardcoded in
   `scripts/generate-modular-architecture-test-inventory.php`
   (see [`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt)).
   `composer architecture:check` green.

@@ -70,19 +70,19 @@ should be split by subject, not filed whole.
 
 ## Registration — the part that leaks
 
-**Stage 01 already created and fully registered this root** (see its closing
-section); this stage only moves files into it. The table below is what stage 01
-must have done, and what this stage verifies rather than performs:
+**Stage 01 created and registered this root** (see its
+[registration checklist](01-suite-integrity.md#the-registration-checklist)); rows
+1–5 below are what this stage *verifies*, and the last row is work it *performs*:
 
 | Set                   | Current state                                                                                                                                                              | Requirement                                                                                                                                                           |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PHPUnit config        | 53 enumerated directories                                                                                                                                                  | a suite covering the root                                                                                                                                             |
+| PHPUnit config        | 52 enumerated test directories                                                                                                                                             | a suite covering the root                                                                                                                                             |
 | Aggregate             | `scripts/phpunit-aggregate.py:32` hardcodes `SUITES = ("Unit","Integration","Functional","Infrastructure")`, and its docstring *proves* those four partition the aggregate | a fifth suite must be added **and** the partition proof updated, or the aggregate refuses                                                                             |
-| PHPStan               | `phpstan.neon:13` has `tests`; `:32` ignores a path that moves                                                                                                             | add the root; move the ignore with its file                                                                                                                           |
+| PHPStan               | `phpstan.neon:13` has `tests` (the `:32` ignore belongs to stage 03, which moves the fixture it names)                                                                     | add the root; move the ignore with its file                                                                                                                           |
 | PHP-CS-Fixer          | finder has `/tests` and already has `/scripts`                                                                                                                             | add the root                                                                                                                                                          |
 | Composer autoload-dev | `Qualimetrix\Tests\` → `tests/` (the `ArchitectureStaticAnalysis/Unit/Fixtures/` classmap belongs to stage 03, which moves that directory)                                 | new PSR-4 prefix; move the classmap entry                                                                                                                             |
 | Composer group        | four groups named by what invalidates them                                                                                                                                 | `Channel/`, `RuleDeclaration/` etc. are invalidated by a code change, not by a claim about the repo — `check:self` fits some groups and not others; choose explicitly |
-| Inventory generator   | 346 pinned `tests/` paths, **56 touched by this stage**                                                                                                                    | edit and regenerate, or `architecture:check` reddens                                                                                                                  |
+| Inventory generator   | 346 pinned `tests/` paths, **45 touched by this stage**                                                                                                                    | edit and regenerate, or `architecture:check` reddens                                                                                                                  |
 
 **A control's own scan scope must move with it.**
 `ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php:42` declares

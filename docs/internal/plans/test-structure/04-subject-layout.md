@@ -79,7 +79,7 @@ from the old numbers.
 ## The cost review found and the first draft omitted
 
 `scripts/generate-modular-architecture-test-inventory.php` hardcodes **346
-paths under `tests/`**. This stage's moves touch **19** of them; the other
+paths under `tests/`**. This stage's moves touch **17** of them; the other
 stages touch more (see
 [`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt) —
 123 pinned paths across all stages). Every touched path requires editing the
@@ -95,28 +95,40 @@ work estimate.
    stale namespace runs and misleads rather than failing.
 3. **Update the pinned path** in the inventory generator where one exists.
 
-**The map is not executable as it stands, and saying so is the point.** 12 of
-the 96 rows carry `NEEDS DECISION` — 3 files whose `#[CoversClass]` names several
-subjects, 9 with no coverage claim at all. The snapping rule used to resolve the
-first group by taking the common ancestor, which landed them on `tests/Analysis`
-and `tests/Analysis/Policy` — taxonomy nodes that ADR 0022 forbids to hold types.
-It now refuses instead of choosing. A further 12 rows are owned by stages 02 and
-03 (1 repo-control, 5 tooling-test, 6 mixed) and leave this stage's set before it
-runs.
+**The default target is the subject's full path; flattening is a human
+decision.** The rule was inverted in the previous draft: it snapped to the
+deepest *existing* directory, which dropped the last segment of the subject in 52
+of 96 rows — `Infrastructure\Ast`, `Git` and `Serializer` all collapsing into
+`tests/Infrastructure/Unit`, 20 formatter tests into `tests/Reporting/Formatter/Unit`
+— while their siblings (`Infrastructure/Console`, `Cache`, `Profiler`) already
+have their own directories. That is the round-one defect one segment smaller,
+which is why it survived two reviews. The map now targets
+`tests/<owner_ns as path>/<level>` and marks the directory as `(create)`; no
+target flattens its subject. **61 rows create a directory**, and each of those is
+a full pass through the registration checklist in
+[01](01-suite-integrity.md#the-registration-checklist) — four addresses, two of
+which fail hard.
 
-So the script executes only rows whose `owning_stage` is `04` and whose target is
-not `NEEDS DECISION`; the rest are read by a person. Where this file's prose and
-the CSV differ — the `tests/Core/Unit` flattening, the two `HookStatusCommandTest`
-files, the `Functional/Console` fold — the prose wins.
+**12 rows carry `NEEDS DECISION`** — 3 files whose `#[CoversClass]` names several
+subjects, 9 with no coverage claim. The old rule resolved the first group by
+common ancestor, landing them on taxonomy nodes ADR 0022 forbids; it now refuses.
 
-Steps 1–2 over the executable remainder are a mass edit, done by script per
-CLAUDE.md. Each target directory that does not yet exist must be added to
-`phpunit.xml.dist`: the config enumerates directories by name (D6 was withdrawn),
-and G2's orphan check is what catches a missed registration.
+**12 rows belong to other stages**, and the CSV says which: 1 to stage 02, 5 to
+stage 03, and 6 `mixed` files whose control and tooling methods leave in 02/03
+while the product remainder is this stage's to move. Three of those six —
+`ThresholdPopulationAgreementTest`, `DirectiveAuditReportReadingTest`,
+`LedgerVocabularyTest` — have no product remainder at all; they are gone before
+this stage runs and need no target. The other three (`GlobSyntaxTest`,
+`NamespaceMatcherTest`, `VersionTest`) do, and this stage moves it.
 
-**16 of the files this stage moves are also recorded in the ledger as
-`misplaced`.** Moving them here resolves those rows; stage 05 re-derives its set
-afterwards rather than moving them again.
+So the script executes rows whose `owning_stage` is `04` and whose target is not
+`NEEDS DECISION`. Where this file's prose and the CSV disagree — the two
+`HookStatusCommandTest` files, the `Functional/Console` fold — **the exception is
+written into the row's `note` column before the script runs**, because a script
+cannot read prose and an instruction a machine cannot see is not an instruction.
+
+**16 of the files this stage moves are also ledger rows** (8 `misplaced`, 8
+`category-wrong`). Moving them here resolves those rows.
 
 ## Definition of Done
 

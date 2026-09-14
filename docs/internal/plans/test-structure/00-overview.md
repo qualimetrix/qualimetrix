@@ -6,7 +6,7 @@
 independent problems work against that purpose:
 
 1. **The suite cannot be trusted to run what it contains.** One test never
-   executes at all, and `phpunit.xml.dist` enumerates 53 directories by name, so
+   executes at all, and `phpunit.xml.dist` enumerates 52 test directories by name, so
    the set of executed tests is maintained by hand.
 2. **Repository controls live among tests.** 40 files, plus control methods
    inside 17 more, assert facts about the repository — artefact freshness,
@@ -72,7 +72,8 @@ full account is in [01](01-suite-integrity.md).
 Measured intersections: 39 ledger files also appear in the relocation map, 42
 also carry a controls verdict, 66 are touched by some other stage. Of the 78
 ledger files whose defect is `misplaced` or `category-wrong` — the files stage 05
-would itself *move* — 24 are already moved by stage 04 and 15 by stage 02 or 03.
+would itself *move* — 16 are moved by stage 04 and 15 by stage 02 or 03, 31 in
+all.
 
 So stage 05 runs **last**, and its moving classes are re-derived after 02–04 have
 landed: a third of them will already be in the right place and the ledger's paths
@@ -88,7 +89,7 @@ the next one.
 ## Cost the stages share
 
 `scripts/generate-modular-architecture-test-inventory.php` hardcodes 346 paths
-under `tests/`; the stages touch 123 of them
+under `tests/`; the stages touch 125 of them (02: 45, 03: 12, 04: 17, 05: 108)
 ([`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt)).
 Each touched path means editing the generator and regenerating
 `docs/internal/generated/modular-architecture/`, or `architecture:check` reddens.
@@ -98,14 +99,14 @@ Each touched path means editing the generator and regenerating
 Tables are in [`measurement/`](measurement/); read them there rather than
 trusting counts in prose.
 
-| Artifact                                                           | Holds                                                                | Obtained by                                                                                                    | Cannot see                                                      |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `slice-reports/*.md`                                               | per-file SUT, category, defects; 679/679 files                       | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not                    | judgement, not execution — no test was run                      |
-| `defect-ledger.tsv` + `ledger-provenance.md`                       | 276 defects over 219 files                                           | union of all slice reports, the body-hash pass and the never-runs scan                                         | only defects some reader named                                  |
-| `controls-verdict.tsv` + `controls-taxonomy.md`                    | 81 files → 15/40/9/17                                                | D5 applied by reading each file                                                                                | its input list, which was built by the older criterion          |
-| `identical-bodies.txt`                                             | 20 groups, 58 methods, byte-identical                                | hashing normalised bodies, whole tree                                                                          | near-duplicates differing by one literal                        |
-| `legacy-relocation-snapped.csv` + `relocation-map-corrections.txt` | 96 files → targets; witness, owning stage and open decisions per row | the file's own `#[CoversClass]`; name match for 3; refuses where the claim is absent or names several subjects | `#[CoversClass]` is a claim, not a proof; 12 rows need a person |
-| `pinned-paths-impact.txt`                                          | 346 pinned paths, 123 touched                                        | enumerating the generator's literals                                                                           | paths built at runtime rather than written                      |
+| Artifact                                                           | Holds                                                                | Obtained by                                                                                                    | Cannot see                                                                   |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `slice-reports/*.md`                                               | per-file SUT, category, defects; 679/679 files                       | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not                    | judgement, not execution — no test was run                                   |
+| `defect-ledger.tsv` + `ledger-provenance.md`                       | 276 defects over 219 files                                           | union of all slice reports, the body-hash pass and the never-runs scan                                         | only defects some reader named                                               |
+| `controls-verdict.tsv` + `controls-taxonomy.md`                    | 81 files → 15/40/9/17                                                | D5 applied by reading each file                                                                                | its input list, which was built by the older criterion                       |
+| `identical-bodies.txt`                                             | 20 groups, 58 methods, byte-identical                                | hashing normalised bodies, whole tree                                                                          | near-duplicates differing by one literal                                     |
+| `legacy-relocation-snapped.csv` + `relocation-map-corrections.txt` | 96 files → targets; witness, owning stage and open decisions per row | the file's own `#[CoversClass]`; name match for 3; refuses where the claim is absent or names several subjects | `#[CoversClass]` is a claim, not a proof; 12 rows need a person              |
+| `pinned-paths-impact.txt`                                          | 346 pinned paths, 125 touched across stages                          | enumerating the generator's literals                                                                           | paths built at runtime; directory pins counted as touched are an upper bound |
 
 **Three witnesses, and they disagreed usefully.** The mechanical import scan
 produced 17 false accusations out of 21 and still found 4 real controls the
