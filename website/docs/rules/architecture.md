@@ -525,7 +525,7 @@ Two things the channel deliberately does not do:
   `match: any`, a clause whose `suffix` fires while its `patterns` never do has
   removed classes, and this channel stays silent about the pattern.
 - **It judges a template's clause once, across every layer it expanded to.**
-  One `exclude:` under [`domain-{module}`](#template-layers) becomes one layer
+  One `exclude:` under [`domain-{module}`](#layer-templates) becomes one layer
   per module, and a clause that carves classes out of one module is doing its
   job even where another module has nothing to carve. Dropping it, as a
   per-module finding would advise, would break the module where it works. So

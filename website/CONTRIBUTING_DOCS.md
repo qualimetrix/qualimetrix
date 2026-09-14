@@ -192,7 +192,20 @@ Per the single-source-of-truth principle:
 
 - Rule ID (e.g., `**Rule ID:** complexity.ccn`)
 - Judged metric, where the rule declares one (e.g., `**Judged metric:** complexity.ccn`) — the rule ID and the metric key are separate names in separate vocabularies, and this line is the only place the pair is written down for a reader. Take the keys from `bin/qmx rules`, never from the spelling of the rule ID. RU pages use `**Судимая метрика:**` / `**Судимые метрики:**`
-- `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`
+- `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`.
+
+    Take the rule's **option set** from the product's refusal, not from `bin/qmx rules`:
+
+    ```bash
+    bin/qmx check <path> --rule-opt='<rule>:zzNotAnOption=1'
+    ```
+
+    exits 3 and names every option that rule accepts. `bin/qmx rules` lists only
+    options carrying a dedicated CLI alias, so options reachable just through
+    `--rule-opt` or YAML are invisible there — which is how 13 rule sections came
+    to omit real options, the `threshold` shorthand among them. Write YAML keys in
+    `snake_case`; the product also accepts kebab and camel, so a page mixing them
+    still works and therefore drifts unnoticed.
 
 When adding a new rule page, mirror the skip-marker placement from existing pages. Both EN and RU versions must have identical markers.
 
