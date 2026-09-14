@@ -58,13 +58,19 @@ command runs in the Definition of Done of *every* stage that touches
 `ComputedMetricDefaults.php` or the aggregation, so a criterion satisfied in one
 stage cannot be quietly undone by the next.
 
-- **C1 — monotonicity.** For every parent/child level pair and every dimension,
-  the parent score lies within `[min(children), max(children)]`. Fails today on
-  CodeIgniter: project `health.coupling` 100.0 against its only namespace's 76.1.
+- **C1 — monotonicity, one-sided.** No parent scores **above** the maximum of
+  its children, for any dimension and any parent/child level pair. Fails today
+  on CodeIgniter: project `health.coupling` 100.0 against its only namespace's
+  76.1, and on 233 further parent/dimension pairs across the corpus.
   "Child" is defined by **containment of symbols**, not by the namespace tree
   the product builds: the tree is what drops `(global)`, and a criterion that
-  inherits the defect it is testing for is no criterion. Every class in the
-  project is a descendant of the project, `(global)` included.
+  inherits the defect it is testing for is no criterion.
+  The criterion is one-sided because measurement showed the other side is mostly
+  legitimate — a parent scoring *below* all its children usually reflects penalty
+  terms the parent formula has and the child formula does not (coupling:
+  604 below, zero above). Two-sided, roughly five reported violations in six are
+  of that explainable kind, which buries the ones that matter.
+  `measurement/07-monotonicity-direction.md`.
 - **C2 — the top is earned.** Per dimension and level, no subject scores 100
   while any of its penalty inputs lies outside the range its thresholds cover.
   The count of subjects at exactly 100 is reported before and after, per
