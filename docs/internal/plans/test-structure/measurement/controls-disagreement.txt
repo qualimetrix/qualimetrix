@@ -1,0 +1,54 @@
+== только отчёты ==
+tests/Analysis/Finding/Integration/AnalysisContextScopeArgumentGuardTest.php	control-invariant (AST-скан ВСЕГО src/ на конструкции `new AnalysisContext(...)`)
+tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	control (fixture drift: реестр строится реальным контейнером, но предмет сравнения — синхронность с ручным текстовым файлом)
+tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php	control-invariant (парсит php-parser'ом весь src/, включая собственный self-test резолвера)
+tests/Analysis/Finding/Integration/ChannelLevelAssemblyTopologyTest.php	control-invariant + один self-test резолвера (`itRecognisesARetiredLevelBearingChannelName` тестирует собственный приватный парсер `levelSegmentOf()`, а не продукт)
+tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	control-invariant (топология исходников, pinned списки)
+tests/Analysis/Finding/Integration/ChannelOrderFixtureDriftTest.php	control (fixture drift)
+tests/Analysis/Finding/Integration/ChannelShapeNotDeclaredByChannelTopologyTest.php	control-invariant
+tests/Analysis/Evidence/Measurement/Integration/Identity/ClassProducerOrdinalTest.php	integration / **control-invariant** (2 из 3 методов)
+tests/Unit/PromiseEffect/ClassifierTest.php	**control**
+tests/Analysis/Evidence/CodeSmell/Integration/CodeSmellRuleContractTest.php	control-invariant (метод 1) / integration (метод 2, реальный DI-контейнер)
+tests/Analysis/Configuration/Unit/ConfigSchemaTest.php	unit (частично control-invariant)
+tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	смешанный: control (2 первых теста — AST/grep скан) + integration (5 следующих — реальный compiler pass и RuleExecution с фикстурными классами)
+tests/Analysis/Finding/Unit/Exclusion/ConfiguredSuppressionTest.php	unit + **control-invariant** (последний тест)
+tests/Analysis/Finding/RuleConfiguration/Unit/DeclaredOptionKeysCoverReadKeysTest.php	**control** (control-invariant, но с AST-оракулом, а не текстовым regex)
+tests/Infrastructure/Console/Integration/ErrorStreamContainerIdentityTest.php	integration, реф-обход — **control-invariant**-подобный
+tests/Unit/PromiseEffect/FloorTest.php	**control**
+tests/Reporting/Formatter/Unit/FormatOptionKeyDeclarationTest.php	**control-invariant**
+tests/Unit/Core/Util/GlobSyntaxTest.php	unit + control (см. ниже)
+tests/Analysis/Finding/Integration/LevelActivityCoversEveryDeclaredLevelTest.php	integration (пограничный control-invariant: обход по всей популяции каналов)
+tests/Analysis/Evidence/Measurement/Unit/MetricNameVocabularyTest.php	unit / спорная граница control-invariant
+tests/Unit/Core/Util/NamespaceMatcherTest.php	unit + control (см. ниже)
+tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php	**control** (control-invariant: сканирует `src/` как текст)
+tests/Analysis/Finding/RuleConfiguration/Unit/RuleOptionKeyDeclarationCoverageTest.php	**control** (control-invariant)
+tests/Integration/DependencyInjection/RuleRegistrationDriftTest.php	control (второй свидетель через рефлексию + файловую систему)
+tests/Infrastructure/Unit/RuleRegistryTest.php	unit + control-invariant (один тест строит реальный контейнер и обходит все правила)
+tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryCompletenessTest.php	integration / control-invariant-подобный (полное сканирование `src/` через `nikic/php-parser` + `Symfony\Finder`, но проверяет продуктовый инвариант конкретного класса, а не состояние репозитория/доков)
+tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php	integration / control-invariant-подобный (сканирование `src/` + реальные Options-классы, файловый I/O)
+tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php	integration / **control-invariant кандидат** (файловый обход 9 директорий `src/Analysis/Evidence/*` + рефлексия)
+tests/Unit/Core/VersionTest.php	unit + control-подобный
+tests/Analysis/Finding/Integration/WarningBoundaryDeclarationTest.php	integration (пограничный control-invariant: поведенческий обход по всей популяции)
+
+== только механика ==
+tests/Infrastructure/Console/Functional/ApplicationRefusalTest.php
+tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php
+tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php
+tests/Analysis/Policy/Baseline/Functional/BaselineCommandOptionSurfaceTest.php
+tests/Analysis/Policy/Baseline/Functional/BaselineLifecycleTest.php
+tests/Analysis/Policy/Baseline/Functional/BaselineMigrateCommandTest.php
+tests/Analysis/Policy/Baseline/Functional/BaselineRenameChannelsCommandTest.php
+tests/Analysis/Policy/Baseline/Integration/CboAggregateBreachTest.php
+tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php
+tests/Analysis/Evidence/Measurement/Integration/Identity/DeclarationIdentityTest.php
+tests/Analysis/Evidence/Duplication/Unit/DuplicationMemoryLimitProcessTest.php
+tests/Infrastructure/Console/Functional/ErrorStreamPseudoTerminalTest.php
+tests/Functional/Console/Command/HookInstallCommandTest.php
+tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php
+tests/Functional/Console/Command/HookUninstallCommandTest.php
+tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php
+tests/Analysis/Policy/Architecture/Unit/LayersValidatorTest.php
+tests/Analysis/Run/Integration/Pipeline/MultiNamespaceAnalysisTest.php
+tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php
+tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php
+tests/Reporting/Formatter/Suppressed/Unit/SuppressionSnapshotKeyTest.php
