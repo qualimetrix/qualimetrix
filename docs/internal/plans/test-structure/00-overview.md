@@ -48,31 +48,37 @@ kind of claim, and which concealed an unwritten third criterion. Restated: *one
 named thing behaves so* is a test; *every registered X has property Y* is a
 control, whichever device it reads through.
 
-**D6. The suite config uses globs, with a shrinking transitional remainder.**
-Measured: PHPUnit 12.5.25 accepts `<directory>tests/*/*/Unit</directory>`, and a
-depth-glob set plus transitional entries reproduces the current suite exactly —
-679 classes, 9098 methods, nothing lost, nothing extra. Globs alone lose 100
-classes: 96 legacy-bucket files whose level segment comes first (covered once
-stage 04 moves them) and 4 `Infrastructure/Logging` tests that sit under no level
-directory (moved in stage 01). Rejected: keeping the enumeration and adding a
-directory-coverage guard, which taxes every later stage with a registration step.
+**D6. The suite config keeps its enumerated directories.** A glob-based config
+was adopted in the second draft and withdrawn in the third: globs break the
+four-suite partition the aggregate proves, and
+`generate-modular-architecture-test-inventory.php` holds a second copy of the
+suite map that reconciles literally in both directions, so `architecture:check`
+reddens. The hazard globs were meant to remove — a move into an unlisted
+directory — is already caught by G2's orphan check, so the cheaper config was
+also the unnecessary one. Each stage registers the directories it creates; the
+full account is in [01](01-suite-integrity.md).
 
 ## Stages
 
-| Stage                           | Subject                            | Scope                                       | Depends on |
-| ------------------------------- | ---------------------------------- | ------------------------------------------- | ---------- |
-| [01](01-suite-integrity.md)     | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —          |
-| [02](02-controls-extraction.md) | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01         |
-| [03](03-tooling-tests.md)       | Tooling tests move to their code   | 9 files + 4 partials                        | 01, 02     |
-| [04](04-subject-layout.md)      | ADR 0022 completed                 | 96 files                                    | 01, 02, 03 |
-| [05](05-content-defects.md)     | Ledger defects                     | 219 files                                   | 01         |
+| Stage                           | Subject                            | Scope                                       | Depends on     |
+| ------------------------------- | ---------------------------------- | ------------------------------------------- | -------------- |
+| [01](01-suite-integrity.md)     | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
+| [02](02-controls-extraction.md) | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
+| [03](03-tooling-tests.md)       | Tooling tests move to their code   | 9 files + 4 partials                        | 01, 02         |
+| [04](04-subject-layout.md)      | ADR 0022 completed                 | 96 files                                    | 01, 02, 03     |
+| [05](05-content-defects.md)     | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
 
 **The stages are not independent, and the first draft claimed they were.**
-Review showed the file sets intersect: the tooling files carry control verdicts
-(02 ↔ 03), five of them also have relocation targets (03 ↔ 04), and 40 ledger
-files are also control or relocation files (02/04 ↔ 05). Each stage's tables
-describe the tree as it is *before* the previous stage ran, so the order above is
-mandatory, not advisory.
+Measured intersections: 39 ledger files also appear in the relocation map, 42
+also carry a controls verdict, 66 are touched by some other stage. Of the 78
+ledger files whose defect is `misplaced` or `category-wrong` — the files stage 05
+would itself *move* — 24 are already moved by stage 04 and 15 by stage 02 or 03.
+
+So stage 05 runs **last**, and its moving classes are re-derived after 02–04 have
+landed: a third of them will already be in the right place and the ledger's paths
+for them will no longer exist. Every stage's tables describe the tree as it was
+*before* the previous stage ran, which is why the order is mandatory rather than
+advisory.
 
 Stage 01 also creates and fully registers the controls root, resolving the cycle
 "the guards are controls, and the controls root is made in stage 02". A stage
@@ -92,14 +98,14 @@ Each touched path means editing the generator and regenerating
 Tables are in [`measurement/`](measurement/); read them there rather than
 trusting counts in prose.
 
-| Artifact                                                           | Holds                                          | Obtained by                                                                                 | Cannot see                                                                     |
-| ------------------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `slice-reports/*.md`                                               | per-file SUT, category, defects; 679/679 files | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not | judgement, not execution — no test was run                                     |
-| `defect-ledger.tsv` + `ledger-provenance.md`                       | 276 defects over 219 files                     | union of all slice reports, the body-hash pass and the never-runs scan                      | only defects some reader named                                                 |
-| `controls-verdict.tsv` + `controls-taxonomy.md`                    | 81 files → 15/40/9/17                          | D5 applied by reading each file                                                             | its input list, which was built by the older criterion                         |
-| `identical-bodies.txt`                                             | 20 groups, 58 methods, byte-identical          | hashing normalised bodies, whole tree                                                       | near-duplicates differing by one literal                                       |
-| `legacy-relocation-snapped.csv` + `relocation-map-corrections.txt` | 96 files → targets, by `#[CoversClass]`        | the file's own coverage claim, imports as fallback                                          | 7 fallback rows carry the old defect; `#[CoversClass]` is a claim, not a proof |
-| `pinned-paths-impact.txt`                                          | 346 pinned paths, 123 touched                  | enumerating the generator's literals                                                        | paths built at runtime rather than written                                     |
+| Artifact                                                           | Holds                                                                | Obtained by                                                                                                    | Cannot see                                                      |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `slice-reports/*.md`                                               | per-file SUT, category, defects; 679/679 files                       | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not                    | judgement, not execution — no test was run                      |
+| `defect-ledger.tsv` + `ledger-provenance.md`                       | 276 defects over 219 files                                           | union of all slice reports, the body-hash pass and the never-runs scan                                         | only defects some reader named                                  |
+| `controls-verdict.tsv` + `controls-taxonomy.md`                    | 81 files → 15/40/9/17                                                | D5 applied by reading each file                                                                                | its input list, which was built by the older criterion          |
+| `identical-bodies.txt`                                             | 20 groups, 58 methods, byte-identical                                | hashing normalised bodies, whole tree                                                                          | near-duplicates differing by one literal                        |
+| `legacy-relocation-snapped.csv` + `relocation-map-corrections.txt` | 96 files → targets; witness, owning stage and open decisions per row | the file's own `#[CoversClass]`; name match for 3; refuses where the claim is absent or names several subjects | `#[CoversClass]` is a claim, not a proof; 12 rows need a person |
+| `pinned-paths-impact.txt`                                          | 346 pinned paths, 123 touched                                        | enumerating the generator's literals                                                                           | paths built at runtime rather than written                      |
 
 **Three witnesses, and they disagreed usefully.** The mechanical import scan
 produced 17 false accusations out of 21 and still found 4 real controls the
@@ -107,12 +113,26 @@ readers missed — both because of `require_once`. The body-hash pass found 56
 duplicates no reader reported. The readers found tautologies no script can see.
 No single list was right.
 
-**What review corrected, recorded because the same mistakes recur:** the
-relocation map was built from the wrong witness and was wrong in 68 of 96 rows;
-the ledger was one source rather than the union and was missing 63 rows,
-including both specimens the plan cited; the pinned-path cost was described as a
-single special case rather than 123; G2's justification asserted something
-false; and the glob option was measured only after review asked for it.
+**What two review rounds corrected, recorded because the mistakes recur.** Round
+one: the relocation map was built from the wrong witness and wrong in 68 of 96
+rows; the ledger was one source rather than the union, missing 63 rows including
+both specimens the plan cited; the pinned-path cost was one special case rather
+than 123; the controls criterion split files making the same claim while hiding
+an unwritten third rule; G2's justification asserted something false.
+
+Round two, on the repairs themselves: the glob config adopted to simplify
+registration breaks the suite partition and the inventory generator's second copy
+of the suite map, and was withdrawn; the rebuilt map left its `witness` column
+empty, so the counts it claimed could not be checked and its 12 undecidable rows
+could not be selected; the snapping rule resolved multi-subject files onto
+taxonomy nodes ADR 0022 forbids; stage 05 was still declared independent while
+78 of its files are moved by other stages; and stage 03's registration claims
+were wrong in three places, including two files that would have left PHPStan and
+cs-fixer entirely.
+
+**The recurring shape is one mistake, not five:** a claim about a set accepted
+from a measurement narrower than the set. It survived into the repairs, which is
+why the withdrawal of D6 is written out rather than deleted.
 
 **Blind spot, named rather than closed:** nothing here was established by
 running the suite. Stage 01 is what converts static reading into something

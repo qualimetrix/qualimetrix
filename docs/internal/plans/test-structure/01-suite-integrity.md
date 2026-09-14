@@ -8,7 +8,7 @@ until this is green in CI.
 
 `tests/Analysis/Evidence/Design/Unit/TypeCoverage/TypeCoverageRuleTest.php:143`
 — `itAliasesItsOwnTwoBoundariesOnly` carries neither `#[Test]` nor
-`#[DataProvider]`, while all 11 sibling methods carry both. PHPUnit never calls
+`#[DataProvider]`, while 10 of its 11 sibling `it*` methods carry `#[Test]` and 8 carry `#[DataProvider]`. PHPUnit never calls
 it. The CLI-alias contract of the three type-coverage rules is asserted by
 nothing, and has been since the method was written.
 
@@ -17,46 +17,41 @@ executed: it may be red. Red means either a stale test or a real defect in the
 alias contract, and which one decides whether this stage also carries a product
 fix. Do not assume green.
 
-## D6 — the suite config stops enumerating directories by name
+## D6 was adopted and is withdrawn
 
-`phpunit.xml.dist` lists 53 directories by name. **PHPUnit supports globs in
-`<directory>`** — measured on this tree with PHPUnit 12.5.25. Each suite becomes
-a set of depth globs (`tests/*/Unit`, `tests/*/*/Unit`, … to the tree's maximum
-depth of four) instead of hand-maintained paths, so a subject directory created
-by any later stage is covered the moment it exists.
+The previous draft replaced `phpunit.xml.dist`'s 53 enumerated directories with
+depth globs, on the strength of one measurement: a glob set plus transitional
+entries reproduced the suite exactly (679 classes, 9098 methods). **That
+measurement was too narrow and the decision was wrong.** It merged every glob
+into a single suite, which is precisely the shape that hides the two costs:
 
-**The glob set alone loses 100 of the 679 test classes, and the first draft of
-this section did not say so.** Measured, not reasoned:
+- **Suite partitioning breaks.** `tests/*/*/Unit` matches
+  `tests/Infrastructure/Console/Unit`, which the `Infrastructure` suite already
+  claims as part of its whole root — 404 tests land in two suites. PHPUnit
+  refuses (`Cannot add file … as it was already added to test suite`), and
+  `scripts/phpunit-aggregate.py`'s partition assertion refuses earlier still.
+  `--list-tests` does not show this: PHPUnit deduplicates the file, the count is
+  unchanged, only suite membership moves.
+- **`architecture:check` reddens.**
+  `scripts/generate-modular-architecture-test-inventory.php` holds a *second*
+  copy of the suite map — `testSuitePrefixTable()`, 53 literals — and reconciles
+  it with the config in both directions, probing each declared prefix and
+  requiring each table prefix to be declared literally. A glob satisfies
+  neither. This was invisible to `pinned-paths-impact.txt`, which counts
+  `'tests/…'` literals: the classifier is not a path.
 
-| Config                             | Classes | Methods  |
-| ---------------------------------- | ------- | -------- |
-| current enumeration                | 679     | 9098     |
-| depth globs only                   | 579     | 7838     |
-| depth globs + transitional entries | **679** | **9098** |
+So globs are not a config edit; they are a rewrite of how two tools agree on the
+suite map, with a suite redesign attached.
 
-The 100 split into two causes, and each has its own consequence:
+**And the problem they were introduced to solve does not exist.** Round one
+established that the orphan check catches a file moved into an unlisted
+directory — the file *is* there, and G2 reddens. The enumeration therefore stays,
+each stage registers the directories it creates, and G2 is what makes a missed
+registration loud. A cheaper change that was never needed is not a bargain.
 
-- **96 are the legacy-bucket files.** In `tests/Unit/Core/...` the level comes
-  *first*, so `tests/*/Unit` cannot match them. They are covered by globs only
-  after stage 04 moves them. Until then the config keeps
-  `<directory>tests/Unit</directory>` and its two siblings as **transitional
-  entries**, deleted by stage 04 as its last step.
-- **4 are `tests/Infrastructure/Logging/*Test.php`, which sit under no level
-  directory at all.** They run today only because the `Infrastructure` suite
-  includes its root wholesale. Either they move into
-  `Infrastructure/Logging/Unit/` — which is what the layout says anyway — or
-  they need a permanent explicit entry. Moving them is this plan's answer, and
-  it belongs to this stage, not to stage 04, because until it happens the glob
-  set is not self-sufficient.
-
-So D6 does not delete the enumeration in one step: it replaces the parts that
-globs can express and keeps a shrinking, explicitly-named remainder. Claiming
-the hazard is simply "gone" — as the first draft did — would itself have been
-the kind of unverified promise this plan exists to remove.
-
-**Cost to state:** a glob set silently includes a directory somebody adds later.
-That is intended here (a test should run), but the config no longer documents
-what exists. G2 below is what keeps that honest.
+Recorded here rather than deleted because the error is the plan's own subject
+matter: a claim about a set, accepted from a measurement that did not cover the
+set.
 
 ## Three guards, and what each refuses
 
@@ -77,10 +72,11 @@ the second.
 
 ### G2 — every test file runs, and the count is stated
 
-Refuses a `*Test.php` reachable by no suite. **After D6 this is nearly free**,
-but it stays, because a glob set can still miss a depth, and because this is the
-X13 class: 110 tests once sat unexecuted for three runs under a green
-`composer check`.
+Refuses a `*Test.php` reachable by no suite. This is the guard the whole plan
+leans on: with the enumeration kept, every stage that creates a directory must
+register it, and G2 is what makes a forgotten registration loud instead of
+silent. It is also the X13 class — 110 tests once sat unexecuted for three runs
+under a green `composer check`.
 
 ```
 executed = tests PHPUnit actually lists for the configured suites
@@ -89,12 +85,11 @@ refuse when on_disk \ executed is non-empty
 ```
 
 **Take the executed set from PHPUnit's own `--list-tests`, not from a
-reimplementation of its matching rules.** The previous draft of this plan
-specified G2 as a directory-coverage check and justified it with a claim that is
-simply false — that a file moved into an unlisted directory would not be caught
-by an orphan check "because that file is then not there yet". It is there, and
-an orphan check catches it. The real value of G2 is the count, not the
-directory inventory, and after D6 the directory inventory is meaningless.
+reimplementation of its matching rules.** An earlier draft specified G2 as a
+directory-coverage check and justified it with a claim that is false — that a
+file moved into an unlisted directory escapes an orphan check "because that file
+is then not there yet". It is there, and the orphan check catches it. The value
+of G2 is the executed set, not a directory inventory.
 
 ### G3 — namespace agrees with path
 
@@ -129,9 +124,10 @@ own docblocks. Decide at execution; do not leave it unstated.
 
 - `TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly` executes; its verdict
   is written into the stage report.
-- D6 landed: the config uses globs, and `--list-tests` returns the same test
-  count as before the change. A different count means the rewrite changed what
-  runs, which is the one thing it must not do.
+- The four `tests/Infrastructure/Logging/*Test.php` files, which sit under no
+  level directory and run only because the `Infrastructure` suite includes its
+  root wholesale, are moved into `Infrastructure/Logging/Unit/` and registered.
+  They are the one place where the current config's shape hides a layout defect.
 - G1, G2, G3 exist and are reachable from a composer script the aggregate calls.
 - **Each guard is proved to bite**: plant one breakage per guard, record that it
   reddens for its own case and only for it, and that it is green on the clean

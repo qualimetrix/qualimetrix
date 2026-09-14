@@ -52,7 +52,10 @@ property proves to be covered elsewhere.
 
 [`measurement/identical-bodies.txt`](measurement/identical-bodies.txt) holds 20
 groups of byte-identical method bodies, 58 methods, found by hashing normalised
-bodies across the whole tree. They are now rows in the ledger.
+bodies across the whole tree. They are now rows in the ledger — 57 rows, because
+`ComputedMetricRuleOptionsTest`'s two methods (lines 16 and 32) collapsed into
+one row whose `line` field is empty. Restore the line numbers before working
+that row: a defect without a location is a defect nobody can close.
 
 **Do not repeat the causal claim the first draft made.** It said the script
 "independently rediscovered" a duplicate a reader had found, offering that as
@@ -84,13 +87,15 @@ reading both bodies and both SUTs; never delete on resemblance.
 that spawn real subprocesses (`DuplicationMemoryLimitProcessTest` runs
 `bin/qmx`), do real filesystem work, or build the DI container.
 
-The first draft made this class conditional on a directory-coverage guard,
-claiming a move into an unlisted directory would silently disable the test. With
-D6 the config uses depth globs, so a target directory of the form
-`{subject}/{level}` is covered the moment it exists. That covers every target in
-this class — but the guarantee is the glob set's, not a directory inventory's,
-so the check that matters is unchanged: state the executed-test count before and
-after, and explain any difference.
+An earlier draft made this class conditional on a directory-coverage guard and
+then on globs; both framings are withdrawn. The config enumerates directories, so
+a move into a new one is a registration step, and G2's orphan check is what makes
+a forgotten registration loud.
+
+**Re-derive this class after stages 02–04.** Of the 78 ledger files whose defect
+is `misplaced` or `category-wrong`, 24 are moved by stage 04 and 15 by stage 02
+or 03. Their ledger paths will not exist by the time this stage runs, and a third
+of the work will already be done.
 
 ## Definition of Done
 

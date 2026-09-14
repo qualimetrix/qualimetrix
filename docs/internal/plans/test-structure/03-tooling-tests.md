@@ -43,28 +43,43 @@ tools/phpstan/tests/
 A single `tools-tests/` root was rejected on the same ADR 0016 grounds as
 `controls/`: it names a role and collects one file per tool.
 
-## The hazard review found: these files leave every guard's field of view
+## These files leave every guard's field of view
 
-`scripts/` and `tools/` are outside `tests/` and outside the controls root, so
-G2 and G3 from stage 01 do not scan them. **The first draft's DoD ("G2 reports
-zero orphans") was satisfiable trivially — by the guard not seeing the files at
-all** — while the eight tests silently stopped running forever. That is the
-`ownerless files` failure this project has already paid for, reproduced by a
-stage whose own DoD was green.
+`scripts/` and `tools/` lie outside `tests/` and outside the controls root, so
+G2 and G3 do not scan them. **An earlier DoD ("G2 reports zero orphans") was
+satisfiable trivially — by the guard not seeing the files at all** — while the
+moved tests silently stopped running forever. That is the `ownerless files`
+failure this project has already paid for, reproduced by a stage green under its
+own DoD.
 
-Therefore, before any file moves:
+Before any file moves:
 
-1. The guards' scanned roots must include `scripts/**/tests/` and
-   `tools/**/tests/`. A root nobody scans is a root where tests go to die.
-2. A PHPUnit suite must cover them, **and** `scripts/phpunit-aggregate.py:32`'s
-   `SUITES` tuple must list it, or the aggregate never runs them.
-3. Autoloading must be established. These classes are currently reached by
-   `require_once`, not by `autoload` or `autoload-dev`. Either keep that working
-   or give the tools a PSR-4 prefix — which is a new public surface for
-   `scripts/`, a decision to state rather than a mechanical step.
+1. G2 and G3 must scan `scripts/**/tests/` and `tools/**/tests/`.
+2. A PHPUnit suite must cover them **and** be listed in
+   `scripts/phpunit-aggregate.py`'s `SUITES` tuple, whose docstring proves the
+   suites partition the aggregate — the proof has to be updated with it, or the
+   aggregate refuses before running anything.
+3. **`tools/` is in neither `phpstan.neon`'s `paths` (`src`, `tests`, `scripts`)
+   nor `.php-cs-fixer.dist.php`'s finder (the same three).** The two files headed
+   for `tools/phpstan/tests/` would leave static analysis and style checking
+   entirely. Add `tools` to both, or place those tests elsewhere.
+4. Autoloading differs per tool and the earlier blanket claim was wrong.
+   `composer.json:59` already maps `Qualimetrix\PhpStan\` to `tools/phpstan/`,
+   and `BannedStringPathPropertyRuleTest` imports its SUT with a plain `use`.
+   Only the `scripts/` tools rely on `require_once`. Establish per tool what
+   holds today, and keep it working — or give `scripts/` a PSR-4 prefix, which
+   is a new public surface and a decision to state.
 
-`.php-cs-fixer.dist.php` and `phpstan.neon` already include `scripts`, so those
-two registrations need nothing.
+Two of the nine have no destination yet: `SuppressionSnapshotKeyTest` (tests the
+snapshot generator) and `ChannelRenameTsvGateAgreementTest` (drives a
+`scripts/finding-gate` reader). Neither fits the three directories above; decide
+where the finding-gate and snapshot tooling tests live before moving anything.
+
+**Ownership note.** `phpstan.neon:21` excludes
+`tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures`, and `autoload-dev`
+classmaps the same directory. That directory moves with **this** stage, not
+stage 02 — stage 02's registration table assigns the classmap entry to itself,
+which is wrong. Whichever stage moves the fixtures owns both edits.
 
 ## Definition of Done
 

@@ -30,21 +30,27 @@ what the reviewer is for.
 The map is now built from `#[CoversClass]`, which is the file's own statement
 about its SUT, with imports only as fallback:
 
-| Witness                    | Files |
-| -------------------------- | ----- |
-| `#[CoversClass]`           | 83    |
-| name match                 | 3     |
-| dominant import (fallback) | 7     |
-| unresolved                 | 3     |
+| Witness                     | Rows | Outcome                                    |
+| --------------------------- | ---- | ------------------------------------------ |
+| `CoversClass` (one subject) | 81   | target derived                             |
+| `name-match`                | 3    | target derived                             |
+| `CoversClass(multi)`        | 3    | `NEEDS DECISION` — covers several subjects |
+| `none`                      | 9    | `NEEDS DECISION` — no coverage claim       |
+
+The witness is recorded per row in the CSV's `witness` column, so the 12 rows
+needing a person can be selected rather than searched for. An earlier version of
+this table quoted counts the artifact could not confirm: the column existed but
+was empty in all 96 rows.
 
 The corrections are listed in
 [`measurement/relocation-map-corrections.txt`](measurement/relocation-map-corrections.txt).
 
-**What this witness still cannot see.** `#[CoversClass]` is a claim, not a
-proof: a file may cover more than it declares, or declare a class it barely
-touches. The seven fallback rows carry the original defect and must be read
-individually. The three unresolved rows are the `RuleVocabulary` tooling tests,
-which belong to stage 03 and must not be moved here.
+**What this witness still cannot see.** `#[CoversClass]` is a claim, not a proof:
+a file may cover more than it declares, or declare a class it barely touches. The
+3 name-match rows rest on a filename convention. And the witness says nothing
+about whether the *level* segment is right — a test filed under `Unit` that
+builds a container keeps its wrong level through this stage; that is stage 05's
+`category-wrong` class.
 
 **The cluster in the first map was an artefact.** "24 files to
 `Analysis/Finding/Unit`" was a property of the inference method, not of
@@ -89,22 +95,41 @@ work estimate.
    stale namespace runs and misleads rather than failing.
 3. **Update the pinned path** in the inventory generator where one exists.
 
-Steps 1–2 over 96 files are a mass edit, done by script per CLAUDE.md. Directory
-registration is no longer a step — D6 replaced it with globs — but this stage
-owns the other half of D6: **once the 96 files are out of the role buckets, the
-transitional entries `tests/Unit`, `tests/Integration` and `tests/Functional`
-must be deleted from the config as this stage's last action.** Leaving them is
-harmless while the directories exist and becomes a lie the moment they do not.
+**The map is not executable as it stands, and saying so is the point.** 12 of
+the 96 rows carry `NEEDS DECISION` — 3 files whose `#[CoversClass]` names several
+subjects, 9 with no coverage claim at all. The snapping rule used to resolve the
+first group by taking the common ancestor, which landed them on `tests/Analysis`
+and `tests/Analysis/Policy` — taxonomy nodes that ADR 0022 forbids to hold types.
+It now refuses instead of choosing. A further 12 rows are owned by stages 02 and
+03 (1 repo-control, 5 tooling-test, 6 mixed) and leave this stage's set before it
+runs.
+
+So the script executes only rows whose `owning_stage` is `04` and whose target is
+not `NEEDS DECISION`; the rest are read by a person. Where this file's prose and
+the CSV differ — the `tests/Core/Unit` flattening, the two `HookStatusCommandTest`
+files, the `Functional/Console` fold — the prose wins.
+
+Steps 1–2 over the executable remainder are a mass edit, done by script per
+CLAUDE.md. Each target directory that does not yet exist must be added to
+`phpunit.xml.dist`: the config enumerates directories by name (D6 was withdrawn),
+and G2's orphan check is what catches a missed registration.
+
+**16 of the files this stage moves are also recorded in the ledger as
+`misplaced`.** Moving them here resolves those rows; stage 05 re-derives its set
+afterwards rather than moving them again.
 
 ## Definition of Done
 
 - `tests/Unit/`, `tests/Integration/`, `tests/Functional/` no longer exist, and
-  the three transitional `<directory>` entries naming them are gone from the
-  config.
+  the `<directory>` entries naming them are gone from the config.
+- No row was executed whose `owning_stage` is not `04`; every `NEEDS DECISION`
+  row has a target chosen by a person and written into the CSV.
+- No target is a taxonomy node (`tests/Analysis`, `tests/Analysis/Evidence`,
+  `tests/Analysis/Policy`).
 - G3 green over the tree, with its allow-list no larger than stage 01 left it.
 - **Executed-test count equals the stage-01 baseline exactly.** A relocation
   cannot change how many tests run; if it did, something was dropped.
 - `composer architecture:check` green — this is where a missed pinned path bites.
 - `composer check` green. The aggregate is the evidence; a green subset is not.
-- Every row whose witness was `dominant import` or `unresolved` is confirmed by
-  reading the file, and the confirmation is recorded per row.
+- Every `NEEDS DECISION` row (12) is resolved by reading the file, and the chosen
+  target plus the reason is written into the CSV.

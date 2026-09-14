@@ -53,7 +53,7 @@ governance/
 ├── SolePrimitiveOwnership/   6
 ├── ThresholdKeys/            5
 ├── ModularOwnership/         4
-├── TestSuiteHygiene/         4      ← G1, G2, G3 from stage 01
+├── TestSuiteHygiene/         4 + 3  ← 4 existing, plus G1, G2, G3 from stage 01
 ├── ConsoleComposition/       3
 ├── RepositoryEntrypoints/    3
 ├── RuleOptionKeys/           2
@@ -76,11 +76,11 @@ must have done, and what this stage verifies rather than performs:
 
 | Set                   | Current state                                                                                                                                                              | Requirement                                                                                                                                                           |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PHPUnit config        | globs after D6                                                                                                                                                             | a suite covering the root                                                                                                                                             |
+| PHPUnit config        | 53 enumerated directories                                                                                                                                                  | a suite covering the root                                                                                                                                             |
 | Aggregate             | `scripts/phpunit-aggregate.py:32` hardcodes `SUITES = ("Unit","Integration","Functional","Infrastructure")`, and its docstring *proves* those four partition the aggregate | a fifth suite must be added **and** the partition proof updated, or the aggregate refuses                                                                             |
 | PHPStan               | `phpstan.neon:13` has `tests`; `:32` ignores a path that moves                                                                                                             | add the root; move the ignore with its file                                                                                                                           |
 | PHP-CS-Fixer          | finder has `/tests` and already has `/scripts`                                                                                                                             | add the root                                                                                                                                                          |
-| Composer autoload-dev | `Qualimetrix\Tests\` → `tests/`; classmap for `ArchitectureStaticAnalysis/Unit/Fixtures/`                                                                                  | new PSR-4 prefix; move the classmap entry                                                                                                                             |
+| Composer autoload-dev | `Qualimetrix\Tests\` → `tests/` (the `ArchitectureStaticAnalysis/Unit/Fixtures/` classmap belongs to stage 03, which moves that directory)                                 | new PSR-4 prefix; move the classmap entry                                                                                                                             |
 | Composer group        | four groups named by what invalidates them                                                                                                                                 | `Channel/`, `RuleDeclaration/` etc. are invalidated by a code change, not by a claim about the repo — `check:self` fits some groups and not others; choose explicitly |
 | Inventory generator   | 346 pinned `tests/` paths, **56 touched by this stage**                                                                                                                    | edit and regenerate, or `architecture:check` reddens                                                                                                                  |
 
