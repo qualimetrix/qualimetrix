@@ -605,6 +605,10 @@ architecture:
 
 **`max_expanded_layers`** caps the total number of concrete layers produced by template expansion across all templates (default `500`). The cap protects against pathological broad templates whose binding tuples would blow up the layer count. Raise the ceiling explicitly when a monorepo legitimately has more bounded contexts than the default allows; overflow rejects at expansion with an actionable error.
 
+### Computed Metrics
+
+The `computed_metrics:` root key configures the six built-in health scores (`health.complexity`, `health.cohesion`, `health.coupling`, `health.typing`, `health.maintainability`, `health.overall`) and any user-defined computed metrics. This is a large enough surface — accepted keys, thresholds, custom formulas, available variables and functions — to have its own reference: see [Health Scores > Configuration](../reference/health-scores.md#configuration) for the full schema.
+
 ---
 
 ## Presets
