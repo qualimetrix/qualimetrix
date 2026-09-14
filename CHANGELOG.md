@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Health scores move on every project.** The six `health.*` dimensions were
+recalibrated against a corpus that now includes legacy anchors, and the project
+aggregate of a namespace-collected metric now includes the global namespace.
+Scores fall for most projects — across a seventeen-project corpus the median
+overall went from 79.1 to 73.4 — so a `health.*` finding can cross a warning or
+error threshold that it did not cross before, changing a run's exit code.
+Regenerate any recorded baseline. ADR 0062, "Health Scores Measure What They
+Cover", records what moved and why, including what was decided against.
+
 **A filter value that used to be discarded in silence now exits 3.** Each of
 these accepted anything, dropped what it could not use and reported success;
 each now refuses and says what did not bind. `--rule-opt` (a pair written

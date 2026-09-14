@@ -90,7 +90,7 @@ At class level, directly maps type coverage percentage. At namespace and project
 
 ### Maintainability
 
-Three-term penalty on MI average (base quality), MI 5th percentile (main differentiator), and MI minimum (extreme outliers). The multi-term approach produces good discrimination across projects — from well-maintained libraries (score ~95) to complex frameworks (score ~48).
+Three-term penalty on MI average (base quality), MI 5th percentile (main differentiator), and MI minimum (extreme outliers). The knees sit at Coleman's published lines: 85, above which a codebase is "highly maintainable", and 65, below which it is "difficult to maintain". Across the seventeen-project calibration corpus the dimension ranges from 33.7 to 100.0 at project level.
 
 ### Overall
 
