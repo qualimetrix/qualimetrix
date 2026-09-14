@@ -33,6 +33,9 @@ handled".
 
 ## Definition of Done
 
+- `php scripts/health-calibration.php --verdicts` exits 0 — every criterion
+  C1-C7 re-checked, not only the ones this stage set out to move. A criterion
+  satisfied by an earlier stage must not be quietly undone here.
 - `composer check` green — the aggregate, not a group.
 - `composer benchmark:check` exit 0.
 - The gate run, its verdict recorded, every red channel explained as an intended

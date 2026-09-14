@@ -47,32 +47,72 @@ is its last stage, not its whole.**
 
 ## The criteria
 
-Each is a command that can fail, and each can fail for the reason it exists.
+Round 2 of review was given one hypothesis — "find an execution where every
+criterion is green and the measured bad outcomes survive" — and found four. The
+criteria below are the answer to those four; `REVIEW.md` records which finding
+each clause exists for.
 
-- **C1 — monotonicity.** A subject with exactly one child must not score better
-  than that child, on any dimension. Runs on CodeIgniter today and fails; needs
-  no corpus, no ranking and no judgement. This is the criterion review found
-  missing: it rejects the outcome the work exists to remove.
-- **C2 — the top is earned.** No subject scores 100 on a dimension by clearing
-  every threshold. Where a perfect score is legitimate and vacuous — full type
-  coverage, a namespace with nothing to measure — the dimension declares itself
-  not applicable rather than scoring perfect. A count of subjects at exactly 100
-  before and after is part of the stage report.
-- **C3 — applicability is stated, not implied.** A dimension whose inputs cover a
-  negligible fraction of the subject reports that it does not apply. Measured
-  against the `.count` keys, which already exist. Replaces the earlier C3, which
-  tested how absence was spelled and would have passed CodeIgniter unchanged.
-- **C4 — ordering.** No legacy anchor outranks a modern library on
-  `health.overall`, against the ranking frozen in
-  `measurement/02-apriori-ranking.md` before any coefficient moves. The ranking
-  is produced by someone who has not seen the score tables — the author has, so
-  the author does not write it.
-- **C5 — namespace and class are calibrated, not just project.** The stage
-  report states, per level, the median and the interquartile range across the
-  corpus before and after, and what change counts as success. Premise 3 is a
-  namespace-level defect and no project-level criterion can detect its repair.
-- **C6 — the shift is explained.** Every dimension whose formula changed carries
-  a before/after table per project per level, and a reason in the ADR.
+Every criterion is one verdict from one command, `scripts/health-calibration.php`,
+which exits non-zero when any of them fails. They are **not staged**: the single
+command runs in the Definition of Done of *every* stage that touches
+`ComputedMetricDefaults.php` or the aggregation, so a criterion satisfied in one
+stage cannot be quietly undone by the next.
+
+- **C1 — monotonicity.** For every parent/child level pair and every dimension,
+  the parent score lies within `[min(children), max(children)]`. Fails today on
+  CodeIgniter: project `health.coupling` 100.0 against its only namespace's 76.1.
+  "Child" is defined by **containment of symbols**, not by the namespace tree
+  the product builds: the tree is what drops `(global)`, and a criterion that
+  inherits the defect it is testing for is no criterion. Every class in the
+  project is a descendant of the project, `(global)` included.
+- **C2 — the top is earned.** Per dimension and level, no subject scores 100
+  while any of its penalty inputs lies outside the range its thresholds cover.
+  The count of subjects at exactly 100 is reported before and after, per
+  dimension and level, and the count is a fact in the stage report rather than
+  a target the judged stage sets for itself. A maximum reached because there was
+  genuinely nothing to penalise is legitimate and is distinguished from one
+  reached because every threshold was out of reach.
+- **C3 — coverage is stated and bounded.** For every subject and dimension the
+  bench prints the share the score was computed over, by symbol count and, at
+  the levels where symbols carry lines, by lines. A score whose coverage falls
+  below a declared fraction is damped toward the neutral value rather than
+  published at face value, and the coverage travels with the score into the
+  report. The fraction and the damping are chosen in P3 and written into this
+  file; "negligible" is not a threshold.
+
+  **This is deliberately not "the dimension declares itself not applicable".**
+  Round 2 established that per-subject refusal is the one candidate the engine
+  cannot express: there is no per-subject non-publication path, the only route
+  leads to `health.overall`'s `?? 75`, and per-subject renormalisation needs a
+  non-canonical `health.overall` that `WeightedHealthFormula` does not parse and
+  `HealthFormulaExcluder` refuses. Round 1 of these criteria demanded exactly
+  that and would have forced a change to the evaluator, the repository, twelve
+  formatters, the excluder and its tests under the heading of a recalibration.
+  Publishing the coverage alongside a damped score is engine-compatible, and a
+  first-class "not applicable" state remains available as its own decision with
+  its own ADR.
+
+- **C4 — the aggregate describes the whole.** For every dimension with a
+  level aggregate, the project number computed by the current rule and the
+  number computed over the pooled set of the level's members, weighted by size,
+  differ by no more than a declared tolerance. This is the criterion round 2
+  found missing: the unweighted mean was listed among the defects and rejected
+  by nothing, so `Avifinfo` with seven classes counting as much as a 451-class
+  namespace passed every other criterion.
+- **C5 — ordering.** No legacy anchor outranks a modern library on
+  `health.overall`, against `measurement/02-apriori-ranking.md`, frozen before
+  any coefficient moves and written by someone who has not seen the scores.
+- **C6 — every level is calibrated.** Median and interquartile range per
+  dimension per level, across the corpus, before and after. The target is
+  declared in P4's stage report *and* in this file before P4 runs, so the stage
+  under judgement does not write its own passing condition.
+- **C7 — the shift is explained.** Every dimension whose formula or aggregation
+  changed carries a before/after table per project per level, and a reason in
+  the ADR.
+
+C1 to C4 are properties of a single run and can fail on today's product; C5 and
+C6 need the frozen ranking and the declared targets; C7 is a property of the
+writeup.
 
 ## Decisions
 

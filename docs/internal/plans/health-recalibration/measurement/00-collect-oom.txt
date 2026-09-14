@@ -1,6 +1,6 @@
 scripts/collect-benchmark-data.php, run 2026-09-14 with the PHP default
-memory_limit (128M). All fifteen projects analysed; the run then died while
-assembling the output and wrote nothing.
+memory_limit (128M). Fourteen projects analysed; the run died on the fifteenth
+and wrote nothing.
 
     Analyzing: laravel-framework ... OK (54s, 209 ns, 1451 classes)
     Analyzing: qmx ... PHP Fatal error:  Allowed memory size of 134217728 bytes
@@ -8,8 +8,12 @@ assembling the output and wrote nothing.
     scripts/collect-benchmark-data.php on line 102
     EXIT=255
 
-Line 102 is an implode() over one array holding every output line of every
-symbol of every project.
+Line 102 is `implode("\n", $output)` — the per-project step that joins the line
+array `exec()` produced into one JSON string. It is not the final document
+assembly: the failure is one project's output, the largest in the corpus
+(`--format=metrics` over `src/` is about 12.5 MB), held twice at once as an
+array of lines and as the joined string.
 
 The same command under `php -d memory_limit=2G` exits 0 and writes the file, so
-the analysis is not at fault — only the collector's assembly step.
+the analysis is not at fault — only the collector's use of `exec()`, which has
+no way to stream.

@@ -69,3 +69,66 @@ Neither reviewer ran `composer check` or `benchmark:check`; neither examined the
 finding-gate cases, the presets, or CI. The anchors' installation was not
 exercised by either. These remain open and are named in the stages that touch
 them.
+
+---
+
+# Plan review — round 2, disposition
+
+Narrow, one reviewer, one hypothesis: *does an execution exist where every
+criterion is green and the three measured bad outcomes survive?* The outcomes
+put to it were CodeIgniter's 100.0 coupling, WordPress's unweighted structural
+mean, and flysystem's identity-100 maintainability.
+
+**The hypothesis was confirmed**, with a concrete execution named. 14 findings,
+all confirmed — 4 HIGH, 8 MEDIUM, 2 LOW — plus 1 refuted.
+
+## The execution the reviewer constructed
+
+P3 settles M1 by a coverage rule that includes `(global)`, which greens C1 on
+CodeIgniter. It settles the second half of M1 in favour of the status quo, so
+the mean stays unweighted. C3 takes its denominator in symbols, where
+WordPress's 20 of 32 is 62% and not "negligible". P4 then raises the `mi.avg`
+threshold above flysystem's lowest namespace, so the count of subjects at
+exactly 100 falls and C2 goes green. Every criterion passes; two of the three
+defects are untouched.
+
+And the third returns: C1 and C3 appeared in no stage's DoD after P3, while P4
+edits the same formula file.
+
+## What changed in response
+
+- **C4 is new** — the aggregate must agree, within a declared tolerance, with
+  the same quantity computed over the pooled members weighted by size. The
+  unweighted mean was listed as a defect and rejected by nothing.
+- **The criteria stopped being staged.** One bench command prints all seven
+  verdicts and exits non-zero on any failure, and that command is in the DoD of
+  every stage touching the formulas or the aggregation.
+- **C1 defines "child" by symbol containment**, not by the product's namespace
+  tree — the tree is what drops `(global)`, and a criterion built on it would
+  inherit the defect it exists to detect.
+- **C2 and C3 stopped demanding what the engine cannot do.** Round 1's wording
+  ("the dimension declares itself not applicable") selected the one M2 candidate
+  with no per-subject path in the engine, while M2 still presented the choice as
+  open and priced it as "a shape the engine already has". It is not: it would
+  change the evaluator, the repository, the formatters, the excluder and its
+  tests. The decision taken is to publish coverage alongside a damped score, and
+  to leave a first-class "not applicable" state to its own ADR.
+- **"The `?? 75` fallbacks ... or are gone" is withdrawn.** Removing them breaks
+  `WeightedHealthFormula`'s parse and therefore `--exclude-health`. The DoD now
+  asks for a documented meaning, which is achievable.
+
+## Still open, carried into the stages
+
+C3's fraction, denominator and damping are numbers P3 must choose and write
+down. C5's ranking has no tool yet and its band form does not match what a
+comparison needs. The class level is verified by no instrument DoD. These are
+named in their stages rather than resolved here.
+
+## Measured against the reviewers
+
+Two round-1 reviewers rated the collector's configuration leak HIGH and
+concluded the instruments "measured different things". Measurement says
+otherwise for health numbers: identical to the decimal from both working
+directories — `measurement/06-instrument-contamination.md`. The fix is kept for
+correctness; the claim is withdrawn. Agreement between reviewers is a reason to
+measure, not a measurement.

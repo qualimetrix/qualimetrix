@@ -38,6 +38,9 @@ twelve output formats.
 
 ## Definition of Done
 
+- `php scripts/health-calibration.php --verdicts` exits 0 — every criterion
+  C1-C7 re-checked, not only the ones this stage set out to move. A criterion
+  satisfied by an earlier stage must not be quietly undone here.
 - No advertised "ideal" contradicts the formula it describes, proven by a test
   that reads both.
 - The inputs shown under a score are the inputs that score was computed from, at

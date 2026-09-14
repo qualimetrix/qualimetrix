@@ -43,6 +43,9 @@ metrics above convenient distributions.
 
 ## Definition of Done
 
+- `php scripts/health-calibration.php --verdicts` exits 0 — every criterion
+  C1-C7 re-checked, not only the ones this stage set out to move. A criterion
+  satisfied by an earlier stage must not be quietly undone here.
 - C2, C4, C5 hold, each reported by the bench with the command that produced it.
 - Per dimension per level, a before/after distribution table across the corpus.
 - Every threshold that moved is listed with its justification and its kind

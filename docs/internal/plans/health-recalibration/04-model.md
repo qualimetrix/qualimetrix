@@ -52,10 +52,16 @@ changes what the product publishes:
 
 - **damp the score** toward a neutral value as coverage falls — cheapest, one
   file, but it still publishes a number that claims to be about the subject;
-- **refuse the dimension for that subject** — honest, and the engine already has
-  a shape for it (`HealthFormulaExcluder` renormalises `health.overall` when a
-  dimension is excluded), but that mechanism works at configuration time over
-  the definition list, not per subject at evaluation time;
+- **refuse the dimension for that subject** — honest, and **ruled out for this
+  work**. The engine has no per-subject non-publication path: the only route
+  leads to `health.overall`'s `?? 75`, and per-subject renormalisation needs a
+  non-canonical `health.overall` that `WeightedHealthFormula` does not parse and
+  `HealthFormulaExcluder` refuses. `HealthFormulaExcluder` works at
+  configuration time over the definition list, not per subject at evaluation
+  time, so citing it as "a shape the engine already has" is wrong. Reaching this
+  candidate means changing the evaluator, the repository, the formatters, the
+  excluder and its tests — a product feature with its own ADR, not a step of a
+  recalibration;
 - **publish the coverage alongside the score** and leave interpretation to the
   reader — smallest behaviour change, largest reporting change.
 
@@ -65,6 +71,17 @@ caught, the dimension is silently not published, and `health.overall` then reads
 its `?? 75` fallback — an invented neutral that hides the whole event. Whichever
 candidate is chosen, the `?? 75` fallbacks in `health.overall` are part of this
 stage, not a separate concern.
+
+## The decision this stage takes on M2
+
+Coverage is **published alongside the score, and a score below the declared
+coverage fraction is damped toward the neutral value**. Both are expressible in
+the current engine: the `.count` keys already pass the metric catalog, and
+`health.overall` keeps its canonical weighted-sum shape.
+
+The fraction, the denominator (symbols or lines) and the damping are numbers
+this stage chooses and writes into `00-overview.md` under C3. A word such as
+"negligible" is not one of them.
 
 ## What this stage must not do
 
@@ -91,12 +108,20 @@ problems; only M1 and M2 touch the latter.
 
 ## Definition of Done
 
+- `php scripts/health-calibration.php --verdicts` exits 0 — every criterion
+  C1-C7 re-checked, not only the ones this stage set out to move. A criterion
+  satisfied by an earlier stage must not be quietly undone here.
 - C1 holds across the corpus, reported by the bench. CodeIgniter's project
   coupling is at or below its namespace value.
 - C3 holds: every dimension whose inputs cover a negligible share of a subject
   reports so, and the bench prints the coverage it used.
 - The mechanism behind M1 is written down in the stage report, not only fixed.
-- The `?? 75` fallbacks in `health.overall` have a stated meaning or are gone.
+- The `?? 75` fallbacks in `health.overall` have a stated, documented meaning.
+  Removing them is not an option: `WeightedHealthFormula` parses the canonical
+  `(m["health.dim"] ?? fallback) * weight` shape out of the formula text, and
+  `HealthFormulaExcluder` refuses anything else, so a formula without `??`
+  breaks `--exclude-health`. Round 1 of this stage asked for "or are gone",
+  which is unsatisfiable.
 - `composer check` green, including the ratchet and baselines this stage moves —
   this stage regenerates what it invalidates rather than leaving it to P7.
 - Unit tests: a single-child parent (C1), a subject with a 1-of-500 aggregate
