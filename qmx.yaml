@@ -885,6 +885,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
+        - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\RuntimeLimits'
         - 'Qualimetrix\Infrastructure\Console\RuntimeLimitsController'

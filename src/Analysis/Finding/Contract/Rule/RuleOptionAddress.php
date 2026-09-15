@@ -24,4 +24,18 @@ final readonly class RuleOptionAddress
         public ?string $level,
         public string $key,
     ) {}
+
+    /**
+     * The address as a user writes it into `--rule-opt` or a `rules:` document:
+     * `level.key` inside a slot, the bare key at the rule's own depth.
+     *
+     * Here rather than in each reader, because the dot is the grammar the
+     * address is made of — a caller that joins the two halves itself has to
+     * know that grammar to do it, and two callers knowing it is how they come
+     * to disagree about it.
+     */
+    public function written(): string
+    {
+        return $this->level === null ? $this->key : $this->level . '.' . $this->key;
+    }
 }

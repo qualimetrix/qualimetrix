@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -36,6 +37,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * the first place.
  */
 #[CoversClass(RulesCommand::class)]
+#[CoversClass(RuleListingPresenter::class)]
 #[CoversClass(RuleOptionSurface::class)]
 final class RulesListingAgreesWithRefusalTest extends TestCase
 {

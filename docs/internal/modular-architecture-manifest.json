@@ -9763,6 +9763,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "closes_in": null
         }
       ]
     },
@@ -18759,6 +18764,25 @@
       "owner": "Infrastructure.Console",
       "visibility": "internal",
       "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter": {
+      "path": "src/Infrastructure/Console/RuleListingPresenter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P6-A",
       "consumers": [
         {
           "owner": "Infrastructure.DependencyInjection",

@@ -73,6 +73,7 @@ use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
@@ -460,11 +461,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
 
         // RulesCommand
+        $container->register(RuleListingPresenter::class);
+
         $container->register(RulesCommand::class)
             ->setArguments([
                 new Reference(RuleExecutionInterface::class),
                 new Reference(RuleChannelRegistryInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(RuleListingPresenter::class),
             ])
             ->setPublic(true);
 

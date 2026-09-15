@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,6 +35,7 @@ final class RulesCommand extends Command
         private readonly RuleExecutionInterface $ruleExecution,
         private readonly RuleChannelRegistryInterface $channels,
         private readonly ChannelDeclarationRegistryInterface $declarations,
+        private readonly RuleListingPresenter $presenter,
     ) {
         parent::__construct();
     }
@@ -68,99 +70,9 @@ final class RulesCommand extends Command
             );
         }
 
-        $rules = $this->rulesIn($groupFilter);
-
-        if ($rules === []) {
-            $output->writeln('<comment>No rules found</comment>');
-
-            return self::SUCCESS;
-        }
-
-        $output->writeln(\sprintf('<info>%d rules available</info>', \count($rules)));
-        $output->writeln('');
-
-        $currentGroup = '';
-
-        foreach ($rules as $rule) {
-            if ($rule['group'] !== $currentGroup) {
-                $currentGroup = $rule['group'];
-                $output->writeln(\sprintf('<comment>%s</comment>', ucfirst($currentGroup)));
-            }
-
-            $output->writeln(\sprintf('  %-40s %s', $rule['name'], $rule['description']));
-
-            foreach ($rule['judged'] as $channelCode => $metricKeys) {
-                $output->writeln(\sprintf(
-                    '    <comment>%s</comment> judges %s',
-                    $channelCode,
-                    implode(', ', $metricKeys),
-                ));
-            }
-
-            if ($rule['options'] !== []) {
-                $output->writeln(\sprintf('    options: %s', implode(', ', $rule['options'])));
-            }
-
-            // A slot always gets its line, even were it ever to accept nothing:
-            // the slot name is itself the information that this rule may be
-            // addressed one level down, and silence there hides the depth
-            // rather than tidying the listing.
-            foreach ($rule['optionsAtLevel'] as $level => $keys) {
-                $output->writeln(\sprintf('    options at %s: %s', $level, implode(', ', $keys)));
-            }
-
-            foreach ($rule['aliases'] as $alias => $optionName) {
-                $output->writeln(\sprintf(
-                    '    <info>--%s</info> <comment>(--rule-opt=%s:%s=...)</comment>',
-                    $alias,
-                    $rule['name'],
-                    $optionName,
-                ));
-            }
-        }
-
-        $output->writeln('');
-        $output->writeln(\sprintf(
-            '<info>Every rule also takes:</info> %s',
-            implode(', ', FrameworkOptionKeys::all()),
-        ));
-        $output->writeln('');
-        $output->writeln('<info>Usage:</info> bin/qmx check --disable-rule=<name> | --only-rule=<name>');
-        $output->writeln('        bin/qmx check --rule-opt=<name>:<option>=<value>');
+        $this->presenter->present($output, $this->rulesIn($groupFilter));
 
         return self::SUCCESS;
-    }
-
-    /**
-     * The alias targets restated in the spelling the declarations use.
-     *
-     * A target is authored by hand in a CLI attribute, so it arrives in kebab,
-     * snake or camel depending on who wrote it — 34 of the 80 were not kebab —
-     * while every refusal about those keys prints canonical kebab. Printing
-     * both spellings of one key is the same defect this listing exists to end,
-     * one column over.
-     *
-     * A target nothing accepts keeps the spelling its author gave it: the
-     * listing is not the place to discover that, and inventing a canonical form
-     * for a key no declaration has would be a guess printed as a fact.
-     *
-     * @param array<string, string> $aliases CLI alias => target as authored
-     *
-     * @return array<string, string> CLI alias => target in canonical spelling
-     */
-    private static function aliasesInCanonicalSpelling(array $aliases, RuleOptionSurface $surface): array
-    {
-        $canonical = [];
-
-        foreach ($aliases as $alias => $target) {
-            $address = $surface->locate($target);
-
-            $canonical[$alias] = $address === null
-                ? $target
-                : ($address->level === null ? $address->key : $address->level . '.' . $address->key);
-        }
-
-        return $canonical;
     }
 
     /**
@@ -234,7 +146,16 @@ final class RulesCommand extends Command
                     FrameworkOptionKeys::all(),
                 )),
                 'optionsAtLevel' => $optionsAtLevel,
-                'aliases' => self::aliasesInCanonicalSpelling($rule->aliases, $surface),
+                // Restated in the spelling the declarations use: an alias
+                // target is authored by hand in an attribute, and 34 of the 80
+                // were snake or camel while every refusal about those keys
+                // printed canonical kebab. A target nothing accepts keeps the
+                // spelling its author gave it — inventing a canonical form for
+                // a key no declaration has would be a guess printed as a fact.
+                'aliases' => array_map(
+                    static fn(string $target): string => $surface->locate($target)?->written() ?? $target,
+                    $rule->aliases,
+                ),
                 'judged' => $judged,
             ];
         }

@@ -30,9 +30,11 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptio
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(RulesCommand::class)]
+#[CoversClass(RuleListingPresenter::class)]
 final class RulesCommandTest extends TestCase
 {
     #[Test]
@@ -356,7 +358,7 @@ final class RulesCommandTest extends TestCase
             static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
         );
 
-        return new RulesCommand($execution, $channels, $registry);
+        return new RulesCommand($execution, $channels, $registry, new RuleListingPresenter());
     }
 
     private function createCyclomaticRuleWithAlias(): RuleInterface

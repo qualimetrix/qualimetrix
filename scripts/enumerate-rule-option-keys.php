@@ -45,7 +45,20 @@ require __DIR__ . '/../vendor/autoload.php';
 final class RuleOptionKeyEnumeration
 {
     /** Keys the factory strips before `fromArray()` ever sees them. */
-    private const array FRAMEWORK_KEYS = ['suppressNamespaces', 'suppressNamespaceChannels', 'suppressPaths'];
+    /**
+     * Read off the product's owner rather than written out here: a fifth copy
+     * of this list is how it goes out of step in silence, which is the defect
+     * the owner was introduced to close.
+     *
+     * @return list<string> normalized spellings, as this script compares them
+     */
+    private static function frameworkKeys(): array
+    {
+        return array_map(
+            ConfigKeySpelling::normalize(...),
+            \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::all(),
+        );
+    }
 
     /**
      * @param list<string> $arguments
@@ -242,7 +255,7 @@ final class RuleOptionKeyEnumeration
             $levelClass = $levelOptions::class;
             $reading = $reader->read($levelClass);
 
-            $keys = array_values(array_diff(array_keys($reading->keys), self::FRAMEWORK_KEYS));
+            $keys = array_values(array_diff(array_keys($reading->keys), self::frameworkKeys()));
             sort($keys);
 
             $slots[] = $level->value;
@@ -294,7 +307,7 @@ final class RuleOptionKeyEnumeration
             }
         }
 
-        foreach (self::FRAMEWORK_KEYS as $frameworkKey) {
+        foreach (self::frameworkKeys() as $frameworkKey) {
             unset($declared[$frameworkKey]);
         }
 
