@@ -321,6 +321,13 @@ accepted set in the seam's wording and arrives before the rule is built.
   coverage. Where coverage is undefined — `health.overall`, `health.typing`, a
   class-level or namespace-filtered score — the field states that and why,
   rather than reporting zero.
+- `bin/qmx rules` now lists every option a rule accepts — at its own depth and
+  inside each level slot — instead of only the ones that happen to carry a CLI
+  alias. 54 of the 132 real options were reachable through `--rule-opt` and
+  YAML but named nowhere; `duplication.clone` and `code-smell.boolean-argument`
+  showed none at all. The three suppression keys are named once in a footer,
+  and alias annotations now print their option in the same canonical spelling
+  every refusal uses.
 - Configuration that binds to nothing is now reported instead of passing
   unnoticed, through six new channels, all `warning` at project level:
   `discovery.unmatched-exclude` (an `--exclude` value or `exclude:` entry that
