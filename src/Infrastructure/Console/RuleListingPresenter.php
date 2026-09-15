@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * What `bin/qmx rules` looks like.
  *
+ * @phpstan-type RuleRow array{name: string, group: string, description: string, options: list<string>, optionsAtLevel: array<string, list<string>>, aliases: array<string, string>, judged: array<string, non-empty-list<string>>}
+ *
  * Separate from the command for the reason the command's own metrics named:
  * deciding which producers are listed and saying what a producer looks like are
  * two subjects, and one class holding both shared no state between the halves.
@@ -24,7 +26,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class RuleListingPresenter
 {
     /**
-     * @param list<array{name: string, group: string, description: string, options: list<string>, optionsAtLevel: array<string, list<string>>, aliases: array<string, string>, judged: array<string, non-empty-list<string>>}> $rules
+     * @param list<RuleRow> $rules
      */
     public function present(OutputInterface $output, array $rules): void
     {
@@ -59,40 +61,75 @@ final readonly class RuleListingPresenter
     }
 
     /**
-     * One producer's block: what it judges, what it accepts at each depth, and
-     * the flags that reach some of those options.
+     * One producer's block, in the order a reader meets it: what the rule is,
+     * what it judges, what it accepts at each depth, and the flags that reach
+     * some of those options.
      *
-     * @param array{name: string, group: string, description: string, options: list<string>, optionsAtLevel: array<string, list<string>>, aliases: array<string, string>, judged: array<string, non-empty-list<string>>} $rule
+     * @param RuleRow $rule
      */
     private function writeRule(OutputInterface $output, array $rule): void
     {
         $output->writeln(\sprintf('  %-40s %s', $rule['name'], $rule['description']));
 
-        foreach ($rule['judged'] as $channelCode => $metricKeys) {
+        $this->writeJudgedMetrics($output, $rule['judged']);
+        $this->writeAcceptedOptions($output, $rule['options'], $rule['optionsAtLevel']);
+        $this->writeAliases($output, $rule['name'], $rule['aliases']);
+    }
+
+    /**
+     * The catalog metrics each of this producer's channels judges. A rule that
+     * reports a number of its own making — a cycle's member count, a count of
+     * matched criteria — judges no metric and prints no line.
+     *
+     * @param array<string, non-empty-list<string>> $judged
+     */
+    private function writeJudgedMetrics(OutputInterface $output, array $judged): void
+    {
+        foreach ($judged as $channelCode => $metricKeys) {
             $output->writeln(\sprintf(
                 '    <comment>%s</comment> judges %s',
                 $channelCode,
                 implode(', ', $metricKeys),
             ));
         }
+    }
 
-        if ($rule['options'] !== []) {
-            $output->writeln(\sprintf('    options: %s', implode(', ', $rule['options'])));
+    /**
+     * What may be written under this rule, at its own depth and inside each
+     * level slot.
+     *
+     * A rule with no substantive option of its own prints no `options:` line. A
+     * slot always prints its line, even were it ever to accept nothing: the
+     * slot name is itself the information that this rule may be addressed one
+     * level down, and silence there hides the depth rather than tidying it.
+     *
+     * @param list<string> $options
+     * @param array<string, list<string>> $optionsAtLevel
+     */
+    private function writeAcceptedOptions(OutputInterface $output, array $options, array $optionsAtLevel): void
+    {
+        if ($options !== []) {
+            $output->writeln(\sprintf('    options: %s', implode(', ', $options)));
         }
 
-        // A slot always gets its line, even were it ever to accept nothing:
-        // the slot name is itself the information that this rule may be
-        // addressed one level down, and silence there hides the depth rather
-        // than tidying the listing.
-        foreach ($rule['optionsAtLevel'] as $level => $keys) {
+        foreach ($optionsAtLevel as $level => $keys) {
             $output->writeln(\sprintf('    options at %s: %s', $level, implode(', ', $keys)));
         }
+    }
 
-        foreach ($rule['aliases'] as $alias => $optionName) {
+    /**
+     * The flags that reach some of those options, each with the long
+     * `--rule-opt` form it expands to.
+     *
+     * @param array<string, string> $aliases CLI alias => option target, canonical spelling
+     */
+    private function writeAliases(OutputInterface $output, string $ruleName, array $aliases): void
+    {
+        foreach ($aliases as $alias => $optionName) {
             $output->writeln(\sprintf(
                 '    <info>--%s</info> <comment>(--rule-opt=%s:%s=...)</comment>',
                 $alias,
-                $rule['name'],
+                $ruleName,
                 $optionName,
             ));
         }
