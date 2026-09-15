@@ -1,0 +1,65 @@
+rule	level	options_here
+annotation.directive	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, unused-directive-severity
+architecture.circular-dependency	-	direct-as-error, enabled, max-cycle-size, suppress-namespace-channels, suppress-namespaces, suppress-paths
+architecture.layer-violation	-	enabled, severity, suppress-namespace-channels, suppress-namespaces, suppress-paths
+architecture.unassigned-class	-	mode, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.boolean-argument	-	allowed-prefixes, enabled, flag-promoted-properties, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.constructor-overinjection	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+code-smell.count-in-loop	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.debug-code	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.empty-catch	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.error-suppression	-	allowed-functions, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.eval	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.exit	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.goto	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.identical-subexpression	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.long-parameter-list	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, vo-error, vo-threshold, vo-warning, warning
+code-smell.superglobals	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+code-smell.unreachable-code	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+code-smell.unused-private	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+cohesion.lcom	-	enabled, error, exclude-methods, exclude-readonly, min-methods, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+complexity.ccn	-	callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold
+complexity.ccn	callable	enabled, error, threshold, warning
+complexity.ccn	class	enabled, max-error, max-warning, threshold
+complexity.cognitive	-	callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold
+complexity.cognitive	callable	enabled, error, threshold, warning
+complexity.cognitive	class	enabled, max-error, max-warning, threshold
+complexity.npath	-	callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold
+complexity.npath	callable	enabled, error, threshold, warning
+complexity.npath	class	enabled, max-error, max-warning, threshold
+complexity.wmc	-	enabled, error, exclude-data-classes, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+computed	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+coupling.cbo	-	class, enabled, error, namespace, scope, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+coupling.cbo	class	enabled, error, scope, threshold, warning
+coupling.cbo	namespace	enabled, error, min-class-count, threshold, warning
+coupling.class-rank	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+coupling.distance	-	enabled, include-namespaces, max-distance-error, max-distance-warning, min-class-count, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold
+coupling.instability	-	class, enabled, max-error, max-warning, namespace, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold
+coupling.instability	class	enabled, max-error, max-warning, min-afferent, threshold
+coupling.instability	namespace	enabled, max-error, max-warning, min-afferent, min-class-count, threshold
+coupling.unmatched-framework-namespace	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+design.data-class	-	enabled, exclude-exceptions, exclude-promoted-only, exclude-readonly, min-members, suppress-namespace-channels, suppress-namespaces, suppress-paths, wmc-threshold, woc-threshold
+design.dit	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+design.god-class	-	class-loc-threshold, enabled, exclude-readonly, lcom-threshold, min-criteria, min-methods, suppress-namespace-channels, suppress-namespaces, suppress-paths, tcc-threshold, wmc-threshold
+design.noc	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+design.type-coverage.param	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+design.type-coverage.property	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+design.type-coverage.return	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+discovery.unmatched-exclude	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+duplication.clone	-	enabled, error, min-lines, min-tokens, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+health.cohesion	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+health.complexity	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+health.coupling	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+health.maintainability	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+health.overall	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+health.typing	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+maintainability.mi	-	enabled, error, exclude-tests, min-statements, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+security.command-injection	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+security.hardcoded-credentials	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+security.sensitive-parameter	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+security.sql-injection	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+security.xss	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
+size.class-count	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+size.method-count	-	enabled, error, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+size.property-count	-	enabled, error, exclude-promoted-only, exclude-readonly, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning
+suppression.configuration	-	enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths
