@@ -306,6 +306,71 @@ final class RenameMaps
     }
 
     /**
+     * What this instance translated, keyed by the row that did it.
+     *
+     * Exists because a case runs in a worker process with a `RenameMaps` of its
+     * own ({@see \QmxFindingGate\CaseScheduler}), and a row whose only work is
+     * on that case's *input* — a configuration key as the document writes it, a
+     * name inside a case argument — fires there and nowhere else. Without a way
+     * back, the parent judges staleness against hits it could never have seen
+     * and reports such a row as translating nothing in the whole run. Measured:
+     * `root-key-renamed`, whose entire subject is an input-only translation,
+     * was failing for exactly that reason.
+     *
+     * Keyed by the row's own text rather than by index: both processes load the
+     * same directory and would agree on order today, but an index is a fact
+     * about one load and the row is the thing being credited.
+     *
+     * @return array<string, int>
+     */
+    public function firedRows(): array
+    {
+        $fired = [];
+
+        foreach ($this->pairs as $index => $pair) {
+            $hits = $this->hits[$index] ?? 0;
+
+            if ($hits > 0) {
+                $fired[$pair['row']] = ($fired[$pair['row']] ?? 0) + $hits;
+            }
+        }
+
+        return $fired;
+    }
+
+    /**
+     * Credits rows that fired in another process.
+     *
+     * A row this instance does not declare is refused rather than ignored: it
+     * means the two processes loaded different maps, and silently dropping the
+     * credit would report a live row as stale — the failure this method exists
+     * to remove, arriving by a different door.
+     *
+     * @param array<string, int> $hitsByRow
+     */
+    public function creditRowsFiredElsewhere(array $hitsByRow): void
+    {
+        foreach ($hitsByRow as $row => $hits) {
+            $matched = false;
+
+            foreach ($this->pairs as $index => $pair) {
+                if ($pair['row'] === $row) {
+                    $this->hits[$index] = ($this->hits[$index] ?? 0) + $hits;
+                    $matched = true;
+                }
+            }
+
+            if (!$matched) {
+                throw new GateError(\sprintf(
+                    'A case worker credited the map row "%s", which this process does not declare. The two loaded'
+                    . ' different maps, and crediting nothing would report a live row as stale.',
+                    $row,
+                ));
+            }
+        }
+    }
+
+    /**
      * The declared rows that translated nothing in the whole run.
      *
      * A row that fired nowhere is a claim about a rename that did not happen —

@@ -27,6 +27,10 @@ final class CaseScheduler
         private readonly string $label,
         private readonly bool $reverseInput,
         private readonly int $jobs,
+        // The parent's maps, credited with what each worker's own instance
+        // translated. Staleness is judged here, and a case's input is
+        // translated there.
+        private readonly RenameMaps $maps,
     ) {}
 
     /**
@@ -88,7 +92,7 @@ final class CaseScheduler
                     }
 
                     try {
-                        $artifacts = json_decode(Fs::read($worker['output']), true, 512, \JSON_THROW_ON_ERROR);
+                        $payload = json_decode(Fs::read($worker['output']), true, 512, \JSON_THROW_ON_ERROR);
                     } catch (JsonException $error) {
                         throw new GateError(\sprintf(
                             'Case worker "%s" in %s wrote unreadable artifacts: %s.',
@@ -98,11 +102,19 @@ final class CaseScheduler
                         ));
                     }
 
-                    if (!\is_array($artifacts) || array_filter($artifacts, static fn(mixed $artifact): bool => !\is_string($artifact)) !== []) {
+                    $artifacts = \is_array($payload) ? ($payload['artifacts'] ?? null) : null;
+                    $hits = \is_array($payload) ? ($payload['mapHits'] ?? null) : null;
+
+                    if (!\is_array($artifacts) || !\is_array($hits)
+                        || array_filter($artifacts, static fn(mixed $artifact): bool => !\is_string($artifact)) !== []
+                        || array_filter($hits, static fn(mixed $count): bool => !\is_int($count)) !== []
+                    ) {
                         throw new GateError(\sprintf('Case worker "%s" in %s wrote an invalid artifact map.', $worker['case']->id, $this->label));
                     }
 
                     /** @var array<string, string> $artifacts */
+                    /** @var array<string, int> $hits */
+                    $this->maps->creditRowsFiredElsewhere($hits);
                     $completed[$index] = $artifacts;
                     ++$finished;
                     $this->announce($finished, $total, \count($inFlight));

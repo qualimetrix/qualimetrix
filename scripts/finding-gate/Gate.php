@@ -283,6 +283,7 @@ final class Gate
             $label,
             $reverseInput,
             $this->options->jobs,
+            $this->maps,
         ))->run($this->corpus->cases);
 
         return $artifacts;

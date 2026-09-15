@@ -41,6 +41,65 @@ final class Mutation
      */
     private const APPEND = 'append';
 
+    /**
+     * A rename carried into the step's DERIVED declarations: the exact diffs
+     * under `finding-gate/declared-delta/`, whose contents are *measured* by
+     * `--derive-declared-delta` rather than typed by anyone.
+     *
+     * Its own kind because two of {@see edit()}'s guarantees are wrong for this
+     * subject, and both were measured on this rig rather than foreseen.
+     *
+     * How many times such a file names a channel is nobody's decision. When a
+     * step first declared a delta for `tree|rules`, the measured diff named
+     * `security.sensitive-parameter` twice and `code-smell.unused-private` not
+     * at all — so of two controls built on the same shape, one failed on a
+     * stale declaration and the other stayed green, decided by nothing but
+     * which rule's block fell inside a hunk. `edit()`'s exactly-once rule
+     * cannot express either side of that, and pinning a count would re-break on
+     * the next derivation.
+     *
+     * Whether the directory exists at all is likewise a property of the step
+     * under test, not of the control: a step that declares no delta leaves none
+     * on disk, and a control must not care.
+     *
+     * So this kind rewrites every occurrence, asserts nothing about the count,
+     * and passes over a directory that is not there. The guarantee {@see edit()}
+     * buys with its count — a control cannot quietly stop mutating — is kept by
+     * construction instead: {@see apply()} refuses a mutation made only of
+     * these, because carrying a rename into a declaration is never a control's
+     * subject, only the bookkeeping its subject drags along.
+     */
+    private const RENAME_DERIVED = 'rename-derived';
+
+    /** Where the derived declarations live, relative to the repository root. */
+    private const DERIVED_DECLARATIONS = 'finding-gate/declared-delta';
+
+    /**
+     * A root configuration key renamed in every corpus document that writes it
+     * there.
+     *
+     * The corpus is the input, so a control renaming a published root key has
+     * to rename it everywhere the input spells it, or the mutated product meets
+     * a document written in a vocabulary it no longer has and refuses before
+     * the gate can measure anything.
+     *
+     * Its own kind rather than a list of {@see edit()}s because the list went
+     * stale and said so only years later: `root-key-renamed` carried the rename
+     * into "the one case addressing the root key" while two cases addressed it,
+     * and the control had been failing on the second — a refusal during the
+     * channel probe, which reports as "the gate wrote no report" and names
+     * neither the case nor the key.
+     *
+     * **Root indent only, and that is the subject rather than an optimisation.**
+     * A key of the same spelling nested under `rules:` is a per-rule option, a
+     * different key that this rename must leave alone; the control that owns
+     * this mutation exists partly to show the two are told apart.
+     */
+    private const RENAME_ROOT_KEY_IN_CORPUS = 'rename-root-key-in-corpus';
+
+    /** Where the corpus documents live, relative to the repository root. */
+    private const CORPUS_CASES = 'finding-gate/cases';
+
     /** @param list<array{kind: string, path: string, replacements: array<string, string>, contents: string}> $actions */
     private function __construct(
         public readonly string $description,
@@ -54,6 +113,28 @@ final class Mutation
     public static function edit(string $relativePath, array $replacements, string $description): self
     {
         return new self($description, [self::action(self::EDIT, $relativePath, $replacements, '')]);
+    }
+
+    /**
+     * @param array<string, string> $replacements old fragment => new fragment, applied to
+     *                                            every occurrence in every derived declaration
+     */
+    public static function renameInDerivedDeclarations(array $replacements, string $description): self
+    {
+        return new self($description, [self::action(self::RENAME_DERIVED, self::DERIVED_DECLARATIONS, $replacements, '')]);
+    }
+
+    /**
+     * @param string $oldKey the key as a document writes it, without its colon
+     */
+    public static function renameRootKeyInCorpus(string $oldKey, string $newKey, string $description): self
+    {
+        return new self($description, [self::action(
+            self::RENAME_ROOT_KEY_IN_CORPUS,
+            self::CORPUS_CASES,
+            [$oldKey => $newKey],
+            '',
+        )]);
     }
 
     public static function append(string $relativePath, string $text, string $description): self
@@ -134,6 +215,19 @@ final class Mutation
 
     public function apply(Scratch $scratch, string $repository): void
     {
+        $carried = array_filter(
+            $this->actions,
+            static fn(array $action): bool => $action['kind'] !== self::RENAME_DERIVED,
+        );
+
+        if ($this->actions !== [] && $carried === []) {
+            throw new RuntimeException(
+                'This mutation only carries a rename into the derived declarations, which asserts nothing:'
+                . ' that kind rewrites what it finds and is allowed to find nothing. It is bookkeeping for a'
+                . ' mutation that moves something, never a mutation of its own.',
+            );
+        }
+
         foreach ($this->actions as $action) {
             $this->applyOne($action, $scratch, $repository);
         }
@@ -142,6 +236,18 @@ final class Mutation
     /** @param array{kind: string, path: string, replacements: array<string, string>, contents: string} $action */
     private function applyOne(array $action, Scratch $scratch, string $repository): void
     {
+        if ($action['kind'] === self::RENAME_DERIVED) {
+            self::renameThroughDerivedDeclarations($action, $scratch, $repository);
+
+            return;
+        }
+
+        if ($action['kind'] === self::RENAME_ROOT_KEY_IN_CORPUS) {
+            self::renameRootKeyThroughCorpus($action, $scratch, $repository);
+
+            return;
+        }
+
         $target = $scratch->path($action['path']);
         $original = $repository . '/' . $action['path'];
         $existsAlready = $action['kind'] !== self::CREATE;
@@ -209,6 +315,98 @@ final class Mutation
         }
 
         return $contents;
+    }
+
+    /**
+     * The root key renamed in every corpus document that writes it at root, and
+     * the count asserted to be non-zero.
+     *
+     * Unlike {@see renameThroughDerivedDeclarations()}, finding nothing here is
+     * a defect rather than a possibility: a control renaming a root key that no
+     * corpus document writes is testing a rename nothing exercises, which is
+     * exactly the silent no-op {@see edit()}'s count guard exists against.
+     *
+     * @param array{kind: string, path: string, replacements: array<string, string>, contents: string} $action
+     */
+    private static function renameRootKeyThroughCorpus(array $action, Scratch $scratch, string $repository): void
+    {
+        $documents = glob($scratch->path($action['path']) . '/*/qmx.yaml');
+        $renamed = 0;
+
+        foreach ($documents === false ? [] : $documents as $document) {
+            $original = $repository . '/' . $action['path'] . '/'
+                . basename(\dirname($document)) . '/' . basename($document);
+            $before = is_file($original) ? hash_file('sha256', $original) : false;
+
+            $contents = Shell::read($document);
+            $rewritten = $contents;
+
+            foreach ($action['replacements'] as $old => $new) {
+                $rewritten = (string) preg_replace(
+                    '/^' . preg_quote($old, '/') . ':/m',
+                    $new . ':',
+                    $rewritten,
+                );
+            }
+
+            if ($rewritten !== $contents) {
+                Shell::replace($document, $rewritten);
+                ++$renamed;
+            }
+
+            if (\is_string($before)) {
+                self::assertRepositoryUntouched($original, $before);
+            }
+        }
+
+        if ($renamed === 0) {
+            throw new RuntimeException(\sprintf(
+                'No corpus document writes %s at root, so renaming it exercises nothing. Re-point the control'
+                . ' instead of letting it quietly stop mutating.',
+                implode(', ', array_keys($action['replacements'])),
+            ));
+        }
+    }
+
+    /**
+     * Every derived declaration, rewritten in place, with the repository's own
+     * copies left untouched and checked to be untouched — the hardlink hazard
+     * is the same one every other kind guards against.
+     *
+     * @param array{kind: string, path: string, replacements: array<string, string>, contents: string} $action
+     */
+    private static function renameThroughDerivedDeclarations(array $action, Scratch $scratch, string $repository): void
+    {
+        $directory = $scratch->path($action['path']);
+
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $files = glob($directory . '/*.diff');
+
+        foreach ($files === false ? [] : $files as $file) {
+            $original = $repository . '/' . $action['path'] . '/' . basename($file);
+            $before = is_file($original) ? hash_file('sha256', $original) : false;
+
+            if ($before === false) {
+                // The scratch tree holds a derived declaration the repository
+                // does not, so there is no hardlink to write through and
+                // nothing to compare against. Rewriting it is still correct.
+                $before = null;
+            }
+
+            $contents = Shell::read($file);
+            $rewritten = strtr($contents, $action['replacements']);
+
+            if ($rewritten !== $contents) {
+                Shell::replace($file, $rewritten);
+            }
+
+            if (\is_string($before)) {
+                self::assertRepositoryUntouched($original, $before);
+            }
+        }
     }
 
     /** A created file can be the first thing in its directory — the declared delta's is. */
