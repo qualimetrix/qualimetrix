@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -256,6 +257,59 @@ final class RulesCommandTest extends TestCase
         $rule->method('getDescription')->willReturn($description);
 
         return $rule;
+    }
+
+    /**
+     * `StubRuleOptions` accepts nothing, which is the one shape the live
+     * population has no example of: every registered rule accepts at least
+     * `enabled` or a threshold. The branch still has to be right, because a
+     * blank `options:` line reads as "this rule takes no options" while
+     * meaning "nobody asked".
+     */
+    #[Test]
+    public function itPrintsNoOptionsLineForARuleWhoseDeclarationAcceptsNothing(): void
+    {
+        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        $tester->execute([]);
+
+        self::assertStringNotContainsString('options: ', $tester->getDisplay());
+    }
+
+    /**
+     * The three framework keys are legal under every rule and declared by none,
+     * so naming them per rule would add four lines to fifty-four bodies. They
+     * are not in the footer because they are universal, though: `enabled` is
+     * nearly universal and stays inline, because `architecture.unassigned-class`
+     * does not accept it and a footer would lie about that one rule.
+     */
+    #[Test]
+    public function itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody(): void
+    {
+        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        $tester->execute([]);
+
+        $display = $tester->getDisplay();
+
+        self::assertStringContainsString(
+            'Every rule also takes: ' . implode(', ', FrameworkOptionKeys::all()),
+            $display,
+        );
+        self::assertSame(1, substr_count($display, 'Every rule also takes:'));
+    }
+
+    /**
+     * The alias fixture targets `warning_threshold`, which the stub declaration
+     * does not accept. Restating it in canonical kebab would invent a spelling
+     * for a key nothing has, so the authored one is printed unchanged — the
+     * listing is not where a dangling alias is discovered.
+     */
+    #[Test]
+    public function itLeavesAnAliasTargetNothingAcceptsInTheSpellingItsAuthorGave(): void
+    {
+        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        $tester->execute([]);
+
+        self::assertStringContainsString('warning_threshold=...', $tester->getDisplay());
     }
 
     /**

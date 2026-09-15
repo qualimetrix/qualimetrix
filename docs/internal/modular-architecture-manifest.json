@@ -9756,9 +9756,15 @@
       "path": "src/Analysis/Finding/Contract/Rule/FrameworkOptionKeys.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P6-A",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php",
@@ -10029,9 +10035,15 @@
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P6-A",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShape": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionShape.php",

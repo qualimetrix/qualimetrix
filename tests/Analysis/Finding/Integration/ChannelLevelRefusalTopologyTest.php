@@ -103,6 +103,11 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
             'a rule reading its own declarations to say which of its levels this configuration let run'
             . ' (levelActivity()); the levels come from the rule itself, no authored text is involved,'
             . ' and nothing here refuses anything',
+        'src/Infrastructure/Console/Command/RulesCommand.php' =>
+            'trips both halves of the detector on two unrelated subjects: it asks declarationFor() for one'
+            . ' property that is not a level — which metrics a channel judges — and its ->levels() call is'
+            . ' RuleOptionSurface\'s, whose levels are a rule\'s option slots (callable, class, namespace) and'
+            . ' not a channel\'s declared levels. It advertises a grammar and judges no authored text at all',
         'src/Analysis/Finding/ConfiguredLevelActivity.php' =>
             'completes that same snapshot for channels a producer owns but does not declare itself —'
             . ' its configuration validator\'s — by reading the registry, not any authored pair',

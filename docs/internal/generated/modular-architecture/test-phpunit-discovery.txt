@@ -7381,6 +7381,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
+ - Qualimetrix\Tests\Infrastructure\Integration\RulesListingAgreesWithRefusalTest::itAdvertisesExactlyWhatTheRefusalAdmitsAtEveryDepth
+ - Qualimetrix\Tests\Infrastructure\Integration\RulesListingAgreesWithRefusalTest::itResolvesEveryCliAliasToAnAcceptedOption
  - Qualimetrix\Tests\Infrastructure\Integration\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itFormatsContext
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itHandlesEmptyContext
@@ -7528,7 +7530,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFailsOnAGroupNoProducerHas
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFailsOnAGroupThatDiffersOnlyInCase
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFiltersRulesByGroup
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itLeavesAnAliasTargetNothingAcceptsInTheSpellingItsAuthorGave
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itListsRulesUnderGroupHeaders
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itPrintsNoOptionsLineForARuleWhoseDeclarationAcceptsNothing
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itPrintsTheMetricsAChannelDeclaresItJudges
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itSaysNothingAboutAChannelThatJudgesNoMetric
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itSetsTheCommandNameAndDescription
