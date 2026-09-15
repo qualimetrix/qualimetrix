@@ -1,0 +1,6 @@
+{
+    "name": "qmx-fixture/output-formats-empty",
+    "description": "Fixture: a complete run that finds nothing",
+    "type": "project",
+    "autoload": {"psr-4": {"Fixture\\": "src/"}}
+}

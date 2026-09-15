@@ -1,0 +1,10 @@
+{
+    "name": "qmx-fixture/output-formats-full",
+    "description": "Fixture: a run reaching every documented schema branch that needs findings",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Fixture\\": "src/"
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "name": "qmx-fixture/output-formats-breach",
+    "description": "Fixture: an accepted ceiling the run exceeds, so findings carry a non-null acceptedLevel",
+    "type": "project",
+    "autoload": {"psr-4": {"Fixture\\": "src/"}}
+}

@@ -1,0 +1,7 @@
+paths:
+  - src
+# Deliberately matches nothing: this is the only way to observe the
+# `neverMatched` list, which exists so a stale suppressor is distinguishable
+# from one that was never written.
+suppress_paths:
+  - 'src/NoSuchDirectory/**'

@@ -15,7 +15,7 @@ architecture.unreachable-layer	channel	?		19	26	0	0	0	47	0	3	0	0	0	0
 code-smell.boolean-argument	channel	?		4	37	1	2	28	36	0	5	0	0	1	1
 code-smell.constructor-overinjection	channel	?		14	11	2	2	6	31	0	6	0	0	0	0
 code-smell.count-in-loop	channel	?		1	8	0	0	0	12	0	5	0	0	1	1
-code-smell.debug-code	channel	?		1	39	0	0	0	13	0	5	0	0	1	1
+code-smell.debug-code	channel	?		1	42	0	0	0	13	0	5	0	0	1	1
 code-smell.empty-catch	channel	?		4	8	0	0	0	16	0	5	0	0	1	1
 code-smell.error-suppression	channel	?		1	13	1	2	2	20	0	5	0	0	1	1
 code-smell.eval	channel	?		1	27	0	0	0	16	0	14	0	0	1	1
@@ -32,7 +32,7 @@ complexity.cognitive	channel	?		22	96	2	2	28	64	0	28	0	0	0	0
 complexity.npath	channel	?		19	106	2	2	10	52	0	22	0	0	0	0
 complexity.wmc	channel	?		20	88	2	2	8	37	0	21	0	0	0	0
 coupling.cbo	channel	?		66	348	2	4	4	127	0	22	0	0	0	0
-coupling.class-rank	channel	?		22	110	0	2	2	38	0	43	0	0	0	0
+coupling.class-rank	channel	?		22	115	0	2	2	38	0	43	0	0	0	0
 coupling.distance	channel	?		29	91	2	2	1	40	0	47	0	0	0	0
 coupling.instability	channel	?		41	106	2	3	7	58	0	24	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		3	8	0	0	0	15	0	4	0	0	0	0
@@ -80,7 +80,7 @@ coupling.cbo-app	metric-key	?		17	20	0	0	0	18	0	4	0	0	0	0
 coupling.ce	metric-key	?		22	82	0	0	0	8	0	4	0	0	0	0
 coupling.ce-framework	metric-key	?		13	15	0	0	0	10	0	3	0	0	0	0
 coupling.ce-packages	metric-key	?		11	9	0	0	0	4	0	2	0	0	0	0
-coupling.class-rank	metric-key	?		22	110	0	2	2	38	0	43	0	0	0	0
+coupling.class-rank	metric-key	?		22	115	0	2	2	38	0	43	0	0	0	0
 coupling.distance	metric-key	?		29	91	2	2	1	40	0	47	0	0	0	0
 coupling.instability	metric-key	?		41	106	2	3	7	58	0	24	0	0	0	0
 coupling.rfc	metric-key	?		6	44	0	0	0	0	0	4	0	0	0	0
@@ -146,7 +146,7 @@ architecture.unassigned-class	producer	?		29	29	0	0	0	22	0	6	0	0	0	0
 code-smell.boolean-argument	producer	?		4	37	1	2	28	36	0	5	0	0	0	0
 code-smell.constructor-overinjection	producer	?		14	11	2	2	6	31	0	6	0	0	0	0
 code-smell.count-in-loop	producer	?		1	8	0	0	0	12	0	5	0	0	0	0
-code-smell.debug-code	producer	?		1	39	0	0	0	13	0	5	0	0	0	0
+code-smell.debug-code	producer	?		1	42	0	0	0	13	0	5	0	0	0	0
 code-smell.empty-catch	producer	?		4	8	0	0	0	16	0	5	0	0	0	0
 code-smell.error-suppression	producer	?		1	13	1	2	2	20	0	5	0	0	0	0
 code-smell.eval	producer	?		1	27	0	0	0	16	0	14	0	0	0	0
@@ -164,7 +164,7 @@ complexity.npath	producer	?		19	106	2	2	10	52	0	22	0	0	0	0
 complexity.wmc	producer	?		20	88	2	2	8	37	0	21	0	0	0	0
 computed	producer	?		120	107	0	1	0	34	0	19	0	0	0	0
 coupling.cbo	producer	?		66	348	2	4	4	127	0	22	0	0	0	0
-coupling.class-rank	producer	?		22	110	0	2	2	38	0	43	0	0	0	0
+coupling.class-rank	producer	?		22	115	0	2	2	38	0	43	0	0	0	0
 coupling.distance	producer	?		29	91	2	2	1	40	0	47	0	0	0	0
 coupling.instability	producer	?		41	106	2	3	7	58	0	24	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		3	8	0	0	0	15	0	4	0	0	0	0

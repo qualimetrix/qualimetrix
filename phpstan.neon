@@ -19,6 +19,7 @@ parameters:
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
         - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
+        - tests/System/DocumentationConsistency/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     ignoreErrors:
