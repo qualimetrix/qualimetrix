@@ -398,6 +398,19 @@ accepted set in the seam's wording and arrives before the rule is built.
   65" where the formula stops penalising at 5. Inputs and targets are now
   resolved per level and checked against the formulas by a test.
 
+- **The documented output-format schemas now match what the formatters emit.**
+  The published key lists for `json`, `metrics` and `sarif` had drifted from
+  the product on surfaces consumers parse with scripts: `summary.infoCount`,
+  the `health` entries' `worstContributors` and the shape of their
+  `decomposition` entries, the counters in the `metrics` summary, SARIF's
+  `tool.driver.informationUri`, its `rules[]` catalogue, `invocations[]` and
+  `originalUriBaseIds`, and the object a non-null `acceptedLevel` actually is
+  (`{shape, describe, count}`, alongside the breach's promotion to `error`
+  severity) were all absent from the page. A new test runs every
+  machine-readable formatter over fixtures and compares the key set of each
+  schema node against both language versions of the page, so a description
+  that stops being true now fails the build.
+
 - **An empty `cache.dir` no longer offers `--no-cache` as the way out.** Both
   cache refusals used to end with "or disable the cache with --no-cache".
   Against an unwritable directory that is true and it stays — the flag really
