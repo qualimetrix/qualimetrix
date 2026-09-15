@@ -1,0 +1,6 @@
+{
+    "name": "qmx-fixture/output-formats-broken",
+    "description": "Fixture: one file the parser cannot read, so the run reports incomplete coverage",
+    "type": "project",
+    "autoload": {"psr-4": {"Fixture\\": "src/"}}
+}

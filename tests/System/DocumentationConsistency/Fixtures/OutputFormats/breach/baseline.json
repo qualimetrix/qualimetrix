@@ -1,0 +1,13 @@
+{
+  "version": 13,
+  "generated": "2026-09-14T20:30:21+00:00",
+  "scope": ["src"],
+  "entries": {
+    "declaration:callable:Fixture\\Noisy::emit@src/Noisy.php": [
+      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":2}
+    ],
+    "declaration:class:Fixture\\Noisy@src/Noisy.php": [
+      {"channel":"coupling.class-rank","count":1}
+    ]
+  }
+}

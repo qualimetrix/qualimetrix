@@ -82,6 +82,11 @@ examples/
 # its composer.json, and a fixture that a fresh clone cannot reproduce makes
 # every digest in the frozen snapshot unverifiable.
 !/promise-effect/fixtures/**/*.json
+# Output-format fixtures: their composer.json sets the PSR-4 root the analysed
+# code needs, and breach/baseline.json is the accepted ceiling whose exceeding
+# is the only route to a non-null `acceptedLevel`. Swallowed, the guard's
+# scenarios cannot be reproduced from a fresh clone.
+!/tests/System/DocumentationConsistency/Fixtures/**/*.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

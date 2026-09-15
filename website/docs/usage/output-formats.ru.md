@@ -176,6 +176,7 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
         "violationCount": 3,
         "errorCount": 2,
         "warningCount": 1,
+        "infoCount": 0,
         "techDebtMinutes": 270,
         "debtPer1kLoc": 2.1
     },
@@ -193,7 +194,22 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
                 "basis": "complexity.ccn.count",
                 "reason": null
             },
-            "decomposition": []
+            "decomposition": [
+                {
+                    "metric": "complexity.ccn.sum",
+                    "humanName": "Cyclomatic complexity",
+                    "value": 412,
+                    "good": true,
+                    "direction": "lower-is-better"
+                }
+            ],
+            "worstContributors": [
+                {
+                    "symbolPath": "App\\Service\\UserService",
+                    "className": "App\\Service\\UserService",
+                    "metrics": {"complexity.ccn.sum": 96}
+                }
+            ]
         },
         "overall": {
             "score": 72.0,
@@ -208,7 +224,8 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
                 "basis": null,
                 "reason": "health.overall composes the other dimensions; each of them publishes its own coverage"
             },
-            "decomposition": []
+            "decomposition": [],
+            "worstContributors": []
         }
     },
     "worstNamespaces": [
@@ -300,6 +317,13 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
 различает: baseline вообще не настроен для прогона, либо baseline настроен,
 но именно эту находку он ещё не оценивал (новая находка). Ни JSON-payload, ни
 само поле `acceptedLevel` не говорят, какой из случаев перед вами.
+
+Когда значение не равно null, `acceptedLevel` — это объект: находка, чья
+собственная группа идентичности превысила принятый уровень, публикуется как
+прорыв и несёт `{"shape": "occurrence", "describe": "2 occurrences", "count": 2}`.
+`shape` называет, что именно считает потолок, `count` — принятое количество,
+`describe` — то же число словами. Прорыв к тому же повышается до severity
+`error`, что бы ни сообщило правило само по себе.
 `violationsMeta` также сообщает `shown` — число нарушений, фактически
 включённых в этот payload; оно может быть меньше `total`, когда
 `--format-opt=violations=N` обрезает список.
@@ -416,7 +440,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
-        "duration": 1.234
+        "duration": 1.234,
+        "violations": 3,
+        "errors": 2,
+        "warnings": 1,
+        "info": 0
     }
 }
 ```
@@ -478,6 +506,19 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция правила в `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, и `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` есть не у каждой записи: у находки уровня проекта без позиции в исходнике (например, `architecture.unreachable-layer`) массива `locations` вообще нет.
 
 `runs[].invocations[0]` сообщает `executionSuccessful` (см. таблицу coverage ниже), а `runs[].originalUriBaseIds` объявляет базу `%SRCROOT%`, на которую ссылается каждый `artifactLocation.uriBaseId`, разрешая её в корень анализируемого проекта как `file://`-URI.
+
+`runs[].tool.driver` описывает сам инструмент: `name`, `version`,
+`informationUri` и каталог `rules[]`, в который указывает `ruleIndex` каждой
+записи. Каждая запись каталога —
+`{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
+
+Каждая запись `runs[].invocations[]` —
+`{"executionSuccessful": true, "toolExecutionNotifications": []}`, а каждое
+уведомление в ней —
+`{"descriptor": {"id": "..."}, "level": "...", "message": {"text": "..."}}`;
+именно здесь сообщается о файле, который не удалось разобрать.
+`runs[].originalUriBaseIds` отображает `%SRCROOT%` в
+`{"uri": "file:///path/to/project/"}`.
 
 `partialFingerprints.primaryLocationLineHash` важен не только для полноты
 спецификации: именно по нему де-дупликация алертов code-scanning на GitHub
@@ -601,6 +642,11 @@ code_quality:
 **Когда использовать:** GitHub Actions CI. Проще в настройке, чем SARIF — не нужен шаг загрузки.
 
 Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: warning → `::warning`, error → `::error`.
+
+На каждой строке присутствует только `title=`. У находки уровня проекта нет
+позиции в исходнике, поэтому она печатается как
+`::<level> title=<rule>::<message>` — без `file=` и `line=`; GitHub тогда
+показывает её у прогона workflow, а не у строки в диффе.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**

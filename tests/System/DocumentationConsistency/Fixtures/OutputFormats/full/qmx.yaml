@@ -1,0 +1,17 @@
+# The layer policy is deliberately incomplete: `ghost` matches nothing and no
+# layer claims the global-namespace class, so the run also reports
+# project-level findings, which carry neither a file nor a line.
+paths:
+  - src
+architecture:
+  layers:
+    - name: service
+      patterns: ['Fixture\Service\**']
+    - name: repository
+      patterns: ['Fixture\Repository\**']
+    - name: ghost
+      patterns: ['Fixture\NoSuch\**']
+  allow:
+    service: []
+    repository: []
+  coverage-gap: error

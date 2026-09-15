@@ -1,0 +1,6 @@
+{
+    "name": "qmx-fixture/output-formats-suppressed",
+    "description": "Fixture: a run that holds findings back, and a suppressor that matches nothing",
+    "type": "project",
+    "autoload": {"psr-4": {"Fixture\\": "src/"}}
+}

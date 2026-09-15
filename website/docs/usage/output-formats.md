@@ -176,6 +176,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "violationCount": 3,
         "errorCount": 2,
         "warningCount": 1,
+        "infoCount": 0,
         "techDebtMinutes": 270,
         "debtPer1kLoc": 2.1
     },
@@ -193,7 +194,22 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
                 "basis": "complexity.ccn.count",
                 "reason": null
             },
-            "decomposition": []
+            "decomposition": [
+                {
+                    "metric": "complexity.ccn.sum",
+                    "humanName": "Cyclomatic complexity",
+                    "value": 412,
+                    "good": true,
+                    "direction": "lower-is-better"
+                }
+            ],
+            "worstContributors": [
+                {
+                    "symbolPath": "App\\Service\\UserService",
+                    "className": "App\\Service\\UserService",
+                    "metrics": {"complexity.ccn.sum": 96}
+                }
+            ]
         },
         "overall": {
             "score": 72.0,
@@ -208,7 +224,8 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
                 "basis": null,
                 "reason": "health.overall composes the other dimensions; each of them publishes its own coverage"
             },
-            "decomposition": []
+            "decomposition": [],
+            "worstContributors": []
         }
     },
     "worstNamespaces": [
@@ -298,7 +315,16 @@ measured against, or `null` whenever the finding has no accepted level of its
 own. That covers two distinct cases the value cannot tell apart: no baseline
 is configured for the run at all, or a baseline is configured but this
 particular finding is new and the baseline never judged it. Neither the JSON
-payload nor `acceptedLevel` itself exposes which case applies. `violationsMeta`
+payload nor `acceptedLevel` itself exposes which case applies.
+
+When it is not null, `acceptedLevel` is an object — a finding whose own
+identity group exceeded its accepted level is reported as a breach and carries
+`{"shape": "occurrence", "describe": "2 occurrences", "count": 2}`. `shape`
+names what the ceiling counts, `count` is the accepted number, and `describe`
+is that number in words. A breach is also raised to `error` severity,
+whatever the rule would otherwise have reported.
+
+`violationsMeta`
 also reports `shown` — the number of violations actually included in this
 payload, which can be lower than `total` when `--format-opt=violations=N`
 truncates the list.
@@ -415,7 +441,11 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
-        "duration": 1.234
+        "duration": 1.234,
+        "violations": 3,
+        "errors": 2,
+        "warnings": 1,
+        "info": 0
     }
 }
 ```
@@ -477,6 +507,18 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `ruleIndex` (position of the rule in `tool.driver.rules`), `level` (error/warning/note), `message.text`, `partialFingerprints.primaryLocationLineHash`, and `locations[].physicalLocation.{artifactLocation.{uri,uriBaseId}, region.{startLine,startColumn}}`. `locations` is not present on every result: a project-level finding with no source position (e.g. `architecture.unreachable-layer`) has no `locations` array at all.
 
 `runs[].invocations[0]` reports `executionSuccessful` (see the coverage table below), and `runs[].originalUriBaseIds` declares the `%SRCROOT%` base referenced by every `artifactLocation.uriBaseId`, resolving it to the analyzed project root as a `file://` URI.
+
+`runs[].tool.driver` describes the tool itself: `name`, `version`,
+`informationUri`, and a `rules[]` catalogue that every result's `ruleIndex`
+points into. Each rules entry is
+`{"id": "...", "name": "...", "shortDescription": {"text": "..."}, "fullDescription": {"text": "..."}, "helpUri": "...", "defaultConfiguration": {"level": "..."}}`.
+
+Each `runs[].invocations[]` entry is
+`{"executionSuccessful": true, "toolExecutionNotifications": []}`, and every
+notification in it is
+`{"descriptor": {"id": "..."}, "level": "...", "message": {"text": "..."}}` —
+this is where a file that failed to parse is reported. `runs[].originalUriBaseIds`
+maps `%SRCROOT%` to `{"uri": "file:///path/to/project/"}`.
 
 `partialFingerprints.primaryLocationLineHash` matters beyond spec completeness:
 it is what GitHub's code-scanning alert de-duplication keys on across uploads,
@@ -600,6 +642,11 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 **When to use:** GitHub Actions CI. Simpler setup than SARIF — no upload step needed.
 
 Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: warning → `::warning`, error → `::error`.
+
+Only `title=` appears on every line. A project-level finding has no source
+position, so it is annotated as `::<level> title=<rule>::<message>` — without
+`file=` and `line=`, which GitHub then shows against the workflow run rather
+than against a line in the diff.
 
 <!-- llms:skip-begin -->
 **Example output:**

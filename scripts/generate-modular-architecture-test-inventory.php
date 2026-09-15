@@ -1238,6 +1238,7 @@ function fixtureTail(string $path): string
         'tests/Analysis/Policy/Architecture/Fixtures/',
         'tests/Analysis/Policy/Baseline/Fixtures/',
         'tests/Analysis/Policy/Inline/Fixtures/',
+        'tests/System/DocumentationConsistency/Fixtures/',
         'tests/Architecture/Fixtures/',
         'tests/Fixtures/',
         'tests/Fixture/',
