@@ -7,9 +7,9 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDow
 use Generator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -25,14 +25,13 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
 final readonly class HealthScoreDrillDown
 {
     private ContributorRanker $contributorRanker;
-    private HealthDimensionCatalog $dimensions;
+    private HealthDecompositionCatalog $decomposition;
 
     public function __construct(
-        private HealthMetricMetadataProviderInterface $metadataProvider,
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
         $this->contributorRanker = new ContributorRanker();
-        $this->dimensions = new HealthDimensionCatalog();
+        $this->decomposition = new HealthDecompositionCatalog();
     }
 
     /**
@@ -78,6 +77,11 @@ final readonly class HealthScoreDrillDown
                 label: $this->scoreLabel($avg, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                // A subtree score is a class-weighted mean of whole namespace
+                // scores, so the `.count` behind any one input is not the
+                // denominator of this number. The covered share is published
+                // where the aggregates are, at project level.
+                coverage: HealthCoverage::notApplicable('a subtree score is a class-weighted mean of namespace scores; coverage is published at project level'),
                 worstContributors: $contributors,
             );
         }
@@ -102,7 +106,7 @@ final readonly class HealthScoreDrillDown
             }
 
             $namespaceMetrics = $metrics->get($namespaceInfo->symbolPath);
-            $classCount = max(1, (int) ($namespaceMetrics->get($this->dimensions->classCountMetric()) ?? 1));
+            $classCount = max(1, (int) ($namespaceMetrics->get($this->decomposition->classCountMetric()) ?? 1));
             $this->accumulateDimensionWeights($namespaceMetrics, $dimensions, $classCount, $weightedSums, $dimensionWeights);
         }
 
@@ -177,6 +181,7 @@ final readonly class HealthScoreDrillDown
                 label: $this->scoreLabel($scoreValue, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                coverage: HealthCoverage::notApplicable("a class score is computed from the class's own metrics, not from an aggregate over symbols"),
             );
         }
 
@@ -197,13 +202,21 @@ final readonly class HealthScoreDrillDown
         }
     }
 
-    /** @return list<array{classKey: string, direction: string}> */
+    /**
+     * The class-level keys a parent score's worst contributors are ranked by.
+     *
+     * Read from the catalog's contributor list rather than from the shipped
+     * decomposition: the decomposition now answers per level, and "what a
+     * namespace score was computed from" is not "which class dragged it down".
+     *
+     * @return list<array{classKey: string, direction: string}>
+     */
     private function classInputs(string $dimension): array
     {
         return array_map(static fn(array $input): array => [
-            'classKey' => $input['altKey'] ?? $input['key'],
+            'classKey' => $input['classKey'],
             'direction' => $input['direction'],
-        ], $this->metadataProvider->metadata()->healthDecomposition[$dimension]['inputs'] ?? []);
+        ], $this->decomposition->getDecompositionForClasses($dimension));
     }
 
     /**
@@ -219,7 +232,7 @@ final readonly class HealthScoreDrillDown
     ): Generator {
         foreach ($classSymbols as $symbol) {
             $metrics = $repository->get($symbol->symbolPath);
-            $selection = $this->dimensions->selectContributorMetrics($inputs, $metrics->get(...));
+            $selection = $this->decomposition->selectContributorMetrics($inputs, $metrics->get(...));
 
             yield [
                 'symbol' => $symbol,

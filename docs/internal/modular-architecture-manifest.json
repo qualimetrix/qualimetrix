@@ -2276,6 +2276,48 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\CoverageUnit": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/CoverageUnit.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "contract",
+      "closure_package": "P5",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage"
+        },
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/HealthCoverage.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "contract",
+      "closure_package": "P5",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthContributor": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/HealthContributor.php",
       "kind": "class",
@@ -2337,6 +2379,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php",
       "kind": "class",
@@ -2387,6 +2437,14 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Score\\ContributorRanker": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Score/ContributorRanker.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Score\\CoverageReader": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Score/CoverageReader.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics.Health",
       "visibility": "internal",
@@ -4673,7 +4731,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog",
           "closes_in": null
         },
         {
@@ -16303,6 +16361,16 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthMetricCatalog",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown",
           "closes_in": null
         },
@@ -16714,6 +16782,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Score\\CoverageReader",
           "closes_in": null
         }
       ]
@@ -20567,6 +20640,14 @@
     },
     "Qualimetrix\\Reporting\\Formatter\\Support\\CoverageNarrator": {
       "path": "src/Reporting/Formatter/Support/CoverageNarrator.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator": {
+      "path": "src/Reporting/Formatter/Support/HealthCoverageNarrator.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -141,7 +142,7 @@ final class HintRendererTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: [$worstNs],
         );
@@ -179,7 +180,7 @@ final class HintRendererTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstClasses: [$worstClass],
         );
@@ -232,7 +233,7 @@ final class HintRendererTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             worstNamespaces: [$worstNs],
         );
@@ -281,7 +282,7 @@ final class HintRendererTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 

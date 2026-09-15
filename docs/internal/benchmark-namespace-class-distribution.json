@@ -1,0 +1,1537 @@
+{
+    "version": 1,
+    "updated_at": "2026-09-14",
+    "description": "Per-project namespace- and class-level health.* distributions (median, p25, p75, iqr), sampled alongside docs\/internal\/benchmark-baselines.json by scripts\/benchmark-regression.php --update-baselines.",
+    "projects": {
+        "flysystem": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 4,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 4,
+                    "median": 66.06,
+                    "p25": 63.7,
+                    "p75": 70.88,
+                    "iqr": 7.18
+                },
+                "health.coupling": {
+                    "count": 4,
+                    "median": 92.7,
+                    "p25": 90.95,
+                    "p75": 93.33,
+                    "iqr": 2.38
+                },
+                "health.maintainability": {
+                    "count": 4,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.typing": {
+                    "count": 4,
+                    "median": 96.81,
+                    "p25": 93.62,
+                    "p75": 100,
+                    "iqr": 6.38
+                },
+                "health.overall": {
+                    "count": 4,
+                    "median": 91.11,
+                    "p25": 90.45,
+                    "p75": 92.36,
+                    "iqr": 1.91
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 55,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 55,
+                    "median": 85.36,
+                    "p25": 67.66,
+                    "p75": 85.36,
+                    "iqr": 17.69
+                },
+                "health.coupling": {
+                    "count": 55,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 55,
+                    "median": 100,
+                    "p25": 95.34,
+                    "p75": 100,
+                    "iqr": 4.66
+                },
+                "health.typing": {
+                    "count": 55,
+                    "median": 100,
+                    "p25": 95.06,
+                    "p75": 100,
+                    "iqr": 4.94
+                },
+                "health.overall": {
+                    "count": 55,
+                    "median": 96.34,
+                    "p25": 88.5,
+                    "p75": 96.34,
+                    "iqr": 7.84
+                }
+            }
+        },
+        "symfony-console": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 38,
+                    "median": 87.95,
+                    "p25": 71.37,
+                    "p75": 100,
+                    "iqr": 28.63
+                },
+                "health.cohesion": {
+                    "count": 38,
+                    "median": 81.31,
+                    "p25": 59.7,
+                    "p75": 85.36,
+                    "iqr": 25.66
+                },
+                "health.coupling": {
+                    "count": 38,
+                    "median": 86.39,
+                    "p25": 80.99,
+                    "p75": 97.41,
+                    "iqr": 16.42
+                },
+                "health.maintainability": {
+                    "count": 38,
+                    "median": 78.9,
+                    "p25": 66.59,
+                    "p75": 92.6,
+                    "iqr": 26.01
+                },
+                "health.typing": {
+                    "count": 38,
+                    "median": 100,
+                    "p25": 99.39,
+                    "p75": 100,
+                    "iqr": 0.61
+                },
+                "health.overall": {
+                    "count": 38,
+                    "median": 81.07,
+                    "p25": 74.86,
+                    "p75": 89.68,
+                    "iqr": 14.81
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 173,
+                    "median": 100,
+                    "p25": 88,
+                    "p75": 100,
+                    "iqr": 12
+                },
+                "health.cohesion": {
+                    "count": 173,
+                    "median": 85.36,
+                    "p25": 75.36,
+                    "p75": 85.36,
+                    "iqr": 10
+                },
+                "health.coupling": {
+                    "count": 173,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 173,
+                    "median": 85,
+                    "p25": 71.3,
+                    "p75": 100,
+                    "iqr": 28.7
+                },
+                "health.typing": {
+                    "count": 173,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 173,
+                    "median": 94.24,
+                    "p25": 87.8,
+                    "p75": 96.34,
+                    "iqr": 8.54
+                }
+            }
+        },
+        "symfony-di": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 18,
+                    "median": 65.99,
+                    "p25": 35.09,
+                    "p75": 99.11,
+                    "iqr": 64.02
+                },
+                "health.cohesion": {
+                    "count": 18,
+                    "median": 75.16,
+                    "p25": 49.11,
+                    "p75": 83.78,
+                    "iqr": 34.67
+                },
+                "health.coupling": {
+                    "count": 18,
+                    "median": 86.05,
+                    "p25": 80.53,
+                    "p75": 94.92,
+                    "iqr": 14.39
+                },
+                "health.maintainability": {
+                    "count": 18,
+                    "median": 73.61,
+                    "p25": 55.61,
+                    "p75": 88.03,
+                    "iqr": 32.42
+                },
+                "health.typing": {
+                    "count": 18,
+                    "median": 100,
+                    "p25": 99.84,
+                    "p75": 100,
+                    "iqr": 0.16
+                },
+                "health.overall": {
+                    "count": 18,
+                    "median": 75.1,
+                    "p25": 62.58,
+                    "p75": 86.42,
+                    "iqr": 23.84
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 217,
+                    "median": 99.56,
+                    "p25": 76,
+                    "p75": 100,
+                    "iqr": 24
+                },
+                "health.cohesion": {
+                    "count": 217,
+                    "median": 85.36,
+                    "p25": 85.36,
+                    "p75": 85.36,
+                    "iqr": 0
+                },
+                "health.coupling": {
+                    "count": 217,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 217,
+                    "median": 85,
+                    "p25": 58.21,
+                    "p75": 100,
+                    "iqr": 41.79
+                },
+                "health.typing": {
+                    "count": 217,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 217,
+                    "median": 93.84,
+                    "p25": 85,
+                    "p75": 96.34,
+                    "iqr": 11.34
+                }
+            }
+        },
+        "symfony-http-foundation": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 16,
+                    "median": 99.33,
+                    "p25": 82.89,
+                    "p75": 100,
+                    "iqr": 17.11
+                },
+                "health.cohesion": {
+                    "count": 16,
+                    "median": 69.15,
+                    "p25": 60.17,
+                    "p75": 74.79,
+                    "iqr": 14.62
+                },
+                "health.coupling": {
+                    "count": 16,
+                    "median": 95.34,
+                    "p25": 91.32,
+                    "p75": 100,
+                    "iqr": 8.68
+                },
+                "health.maintainability": {
+                    "count": 16,
+                    "median": 98.16,
+                    "p25": 75.67,
+                    "p75": 100,
+                    "iqr": 24.33
+                },
+                "health.typing": {
+                    "count": 16,
+                    "median": 100,
+                    "p25": 98.13,
+                    "p75": 100,
+                    "iqr": 1.88
+                },
+                "health.overall": {
+                    "count": 16,
+                    "median": 86.13,
+                    "p25": 82.8,
+                    "p75": 91.58,
+                    "iqr": 8.78
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 116,
+                    "median": 100,
+                    "p25": 98,
+                    "p75": 100,
+                    "iqr": 2
+                },
+                "health.cohesion": {
+                    "count": 116,
+                    "median": 85.36,
+                    "p25": 79.24,
+                    "p75": 85.36,
+                    "iqr": 6.12
+                },
+                "health.coupling": {
+                    "count": 116,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 116,
+                    "median": 94.64,
+                    "p25": 85,
+                    "p75": 100,
+                    "iqr": 15
+                },
+                "health.typing": {
+                    "count": 116,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 116,
+                    "median": 95.99,
+                    "p25": 92.28,
+                    "p75": 96.34,
+                    "iqr": 4.06
+                }
+            }
+        },
+        "symfony-http-kernel": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 22,
+                    "median": 68.65,
+                    "p25": 62.3,
+                    "p75": 94.66,
+                    "iqr": 32.36
+                },
+                "health.cohesion": {
+                    "count": 22,
+                    "median": 77.97,
+                    "p25": 62,
+                    "p75": 85.36,
+                    "iqr": 23.36
+                },
+                "health.coupling": {
+                    "count": 22,
+                    "median": 92.13,
+                    "p25": 84.64,
+                    "p75": 94.72,
+                    "iqr": 10.08
+                },
+                "health.maintainability": {
+                    "count": 22,
+                    "median": 73.33,
+                    "p25": 60.68,
+                    "p75": 83.37,
+                    "iqr": 22.7
+                },
+                "health.typing": {
+                    "count": 22,
+                    "median": 100,
+                    "p25": 99.4,
+                    "p75": 100,
+                    "iqr": 0.6
+                },
+                "health.overall": {
+                    "count": 22,
+                    "median": 78.65,
+                    "p25": 72.88,
+                    "p75": 87.94,
+                    "iqr": 15.05
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 177,
+                    "median": 100,
+                    "p25": 88,
+                    "p75": 100,
+                    "iqr": 12
+                },
+                "health.cohesion": {
+                    "count": 177,
+                    "median": 85.36,
+                    "p25": 85.36,
+                    "p75": 85.36,
+                    "iqr": 0
+                },
+                "health.coupling": {
+                    "count": 177,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 177,
+                    "median": 90.94,
+                    "p25": 71.31,
+                    "p75": 100,
+                    "iqr": 28.69
+                },
+                "health.typing": {
+                    "count": 177,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 177,
+                    "median": 96.34,
+                    "p25": 88.91,
+                    "p75": 96.34,
+                    "iqr": 7.43
+                }
+            }
+        },
+        "symfony-routing": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 14,
+                    "median": 59.12,
+                    "p25": 51.25,
+                    "p75": 80.17,
+                    "iqr": 28.91
+                },
+                "health.cohesion": {
+                    "count": 14,
+                    "median": 80.12,
+                    "p25": 68.16,
+                    "p75": 85.36,
+                    "iqr": 17.2
+                },
+                "health.coupling": {
+                    "count": 14,
+                    "median": 92.32,
+                    "p25": 87.03,
+                    "p75": 95.2,
+                    "iqr": 8.17
+                },
+                "health.maintainability": {
+                    "count": 14,
+                    "median": 64.28,
+                    "p25": 60.39,
+                    "p75": 71,
+                    "iqr": 10.62
+                },
+                "health.typing": {
+                    "count": 14,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 14,
+                    "median": 73.38,
+                    "p25": 68.9,
+                    "p75": 83.36,
+                    "iqr": 14.46
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 72,
+                    "median": 100,
+                    "p25": 86.38,
+                    "p75": 100,
+                    "iqr": 13.63
+                },
+                "health.cohesion": {
+                    "count": 72,
+                    "median": 85.36,
+                    "p25": 75.36,
+                    "p75": 85.36,
+                    "iqr": 10
+                },
+                "health.coupling": {
+                    "count": 72,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 72,
+                    "median": 85,
+                    "p25": 70.23,
+                    "p75": 100,
+                    "iqr": 29.77
+                },
+                "health.typing": {
+                    "count": 72,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 72,
+                    "median": 94.78,
+                    "p25": 87.61,
+                    "p75": 96.34,
+                    "iqr": 8.73
+                }
+            }
+        },
+        "phpunit": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 66,
+                    "median": 99.21,
+                    "p25": 84.77,
+                    "p75": 100,
+                    "iqr": 15.23
+                },
+                "health.cohesion": {
+                    "count": 66,
+                    "median": 67.92,
+                    "p25": 39.98,
+                    "p75": 81.09,
+                    "iqr": 41.11
+                },
+                "health.coupling": {
+                    "count": 66,
+                    "median": 86.22,
+                    "p25": 79.05,
+                    "p75": 93.75,
+                    "iqr": 14.7
+                },
+                "health.maintainability": {
+                    "count": 66,
+                    "median": 91.97,
+                    "p25": 70.15,
+                    "p75": 100,
+                    "iqr": 29.85
+                },
+                "health.typing": {
+                    "count": 66,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 66,
+                    "median": 82.81,
+                    "p25": 77.37,
+                    "p75": 88.7,
+                    "iqr": 11.34
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 1143,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 1143,
+                    "median": 85.36,
+                    "p25": 69.36,
+                    "p75": 85.36,
+                    "iqr": 15.99
+                },
+                "health.coupling": {
+                    "count": 1143,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 1143,
+                    "median": 100,
+                    "p25": 86.18,
+                    "p75": 100,
+                    "iqr": 13.82
+                },
+                "health.typing": {
+                    "count": 1143,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 1143,
+                    "median": 96.34,
+                    "p25": 92.14,
+                    "p75": 96.34,
+                    "iqr": 4.2
+                }
+            }
+        },
+        "php-parser": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 20,
+                    "median": 100,
+                    "p25": 96.22,
+                    "p75": 100,
+                    "iqr": 3.78
+                },
+                "health.cohesion": {
+                    "count": 20,
+                    "median": 68.46,
+                    "p25": 50,
+                    "p75": 85.36,
+                    "iqr": 35.36
+                },
+                "health.coupling": {
+                    "count": 20,
+                    "median": 80.6,
+                    "p25": 77.78,
+                    "p75": 85.79,
+                    "iqr": 8.01
+                },
+                "health.maintainability": {
+                    "count": 20,
+                    "median": 99.06,
+                    "p25": 88.43,
+                    "p75": 100,
+                    "iqr": 11.57
+                },
+                "health.typing": {
+                    "count": 20,
+                    "median": 100,
+                    "p25": 94.45,
+                    "p75": 100,
+                    "iqr": 5.55
+                },
+                "health.overall": {
+                    "count": 20,
+                    "median": 86.2,
+                    "p25": 81.64,
+                    "p75": 88.88,
+                    "iqr": 7.24
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 270,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 270,
+                    "median": 85.36,
+                    "p25": 85.36,
+                    "p75": 94.72,
+                    "iqr": 9.37
+                },
+                "health.coupling": {
+                    "count": 270,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 270,
+                    "median": 100,
+                    "p25": 95.64,
+                    "p75": 100,
+                    "iqr": 4.36
+                },
+                "health.typing": {
+                    "count": 270,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 270,
+                    "median": 96.34,
+                    "p25": 93.84,
+                    "p75": 98.68,
+                    "iqr": 4.84
+                }
+            }
+        },
+        "doctrine-orm": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 47,
+                    "median": 92.37,
+                    "p25": 68.92,
+                    "p75": 100,
+                    "iqr": 31.08
+                },
+                "health.cohesion": {
+                    "count": 47,
+                    "median": 85.36,
+                    "p25": 78.6,
+                    "p75": 90,
+                    "iqr": 11.4
+                },
+                "health.coupling": {
+                    "count": 47,
+                    "median": 90.68,
+                    "p25": 85.43,
+                    "p75": 92.31,
+                    "iqr": 6.87
+                },
+                "health.maintainability": {
+                    "count": 47,
+                    "median": 73.1,
+                    "p25": 54.2,
+                    "p75": 100,
+                    "iqr": 45.8
+                },
+                "health.typing": {
+                    "count": 47,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 47,
+                    "median": 87.41,
+                    "p25": 74.99,
+                    "p75": 94.21,
+                    "iqr": 19.23
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 471,
+                    "median": 100,
+                    "p25": 98.7,
+                    "p75": 100,
+                    "iqr": 1.3
+                },
+                "health.cohesion": {
+                    "count": 471,
+                    "median": 85.36,
+                    "p25": 85.36,
+                    "p75": 85.36,
+                    "iqr": 0
+                },
+                "health.coupling": {
+                    "count": 471,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 471,
+                    "median": 100,
+                    "p25": 82.94,
+                    "p75": 100,
+                    "iqr": 17.06
+                },
+                "health.typing": {
+                    "count": 471,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 471,
+                    "median": 96.34,
+                    "p25": 93.83,
+                    "p75": 96.34,
+                    "iqr": 2.51
+                }
+            }
+        },
+        "doctrine-dbal": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 88,
+                    "median": 100,
+                    "p25": 86.96,
+                    "p75": 100,
+                    "iqr": 13.04
+                },
+                "health.cohesion": {
+                    "count": 88,
+                    "median": 85.36,
+                    "p25": 69,
+                    "p75": 85.36,
+                    "iqr": 16.36
+                },
+                "health.coupling": {
+                    "count": 88,
+                    "median": 91.94,
+                    "p25": 82.66,
+                    "p75": 97.53,
+                    "iqr": 14.87
+                },
+                "health.maintainability": {
+                    "count": 88,
+                    "median": 93.24,
+                    "p25": 75.48,
+                    "p75": 100,
+                    "iqr": 24.52
+                },
+                "health.typing": {
+                    "count": 88,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 88,
+                    "median": 88.81,
+                    "p25": 80.47,
+                    "p75": 94.03,
+                    "iqr": 13.57
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 434,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 434,
+                    "median": 85.36,
+                    "p25": 81.71,
+                    "p75": 85.36,
+                    "iqr": 3.64
+                },
+                "health.coupling": {
+                    "count": 434,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 434,
+                    "median": 99.55,
+                    "p25": 85,
+                    "p75": 100,
+                    "iqr": 15
+                },
+                "health.typing": {
+                    "count": 434,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 434,
+                    "median": 96.34,
+                    "p25": 93.58,
+                    "p75": 96.34,
+                    "iqr": 2.76
+                }
+            }
+        },
+        "composer": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 39,
+                    "median": 59.64,
+                    "p25": 35.99,
+                    "p75": 92.64,
+                    "iqr": 56.66
+                },
+                "health.cohesion": {
+                    "count": 39,
+                    "median": 66.58,
+                    "p25": 47.29,
+                    "p75": 85.36,
+                    "iqr": 38.07
+                },
+                "health.coupling": {
+                    "count": 39,
+                    "median": 87.74,
+                    "p25": 79.95,
+                    "p75": 93.67,
+                    "iqr": 13.72
+                },
+                "health.maintainability": {
+                    "count": 39,
+                    "median": 55.26,
+                    "p25": 47.1,
+                    "p75": 77.35,
+                    "iqr": 30.25
+                },
+                "health.typing": {
+                    "count": 39,
+                    "median": 79.16,
+                    "p25": 74.93,
+                    "p75": 85.78,
+                    "iqr": 10.85
+                },
+                "health.overall": {
+                    "count": 39,
+                    "median": 68.01,
+                    "p25": 56.45,
+                    "p75": 78.05,
+                    "iqr": 21.6
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 308,
+                    "median": 93.81,
+                    "p25": 69.56,
+                    "p75": 100,
+                    "iqr": 30.44
+                },
+                "health.cohesion": {
+                    "count": 308,
+                    "median": 85.36,
+                    "p25": 71.03,
+                    "p75": 85.36,
+                    "iqr": 14.32
+                },
+                "health.coupling": {
+                    "count": 308,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 308,
+                    "median": 74.47,
+                    "p25": 56.72,
+                    "p75": 95.06,
+                    "iqr": 38.34
+                },
+                "health.typing": {
+                    "count": 308,
+                    "median": 82.61,
+                    "p25": 70,
+                    "p75": 100,
+                    "iqr": 30
+                },
+                "health.overall": {
+                    "count": 308,
+                    "median": 85.85,
+                    "p25": 76.59,
+                    "p75": 92.62,
+                    "iqr": 16.03
+                }
+            }
+        },
+        "monolog": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 10,
+                    "median": 84.97,
+                    "p25": 72.13,
+                    "p75": 100,
+                    "iqr": 27.87
+                },
+                "health.cohesion": {
+                    "count": 10,
+                    "median": 77.83,
+                    "p25": 69.35,
+                    "p75": 85.36,
+                    "iqr": 16
+                },
+                "health.coupling": {
+                    "count": 10,
+                    "median": 90.65,
+                    "p25": 82.75,
+                    "p75": 97.07,
+                    "iqr": 14.31
+                },
+                "health.maintainability": {
+                    "count": 10,
+                    "median": 68.78,
+                    "p25": 62.38,
+                    "p75": 94.41,
+                    "iqr": 32.03
+                },
+                "health.typing": {
+                    "count": 10,
+                    "median": 98.91,
+                    "p25": 96.59,
+                    "p75": 100,
+                    "iqr": 3.41
+                },
+                "health.overall": {
+                    "count": 10,
+                    "median": 82.35,
+                    "p25": 76.38,
+                    "p75": 89.93,
+                    "iqr": 13.55
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 125,
+                    "median": 99.14,
+                    "p25": 94.86,
+                    "p75": 100,
+                    "iqr": 5.14
+                },
+                "health.cohesion": {
+                    "count": 125,
+                    "median": 85.36,
+                    "p25": 72.36,
+                    "p75": 85.36,
+                    "iqr": 12.99
+                },
+                "health.coupling": {
+                    "count": 125,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 125,
+                    "median": 83.86,
+                    "p25": 74.32,
+                    "p75": 98.09,
+                    "iqr": 23.78
+                },
+                "health.typing": {
+                    "count": 125,
+                    "median": 100,
+                    "p25": 95.45,
+                    "p75": 100,
+                    "iqr": 4.55
+                },
+                "health.overall": {
+                    "count": 125,
+                    "median": 93.37,
+                    "p25": 88.84,
+                    "p75": 96.34,
+                    "iqr": 7.5
+                }
+            }
+        },
+        "guzzle": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 5,
+                    "median": 52.58,
+                    "p25": 46.59,
+                    "p75": 60.79,
+                    "iqr": 14.2
+                },
+                "health.cohesion": {
+                    "count": 5,
+                    "median": 83.23,
+                    "p25": 81.2,
+                    "p75": 85.36,
+                    "iqr": 4.15
+                },
+                "health.coupling": {
+                    "count": 5,
+                    "median": 83.74,
+                    "p25": 82.63,
+                    "p75": 92.31,
+                    "iqr": 9.68
+                },
+                "health.maintainability": {
+                    "count": 5,
+                    "median": 54.16,
+                    "p25": 45.66,
+                    "p75": 65.07,
+                    "iqr": 19.41
+                },
+                "health.typing": {
+                    "count": 5,
+                    "median": 98.43,
+                    "p25": 93.12,
+                    "p75": 98.55,
+                    "iqr": 5.43
+                },
+                "health.overall": {
+                    "count": 5,
+                    "median": 68.39,
+                    "p25": 67.18,
+                    "p75": 73.81,
+                    "iqr": 6.63
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 70,
+                    "median": 99.17,
+                    "p25": 84.77,
+                    "p75": 100,
+                    "iqr": 15.23
+                },
+                "health.cohesion": {
+                    "count": 70,
+                    "median": 85.36,
+                    "p25": 67.75,
+                    "p75": 85.36,
+                    "iqr": 17.6
+                },
+                "health.coupling": {
+                    "count": 70,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 70,
+                    "median": 85,
+                    "p25": 67.73,
+                    "p75": 98.82,
+                    "iqr": 31.09
+                },
+                "health.typing": {
+                    "count": 70,
+                    "median": 100,
+                    "p25": 91.71,
+                    "p75": 100,
+                    "iqr": 8.29
+                },
+                "health.overall": {
+                    "count": 70,
+                    "median": 93,
+                    "p25": 85.7,
+                    "p75": 96.34,
+                    "iqr": 10.64
+                }
+            }
+        },
+        "laravel-framework": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 227,
+                    "median": 100,
+                    "p25": 96.94,
+                    "p75": 100,
+                    "iqr": 3.06
+                },
+                "health.cohesion": {
+                    "count": 227,
+                    "median": 85.36,
+                    "p25": 60.58,
+                    "p75": 85.36,
+                    "iqr": 24.77
+                },
+                "health.coupling": {
+                    "count": 227,
+                    "median": 91.72,
+                    "p25": 82.29,
+                    "p75": 97.03,
+                    "iqr": 14.74
+                },
+                "health.maintainability": {
+                    "count": 227,
+                    "median": 93.78,
+                    "p25": 83.08,
+                    "p75": 100,
+                    "iqr": 16.92
+                },
+                "health.typing": {
+                    "count": 227,
+                    "median": 19.5,
+                    "p25": 7.83,
+                    "p75": 45.18,
+                    "iqr": 37.35
+                },
+                "health.overall": {
+                    "count": 227,
+                    "median": 82.58,
+                    "p25": 76.86,
+                    "p75": 87.4,
+                    "iqr": 10.55
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 1600,
+                    "median": 100,
+                    "p25": 98.89,
+                    "p75": 100,
+                    "iqr": 1.11
+                },
+                "health.cohesion": {
+                    "count": 1600,
+                    "median": 85.36,
+                    "p25": 75.16,
+                    "p75": 85.36,
+                    "iqr": 10.19
+                },
+                "health.coupling": {
+                    "count": 1600,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 1600,
+                    "median": 96.2,
+                    "p25": 85,
+                    "p75": 100,
+                    "iqr": 15
+                },
+                "health.typing": {
+                    "count": 1600,
+                    "median": 16.67,
+                    "p25": 0,
+                    "p75": 50,
+                    "iqr": 50
+                },
+                "health.overall": {
+                    "count": 1600,
+                    "median": 81.34,
+                    "p25": 79.05,
+                    "p75": 88.33,
+                    "iqr": 9.28
+                }
+            }
+        },
+        "qmx": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 175,
+                    "median": 90.38,
+                    "p25": 82.19,
+                    "p75": 100,
+                    "iqr": 17.81
+                },
+                "health.cohesion": {
+                    "count": 175,
+                    "median": 85.36,
+                    "p25": 70.6,
+                    "p75": 85.36,
+                    "iqr": 14.75
+                },
+                "health.coupling": {
+                    "count": 175,
+                    "median": 91.3,
+                    "p25": 83.33,
+                    "p75": 96.92,
+                    "iqr": 13.58
+                },
+                "health.maintainability": {
+                    "count": 175,
+                    "median": 81.33,
+                    "p25": 68.28,
+                    "p75": 100,
+                    "iqr": 31.72
+                },
+                "health.typing": {
+                    "count": 175,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 175,
+                    "median": 86.33,
+                    "p25": 80.14,
+                    "p75": 93.12,
+                    "iqr": 12.98
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 950,
+                    "median": 100,
+                    "p25": 94.67,
+                    "p75": 100,
+                    "iqr": 5.33
+                },
+                "health.cohesion": {
+                    "count": 950,
+                    "median": 85.36,
+                    "p25": 75.36,
+                    "p75": 85.36,
+                    "iqr": 10
+                },
+                "health.coupling": {
+                    "count": 950,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 950,
+                    "median": 90.93,
+                    "p25": 76.67,
+                    "p75": 100,
+                    "iqr": 23.33
+                },
+                "health.typing": {
+                    "count": 950,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 950,
+                    "median": 95.41,
+                    "p25": 91.34,
+                    "p75": 96.34,
+                    "iqr": 5
+                }
+            }
+        },
+        "codeigniter": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 1,
+                    "median": 57.2,
+                    "p25": 57.2,
+                    "p75": 57.2,
+                    "iqr": 0
+                },
+                "health.cohesion": {
+                    "count": 1,
+                    "median": 31.54,
+                    "p25": 31.54,
+                    "p75": 31.54,
+                    "iqr": 0
+                },
+                "health.coupling": {
+                    "count": 1,
+                    "median": 76.07,
+                    "p25": 76.07,
+                    "p75": 76.07,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 1,
+                    "median": 52.26,
+                    "p25": 52.26,
+                    "p75": 52.26,
+                    "iqr": 0
+                },
+                "health.typing": {
+                    "count": 1,
+                    "median": 0.82,
+                    "p25": 0.82,
+                    "p75": 0.82,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 1,
+                    "median": 49.22,
+                    "p25": 49.22,
+                    "p75": 49.22,
+                    "iqr": 0
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 140,
+                    "median": 93.33,
+                    "p25": 78.81,
+                    "p75": 100,
+                    "iqr": 21.19
+                },
+                "health.cohesion": {
+                    "count": 140,
+                    "median": 74.43,
+                    "p25": 50,
+                    "p75": 85.36,
+                    "iqr": 35.36
+                },
+                "health.coupling": {
+                    "count": 140,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 140,
+                    "median": 74.28,
+                    "p25": 61.41,
+                    "p75": 85.34,
+                    "iqr": 23.94
+                },
+                "health.typing": {
+                    "count": 140,
+                    "median": 0,
+                    "p25": 0,
+                    "p75": 0,
+                    "iqr": 0
+                },
+                "health.overall": {
+                    "count": 140,
+                    "median": 72.47,
+                    "p25": 66.21,
+                    "p75": 77.99,
+                    "iqr": 11.78
+                }
+            }
+        },
+        "wordpress": {
+            "namespace": {
+                "health.complexity": {
+                    "count": 32,
+                    "median": 91.53,
+                    "p25": 39.93,
+                    "p75": 100,
+                    "iqr": 60.07
+                },
+                "health.cohesion": {
+                    "count": 32,
+                    "median": 85.36,
+                    "p25": 68.17,
+                    "p75": 85.36,
+                    "iqr": 17.19
+                },
+                "health.coupling": {
+                    "count": 32,
+                    "median": 88.33,
+                    "p25": 78.5,
+                    "p75": 96.68,
+                    "iqr": 18.18
+                },
+                "health.maintainability": {
+                    "count": 32,
+                    "median": 70.04,
+                    "p25": 43.09,
+                    "p75": 75.76,
+                    "iqr": 32.67
+                },
+                "health.typing": {
+                    "count": 32,
+                    "median": 9,
+                    "p25": 0.83,
+                    "p75": 71.2,
+                    "iqr": 70.37
+                },
+                "health.overall": {
+                    "count": 32,
+                    "median": 75.49,
+                    "p25": 51.66,
+                    "p75": 85.23,
+                    "iqr": 33.57
+                }
+            },
+            "class": {
+                "health.complexity": {
+                    "count": 601,
+                    "median": 97.33,
+                    "p25": 78.62,
+                    "p75": 100,
+                    "iqr": 21.38
+                },
+                "health.cohesion": {
+                    "count": 601,
+                    "median": 85.36,
+                    "p25": 69.69,
+                    "p75": 85.36,
+                    "iqr": 15.67
+                },
+                "health.coupling": {
+                    "count": 601,
+                    "median": 100,
+                    "p25": 100,
+                    "p75": 100,
+                    "iqr": 0
+                },
+                "health.maintainability": {
+                    "count": 601,
+                    "median": 72.04,
+                    "p25": 56.36,
+                    "p75": 85,
+                    "iqr": 28.64
+                },
+                "health.typing": {
+                    "count": 601,
+                    "median": 0,
+                    "p25": 0,
+                    "p75": 27.78,
+                    "iqr": 27.78
+                },
+                "health.overall": {
+                    "count": 601,
+                    "median": 78.11,
+                    "p25": 69.96,
+                    "p75": 81.7,
+                    "iqr": 11.74
+                }
+            }
+        }
+    }
+}

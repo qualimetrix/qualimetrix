@@ -1,15 +1,15 @@
 {
   "package": "laravel/framework",
-  "version": "v12.59.0",
-  "lockReference": "70a838b1a6f12abaf5bebb76ea4f28fbd37451fa",
+  "version": "v13.31.0",
+  "lockReference": "7c75fbf93f91fa077d3df1c820cc14f4e59a9774",
   "project": "benchmarks/vendor/laravel/framework/src",
   "selectionMethod": "largest direct benchmark dependency by installed disk usage",
-  "analyzedFiles": 1546,
-  "baselineEntries": 5407,
+  "analyzedFiles": 1696,
+  "baselineEntries": 2522,
   "memoryLimitBytes": 2147483648,
-  "commandTemplate": "php -d memory_limit=2G bin/qmx check benchmarks/vendor/laravel/framework/src --baseline=<baseline> --workers=1 --no-progress --format=json",
+  "commandTemplate": "php -d memory_limit=2G <qmx> check <project> --baseline=<baseline> --workers=1 --no-progress --format=json, run from an empty working directory so the repository's own qmx.yaml is not auto-discovered",
   "generateExitStatus": 0,
   "checkExitStatus": 0,
-  "observedPeakRssBytes": 388939776,
-  "measuredDate": "2026-08-07"
+  "observedPeakRssBytes": 410419200,
+  "measuredDate": "2026-09-14"
 }

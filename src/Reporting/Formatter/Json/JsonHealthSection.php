@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FormatterContext;
@@ -73,6 +74,7 @@ final class JsonHealthSection
                     'warning' => $this->sanitizer->sanitizeFloat($hs->warningThreshold),
                     'error' => $this->sanitizer->sanitizeFloat($hs->errorThreshold),
                 ],
+                'coverage' => $this->formatCoverage($hs->coverage),
                 'decomposition' => array_map(
                     fn(DecompositionItem $item): array => [
                         'metric' => $item->metricKey,
@@ -95,6 +97,28 @@ final class JsonHealthSection
         }
 
         return $result;
+    }
+
+    /**
+     * What share of the subject the score was computed over.
+     *
+     * The two states carry the same keys, so a consumer reads `state` instead
+     * of inferring absence from a zero: an undefined coverage and a coverage
+     * of nothing are different claims about the subject.
+     *
+     * @return array<string, mixed>
+     */
+    private function formatCoverage(HealthCoverage $coverage): array
+    {
+        return [
+            'state' => $coverage->applicable ? 'measured' : 'not-applicable',
+            'measured' => $coverage->measured,
+            'eligible' => $coverage->eligible,
+            'ratio' => $coverage->ratio !== null ? $this->sanitizer->sanitizeFloat($coverage->ratio) : null,
+            'unit' => $coverage->unit?->value,
+            'basis' => $coverage->basis,
+            'reason' => $coverage->reason,
+        ];
     }
 
     /**

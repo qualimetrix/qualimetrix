@@ -57,6 +57,7 @@ src/Reporting/Formatter/Support/DebtBreakdownRenderer.php	Qualimetrix\Reporting\
 src/Reporting/Formatter/Support/DetailedFindingRenderer.php	Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer	"output projection"	Reporting	P6
 src/Reporting/Formatter/Support/FindingDetailRenderer.php	Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer	"output projection"	Reporting	P6
 src/Reporting/Formatter/Support/FindingSorter.php	Qualimetrix\Reporting\Formatter\Support\FindingSorter	"output projection"	Reporting	P6
+src/Reporting/Formatter/Support/HealthCoverageNarrator.php	Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator	"output projection"	Reporting	P6
 src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	"output projection"	Reporting	P6-A
 src/Reporting/Formatter/TextFormatter.php	Qualimetrix\Reporting\Formatter\TextFormatter	"output projection"	Reporting	P6
 src/Reporting/Formatter/TextVerboseFormatter.php	Qualimetrix\Reporting\Formatter\TextVerboseFormatter	"output projection"	Reporting	P6

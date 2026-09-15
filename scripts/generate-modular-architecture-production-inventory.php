@@ -2560,6 +2560,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0058-a-layers-value-survives-the-layers-above-it.md',
         'docs/adr/0060-published-vocabulary-and-name-ownership.md',
         'docs/adr/0061-configuration-miss-and-refusal-semantics.md',
+        'docs/adr/0062-health-scores-measure-what-they-cover.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

@@ -14,7 +14,7 @@ final readonly class HealthHintProjector
     ) {}
 
     /**
-     * @return array{metricHints: array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}>, healthDecomposition: array<string, array{inputs: list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>}>}
+     * @return array{metricHints: array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}>, healthDecomposition: array<string, array{levels: array<string, list<array{key: string, label: string, direction: string}>>}>}
      */
     public function project(): array
     {
@@ -22,7 +22,7 @@ final readonly class HealthHintProjector
     }
 
     /**
-     * @return array{metricHints: array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}>, healthDecomposition: array<string, array{inputs: list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>}>}
+     * @return array{metricHints: array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}>, healthDecomposition: array<string, array{levels: array<string, list<array{key: string, label: string, direction: string}>>}>}
      */
     private function projectMetadata(HealthMetricMetadataCollection $metadata): array
     {

@@ -25,6 +25,46 @@ score/decomposition semantics, contributor ranking, namespace drill-down, and
 human explanations. Reporting owns only report assembly and output projection;
 it consumes immutable Health contracts and never imports Health internals.
 
+`Metadata` answers two questions that share no data, and holds a class for
+each: `HealthDecompositionCatalog` says which metrics a score is made of and
+under which keys they are published, `HealthDimensionCatalog` says how a
+dimension is worded. They were one class while the decomposition was a single
+flat list; once it had to answer per level, the product's own god-class rule
+said the class held two subjects.
+
+A decomposition answers per symbol level, because the formulas do: the project
+coupling score is computed from CBO aggregates where the namespace one is
+computed from Ce aggregates, and a single list described the wrong score at two
+levels out of three. `HealthDimensionCatalog::inputsFor()` resolves the project
+level from the namespace one exactly where `ComputedMetricDefinition`
+inherits the namespace formula, and the metadata projection ships every level
+resolved so the HTML report picks by the node's own level. Which class dragged a
+parent score down is a separate question with a separate list — the contributor
+keys — and the two must not be conflated.
+
+Every input line also declares what it covers: the `.count` its aggregate
+already publishes and the population that count is a share of. A score reports
+the *narrowest* of its inputs' ratios, because a score is only as much a
+statement about the project as its least-covered term — a cohesion score whose
+TCC term saw a third of the classes is a statement about that third, however
+completely LCOM saw the rest. Populations are symbol counts
+(`size.symbol-class-count`, `size.symbol-method-count`, and the leaf namespaces
+a namespace-collected aggregate is offered), never the `.count` of a
+neighbouring metric: a denominator that is itself a measurement shrinks when
+that measurement fails and hides the very gap being reported. Where no input is
+an aggregate over symbols — `health.overall`, `health.typing`, a class score, a
+namespace-filtered subtree — the coverage is an explicit "not applicable" with
+a reason, never a zero. Scores are never damped by coverage (ADR 0062).
+
+The threshold a decomposition line advertises is the knee its formula term
+applies, and nothing else. Both had drifted silently while the catalog
+transcribed the constants by hand, so
+`HealthDecompositionAgreesWithFormulasTest` now reads the formulas and fails on
+disagreement: every shown input must be one its level's formula reads, and every
+advertised target must be that formula's own knee. A term whose knee sits on a
+blend of several signals advertises nothing per key, and a term with no knee is
+declared knee-less and rechecked as such.
+
 ## Structure
 
 ```text
@@ -54,12 +94,12 @@ ComputedMetrics/
     │   ├── DrillDown/                # score and worst-class queries
     │   ├── Metadata/                 # immutable metadata projection
     │   ├── Offender/                 # offender value and the levels ranked for it
-    │   ├── Score/                    # score and decomposition values
+    │   ├── Score/                    # score, decomposition and covered-share values
     │   └── Summary/                  # summary value and concrete builder
     ├── Configuration/                # formula exclusion
-    ├── Metadata/                     # metric hints, health dimensions, facade
+    ├── Metadata/                     # metric hints, decomposition, dimension wording, facade
     ├── Offender/                     # evidence, reasons, projection builder
-    └── Score/                        # contributor ranking
+    └── Score/                        # contributor ranking, covered-share reading
 ```
 
 ## Lifecycle and phase

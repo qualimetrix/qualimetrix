@@ -91,6 +91,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0059 — Declared-Layer Policy and Architecture Governance](0059-declared-layer-policy-and-architecture-governance.md) — current layer-policy semantics and manifest authority.
 - [0060 — Published Vocabulary and Name Ownership](0060-published-vocabulary-and-name-ownership.md) — current naming grammar, owners, and completeness rule.
 - [0061 — Configuration Miss and Refusal Semantics](0061-configuration-miss-and-refusal-semantics.md) — final miss classification and refusal contract.
+- [0062 — Health Scores Measure What They Cover](0062-health-scores-measure-what-they-cover.md) — aggregation, corpus floor, and recalibrated thresholds for the six health dimensions.
 
 ## Superseded history
 

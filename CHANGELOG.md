@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Health scores move on every project.** The six `health.*` dimensions were
+recalibrated against a corpus that now includes legacy anchors, and the project
+aggregate of a namespace-collected metric now includes the global namespace.
+Scores fall for most projects — across a seventeen-project corpus the median
+overall went from 79.1 to 73.4 — so a `health.*` finding can cross a warning or
+error threshold that it did not cross before, changing a run's exit code.
+Regenerate any recorded baseline. ADR 0062, "Health Scores Measure What They
+Cover", records what moved and why, including what was decided against.
+
 **A filter value that used to be discarded in silence now exits 3.** Each of
 these accepted anything, dropped what it could not use and reported success;
 each now refuses and says what did not bind. `--rule-opt` (a pair written
@@ -303,6 +312,15 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Changed
 
+- Every health dimension now publishes what share of its subject it was
+  computed over. `--format=json` gains a `coverage` object per dimension
+  (measured count, eligible population, ratio, unit and the `.count` it came
+  from) and `--format=health` prints one line per dimension. The narrowest
+  input decides, so a cohesion score computed from the third of classes that
+  carry TCC now says so. Scores themselves are unchanged and are not damped by
+  coverage. Where coverage is undefined — `health.overall`, `health.typing`, a
+  class-level or namespace-filtered score — the field states that and why,
+  rather than reporting zero.
 - Configuration that binds to nothing is now reported instead of passing
   unnoticed, through six new channels, all `warning` at project level:
   `discovery.unmatched-exclude` (an `--exclude` value or `exclude:` entry that
@@ -369,6 +387,16 @@ accepted set in the seam's wording and arrives before the rule is built.
   and neither a path nor a formula is a number.
 
 ### Fixed
+
+- **A health score's breakdown now lists the inputs that score was computed
+  from, with the targets its own formula applies.** The breakdown carried one
+  input list per dimension for all three levels, so a project coupling score
+  built from CBO aggregates was explained by namespace-shaped inputs, and the
+  typing breakdown above class level was silently empty because the key it named
+  does not exist there. Targets came from a base-key fallback and contradicted
+  the formulas they described — the maintainability minimum advertised "above
+  65" where the formula stops penalising at 5. Inputs and targets are now
+  resolved per level and checked against the formulas by a test.
 
 - **An empty `cache.dir` no longer offers `--no-cache` as the way out.** Both
   cache refusals used to end with "or disable the cache with --no-cache".

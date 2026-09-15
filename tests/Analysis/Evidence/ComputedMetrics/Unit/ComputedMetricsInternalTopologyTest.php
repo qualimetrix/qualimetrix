@@ -64,6 +64,8 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\DecompositionItem', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\DecompositionItem', 'Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthContributor', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
+        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage', 'Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator'],
+        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown', 'Qualimetrix\\Reporting\\Health\\HealthScoreResolver'],
@@ -92,7 +94,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(48, $declarations);
+        self::assertCount(52, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);
@@ -120,10 +122,10 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $expected = [...self::EXPECTED_RELATIONS, ...self::COMPOSED_CARRIER_RELATIONS];
         sort($expected);
         self::assertSame($expected, $relations, 'Every raw cross-owner Contract import must be explicitly classified.');
-        self::assertCount(47, $relations);
-        self::assertCount(42, self::EXPECTED_RELATIONS);
+        self::assertCount(49, $relations);
+        self::assertCount(44, self::EXPECTED_RELATIONS);
         self::assertCount(25, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
-        self::assertCount(17, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => str_contains($relation[0], '\\Health\\Contract\\')));
+        self::assertCount(19, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => str_contains($relation[0], '\\Health\\Contract\\')));
 
         $source = implode("\n", array_map(static fn(string $path): string => (string) file_get_contents($path), $declarations));
         $obsoleteNames = [

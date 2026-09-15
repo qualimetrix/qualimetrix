@@ -13,6 +13,12 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * A namespace is considered a "leaf" if it has no children in the tree.
  * If "App" and "App\Service" are both in the input, "App" becomes a parent
  * (not a leaf) because it has children.
+ *
+ * The global namespace is the empty string: an isolated leaf, not the root —
+ * nothing names it as a parent and it has no parent chain of its own. Filtering
+ * it out here is not a construction guard; it silently removes global-namespace
+ * code from every consumer that asks the tree which namespaces hold code,
+ * including the project aggregate of namespace-collected metrics.
  */
 final readonly class NamespaceTree
 {
@@ -43,7 +49,7 @@ final readonly class NamespaceTree
     }
 
     /**
-     * Deduplicates and registers input namespaces, skipping empty strings.
+     * Deduplicates and registers input namespaces.
      *
      * @param list<string> $leafNamespaces
      *
@@ -54,10 +60,6 @@ final readonly class NamespaceTree
         $allNodes = [];
 
         foreach ($leafNamespaces as $ns) {
-            if ($ns === '') {
-                continue;
-            }
-
             $allNodes[$ns] = true;
         }
 

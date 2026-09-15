@@ -53,8 +53,8 @@ rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symb
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/ConfigKeySpelling.php	Qualimetrix\Analysis\Configuration	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/DecompositionItem.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/CoverageUnit.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Offender/HealthReasonBuilder.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	Qualimetrix\Analysis\Evidence\Prioritization\Debt	error	1
@@ -70,7 +70,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Version.
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Reporting/Formatter/Support/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter\Support	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	Qualimetrix\Analysis\Evidence\Coupling	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Configuration\Contract\Refusal	warning	1
+rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Run\ExcludeBinding	warning	1

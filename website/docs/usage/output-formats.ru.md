@@ -184,12 +184,30 @@ src/Repository/OrderRepository.php: warning[coupling.class-rank]: ClassRank is 0
             "score": 78.0,
             "label": "Excellent",
             "threshold": {"warning": 50, "error": 25},
+            "coverage": {
+                "state": "measured",
+                "measured": 2263,
+                "eligible": 2263,
+                "ratio": 1.0,
+                "unit": "callables",
+                "basis": "complexity.ccn.count",
+                "reason": null
+            },
             "decomposition": []
         },
         "overall": {
             "score": 72.0,
             "label": "Fair",
             "threshold": {"warning": 50, "error": 25},
+            "coverage": {
+                "state": "not-applicable",
+                "measured": null,
+                "eligible": null,
+                "ratio": null,
+                "unit": null,
+                "basis": null,
+                "reason": "health.overall composes the other dimensions; each of them publishes its own coverage"
+            },
             "decomposition": []
         }
     },

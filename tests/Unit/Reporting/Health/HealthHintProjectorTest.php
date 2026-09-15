@@ -90,7 +90,13 @@ final class HealthHintProjectorTest extends TestCase
         $decomposition = $this->projector->project()['healthDecomposition'];
         foreach (['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability', 'health.overall'] as $dimension) {
             self::assertArrayHasKey($dimension, $decomposition, "Missing health dimension: {$dimension}");
-            self::assertArrayHasKey('inputs', $decomposition[$dimension]);
+            self::assertArrayHasKey('levels', $decomposition[$dimension]);
+
+            // Every level resolved, so the page never has to fall back to a
+            // list belonging to another one.
+            foreach (['class', 'namespace', 'project'] as $level) {
+                self::assertArrayHasKey($level, $decomposition[$dimension]['levels'], "{$dimension} missing level {$level}");
+            }
         }
     }
 
@@ -98,9 +104,11 @@ final class HealthHintProjectorTest extends TestCase
     public function itExportForHtmlHealthInputsHaveRequiredFields(): void
     {
         foreach ($this->projector->project()['healthDecomposition'] as $dimension => $data) {
-            foreach ($data['inputs'] as $i => $input) {
-                foreach (['key', 'altKey', 'label', 'ideal', 'direction'] as $field) {
-                    self::assertArrayHasKey($field, $input, "{$dimension}[{$i}] missing {$field}");
+            foreach ($data['levels'] as $level => $inputs) {
+                foreach ($inputs as $i => $input) {
+                    foreach (['key', 'label', 'direction'] as $field) {
+                        self::assertArrayHasKey($field, $input, "{$dimension}.{$level}[{$i}] missing {$field}");
+                    }
                 }
             }
         }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 /**
  * Collects benchmark metrics data from multiple PHP projects.
- * Usage: php scripts/collect-benchmark-data.php [output-file.json]
+ * Usage: php scripts/collect-benchmark-data.php [output-file.json] [--capture-dir[=dir]]
  *
  * Projects are sourced from:
  * - benchmarks/vendor/ — open-source projects (installed via benchmarks/composer.json)
@@ -16,6 +16,12 @@ declare(strict_types=1);
  * benchmarks/local-projects.json.example to benchmarks/local-projects.json and
  * point it at your own checkouts; the file is git-ignored so that no private
  * project name or filesystem path can reach the public repository.
+ *
+ * --capture-dir writes, per project, the full metric map of the project symbol
+ * and of every namespace and class symbol to its own file under the given
+ * directory (default outside the repository — see $defaultCaptureDir below).
+ * This raw capture is the input a formula bench needs and the digest below
+ * does not carry; it is never committed.
  */
 
 $qmxBin = __DIR__ . '/../bin/qmx';
@@ -39,6 +45,13 @@ $projects = [
     ['id' => 'monolog', 'path' => "$benchmarkVendor/monolog/monolog/src", 'type' => 'open-source', 'description' => 'Monolog logging library'],
     ['id' => 'guzzle', 'path' => "$benchmarkVendor/guzzlehttp/guzzle/src", 'type' => 'open-source', 'description' => 'Guzzle HTTP client'],
     ['id' => 'laravel-framework', 'path' => "$benchmarkVendor/laravel/framework/src", 'type' => 'open-source', 'description' => 'Laravel Framework'],
+
+    // Legacy anchors. The corpus is otherwise fifteen top-decile libraries, so
+    // health scores never left the top third of their own scale and the declared
+    // Poor and Critical bands were unreachable by any real project. These two are
+    // procedural, predate namespaces, and both parse cleanly under PHP 8.4.
+    ['id' => 'codeigniter', 'path' => "$benchmarkVendor/codeigniter/framework/system", 'type' => 'open-source', 'description' => 'CodeIgniter 3, procedural legacy'],
+    ['id' => 'wordpress', 'path' => "$benchmarkVendor/johnpbloch/wordpress-core/wp-includes", 'type' => 'open-source', 'description' => 'WordPress core includes, procedural legacy'],
 
     // Qualimetrix itself
     ['id' => 'qmx', 'path' => __DIR__ . '/../src', 'type' => 'open-source', 'description' => 'Qualimetrix'],
@@ -64,10 +77,47 @@ if (is_file($localProjectsFile)) {
     }
 }
 
-$outputFile = $argv[1] ?? __DIR__ . '/../docs/internal/benchmark-data.json';
+// --capture-dir[=dir] is separated from positional arguments so the existing
+// `[output-file.json]` usage keeps working unchanged.
+$defaultCaptureDir = sys_get_temp_dir() . '/qmx-benchmark-capture';
+$captureDir = null;
+$positionalArgs = [];
+/** @var list<string> $argv */
+$cliArgs = array_slice($argv, 1);
+foreach ($cliArgs as $arg) {
+    if ($arg === '--capture-dir') {
+        $captureDir = $defaultCaptureDir;
+        continue;
+    }
+    if (str_starts_with($arg, '--capture-dir=')) {
+        $captureDir = substr($arg, strlen('--capture-dir='));
+        continue;
+    }
+    $positionalArgs[] = $arg;
+}
+
+if ($captureDir !== null && !is_dir($captureDir) && !mkdir($captureDir, 0o755, true) && !is_dir($captureDir)) {
+    fprintf(STDERR, "ERROR: Cannot create capture directory: %s\n", $captureDir);
+    exit(2);
+}
+
+$outputFile = $positionalArgs[0] ?? __DIR__ . '/../docs/internal/benchmark-data.json';
 
 $qmxVersionOutput = shell_exec("$qmxBin --version 2>/dev/null");
 $qmxVersion = is_string($qmxVersionOutput) ? trim($qmxVersionOutput) : '';
+
+// qmx auto-discovers qmx.yaml (and composer.json) from the process working
+// directory. Running from the repo root would leak this repository's own
+// qmx.yaml — its memory_limit, its Qualimetrix\** architecture layers, and
+// its coupling framework namespaces — onto every benchmark project, so every
+// project would be measured under a configuration that is not its own. A
+// fresh, empty working directory turns auto-discovery into a no-op, while the
+// absolute $qmxBin and per-project $path keep each invocation self-contained.
+$neutralDir = sys_get_temp_dir() . '/qmx-benchmark-collect-' . getmypid();
+if (!is_dir($neutralDir) && !mkdir($neutralDir, 0o755, true) && !is_dir($neutralDir)) {
+    fprintf(STDERR, "ERROR: Cannot create neutral working directory: %s\n", $neutralDir);
+    exit(2);
+}
 
 $results = [
     'version' => '1.0',
@@ -78,6 +128,13 @@ $results = [
 $failures = [];
 
 foreach ($projects as $project) {
+    // Free the previous iteration's decoded payload before allocating this
+    // one's: $data holds a fresh value only once assignment completes, so
+    // without this, the largest project's ~12.5 MB decoded array stays alive
+    // while the next project's json_decode() builds its own copy — the
+    // combination is what exhausted the default 128M limit.
+    unset($data, $json, $output, $namespaces, $classes, $captureSymbols, $encodedCapture, $projectResult);
+
     $path = $project['path'];
     $id = $project['id'];
 
@@ -91,15 +148,26 @@ foreach ($projects as $project) {
     $start = microtime(true);
 
     $cmd = sprintf(
-        'php -d memory_limit=2G %s check %s --format=metrics --workers=0 2>/dev/null',
+        'php -d memory_limit=2G %s check %s --format=metrics --workers=0',
         escapeshellarg($qmxBin),
         escapeshellarg($path),
     );
 
-    $output = [];
-    $exitCode = 0;
-    exec($cmd, $output, $exitCode);
-    $json = implode("\n", $output);
+    // Run from the neutral working directory (see $neutralDir above) so qmx
+    // does not auto-discover this repository's qmx.yaml/composer.json.
+    // proc_open + stream_get_contents also avoids exec()'s double memory
+    // ownership of large output (a line array plus its imploded string) —
+    // the qmx self-analysis alone produces ~12.5 MB of JSON.
+    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $neutralDir);
+    if (!is_resource($process)) {
+        fprintf(STDERR, "FAILED (could not start analysis)\n");
+        $failures[] = sprintf('%s: could not start analysis', $id);
+        continue;
+    }
+    $output = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $exitCode = proc_close($process);
+    $json = $output === false ? '' : $output;
     $elapsed = round(microtime(true) - $start, 1);
 
     if ($exitCode > 2) {
@@ -108,7 +176,7 @@ foreach ($projects as $project) {
         continue;
     }
 
-    if (trim($json) === '') {
+    if ($json === '') {
         fprintf(STDERR, "FAILED (no output)\n");
         $failures[] = sprintf('%s: analysis produced no output', $id);
         continue;
@@ -125,6 +193,37 @@ foreach ($projects as $project) {
         fprintf(STDERR, "FAILED (analysis coverage incomplete or missing)\n");
         $failures[] = sprintf('%s: analysis coverage is not complete', $id);
         continue;
+    }
+
+    // Raw capture: the full metric map of the project, namespace and class
+    // symbols, for a formula bench — a different question from the digest
+    // built below, so it is written to its own file rather than merged in.
+    if ($captureDir !== null) {
+        $captureSymbols = [];
+        foreach ($data['symbols'] as $symbol) {
+            if (!in_array($symbol['type'], ['project', 'namespace', 'class'], true)) {
+                continue;
+            }
+            $captureSymbols[] = [
+                'name' => $symbol['name'],
+                'type' => $symbol['type'],
+                'metrics' => $symbol['metrics'] ?? [],
+                'size.loc' => $symbol['metrics']['size.loc'] ?? null,
+            ];
+        }
+
+        // No JSON_PRETTY_PRINT: this file is machine-read only, and pretty-printing
+        // a multi-megabyte payload roughly doubles its peak memory for no benefit.
+        $captureFile = $captureDir . '/' . $id . '.json';
+        $encodedCapture = json_encode(
+            ['id' => $id, 'symbols' => $captureSymbols],
+            JSON_UNESCAPED_UNICODE,
+        );
+        if ($encodedCapture === false || file_put_contents($captureFile, $encodedCapture) === false) {
+            fprintf(STDERR, "FAILED (could not write capture file)\n");
+            $failures[] = sprintf('%s: could not write capture file', $id);
+            continue;
+        }
     }
 
     // Extract namespace-level metrics
@@ -217,7 +316,14 @@ foreach ($projects as $project) {
     ];
 
     $results['projects'][] = $projectResult;
-    fprintf(STDERR, "OK (%ds, %d ns, %d classes)\n", $elapsed, count($namespaces), count($classes));
+    fprintf(
+        STDERR,
+        "OK (%ds, %d ns, %d classes, peak %s)\n",
+        $elapsed,
+        count($namespaces),
+        count($classes),
+        round(memory_get_peak_usage(true) / 1_048_576, 1) . 'M',
+    );
 }
 
 if ($failures !== [] || count($results['projects']) !== count($projects)) {

@@ -11,8 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -33,7 +33,7 @@ final class HealthBarRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $this->renderer = new HealthBarRenderer($resolver);
         $this->color = new AnsiColor(false);
     }
@@ -54,9 +54,9 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersOverallAndDimensions(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 75.3, 'Acceptable', 60.0, 30.0),
-            'complexity' => new HealthScore('complexity', 82.0, 'Good', 60.0, 30.0),
-            'coupling' => new HealthScore('coupling', 45.5, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 75.3, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'complexity' => new HealthScore('complexity', 82.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'coupling' => new HealthScore('coupling', 45.5, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -76,7 +76,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersBoundaryScoreZero(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 0.0, 'Critical', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 0.0, 'Critical', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -91,7 +91,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersBoundaryScoreHundred(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 100.0, 'Excellent', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 100.0, 'Excellent', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -105,7 +105,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNanScoreHandled(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', \NAN, 'N/A', 60.0, 30.0),
+            'overall' => new HealthScore('overall', \NAN, 'N/A', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -120,7 +120,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersAsciiBar(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -138,7 +138,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersUnicodeBar(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -153,8 +153,8 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNullScoreDimensionShowsNA(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0),
-            'typing' => new HealthScore('typing', null, 'No classes analyzed', 80.0, 50.0),
+            'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'typing' => new HealthScore('typing', null, 'No classes analyzed', 80.0, 50.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -169,8 +169,8 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNarrowTerminalSkipsBars(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
-            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -192,7 +192,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNamespaceHeader(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -207,7 +207,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersClassHeader(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -233,8 +233,8 @@ final class HealthBarRendererTest extends TestCase
         ];
 
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 40.0, 'Poor', 60.0, 30.0),
-            'complexity' => new HealthScore('complexity', 35.0, 'Poor', 60.0, 30.0, $decomposition),
+            'overall' => new HealthScore('overall', 40.0, 'Poor', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'complexity' => new HealthScore('complexity', 35.0, 'Poor', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), $decomposition),
         ]);
         $lines = [];
 
@@ -252,9 +252,9 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersScaleExplanationWhenDifferentThresholds(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
-            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0),
-            'typing' => new HealthScore('typing', 75.0, 'Needs work', 80.0, 50.0),
+            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'typing' => new HealthScore('typing', 75.0, 'Needs work', 80.0, 50.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -268,9 +268,9 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNoScaleExplanationWhenSameThresholds(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
-            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0),
-            'coupling' => new HealthScore('coupling', 65.0, 'Acceptable', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'complexity' => new HealthScore('complexity', 85.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'coupling' => new HealthScore('coupling', 65.0, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -334,7 +334,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersOnlyOverallWithoutException(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 90.0, 'Excellent', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 90.0, 'Excellent', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -356,7 +356,7 @@ final class HealthBarRendererTest extends TestCase
         // At terminal width 80, barWidth = max(20, min(30, 80-50)) = 30
         // Score 50% => filled = round(50/100 * 30) = 15
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -390,11 +390,11 @@ final class HealthBarRendererTest extends TestCase
     public function itColorsScoreByRange(float $score, string $expectedColor): void
     {
         $ansiColor = new AnsiColor(true);
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $renderer = new HealthBarRenderer($resolver);
 
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', $score, 'Test', 60.0, 30.0),
+            'overall' => new HealthScore('overall', $score, 'Test', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -409,7 +409,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersNegativeScoreTreatedAsZero(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', -10.0, 'Critical', 60.0, 30.0),
+            'overall' => new HealthScore('overall', -10.0, 'Critical', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -427,7 +427,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersInfiniteScoreHandled(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', \INF, 'N/A', 60.0, 30.0),
+            'overall' => new HealthScore('overall', \INF, 'N/A', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -441,7 +441,7 @@ final class HealthBarRendererTest extends TestCase
     public function itRendersIntegerScoreOmittingDecimal(): void
     {
         $report = $this->createReport(healthScores: [
-            'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0),
+            'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
         $lines = [];
 
@@ -515,7 +515,7 @@ final class HealthBarRendererTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', $overallScore, 'Acceptable', 60.0, 30.0),
+                'overall' => new HealthScore('overall', $overallScore, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
         );
 

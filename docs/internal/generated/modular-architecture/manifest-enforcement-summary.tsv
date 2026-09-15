@@ -1,12 +1,12 @@
 metric	count
-declarations	950
-files	948
+declarations	955
+files	953
 semantic_owners	37
-contract_consumer_entries	2494
+contract_consumer_entries	2501
 temporary_contract_consumer_entries	0
 permanent_composition_bindings	73
-exact_dependency_edges	4086
-cross_owner_imports	2488
+exact_dependency_edges	4100
+cross_owner_imports	2493
 semantic_owner_layers	37
 singleton_seams	0
 exact_composition_bindings	73

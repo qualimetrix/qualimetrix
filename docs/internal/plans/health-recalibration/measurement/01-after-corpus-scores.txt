@@ -1,0 +1,25 @@
+Corpus after the version bump, before any model or formula change.
+php scripts/benchmark-regression.php, 2026-09-14, exit 1 (two expectations
+unmet — see below), then re-baselined.
+
+Project                    cmplx  cohsn  cplng  maint  typng  ovral
+--------------------------------------------------------------------------
+flysystem                  100.0   70.8   90.2  100.0   93.6   91.6
+symfony-console             82.1   79.7   65.7   89.1   98.6   81.4
+symfony-di                  60.9   79.0   51.4   71.0   99.8   68.5
+symfony-http-foundation     85.7   79.6   80.9   92.7   98.1   86.2
+symfony-http-kernel         77.6   84.4   84.6   85.3   99.4   84.1
+symfony-routing             73.3   71.8   80.0   79.6  100.0   78.3
+phpunit                     86.8   66.2   57.7   97.1   99.9   80.2
+php-parser                  94.9   63.0   44.3  100.0   90.6   79.0
+doctrine-orm                78.0   86.7   58.9   83.2   99.7   79.1
+doctrine-dbal               92.0   72.4   62.1  100.0   99.7   84.5
+composer                    64.8   72.7   35.5   71.0   77.5   63.0
+monolog                     88.3   75.9   60.0   88.1   96.3   80.9
+guzzle                      74.6   81.2   63.3   72.3   92.5   75.0
+laravel-framework           85.8   70.8   55.0   97.1   21.0   72.4
+qmx                         89.0   83.2   51.0   97.0  100.0   82.9
+
+REGRESSION DETECTED (2 failures):
+  - guzzle: health.coupling = 63.3, expected [83, 100]
+  - guzzle: health.maintainability = 72.3, expected [73, 94]

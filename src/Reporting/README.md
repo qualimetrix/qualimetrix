@@ -78,7 +78,8 @@ Reporting/
     │   ├── FindingDetailRenderer.php    # Sorted/grouped finding details
     │   ├── DebtBreakdownRenderer.php      # Per-rule technical-debt details
     │   ├── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
-    │   └── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
+    │   ├── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
+    │   └── HealthCoverageNarrator.php     # What share of its subject a health score was computed over
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
@@ -448,7 +449,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 {
   "meta": { "version": "1.0.0", "package": "qmx", "timestamp": "..." },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
-  "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
+  "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
   "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.ccn", "code": "complexity.ccn", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
@@ -757,7 +758,7 @@ Per-format decision — whether the accepted level is carried, and how:
 
 **Name:** `health` | **Default grouping:** `none`
 
-Text-based health report for terminal output. Renders a table of health dimensions with scores, status labels, and threshold info, followed by decomposition details showing each contributing metric. Supports ANSI colors and adapts to narrow terminals.
+Text-based health report for terminal output. Renders a table of health dimensions with scores, status labels, and threshold info, followed by decomposition details showing each contributing metric and the share of the subject the score was computed over. Supports ANSI colors and adapts to narrow terminals.
 
 Supports `--namespace` and `--class` for drill-down (filtering to specific scope).
 

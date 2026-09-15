@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
@@ -28,7 +29,7 @@ final class HealthTextFormatterTest extends TestCase
     protected function setUp(): void
     {
         $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown($hintProvider, self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
         $resolver = new HealthScoreResolver($drillDown);
         $this->formatter = new HealthTextFormatter($resolver);
     }
@@ -66,13 +67,13 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithAllDimensions(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
             ]),
-            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0),
-            'coupling' => new HealthScore('coupling', 81.5, 'Good', 60.0, 40.0),
-            'maintainability' => new HealthScore('maintainability', 68.9, 'Good', 50.0, 30.0),
-            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
+            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'coupling' => new HealthScore('coupling', 81.5, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'maintainability' => new HealthScore('maintainability', 68.9, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -107,11 +108,11 @@ final class HealthTextFormatterTest extends TestCase
     public function itShowsDecompositionInOutput(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
                 new DecompositionItem('complexity.cognitive.avg', 'Cognitive (avg)', 4.5, 'below 5', 'lower_is_better', ''),
             ]),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -129,8 +130,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithNullScore(): void
     {
         $report = $this->createReportWithHealthScores([
-            'typing' => new HealthScore('typing', null, '0 classes analyzed', 80.0, 50.0),
-            'overall' => new HealthScore('overall', 50.0, 'Fair', 50.0, 30.0),
+            'typing' => new HealthScore('typing', null, '0 classes analyzed', 80.0, 50.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 50.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -145,9 +146,9 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithColorEnabled(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
-            'cohesion' => new HealthScore('cohesion', 35.0, 'Poor', 50.0, 30.0),
-            'overall' => new HealthScore('overall', 53.7, 'Fair', 50.0, 30.0),
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'cohesion' => new HealthScore('cohesion', 35.0, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 53.7, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
@@ -163,8 +164,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithNoColor(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -178,10 +179,10 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsOnNarrowTerminal(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
             ]),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
@@ -202,8 +203,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithNamespaceFilter(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, namespace: 'App\\Core', terminalWidth: 120);
@@ -216,8 +217,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithClassFilter(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService', terminalWidth: 120);
@@ -230,8 +231,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itFormatsWithErrorScore(): void
     {
         $report = $this->createReportWithHealthScores([
-            'cohesion' => new HealthScore('cohesion', 20.0, 'Critical', 50.0, 30.0),
-            'overall' => new HealthScore('overall', 20.0, 'Critical', 50.0, 30.0),
+            'cohesion' => new HealthScore('cohesion', 20.0, 'Critical', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
+            'overall' => new HealthScore('overall', 20.0, 'Critical', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
@@ -245,8 +246,8 @@ final class HealthTextFormatterTest extends TestCase
     public function itSkipsEmptyDecompositionSection(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, []),
-            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+            'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), []),
+            'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -260,7 +261,7 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores(
             healthScores: [
-                'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
             filesAnalyzed: 1,
         );
@@ -277,19 +278,19 @@ final class HealthTextFormatterTest extends TestCase
     public function itShowsContributorsInOutput(): void
     {
         $report = $this->createReportWithHealthScores([
-            'complexity' => new HealthScore('complexity', 42.0, 'Poor', 50.0, 30.0, [
+            'complexity' => new HealthScore('complexity', 42.0, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('complexity.ccn.avg', 'CCN avg', 8.5, '1-3', 'lower_is_better', ''),
             ], [
                 new HealthContributor('HeavyService', 'class:App\\HeavyService', ['complexity.ccn.sum' => 45, 'complexity.cognitive.sum' => 30]),
             ]),
-            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
+            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
                 new HealthContributor('ComputedMetricDefinition', 'class:App\\ComputedMetricDefinition', ['cohesion.tcc' => 0.3, 'cohesion.lcom' => 5]),
                 new HealthContributor('FormulaParser', 'class:App\\FormulaParser', ['cohesion.tcc' => 0.42, 'cohesion.lcom' => 3]),
                 new HealthContributor('ExpressionValidator', 'class:App\\ExpressionValidator', ['cohesion.tcc' => 0.458, 'cohesion.lcom' => 2]),
             ]),
-            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -315,12 +316,12 @@ final class HealthTextFormatterTest extends TestCase
     public function itHidesContributorsWhenContributorsOptionIsZero(): void
     {
         $report = $this->createReportWithHealthScores([
-            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
+            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
                 new HealthContributor('SomeClass', 'class:App\\SomeClass', ['cohesion.tcc' => 0.1]),
             ]),
-            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '0']);
@@ -334,14 +335,14 @@ final class HealthTextFormatterTest extends TestCase
     public function itLimitsContributorsByFormatOption(): void
     {
         $report = $this->createReportWithHealthScores([
-            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
+            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
                 new HealthContributor('ClassA', 'class:App\\ClassA', ['cohesion.tcc' => 0.1]),
                 new HealthContributor('ClassB', 'class:App\\ClassB', ['cohesion.tcc' => 0.2]),
                 new HealthContributor('ClassC', 'class:App\\ClassC', ['cohesion.tcc' => 0.3]),
             ]),
-            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '1']);
@@ -356,12 +357,12 @@ final class HealthTextFormatterTest extends TestCase
     public function itDoesNotShowContributorsInNarrowTerminal(): void
     {
         $report = $this->createReportWithHealthScores([
-            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
+            'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
                 new HealthContributor('SomeClass', 'class:App\\SomeClass', ['cohesion.tcc' => 0.1]),
             ]),
-            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
@@ -374,10 +375,10 @@ final class HealthTextFormatterTest extends TestCase
     public function itShowsNoContributorsSectionWhenEmpty(): void
     {
         $report = $this->createReportWithHealthScores([
-            'cohesion' => new HealthScore('cohesion', 80.0, 'Good', 50.0, 30.0, [
+            'cohesion' => new HealthScore('cohesion', 80.0, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage'), [
                 new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.8, 'above 0.5', 'higher_is_better', ''),
             ], []),
-            'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 30.0),
+            'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);

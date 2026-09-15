@@ -30,6 +30,25 @@ These projects serve as a reference corpus for:
 | guzzle                  | guzzlehttp/guzzle            | Guzzle HTTP client               |
 | laravel-framework       | laravel/framework            | Laravel Framework                |
 
+### Legacy anchors
+
+The libraries above are all top-decile code, so before these two were added the
+whole corpus sat in the upper third of the 0-100 health scale and the declared
+Poor and Critical bands were unreachable by anything real. A scale calibrated
+only against excellent code cannot be checked for saying the right thing about
+the rest. Both anchors are procedural, predate namespaces, and parse cleanly
+under PHP 8.4.
+
+| ID          | Package                   | Analysed path  |
+| ----------- | ------------------------- | -------------- |
+| codeigniter | codeigniter/framework     | `system/`      |
+| wordpress   | johnpbloch/wordpress-core | `wp-includes/` |
+
+`johnpbloch/wordpress-core` ships an installer plugin that would relocate the
+package out of `vendor/`. `composer.json` refuses that plugin through
+`allow-plugins`, which is what keeps the path above valid; a non-interactive
+install fails without it.
+
 ### Self-analysis
 
 | ID  | Path   | Description        |
