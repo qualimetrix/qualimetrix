@@ -4362,6 +4362,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"no branch of a union matches"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAnEmptyClosedSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAddsTheFrameworkKeysAtTheRulesOwnDepthAndNeverInsideASlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLeavesAKeyTheClassAnswersAboutItselfOutOfBothAnswers
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesABareTargetAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesADottedTargetInsideItsSlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesEverySpellingOfOneTargetAtOneAddress
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesNothingForATargetNobodyAccepts
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itNamesTheLevelSlotsInDeclarationOrder
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itReadsADotThatNamesNoSlotAsPartOfTheKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itSortsWhatIsWritableAtEachDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"empty string"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"false"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"null (the `~` case)"

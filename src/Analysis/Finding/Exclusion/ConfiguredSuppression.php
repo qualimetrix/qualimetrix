@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
+use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+
 /**
  * The suppression a producer's own `rules:` section configures, read off the
  * raw options array — every option, under every spelling.
@@ -43,13 +47,49 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
 final readonly class ConfiguredSuppression
 {
     /**
-     * The options, spelled as an author writes them. These three names are the
-     * enumeration every consumer shares: a fourth option is added here, and
-     * the applying, judging and reporting sides gain it in the same edit.
+     * The options, spelled as an author writes them.
+     *
+     * The enumeration itself moved to {@see FrameworkOptionKeys}: the sides
+     * that answer *about* these keys — the refusal listing what a rule allows,
+     * and the `rules` command advertising it — cannot reach into this
+     * namespace, and a copy kept for them was the third of four. What stays
+     * here is the author-facing spelling, rewritten from the one canonical name
+     * rather than written out beside it, so adding a fourth option is still a
+     * single edit and the applying, judging and reporting sides still gain it
+     * together.
      */
     public const string PATHS = 'suppress_paths';
     public const string NAMESPACES = 'suppress_namespaces';
     public const string NAMESPACE_CHANNELS = 'suppress_namespace_channels';
+
+    /**
+     * Guards the sentence above: a constant here is the snake spelling of a key
+     * {@see FrameworkOptionKeys} declares, and nothing else. A name that drifts
+     * apart from the owner — or an option added to one side only — fails here
+     * rather than in whichever consumer happens to read the stale half.
+     */
+    public static function assertSpellingsMatchTheOwner(): void
+    {
+        $authored = [self::PATHS, self::NAMESPACES, self::NAMESPACE_CHANNELS];
+        sort($authored);
+
+        $derived = array_map(
+            static fn(string $key): string => ConfigKeySpelling::rewriteLike(
+                ConfigKeySpelling::normalize($key),
+                'a_b',
+            ),
+            FrameworkOptionKeys::all(),
+        );
+        sort($derived);
+
+        if ($authored !== $derived) {
+            throw new LogicException(\sprintf(
+                'The suppression options spelled here (%s) are not the keys FrameworkOptionKeys declares (%s).',
+                implode(', ', $authored),
+                implode(', ', $derived),
+            ));
+        }
+    }
 
     /**
      * `suppress_paths` patterns.

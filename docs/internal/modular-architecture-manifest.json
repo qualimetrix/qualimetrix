@@ -54,7 +54,22 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\FrameworkOptionKeys",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\ConfiguredSuppression",
           "closes_in": null
         },
         {
@@ -9737,6 +9752,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\FrameworkOptionKeys": {
+      "path": "src/Analysis/Finding/Contract/Rule/FrameworkOptionKeys.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php",
       "kind": "class",
@@ -9988,6 +10011,22 @@
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionRefusalWording": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionAddress": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionAddress.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",

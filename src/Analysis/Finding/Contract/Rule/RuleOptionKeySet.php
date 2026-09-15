@@ -132,6 +132,22 @@ final readonly class RuleOptionKeySet
     }
 
     /**
+     * The spelling the class declared an accepted key under, for a $key already
+     * folded through {@see ConfigKeySpelling::normalize()}; null when nothing
+     * here accepts it.
+     *
+     * Asked rather than derived. The declared spelling is canonical kebab by
+     * the invariant {@see self::index()} enforces, so rewriting the normalized
+     * form would produce the same string today — and would be a second
+     * derivation of a fact this object already holds, agreeing by construction
+     * until the invariant ever moves.
+     */
+    public function spellingOf(string $key): ?string
+    {
+        return $this->accepted[$key] ?? null;
+    }
+
+    /**
      * The declared form of an accepted key — already folded through
      * `ConfigKeySpelling::normalize()` — or null when nothing here accepts it.
      * A key the class answers about itself has no form here by construction.

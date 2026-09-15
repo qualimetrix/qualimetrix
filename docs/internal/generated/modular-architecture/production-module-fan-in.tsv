@@ -1,5 +1,5 @@
 target_contract_fqcn	target_owner	distinct_consumer_fqcns	distinct_consumer_owners
-Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	6	2
+Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	9	2
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	12	7
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	24	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3

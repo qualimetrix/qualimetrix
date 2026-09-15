@@ -1320,13 +1320,16 @@ Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	Qual
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8

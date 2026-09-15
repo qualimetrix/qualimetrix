@@ -126,9 +126,13 @@ framework keys are taken out and before
 `fromArray()`. A key the class declared as answered by itself passes through
 untouched, so `fromArray()` may refuse it in its own words; the three framework
 keys (`suppress-paths`, `suppress-namespaces`, `suppress-namespace-channels`)
-are legal at the rule's own depth only, are declared by no options class, and
-are listed beside the walk so that a refusal for a mistyped one names the
-spelling that works.
+are legal at the rule's own depth only and are declared by no options class.
+`FrameworkOptionKeys` (`Contract\Rule`) is where those three are named, so that
+a refusal for a mistyped one can name the spelling that works and the `rules`
+listing can advertise them. `RuleOptionSurface` beside it answers the question
+both of those sides ask — which declaration answers at which depth, and what may
+legally stand there — and the walk addresses through it rather than deriving the
+pair itself.
 `RuleOptionRefusalWording` holds the sentences, beside `ChannelLevelRefusalWording`
 and for the same reason. Every sentence prints the key exactly as the walk
 received it: each door folds separators before the factory exists, so there is

@@ -7,12 +7,14 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 
 /**
  * Which option keys a rule answers for at each of the two depths a user can
@@ -33,23 +35,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
  */
 final class RuleOptionKeyRecognition
 {
-    /**
-     * The keys the framework consumes before `fromArray()` ever sees them.
-     *
-     * No options class declares them and none ever will: {@see RuleOptionsFactory}
-     * takes them out of the user's config on its way to `fromArray()`, so a
-     * correctly spelled one never reaches the comparison below — but a mistyped
-     * one does, and a refusal that lists the allowed keys without listing these
-     * would name the fix nowhere.
-     *
-     * @var list<string>
-     */
-    private const array FRAMEWORK_KEYS = [
-        'suppress-namespace-channels',
-        'suppress-namespaces',
-        'suppress-paths',
-    ];
-
     /**
      * Refuses a framework key whose value is of no form the framework can use.
      *
@@ -95,7 +80,7 @@ final class RuleOptionKeyRecognition
     private static function frameworkKeyShapes(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'suppress-paths' => RuleOptionShape::either(
+            FrameworkOptionKeys::PATHS => RuleOptionShape::either(
                 RuleOptionShape::nonEmptyText(),
                 RuleOptionShape::listOf(RuleOptionShape::nonEmptyText()),
             )->orNull(),
@@ -117,6 +102,7 @@ final class RuleOptionKeyRecognition
      */
     public static function refuseUnknownKeys(array $userConfig, string $ruleName, string $optionsClass): void
     {
+        $surface = RuleOptionSurface::of($optionsClass);
         $acceptedHere = $optionsClass::acceptedOptionKeys();
         $slots = is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)
             ? $optionsClass::levelOptionsClasses()
@@ -142,11 +128,11 @@ final class RuleOptionKeyRecognition
             }
 
             throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::closed([$ruleName], $key, self::optionsHere($acceptedHere)),
+                RefusedPosition::closed([$ruleName], $key, $surface->writableAt(null)),
                 RuleOptionRefusalWording::notAnOptionOfRule(
                     $key,
                     $ruleName,
-                    self::optionsHere($acceptedHere),
+                    $surface->writableAt(null),
                 ),
             );
         }
@@ -237,22 +223,5 @@ final class RuleOptionKeyRecognition
             RefusedPosition::open($level === null ? [$ruleName] : [$ruleName, $level], $writtenKey),
             RuleOptionRefusalWording::valueOfTheWrongShape($writtenKey, $ruleName, $level, $shape, $written),
         );
-    }
-
-    /**
-     * The allowed set printed at depth 1: what the class declared, plus the
-     * three framework keys no options class declares and none ever will.
-     *
-     * They are legal here and illegal inside a slot, and a refusal that omits
-     * them would name the fix for a mistyped `suppress_path` nowhere.
-     *
-     * @return list<string>
-     */
-    private static function optionsHere(RuleOptionKeySet $acceptedHere): array
-    {
-        $options = [...$acceptedHere->acceptedForDisplay(), ...self::FRAMEWORK_KEYS];
-        sort($options);
-
-        return $options;
     }
 }
