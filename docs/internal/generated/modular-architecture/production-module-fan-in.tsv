@@ -1,5 +1,5 @@
 target_contract_fqcn	target_owner	distinct_consumer_fqcns	distinct_consumer_owners
-Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	9	2
+Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	8	2
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	12	7
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	24	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	5	3
@@ -147,7 +147,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analys
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	30	8
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	108	17
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	8	3
-Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1

@@ -30,7 +30,7 @@ final class RuleOptionSurfaceTest extends TestCase
         $surface = RuleOptionSurface::of(FlatOptionsStub::class);
 
         self::assertSame([], $surface->levels());
-        self::assertNull($surface->keySetAt('class'));
+        self::assertNull($surface->keySetAtLevel('class'));
         self::assertSame([], $surface->writableAt('class'));
     }
 
@@ -38,6 +38,22 @@ final class RuleOptionSurfaceTest extends TestCase
     public function itNamesTheLevelSlotsInDeclarationOrder(): void
     {
         self::assertSame(['callable', 'class'], RuleOptionSurface::of(HierarchicalOptionsStub::class)->levels());
+    }
+
+    /**
+     * The refusal walk asks this of every key a user wrote, so it has to fold
+     * both sides: the walk used to compare a normalized written key against the
+     * declared names with a raw `isset()`, which folds one side only.
+     */
+    #[Test]
+    public function itAnswersToASlotNameUnderAnySpelling(): void
+    {
+        $surface = RuleOptionSurface::of(HierarchicalOptionsStub::class);
+
+        self::assertSame('callable', $surface->levelNamed('callable'));
+        self::assertNull($surface->levelNamed('namespace'));
+        self::assertNotNull($surface->keySetAtLevel('class'));
+        self::assertNull($surface->keySetAtLevel('namespace'));
     }
 
     /**

@@ -287,7 +287,13 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody(): void
     {
-        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        // Two rules, because on one the two implementations this test tells
+        // apart — a footer, and a footer repeated in every body — both print
+        // the sentence exactly once.
+        $tester = new CommandTester($this->createCommand([
+            new FixtureRuleWithCyclomaticAlias(),
+            $this->createRuleMock('size.class-count', 'Class count'),
+        ]));
         $tester->execute([]);
 
         $display = $tester->getDisplay();

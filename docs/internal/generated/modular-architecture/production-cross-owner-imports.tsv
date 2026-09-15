@@ -1320,7 +1320,6 @@ Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	Qual
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
-Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract	P3
@@ -2019,6 +2018,7 @@ Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qua
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector	Analysis.Finding	contract	P6-A
+Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface	Infrastructure.Rule	contract	P8
 Qualimetrix\Infrastructure\Console\RuleInputValidator	Infrastructure.Console	Qualimetrix\Infrastructure\Rule\RuleRegistryInterface	Infrastructure.Rule	contract	P8

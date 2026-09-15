@@ -214,8 +214,15 @@ final class RulesListingAgreesWithRefusalTest extends TestCase
                 continue;
             }
 
-            if (preg_match('/^ {4}options at (\S+): (.+)$/', $line, $match) === 1) {
-                $listed[$rule][$match[1]] = array_map(trim(...), explode(',', $match[2]));
+            // `(.*)` rather than `(.+)`: the presenter prints a slot's line
+            // even for a slot that accepts nothing, which is a branch it
+            // declares and this parser used to drop — the level would go
+            // missing from the reading and the test would fail as a
+            // disagreement rather than report the empty slot.
+            if (preg_match('/^ {4}options at (\S+): ?(.*)$/', $line, $match) === 1) {
+                $listed[$rule][$match[1]] = $match[2] === ''
+                    ? []
+                    : array_map(trim(...), explode(',', $match[2]));
             }
         }
 

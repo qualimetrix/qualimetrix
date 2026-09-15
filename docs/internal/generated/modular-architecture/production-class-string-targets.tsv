@@ -44,7 +44,6 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	method	levelOptionsC
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	constructor	levelOptionsClasses	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	constructor	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	method	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
-Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	method	levelOptionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition	method	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	method	optionsClass	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	method	ruleClasses	Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface

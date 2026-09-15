@@ -52,11 +52,24 @@ final readonly class ConfiguredSuppression
      * The enumeration itself moved to {@see FrameworkOptionKeys}: the sides
      * that answer *about* these keys — the refusal listing what a rule allows,
      * and the `rules` command advertising it — cannot reach into this
-     * namespace, and a copy kept for them was the third of four. What stays
-     * here is the author-facing spelling, rewritten from the one canonical name
-     * rather than written out beside it, so adding a fourth option is still a
-     * single edit and the applying, judging and reporting sides still gain it
-     * together.
+     * namespace, and a copy kept for them was one of six.
+     *
+     * What stays here is spelling, and it stays as literals rather than being
+     * derived, for a reason worth stating because the opposite reads as tidier:
+     * the guard in `ConfiguredSuppressionTest` recognises a reader by a
+     * suppression key written *at* a subscript, and a file that folded its
+     * spellings out of a canonical name would subscript with a variable and
+     * become invisible to the guard that keeps it the only reader. The snake
+     * constants are also read by name elsewhere — `UnboundSuppressionAudit`
+     * reports the option a dead pattern was written under — so they are a
+     * published spelling, not an internal convenience.
+     *
+     * Adding a fourth option is therefore two edits, not one: the name in
+     * `FrameworkOptionKeys`, and its pair of spellings here.
+     * {@see self::assertSpellingsMatchTheOwner()} is what keeps the second from
+     * being forgotten, and it judges the snake side — the camel twin written
+     * inside each accessor is the guard's own anchor and is covered by the
+     * round-trip test above, which reads each option under both spellings.
      */
     public const string PATHS = 'suppress_paths';
     public const string NAMESPACES = 'suppress_namespaces';

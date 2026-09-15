@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
@@ -103,17 +102,16 @@ final class RuleOptionKeyRecognition
     public static function refuseUnknownKeys(array $userConfig, string $ruleName, string $optionsClass): void
     {
         $surface = RuleOptionSurface::of($optionsClass);
-        $acceptedHere = $optionsClass::acceptedOptionKeys();
-        $slots = is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)
-            ? $optionsClass::levelOptionsClasses()
-            : [];
+        $acceptedHere = $surface->ownKeySet();
 
         foreach ($userConfig as $writtenKey => $value) {
             $key = (string) $writtenKey;
             $normalized = ConfigKeySpelling::normalize($key);
 
-            if (isset($slots[$normalized])) {
-                self::refuseUnknownKeysInsideLevel($value, $normalized, $ruleName, $slots[$normalized]);
+            $level = $surface->levelNamed($key);
+
+            if ($level !== null) {
+                self::refuseUnknownKeysInsideLevel($value, $level, $ruleName, $surface);
 
                 continue;
             }
@@ -145,15 +143,13 @@ final class RuleOptionKeyRecognition
      * `null` is accepted: an empty level block means what an omitted one means,
      * and refusing it would refuse a harmless YAML idiom.
      *
-     * @param class-string<LevelOptionsInterface> $levelOptionsClass
-     *
      * @throws ConfigurationRefusal
      */
     private static function refuseUnknownKeysInsideLevel(
         mixed $value,
         string $level,
         string $ruleName,
-        string $levelOptionsClass,
+        RuleOptionSurface $surface,
     ): void {
         if ($value === null) {
             return;
@@ -166,7 +162,8 @@ final class RuleOptionKeyRecognition
             );
         }
 
-        $acceptedThere = $levelOptionsClass::acceptedOptionKeys();
+        $acceptedThere = $surface->keySetAtLevel($level)
+            ?? throw new LogicException(\sprintf('Rule "%s" has no level "%s".', $ruleName, $level));
 
         foreach ($value as $writtenKey => $written) {
             $key = (string) $writtenKey;
@@ -185,12 +182,12 @@ final class RuleOptionKeyRecognition
             }
 
             throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::closed([$ruleName, $level], $key, $acceptedThere->acceptedForDisplay()),
+                RefusedPosition::closed([$ruleName, $level], $key, $surface->writableAt($level)),
                 RuleOptionRefusalWording::notAnOptionAtLevel(
                     $key,
                     $ruleName,
                     $level,
-                    $acceptedThere->acceptedForDisplay(),
+                    $surface->writableAt($level),
                 ),
             );
         }

@@ -4363,6 +4363,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAnEmptyClosedSet
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAddsTheFrameworkKeysAtTheRulesOwnDepthAndNeverInsideASlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAnswersToASlotNameUnderAnySpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner

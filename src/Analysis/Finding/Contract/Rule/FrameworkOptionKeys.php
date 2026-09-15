@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-
 /**
  * The option keys Finding consumes itself, under every producer's `rules:`
  * section, before any options class is asked about anything.
@@ -30,9 +28,9 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  *
  * Declared in the canonical kebab spelling users type. A door hands its keys
  * over in whatever spelling it produces, so a consumer comparing against these
- * folds both sides through {@see ConfigKeySpelling::normalize()} — and one that
+ * folds both sides through `ConfigKeySpelling::normalize()` — and one that
  * must address a value under an authored spelling rewrites it with
- * {@see ConfigKeySpelling::rewriteLike()} rather than writing the variant out
+ * `ConfigKeySpelling::rewriteLike()` rather than writing the variant out
  * a second time.
  */
 final readonly class FrameworkOptionKeys
@@ -53,20 +51,5 @@ final readonly class FrameworkOptionKeys
         sort($keys);
 
         return $keys;
-    }
-
-    /**
-     * True when $normalizedKey — already folded through
-     * {@see ConfigKeySpelling::normalize()} — names one of the three.
-     */
-    public static function contains(string $normalizedKey): bool
-    {
-        foreach (self::all() as $key) {
-            if (ConfigKeySpelling::normalize($key) === $normalizedKey) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

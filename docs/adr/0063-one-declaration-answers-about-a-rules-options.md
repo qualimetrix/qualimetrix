@@ -17,8 +17,11 @@ substantive options; 78 carry a CLI alias and 54 did not appear in the listing
 at all — 32 of them the `threshold` shorthand. Two producers advertised no
 options while accepting five and two. `check --help` points readers at the
 listing for "all available rules and their options", and the website's rule
-pages were written against it, so the published documentation inherited exactly
-the listing's blind spot.
+pages were written against it. Thirteen rule sections had omitted real options
+by the time that was noticed, and a separate repair brought the pages back in
+line with the product. The pages are correct today; what makes this worth an ADR
+is that the oracle they were written against is still the incomplete one, so
+nothing stops them drifting again.
 
 A second, smaller divergence had the same root. An alias target is authored by
 hand in a CLI attribute, so 34 of the 80 were spelled in snake or camel while
@@ -46,12 +49,24 @@ declaration, not about the two-depth shape.
 
 **The keys the framework consumes have one enumeration.**
 `FrameworkOptionKeys` holds `suppress-paths`, `suppress-namespaces` and
-`suppress-namespace-channels`. This is a relocation, not a new owner: the three
-were enumerated in four places, and one of them — `Exclusion\ConfiguredSuppression`
-— already declared itself the enumeration every consumer shares. That promise is
-now kept from a namespace the answering sides can also reach, and a guard fails
-loudly if the authored spellings there drift from it. `ConfiguredSuppression`
-remains the only reader of a producer's raw options.
+`suppress-namespace-channels`. This is a relocation, not a new owner:
+`Exclusion\ConfiguredSuppression` already declared itself the enumeration every
+consumer shares, and a second owner beside it would have been this decision's own
+defect one layer down. That promise is now kept from a namespace the answering
+sides can also reach, and a guard fails loudly if the authored spellings there
+drift from it. `ConfiguredSuppression` remains the only reader of a producer's
+raw options.
+
+**Six copies, and how each was found, because the count moved three times.** A
+sweep of `src/` for the literal spellings found four; a fifth was in `scripts/`
+and announced itself — `promise-effect`'s cross-check reads the list off the
+product by reflection and failed loudly, as it was built to. The sixth was found
+by review: `RuleInputValidator` held both spellings of one key in a constant and
+subscripted raw options with the loop variable, a shape the only-reader guard
+could not see, because it recognises a key written *at* the subscript. That guard
+now also flags a file holding two suppression spellings side by side, whatever it
+does with them, and the validator reads its value through `ConfiguredSuppression`
+like every other consumer.
 
 **The listing prints names, not reach.** What an option covers — for
 `threshold` especially — is a separate question with its own unfinished round;

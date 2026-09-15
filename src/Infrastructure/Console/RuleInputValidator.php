@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -25,9 +26,6 @@ use Symfony\Component\Console\Input\InputInterface;
 /** Fail-closed validation for all rule selectors accepted by CLI adapters. */
 final readonly class RuleInputValidator
 {
-    /** Both spellings the option is accepted under; see `RuleOptionsFactory`. */
-    private const array CHANNEL_EXCLUSION_KEYS = ['suppress_namespace_channels', 'suppressNamespaceChannels'];
-
     public function __construct(
         private RuleRegistryInterface $ruleRegistry,
         private RuleSelector $ruleSelector,
@@ -196,16 +194,14 @@ final readonly class RuleInputValidator
                 continue;
             }
 
-            foreach (self::CHANNEL_EXCLUSION_KEYS as $key) {
-                /** @var mixed $map */
-                $map = $options[$key] ?? null;
-                if (!\is_array($map)) {
-                    continue;
-                }
-
-                foreach (array_keys($map) as $selector) {
-                    $keys->assertAddressesAProducedChannel((string) $ruleName, (string) $selector);
-                }
+            // Asked of the one reader of a producer's raw options rather than
+            // subscripted here. This method used to hold both spellings of the
+            // key itself, which was a second enumeration — and the guard that
+            // keeps `ConfiguredSuppression` the only reader could not see it,
+            // because the literals sat in a constant while the subscript was a
+            // variable.
+            foreach (array_keys(ConfiguredSuppression::rawNamespaceChannels($options)) as $selector) {
+                $keys->assertAddressesAProducedChannel((string) $ruleName, (string) $selector);
             }
         }
     }
