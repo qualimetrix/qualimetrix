@@ -89,6 +89,7 @@
             <directory>governance/Occurrence</directory>
             <directory>governance/RuleOptionKeys</directory>
             <directory>governance/Channel</directory>
+            <directory>governance/ThresholdKeys</directory>
         </testsuite>
     </testsuites>
 

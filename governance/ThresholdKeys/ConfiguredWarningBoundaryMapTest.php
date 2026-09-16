@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
+namespace Qualimetrix\Governance\ThresholdKeys;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -85,14 +85,14 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
     /**
      * The reader must not go back to reading members by name. This guards the
      * token, not the behaviour — what guards the behaviour is
-     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest},
+     * {@see \Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest},
      * and a green line here proves only that one way back is closed.
      */
     #[Test]
     public function itReadsNoOptionsMemberByName(): void
     {
         $source = file_get_contents(
-            \dirname(__DIR__, 5) . '/src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php',
+            \dirname(__DIR__, 2) . '/src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php',
         );
 
         self::assertIsString($source);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit;
+namespace Qualimetrix\Governance\ThresholdKeys;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -80,7 +80,7 @@ final class ThresholdValidatorAssignmentTest extends TestCase
      */
     private function discoverThresholdAwareOptions(): iterable
     {
-        $root = \dirname(__DIR__, 4) . '/src';
+        $root = \dirname(__DIR__, 2) . '/src';
         foreach ([
             $root . '/Analysis/Evidence/Duplication',
             $root . '/Analysis/Evidence/CodeSmell',

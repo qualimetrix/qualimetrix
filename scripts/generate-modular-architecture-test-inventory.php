@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = '72b419a19c39c6dfe93240e46f58f85eb9fefe0442335a9acb978d286c2de50f';
+const P6_C_BASELINE_PATHS_SHA256 = '572a6001003a502d79c50e547d07cff430897e8cd784fffcfda393cb213bd0e5';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -117,7 +117,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
     'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
     'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
-    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyResolverTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyVisitorTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/Handler/TypeDependencyHelperTest.php',
@@ -192,10 +192,10 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
     'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
     'tests/Analysis/Finding/Unit/RuleSelectorTest.php',
-    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Finding/Unit/SeverityTest.php',
     'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
-    'tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php',
+    'governance/ThresholdKeys/ThresholdValidatorAssignmentTest.php',
     'tests/Analysis/Finding/Unit/FindingChannelTest.php',
     'tests/Analysis/Finding/Unit/FindingFilterStageTest.php',
     'tests/Analysis/Finding/Unit/FindingTest.php',
@@ -1073,6 +1073,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
         ['prefix' => 'governance/RuleOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/Channel/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ThresholdKeys/', 'suite' => 'Governance'],
     ];
 }
 

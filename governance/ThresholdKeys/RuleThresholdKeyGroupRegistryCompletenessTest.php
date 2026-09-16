@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit;
+namespace Qualimetrix\Governance\ThresholdKeys;
 
 use PhpParser\Node;
 use PhpParser\NodeFinder;
@@ -669,7 +669,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
 
     private static function srcDir(): string
     {
-        return \dirname(__DIR__, 4) . '/src';
+        return \dirname(__DIR__, 2) . '/src';
     }
 
     /**

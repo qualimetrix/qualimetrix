@@ -45,7 +45,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * entry is exercised end-to-end (through the real Options class) by the
  * regression tests in `RuleOptionsFactoryTest` / `ConfigurationMergerTest`,
  * and its completeness against every real call site is proved mechanically
- * by {@see \Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest},
+ * by {@see \Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest},
  * so a call-site change that silently drifts out of sync with its registry
  * entry fails a test rather than misbehaving silently in production.
  *
@@ -64,7 +64,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * unfolding — there is no guessing fallback: a cross-layer mode change for
  * such a rule (e.g. a preset's `warning`/`error` under a `qmx.yaml`
  * `threshold`) reaches `ThresholdParser::parse()` whole and is refused as a
- * mix. {@see \Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest}
+ * mix. {@see \Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest}
  * proves every rule/path that actually calls `ThresholdParser::parse()` has
  * an entry here, so that refusal is never reached for a rule this codebase
  * ships today.
@@ -85,7 +85,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * form (a string, a list) is left under its own `threshold` key rather than
  * unfolded into `warning`/`error`, so a refusal always names the key the
  * author actually wrote.
- * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryCompletenessTest}
+ * {@see \Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest}
  * proves every declared `form` matches the real Options class's own
  * declaration for all three keys of the group.
  *

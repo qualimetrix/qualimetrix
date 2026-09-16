@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit;
+namespace Qualimetrix\Governance\ThresholdKeys;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -356,7 +356,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         }
 
         $classes = [];
-        $srcDir = \dirname(__DIR__, 4) . '/src';
+        $srcDir = \dirname(__DIR__, 2) . '/src';
 
         $finder = (new Finder())->files()->in($srcDir)->name('*Rule.php');
 

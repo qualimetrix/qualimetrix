@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\ThresholdKeys;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -1100,6 +1100,6 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
 
     private static function projectRoot(): string
     {
-        return \dirname(__DIR__, 4);
+        return \dirname(__DIR__, 2);
     }
 }
