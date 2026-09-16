@@ -122,16 +122,15 @@ own docblocks. Decide at execution; do not leave it unstated.
 
 ## The registration checklist
 
-**A new test directory has four addresses in this repository, not one — and a
-new root has ten.** The previous draft named only `phpunit.xml.dist`, and two of
-the other three fail hard rather than quietly. Stage 04 alone creates 61
-directories, so this is the plan's most repeated step and it lives here, once;
-stages 02–04 reference it rather than listing it from memory.
+**A new test directory has four addresses in this repository, not one.** The
+previous draft named only `phpunit.xml.dist`, and two of the other three fail
+hard rather than quietly. Stage 04 alone creates 61 directories, so this is the
+plan's most repeated step and it lives here, once; stages 02–04 reference it
+rather than listing it from memory.
 
-The four-address list below is for a *directory*. The root list that follows it
-was measured against a real root in execution and is longer than this plan first
-wrote it; the count and the failure mode of each address are in the execution
-record at the end of this file.
+The four-address list below is for a *directory*. A new *root* costs more, and
+the canonical list of those addresses lives in AGENTS.md, which is what the next
+agent to register one will read.
 
 For every directory created under `tests/`, the controls root, or a tool's
 `tests/`:
@@ -155,27 +154,10 @@ For every directory created under `tests/`, the controls root, or a tool's
    project has already paid for, and no DoD in stages 02–04 catches it: they
    check G2, G3, the aggregate's suites and pinned paths, but not this scope.
 
-Then, for a new **root** (not for each directory), all of:
-
-5. PHPStan `paths`, the cs-fixer finder, `autoload-dev`.
-6. `scripts/phpunit-aggregate.py` — the `SUITES` tuple, the partition proof in
-   its docstring, and the `--jobs` bound, which is `len(SUITES)`.
-7. `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — a
-   *third* copy of the suite tuple. It runs under `test:cross-tool`, not under
-   the aggregate, so a green `test:aggregate` says nothing about it.
-8. `ScratchPathsCarryRealEntropyTest::ROOTS` — and every other control that
-   carries its own root list. A control whose scope does not follow the root
-   stops covering it, silently.
-9. `.gitattributes` `export-ignore`, or the root ships in the composer dist
-   package; `.dockerignore` and `scripts/init-environment.sh` alongside it.
-10. `.githooks/pre-commit`'s path filter, or the root's PHP skips the local hook,
-    and `generate-modular-architecture-production-inventory.php`, whose ban on
-    `src/` importing a development namespace is a literal list of prefixes.
-11. `generate-rename-enumeration.php`'s `surfaces()` — a surface that does not
-    follow the root turns a later move into a drop in a column nobody re-derives.
-
-Addresses 8 through 11 all fail **silently**. They are the reason this list is
-worth re-deriving against the tree rather than reading from here.
+Then, for a new **root** (not for each directory): every address in the root
+registration table in AGENTS.md, re-derived against the tree rather than read
+from any list — including this plan's execution record, which reports one pass
+and not the standing rule.
 
 **A guard already exists for step 2 and the plan did not know it.** A test in an
 unregistered directory reddens `architecture:check` today, through
@@ -252,10 +234,14 @@ grows by the provider's three cases, 7575 → 7578.
 691 PHPUnit classes, 9195 expanded cases in the inventory; the aggregate's 9193
 is that number less the two cases it excludes by group.
 
-### Registering a root costs ten addresses, not four
+### What registering this root actually cost
 
-The checklist above named four and, for a new root, four more. The root took
-**ten**, and the four the plan did not name all fail *silently*:
+The checklist above named four and, for a new root, four more. This is what
+*this* pass measured when it registered `governance/` — a record of one
+execution, not the standing list. The standing list is the root registration
+table in AGENTS.md, and it is longer than this one: it also names
+`ModularArchitectureGovernanceIntegrationTest::createIsolatedProject()`,
+`.dockerignore` and `scripts/init-environment.sh`.
 
 | Address                                                                                                                                                     | Fails        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
@@ -309,10 +295,10 @@ The plan's claim that an unregistered directory already reddens
 
 60 `*Test.php` files declare a namespace their path contradicts.
 `namespace-path-allow-list.php` is written by
-`derive-namespace-path-allow-list.php`, which exits 4 when it wrote and 5 when
-the measurement failed, never 0. A row that stops describing a violation is
-refused exactly as loudly as a violation that is missing. **Emptying the list is
-its own piece of work and has not been done.**
+`derive-namespace-path-allow-list.php`, which never exits 0 — see "What review
+replaced" below for the exit codes it uses now. A row that stops describing a
+violation is refused exactly as loudly as a violation that is missing.
+**Emptying the list is its own piece of work and has not been done.**
 
 The neighbouring counts, reconciled rather than rounded: 139 files under the dev
 roots declare both a namespace and a type and disagree with their path; 146 is
@@ -339,3 +325,67 @@ fixtures)" is the first and second of these.
 `EXPLICIT_PATH_DISPOSITIONS` no longer exists: both its entries keyed retired
 paths, and an empty map cannot be typed past PHPStan. References to it in this
 plan describe a mechanism the tree no longer carries.
+
+### What review replaced
+
+Three-reviewer review found one mechanism behind most of its findings: a guard
+was re-implementing a rule PHPUnit or the runner owns instead of asking for it.
+The repaired shapes, which supersede the descriptions above:
+
+- **The runner's arguments are no longer read out of its Python source.**
+  `scripts/phpunit-aggregate.py --print-commands --cache-root=DIR` prints the
+  exact per-suite argv, built by the same `shard_command()` the run uses. G2
+  compares `--list-tests` under that argv against `--list-tests` under the bare
+  configuration, so every selector — `--filter`, `--group`, a separated
+  `--exclude-group live-freshness` — narrows the measurement exactly as it
+  narrows the run, and none of them is modelled. The refusal that named the
+  excluded *groups* is gone with the lexer that fed it.
+- **G2 judges each declared class, not the file.** PHPUnit does not run every
+  class a file declares, and drops one in silence — no warning, no non-zero
+  exit. The old set-intersection called a file executed because one of its
+  classes was. *Which* class PHPUnit keeps resisted characterisation and is
+  claimed nowhere: three probes on PHPUnit 12.5.25 gave three answers. A file
+  named `ProbeTest.php` declaring `SecondProbeTest` then `ProbeTest` ran
+  `SecondProbeTest`; declaring `ProbeTest` then `SecondProbeTest` ran
+  `ProbeTest`; declaring `AlphaTest` then `BetaTest` ran nothing at all and
+  reported "Class ProbeTest cannot be found". Neither "the first declared" nor
+  "the one named after the file" survives all three, so no refusal explains why
+  a class was dropped — only that it was.
+- **The refusal separates "unregistered directory" from "registered directory,
+  unlisted class" by measurement**, not by that rule: whether any other file in
+  the same directory is listed.
+- **G2 also refuses in the opposite direction**: a class a suite lists that no
+  file under a PSR-4 dev root declares — the one way `phpunit.xml.dist` can
+  reach outside the corpus these guards judge.
+- **G2 refuses a suite the configuration declares and the runner does not shard.**
+  This is the one question PHPUnit cannot be asked: `--list-suites` omits a
+  suite holding no test, so an empty `<testsuite>` is invisible to it and to the
+  runner's identifier partition alike. The suite *names* are read from
+  `phpunit.xml.dist`; nothing else about it is.
+- **G1 asks both of PHPUnit's discovery rules and both halves of the
+  convention.** A public `test…` method runs under the legacy prefix, and a
+  method that is named or attributed as a case but is not public does not run at
+  all; neither was visible before.
+- **A declared PSR-4 dev root that is not on disk refuses** instead of dropping
+  out of all three corpora while the floors stay satisfied.
+- **The allow-list carries its own ceiling** and the derive command may only
+  lower it, so a fresh violation cannot be absorbed by re-running the command.
+  Above the ceiling it writes nothing and exits 6.
+
+### The first round of bite proofs shared the guards' blind spot
+
+Every breakage planted before review was a shape the guard's own model could
+see: a stripped attribute, an unregistered directory, a namespace that
+disagrees. None was a second class in a file, a `test…` method, a non-public
+case, or a runner argument the lexer could not read — the four shapes review
+then found. "Green on a clean tree, red on my plant" proved the guard refuses
+what its author imagined, which is not the same claim.
+
+The second round takes its plants from the findings rather than from the author,
+and runs them through the aggregate. Both of the two that matter most redden the
+Governance shard alone: a second test class appended to a live `*Test.php`, and
+a `#[Test]` method renamed to the legacy `test…` prefix.
+
+**This is the stage's own lesson turned on itself** — a claim about a set,
+accepted from a measurement that did not cover the set — and it is recorded
+because the plan's other stages will plant breakages the same way.

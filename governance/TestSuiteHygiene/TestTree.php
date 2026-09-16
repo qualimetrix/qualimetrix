@@ -7,7 +7,9 @@ namespace Qualimetrix\Governance\TestSuiteHygiene;
 use JsonException;
 use LogicException;
 use PhpParser\Node;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
+use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
@@ -28,20 +30,27 @@ use SplFileInfo;
  *
  * **Scope is the PSR-4 dev roots**, taken from `composer.json`: a root
  * registered for autoloading is judged from the moment it is registered, so a
- * new one cannot be added without also being covered. The `classmap` entry is
- * deliberately not a root — its files are analyser input that does not comply
- * with PSR-4 on purpose.
+ * new one cannot be added without also being covered. A declared root that is
+ * not on disk is refused rather than skipped — skipping it would drop every
+ * file under it from all three guards while the count of the remaining roots
+ * kept the floors satisfied. The `classmap` entry is deliberately not a root —
+ * its files are analyser input that does not comply with PSR-4 on purpose.
  *
  * **Declarations are read from the syntax tree, not from reflection.** The tree
- * still carries 60 test files whose namespace does not follow their path — part
- * of the 146 files, declaring 147 classes, that `composer dump-autoload -o`
- * skips outright — so loading a class by the name its path implies would miss
- * exactly the files most likely to be wrong. Parsing reads every file the same
- * way and needs no autoloader.
+ * still carries test files whose namespace does not follow their path — they
+ * are the ones {@see NamespacePathAllowList} tracks, and `composer
+ * dump-autoload -o` skips them outright — so loading a class by the name its
+ * path implies would miss exactly the files most likely to be wrong. Parsing
+ * reads every file the same way and needs no autoloader.
  */
 final class TestTree
 {
-    /** @var array<string, array{namespaces: list<string>, classes: list<string>}> */
+    /**
+     * The attribute that makes a method a case.
+     */
+    public const TEST_ATTRIBUTE = 'PHPUnit\Framework\Attributes\Test';
+
+    /** @var array<string, array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}> */
     private static array $declarations = [];
 
     public static function projectRoot(): string
@@ -55,7 +64,7 @@ final class TestTree
     }
 
     /**
-     * The `autoload-dev` PSR-4 map, restricted to roots that exist on disk.
+     * The `autoload-dev` PSR-4 map, every entry of it.
      *
      * @return array<string, string> namespace prefix without its trailing
      *                               separator => project-relative directory
@@ -90,13 +99,21 @@ final class TestTree
             }
 
             $root = rtrim($directory, '/');
-            if (is_dir(self::absolute($root))) {
-                $roots[rtrim($prefix, '\\')] = $root;
+            if (!is_dir(self::absolute($root))) {
+                throw new LogicException(\sprintf(
+                    'composer.json maps %s to %s, which is not a directory. Every file under a dev root that is '
+                    . 'declared but absent is judged by no guard here, and the floors do not notice because the '
+                    . 'other roots still satisfy them. Create the directory or drop the entry.',
+                    $prefix,
+                    $root,
+                ));
             }
+
+            $roots[rtrim($prefix, '\\')] = $root;
         }
 
         if ($roots === []) {
-            throw new LogicException('composer.json declares no existing PSR-4 dev root');
+            throw new LogicException('composer.json declares no PSR-4 dev root');
         }
 
         ksort($roots);
@@ -113,17 +130,27 @@ final class TestTree
         return $roots;
     }
 
-    /** @return list<string> project-relative paths of every *Test.php under the dev roots */
+    /**
+     * Every `*Test.php` under the dev roots, named once.
+     *
+     * A root nested inside another is a shape {@see NamespacePathAllowList}
+     * already resolves, so it reaches here too, and a file under both would
+     * otherwise be counted twice — inflating the floors that are the only thing
+     * standing between a scan that read nothing and a green guard.
+     *
+     * @return list<string> project-relative paths
+     */
     public static function testFiles(): array
     {
         $files = [];
 
         foreach (self::roots() as $root) {
             foreach (self::testFilesIn($root) as $file) {
-                $files[] = $file;
+                $files[$file] = true;
             }
         }
 
+        $files = array_keys($files);
         sort($files);
 
         return $files;
@@ -180,7 +207,7 @@ final class TestTree
     /**
      * What a file declares, cached per path because two guards ask for it.
      *
-     * @return array{namespaces: list<string>, classes: list<string>}
+     * @return array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}
      */
     public static function declarationsIn(string $relativePath): array
     {
@@ -191,9 +218,20 @@ final class TestTree
     }
 
     /**
-     * The namespaces a file opens and the fully qualified class-likes it declares.
+     * The namespaces a file opens, the class-likes it declares, and which of
+     * those PHPUnit would run.
      *
-     * @return array{namespaces: list<string>, classes: list<string>}
+     * `executableClasses` asks what makes a method run rather than what a class
+     * inherits from: a concrete class declaring a public, non-abstract method
+     * that either carries `#[Test]` or is named `test…`. Both forms were measured
+     * running in this tree. Inheritance is the wrong question here because the
+     * base class may be anywhere, and a guard that resolved it would be loading
+     * the very classes that cannot be autoloaded.
+     *
+     * Which class PHPUnit keeps when a file declares several is not modelled
+     * anywhere in this group — only whether a given class was listed.
+     *
+     * @return array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}
      */
     public static function parseDeclarations(string $displayPath, string $code): array
     {
@@ -206,7 +244,7 @@ final class TestTree
             /** @var list<string> */
             public array $namespaces = [];
 
-            /** @var list<string> */
+            /** @var list<array{name: string, node: ClassLike}> */
             public array $classes = [];
 
             public function enterNode(Node $node): null
@@ -216,7 +254,10 @@ final class TestTree
                 }
 
                 if ($node instanceof ClassLike && $node->name !== null) {
-                    $this->classes[] = $node->namespacedName?->toString() ?? $node->name->toString();
+                    $this->classes[] = [
+                        'name' => $node->namespacedName?->toString() ?? $node->name->toString(),
+                        'node' => $node,
+                    ];
                 }
 
                 return null;
@@ -228,6 +269,68 @@ final class TestTree
         $traverser->addVisitor($collector);
         $traverser->traverse($statements);
 
-        return ['namespaces' => $collector->namespaces, 'classes' => $collector->classes];
+        // Attribute names resolve as the traversal descends, so a class read on
+        // the way in cannot be judged until the whole file has been walked.
+        $classes = [];
+        $executable = [];
+        foreach ($collector->classes as ['name' => $name, 'node' => $node]) {
+            $classes[] = $name;
+            if (self::isExecutableClass($node)) {
+                $executable[] = $name;
+            }
+        }
+
+        return ['namespaces' => $collector->namespaces, 'classes' => $classes, 'executableClasses' => $executable];
+    }
+
+    /** Whether PHPUnit would discover at least one case in this declaration. */
+    public static function isExecutableClass(ClassLike $node): bool
+    {
+        if (!$node instanceof Class_ || $node->isAbstract()) {
+            return false;
+        }
+
+        foreach ($node->getMethods() as $method) {
+            if (self::isExecutableMethod($method)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Whether PHPUnit would run this method as a case. */
+    public static function isExecutableMethod(ClassMethod $method): bool
+    {
+        if (!$method->isPublic() || $method->isAbstract()) {
+            return false;
+        }
+
+        return self::carriesTestAttribute($method) || self::carriesLegacyTestPrefix($method);
+    }
+
+    /**
+     * A public `test…` method runs without the attribute — measured in this
+     * tree. A guard that knew only the attribute would call such a method
+     * unreachable while PHPUnit was running it.
+     */
+    public static function carriesLegacyTestPrefix(ClassMethod $method): bool
+    {
+        return str_starts_with($method->name->toString(), 'test');
+    }
+
+    public static function carriesTestAttribute(ClassMethod $method): bool
+    {
+        foreach ($method->attrGroups as $group) {
+            foreach ($group->attrs as $attribute) {
+                $resolved = $attribute->name->getAttribute('resolvedName');
+                $name = $resolved instanceof Node\Name ? $resolved->toString() : $attribute->name->toString();
+                if ($name === self::TEST_ATTRIBUTE) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

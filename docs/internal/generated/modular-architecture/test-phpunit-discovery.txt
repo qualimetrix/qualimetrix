@@ -1,12 +1,13 @@
 PHPUnit 12.5.25 by Sebastian Bergmann and contributors.
 
 Available tests:
- - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itAccountsForEveryGroupTheAggregateExcludes
- - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itAsksPhpunitAboutEverySuiteTheAggregateRuns
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itAsksPhpunitAboutEverySuiteTheRunnerShards
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itCarriesNoStaleSilentExclusionDeclaration
- - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itExecutesEveryTestFileTheTreeCarries
- - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itNamesEveryCaseTheAggregateExcludesFromCheck
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itExecutesEveryTestClassTheTreeDeclares
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itFindsNoExecutedClassOutsideTheCorpusItJudges
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itNamesEveryCaseTheRunnerExcludesFromCheck
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itRefusesEachWayOnTheSetsItIsGiven
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itShardsEverySuiteTheConfigurationDeclares
  - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itFindsNoTestMethodWhoseNameAndAttributeDisagree
  - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itReadsEveryTestRootItJudges
  - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itRefusesEachDirectionOnSourceItIsGiven

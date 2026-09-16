@@ -194,6 +194,73 @@ class PhpunitAggregateTest(unittest.TestCase):
             time.sleep(0.02)
         self.assertFalse(process_exists(child_pid), f"timeout left child process {child_pid} alive")
 
+    def test_printed_commands_are_built_by_the_function_that_starts_a_shard(self):
+        """A printed command a reader trusts has to be the command that runs.
+
+        Spying on shard_command proves both paths go through it, and comparing
+        the printed argv with what Popen was handed proves nothing was added on
+        the way out.
+        """
+        runner = load_runner_module()
+        original = runner.shard_command
+        callers: list[str] = []
+
+        def spy(phpunit, suite, cache_directory):
+            callers.append(suite)
+            return original(phpunit, suite, cache_directory)
+
+        phpunit = Path("vendor/bin/phpunit")
+        with tempfile.TemporaryDirectory(prefix="qmx-shard-command-") as directory:
+            cache_root = Path(directory)
+            shard = runner.Shard("Unit", cache_root / "Unit.stdout", cache_root / "Unit.stderr")
+            with mock.patch.object(runner, "shard_command", side_effect=spy):
+                printed = runner.printable_commands(phpunit, cache_root)
+                with mock.patch.object(runner.subprocess, "Popen") as popen:
+                    runner.start_shard(phpunit, shard, cache_root)
+            runner.close_shard_handles(shard)
+
+        self.assertEqual([*SUITES, "Unit"], callers)
+        self.assertEqual(printed["Unit"], popen.call_args.args[0])
+
+    def test_print_commands_writes_json_for_every_suite_and_runs_nothing(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-print-commands-") as directory:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(RUNNER),
+                    f"--phpunit={FAKE_PHPUNIT}",
+                    "--print-commands",
+                    f"--cache-root={directory}",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+            )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual("", completed.stderr)
+        printed = json.loads(completed.stdout)
+        self.assertEqual(str(FAKE_PHPUNIT), printed["phpunit"])
+        self.assertEqual(list(SUITES), list(printed["commands"]))
+        for suite, command in printed["commands"].items():
+            self.assertEqual(str(FAKE_PHPUNIT), command[0])
+            self.assertIn(f"--testsuite={suite}", command)
+
+    def test_print_commands_refuses_without_a_cache_root(self):
+        completed = subprocess.run(
+            [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}", "--print-commands"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("--print-commands needs --cache-root", completed.stderr)
+
     def test_attempts_to_terminate_every_shard_when_one_cleanup_fails(self):
         runner = load_runner_module()
         shards = [

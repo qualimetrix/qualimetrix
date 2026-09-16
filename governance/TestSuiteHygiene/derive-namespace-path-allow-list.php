@@ -7,7 +7,8 @@ declare(strict_types=1);
  *
  * A write, not a check: it never exits 0. 4 means it wrote and the guard should
  * now be run against it; 5 means the scan failed and the tracked file was left
- * exactly as it was.
+ * exactly as it was; 6 means the tree carries more violations than the tracked
+ * ceiling admits, so the file was left alone rather than absorbing them.
  */
 
 use Qualimetrix\Governance\TestSuiteHygiene\NamespacePathAllowList;

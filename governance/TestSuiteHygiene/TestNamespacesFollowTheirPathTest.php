@@ -12,30 +12,27 @@ use PHPUnit\Framework\TestCase;
  *
  * `expected = psr4_prefix + relative directory, / -> \`. When the two disagree
  * the class is not autoloadable at all — `composer dump-autoload -o` prints
- * "does not comply with psr-4 … Skipping" for 147 classes in this tree — and
- * every tool that goes from a name to a file, or from a file to a name, is
- * reading a map the filesystem does not agree with. The one in this group that
- * pays for it directly is {@see TestFilesAreExecutedTest}, which has to parse
- * each file for what it declares precisely because the name cannot be derived
- * from the path.
+ * "does not comply with psr-4 … Skipping" for every one of them — and every tool
+ * that goes from a name to a file, or from a file to a name, is reading a map
+ * the filesystem does not agree with. The one in this group that pays for it
+ * directly is {@see TestFilesAreExecutedTest}, which has to parse each file for
+ * what it declares precisely because the name cannot be derived from the path.
  *
- * **Scope is `*Test.php` under the PSR-4 dev roots**, and the boundary is
- * measured rather than assumed: of the 149 files under those roots whose
- * namespace disagrees with their path, all 89 non-test ones sit under a
- * `Fixtures/` directory and none of the 60 test ones do. Fixtures are analyser
+ * **Scope is `*Test.php` under the PSR-4 dev roots.** The non-test files that
+ * break the same rule all sit under a `Fixtures/` directory: they are analyser
  * input — sample projects whose foreign namespaces are the thing being measured
  * — so making them comply would destroy what they are for. They are excluded by
  * being fixtures, not by being awkward.
  *
- * **The 60 known violations ship as {@see NamespacePathAllowList}, a tracked
- * file of its own.** Two refusals, and the second matters as much as the first:
- * a violation the list does not carry, and a row in the list that no longer
+ * **The known violations ship as {@see NamespacePathAllowList}, a tracked file
+ * of its own.** Two refusals, and the second matters as much as the first: a
+ * violation the list does not carry, and a row in the list that no longer
  * describes a violation. A stale row is the same defect as a missed one — a
  * statement about the tree that stopped being true while still being believed.
  *
- * Emptying the list is deliberately not this guard's job, and not this stage's:
- * it is a rename per file, and the check has to exist before the renames can be
- * proved to have finished.
+ * Emptying the list is deliberately not this guard's job: it is a rename per
+ * file, and the check has to exist before the renames can be proved to have
+ * finished.
  */
 final class TestNamespacesFollowTheirPathTest extends TestCase
 {
@@ -115,9 +112,9 @@ final class TestNamespacesFollowTheirPathTest extends TestCase
     /**
      * Names what was judged and what was allowed, in the two directions they
      * move in. The judged corpus is a floor: a file may not leave the scan
-     * unnoticed. The allow-list is a ceiling: 60 is the plan's own measurement
-     * of this tree, and emptying it may only ever take that number down — never
-     * by a file dropping out of the scan, which the floor refuses.
+     * unnoticed. The allow-list is held under the ceiling the list itself
+     * carries, which the derive command may only ever lower — so the list can
+     * shrink, and cannot grow without someone editing that number by hand.
      */
     #[Test]
     public function itJudgesEveryTestFileInTheTree(): void
@@ -126,7 +123,7 @@ final class TestNamespacesFollowTheirPathTest extends TestCase
         $allowed = NamespacePathAllowList::load();
 
         self::assertGreaterThan(500, \count($judged));
-        self::assertLessThanOrEqual(60, \count($allowed));
+        self::assertLessThanOrEqual(NamespacePathAllowList::ceiling(), \count($allowed));
         self::assertSame([], array_values(array_diff(array_keys($allowed), $judged)));
     }
 }

@@ -4,71 +4,89 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\TestSuiteHygiene;
 
+use FilesystemIterator;
+use JsonException;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
- * Every test file the tree carries is one the suite actually runs.
+ * Every test class the tree carries is one the suite actually runs.
  *
  * `phpunit.xml.dist` enumerates its test directories by hand, so a directory
  * created without being registered holds files that exist, compile, read as
  * tests and are never executed. This repository has already paid for that
  * defect once: 110 tests sat unexecuted for three runs under a green
- * `composer check`. Every later stage of the test-structure plan creates
- * directories, and this is what makes a forgotten registration loud.
+ * `composer check`.
  *
- * **The executed set comes from PHPUnit's own `--list-tests`, never from a
- * reimplementation of its matching rules.** A guard that re-derives which files
- * a `<directory>` entry claims is a second copy of PHPUnit's discovery, and a
- * second copy is the thing being guarded against.
+ * **Nothing here re-implements a rule PHPUnit or the runner owns; both are
+ * asked.** A guard that re-derived which files a `<directory>` entry claims, or
+ * which arguments the runner passes, would be a second copy of the thing being
+ * guarded — and a second copy is exactly the defect class. So:
+ *
+ * - what a suite *could* run is `--list-tests` for that suite with no argument
+ *   but the configuration;
+ * - what `composer check` *does* run is the runner's own per-suite command,
+ *   printed by `scripts/phpunit-aggregate.py --print-commands` and executed
+ *   verbatim with `--list-tests` appended;
+ * - the difference between the two is whatever the runner excludes, in whatever
+ *   form it excludes it. No selector is modelled, so a `--filter`, a `--group`
+ *   or a separated `--exclude-group live-freshness` narrows the measurement the
+ *   same way it narrows the run.
+ *
+ * **The unit judged is the class, not the file.** PHPUnit does not run every
+ * class a file declares, and it says nothing when it drops one — no warning, no
+ * non-zero exit. Two shapes were measured here: a `*Test.php` declaring two test
+ * classes ran one of them, and a `*Test.php` declaring two that the file is not
+ * named after ran neither. Which class it keeps is deliberately not
+ * characterised, here or in any refusal below: nothing in this guard depends on
+ * the answer, and a sentence claiming one would be the second copy this whole
+ * group exists to prevent. Judging the file instead of the class would call a
+ * file executed because one of its classes was.
  *
  * **`--list-tests` prints class names, not paths**, and the tree still carries
- * 60 `*Test.php` files whose namespace does not follow their path — part of the
- * 146 files, declaring 147 classes, that `composer dump-autoload -o` skips
- * outright, the rest being analyser fixtures. Deriving a path from a class name,
- * or loading a class by the name its path implies, would therefore fail exactly
- * on the files most likely to be wrong. The mapping runs the other way: each
- * file on disk is parsed for what it declares, and that name is looked for in
- * the listing.
+ * test files whose namespace does not follow their path, which `composer
+ * dump-autoload -o` skips outright. Deriving a path from a class name, or
+ * loading a class by the name its path implies, would therefore fail exactly on
+ * the files most likely to be wrong. The mapping runs the other way: each file
+ * on disk is parsed for what it declares, and that name is looked for in the
+ * listing.
  *
- * **The suites and the exclusions are read out of `scripts/phpunit-aggregate.py`.**
- * That file is what `composer check` actually runs; a guard that declared its
- * own suite list would be a sixth copy of a map this repository already keeps
- * five copies of.
+ * The refusals, one per way a case can go missing:
  *
- * Four refusals, one per way a case can go missing:
+ * 1. a class the tree declares and PHPUnit would run, that no configured suite
+ *    lists at all;
+ * 2. a class a suite lists that no file in this corpus declares — the two
+ *    definitions of "the test tree", `phpunit.xml.dist`'s directories and the
+ *    PSR-4 dev roots, reconciled in the direction the first one cannot see;
+ * 3. a case the runner's arguments remove that {@see SILENTLY_EXCLUDED} does
+ *    not name;
+ * 4. a name in {@see SILENTLY_EXCLUDED} that the runner no longer removes;
+ * 5. a suite PHPUnit knows about that the runner does not shard, or the reverse.
  *
- * 1. a `*Test.php` on disk that no configured suite reaches at all;
- * 2. an `--exclude-group` the aggregate passes that this guard does not account
- *    for — a new exclusion silently shrinks `composer check`;
- * 3. a case removed by one of those exclusions that {@see SILENTLY_EXCLUDED}
- *    does not name;
- * 4. a name in {@see SILENTLY_EXCLUDED} that no exclusion removes any more.
+ * Refusals 3–5 are why `SuppressionSnapshotFreshnessTest` and
+ * `ModularArchitectureGovernanceIntegrationTest` are visible at all: they sit in
+ * listed directories, carry `#[Test]`, are named `itXxx` and have correct
+ * namespaces — and still do not run under `composer check`. Nothing else in the
+ * tree sees that. They also make `--exclude-group=benchmark` a measured fact:
+ * it removes nothing today, and the day it removes something, refusal 3 names
+ * what.
  *
- * Refusals 2–4 are the plan's fourth axis: `SuppressionSnapshotFreshnessTest`
- * and `ModularArchitectureGovernanceIntegrationTest` sit in listed directories,
- * carry `#[Test]`, are named `itXxx` and have correct namespaces — and still do
- * not run under `composer check`. Nothing else in the tree sees that.
- * `--exclude-group=benchmark` is the standing counter-example: the aggregate
- * passes it and no method carries the group, so it removes nothing, and
- * refusal 3 is what keeps that a measured fact rather than a claim.
- *
- * Refusal 1 is judged against the listing taken *without* the exclusions, so a
- * file whose every case carries an excluded group — which is true of
- * `SuppressionSnapshotFreshnessTest` today — is reachable, not orphaned. What
- * happens to its cases afterwards is refusals 2–4's subject, and folding the
- * two questions together would have needed a silent exemption inside refusal 1.
+ * Refusal 1 is judged against the listing taken *without* the runner's
+ * arguments, so a class whose every case carries an excluded group — which is
+ * true of `SuppressionSnapshotFreshnessTest` today — is reachable, not orphaned.
+ * What happens to its cases afterwards is refusals 3–4's subject, and folding
+ * the two questions together would have needed a silent exemption inside
+ * refusal 1.
  */
 final class TestFilesAreExecutedTest extends TestCase
 {
     private const AGGREGATE = 'scripts/phpunit-aggregate.py';
 
-    /**
-     * The groups the aggregate excludes, and therefore the only exclusions this
-     * guard knows how to account for.
-     */
-    private const DECLARED_EXCLUDED_GROUPS = ['benchmark', 'live-freshness'];
+    private const CONFIGURATION = 'phpunit.xml.dist';
 
     /**
      * Every case `composer check` does not run although the suite reaches it.
@@ -87,38 +105,66 @@ final class TestFilesAreExecutedTest extends TestCase
     /** @var array<string, list<string>> */
     private static array $listings = [];
 
+    /** @var array{phpunit: string, commands: array<string, list<string>>}|null */
+    private static ?array $aggregate = null;
+
+    private static ?string $cacheRoot = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        if (self::$cacheRoot !== null) {
+            self::removeTree(self::$cacheRoot);
+            self::$cacheRoot = null;
+        }
+
+        self::$listings = [];
+        self::$aggregate = null;
+    }
+
     #[Test]
-    public function itExecutesEveryTestFileTheTreeCarries(): void
+    public function itExecutesEveryTestClassTheTreeDeclares(): void
     {
         $declarations = [];
         foreach (TestTree::testFiles() as $path) {
-            $declarations[$path] = TestTree::declarationsIn($path)['classes'];
+            $declared = TestTree::declarationsIn($path);
+            $declarations[$path] = [
+                'classes' => $declared['classes'],
+                'executable' => $declared['executableClasses'],
+            ];
         }
 
-        $orphans = self::orphansIn($declarations, self::classesIn(self::reachableIds()));
+        $unreachable = self::unreachableIn($declarations, self::classesIn(self::reachableIds()));
 
-        self::assertSame([], $orphans, \sprintf(
-            "%d test file(s) exist but no configured suite runs them.\n"
-            . "Register the directory in phpunit.xml.dist and in the matching branch of currentSuite()\n"
-            . "in scripts/generate-modular-architecture-test-inventory.php:\n%s",
-            \count($orphans),
-            implode("\n", $orphans),
+        self::assertSame([], $unreachable, \sprintf(
+            "%d test class(es) exist in the tree and no configured suite runs them:\n%s",
+            \count($unreachable),
+            implode("\n", $unreachable),
         ));
     }
 
     #[Test]
-    public function itAccountsForEveryGroupTheAggregateExcludes(): void
+    public function itFindsNoExecutedClassOutsideTheCorpusItJudges(): void
     {
-        self::assertSame(
-            self::DECLARED_EXCLUDED_GROUPS,
-            self::aggregate()['excludedGroups'],
-            self::AGGREGATE . " excludes a different set of groups than this guard accounts for.\n"
-            . 'An exclusion added there removes cases from `composer check`; name it here and record what it removes.',
-        );
+        $declared = [];
+        foreach (TestTree::testFiles() as $path) {
+            foreach (TestTree::declarationsIn($path)['classes'] as $class) {
+                $declared[$class] = true;
+            }
+        }
+
+        $unjudged = array_values(array_diff(self::classesIn(self::reachableIds()), array_keys($declared)));
+
+        self::assertSame([], $unjudged, \sprintf(
+            "%d class(es) run under a configured suite and lie outside the corpus the hygiene guards judge.\n"
+            . "phpunit.xml.dist reaches a file that is not a *Test.php under a PSR-4 dev root, so nothing here\n"
+            . "checks its methods or its namespace. Move it under a dev root, or stop running it:\n%s",
+            \count($unjudged),
+            implode("\n", $unjudged),
+        ));
     }
 
     #[Test]
-    public function itNamesEveryCaseTheAggregateExcludesFromCheck(): void
+    public function itNamesEveryCaseTheRunnerExcludesFromCheck(): void
     {
         $undeclared = self::undeclaredExclusions(self::excludedIds(), self::SILENTLY_EXCLUDED);
 
@@ -136,11 +182,45 @@ final class TestFilesAreExecutedTest extends TestCase
         $stale = self::staleExclusions(self::excludedIds(), self::SILENTLY_EXCLUDED);
 
         self::assertSame([], $stale, \sprintf(
-            "%d name(s) in SILENTLY_EXCLUDED are not excluded by the aggregate any more.\n"
+            "%d name(s) in SILENTLY_EXCLUDED are not excluded by %s any more.\n"
             . "A declaration that describes nothing hides the next one that would: remove these:\n%s",
             \count($stale),
+            self::AGGREGATE,
             implode("\n", $stale),
         ));
+    }
+
+    /**
+     * A suite the configuration declares is a suite the runner shards.
+     *
+     * This is the one question PHPUnit cannot be asked. The runner proves its
+     * shards partition the aggregate by comparing test identifiers, and
+     * `--list-suites` omits a suite that holds no test, so a `<testsuite>`
+     * declared with nothing in it contributes no identifier to either and is
+     * invisible to both. The only place it exists is the configuration file,
+     * which is therefore read for its suite names — the names alone, never for
+     * which files a `<directory>` entry claims.
+     *
+     * An empty suite is not harmless: it is how a suite gets declared ahead of
+     * the directories it will hold, and the day those directories arrive they
+     * run under a shard nobody added.
+     */
+    #[Test]
+    public function itShardsEverySuiteTheConfigurationDeclares(): void
+    {
+        $shardedInOrder = self::suites();
+        sort($shardedInOrder);
+
+        self::assertSame(
+            self::declaredSuites(),
+            $shardedInOrder,
+            \sprintf(
+                "phpunit.xml.dist and %s disagree about which suites exist.\n"
+                . 'A suite the runner does not shard is never run by `composer check`, '
+                . 'and a suite it shards that the configuration does not declare refuses the run.',
+                self::AGGREGATE,
+            ),
+        );
     }
 
     /**
@@ -150,14 +230,73 @@ final class TestFilesAreExecutedTest extends TestCase
     #[Test]
     public function itRefusesEachWayOnTheSetsItIsGiven(): void
     {
-        self::assertSame(['acme/OrphanTest.php declares Acme\OrphanTest'], self::orphansIn(
-            ['acme/RunsTest.php' => ['Acme\RunsTest'], 'acme/OrphanTest.php' => ['Acme\OrphanTest']],
-            ['Acme\RunsTest'],
-        ));
-        self::assertSame(['acme/EmptyTest.php declares no class at all'], self::orphansIn(
-            ['acme/EmptyTest.php' => []],
-            ['Acme\RunsTest'],
-        ));
+        self::assertSame(
+            ['elsewhere/OrphanTest.php declares Acme\OrphanTest, which no configured suite lists,'
+                . ' and nothing in elsewhere is listed.'
+                . ' Register the directory in phpunit.xml.dist and in the matching branch of currentSuite()'
+                . ' in scripts/generate-modular-architecture-test-inventory.php'],
+            self::unreachableIn(
+                [
+                    'acme/RunsTest.php' => ['classes' => ['Acme\RunsTest'], 'executable' => ['Acme\RunsTest']],
+                    'elsewhere/OrphanTest.php' => [
+                        'classes' => ['Acme\OrphanTest'],
+                        'executable' => ['Acme\OrphanTest'],
+                    ],
+                ],
+                ['Acme\RunsTest'],
+            ),
+        );
+
+        self::assertSame(
+            ['acme/RunsTest.php declares Acme\SecondTest, which no configured suite lists,'
+                . ' although Acme\RunsTest in the same file is listed.'
+                . ' PHPUnit does not run every class a file declares:'
+                . ' give this class a file of its own'],
+            self::unreachableIn(
+                ['acme/RunsTest.php' => [
+                    'classes' => ['Acme\RunsTest', 'Acme\SecondTest'],
+                    'executable' => ['Acme\RunsTest', 'Acme\SecondTest'],
+                ]],
+                ['Acme\RunsTest'],
+            ),
+        );
+
+        // No class this file declares is listed, and a sibling in the same
+        // directory is: the directory is reached, so registering it is not the
+        // cure. Measured, not inferred from how PHPUnit picks a class.
+        self::assertSame(
+            ['acme/NamedElsewhereTest.php declares Acme\AlphaTest, which no configured suite lists,'
+                . ' and no class this file declares is listed although other files in acme are.'
+                . ' The directory is reached, so registering it is not the cure:'
+                . ' PHPUnit does not run every class a file declares'],
+            self::unreachableIn(
+                [
+                    'acme/RunsTest.php' => ['classes' => ['Acme\RunsTest'], 'executable' => ['Acme\RunsTest']],
+                    'acme/NamedElsewhereTest.php' => [
+                        'classes' => ['Acme\AlphaTest'],
+                        'executable' => ['Acme\AlphaTest'],
+                    ],
+                ],
+                ['Acme\RunsTest'],
+            ),
+        );
+
+        self::assertSame(
+            ['acme/EmptyTest.php declares Acme\EmptyTest, and PHPUnit would run no case in this file.'
+                . ' Its directory is not the suspect: give the file a case, or delete it'],
+            self::unreachableIn(
+                ['acme/EmptyTest.php' => ['classes' => ['Acme\EmptyTest'], 'executable' => []]],
+                ['Acme\RunsTest'],
+            ),
+        );
+
+        self::assertSame(
+            ['acme/NothingTest.php declares no class at all'],
+            self::unreachableIn(
+                ['acme/NothingTest.php' => ['classes' => [], 'executable' => []]],
+                ['Acme\RunsTest'],
+            ),
+        );
 
         self::assertSame(
             ['Acme\ThirdTest::itIsSilentlyDropped'],
@@ -171,11 +310,11 @@ final class TestFilesAreExecutedTest extends TestCase
         );
         self::assertSame([], self::staleExclusions(['Acme\KnownTest::itIsKnown'], ['Acme\KnownTest::itIsKnown']));
 
-        self::assertSame(
-            ['live-freshness', 'slow'],
-            self::excludedGroupsIn("COMMON_ARGUMENTS = (\n    \"--no-coverage\",\n"
-                . "    \"--exclude-group=live-freshness\",\n    \"--exclude-group=slow\",\n)\n"),
-        );
+        // Both data-set spellings PHPUnit prints, including a named one that
+        // carries the numeric marker inside its own label.
+        self::assertSame('Acme\Test::itRuns', self::withoutDataSet('Acme\Test::itRuns#3'));
+        self::assertSame('Acme\Test::itRuns', self::withoutDataSet('Acme\Test::itRuns"case #1"'));
+        self::assertSame('Acme\Test::itRuns', self::withoutDataSet('Acme\Test::itRuns'));
     }
 
     /**
@@ -184,16 +323,16 @@ final class TestFilesAreExecutedTest extends TestCase
      * refusal in this class vacuously green.
      */
     #[Test]
-    public function itAsksPhpunitAboutEverySuiteTheAggregateRuns(): void
+    public function itAsksPhpunitAboutEverySuiteTheRunnerShards(): void
     {
-        $suites = self::aggregate()['suites'];
+        $suites = self::suites();
 
         self::assertContains('Unit', $suites);
         self::assertContains('Governance', $suites);
         self::assertGreaterThanOrEqual(5, \count($suites));
 
         foreach ($suites as $suite) {
-            self::assertNotEmpty(self::listing(self::aggregate()['reachableArguments'], $suite), $suite);
+            self::assertNotEmpty(self::listing(self::reachableCommand($suite)), $suite);
         }
 
         self::assertGreaterThan(500, \count(TestTree::testFiles()));
@@ -202,23 +341,84 @@ final class TestFilesAreExecutedTest extends TestCase
     }
 
     /**
-     * @param array<string, list<string>> $declarations file => the class-likes it declares
+     * @param array<string, array{classes: list<string>, executable: list<string>}> $declarations
      * @param list<string> $reachable classes some suite lists
      *
      * @return list<string>
      */
-    private static function orphansIn(array $declarations, array $reachable): array
+    private static function unreachableIn(array $declarations, array $reachable): array
     {
-        $orphans = [];
+        // Whether a directory is reached at all is a measurement over the same
+        // two sets, and it is what separates "nobody registered this directory"
+        // from "the directory runs and this file's classes do not".
+        $reachedDirectories = [];
         foreach ($declarations as $path => $declared) {
-            if (array_intersect($declared, $reachable) === []) {
-                $orphans[] = $path . ' declares ' . (
-                    $declared === [] ? 'no class at all' : implode(', ', $declared)
-                );
+            if (array_intersect($declared['classes'], $reachable) !== []) {
+                $reachedDirectories[\dirname($path)] = true;
             }
         }
 
-        return $orphans;
+        $unreachable = [];
+        foreach ($declarations as $path => $declared) {
+            if ($declared['classes'] === []) {
+                $unreachable[] = $path . ' declares no class at all';
+
+                continue;
+            }
+
+            if ($declared['executable'] === []) {
+                $unreachable[] = \sprintf(
+                    '%s declares %s, and PHPUnit would run no case in this file.'
+                    . ' Its directory is not the suspect: give the file a case, or delete it',
+                    $path,
+                    implode(', ', $declared['classes']),
+                );
+
+                continue;
+            }
+
+            $directory = \dirname($path);
+            $listed = array_intersect($declared['classes'], $reachable);
+            foreach ($declared['executable'] as $class) {
+                if (\in_array($class, $reachable, true)) {
+                    continue;
+                }
+
+                if ($listed !== []) {
+                    $unreachable[] = \sprintf(
+                        '%s declares %s, which no configured suite lists, although %s in the same file is listed.'
+                        . ' PHPUnit does not run every class a file declares:'
+                        . ' give this class a file of its own',
+                        $path,
+                        $class,
+                        implode(', ', $listed),
+                    );
+
+                    continue;
+                }
+
+                $unreachable[] = isset($reachedDirectories[$directory])
+                    ? \sprintf(
+                        '%s declares %s, which no configured suite lists,'
+                        . ' and no class this file declares is listed although other files in %s are.'
+                        . ' The directory is reached, so registering it is not the cure:'
+                        . ' PHPUnit does not run every class a file declares',
+                        $path,
+                        $class,
+                        $directory,
+                    )
+                    : \sprintf(
+                        '%s declares %s, which no configured suite lists, and nothing in %s is listed.'
+                        . ' Register the directory in phpunit.xml.dist and in the matching branch of currentSuite()'
+                        . ' in scripts/generate-modular-architecture-test-inventory.php',
+                        $path,
+                        $class,
+                        $directory,
+                    );
+            }
+        }
+
+        return $unreachable;
     }
 
     /**
@@ -243,33 +443,29 @@ final class TestFilesAreExecutedTest extends TestCase
         return array_values(array_diff($declared, $excluded));
     }
 
-    /** @return list<string> every `Class::method` the configured suites reach, exclusions ignored */
+    /** @return list<string> every `Class::method` the configured suites reach, the runner's arguments ignored */
     private static function reachableIds(): array
     {
-        return self::idsAcrossSuites(self::aggregate()['reachableArguments']);
+        return self::idsAcrossSuites(self::reachableCommand(...));
     }
 
-    /** @return list<string> every `Class::method` the aggregate's exclusions remove */
+    /** @return list<string> every `Class::method` the runner's own arguments remove */
     private static function excludedIds(): array
     {
-        return array_values(array_diff(self::reachableIds(), self::idsAcrossSuites(self::aggregate()['executedArguments'])));
+        return array_values(array_diff(self::reachableIds(), self::idsAcrossSuites(self::executedCommand(...))));
     }
 
     /**
-     * @param list<string> $arguments
+     * @param callable(string): list<string> $commandFor
      *
      * @return list<string> sorted, deduplicated `Class::method` identifiers
      */
-    private static function idsAcrossSuites(array $arguments): array
+    private static function idsAcrossSuites(callable $commandFor): array
     {
         $ids = [];
-        foreach (self::aggregate()['suites'] as $suite) {
-            foreach (self::listing($arguments, $suite) as $identifier) {
-                // A data set widens one method into many identifiers; the
-                // method is the unit a group is declared on, so the suffix is
-                // dropped rather than carried into every comparison.
-                $position = strpos($identifier, '#');
-                $ids[$position === false ? $identifier : substr($identifier, 0, $position)] = true;
+        foreach (self::suites() as $suite) {
+            foreach (self::listing($commandFor($suite)) as $identifier) {
+                $ids[self::withoutDataSet($identifier)] = true;
             }
         }
 
@@ -277,6 +473,25 @@ final class TestFilesAreExecutedTest extends TestCase
         sort($ids);
 
         return $ids;
+    }
+
+    /**
+     * A data set widens one method into many identifiers, and the method is the
+     * unit a group is declared on. PHPUnit spells a numbered set `#0` and a
+     * named one `"label"`, and a label may itself contain `#`, so the cut is at
+     * whichever marker comes first.
+     */
+    private static function withoutDataSet(string $identifier): string
+    {
+        $positions = [];
+        foreach (['#', '"'] as $marker) {
+            $position = strpos($identifier, $marker);
+            if ($position !== false) {
+                $positions[] = $position;
+            }
+        }
+
+        return $positions === [] ? $identifier : substr($identifier, 0, min($positions));
     }
 
     /**
@@ -302,88 +517,180 @@ final class TestFilesAreExecutedTest extends TestCase
         return $classes;
     }
 
-    /**
-     * What `composer check` runs, read from the runner that runs it.
-     *
-     * @return array{suites: list<string>, excludedGroups: list<string>, reachableArguments: list<string>, executedArguments: list<string>}
-     */
-    private static function aggregate(): array
+    /** @return list<string> the suites the runner shards, in its own order */
+    private static function suites(): array
     {
-        $source = TestTree::read(self::AGGREGATE);
-        $arguments = self::tupleIn($source, 'COMMON_ARGUMENTS');
-
-        return [
-            'suites' => self::tupleIn($source, 'SUITES'),
-            'excludedGroups' => self::excludedGroupsIn($source),
-            'reachableArguments' => array_values(array_filter(
-                $arguments,
-                static fn(string $argument): bool => !str_starts_with($argument, '--exclude-group='),
-            )),
-            'executedArguments' => $arguments,
-        ];
+        return array_keys(self::aggregate()['commands']);
     }
 
-    /** @return list<string> */
-    private static function excludedGroupsIn(string $source): array
+    /** @return list<string> the suite names phpunit.xml.dist declares, sorted */
+    private static function declaredSuites(): array
     {
-        $groups = [];
-        foreach (self::tupleIn($source, 'COMMON_ARGUMENTS') as $argument) {
-            if (str_starts_with($argument, '--exclude-group=')) {
-                $groups[] = substr($argument, \strlen('--exclude-group='));
-            }
+        $previous = libxml_use_internal_errors(true);
+        $document = simplexml_load_string(TestTree::read(self::CONFIGURATION));
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($document === false) {
+            throw new LogicException(self::CONFIGURATION . ' is not readable XML');
         }
 
-        sort($groups);
+        $names = [];
+        foreach ($document->testsuites->testsuite as $suite) {
+            $name = (string) $suite['name'];
+            if ($name === '') {
+                throw new LogicException(self::CONFIGURATION . ' declares a testsuite without a name');
+            }
 
-        return $groups;
+            $names[] = $name;
+        }
+
+        if ($names === []) {
+            throw new LogicException(self::CONFIGURATION . ' declares no testsuite');
+        }
+
+        sort($names);
+
+        return $names;
     }
 
     /**
-     * Reads one module-level tuple of string literals out of the Python runner.
-     *
-     * A tuple this guard cannot parse stops it, rather than leaving it with an
-     * empty suite list that would make every refusal here silently vacuous.
+     * What a suite could run: the configuration and nothing else.
      *
      * @return list<string>
      */
-    private static function tupleIn(string $source, string $name): array
+    private static function reachableCommand(string $suite): array
     {
-        if (preg_match('/^' . preg_quote($name, '/') . ' = \((.*?)\)$/ms', $source, $matches) !== 1) {
-            throw new LogicException(self::AGGREGATE . ' declares no readable ' . $name . ' tuple');
-        }
-
-        if (preg_match_all('/"([^"]*)"/', $matches[1], $entries) < 1) {
-            throw new LogicException(self::AGGREGATE . ' declares an empty ' . $name . ' tuple');
-        }
-
-        return $entries[1];
+        return [self::aggregate()['phpunit'], '--list-tests', '--testsuite=' . $suite];
     }
 
     /**
-     * @param list<string> $arguments
+     * What `composer check` does run, as the runner itself prints it.
      *
-     * @return list<string> the identifiers PHPUnit lists for one suite
+     * @return list<string>
      */
-    private static function listing(array $arguments, string $suite): array
+    private static function executedCommand(string $suite): array
     {
-        $command = [\PHP_BINARY, 'vendor/bin/phpunit', '--list-tests', ...$arguments, '--testsuite=' . $suite];
+        $commands = self::aggregate()['commands'];
+        if (!isset($commands[$suite])) {
+            throw new LogicException(self::AGGREGATE . ' prints no command for suite ' . $suite);
+        }
+
+        return [...$commands[$suite], '--list-tests'];
+    }
+
+    /**
+     * The runner's own per-suite commands, asked of the runner.
+     *
+     * @return array{phpunit: string, commands: array<string, list<string>>}
+     */
+    private static function aggregate(): array
+    {
+        if (self::$aggregate !== null) {
+            return self::$aggregate;
+        }
+
+        $output = self::runCommand(
+            ['python3', self::AGGREGATE, '--print-commands', '--cache-root=' . self::cacheRoot()],
+            self::AGGREGATE . ' --print-commands',
+        );
+
+        try {
+            $printed = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new LogicException(self::AGGREGATE . ' did not print readable JSON', 0, $exception);
+        }
+
+        if (!\is_array($printed) || !\is_string($printed['phpunit'] ?? null) || !\is_array($printed['commands'] ?? null)) {
+            throw new LogicException(self::AGGREGATE . ' printed no phpunit path and command map');
+        }
+
+        $commands = [];
+        foreach ($printed['commands'] as $suite => $command) {
+            if (!\is_string($suite) || !\is_array($command) || $command === []) {
+                throw new LogicException(self::AGGREGATE . ' printed an unreadable command entry');
+            }
+
+            $arguments = [];
+            foreach ($command as $argument) {
+                if (!\is_string($argument)) {
+                    throw new LogicException(self::AGGREGATE . ' printed a non-string argument for ' . $suite);
+                }
+
+                $arguments[] = $argument;
+            }
+
+            $commands[$suite] = $arguments;
+        }
+
+        if ($commands === []) {
+            throw new LogicException(self::AGGREGATE . ' printed no suite command');
+        }
+
+        return self::$aggregate = ['phpunit' => $printed['phpunit'], 'commands' => $commands];
+    }
+
+    /**
+     * A scratch cache root the printed commands point at. PHPUnit creates the
+     * per-suite directories under it; this class removes the lot afterwards.
+     */
+    private static function cacheRoot(): string
+    {
+        if (self::$cacheRoot !== null) {
+            return self::$cacheRoot;
+        }
+
+        $path = sys_get_temp_dir() . '/qmx-suite-hygiene-' . bin2hex(random_bytes(6));
+        if (!mkdir($path, 0o777, true) && !is_dir($path)) {
+            throw new LogicException('Cannot create a scratch cache root at ' . $path);
+        }
+
+        return self::$cacheRoot = $path;
+    }
+
+    private static function removeTree(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $walk = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        /** @var SplFileInfo $entry */
+        foreach ($walk as $entry) {
+            $entry->isDir() ? @rmdir($entry->getPathname()) : @unlink($entry->getPathname());
+        }
+
+        @rmdir($path);
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @return list<string> the identifiers PHPUnit lists for one command
+     */
+    private static function listing(array $command): array
+    {
         $key = implode(' ', $command);
 
-        return self::$listings[$key] ??= self::parseListing(self::runListing($command), $key);
+        return self::$listings[$key] ??= self::parseListing(self::runCommand($command, $key), $key);
     }
 
     /**
-     * Mirrors the aggregate's own refusals: a listing that exited non-zero, wrote
-     * to stderr, or does not have the documented shape is not a measurement.
+     * Mirrors the runner's own refusals: a command that exited non-zero or wrote
+     * to stderr is not a measurement.
      *
      * @param list<string> $command
      */
-    private static function runListing(array $command): string
+    private static function runCommand(array $command, string $label): string
     {
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $process = proc_open($command, $descriptors, $pipes, TestTree::projectRoot());
         if ($process === false) {
-            throw new LogicException('Cannot start ' . implode(' ', $command));
+            throw new LogicException('Cannot start ' . $label);
         }
 
         $stdout = stream_get_contents($pipes[1]);
@@ -393,13 +700,13 @@ final class TestFilesAreExecutedTest extends TestCase
         $status = proc_close($process);
 
         if ($stdout === false || $stderr === false) {
-            throw new LogicException(implode(' ', $command) . ' produced no readable output');
+            throw new LogicException($label . ' produced no readable output');
         }
         if ($status !== 0) {
-            throw new LogicException(\sprintf('%s exited %d', implode(' ', $command), $status));
+            throw new LogicException(\sprintf('%s exited %d', $label, $status));
         }
         if ($stderr !== '') {
-            throw new LogicException(implode(' ', $command) . ' wrote to stderr');
+            throw new LogicException($label . ' wrote to stderr');
         }
 
         return $stdout;
@@ -409,7 +716,16 @@ final class TestFilesAreExecutedTest extends TestCase
     private static function parseListing(string $output, string $label): array
     {
         $lines = explode("\n", rtrim($output, "\n"));
-        $headers = array_keys($lines, 'Available tests:', true);
+        // PHPUnit spells the header in the singular when it lists one test or
+        // none, so requiring the plural would refuse a narrow listing with the
+        // wrong sentence — and an empty one is the case worth naming exactly.
+        $headers = [];
+        foreach ($lines as $index => $line) {
+            if ($line === 'Available tests:' || $line === 'Available test:') {
+                $headers[] = $index;
+            }
+        }
+
         if (\count($headers) !== 1) {
             throw new LogicException($label . ': expected exactly one "Available tests:" header');
         }
