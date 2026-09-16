@@ -98,10 +98,24 @@ src/
 ├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
+governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
 ```
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
+
+`governance/` is a test root and not a test tree: a file there asserts something
+about this repository — that an artifact is fresh, that documentation agrees
+with the tree, that every registered thing has some property — rather than about
+product behaviour. It is grouped by the subject each control guards, never by
+the kind of artifact the control happens to read. Registering a new group means
+`phpunit.xml.dist`, `currentSuite()` in
+`scripts/generate-modular-architecture-test-inventory.php`, and nothing else —
+an unregistered group reddens `composer architecture:check` by name. The root
+itself is registered once and for all: `autoload-dev`, `phpstan.neon`, the
+cs-fixer finder, the pre-commit hook's staged-file filter, the aggregate's suite
+tuple, the inventory generator's scan scope, the rename enumeration's `tests`
+surface, `.gitattributes`, `.dockerignore` and the environment bootstrap.
 
 ### Decision framework for new capabilities
 

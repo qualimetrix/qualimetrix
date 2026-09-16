@@ -84,6 +84,9 @@
         <testsuite name="Infrastructure">
             <directory>tests/Infrastructure</directory>
         </testsuite>
+        <testsuite name="Governance">
+            <directory>governance/TestSuiteHygiene</directory>
+        </testsuite>
     </testsuites>
 
     <source>

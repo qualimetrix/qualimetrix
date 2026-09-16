@@ -48,8 +48,13 @@ function surfaces(): array
             'excludeDirs' => ['node_modules', 'dist'],
             'excludeFiles' => [...$presetFiles, 'src/.gitkeep', 'src/Reporting/Template/package-lock.json'],
         ],
+        // One surface, two roots: a control that pins a channel spelling counts
+        // the same wherever it is filed, and the repository-controls root is
+        // where those controls are moving. A separate column would have split
+        // the count in the same step that moves the files, so a sweep reading
+        // one column would have read a drop that means nothing.
         'tests' => [
-            'roots' => ['tests'],
+            'roots' => ['tests', 'governance'],
             'files' => [],
             'excludeDirs' => ['__pycache__'],
             'excludeFiles' => [],

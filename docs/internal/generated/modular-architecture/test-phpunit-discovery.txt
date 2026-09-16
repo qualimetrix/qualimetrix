@@ -1,6 +1,9 @@
 PHPUnit 12.5.25 by Sebastian Bergmann and contributors.
 
 Available tests:
+ - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itFindsNoTestMethodWhoseNameAndAttributeDisagree
+ - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itReadsEveryTestRootItJudges
+ - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itRefusesEachDirectionOnSourceItIsGiven
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigSchemaCoverageTest::itDeclaresAPolicyForExactlyEveryAllowedRootKey
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigSchemaCoverageTest::itFailsFastForAnUnregisteredKey
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigSchemaCoverageTest::itReturnsTheSamePolicyAsTheSectionPoliciesEntry

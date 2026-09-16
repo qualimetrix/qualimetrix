@@ -987,16 +987,31 @@ foreach ($fanIn as $target => $data) {
 }
 usort($fanInRows, static fn(array $left, array $right): int => $left <=> $right);
 
+// Every PSR-4 root that only exists for autoloading in development: the test
+// tree and the repository-controls root. Production may reach neither, and the
+// refusal names which one it reached, because the two are fixed by different
+// people for different reasons.
+const DEVELOPMENT_NAMESPACE_PREFIXES = [
+    'Qualimetrix\\Tests\\',
+    'Qualimetrix\\Governance\\',
+];
+
 $productionToTestRows = [];
 foreach ($rows as $row) {
     foreach ($row['dependencies'] as $dependency) {
-        if (str_starts_with($dependency, 'Qualimetrix\\Tests\\')) {
-            $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
+        foreach (DEVELOPMENT_NAMESPACE_PREFIXES as $prefix) {
+            if (str_starts_with($dependency, $prefix)) {
+                $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
+            }
         }
     }
 }
 if ($productionToTestRows !== []) {
-    fail('production source imports a test namespace');
+    $offences = array_map(
+        static fn(array $offence): string => sprintf('%s imports %s (%s)', $offence[1], $offence[2], $offence[0]),
+        $productionToTestRows,
+    );
+    fail("production source imports a development-only namespace:\n  " . implode("\n  ", $offences));
 }
 
 $extensionDefinitions = [

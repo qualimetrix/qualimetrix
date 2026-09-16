@@ -24,6 +24,7 @@ dist/
 
 # Test outputs and coverage
 tests/
+governance/
 phpunit.xml*
 coverage/
 .phpunit.cache/

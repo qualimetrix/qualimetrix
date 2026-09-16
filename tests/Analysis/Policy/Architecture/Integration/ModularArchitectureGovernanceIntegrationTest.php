@@ -371,6 +371,10 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         try {
             $sourceRoot = $this->root();
             $this->copyDirectory($sourceRoot . '/tests', $projectRoot . '/tests');
+            // PHPUnit exits 2 when a <testsuite> names a directory that is not
+            // there, so every root the tracked configuration declares has to
+            // exist here before the inventory script can reach its own refusal.
+            $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
             $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
             $this->copyDirectory(
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
@@ -393,6 +397,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
                 '--',
                 'phpunit.xml.dist',
                 'tests',
+                'governance',
                 'scripts',
                 'src/Reporting/Template',
             ], $projectRoot);

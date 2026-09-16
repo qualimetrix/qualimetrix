@@ -348,7 +348,7 @@ if ($classificationProbeArguments !== []) {
 }
 
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -654,6 +654,12 @@ function p6CBaselinePaths(string $projectRoot): array
  */
 function classifyOwner(string $path): array
 {
+    // The repository-controls root is not a test tree: every file under it
+    // asserts something about this repository, so the governance that owns the
+    // repository owns all of it, whichever subject a group guards.
+    if (str_starts_with($path, 'governance/')) {
+        return ['Architecture.Governance', 'P8'];
+    }
     if (str_starts_with($path, 'tests/System/DocumentationConsistency/')) {
         return ['System/DocumentationConsistency', 'P8'];
     }
@@ -1063,6 +1069,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
+        ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1137,6 +1144,12 @@ function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
 
 function dispositionFor(string $path, string $kind): string
 {
+    // A control is written straight into the root that holds it, so there is no
+    // move to record: a target path other than its own would assert a relocation
+    // nobody decided.
+    if (str_starts_with($path, 'governance/')) {
+        return 'Retain at the materialized subject-owned path.';
+    }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
         || in_array($path, P7_MEASUREMENT_PATHS, true)
         || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
@@ -1178,6 +1191,9 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
+    if (str_starts_with($path, 'governance/')) {
+        return $path;
+    }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
         return 'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php';
     }

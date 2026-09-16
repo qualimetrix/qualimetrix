@@ -12,6 +12,7 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /.githooks/             export-ignore
 /docs/                  export-ignore
 /tests/                 export-ignore
+/governance/            export-ignore
 /scripts/               export-ignore
 /directive-audit/**     export-ignore
 /finding-gate/**        export-ignore

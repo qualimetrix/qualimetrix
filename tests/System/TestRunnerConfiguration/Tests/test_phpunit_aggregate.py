@@ -19,7 +19,7 @@ TEST_ROOT = Path(__file__).parent
 PROJECT_ROOT = TEST_ROOT.parents[3]
 RUNNER = PROJECT_ROOT / "scripts/phpunit-aggregate.py"
 FAKE_PHPUNIT = TEST_ROOT / "Fixtures/fake_phpunit.py"
-SUITES = ("Unit", "Integration", "Functional", "Infrastructure")
+SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
 
 
 def load_runner_module():
@@ -88,7 +88,12 @@ class PhpunitAggregateTest(unittest.TestCase):
         suites = configuration["suites"]
         assert isinstance(suites, dict)
         suites["Functional"] = ["Example\\UnitTest::itRuns"]
-        configuration["aggregate"] = ["Example\\UnitTest::itRuns", "Example\\IntegrationTest::itRuns", "Example\\InfrastructureTest::itRuns"]
+        configuration["aggregate"] = [
+            "Example\\UnitTest::itRuns",
+            "Example\\IntegrationTest::itRuns",
+            "Example\\InfrastructureTest::itRuns",
+            "Example\\GovernanceTest::itRuns",
+        ]
 
         completed = self.run_runner(configuration)
 
@@ -112,6 +117,7 @@ class PhpunitAggregateTest(unittest.TestCase):
             "Integration": {"stdout": "integration output", "exit": 7},
             "Functional": {"stdout": "functional output"},
             "Infrastructure": {"stdout": "infrastructure output"},
+            "Governance": {"stdout": "governance output"},
         }
 
         completed = self.run_runner(configuration)
@@ -128,9 +134,10 @@ class PhpunitAggregateTest(unittest.TestCase):
             "Integration": {"stdout": "integration", "sleep": 0.08},
             "Functional": {"stdout": "functional", "sleep": 0.04},
             "Infrastructure": {"stdout": "infrastructure", "sleep": 0.01},
+            "Governance": {"stdout": "governance", "sleep": 0.02},
         }
 
-        completed = self.run_runner(configuration, "--jobs=4", "--timeout=2")
+        completed = self.run_runner(configuration, f"--jobs={len(SUITES)}", "--timeout=2")
 
         self.assertEqual(0, completed.returncode, completed.stderr)
         positions = [completed.stdout.index(f"===== PHPUnit suite: {suite}") for suite in SUITES]
@@ -156,7 +163,7 @@ class PhpunitAggregateTest(unittest.TestCase):
         configuration = complete_configuration()
         configuration["run"] = {suite: {"sleep": 30} for suite in SUITES}
 
-        completed = self.run_runner(configuration, "--timeout=5", "--jobs=4")
+        completed = self.run_runner(configuration, "--timeout=5", f"--jobs={len(SUITES)}")
 
         self.assertEqual(1, completed.returncode)
         self.assertIn("===== PHPUnit suite: Unit (exit 124) =====", completed.stdout)
@@ -169,13 +176,14 @@ class PhpunitAggregateTest(unittest.TestCase):
             "Integration": {"sleep": 30},
             "Functional": {"sleep": 30},
             "Infrastructure": {"sleep": 30},
+            "Governance": {"sleep": 30},
         }
         with tempfile.TemporaryDirectory(prefix="qmx-phpunit-child-record-") as directory:
             record_directory = Path(directory)
             completed = self.run_runner(
                 configuration,
                 "--timeout=2",
-                "--jobs=4",
+                f"--jobs={len(SUITES)}",
                 record_directory=record_directory,
             )
             child_pid = int((record_directory / "Unit.child-pid").read_text(encoding="utf-8"))

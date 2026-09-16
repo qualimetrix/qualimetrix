@@ -6,6 +6,7 @@ $finder = PhpCsFixer\Finder::create()
     ->in([
         __DIR__ . '/src',
         __DIR__ . '/tests',
+        __DIR__ . '/governance',
         __DIR__ . '/scripts',
     ])
     ->name('*.php')

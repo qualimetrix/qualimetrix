@@ -1,4 +1,5 @@
 current_path	kind	classes	discovered_classes	discovered_test_cases	current_suite	target_suite	subject_owner	target_path	closure_package	disposition
+governance/TestSuiteHygiene/TestMethodsAreReachableTest.php	phpunit-test-class	Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest	Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest	3	Governance	Governance	Architecture.Governance	governance/TestSuiteHygiene/TestMethodsAreReachableTest.php	P8	"Retain at the materialized subject-owned path."
 src/Reporting/Template/package.json	non-php-test-config			0	none	none	Reporting/HtmlTemplate	tests/Reporting/HtmlTemplate/Tests/package.json	permanent	"Move atomically with the named owner and closure package."
 src/Reporting/Template/tests/color.test.js	non-php-test-process			0	none	none	Reporting/HtmlTemplate	tests/Reporting/HtmlTemplate/Tests/color.test.js	permanent	"Move atomically with the named owner and closure package."
 src/Reporting/Template/tests/hash.test.js	non-php-test-process			0	none	none	Reporting/HtmlTemplate	tests/Reporting/HtmlTemplate/Tests/hash.test.js	permanent	"Move atomically with the named owner and closure package."

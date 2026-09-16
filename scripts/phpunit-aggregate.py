@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Run the configured PHPUnit aggregate as isolated, verified suite shards.
 
-The runner deliberately proves that the four configured suites partition the
-same test IDs as the aggregate before it starts a shard. That prevents a fast,
-green parallel run from silently omitting a directory or executing a test twice.
+The runner deliberately proves that every configured suite in SUITES partitions
+the same test IDs as the aggregate before it starts a shard. That prevents a
+fast, green parallel run from silently omitting a directory or executing a test
+twice. A suite declared in phpunit.xml.dist and missing from SUITES therefore
+refuses the run rather than disappearing from it.
 
 Usage:
-    python3 scripts/phpunit-aggregate.py [--jobs=1..4] [--timeout=SECONDS]
+    python3 scripts/phpunit-aggregate.py [--jobs=1..N] [--timeout=SECONDS]
+    (N is len(SUITES); the default runs every shard concurrently.)
 
 The command retains the aggregate's no-coverage, benchmark, and live-freshness
 exclusions. Suite output is captured per shard, then published only after the
@@ -29,7 +32,7 @@ from typing import Sequence
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SUITES = ("Unit", "Integration", "Functional", "Infrastructure")
+SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
 COMMON_ARGUMENTS = (
     "--no-coverage",
     "--exclude-group=benchmark",
