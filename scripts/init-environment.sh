@@ -300,6 +300,7 @@ CRITICAL_DIRS=(
     "src/Reporting"
     "src/Infrastructure"
     "tests"
+    "governance"
     "docs"
     "website/docs"
 )

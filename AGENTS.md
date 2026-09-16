@@ -98,10 +98,40 @@ src/
 ├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
+governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
 ```
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
+
+`governance/` is a test root and not a test tree: a file there asserts something
+about this repository — that an artifact is fresh, that documentation agrees
+with the tree, that every registered thing has some property — rather than about
+product behaviour. It is grouped by the subject each control guards, never by
+the kind of artifact the control happens to read. Registering a new group means
+`phpunit.xml.dist`, `currentSuite()` in
+`scripts/generate-modular-architecture-test-inventory.php`, and nothing else —
+an unregistered group reddens `composer architecture:check` by name.
+
+Registering a new test **root** means every address in the table below, and
+re-deriving that table against the tree before trusting it. Most of these
+addresses fail silently: the root stays unprotected, or ships where it should
+not, under a green `composer check`.
+
+| Address                                                                                                                                                                    | Fails        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `composer.json` `autoload-dev`, `phpstan.neon` `paths`, the `.php-cs-fixer.dist.php` finder                                                                                | loudly       |
+| `phpunit.xml.dist` — a `<testsuite>` that reaches it                                                                                                                       | loudly       |
+| `scripts/phpunit-aggregate.py` — `SUITES`, the partition proof in its docstring, the `--jobs` bound                                                                        | loudly       |
+| `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — its own copy of the suite tuple, run by `test:cross-tool` and not by the aggregate                | loudly       |
+| `scripts/generate-modular-architecture-test-inventory.php` — scan scope, `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()` | loudly       |
+| `scripts/generate-modular-architecture-production-inventory.php` — the ban on `src/` importing a development namespace is a literal list of prefixes                       | **silently** |
+| `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                    | **silently** |
+| `tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                            | **silently** |
+| `tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php` — `createIsolatedProject()` copies the roots it names                    | **silently** |
+| `.gitattributes` — `export-ignore`, or the root ships in the composer dist package                                                                                         | **silently** |
+| `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                               | **silently** |
+| `.dockerignore` and `scripts/init-environment.sh`                                                                                                                          | **silently** |
 
 ### Decision framework for new capabilities
 

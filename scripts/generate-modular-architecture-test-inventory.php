@@ -59,12 +59,6 @@ const ORPHAN_CANDIDATE_PREFIXES = [
     'tests/Fixtures/Inheritance/' => 'No live test reads or analyses this fixture directory.',
 ];
 
-/** @var array<string, string> */
-const EXPLICIT_PATH_DISPOSITIONS = [
-    'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'P8: consolidate overlapping LoggerFactory coverage before moving to Infrastructure/Unit.',
-    'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'P8: consolidate overlapping LoggerFactory coverage before moving to Infrastructure/Unit.',
-];
-
 /** @var list<string> JSON fixtures are covered by a repository-wide ignore rule until staged. */
 const P4_IGNORED_FIXTURE_PATHS = [
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/expected-violations.json',
@@ -322,8 +316,8 @@ const RETIRED_PATH_ASSERTIONS = [
     'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php' => 'P3 closure; the test was removed after the package.',
     'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php' => 'P3 closure; the test was removed after the package.',
-    'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'EXPLICIT_PATH_DISPOSITIONS; the P8 consolidation this disposition described has happened.',
-    'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'EXPLICIT_PATH_DISPOSITIONS; the P8 consolidation this disposition described has happened.',
+    'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
+    'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
 ];
 
 $projectRoot = realpath(__DIR__ . '/..');
@@ -354,7 +348,7 @@ if ($classificationProbeArguments !== []) {
 }
 
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -420,7 +414,7 @@ foreach ($worktreePaths as $path) {
         : 'none';
     $disposition = dispositionFor($path, $kind);
 
-    if (isset(EXPLICIT_PATH_DISPOSITIONS[$path]) || orphanCandidateReason($path) !== null || $kind === 'placeholder') {
+    if (orphanCandidateReason($path) !== null || $kind === 'placeholder') {
         $closurePackage = 'P8';
     }
 
@@ -660,6 +654,12 @@ function p6CBaselinePaths(string $projectRoot): array
  */
 function classifyOwner(string $path): array
 {
+    // The repository-controls root is not a test tree: every file under it
+    // asserts something about this repository, so the governance that owns the
+    // repository owns all of it, whichever subject a group guards.
+    if (str_starts_with($path, 'governance/')) {
+        return ['Architecture.Governance', 'P8'];
+    }
     if (str_starts_with($path, 'tests/System/DocumentationConsistency/')) {
         return ['System/DocumentationConsistency', 'P8'];
     }
@@ -1069,6 +1069,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
+        ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1143,9 +1144,18 @@ function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
 
 function dispositionFor(string $path, string $kind): string
 {
+    // A control is written straight into the root that holds it, so there is no
+    // move to record: a target path other than its own would assert a relocation
+    // nobody decided.
+    if (str_starts_with($path, 'governance/')) {
+        return 'Retain at the materialized subject-owned path.';
+    }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
         || in_array($path, P7_MEASUREMENT_PATHS, true)
         || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        // Logging's target directory is settled; its Infrastructure/{Subject}/Unit
+        // siblings (Cache, Console, Parallel, Rule, ...) do not have that decision yet.
+        || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
         || str_starts_with($path, 'tests/Analysis/Finding/')
         || str_starts_with($path, 'tests/Analysis/Policy/Inline/')
         || str_starts_with($path, 'tests/Analysis/Policy/Baseline/')
@@ -1157,10 +1167,6 @@ function dispositionFor(string $path, string $kind): string
     ) {
         return 'Retain at the materialized subject-owned path.';
     }
-    if (isset(EXPLICIT_PATH_DISPOSITIONS[$path])) {
-        return EXPLICIT_PATH_DISPOSITIONS[$path];
-    }
-
     $orphanReason = orphanCandidateReason($path);
     if ($orphanReason !== null) {
         return 'P8: retain in place until consumer proof; delete only if the orphan candidate is confirmed. ' . $orphanReason;
@@ -1185,12 +1191,16 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
+    if (str_starts_with($path, 'governance/')) {
+        return $path;
+    }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
         return 'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php';
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
         || in_array($path, P7_MEASUREMENT_PATHS, true)
         || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
         || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
         || str_starts_with($path, 'tests/Unit/Reporting/Health/')
         || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
@@ -1312,11 +1322,8 @@ function validateInventory(array $rows, array $discoveredCaseCounts): void
         if (count($uniquePaths) < 2) {
             continue;
         }
-        foreach ($uniquePaths as $path) {
-            if (!isset(EXPLICIT_PATH_DISPOSITIONS[$path])) {
-                fail(sprintf('Target collision without disposition at %s: %s', $target, implode(', ', $uniquePaths)));
-            }
-        }
+
+        fail(sprintf('Target collision at %s: %s', $target, implode(', ', $uniquePaths)));
     }
 
 }

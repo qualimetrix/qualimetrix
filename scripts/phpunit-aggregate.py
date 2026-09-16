@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
 """Run the configured PHPUnit aggregate as isolated, verified suite shards.
 
-The runner deliberately proves that the four configured suites partition the
-same test IDs as the aggregate before it starts a shard. That prevents a fast,
-green parallel run from silently omitting a directory or executing a test twice.
+The runner deliberately proves that every configured suite in SUITES partitions
+the same test IDs as the aggregate before it starts a shard. That prevents a
+fast, green parallel run from silently omitting a directory or executing a test
+twice. A suite declared in phpunit.xml.dist and missing from SUITES therefore
+refuses the run rather than disappearing from it.
 
 Usage:
-    python3 scripts/phpunit-aggregate.py [--jobs=1..4] [--timeout=SECONDS]
+    python3 scripts/phpunit-aggregate.py [--jobs=1..N] [--timeout=SECONDS]
+    (N is len(SUITES); the default runs every shard concurrently.)
 
-The command retains the aggregate's no-coverage, benchmark, and live-freshness
-exclusions. Suite output is captured per shard, then published only after the
+    python3 scripts/phpunit-aggregate.py --print-commands --cache-root=DIR
+    prints, as JSON, the exact argv each suite shard would be started with.
+    It runs nothing. A reader that has to know what `composer check` executes
+    gets it from here rather than from a second reading of this file, and
+    shard_command() is the single place both the print and the run come from.
+
+The command names the configuration explicitly and retains the aggregate's
+no-coverage, benchmark, and live-freshness exclusions. Suite output is captured per shard, then published only after the
 run in the fixed PHPUnit-suite order.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import signal
@@ -29,8 +39,13 @@ from typing import Sequence
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SUITES = ("Unit", "Integration", "Functional", "Infrastructure")
+SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
+# Named rather than left to PHPUnit's search, which takes a local phpunit.xml
+# ahead of phpunit.xml.dist: that file is git-ignored, so a developer's tree
+# would run a different configuration than CI while both reported success.
+CONFIGURATION = ROOT / "phpunit.xml.dist"
 COMMON_ARGUMENTS = (
+    f"--configuration={CONFIGURATION}",
     "--no-coverage",
     "--exclude-group=benchmark",
     "--exclude-group=live-freshness",
@@ -85,6 +100,17 @@ def parse_arguments(arguments: Sequence[str]) -> argparse.Namespace:
     )
     parser.add_argument("--jobs", type=parse_positive_int, default=len(SUITES), help="Concurrent suite shards")
     parser.add_argument(
+        "--print-commands",
+        action="store_true",
+        help="Print the per-suite commands as JSON and exit without running anything",
+    )
+    parser.add_argument(
+        "--cache-root",
+        type=Path,
+        default=None,
+        help="Cache root the printed commands point at (required with --print-commands)",
+    )
+    parser.add_argument(
         "--timeout",
         type=parse_positive_seconds,
         default=900.0,
@@ -104,6 +130,24 @@ def list_command(phpunit: Path, suite: str | None) -> list[str]:
     if suite is not None:
         command.append(f"--testsuite={suite}")
     return command
+
+
+def shard_command(phpunit: Path, suite: str, cache_directory: Path) -> list[str]:
+    """The exact argv one suite shard is started with.
+
+    Both the run and `--print-commands` come through here, so what a reader is
+    told `composer check` executes cannot drift from what it executes.
+    """
+    return [
+        str(phpunit),
+        *COMMON_ARGUMENTS,
+        f"--cache-directory={cache_directory}",
+        f"--testsuite={suite}",
+    ]
+
+
+def printable_commands(phpunit: Path, cache_root: Path) -> dict[str, list[str]]:
+    return {suite: shard_command(phpunit, suite, cache_root / suite) for suite in SUITES}
 
 
 def run_listing(phpunit: Path, suite: str | None, timeout: float) -> list[str]:
@@ -216,12 +260,7 @@ def remaining_seconds(deadline: float) -> float:
 def start_shard(phpunit: Path, shard: Shard, cache_root: Path) -> None:
     cache_directory = cache_root / shard.suite
     cache_directory.mkdir()
-    command = [
-        str(phpunit),
-        *COMMON_ARGUMENTS,
-        f"--cache-directory={cache_directory}",
-        f"--testsuite={shard.suite}",
-    ]
+    command = shard_command(phpunit, shard.suite, cache_directory)
     shard.stdout_handle = shard.stdout_path.open("wb")
     shard.stderr_handle = shard.stderr_path.open("wb")
     try:
@@ -368,6 +407,21 @@ def publish_shards(shards: Sequence[Shard]) -> None:
 
 def main(arguments: Sequence[str] | None = None) -> int:
     args = parse_arguments(sys.argv[1:] if arguments is None else arguments)
+    if args.print_commands:
+        if args.cache_root is None:
+            print("phpunit aggregate refusal: --print-commands needs --cache-root", file=sys.stderr)
+            return REFUSAL_EXIT
+        json.dump(
+            {
+                "phpunit": str(args.phpunit),
+                "configuration": str(CONFIGURATION),
+                "commands": printable_commands(args.phpunit, args.cache_root),
+            },
+            sys.stdout,
+            indent=2,
+        )
+        sys.stdout.write("\n")
+        return 0
     if os.name != "posix":
         print("phpunit aggregate refusal: isolated process groups require a POSIX platform", file=sys.stderr)
         return REFUSAL_EXIT
