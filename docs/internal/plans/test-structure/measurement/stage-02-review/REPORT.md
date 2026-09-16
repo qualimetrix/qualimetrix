@@ -47,7 +47,12 @@ that.
   and the number was never re-derived. The list can grow back by three without
   anyone admitting it in a diff.
 - `classifyOwner()` keeps a branch for `tests/Integration/Documentation/`, a
-  directory that does not exist.
+  directory that does not exist. Removing it exposed the same fault at scale:
+  **50 of the 84** `tests/`-or-`governance/` prefixes the generator tests
+  against name a directory that is not there. They are residue of the earlier
+  architecture migration, not of this stage, and were deliberately left — a
+  fifty-line cleanup inside a file this stage only registers groups in is a
+  separate decision for that script's owner.
 - `check-verdict-conformance.py`, written in this stage to check its own
   Definition of Done, carries one of the two corrections from
   `two-witness-adjudication.md` and not the other. The code is placed correctly
@@ -55,7 +60,7 @@ that.
   `governance/DirectiveVocabulary/` — but had it been left behind, the check
   would have passed. A check weaker than it claims is this stage's own subject.
 
-### C. The population was still open — 10 more files
+### C. The population was still open — 11 more files
 
 `codex-01`. Codex found, by reading, three controls that this session's
 instrument scored at **zero** signals: they hold no pinned path list and walk no
@@ -65,7 +70,8 @@ held in memory. `ComputedMetricDefaultsTest` quantifies over
 
 The instrument's blind spot was then measured rather than argued: a signal for
 that shape accuses 16 further files, and a fourth triage of those returned 3
-whole controls and 7 mixed. The population grows from 76 files to 86.
+whole controls and 8 mixed — eleven carriers in all. The population grows from
+76 files to 87, and `governance/` from 21 groups to 24.
 
 This is the second measured failure of the claim "recall 42/42 makes the list
 complete". It was hedged when written; it is now falsified twice, and the
