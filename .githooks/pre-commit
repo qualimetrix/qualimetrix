@@ -47,11 +47,10 @@ fi
 # `composer check` and rejects PHP that is deliberately non-conforming, such as
 # the finding-gate corpus, whose fixtures exist to make rules fire.
 #
-# It is in fact narrower than that: both tools also declare scripts/, which this
-# hook has never passed them. Whatever the hook skips, `composer check` still
-# checks.
+# The four roots below are exactly what both tools declare, so the hook is now
+# neither stricter nor narrower than the check it stands in for.
 STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=ACM \
-    | grep -E '^(src|tests|governance)/' \
+    | grep -E '^(src|tests|governance|scripts)/' \
     | grep '\.php$' \
     | grep -v 'Fixtures/Ast/invalid_syntax.php' \
     | grep -v 'Fixtures/OutputFormats/broken/src/Unparsable.php' || true)

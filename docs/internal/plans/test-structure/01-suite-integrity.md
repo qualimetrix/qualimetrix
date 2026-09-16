@@ -307,24 +307,36 @@ count, one file declaring two non-compliant classes; 149 counts three more files
 that declare a namespace and no type at all. The plan's "60 (139 counting
 fixtures)" is the first and second of these.
 
-### Two defects found and deliberately not fixed
+### One defect found and deliberately left, one closed
 
-- **`classifyOwner()` carries dead code.** A catch-all on `tests/Infrastructure/`
-  precedes the per-subject regex below it, which is therefore unreachable for
-  every path it was written for. Every `Infrastructure/{Subject}/Unit` row in
-  the inventory consequently publishes a flat `Infrastructure/Unit` target the
-  tree has not decided on. Reproduce with
+- **`classifyOwner()` carries dead code, and stage 04 will meet it.** A catch-all
+  on `tests/Infrastructure/` precedes the per-subject regex below it, which is
+  therefore unreachable for every path it was written for. Every
+  `Infrastructure/{Subject}/Unit` row in the inventory consequently publishes a
+  flat `Infrastructure/Unit` target the tree has not decided on. Reproduce with
   `php scripts/generate-modular-architecture-test-inventory.php --classification-probe=tests/Infrastructure/Cache/Unit/CacheKeyTest.php`.
-  Repairing it moves the owner column for a couple of hundred rows — stage 04
-  will meet this.
-- **The pre-commit hook is narrower than both tools it mirrors.** `scripts/` is
-  declared in `phpstan.neon` and in the cs-fixer finder and has never been passed
-  to either through the hook. Recorded in the hook itself; not changed, because
-  widening it changes what a commit rejects.
+  Repairing it moves the owner column for a couple of hundred rows, which is a
+  decision of its own and not this stage's.
+- **The pre-commit hook mirrored neither of the tools it stands in for, and now
+  does.** `scripts/` is declared in `phpstan.neon` and in the cs-fixer finder and
+  had never been passed to either through the hook. Widening it rejects nothing
+  that exists — both tools are green over `scripts/` today, measured before the
+  change — so the only thing it alters is which future commit is stopped early.
+  Its filter now names exactly the four roots both tools declare, which is the
+  constraint the comment beside it states.
 
 `EXPLICIT_PATH_DISPOSITIONS` no longer exists: both its entries keyed retired
 paths, and an empty map cannot be typed past PHPStan. References to it in this
 plan describe a mechanism the tree no longer carries.
+
+### Where the review evidence is
+
+Three reviewer reports, schema-conformant and with the command that verified
+each finding: [`measurement/stage-01-review/`](measurement/stage-01-review/).
+Round one is two independent reviewers over the whole stage; round two is one
+reviewer over the repair alone, and it is the round that found the repair had
+reintroduced the defect it repaired. The raw transcript of the external CLI is
+not kept — the findings derived from it are.
 
 ### What review replaced
 
