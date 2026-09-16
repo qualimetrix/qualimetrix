@@ -101,6 +101,9 @@
             <directory>governance/DirectiveVocabulary</directory>
             <directory>governance/ControlRigLedger</directory>
             <directory>governance/HealthVocabulary</directory>
+            <directory>governance/FindingVocabulary</directory>
+            <directory>governance/LayerPolicyVocabulary</directory>
+            <directory>governance/SymbolVocabulary</directory>
         </testsuite>
     </testsuites>
 

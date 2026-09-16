@@ -949,9 +949,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Integration/Architecture/')) {
         return ['Analysis/Policy/Architecture', 'P0'];
     }
-    if (str_starts_with($path, 'tests/Integration/Documentation/')) {
-        return ['System/DocumentationConsistency', 'P8'];
-    }
     if (str_starts_with($path, 'tests/Integration/Scripts/')) {
         return ['Analysis/Evidence/ComputedMetrics', 'P5'];
     }
@@ -1077,6 +1074,9 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],
         ['prefix' => 'governance/HealthVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/SymbolVocabulary/', 'suite' => 'Governance'],
     ];
 }
 

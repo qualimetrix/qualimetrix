@@ -27,7 +27,7 @@ code-smell.superglobals	channel	?		1	7	1	0	0	12	0	5	0	0	1	1
 code-smell.unreachable-code	channel	?		8	41	0	1	0	29	0	9	0	0	0	0
 code-smell.unused-private	channel	?		2	8	0	0	0	15	0	7	0	0	0	0
 cohesion.lcom	channel	?		40	168	2	2	0	45	0	30	0	0	0	0
-complexity.ccn	channel	?		74	1105	2	3	47	204	0	49	0	0	0	0
+complexity.ccn	channel	?		74	1107	2	3	47	204	0	49	0	0	0	0
 complexity.cognitive	channel	?		22	96	2	2	28	64	0	28	0	0	0	0
 complexity.npath	channel	?		19	106	2	2	10	52	0	22	0	0	0	0
 complexity.wmc	channel	?		20	88	2	2	8	37	0	21	0	0	0	0
@@ -69,7 +69,7 @@ cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	4	0	0	0	0
 cohesion.lcom	metric-key	?		40	168	2	2	0	45	0	30	0	0	0	0
 cohesion.pure-method-count	metric-key	?		5	8	0	0	0	2	0	2	0	0	0	0
 cohesion.tcc	metric-key	?		26	88	0	0	0	12	0	14	0	0	0	0
-complexity.ccn	metric-key	?		74	1105	2	3	47	204	0	49	0	0	0	0
+complexity.ccn	metric-key	?		74	1107	2	3	47	204	0	49	0	0	0	0
 complexity.cognitive	metric-key	?		22	96	2	2	28	64	0	28	0	0	0	0
 complexity.npath	metric-key	?		19	106	2	2	10	52	0	22	0	0	0	0
 complexity.wmc	metric-key	?		20	88	2	2	8	37	0	21	0	0	0	0
@@ -158,7 +158,7 @@ code-smell.superglobals	producer	?		1	7	1	0	0	12	0	5	0	0	0	0
 code-smell.unreachable-code	producer	?		8	41	0	1	0	29	0	9	0	0	0	0
 code-smell.unused-private	producer	?		2	8	0	0	0	15	0	7	0	0	0	0
 cohesion.lcom	producer	?		40	168	2	2	0	45	0	30	0	0	0	0
-complexity.ccn	producer	?		74	1105	2	3	47	204	0	49	0	0	0	0
+complexity.ccn	producer	?		74	1107	2	3	47	204	0	49	0	0	0	0
 complexity.cognitive	producer	?		22	96	2	2	28	64	0	28	0	0	0	0
 complexity.npath	producer	?		19	106	2	2	10	52	0	22	0	0	0	0
 complexity.wmc	producer	?		20	88	2	2	8	37	0	21	0	0	0	0
@@ -260,7 +260,7 @@ suppression.configuration	producer	?		1	0	0	0	0	16	0	2	0	0	0	0
 # ends the freeze and moves `occurrence` for the channel's accepted entries.
 # Every other occurrence the row's surface counts include (selectors,
 # `@qmx-ignore` targets, other tests, docs, config) renames normally.
-# `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceKindFreezeGuardTest.php`
 # re-derives the same frozen set independently on every `composer test` run
 # and fails if the count drifts, if a
 # frozen constant no longer equals its own pin, or if the constant is no
@@ -308,7 +308,7 @@ suppression.configuration	producer	?		1	0	0	0	0	16	0	2	0	0	0	0
 # `SecurityPatternCollector::PATTERN_TYPES`, its `CodeSmellLocation('<leaf>'`
 # / equivalent producer literal in the capability's visitor, and the
 # `'codeSmell.<leaf>'` / `'security.<leaf>'` bag keys throughout tests/.
-# `tests/Analysis/Finding/Integration/OccurrenceLeafFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceLeafFreezeGuardTest.php`
 # re-derives this set independently on every `composer test` run and fails if
 # the twelve drift, if a leaf stops matching its own pin, or if a family
 # loses its pin — a consistent sweep that renamed a leaf everywhere at once

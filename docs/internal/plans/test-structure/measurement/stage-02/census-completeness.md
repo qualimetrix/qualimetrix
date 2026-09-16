@@ -26,52 +26,79 @@ co-change axis. That proof was computed over a population missing them.
 
 ## Why no cheap sweep closes the gap
 
-Two mechanical witnesses were built over the 607 unexamined files and, before
-being believed, were calibrated against the 40 files already ruled
-`repo-control`. Both failed calibration.
+Four witnesses looked, each finding what the previous one could not see. The
+numbers below are the record; the conclusion they support is at the end, and it
+is not the one this file first argued.
 
-**Witness A — signatures** (filesystem walk, project-root helper, tracked
-artifact, generated artifact, pinned `private const` list, `src/` literal, plus
-a name hint). Distribution of signal count over the 40 known controls:
+**Witness A — signatures** (a filesystem walk, a tracked artifact, a pinned
+`private const` list, a control-shaped class name). Calibrated before being
+believed: over the 40 files the audit ruled `repo-control` plus the two found by
+hand, its recall at "one signal or more" is **42/42**. Reduced to the smallest
+signal subset holding that recall, it accuses 100 of the 607 unexamined files.
+A triage of those 100 returned **12 whole controls and 7 mixed**.
 
-| signals | 1   | 2   | 3   | 4   | 5   | 6   | 7   |
-| ------- | --- | --- | --- | --- | --- | --- | --- |
-| files   | 6   | 1   | 11  | 12  | 3   | 5   | 2   |
+**Witness B — a universal quantifier in the method name**. It fires on 25 of 40
+known controls and on 4 of 15 known product tests. Kept as a cross-check, not
+used as an oracle.
 
-Six known controls score a single signal — `MetricNameVocabularyTest`,
-`ChannelDeclarationFixtureDriftTest`, `ChannelOrderFixtureDriftTest`,
-`LevelActivityCoversEveryDeclaredLevelTest`, `ErrorStreamContainerIdentityTest`,
-`CoverageIsRequestedExplicitlyTest` — which is exactly what
-`ChannelUniverseCoverageTest` scores. A threshold selective enough to be
-actionable drops 15% of the known positives; a threshold that keeps them
-accuses 327 of the 607.
+**Witness C — a reviewer reading code.** During review, Codex named three
+controls that witness A scores at **zero** signals: their census is over a
+product class's own static table, held in memory, with no path literal, no
+pinned list and no control-shaped name. `ComputedMetricDefaultsTest`
+quantifies over `ComputedMetricDefaults::getDefaults()` and pins the count at
+six.
 
-**Witness B — a universal quantifier in the method name** (`itRequiresEvery…`,
-`itFindsNo…`, `itKeepsEach…`). It fires on 25 of 40 known `repo-control` files
-and on 4 of 15 known `product-test` files. It flags 106 of the 607.
+**Witness D — a signal for that shape**, written after C found it: iteration
+over a product class's static table together with a universally quantified
+method name. It accuses 16 further files, and a triage of those returned **3
+whole controls and 7 mixed**.
 
-Neither is an oracle. Their union is a work list, not a bound: recall is
-unmeasured above the calibration set, so "the union is N" says nothing about how
-many controls lie outside it.
+## What the numbers say, against what this file first claimed
 
-Raw output is kept at `uncensused-suspects.tsv` and `quantifier-suspects.tsv`
-in the scratch measurement, not tracked: a suspect list no measurement can close
-is a claim about completeness that nothing checks.
+The first version of this section argued that recall 42/42 made the 100 a
+complete work list for that witness. That claim has now been falsified twice —
+once by witness C, once by the yield of witness D — and the honest reading is
+the opposite one:
+
+**Recall measured on a calibration set says nothing about the shapes that set
+does not contain.** The 42 known controls happened to include no table-class
+census with an ordinary name, so the instrument built from them was blind to an
+entire family, and the blindness was invisible from inside the measurement.
+
+Yields per round: 57 of 81 examined by the audit, 19 of 100, 10 of 16. The hit
+rate did not fall, which is the argument against declaring the population
+closed. What did change is the character of the marginal case: the fourth
+triage reported, unprompted, where the criterion stops cutting cleanly —
+`RemediationTimeRegistryTest` copies its expected side from the repository but
+asserts an identity true of any map; `ComputedMetricEvaluatorTest` uses the real
+defaults table as input while asserting arithmetic on named keys. That boundary,
+between the repository as fixture and the repository as subject, is where
+further sweeping buys disputes rather than controls.
+
+So the stage stops sweeping here, with **86 files** relocated and **491 never
+read by anyone**, and states the population as open rather than closed.
 
 ## What this does to the stage
 
-The moves themselves are unaffected — every path in the census is still classed
-correctly, and moving it is still right. What is affected is the **DoD**, which
-cannot be read as "`tests/` now holds no control". It can only be read as
-"`tests/` now holds no control *the audit found*", and that is a different and
-much weaker sentence.
+The moves are unaffected: every path relocated is classed correctly, and moving
+it was right. The **DoD** is what changes, and it cannot be read as "`tests/`
+now holds no control". It reads: *no control that four witnesses found is still
+in `tests/`*, with the witnesses, their yields and their measured blind spots
+named above.
 
-The choice this forces is not the implementer's, because it changes the size of
-the stage. It is stated for the owner in the same message as the other forks:
-relocate the known population and open the re-derivation as its own work, or
-re-derive the population first and move once.
+`check-verdict-conformance.py` checks exactly that sentence and no more. It is
+a one-off, not a tracked guard: a guard for "is this file a control" would be a
+model of the question standing in for the measurement, which is the defect this
+campaign exists to remove.
 
-Whichever is chosen, `ChannelUniverseCoverageTest` and
-`ChannelLevelDeclarationDriftTest` move with `Channel` in this stage: they were
-found, and leaving a control behind that is known to be one is the defect the
-stage exists to remove.
+## What the next reader inherits
+
+- 491 files below every instrument's threshold, read by nobody.
+- A measured blind spot in the signature witness, and the shape that revealed
+  it — a census over a product class's own static table, in memory.
+- One boundary where the criterion stops deciding by itself, named in the
+  fourth triage: a repository table used as a test's input versus as the
+  subject of its assertion.
+
+The first two are work. The third is a question for whoever sharpens the
+criterion, and sweeping again before it is answered will produce disputes.

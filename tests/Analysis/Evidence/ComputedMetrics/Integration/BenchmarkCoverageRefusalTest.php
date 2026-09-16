@@ -11,7 +11,7 @@ use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
-final class BenchmarkConsumersCoverageTest extends TestCase
+final class BenchmarkCoverageRefusalTest extends TestCase
 {
     /** @var list<string> */
     private array $fixtureRoots = [];

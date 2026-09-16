@@ -24,6 +24,10 @@ for f in glob.glob('docs/internal/plans/test-structure/measurement/stage-02/tria
         c=l.split('\t')
         if c[1] in ('repo-control','mixed'): tri.append({'path':c[0],'class':c[1],'scope':c[3]})
 corr={'tests/Analysis/Evidence/Measurement/Integration/Identity/RatchetKeyGrammarTest.php':'repo-control'}
+# two-witness-adjudication.md's second correction: DirectiveAuditReportReadingTest
+# moves four methods, not the three the TSV's `scope` column names —
+# `itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday` joins its three siblings.
+scope_corr={'tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php':{'itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday'}}
 fail=[]
 allr=rows+tri
 for r in allr:
@@ -32,7 +36,8 @@ for r in allr:
     if cls=='product-test' and not os.path.exists(r['path']): fail.append(('product-test vanished',r['path']))
     if cls=='mixed' and os.path.exists(r['path']):
         m=set(re.findall(r'public function (it\w+)', open(r['path']).read()))
-        left={x.strip() for x in r['scope'].split(',') if x.strip()} & m
+        scope={x.strip() for x in r['scope'].split(',') if x.strip()} | scope_corr.get(r['path'], set())
+        left=scope & m
         if left: fail.append(('control method still in tests/',r['path']+' -> '+','.join(sorted(left))))
 for k,v in fail: print(f"[{k}] {v}")
 sys.exit(1 if fail else 0)

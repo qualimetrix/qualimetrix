@@ -23,6 +23,7 @@ Available tests:
  - Qualimetrix\Governance\Channel\ChannelLevelRefusalTopologyTest::itIgnoresProseAboutLevelsThatNeverTouchesThePairGrammar
  - Qualimetrix\Governance\Channel\ChannelLevelRefusalTopologyTest::itPinsEveryProductionFileThatReadsDeclaredLevelsWithAReason
  - Qualimetrix\Governance\Channel\ChannelLevelRefusalTopologyTest::itPinsEveryProductionFileThatWordsALevelRefusalWithAReason
+ - Qualimetrix\Governance\Channel\ChannelLevelSelectorVocabularyTest::itParsesEveryLevelOfTheVocabulary
  - Qualimetrix\Governance\Channel\ChannelOrderFixtureDriftTest::itYieldsChannelsInTheOrderTheFixtureRecords
  - Qualimetrix\Governance\Channel\ChannelPresentationCoverageTest::itResolvesARealDescriptionAndAnExistingDocsPageForEveryConfiguredComputedMetricChannel
  - Qualimetrix\Governance\Channel\ChannelPresentationCoverageTest::itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel
@@ -193,6 +194,9 @@ Available tests:
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
  - Qualimetrix\Governance\ConsoleComposition\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
+ - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
+ - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
+ - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itListsEveryRegisteredRule
  - Qualimetrix\Governance\ControlRigLedger\TrackedLedgerNonEmptinessTest::itLoadsTheRepositorysOwnLedger
@@ -217,6 +221,14 @@ Available tests:
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"symbolPath"
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"threshold"
  - Qualimetrix\Governance\DocumentationCensus\RegisteredFormatterDocumentationTest::itUsesRegisteredFormattersInHealthScoreDocumentation
+ - Qualimetrix\Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach
+ - Qualimetrix\Governance\FindingVocabulary\FindingFilterStageMembershipCensusTest::itCoversEveryStageInTheMembershipTable
+ - Qualimetrix\Governance\FindingVocabulary\SeverityVocabularyTest::itExitCodesAreUniqueAcrossNonInfoSeverities
+ - Qualimetrix\Governance\FindingVocabulary\SeverityVocabularyTest::itGivesEveryCaseANonEmptyDisplayName
+ - Qualimetrix\Governance\FindingVocabulary\SeverityVocabularyTest::itInfoIsExitCodeZeroAllOthersNonZero
+ - Qualimetrix\Governance\FindingVocabulary\SuppressionMechanismTest::itHasExactlySevenValues
+ - Qualimetrix\Governance\FindingVocabulary\SuppressionMechanismTest::itKeepsTheLedgerHalvesDistinctFromEveryStageMechanism
+ - Qualimetrix\Governance\FindingVocabulary\SuppressionMechanismTest::itMapsEveryStageToADistinctMechanism
  - Qualimetrix\Governance\FormatOptionKeys\FormatOptionKeyDeclarationTest::itDeclaresEveryFormatOptionKeyItsOwnFormatterTreeReads
  - Qualimetrix\Governance\FormatOptionKeys\FormatOptionKeyDeclarationTest::itDeclaresNoFormatOptionKeyItsOwnFormatterTreeNeverReads
  - Qualimetrix\Governance\FormatOptionKeys\FormatOptionKeyDeclarationTest::itPlacesEveryFormatOptionReaderUnderAFormatterDirectory
@@ -244,10 +256,35 @@ Available tests:
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsDocumentationOnlySchemaDrift
  - Qualimetrix\Governance\FormatOptionKeys\OutputFormatSchemaConsistencyTest::itRejectsProductOnlySchemaDrift
  - Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExpectedKeys
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExplicitProjectFormulas
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itGivesEveryDefaultAClassAndNamespaceFormula
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itGivesEveryDefaultAWarningAndErrorThreshold
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itInvertsEveryDefault
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itPrefixesEveryDefaultKeyWithHealth
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itProjectFormulaInheritance
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itReturnsEveryDefaultAsAComputedMetricDefinition
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itReturnsSixDefaults
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itAdvertisesTheThresholdTheFormulaApplies
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itBandsTheHtmlTooltipAtTheThresholdItAdvertises
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itKeepsEveryDeclaredDivergenceReal
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itShowsOnlyInputsTheFormulaAtThatLevelReads
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"catch"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"class_const_fetch"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"extends"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"implements"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"instanceof"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"intersection_type"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"new"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"property_type"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"static_call"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"static_property_fetch"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"trait_use"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"type_hint"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"union_type"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\MatchModeVocabularyTest::itHasOnlyAnyAndAllCases
  - Qualimetrix\Governance\MeasurementIdentity\ClassProducerCensusTest::itCoversEveryClassMetricProducer
  - Qualimetrix\Governance\MeasurementIdentity\ClassProducerCensusTest::itFindsTheHelperCallSiteOfEveryCoveredProducer
  - Qualimetrix\Governance\MeasurementVocabulary\MetricNameVocabularyTest::itRejectsAKeyThatCollidesWithAnAggregatedSpellingOfAnotherKey
@@ -399,6 +436,8 @@ Available tests:
  - Qualimetrix\Governance\SolePrimitiveOwnership\TraversalCompletenessTest::itFindsNoTraversalControlReturnInProductionVisitors
  - Qualimetrix\Governance\SolePrimitiveOwnership\TraversalCompletenessTest::itUsesForbiddenNamesTakenFromTheVisitorContractAndFindsSourceFilesToScan
  - Qualimetrix\Governance\SolePrimitiveOwnership\VersionRootPackageIndependenceTest::itDoesNotResolveTheVersionThroughTheRootPackage
+ - Qualimetrix\Governance\SymbolVocabulary\SymbolTypeDeclarationPositionCensusTest::itGivesEveryDeclarationKindAPublicationPosition
+ - Qualimetrix\Governance\SymbolVocabulary\SymbolTypeProjectionCensusTest::itCoversEverySymbolType
  - Qualimetrix\Governance\TestSuiteHygiene\CoverageIsRequestedExplicitlyTest::itKeepsTheCoverageReportWritersOutOfTheTrackedConfiguration
  - Qualimetrix\Governance\TestSuiteHygiene\ResidualLimitationsCoverageTest::itKeepsEveryResidualLimitationPinnedByAConcreteTest
  - Qualimetrix\Governance\TestSuiteHygiene\ScratchPathsCarryRealEntropyTest::itFindsNoClockDerivedIdentifierInTheTree
@@ -2222,11 +2261,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSelectsClassesByNamespaceBoundary
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderEvidenceTest::itConstructsWithMetricsAndHealthScores
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itConstructsWithDefaults
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotPartiallyRatchetWhenAConfiguredProjectIsSkipped
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#0
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#1
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#2
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotWriteCollectedDataWhenAnyProjectIsIncomplete
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkCoverageRefusalTest::itDoesNotPartiallyRatchetWhenAConfiguredProjectIsSkipped
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#0
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#1
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#2
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkCoverageRefusalTest::itDoesNotWriteCollectedDataWhenAnyProjectIsIncomplete
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itExitsNonZeroWhenTheWriteLeavesAnUnmeasuredExpectationStanding
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itMarksAGenuinelyUnmeasuredUndeclaredMetricAsAbsentRatherThanZero
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkRegressionClassificationTest::itPrintsAndSeedsHealthTyping
@@ -2248,16 +2287,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itTreatsAnEmptyHealthExclusionListAsNoAdditionalEntries
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itTreatsAnExplicitEmptyComputedMapAsReplacement
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricContributionReaderTest::itUnionsHealthExclusionsInStableSourceOrder
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itExpectedKeys
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itExplicitProjectFormulas
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itGivesEveryDefaultAClassAndNamespaceFormula
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itGivesEveryDefaultAWarningAndErrorThreshold
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itInvertsEveryDefault
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itPrefixesEveryDefaultKeyWithHealth
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itProjectFormulaInheritance
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itReturnsEveryDefaultAsAComputedMetricDefinition
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefaultsTest::itReturnsSixDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itDefaultThresholdValues
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itGetFormulaForLevelClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itGetFormulaForLevelNamespace
@@ -4487,7 +4516,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itAddressesEveryLevelOfItsChannelsWhenNoLevelIsGiven
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itAddressesOnlyTheGivenLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itComposesAGroupSelectorWithALevel
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itParsesEveryLevelOfTheVocabulary
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itReadsEitherHalfOfTextThatDoesNotParseAsAWhole
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itReadsTheTextAfterTheSeparatorWhetherOrNotItIsALevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelSelectorTest::itRefusesTextThatIsNotOne"a level outside the vocabulary"
@@ -4518,14 +4546,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itLeavesTheLowerLayersWarningAloneWhenTheOverlayWritesNullOverIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itLeavesTheLowerLayersWholeRuleConfigAloneWhenTheOverlayWritesNullOverTheRuleName
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itStillLetsAnExplicitFalseSwitchOffARuleWithConfiguredOptions
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itCoversEveryStageInTheMembershipTable
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"baseline"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"git scope"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"namespace exclusion"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"path exclusion"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"suppression"
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingTest::itCarriesNoAcceptedLevelUnlessOneIsGiven
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingTest::itExposesItsChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingTest::itFindingProperties
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingTest::itFindingWithNullMetricValue
@@ -4980,13 +5006,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"error display name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"info display name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"warning display name"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itExitCodesAreUniqueAcrossNonInfoSeverities
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"error exit code is 2"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"info exit code is 0"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGetExitCode"warning exit code is 1"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itGivesEveryCaseANonEmptyDisplayName
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itInfoFromStringValue
- - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itInfoIsExitCodeZeroAllOthersNonZero
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityOrderingByExitCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itSeverityValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itDoesNotTreatAPrefixOfANameAsABinding
@@ -5102,20 +5125,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itSkipsALayerDeclaredPending
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentOnARunNarrowedBelowTheAutoloadRoots
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedExcludeIntegrationTest::itStaysSilentWhenTheExcludeClauseRemovedAClass
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"catch"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"class_const_fetch"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"extends"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"implements"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"instanceof"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"intersection_type"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"new"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"property_type"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"static_call"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"static_property_fetch"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"trait_use"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"type_hint"
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"union_type"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itAppendsAnUnrelatedDirectTokenAfterAliasMembers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itDedupesADirectTokenThatRepeatsAPrecedingAliasMember
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest::itDedupesAcrossOverlappingAliasMembers
@@ -5489,7 +5498,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itExcludesByAnImplementedInterface
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itExposesTheFullMetadataItWasGiven
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itFiresTheExclusionOnTheFirstMatchingCriterionInAnyMode
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itHasOnlyAnyAndAllCases
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itKeepsThePhase1RestrictionRejectingUppercaseInTheStrictConstructor
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itKeepsUnchangedSemanticsWhenNoExcludeIsDeclared
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerDefinitionTest::itLeavesTheCriteriaListEmptyOnANoMatchResult
@@ -6878,7 +6886,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsCircularDependencyPreparationWithoutDoingWorkWhenRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyDetectionWhenRuleDisabled
- - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itCoversEverySymbolType
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a class"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a file"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a function is the same callable level"
@@ -7223,9 +7230,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitOneAsAnInternalError
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesIncompleteAnalysisAtExitFourInTheSharedLadder
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itWiresThePresenterIntoEveryCommandTheRealContainerBuilds
- - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
- - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
- - Qualimetrix\Tests\Infrastructure\Console\Integration\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -7707,9 +7711,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itDoesNotReportAnOverlappingGlobalExcludePathPatternAsInertWhenItIndependentlyMatches
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itReportsAGlobalExcludePathPatternThatMatchedNothingAsInert
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itReportsAPerRuleExcludePathPatternThatMatchedNothingAsInert
- - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itHasExactlySevenValues
- - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itKeepsTheLedgerHalvesDistinctFromEveryStageMechanism
- - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itMapsEveryStageToADistinctMechanism
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
  - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
@@ -8845,7 +8846,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFiltersNonFiniteValues
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithMetrics
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithNullMetrics
- - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itGivesEveryDeclarationKindAPublicationPosition
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itProducesValidJson
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itPublishesTheDeclarationKindAndKeepsTheBucketOrder
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone

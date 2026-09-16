@@ -48,7 +48,7 @@
 # a mistake).
 #
 # The drift guard
-# (tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php)
+# (governance/Channel/ChannelDeclarationFixtureDriftTest.php)
 # compares this file against
 # ChannelDeclarationRegistryInterface::staticDeclarations() in both
 # directions: a channel declared in code but missing here fails, and a line

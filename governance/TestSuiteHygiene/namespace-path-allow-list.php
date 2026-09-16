@@ -17,7 +17,7 @@ declare(strict_types=1);
  */
 
 return [
-    'ceiling' => 60,
+    'ceiling' => 57,
     'rows' => [
         'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php' => 'Qualimetrix\\Tests\\Unit\\Metrics',
         'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',

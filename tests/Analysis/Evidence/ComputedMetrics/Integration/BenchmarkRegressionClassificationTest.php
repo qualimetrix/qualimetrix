@@ -25,7 +25,7 @@ use Symfony\Component\Process\Process;
  *
  * Every case here drives a real subprocess run of the tracked script against
  * a fake `bin/qmx` (see {@see writeFakeQmx()}), the same isolation
- * `BenchmarkConsumersCoverageTest` already uses — no real analysis, no
+ * `BenchmarkCoverageRefusalTest` already uses — no real analysis, no
  * touching the repository's own baseline file.
  */
 final class BenchmarkRegressionClassificationTest extends TestCase
