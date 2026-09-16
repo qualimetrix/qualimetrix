@@ -389,3 +389,40 @@ a `#[Test]` method renamed to the legacy `test…` prefix.
 **This is the stage's own lesson turned on itself** — a claim about a set,
 accepted from a measurement that did not cover the set — and it is recorded
 because the plan's other stages will plant breakages the same way.
+
+### What the second review round replaced
+
+The first round of fixes moved three answers from a model to a measurement and
+then introduced a fourth model on the way in. The corrections:
+
+- **The listing is the authority; the model is triage only.** G2 used to decide
+  a file carried no case before comparing anything with the listing, so a class
+  whose cases come from an abstract base or a trait was refused by name while
+  PHPUnit was running it — measured: an abstract base plus an empty heir in a
+  registered directory is listed by PHPUnit and was refused with "give the file
+  a case, or delete it". Listed classes are now removed before any opinion is
+  formed, which is asserted in its own refusal rather than left to branch order.
+- **Executability is resolved over the corpus, not over one file.** A class
+  declaring no case of its own may inherit every case it runs. Building the
+  ancestry map costs 0.0006 s on top of a parse the guards already pay for, so
+  the "resolving parents is not free" objection did not survive measurement. The
+  silent half closed with it: a second class in a live `*Test.php` whose cases
+  are inherited is listed nowhere and is now refused, where before it was judged
+  not at all.
+- **`PHPUnit\Framework\TestCase` is not the only base in this tree.** The
+  out-of-corpus parents were enumerated: exactly two are test bases
+  (`PHPUnit\Framework\TestCase`, `PHPStan\Testing\RuleTestCase`) and the rest
+  are exceptions, visitors, loggers and rules. Ancestry that leaves the corpus
+  elsewhere does not make a class a test class, which is also what stops the
+  legacy-prefix rule firing on a helper in a `*Test.php`.
+- **The configuration is named, not searched for.** PHPUnit prefers a local
+  `phpunit.xml` over `phpunit.xml.dist`, and that file is git-ignored — so the
+  runner passes `--configuration` in every command it builds and the guard reads
+  the suite names from the path the runner names.
+- **The allow-list ratchet counts namespaces, not rows.** Fixing one violation
+  and introducing another leaves the row count unchanged; the derive now refuses
+  a measurement carrying a namespace the tracked list has no budget for.
+- **Refusal wording claims nothing about cause.** The branch that used to say
+  "register the directory" now says what was measured — that no class from any
+  file in that directory is listed — and names registration as something to
+  check rather than as the diagnosis.

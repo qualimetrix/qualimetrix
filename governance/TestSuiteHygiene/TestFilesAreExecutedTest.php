@@ -28,7 +28,7 @@ use SplFileInfo;
  * guarded — and a second copy is exactly the defect class. So:
  *
  * - what a suite *could* run is `--list-tests` for that suite with no argument
- *   but the configuration;
+ *   but the configuration the runner names;
  * - what `composer check` *does* run is the runner's own per-suite command,
  *   printed by `scripts/phpunit-aggregate.py --print-commands` and executed
  *   verbatim with `--list-tests` appended;
@@ -46,6 +46,17 @@ use SplFileInfo;
  * the answer, and a sentence claiming one would be the second copy this whole
  * group exists to prevent. Judging the file instead of the class would call a
  * file executed because one of its classes was.
+ *
+ * **The listing is the authority and the model is only triage.** A class the
+ * listing names is running, whatever anything here thinks of it, and
+ * {@see unreachableIn()} removes those names before it forms an opinion — so a
+ * listed class cannot be accused by construction rather than by the order of
+ * two branches. {@see TestTree::looksExecutable()} is consulted for one purpose
+ * only: deciding whether a class the listing does *not* name deserves to be
+ * accused, so that a spy, a helper or a fixture rule is not. That predicate
+ * reads the whole corpus, because a class whose cases come from an abstract
+ * base or a trait declares none of its own — judging it by its own body alone
+ * refused a class PHPUnit was running.
  *
  * **`--list-tests` prints class names, not paths**, and the tree still carries
  * test files whose namespace does not follow their path, which `composer
@@ -65,7 +76,10 @@ use SplFileInfo;
  * 3. a case the runner's arguments remove that {@see SILENTLY_EXCLUDED} does
  *    not name;
  * 4. a name in {@see SILENTLY_EXCLUDED} that the runner no longer removes;
- * 5. a suite PHPUnit knows about that the runner does not shard, or the reverse.
+ * 5. a suite the configuration declares that the runner does not shard, or the
+ *    reverse;
+ * 6. a case the runner runs that no suite reaches — the direction the
+ *    difference in 3 would otherwise discard in silence.
  *
  * Refusals 3–5 are why `SuppressionSnapshotFreshnessTest` and
  * `ModularArchitectureGovernanceIntegrationTest` are visible at all: they sit in
@@ -86,8 +100,6 @@ final class TestFilesAreExecutedTest extends TestCase
 {
     private const AGGREGATE = 'scripts/phpunit-aggregate.py';
 
-    private const CONFIGURATION = 'phpunit.xml.dist';
-
     /**
      * Every case `composer check` does not run although the suite reaches it.
      *
@@ -105,7 +117,7 @@ final class TestFilesAreExecutedTest extends TestCase
     /** @var array<string, list<string>> */
     private static array $listings = [];
 
-    /** @var array{phpunit: string, commands: array<string, list<string>>}|null */
+    /** @var array{phpunit: string, configuration: string, commands: array<string, list<string>>}|null */
     private static ?array $aggregate = null;
 
     private static ?string $cacheRoot = null;
@@ -124,16 +136,7 @@ final class TestFilesAreExecutedTest extends TestCase
     #[Test]
     public function itExecutesEveryTestClassTheTreeDeclares(): void
     {
-        $declarations = [];
-        foreach (TestTree::testFiles() as $path) {
-            $declared = TestTree::declarationsIn($path);
-            $declarations[$path] = [
-                'classes' => $declared['classes'],
-                'executable' => $declared['executableClasses'],
-            ];
-        }
-
-        $unreachable = self::unreachableIn($declarations, self::classesIn(self::reachableIds()));
+        $unreachable = self::unreachableIn(self::treeDeclarations(), self::classesIn(self::reachableIds()));
 
         self::assertSame([], $unreachable, \sprintf(
             "%d test class(es) exist in the tree and no configured suite runs them:\n%s",
@@ -199,7 +202,8 @@ final class TestFilesAreExecutedTest extends TestCase
      * declared with nothing in it contributes no identifier to either and is
      * invisible to both. The only place it exists is the configuration file,
      * which is therefore read for its suite names — the names alone, never for
-     * which files a `<directory>` entry claims.
+     * which files a `<directory>` entry claims. The file read is the one the
+     * runner names, not a path spelled again here.
      *
      * An empty suite is not harmless: it is how a suite gets declared ahead of
      * the directories it will hold, and the day those directories arrive they
@@ -215,12 +219,75 @@ final class TestFilesAreExecutedTest extends TestCase
             self::declaredSuites(),
             $shardedInOrder,
             \sprintf(
-                "phpunit.xml.dist and %s disagree about which suites exist.\n"
+                "%s and %s disagree about which suites exist.\n"
                 . 'A suite the runner does not shard is never run by `composer check`, '
                 . 'and a suite it shards that the configuration does not declare refuses the run.',
+                self::aggregate()['configuration'],
                 self::AGGREGATE,
             ),
         );
+    }
+
+    /**
+     * A class some suite lists is running, and nothing here may say otherwise.
+     *
+     * This is the invariant the triage predicate must never be able to break,
+     * so it is asserted rather than left to the order of two branches. The
+     * shapes below are the ones that broke it: a class whose only cases come
+     * from an abstract base, and one whose cases come from a trait. PHPUnit
+     * lists both; a predicate reading only the class body sees no case in
+     * either and used to refuse them by name.
+     */
+    #[Test]
+    public function itNeverAccusesAClassSomeSuiteLists(): void
+    {
+        self::assertSame([], self::unreachableIn(
+            ['acme/InheritedCaseTest.php' => [
+                'classes' => ['Acme\AbstractProbeTestCase', 'Acme\InheritedCaseTest'],
+                'executable' => [],
+            ]],
+            ['Acme\InheritedCaseTest'],
+        ));
+
+        self::assertSame([], self::unreachableIn(
+            ['acme/TraitCaseTest.php' => [
+                'classes' => ['Acme\ProbeCases', 'Acme\TraitCaseTest'],
+                'executable' => [],
+            ]],
+            ['Acme\TraitCaseTest'],
+        ));
+
+        // Even when the triage predicate names it, a listed class is dropped
+        // before any branch can form an opinion about it.
+        self::assertSame([], self::unreachableIn(
+            ['acme/RunsTest.php' => ['classes' => ['Acme\RunsTest'], 'executable' => ['Acme\RunsTest']]],
+            ['Acme\RunsTest'],
+        ));
+    }
+
+    /**
+     * What `composer check` runs is inside what a suite reaches.
+     *
+     * The excluded set is one side of an asymmetric difference, which discards
+     * anything the runner adds instead of naming it. An argument that widened
+     * the executed set would therefore empty both exclusion refusals in
+     * silence; this is the assertion that makes it loud.
+     */
+    #[Test]
+    public function itRunsOnlyCasesSomeSuiteReaches(): void
+    {
+        $beyond = array_values(array_diff(
+            self::idsAcrossSuites(self::executedCommand(...)),
+            self::reachableIds(),
+        ));
+
+        self::assertSame([], $beyond, \sprintf(
+            "%d case(s) run under %s that no suite reaches without its arguments.\n"
+            . "The difference the exclusion refusals measure is only meaningful one way round:\n%s",
+            \count($beyond),
+            self::AGGREGATE,
+            implode("\n", $beyond),
+        ));
     }
 
     /**
@@ -231,10 +298,11 @@ final class TestFilesAreExecutedTest extends TestCase
     public function itRefusesEachWayOnTheSetsItIsGiven(): void
     {
         self::assertSame(
-            ['elsewhere/OrphanTest.php declares Acme\OrphanTest, which no configured suite lists,'
-                . ' and nothing in elsewhere is listed.'
-                . ' Register the directory in phpunit.xml.dist and in the matching branch of currentSuite()'
-                . ' in scripts/generate-modular-architecture-test-inventory.php'],
+            ['elsewhere/OrphanTest.php declares Acme\OrphanTest,'
+                . ' and no class from any file in elsewhere is listed:'
+                . ' check that a <directory> entry in phpunit.xml.dist reaches elsewhere'
+                . ' and that currentSuite() in scripts/generate-modular-architecture-test-inventory.php'
+                . ' has the matching branch, then check the class names'],
             self::unreachableIn(
                 [
                     'acme/RunsTest.php' => ['classes' => ['Acme\RunsTest'], 'executable' => ['Acme\RunsTest']],
@@ -261,14 +329,12 @@ final class TestFilesAreExecutedTest extends TestCase
             ),
         );
 
-        // No class this file declares is listed, and a sibling in the same
-        // directory is: the directory is reached, so registering it is not the
-        // cure. Measured, not inferred from how PHPUnit picks a class.
+        // Nothing in this file is listed and a sibling in the same directory
+        // is. That is all the wording claims: it names no cause, because a
+        // `<directory>` entry is recursive and a directory may hold one file.
         self::assertSame(
             ['acme/NamedElsewhereTest.php declares Acme\AlphaTest, which no configured suite lists,'
-                . ' and no class this file declares is listed although other files in acme are.'
-                . ' The directory is reached, so registering it is not the cure:'
-                . ' PHPUnit does not run every class a file declares'],
+                . ' and no class this file declares is listed although other files in acme are'],
             self::unreachableIn(
                 [
                     'acme/RunsTest.php' => ['classes' => ['Acme\RunsTest'], 'executable' => ['Acme\RunsTest']],
@@ -282,8 +348,8 @@ final class TestFilesAreExecutedTest extends TestCase
         );
 
         self::assertSame(
-            ['acme/EmptyTest.php declares Acme\EmptyTest, and PHPUnit would run no case in this file.'
-                . ' Its directory is not the suspect: give the file a case, or delete it'],
+            ['acme/EmptyTest.php declares Acme\EmptyTest, and no configured suite lists any of them,'
+                . ' nor would any of them run as a case. Give the file a case, or delete it'],
             self::unreachableIn(
                 ['acme/EmptyTest.php' => ['classes' => ['Acme\EmptyTest'], 'executable' => []]],
                 ['Acme\RunsTest'],
@@ -341,6 +407,31 @@ final class TestFilesAreExecutedTest extends TestCase
     }
 
     /**
+     * The corpus as the refusals judge it: what each file declares, and which of
+     * those a class-level answer would expect to run.
+     *
+     * @return array<string, array{classes: list<string>, executable: list<string>}>
+     */
+    private static function treeDeclarations(): array
+    {
+        $index = TestTree::corpusIndex();
+        $declarations = [];
+
+        foreach (TestTree::testFiles() as $path) {
+            $classes = TestTree::declarationsIn($path)['classes'];
+            $declarations[$path] = [
+                'classes' => $classes,
+                'executable' => array_values(array_filter(
+                    $classes,
+                    static fn(string $class): bool => TestTree::looksExecutable($class, $index),
+                )),
+            ];
+        }
+
+        return $declarations;
+    }
+
+    /**
      * @param array<string, array{classes: list<string>, executable: list<string>}> $declarations
      * @param list<string> $reachable classes some suite lists
      *
@@ -348,13 +439,14 @@ final class TestFilesAreExecutedTest extends TestCase
      */
     private static function unreachableIn(array $declarations, array $reachable): array
     {
-        // Whether a directory is reached at all is a measurement over the same
-        // two sets, and it is what separates "nobody registered this directory"
-        // from "the directory runs and this file's classes do not".
-        $reachedDirectories = [];
+        // Whether any file in a directory is listed is a measurement over the
+        // same two sets. It is not the same question as "is the directory
+        // registered" — a `<directory>` entry is recursive and a directory may
+        // hold one file — so it steers the wording, never a claim about cause.
+        $listedDirectories = [];
         foreach ($declarations as $path => $declared) {
             if (array_intersect($declared['classes'], $reachable) !== []) {
-                $reachedDirectories[\dirname($path)] = true;
+                $listedDirectories[\dirname($path)] = true;
             }
         }
 
@@ -366,10 +458,16 @@ final class TestFilesAreExecutedTest extends TestCase
                 continue;
             }
 
-            if ($declared['executable'] === []) {
+            // The listing answers for every name in it, so those names are gone
+            // before any opinion is formed. Nothing below can accuse one.
+            $listed = array_values(array_intersect($declared['classes'], $reachable));
+            $accused = array_values(array_diff($declared['executable'], $reachable));
+            $directory = \dirname($path);
+
+            if ($accused === [] && $listed === []) {
                 $unreachable[] = \sprintf(
-                    '%s declares %s, and PHPUnit would run no case in this file.'
-                    . ' Its directory is not the suspect: give the file a case, or delete it',
+                    '%s declares %s, and no configured suite lists any of them,'
+                    . ' nor would any of them run as a case. Give the file a case, or delete it',
                     $path,
                     implode(', ', $declared['classes']),
                 );
@@ -377,13 +475,7 @@ final class TestFilesAreExecutedTest extends TestCase
                 continue;
             }
 
-            $directory = \dirname($path);
-            $listed = array_intersect($declared['classes'], $reachable);
-            foreach ($declared['executable'] as $class) {
-                if (\in_array($class, $reachable, true)) {
-                    continue;
-                }
-
+            foreach ($accused as $class) {
                 if ($listed !== []) {
                     $unreachable[] = \sprintf(
                         '%s declares %s, which no configured suite lists, although %s in the same file is listed.'
@@ -397,22 +489,22 @@ final class TestFilesAreExecutedTest extends TestCase
                     continue;
                 }
 
-                $unreachable[] = isset($reachedDirectories[$directory])
+                $unreachable[] = isset($listedDirectories[$directory])
                     ? \sprintf(
                         '%s declares %s, which no configured suite lists,'
-                        . ' and no class this file declares is listed although other files in %s are.'
-                        . ' The directory is reached, so registering it is not the cure:'
-                        . ' PHPUnit does not run every class a file declares',
+                        . ' and no class this file declares is listed although other files in %s are',
                         $path,
                         $class,
                         $directory,
                     )
                     : \sprintf(
-                        '%s declares %s, which no configured suite lists, and nothing in %s is listed.'
-                        . ' Register the directory in phpunit.xml.dist and in the matching branch of currentSuite()'
-                        . ' in scripts/generate-modular-architecture-test-inventory.php',
+                        '%s declares %s, and no class from any file in %s is listed:'
+                        . ' check that a <directory> entry in phpunit.xml.dist reaches %s'
+                        . ' and that currentSuite() in scripts/generate-modular-architecture-test-inventory.php'
+                        . ' has the matching branch, then check the class names',
                         $path,
                         $class,
+                        $directory,
                         $directory,
                     );
             }
@@ -523,30 +615,37 @@ final class TestFilesAreExecutedTest extends TestCase
         return array_keys(self::aggregate()['commands']);
     }
 
-    /** @return list<string> the suite names phpunit.xml.dist declares, sorted */
+    /** @return list<string> the suite names the runner's configuration declares, sorted */
     private static function declaredSuites(): array
     {
+        $configuration = self::aggregate()['configuration'];
+
+        $contents = file_get_contents($configuration);
+        if ($contents === false) {
+            throw new LogicException($configuration . ' is not readable');
+        }
+
         $previous = libxml_use_internal_errors(true);
-        $document = simplexml_load_string(TestTree::read(self::CONFIGURATION));
+        $document = simplexml_load_string($contents);
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
         if ($document === false) {
-            throw new LogicException(self::CONFIGURATION . ' is not readable XML');
+            throw new LogicException($configuration . ' is not readable XML');
         }
 
         $names = [];
         foreach ($document->testsuites->testsuite as $suite) {
             $name = (string) $suite['name'];
             if ($name === '') {
-                throw new LogicException(self::CONFIGURATION . ' declares a testsuite without a name');
+                throw new LogicException($configuration . ' declares a testsuite without a name');
             }
 
             $names[] = $name;
         }
 
         if ($names === []) {
-            throw new LogicException(self::CONFIGURATION . ' declares no testsuite');
+            throw new LogicException($configuration . ' declares no testsuite');
         }
 
         sort($names);
@@ -557,11 +656,22 @@ final class TestFilesAreExecutedTest extends TestCase
     /**
      * What a suite could run: the configuration and nothing else.
      *
+     * The configuration is named rather than left to PHPUnit's search, which
+     * would take a local `phpunit.xml` ahead of `phpunit.xml.dist` and measure a
+     * different tree than `composer check` runs. The runner names the same file
+     * in every command it builds, so both sides of the difference read one
+     * configuration and the guard reads its suite names from that same path.
+     *
      * @return list<string>
      */
     private static function reachableCommand(string $suite): array
     {
-        return [self::aggregate()['phpunit'], '--list-tests', '--testsuite=' . $suite];
+        return [
+            self::aggregate()['phpunit'],
+            '--list-tests',
+            '--configuration=' . self::aggregate()['configuration'],
+            '--testsuite=' . $suite,
+        ];
     }
 
     /**
@@ -582,7 +692,7 @@ final class TestFilesAreExecutedTest extends TestCase
     /**
      * The runner's own per-suite commands, asked of the runner.
      *
-     * @return array{phpunit: string, commands: array<string, list<string>>}
+     * @return array{phpunit: string, configuration: string, commands: array<string, list<string>>}
      */
     private static function aggregate(): array
     {
@@ -601,8 +711,13 @@ final class TestFilesAreExecutedTest extends TestCase
             throw new LogicException(self::AGGREGATE . ' did not print readable JSON', 0, $exception);
         }
 
-        if (!\is_array($printed) || !\is_string($printed['phpunit'] ?? null) || !\is_array($printed['commands'] ?? null)) {
-            throw new LogicException(self::AGGREGATE . ' printed no phpunit path and command map');
+        if (
+            !\is_array($printed)
+            || !\is_string($printed['phpunit'] ?? null)
+            || !\is_string($printed['configuration'] ?? null)
+            || !\is_array($printed['commands'] ?? null)
+        ) {
+            throw new LogicException(self::AGGREGATE . ' printed no phpunit path, configuration and command map');
         }
 
         $commands = [];
@@ -627,7 +742,11 @@ final class TestFilesAreExecutedTest extends TestCase
             throw new LogicException(self::AGGREGATE . ' printed no suite command');
         }
 
-        return self::$aggregate = ['phpunit' => $printed['phpunit'], 'commands' => $commands];
+        return self::$aggregate = [
+            'phpunit' => $printed['phpunit'],
+            'configuration' => $printed['configuration'],
+            'commands' => $commands,
+        ];
     }
 
     /**

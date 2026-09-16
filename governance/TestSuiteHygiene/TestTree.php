@@ -11,6 +11,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\NodeVisitorAbstract;
@@ -36,6 +37,10 @@ use SplFileInfo;
  * kept the floors satisfied. The `classmap` entry is deliberately not a root —
  * its files are analyser input that does not comply with PSR-4 on purpose.
  *
+ * **Which class PHPUnit keeps when a file declares several is not modelled
+ * here, or anywhere in this group.** Only whether a given class appeared in a
+ * listing, which is measured.
+ *
  * **Declarations are read from the syntax tree, not from reflection.** The tree
  * still carries test files whose namespace does not follow their path — they
  * are the ones {@see NamespacePathAllowList} tracks, and `composer
@@ -50,8 +55,23 @@ final class TestTree
      */
     public const TEST_ATTRIBUTE = 'PHPUnit\Framework\Attributes\Test';
 
-    /** @var array<string, array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}> */
+    /**
+     * Base classes that make a descendant a test class although the corpus
+     * cannot see them. Measured, not assumed: these are the only two
+     * out-of-corpus parents in this tree that are test bases at all — every
+     * other one is an exception, a visitor, a logger or a rule. A base class
+     * from some third namespace would leave its descendants unjudged, which is
+     * why the list is here rather than implied.
+     *
+     * @var list<string>
+     */
+    private const FOREIGN_TEST_BASE_PREFIXES = ['PHPUnit\\', 'PHPStan\\Testing\\'];
+
+    /** @var array<string, array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}> */
     private static array $declarations = [];
+
+    /** @var array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>|null */
+    private static ?array $corpusIndex = null;
 
     public static function projectRoot(): string
     {
@@ -207,7 +227,7 @@ final class TestTree
     /**
      * What a file declares, cached per path because two guards ask for it.
      *
-     * @return array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}
+     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}
      */
     public static function declarationsIn(string $relativePath): array
     {
@@ -218,20 +238,19 @@ final class TestTree
     }
 
     /**
-     * The namespaces a file opens, the class-likes it declares, and which of
-     * those PHPUnit would run.
+     * What a file opens, declares, and inherits from.
      *
-     * `executableClasses` asks what makes a method run rather than what a class
-     * inherits from: a concrete class declaring a public, non-abstract method
-     * that either carries `#[Test]` or is named `test…`. Both forms were measured
-     * running in this tree. Inheritance is the wrong question here because the
-     * base class may be anywhere, and a guard that resolved it would be loading
-     * the very classes that cannot be autoloaded.
+     * `declarations` carries, per class-like, the three facts a corpus-wide
+     * answer is assembled from: whether it is a concrete class, whether it
+     * declares a method that would run as a case, and which classes and traits
+     * it takes members from. None of them answers on its own — a class whose
+     * only cases come from an abstract base declares none itself — so the
+     * answer is computed across the whole corpus by {@see looksExecutable()}.
      *
-     * Which class PHPUnit keeps when a file declares several is not modelled
-     * anywhere in this group — only whether a given class was listed.
+     * Trait `insteadof` and `as` adaptations are not read: they rename and
+     * resolve members, and this only asks whether a trait brings a case at all.
      *
-     * @return array{namespaces: list<string>, classes: list<string>, executableClasses: list<string>}
+     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}
      */
     public static function parseDeclarations(string $displayPath, string $code): array
     {
@@ -269,30 +288,162 @@ final class TestTree
         $traverser->addVisitor($collector);
         $traverser->traverse($statements);
 
-        // Attribute names resolve as the traversal descends, so a class read on
-        // the way in cannot be judged until the whole file has been walked.
+        // Names resolve as the traversal descends, so a class read on the way
+        // in cannot be judged until the whole file has been walked.
         $classes = [];
-        $executable = [];
+        $declarations = [];
         foreach ($collector->classes as ['name' => $name, 'node' => $node]) {
             $classes[] = $name;
-            if (self::isExecutableClass($node)) {
-                $executable[] = $name;
+            $declarations[$name] = [
+                'concrete' => $node instanceof Class_ && !$node->isAbstract(),
+                'declaresCase' => self::declaresCase($node),
+                'parents' => self::parentsOf($node),
+            ];
+        }
+
+        return ['namespaces' => $collector->namespaces, 'classes' => $classes, 'declarations' => $declarations];
+    }
+
+    /**
+     * The classes and traits a declaration takes members from.
+     *
+     * @return list<string>
+     */
+    private static function parentsOf(ClassLike $node): array
+    {
+        $parents = [];
+
+        if ($node instanceof Class_ && $node->extends !== null) {
+            $parents[] = $node->extends->toString();
+        }
+
+        if ($node instanceof Class_ || $node instanceof Trait_) {
+            foreach ($node->getTraitUses() as $use) {
+                foreach ($use->traits as $trait) {
+                    $parents[] = $trait->toString();
+                }
             }
         }
 
-        return ['namespaces' => $collector->namespaces, 'classes' => $classes, 'executableClasses' => $executable];
+        return $parents;
     }
 
-    /** Whether PHPUnit would discover at least one case in this declaration. */
-    public static function isExecutableClass(ClassLike $node): bool
+    private static function declaresCase(ClassLike $node): bool
     {
-        if (!$node instanceof Class_ || $node->isAbstract()) {
-            return false;
-        }
-
         foreach ($node->getMethods() as $method) {
             if (self::isExecutableMethod($method)) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Every class in the corpus, by name, with what it declares and inherits.
+     *
+     * Built once from {@see testFiles()} alone: a handed-in source must never
+     * reach it, or a probe class would join the map the real scan is judged
+     * against.
+     *
+     * @return array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>
+     */
+    public static function corpusIndex(): array
+    {
+        if (self::$corpusIndex !== null) {
+            return self::$corpusIndex;
+        }
+
+        $index = [];
+        foreach (self::testFiles() as $path) {
+            foreach (self::declarationsIn($path)['declarations'] as $name => $declaration) {
+                $index[$name] = $declaration;
+            }
+        }
+
+        return self::$corpusIndex = $index;
+    }
+
+    /**
+     * Whether PHPUnit would find a case in this class, answered over an index
+     * rather than over one file.
+     *
+     * This is a *triage* predicate and nothing else: it decides whether a class
+     * the listing does not name deserves to be accused, so that a helper, a spy
+     * or a fixture rule is not. A class the listing does name is answered for by
+     * PHPUnit, and no answer here may overrule that.
+     *
+     * @param array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}> $index
+     */
+    public static function looksExecutable(string $class, array $index): bool
+    {
+        $declaration = $index[$class] ?? null;
+        if ($declaration === null || !$declaration['concrete']) {
+            return false;
+        }
+
+        $ancestry = self::ancestryOf($class, $index);
+        if (!self::reachesATestBase($ancestry, $index)) {
+            return false;
+        }
+
+        foreach ($ancestry as $name) {
+            if ($index[$name]['declaresCase'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether this class is one PHPUnit would treat as a test class at all.
+     *
+     * @param array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}> $index
+     */
+    public static function reachesATestBaseClass(string $class, array $index): bool
+    {
+        return self::reachesATestBase(self::ancestryOf($class, $index), $index);
+    }
+
+    /**
+     * @param array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}> $index
+     * @param array<string, bool> $seen
+     *
+     * @return list<string> the class itself and everything it takes members from
+     */
+    private static function ancestryOf(string $class, array $index, array $seen = []): array
+    {
+        if (isset($seen[$class])) {
+            return [];
+        }
+
+        $seen[$class] = true;
+        $ancestry = [$class];
+        foreach ($index[$class]['parents'] ?? [] as $parent) {
+            foreach (self::ancestryOf($parent, $index, $seen) as $name) {
+                $ancestry[] = $name;
+            }
+        }
+
+        return $ancestry;
+    }
+
+    /**
+     * @param list<string> $ancestry
+     * @param array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}> $index
+     */
+    private static function reachesATestBase(array $ancestry, array $index): bool
+    {
+        foreach ($ancestry as $name) {
+            if (isset($index[$name])) {
+                continue;
+            }
+
+            foreach (self::FOREIGN_TEST_BASE_PREFIXES as $prefix) {
+                if (str_starts_with($name, $prefix)) {
+                    return true;
+                }
             }
         }
 
@@ -319,13 +470,17 @@ final class TestTree
         return str_starts_with($method->name->toString(), 'test');
     }
 
+    /**
+     * `NameResolver` replaces each name node with a fully qualified one, so the
+     * name read here is already resolved and an aliased import compares equal.
+     * Reading a `resolvedName` attribute alongside it would be a second path
+     * that never runs.
+     */
     public static function carriesTestAttribute(ClassMethod $method): bool
     {
         foreach ($method->attrGroups as $group) {
             foreach ($group->attrs as $attribute) {
-                $resolved = $attribute->name->getAttribute('resolvedName');
-                $name = $resolved instanceof Node\Name ? $resolved->toString() : $attribute->name->toString();
-                if ($name === self::TEST_ATTRIBUTE) {
+                if ($attribute->name->toString() === self::TEST_ATTRIBUTE) {
                     return true;
                 }
             }

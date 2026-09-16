@@ -6,7 +6,9 @@ Available tests:
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itExecutesEveryTestClassTheTreeDeclares
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itFindsNoExecutedClassOutsideTheCorpusItJudges
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itNamesEveryCaseTheRunnerExcludesFromCheck
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itNeverAccusesAClassSomeSuiteLists
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itRefusesEachWayOnTheSetsItIsGiven
+ - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itRunsOnlyCasesSomeSuiteReaches
  - Qualimetrix\Governance\TestSuiteHygiene\TestFilesAreExecutedTest::itShardsEverySuiteTheConfigurationDeclares
  - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itFindsNoTestMethodWhoseNameAndAttributeDisagree
  - Qualimetrix\Governance\TestSuiteHygiene\TestMethodsAreReachableTest::itReadsEveryTestRootItJudges

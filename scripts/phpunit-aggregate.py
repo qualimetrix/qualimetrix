@@ -17,8 +17,8 @@ Usage:
     gets it from here rather than from a second reading of this file, and
     shard_command() is the single place both the print and the run come from.
 
-The command retains the aggregate's no-coverage, benchmark, and live-freshness
-exclusions. Suite output is captured per shard, then published only after the
+The command names the configuration explicitly and retains the aggregate's
+no-coverage, benchmark, and live-freshness exclusions. Suite output is captured per shard, then published only after the
 run in the fixed PHPUnit-suite order.
 """
 
@@ -40,7 +40,12 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parent.parent
 SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
+# Named rather than left to PHPUnit's search, which takes a local phpunit.xml
+# ahead of phpunit.xml.dist: that file is git-ignored, so a developer's tree
+# would run a different configuration than CI while both reported success.
+CONFIGURATION = ROOT / "phpunit.xml.dist"
 COMMON_ARGUMENTS = (
+    f"--configuration={CONFIGURATION}",
     "--no-coverage",
     "--exclude-group=benchmark",
     "--exclude-group=live-freshness",
@@ -407,7 +412,11 @@ def main(arguments: Sequence[str] | None = None) -> int:
             print("phpunit aggregate refusal: --print-commands needs --cache-root", file=sys.stderr)
             return REFUSAL_EXIT
         json.dump(
-            {"phpunit": str(args.phpunit), "commands": printable_commands(args.phpunit, args.cache_root)},
+            {
+                "phpunit": str(args.phpunit),
+                "configuration": str(CONFIGURATION),
+                "commands": printable_commands(args.phpunit, args.cache_root),
+            },
             sys.stdout,
             indent=2,
         )

@@ -248,6 +248,70 @@ class PhpunitAggregateTest(unittest.TestCase):
             self.assertEqual(str(FAKE_PHPUNIT), command[0])
             self.assertIn(f"--testsuite={suite}", command)
 
+    def test_both_command_builders_select_from_one_argument_tuple(self):
+        """The partition proof and the shard must not select differently.
+
+        The runner builds two commands: one lists tests to prove the suites
+        partition the aggregate, the other runs a shard. A selecting argument
+        added to only one of them would prove coverage over a set nobody runs,
+        or run a set nobody proved. Stripping the one argument each adds leaves
+        two identical lists, which is the property.
+        """
+        runner = load_runner_module()
+        phpunit = Path("vendor/bin/phpunit")
+        cache_directory = Path("/tmp/qmx-cache/Unit")
+
+        listing = [
+            argument
+            for argument in runner.list_command(phpunit, "Unit")
+            if argument != "--list-tests"
+        ]
+        shard = [
+            argument
+            for argument in runner.shard_command(phpunit, "Unit", cache_directory)
+            if not argument.startswith("--cache-directory=")
+        ]
+
+        self.assertEqual(listing, shard)
+
+    def test_every_command_names_the_configuration_instead_of_searching_for_it(self):
+        """A local phpunit.xml outranks phpunit.xml.dist in PHPUnit's search.
+
+        That file is git-ignored, so leaving the choice to PHPUnit would let a
+        developer's tree run one configuration while CI ran another, both green.
+        """
+        runner = load_runner_module()
+        phpunit = Path("vendor/bin/phpunit")
+        expected = f"--configuration={PROJECT_ROOT / 'phpunit.xml.dist'}"
+
+        self.assertIn(expected, runner.list_command(phpunit, None))
+        self.assertIn(expected, runner.list_command(phpunit, "Unit"))
+        for suite, command in runner.printable_commands(phpunit, Path("/tmp/qmx-cache")).items():
+            self.assertIn(expected, command, suite)
+
+    def test_print_commands_names_the_configuration_it_passes(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-print-configuration-") as directory:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(RUNNER),
+                    f"--phpunit={FAKE_PHPUNIT}",
+                    "--print-commands",
+                    f"--cache-root={directory}",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+            )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        printed = json.loads(completed.stdout)
+        self.assertEqual(str(PROJECT_ROOT / "phpunit.xml.dist"), printed["configuration"])
+        for suite, command in printed["commands"].items():
+            self.assertIn(f"--configuration={printed['configuration']}", command, suite)
+
     def test_print_commands_refuses_without_a_cache_root(self):
         completed = subprocess.run(
             [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}", "--print-commands"],

@@ -94,6 +94,29 @@ final class TestNamespacesFollowTheirPathTest extends TestCase
         self::assertSame('Acme\Tests\Deep\Unit', NamespacePathAllowList::expectedNamespace($roots, 'probe/deep/Unit/ThreeTest.php'));
         self::assertNull(NamespacePathAllowList::expectedNamespace($roots, 'elsewhere/FourTest.php'));
 
+        // The ratchet's second arm: a file that moved keeps the namespace it
+        // declares and is absorbed, a fresh violation brings a namespace the
+        // list has no budget for and is not.
+        self::assertSame([], NamespacePathAllowList::untrackedIn(
+            ['probe/Unit/MovedTest.php' => 'Acme\\Tests\\Wrong'],
+            ['probe/OldPlaceTest.php' => 'Acme\\Tests\\Wrong'],
+        ));
+        self::assertSame(
+            ['probe/Unit/FreshTest.php declares Acme\\Tests\\BrandNew'],
+            NamespacePathAllowList::untrackedIn(
+                ['probe/Unit/FreshTest.php' => 'Acme\\Tests\\BrandNew'],
+                ['probe/OldPlaceTest.php' => 'Acme\\Tests\\Wrong'],
+            ),
+        );
+        // One row's worth of budget covers one file, not two.
+        self::assertSame(
+            ['probe/Unit/SecondTest.php declares Acme\\Tests\\Wrong'],
+            NamespacePathAllowList::untrackedIn(
+                ['probe/Unit/FirstTest.php' => 'Acme\\Tests\\Wrong', 'probe/Unit/SecondTest.php' => 'Acme\\Tests\\Wrong'],
+                ['probe/OldPlaceTest.php' => 'Acme\\Tests\\Wrong'],
+            ),
+        );
+
         self::assertSame(
             [
                 'probe/Unit/GlobalTest.php' => '(global namespace)',

@@ -22,13 +22,29 @@ use Throwable;
  * it wrote, {@see MEASUREMENT_FAILED} when the scan it would have written from
  * failed and the tracked file was left alone.
  *
- * **The list carries its own ceiling, and deriving may only lower it.** Without
- * that, the cure for a fresh violation would be to re-run the derive: the new
- * row would join the list, both refusals would go green, and the tree would have
- * grown a violation by running a command. So a measurement above the tracked
- * ceiling writes nothing and exits {@see ABOVE_CEILING}, leaving the guard red
- * until the namespace is actually fixed. Raising the ceiling is possible — it is
- * one hand-edited number in the diff, which is the admission this design wants.
+ * **Deriving may shrink the list and rewrite its keys, and nothing else.**
+ * Without that, the cure for a fresh violation would be to re-run the derive:
+ * the new row would join the list, both refusals would go green, and the tree
+ * would have grown a violation by running a command. Two things are therefore
+ * checked before anything is written:
+ *
+ * - the count, against the ceiling the list carries — a measurement above it
+ *   exits {@see ABOVE_CEILING};
+ * - the declared namespaces themselves, against the ones already tracked — a
+ *   measurement carrying a namespace the list does not already allow, or more
+ *   copies of one than it allows, exits {@see UNTRACKED_VIOLATION}.
+ *
+ * The second is what the count alone missed: fixing one violation and
+ * introducing another leaves the row count unchanged. Moving a file changes a
+ * row's key and keeps its value, which is why the check is on values.
+ *
+ * The blind spot it keeps, named rather than left to be discovered: two files
+ * declaring the *same* wrong namespace, one fixed and one freshly introduced,
+ * are indistinguishable from that file having moved. Closing it would need the
+ * move itself to be evidence, which nothing here has.
+ *
+ * Raising the ceiling is possible — it is one hand-edited number in the diff,
+ * which is the admission this design wants.
  *
  * **It is a tracked file of its own, not a constant inside the guard.** A green
  * check with a silent exemption would be a lie; a list in the diff is an
@@ -46,6 +62,12 @@ final class NamespacePathAllowList
 
     /** The tree carries more violations than the tracked ceiling admits; nothing was written. */
     public const ABOVE_CEILING = 6;
+
+    /** The tree carries a violation the tracked list does not already allow; nothing was written. */
+    public const UNTRACKED_VIOLATION = 7;
+
+    /** The tracked list itself could not be read, so there was nothing to derive against. */
+    public const UNREADABLE_LIST = 8;
 
     /**
      * @return array<string, string> project-relative path => the namespace the
@@ -218,8 +240,20 @@ final class NamespacePathAllowList
      */
     public static function derive(): int
     {
+        // Read outside the measurement's try: a tracked file in the wrong shape
+        // is the one failure the reader fixes in one move, and reporting it as
+        // "the scan failed" would send them to look at the tree instead.
         try {
             $ceiling = self::ceiling();
+            $allowed = self::load();
+        } catch (Throwable $error) {
+            fwrite(\STDERR, 'Cannot read ' . self::PATH . ', so nothing was written: '
+                . $error->getMessage() . "\n");
+
+            return self::UNREADABLE_LIST;
+        }
+
+        try {
             $violations = self::measure();
         } catch (Throwable $error) {
             fwrite(\STDERR, 'The scan this list would be measured from failed, so nothing was written: '
@@ -241,6 +275,20 @@ final class NamespacePathAllowList
             return self::ABOVE_CEILING;
         }
 
+        $untracked = self::untrackedIn($violations, $allowed);
+        if ($untracked !== []) {
+            fwrite(\STDERR, \sprintf(
+                "%d file(s) declare a namespace %s does not already allow, so nothing was written.\n"
+                . "Moving a file keeps the namespace it declares; this does not, so it is a new violation\n"
+                . "and this command will not absorb it:\n%s\n",
+                \count($untracked),
+                self::PATH,
+                implode("\n", $untracked),
+            ));
+
+            return self::UNTRACKED_VIOLATION;
+        }
+
         if (!self::write(self::render($violations, min($ceiling, \count($violations))))) {
             return self::MEASUREMENT_FAILED;
         }
@@ -249,6 +297,34 @@ final class NamespacePathAllowList
         echo "This was a write, not a check: run the Governance suite to be judged against it.\n";
 
         return self::WROTE;
+    }
+
+    /**
+     * Files whose declared namespace the tracked list does not already carry,
+     * counted rather than merely named: two files may legitimately declare one
+     * wrong namespace, and a third may not.
+     *
+     * @param array<string, string> $violations path => declared namespace
+     * @param array<string, string> $allowed the tracked rows
+     *
+     * @return list<string>
+     */
+    public static function untrackedIn(array $violations, array $allowed): array
+    {
+        $budget = array_count_values(array_values($allowed));
+
+        $untracked = [];
+        foreach ($violations as $path => $namespace) {
+            if (($budget[$namespace] ?? 0) > 0) {
+                --$budget[$namespace];
+
+                continue;
+            }
+
+            $untracked[] = $path . ' declares ' . $namespace;
+        }
+
+        return $untracked;
     }
 
     /**

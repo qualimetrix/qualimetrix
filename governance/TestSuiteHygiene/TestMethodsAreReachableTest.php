@@ -34,7 +34,19 @@ use PHPUnit\Framework\TestCase;
  * - carrying the attribute under a name no reader recognises as a case.
  *
  * A method that is neither named nor attributed as a test is a helper, and
- * helpers are not this guard's business at any visibility.
+ * helpers are not this guard's business at any visibility. **A helper named
+ * `itXxx` is not allowed, though**, whatever its visibility: the name is
+ * reserved for cases here, and a lost case and a misnamed helper are
+ * indistinguishable from outside the author's head. The visibility branch is
+ * checked first so that one method yields one diagnosis rather than a second
+ * one after the first is obeyed.
+ *
+ * **The legacy-prefix branch applies only to classes that reach a test base.**
+ * A `*Test.php` may declare spies, fixture rules and traits beside its test
+ * class, and PHPUnit runs none of them; a helper there named `testable()` is
+ * not running under any prefix. Ancestry is resolved over the corpus rather
+ * than assumed, and `PHPUnit\Framework\TestCase` is not the only base in this
+ * tree — see {@see TestTree::looksExecutable()}.
  *
  * **The attribute is read from the syntax tree, not from reflection.** The tree
  * still carries test files whose namespace does not follow their path, so
@@ -54,8 +66,9 @@ final class TestMethodsAreReachableTest extends TestCase
     {
         $violations = [];
 
+        $index = TestTree::corpusIndex();
         foreach (TestTree::testFiles() as $path) {
-            foreach (self::violationsIn($path, TestTree::read($path)) as $violation) {
+            foreach (self::violationsIn($path, TestTree::read($path), $index) as $violation) {
                 $violations[] = $violation;
             }
         }
@@ -82,8 +95,9 @@ final class TestMethodsAreReachableTest extends TestCase
             namespace Acme\Probe;
 
             use PHPUnit\Framework\Attributes\Test as RenamedAttribute;
+            use PHPUnit\Framework\TestCase;
 
-            final class ProbeTest
+            final class ProbeTest extends TestCase
             {
                 #[RenamedAttribute]
                 public function itRuns(): void
@@ -108,6 +122,10 @@ final class TestMethodsAreReachableTest extends TestCase
                 {
                 }
 
+                private function itIsAPrivateHelper(): void
+                {
+                }
+
                 #[RenamedAttribute]
                 protected function itLostItsVisibility(): void
                 {
@@ -117,23 +135,35 @@ final class TestMethodsAreReachableTest extends TestCase
                 {
                 }
             }
+
+            final class ProbeFixture
+            {
+                public function testable(): void
+                {
+                }
+            }
             PHP;
 
-        $violations = self::violationsIn('probe/ProbeTest.php', $source);
+        $declarations = TestTree::parseDeclarations('probe/ProbeTest.php', $source)['declarations'];
+        $violations = self::violationsIn('probe/ProbeTest.php', $source, $declarations);
 
         self::assertSame(
             [
-                'probe/ProbeTest.php:14 Acme\Probe\ProbeTest::itIsNeverCalled()'
+                'probe/ProbeTest.php:15 Acme\Probe\ProbeTest::itIsNeverCalled()'
                 . ' is named itXxx but carries no #[Test] attribute, so PHPUnit never calls it',
-                'probe/ProbeTest.php:18 Acme\Probe\ProbeTest::runsUnderTheWrongName()'
+                'probe/ProbeTest.php:19 Acme\Probe\ProbeTest::runsUnderTheWrongName()'
                 . ' carries #[Test] but is not named itXxx',
-                'probe/ProbeTest.php:32 Acme\Probe\ProbeTest::itLostItsVisibility()'
-                . ' reads as a case but is not public, so PHPUnit never calls it',
-                'probe/ProbeTest.php:37 Acme\Probe\ProbeTest::testUnderTheLegacyPrefix()'
+                'probe/ProbeTest.php:33 Acme\Probe\ProbeTest::itIsAPrivateHelper()'
+                . ' is named itXxx or carries #[Test] but is not public, so PHPUnit never calls it',
+                'probe/ProbeTest.php:37 Acme\Probe\ProbeTest::itLostItsVisibility()'
+                . ' is named itXxx or carries #[Test] but is not public, so PHPUnit never calls it',
+                'probe/ProbeTest.php:42 Acme\Probe\ProbeTest::testUnderTheLegacyPrefix()'
                 . ' is public and named test..., so PHPUnit runs it under the legacy prefix'
                 . ' instead of the itXxx convention',
             ],
             $violations,
+            'ProbeFixture::testable() is public and prefixed, and PHPUnit runs no case in a class'
+            . ' that reaches no test base — so it is absent from this list.',
         );
     }
 
@@ -160,10 +190,15 @@ final class TestMethodsAreReachableTest extends TestCase
     }
 
     /**
+     * The index is the corpus ancestry map, or one built from this source alone
+     * when the caller hands over a probe.
+     *
+     * @param array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}> $index
+     *
      * @return list<string> one line per offending method, each naming the file,
      *                      the line, the class and the method
      */
-    private static function violationsIn(string $displayPath, string $code): array
+    private static function violationsIn(string $displayPath, string $code, array $index): array
     {
         $statements = (new ParserFactory())->createForNewestSupportedVersion()->parse($code);
         if ($statements === null) {
@@ -196,7 +231,7 @@ final class TestMethodsAreReachableTest extends TestCase
 
         $violations = [];
         foreach ($collector->methods as ['class' => $class, 'method' => $method]) {
-            $complaint = self::complaintAbout($method);
+            $complaint = self::complaintAbout($method, TestTree::reachesATestBaseClass($class, $index));
             if ($complaint === null) {
                 continue;
             }
@@ -215,20 +250,23 @@ final class TestMethodsAreReachableTest extends TestCase
     }
 
     /** The one thing wrong with this method, or null when nothing is. */
-    private static function complaintAbout(ClassMethod $method): ?string
+    private static function complaintAbout(ClassMethod $method, bool $inATestClass): ?string
     {
         $named = preg_match('/^it[A-Z]/', $method->name->toString()) === 1;
         $attributed = TestTree::carriesTestAttribute($method);
+
+        // Visibility first: a non-public method is unreachable whatever else is
+        // true of it, and diagnosing the attribute first would send the reader
+        // back here after they added one.
+        if (($named || $attributed) && !$method->isPublic()) {
+            return 'is named itXxx or carries #[Test] but is not public, so PHPUnit never calls it';
+        }
 
         if ($named && !$attributed) {
             return 'is named itXxx but carries no #[Test] attribute, so PHPUnit never calls it';
         }
 
-        if (($named || $attributed) && !$method->isPublic()) {
-            return 'reads as a case but is not public, so PHPUnit never calls it';
-        }
-
-        if (TestTree::isExecutableMethod($method) && TestTree::carriesLegacyTestPrefix($method)) {
+        if ($inATestClass && TestTree::isExecutableMethod($method) && TestTree::carriesLegacyTestPrefix($method)) {
             return 'is public and named test..., so PHPUnit runs it under the legacy prefix'
                 . ' instead of the itXxx convention';
         }
