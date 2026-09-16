@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\DocumentationConsistency\Integration;
+namespace Qualimetrix\Governance\FormatOptionKeys;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Tests\System\DocumentationConsistency\Support\OutputFormatObservation;
-use Qualimetrix\Tests\System\DocumentationConsistency\Support\OutputFormatScenario;
-use Qualimetrix\Tests\System\DocumentationConsistency\Support\PublishedSchema;
-use Qualimetrix\Tests\System\DocumentationConsistency\Support\SchemaNodeInventory;
 use SimpleXMLElement;
 
 /**

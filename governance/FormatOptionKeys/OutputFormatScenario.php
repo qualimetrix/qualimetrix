@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\DocumentationConsistency\Support;
+namespace Qualimetrix\Governance\FormatOptionKeys;
 
 /**
  * One run of the product the guard is allowed to read a schema from.
@@ -38,6 +38,6 @@ final class OutputFormatScenario
 
     public function path(): string
     {
-        return \dirname(__DIR__) . '/Fixtures/OutputFormats/' . $this->directory;
+        return __DIR__ . '/Fixtures/OutputFormats/' . $this->directory;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
+namespace Qualimetrix\Governance\ConfigurationVocabulary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 

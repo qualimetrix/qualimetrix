@@ -110,7 +110,7 @@ final class TestFilesAreExecutedTest extends TestCase
     private const SILENTLY_EXCLUDED = [
         'Qualimetrix\Governance\ModularOwnership\ModularArchitectureGovernanceIntegrationTest'
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
-        'Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration\SuppressionSnapshotFreshnessTest'
+        'Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest'
             . '::itMatchesAFreshSelfAnalysisOfSrc',
     ];
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit;
+namespace Qualimetrix\Governance\HealthVocabulary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Support\FormulaKneeReader;
 
 /**
  * What the report says a health score was made of, against what makes it.

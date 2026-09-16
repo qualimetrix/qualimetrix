@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\DocumentationConsistency\Support;
+namespace Qualimetrix\Governance\FormatOptionKeys;
 
 /**
  * Walks an observed report and names every schema node in it.

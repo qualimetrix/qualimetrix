@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration;
+namespace Qualimetrix\Governance\GeneratedArtifactFreshness;
 
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,7 +51,7 @@ final class SuppressionSnapshotFreshnessTest extends TestCase
 
     private function root(): string
     {
-        $root = realpath(__DIR__ . '/../../../../..');
+        $root = realpath(__DIR__ . '/../..');
         self::assertIsString($root);
 
         return $root;

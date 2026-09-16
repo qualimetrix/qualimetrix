@@ -93,10 +93,8 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
     'tests/Analysis/Policy/Architecture/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
-    'tests/Analysis/Configuration/Integration/Loader/YamlNormalizationCharacterizationTest.php',
     'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
-    'tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
@@ -660,9 +658,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'governance/')) {
         return ['Architecture.Governance', 'P8'];
     }
-    if (str_starts_with($path, 'tests/System/DocumentationConsistency/')) {
-        return ['System/DocumentationConsistency', 'P8'];
-    }
     if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
         return ['System/TestRunnerConfiguration', 'P8'];
     }
@@ -1042,7 +1037,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/FindingProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/Reporting/Formatter/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
@@ -1058,8 +1052,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Formatter/Sarif/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/Reporting/Formatter/Suppressed/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/System/DocumentationConsistency/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
@@ -1077,6 +1069,14 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/ConsoleComposition/', 'suite' => 'Governance'],
         ['prefix' => 'governance/SolePrimitiveOwnership/', 'suite' => 'Governance'],
         ['prefix' => 'governance/RepositoryEntrypoints/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ConfigurationVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/HealthVocabulary/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1255,7 +1255,6 @@ function fixtureTail(string $path): string
         'tests/Analysis/Policy/Architecture/Fixtures/',
         'tests/Analysis/Policy/Baseline/Fixtures/',
         'tests/Analysis/Policy/Inline/Fixtures/',
-        'tests/System/DocumentationConsistency/Fixtures/',
         'tests/Architecture/Fixtures/',
         'tests/Fixtures/',
         'tests/Fixture/',
@@ -1494,7 +1493,6 @@ function orphanDispositionContents(): string
 function systemSupportContents(string $root): string
 {
     $rows = [
-        ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/OutputFormatSchemaConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],

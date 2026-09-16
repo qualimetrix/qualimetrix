@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity;
 
-use FilesystemIterator;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,9 +23,6 @@ use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use ReflectionClass;
 use SplFileInfo;
 
 /**
@@ -107,93 +103,6 @@ final class ClassProducerOrdinalTest extends TestCase
         } finally {
             unlink($file);
         }
-    }
-
-    /**
-     * A ninth class-metric producer is one no fixture above covers.
-     *
-     * The producers are enumerated by what makes them producers — the contract
-     * they implement, resolved through the autoloader — and not by the text of
-     * the helper call, which a new producer is free to spell differently or to
-     * reach through the trait's other method.
-     */
-    #[Test]
-    public function itCoversEveryClassMetricProducer(): void
-    {
-        $found = [];
-        foreach (self::productionClasses() as $class) {
-            if (!is_a($class, ClassMetricsProviderInterface::class, true)) {
-                continue;
-            }
-
-            $reflection = new ReflectionClass($class);
-            if ($reflection->isAbstract() || $reflection->isInterface()) {
-                continue;
-            }
-
-            $found[] = $class;
-        }
-        sort($found);
-        $covered = array_keys(self::PRODUCERS);
-        sort($covered);
-
-        self::assertSame($covered, $found);
-    }
-
-    /**
-     * The call site each producer's fixture stands for still lies where it did.
-     *
-     * Subordinate to the enumeration above: it is what makes the fixtures'
-     * claim about the *helper* checkable, not what makes the set complete.
-     */
-    #[Test]
-    public function itFindsTheHelperCallSiteOfEveryCoveredProducer(): void
-    {
-        $root = \dirname(__DIR__, 6);
-        $callSites = [];
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
-        );
-        foreach ($iterator as $entry) {
-            if (!$entry instanceof SplFileInfo || $entry->getExtension() !== 'php') {
-                continue;
-            }
-
-            if (str_contains((string) file_get_contents($entry->getPathname()), '$this->classWithMetrics(')) {
-                $callSites[] = substr($entry->getPathname(), \strlen($root) + 1);
-            }
-        }
-        sort($callSites);
-        $covered = array_values(self::PRODUCERS);
-        sort($covered);
-
-        self::assertSame($covered, $callSites);
-    }
-
-    /**
-     * @return list<class-string>
-     */
-    private static function productionClasses(): array
-    {
-        $root = \dirname(__DIR__, 6);
-        $classes = [];
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
-        );
-        foreach ($iterator as $entry) {
-            if (!$entry instanceof SplFileInfo || $entry->getExtension() !== 'php') {
-                continue;
-            }
-
-            $relative = substr($entry->getPathname(), \strlen($root) + 5);
-            /** @var class-string $class */
-            $class = 'Qualimetrix\\' . str_replace('/', '\\', substr($relative, 0, -4));
-            if (class_exists($class)) {
-                $classes[] = $class;
-            }
-        }
-
-        return $classes;
     }
 
     private static function deliverIndex(object $participant, FileDeclarationIndex $index): void

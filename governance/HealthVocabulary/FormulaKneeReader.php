@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Support;
+namespace Qualimetrix\Governance\HealthVocabulary;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Symfony\Component\ExpressionLanguage\Node\BinaryNode;

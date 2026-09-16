@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Formatter\Unit;
+namespace Qualimetrix\Governance\FormatOptionKeys;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -250,6 +250,6 @@ final class FormatOptionKeyDeclarationTest extends TestCase
 
     private function projectRoot(): string
     {
-        return \dirname(__DIR__, 4);
+        return \dirname(__DIR__, 2);
     }
 }

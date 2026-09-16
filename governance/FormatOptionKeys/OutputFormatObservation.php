@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\DocumentationConsistency\Support;
+namespace Qualimetrix\Governance\FormatOptionKeys;
 
 use RuntimeException;
 
@@ -142,7 +142,7 @@ final class OutputFormatObservation
 
     public static function repositoryRoot(): string
     {
-        return \dirname(__DIR__, 4);
+        return \dirname(__DIR__, 2);
     }
 
     /**
