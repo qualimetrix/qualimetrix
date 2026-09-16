@@ -2528,6 +2528,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"return"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"return"

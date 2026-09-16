@@ -140,6 +140,8 @@ final class TypeCoverageRuleTest extends TestCase
      *
      * @param Dimension $dimension
      */
+    #[Test]
+    #[DataProvider('dimensions')]
     public function itAliasesItsOwnTwoBoundariesOnly(array $dimension): void
     {
         $alias = $dimension['alias'];
