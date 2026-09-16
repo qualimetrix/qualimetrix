@@ -7373,34 +7373,30 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
  - Qualimetrix\Tests\Infrastructure\Integration\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itFormatsContext
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itHandlesEmptyContext
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itIncludesTimestampInOutput
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itInterpolatesPlaceholders
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itLogsDifferentLogLevels
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itLogsToOutput
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itRespectsMinLevel
- - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itRespectsVerbosityLevels
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itDelegatesToContextData
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itDelegatesToLoggerInHolder
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itDelegatesToMultipleLogLevels
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itDelegatesToNullLoggerInitially
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itReactsToDynamicLoggerChange
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itSupportsAllPsrLogLevels
- - Qualimetrix\Tests\Infrastructure\Logging\DelegatingLoggerTest::itSupportsStringableMessages
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itAppendsToExistingFile
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itCreatesDirectory
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itHandlesEmptyContext
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itInterpolatesPlaceholders
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itRespectsMinLevel
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itWritesJsonLines
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itWritesMultipleLogEntries
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itWritesTimestampInIso8601Format
- - Qualimetrix\Tests\Infrastructure\Logging\FileLoggerTest::itWritesToFile
- - Qualimetrix\Tests\Infrastructure\Logging\LoggerHolderTest::itCanReplaceLogger
- - Qualimetrix\Tests\Infrastructure\Logging\LoggerHolderTest::itCanSetCustomLogger
- - Qualimetrix\Tests\Infrastructure\Logging\LoggerHolderTest::itInitiallyContainsNullLogger
- - Qualimetrix\Tests\Infrastructure\Logging\LoggerHolderTest::itReturnsTheSameInstanceOnMultipleGetterCalls
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itFormatsContext
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itHandlesEmptyContext
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itIncludesTimestampInOutput
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itInterpolatesPlaceholders
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itLogsDifferentLogLevels
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itLogsToOutput
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itRespectsMinLevel
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\ConsoleLoggerTest::itRespectsVerbosityLevels
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itDelegatesToContextData
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itDelegatesToLoggerInHolder
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itDelegatesToMultipleLogLevels
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itDelegatesToNullLoggerInitially
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itReactsToDynamicLoggerChange
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsAllPsrLogLevels
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsStringableMessages
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itAppendsToExistingFile
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itCreatesDirectory
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itHandlesEmptyContext
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itInterpolatesPlaceholders
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRespectsMinLevel
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itWritesJsonLines
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itWritesMultipleLogEntries
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itWritesTimestampInIso8601Format
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itWritesToFile
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itAppliesLogLevelToFileLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itCreatesCompositeLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itCreatesConsoleLoggerAtDefaultVerbosity
@@ -7409,6 +7405,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itCreatesNullLoggerWhenQuiet
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itHandlesEmptyLogFilePath
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerFactoryTest::itRespectsConfiguredConsoleLogLevel
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanReplaceLogger
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanSetCustomLogger
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itInitiallyContainsNullLogger
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itReturnsTheSameInstanceOnMultipleGetterCalls
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itRejectsNegativeWorkerCounts
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationResolverTest::itUsesTheLastWorkerContribution
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\ParallelConfigurationStoreTest::itResetsToAutomaticWorkerSelection
