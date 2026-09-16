@@ -90,6 +90,10 @@
             <directory>governance/RuleOptionKeys</directory>
             <directory>governance/Channel</directory>
             <directory>governance/ThresholdKeys</directory>
+            <directory>governance/RuleDeclaration</directory>
+            <directory>governance/RatchetArtifact</directory>
+            <directory>governance/PlanningRecords</directory>
+            <directory>governance/DocumentationCensus</directory>
         </testsuite>
     </testsuites>
 

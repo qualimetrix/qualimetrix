@@ -1074,6 +1074,10 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/RuleOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/Channel/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ThresholdKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RuleDeclaration/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RatchetArtifact/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PlanningRecords/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DocumentationCensus/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1491,7 +1495,7 @@ function orphanDispositionContents(): string
 function systemSupportContents(string $root): string
 {
     $rows = [
-        ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
+        ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/OutputFormatSchemaConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
         ['System/TestRunnerConfiguration', 'tests/System/TestRunnerConfiguration/Unit/CoverageIsRequestedExplicitlyTest.php', 'Repository test-runner configuration guard.', 'Unit'],
         ['System/ScratchPathIsolation', 'tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php', 'Repository scratch-path isolation guard.', 'Unit'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity;
+namespace Qualimetrix\Governance\RatchetArtifact;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -68,7 +68,7 @@ final class RatchetKeyGrammarTest extends TestCase
     /** @return list<string> */
     private static function declarationKeys(): array
     {
-        $baseline = json_decode((string) file_get_contents(\dirname(__DIR__, 6) . '/qmx-baseline.json'), true);
+        $baseline = json_decode((string) file_get_contents(\dirname(__DIR__, 2) . '/qmx-baseline.json'), true);
         self::assertIsArray($baseline);
         self::assertIsArray($baseline['entries'] ?? null);
 

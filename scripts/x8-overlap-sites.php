@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Enumerates overlap-spelling literal sites using the guard's own optics.
  *
  * The guard this measures is
- * `tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php`. It
+ * `governance/RuleDeclaration/RuleIdentifierLiteralGuardTest.php`. It
  * used to subtract every `MetricName` value from its ownership map, so every
  * literal whose spelling is both a channel code and a metric key was invisible
  * to it. The overlap census exposed those sites; removing the subtraction cured every
@@ -46,7 +46,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
-const GUARD_CLASS = 'Qualimetrix\\Tests\\Analysis\\Finding\\Integration\\RuleIdentifierLiteralGuardTest';
+const GUARD_CLASS = 'Qualimetrix\\Governance\\RuleDeclaration\\RuleIdentifierLiteralGuardTest';
 
 /** @var list<string> $arguments */
 $arguments = array_slice($argv ?? [], 1);

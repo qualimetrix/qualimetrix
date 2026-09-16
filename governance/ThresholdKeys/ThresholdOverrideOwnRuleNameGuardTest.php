@@ -61,7 +61,7 @@ use RuntimeException;
  *   is found by token type, which already excludes docblocks and comments (the
  *   tokenizer folds them into one comment token) and string literals (a
  *   different token type) — matching the precedent in
- *   {@see RuleIdentifierLiteralGuardTest} that a regex cannot tell a real
+ *   {@see \Qualimetrix\Governance\RuleDeclaration\RuleIdentifierLiteralGuardTest} that a regex cannot tell a real
  *   reference from the same text elsewhere. The one declaration
  *   (`function getThresholdOverride(...)` in `AnalysisContext.php`) is
  *   recognised and skipped. Every occurrence *on a recognized context* must be

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\RuleDeclaration;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -649,6 +649,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
     private static function projectRoot(): string
     {
-        return \dirname(__DIR__, 4);
+        return \dirname(__DIR__, 2);
     }
 }

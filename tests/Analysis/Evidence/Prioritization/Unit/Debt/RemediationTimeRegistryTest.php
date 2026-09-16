@@ -59,7 +59,7 @@ final class RemediationTimeRegistryTest extends TestCase
     /**
      * No fallback remains: `MINUTES_BY_RULE` and `DEFAULT_MINUTES` are gone,
      * and every registered rule declares its own minutes on its own class
-     * (see {@see RuleRemediationMinutesCoverageTest}). A name absent from the
+     * (see {@see \Qualimetrix\Governance\RuleDeclaration\RuleRemediationMinutesCoverageTest}). A name absent from the
      * injected map is not a legitimately unknown rule to silently default
      * for — it means a finding carries a rule name no rule declared.
      */

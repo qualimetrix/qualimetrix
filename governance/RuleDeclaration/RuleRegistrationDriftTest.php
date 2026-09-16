@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Integration\DependencyInjection;
+namespace Qualimetrix\Governance\RuleDeclaration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -69,7 +69,7 @@ final class RuleRegistrationDriftTest extends TestCase
     private static function ruleClassesOnDisk(): array
     {
         $classes = [];
-        $root = \dirname(__DIR__, 3) . '/src';
+        $root = \dirname(__DIR__, 2) . '/src';
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/Analysis'));
 
         /** @var SplFileInfo $file */

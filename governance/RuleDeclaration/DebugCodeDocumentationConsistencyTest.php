@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
+namespace Qualimetrix\Governance\RuleDeclaration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,7 +17,7 @@ final class DebugCodeDocumentationConsistencyTest extends TestCase
     #[Test]
     public function itKeepsTheDocumentedSeverityInSyncWithTheRuleConstant(): void
     {
-        $doc = file_get_contents(\dirname(__DIR__, 5) . '/website/docs/rules/code-smell.md');
+        $doc = file_get_contents(\dirname(__DIR__, 2) . '/website/docs/rules/code-smell.md');
         self::assertIsString($doc);
 
         self::assertSame(

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration;
+namespace Qualimetrix\Governance\RuleDeclaration;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -95,7 +95,7 @@ final class CodeSmellRuleContractTest extends TestCase
      */
     private function scanCodeSmellRules(): iterable
     {
-        $dir = \dirname(__DIR__, 5) . '/src/Analysis/Evidence/CodeSmell';
+        $dir = \dirname(__DIR__, 2) . '/src/Analysis/Evidence/CodeSmell';
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
         );
