@@ -86,6 +86,8 @@
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>
+            <directory>governance/Occurrence</directory>
+            <directory>governance/RuleOptionKeys</directory>
         </testsuite>
     </testsuites>
 

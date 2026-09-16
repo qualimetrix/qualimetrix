@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit;
+namespace Qualimetrix\Governance\RuleOptionKeys;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -275,7 +275,7 @@ Sites: " . implode('; ', $reading->unresolvedDetail),
      */
     private static function optionsClassesUnderSource(): array
     {
-        $root = \dirname(__DIR__, 5) . '/src';
+        $root = \dirname(__DIR__, 2) . '/src';
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
 
         $found = [];

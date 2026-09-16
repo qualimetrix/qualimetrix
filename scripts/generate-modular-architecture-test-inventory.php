@@ -1070,6 +1070,8 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
         ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RuleOptionKeys/', 'suite' => 'Governance'],
     ];
 }
 

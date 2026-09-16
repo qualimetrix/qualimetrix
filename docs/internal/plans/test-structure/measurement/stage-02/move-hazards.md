@@ -28,8 +28,16 @@ PHP returns `[]`. A control whose claim is "every X has property Y" is
 Every package's DoD therefore includes both:
 
 ```
-grep -rn 'dirname(__DIR__, *[^2)]' governance/     # must print nothing
+grep -rnoE 'dirname\(__DIR__, *[0-9]+\)' governance/ | grep -v ', *2)'   # must print nothing
 ```
+
+The obvious spelling of that check does not work, and the first package caught
+it. `grep -rn 'dirname(__DIR__, *[^2)]'` looks like it excludes 2, but ` *`
+backtracks to zero repetitions and `[^2)]` then matches the **space** after the
+comma, so the pattern accuses `, 2)` and `, 4)` alike. It can never redden,
+which is the same defect class as the vacuous population it was written to
+catch. Before trusting the corrected command, get its refusal: plant a
+`dirname(__DIR__, 4)` under `governance/`, watch it be named, remove it.
 
 and a per-file check that the population the control walks is non-empty. Several
 controls already assert this themselves (`RatchetKeyGrammarTest` carries

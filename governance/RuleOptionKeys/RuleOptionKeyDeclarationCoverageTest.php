@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit;
+namespace Qualimetrix\Governance\RuleOptionKeys;
 
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -472,7 +472,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
             return $files;
         }
 
-        $root = \dirname(__DIR__, 5);
+        $root = \dirname(__DIR__, 2);
         $files = [];
 
         foreach (['src', 'tests'] as $tree) {
