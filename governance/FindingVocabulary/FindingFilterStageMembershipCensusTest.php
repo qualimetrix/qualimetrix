@@ -8,11 +8,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest;
 
 /**
  * Split off from `FindingFilterStageTest` (which keeps the hand-pinned
  * membership table itself): every case is covered by that table; a new one
  * must not default into the measured set by being forgotten there.
+ *
+ * Reads `FindingFilterStageTest::provideStageMembership()` directly rather
+ * than a copy — the table IS the behavioural test's case list, so a census
+ * over its own copy would only prove the copy covers the enum, never the
+ * table the behavioural test actually executes.
  */
 #[CoversClass(FindingFilterStage::class)]
 final class FindingFilterStageMembershipCensusTest extends TestCase
@@ -22,21 +28,9 @@ final class FindingFilterStageMembershipCensusTest extends TestCase
     {
         $covered = array_map(
             static fn(array $case): FindingFilterStage => $case[0],
-            iterator_to_array(self::provideStageMembership()),
+            iterator_to_array(FindingFilterStageTest::provideStageMembership()),
         );
 
         self::assertSame(FindingFilterStage::cases(), array_values($covered));
-    }
-
-    /**
-     * @return iterable<string, array{FindingFilterStage, bool}>
-     */
-    private static function provideStageMembership(): iterable
-    {
-        yield 'suppression' => [FindingFilterStage::Suppression, true];
-        yield 'path exclusion' => [FindingFilterStage::PathExclusion, true];
-        yield 'namespace exclusion' => [FindingFilterStage::NamespaceExclusion, true];
-        yield 'baseline' => [FindingFilterStage::Baseline, false];
-        yield 'git scope' => [FindingFilterStage::GitScope, false];
     }
 }

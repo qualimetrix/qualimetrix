@@ -16,22 +16,31 @@ being accepted. One was partly refuted by measurement; the rest stand.
 The first fix question is not "which line" but "what produced several of
 these", so the twelve rows collapse into five mechanisms.
 
-### A. A reference living in prose has no resolver — 8 sites
+### A. A reference living in prose has no resolver — 7 named, 6 fixed, 2 more found along the way
 
 `codex-04`, `claude-04`, `claude-08`, and `claude-07` in its naming half.
 
 Every **executable** reference to a moved class was repointed, which is
 measured: PHPStan is clean, the directive stand reports `0 not as declared`,
-and the aggregate partitions. Every reference in a **comment** was not. Seven
-paths that resolved on `52eae218` do not resolve now, three of them in
-production docblocks under `src/` that tell a reader where to put a channel
-declaration; an eighth sits in a comment inside a relocated fixture.
+and the aggregate partitions. Every reference in a **comment** was not.
+`claude-04` names seven paths that resolved on `52eae218` and do not resolve
+now, three of them in production docblocks under `src/` that tell a reader
+where to put a channel declaration; `codex-04` finds one of the same seven
+(`declared.txt`'s drift-guard comment) independently rather than an eighth,
+so the named population is seven, not eight.
 
 No package could have gone red on this: the only literal resolver in the
 repository, `assertPathLiteralsResolve()`, looks inside one generator. This is
 the answer to the brief's seam question — the address no package covered.
 
-**Fixed here:** the eight sites. **Not fixed here:** the absence of a resolver.
+**Fixed here:** six of the seven named sites, plus two the fix round found by
+sweeping class references rather than paths (`Finding.php`,
+`RuleExclusionStatsTest.php`) — eight sites in the commit, none of them a
+duplicate of another. **Not fixed here, and still stale today:** the seventh
+named site, `finding-gate/README.md:912`, which still names
+`tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php`; the
+class now lives at `governance/Channel/ChannelLevelDeclarationDriftTest.php`.
+Also not fixed here: the absence of a resolver.
 Building one is a new guard and this stage adds none; it is recorded as the
 stage's principal inheritance.
 
