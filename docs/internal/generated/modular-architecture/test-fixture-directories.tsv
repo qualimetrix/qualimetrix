@@ -1,4 +1,5 @@
 current_directory	subject_owners	closure_packages	disposition
+governance/Channel/Fixtures	Architecture.Governance	P8	"Move atomically with the owning subject."
 tests/Analysis/Configuration/Fixtures	Analysis/Configuration	P3	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures	Analysis/Evidence/Measurement	P3,P7	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GlobalNamespaceOnly	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
@@ -8,8 +9,6 @@ tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/Repository	Analys
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/Service	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/Service/Auth	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/ValueObject	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
-tests/Analysis/Finding/Fixtures	Analysis/Finding	P8	"Move atomically with the owning subject."
-tests/Analysis/Finding/Fixtures/Channels	Analysis/Finding	P8	"Move atomically with the owning subject."
 tests/Analysis/Policy/Architecture/Fixtures	Analysis/Policy/Architecture	P4	"Move atomically with the owning subject."
 tests/Analysis/Policy/Architecture/Fixtures/CaptureBindingSample	Analysis/Policy/Architecture	P4	"Move atomically with the owning subject."
 tests/Analysis/Policy/Architecture/Fixtures/CaptureBindingSample/Module	Analysis/Policy/Architecture	P4	"Move atomically with the owning subject."

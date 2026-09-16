@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -60,7 +60,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     /**
      * The count is asserted so that a silently shrinking enumeration cannot
      * pass by agreeing with itself on a smaller set. It is obtained, not
-     * remembered: `grep -vc '^#\|^$' tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
+     * remembered: `grep -vc '^#\|^$' governance/Channel/Fixtures/declared.txt`.
      */
     private const int DECLARED_CHANNEL_COUNT = 58;
 
@@ -465,7 +465,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      */
     private static function linesOfFixture(string $name): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/' . $name;
+        $path = __DIR__ . '/Fixtures/' . $name;
         $contents = file_get_contents($path);
 
         if ($contents === false) {

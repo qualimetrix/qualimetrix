@@ -75,7 +75,6 @@ return [
         'tests/Infrastructure/Profiler/Unit/Export/JsonExporterTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler\\Export',
         'tests/Infrastructure/Profiler/Unit/ProfilerTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
         'tests/Infrastructure/Profiler/Unit/SpanTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
-        'tests/System/DocumentationConsistency/Integration/ChannelPublicationConsistencyTest.php' => 'Qualimetrix\\Tests\\Integration\\Documentation',
         'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php' => 'Qualimetrix\\Tests\\Integration\\Documentation',
         'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',
         'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',

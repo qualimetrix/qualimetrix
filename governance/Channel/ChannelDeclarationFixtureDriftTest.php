@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +23,7 @@ use RuntimeException;
 
 /**
  * Drift guard between the production container's STATIC channel
- * declarations and the tracked fixture at `tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
+ * declarations and the tracked fixture at `governance/Channel/Fixtures/declared.txt`.
  *
  * The fixture is the oracle, not this test's own expectations and not the
  * integration suite's coverage: a channel a rule declares but the fixture
@@ -54,7 +54,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $key,
                 $expected,
                 \sprintf(
-                    'Channel "%s" is statically declared in code but missing from tests/Analysis/Finding/Fixtures/Channels/declared.txt.'
+                    'Channel "%s" is statically declared in code but missing from governance/Channel/Fixtures/declared.txt.'
                     . ' Add a line for it — this fixture, not the test suite, is what the drift guard trusts.',
                     $key,
                 ),
@@ -77,7 +77,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $key,
                 $actual,
                 \sprintf(
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt lists "%s", but no rule declares it any more — remove the'
+                    'governance/Channel/Fixtures/declared.txt lists "%s", but no rule declares it any more — remove the'
                     . ' stale line (or move it to excluded.txt if the channel now deliberately declares no baseline'
                     . ' support).',
                     $key,
@@ -239,7 +239,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      */
     private static function readExcludedFixtureKeys(): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/excluded.txt';
+        $path = __DIR__ . '/Fixtures/excluded.txt';
         $contents = file_get_contents($path);
 
         if ($contents === false) {
@@ -310,7 +310,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      */
     private static function readFixture(): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/declared.txt';
+        $path = __DIR__ . '/Fixtures/declared.txt';
         $contents = file_get_contents($path);
 
         if ($contents === false) {

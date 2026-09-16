@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,9 +51,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelLevelDeclarationDriftTest extends TestCase
 {
-    private const string OBSERVATION_ORACLE = 'tests/Analysis/Finding/Fixtures/Channels/observed-levels.tsv';
+    private const string OBSERVATION_ORACLE = 'governance/Channel/Fixtures/observed-levels.tsv';
 
-    private const string DECLARED_CHANNELS = 'tests/Analysis/Finding/Fixtures/Channels/declared.txt';
+    private const string DECLARED_CHANNELS = 'governance/Channel/Fixtures/declared.txt';
 
     /** @var array<string, list<string>>|null channel key => observed level values */
     private static ?array $observed = null;

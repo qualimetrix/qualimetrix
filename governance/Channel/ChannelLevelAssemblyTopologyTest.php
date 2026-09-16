@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use FilesystemIterator;
 use PhpParser\Node;
@@ -196,7 +196,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
 
     private static function sourceRoot(): string
     {
-        return \dirname(__DIR__, 4) . '/src';
+        return \dirname(__DIR__, 2) . '/src';
     }
 
     private static function relative(string $file): string

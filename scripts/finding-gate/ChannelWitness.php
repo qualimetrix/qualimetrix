@@ -10,7 +10,7 @@ namespace QmxFindingGate;
  * Static declarations come from the candidate container; the open
  * `computed.*` / `health.*` family is resolvable only once a case's
  * configuration has resolved, so it is asked per case. The tracked fixture
- * `tests/Analysis/Finding/Fixtures/Channels/declared.txt` is asked the same
+ * `governance/Channel/Fixtures/declared.txt` is asked the same
  * question independently: two artifacts disagreeing is the cheapest detector we
  * have, so their disagreement is its own failure rather than a tie broken
  * silently.
@@ -35,7 +35,7 @@ namespace QmxFindingGate;
  */
 final class ChannelWitness
 {
-    private const FIXTURE = 'tests/Analysis/Finding/Fixtures/Channels/declared.txt';
+    private const FIXTURE = 'governance/Channel/Fixtures/declared.txt';
 
     /** @var array{static: array<string, list<string>>, computed: array<string, list<string>>, levels: list<string>}|null */
     private ?array $tree = null;

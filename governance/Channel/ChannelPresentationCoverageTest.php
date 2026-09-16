@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -136,6 +136,6 @@ final class ChannelPresentationCoverageTest extends TestCase
 
     private static function docsRoot(): string
     {
-        return \dirname(__DIR__, 4) . '/website/docs';
+        return \dirname(__DIR__, 2) . '/website/docs';
     }
 }

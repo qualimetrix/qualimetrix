@@ -107,7 +107,7 @@ final readonly class Finding
      * one into its name, and nothing on this object repeats it. Emission
      * therefore cannot disagree with what is published, and what a channel
      * *declares* is compared against this by
-     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest}
+     * {@see \Qualimetrix\Governance\Channel\ChannelLevelDeclarationDriftTest}
      * over the whole corpus.
      */
     public function level(): SymbolLevel

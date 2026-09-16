@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Integration\Documentation;
+namespace Qualimetrix\Governance\Channel;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -308,7 +308,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$projectRoot = \dirname(__DIR__, 4);
+        self::$projectRoot = \dirname(__DIR__, 2);
     }
 
     #[Test]
@@ -417,7 +417,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
     {
         $configErrors = [];
 
-        foreach (explode("\n", $this->readFile('tests/Analysis/Finding/Fixtures/Channels/declared.txt')) as $line) {
+        foreach (explode("\n", $this->readFile('governance/Channel/Fixtures/declared.txt')) as $line) {
             $line = trim($line);
 
             if ($line === '' || str_starts_with($line, '#') || !str_ends_with($line, ' config-error')) {

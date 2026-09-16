@@ -28,7 +28,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
  * The end-to-end properties — every declared channel has a producer, the
  * reverse lookup covers the mechanisms a file-name scan cannot see — are
  * checked against the real container in
- * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest}.
+ * {@see \Qualimetrix\Governance\Channel\ChannelUniverseCoverageTest}.
  */
 #[CoversClass(ChannelUniverse::class)]
 final class ChannelUniverseTest extends TestCase

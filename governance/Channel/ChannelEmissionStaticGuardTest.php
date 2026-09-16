@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use FilesystemIterator;
 use PhpParser\Node\Arg;
@@ -467,7 +467,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
     private static function projectRoot(): string
     {
-        return \dirname(__DIR__, 4);
+        return \dirname(__DIR__, 2);
     }
 
     /**
@@ -1033,7 +1033,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      */
     private static function readExcludedFixtureKeys(): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/excluded.txt';
+        $path = __DIR__ . '/Fixtures/excluded.txt';
         $contents = file_get_contents($path);
 
         if ($contents === false) {

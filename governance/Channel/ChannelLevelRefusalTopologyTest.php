@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -360,7 +360,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      */
     private static function scan(callable $detector): array
     {
-        $root = \dirname(__DIR__, 4);
+        $root = \dirname(__DIR__, 2);
         $found = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),

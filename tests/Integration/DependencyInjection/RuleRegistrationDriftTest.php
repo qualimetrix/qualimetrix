@@ -30,7 +30,7 @@ use SplFileInfo;
  * That gap was theoretical while every capability globbed `**\/*Rule.php`. It
  * stopped being theoretical when `DesignConfigurator` began naming its rules
  * one by one, which it does because the order channels enter the universe is
- * published (see the fixture `Fixtures/Channels/order.txt`) and a glob would
+ * published (see the fixture `governance/Channel/Fixtures/order.txt`) and a glob would
  * have the file system decide it. The explicit list buys a decided order and
  * costs the automatic net; this test is the net, and it is written over every
  * capability rather than over Design alone, because the next configurator to

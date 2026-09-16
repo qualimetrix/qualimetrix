@@ -165,11 +165,11 @@ const P3_TEST_PATHS = [
 
 /** @var list<string> Exact Finding test closure; future siblings require an ownership decision. */
 const P6_A_FINDING_TEST_PATHS = [
-    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
-    'tests/Analysis/Finding/Fixtures/Channels/excluded.txt',
+    'governance/Channel/Fixtures/declared.txt',
+    'governance/Channel/Fixtures/excluded.txt',
     'tests/Analysis/Finding/Integration/ChannelCoverageTest.php',
-    'tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php',
-    'tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php',
+    'governance/Channel/ChannelDeclarationFixtureDriftTest.php',
+    'governance/Channel/ChannelEmissionStaticGuardTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
     'tests/Analysis/Finding/Support/FindingFactory.php',
@@ -1072,6 +1072,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
         ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
         ['prefix' => 'governance/RuleOptionKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/Channel/', 'suite' => 'Governance'],
     ];
 }
 

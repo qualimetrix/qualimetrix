@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +13,7 @@ use RuntimeException;
 
 /**
  * Drift guard on the ORDER of the channel universe, against the tracked
- * fixture at `tests/Analysis/Finding/Fixtures/Channels/order.txt`.
+ * fixture at `governance/Channel/Fixtures/order.txt`.
  *
  * The order is observable. `DirectiveNameHints` scores candidates with a
  * stable `asort`, so two names at equal Levenshtein distance from a
@@ -34,7 +34,7 @@ use RuntimeException;
 #[CoversClass(ChannelUniverseInterface::class)]
 final class ChannelOrderFixtureDriftTest extends TestCase
 {
-    private const string FIXTURE = '/Fixtures/Channels/order.txt';
+    private const string FIXTURE = '/Fixtures/order.txt';
 
     #[Test]
     public function itYieldsChannelsInTheOrderTheFixtureRecords(): void
@@ -46,7 +46,7 @@ final class ChannelOrderFixtureDriftTest extends TestCase
             $expected,
             $actual,
             'The order of the channel universe no longer matches'
-            . ' tests/Analysis/Finding/Fixtures/Channels/order.txt. That order is published: it breaks ties'
+            . ' governance/Channel/Fixtures/order.txt. That order is published: it breaks ties'
             . " between equidistant names in a \"did you mean\" suggestion, so a finding's text moved with it."
             . ' The usual cause is a producer registered in a new place in a configurator, or a producer kind'
             . ' collected as a block instead of in registration order. Update the fixture only after deciding'
@@ -76,7 +76,7 @@ final class ChannelOrderFixtureDriftTest extends TestCase
      */
     private static function readFixture(): array
     {
-        $path = \dirname(__DIR__) . self::FIXTURE;
+        $path = __DIR__ . self::FIXTURE;
         $contents = file_get_contents($path);
 
         if ($contents === false) {
