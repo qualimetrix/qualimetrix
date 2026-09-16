@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\TestSuiteHygiene;
 
-use JsonException;
 use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassLike;
@@ -15,9 +14,6 @@ use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * A test method is reachable only when its name and its attribute agree.
@@ -35,12 +31,11 @@ use SplFileInfo;
  * loading a class by its expected name would skip exactly the files most likely
  * to be wrong. Parsing reads every file the same way and needs no autoloader.
  *
- * **Scope is the PSR-4 dev roots**, taken from `composer.json`. That is what
- * makes a `*Test.php` a test class rather than a fixture: the corpus files the
- * finding gate analyses, and the tooling helpers under `scripts/`, live outside
- * those roots and are deliberately not judged by this rule. A root registered
- * for autoloading is in scope from the moment it is registered, so a new one
- * cannot be added without also being covered.
+ * **Scope is {@see TestTree}'s corpus**, the PSR-4 dev roots taken from
+ * `composer.json`. That is what makes a `*Test.php` a test class rather than a
+ * fixture: the corpus files the finding gate analyses, and the tooling helpers
+ * under `scripts/`, live outside those roots and are deliberately not judged by
+ * this rule.
  */
 final class TestMethodsAreReachableTest extends TestCase
 {
@@ -51,11 +46,8 @@ final class TestMethodsAreReachableTest extends TestCase
     {
         $violations = [];
 
-        foreach (self::testFiles() as $path) {
-            $contents = file_get_contents($path);
-            self::assertIsString($contents, $path);
-
-            foreach (self::violationsIn(self::relativePath($path), $contents) as $violation) {
+        foreach (TestTree::testFiles() as $path) {
+            foreach (self::violationsIn($path, TestTree::read($path)) as $violation) {
                 $violations[] = $violation;
             }
         }
@@ -134,15 +126,15 @@ final class TestMethodsAreReachableTest extends TestCase
     {
         $perRoot = [];
 
-        foreach (self::testRoots() as $root) {
-            $perRoot[$root] = \count(self::testFilesIn(self::projectRoot() . '/' . $root));
+        foreach (TestTree::roots() as $root) {
+            $perRoot[$root] = \count(TestTree::testFilesIn($root));
         }
 
         self::assertArrayHasKey('tests', $perRoot);
         self::assertArrayHasKey('governance', $perRoot);
         self::assertGreaterThan(500, $perRoot['tests']);
         self::assertGreaterThan(0, $perRoot['governance']);
-        self::assertGreaterThan(500, \count(self::testFiles()));
+        self::assertGreaterThan(500, \count(TestTree::testFiles()));
     }
 
     /**
@@ -219,79 +211,5 @@ final class TestMethodsAreReachableTest extends TestCase
         }
 
         return false;
-    }
-
-    /** @return list<string> */
-    private static function testFiles(): array
-    {
-        $files = [];
-
-        foreach (self::testRoots() as $root) {
-            foreach (self::testFilesIn(self::projectRoot() . '/' . $root) as $file) {
-                $files[] = $file;
-            }
-        }
-
-        sort($files);
-
-        return $files;
-    }
-
-    /** @return list<string> */
-    private static function testFilesIn(string $directory): array
-    {
-        $files = [];
-        $walk = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-            $directory,
-            RecursiveDirectoryIterator::SKIP_DOTS,
-        ));
-
-        /** @var SplFileInfo $entry */
-        foreach ($walk as $entry) {
-            if ($entry->isFile() && str_ends_with($entry->getFilename(), 'Test.php')) {
-                $files[] = $entry->getPathname();
-            }
-        }
-
-        sort($files);
-
-        return $files;
-    }
-
-    /** @return list<string> PSR-4 dev roots, relative to the project root, without a trailing slash */
-    private static function testRoots(): array
-    {
-        $contents = file_get_contents(self::projectRoot() . '/composer.json');
-        self::assertIsString($contents);
-
-        try {
-            /** @var array{'autoload-dev': array{'psr-4': array<string, string>}} $composer */
-            $composer = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new LogicException('composer.json is not readable JSON', 0, $exception);
-        }
-
-        $roots = [];
-        foreach ($composer['autoload-dev']['psr-4'] as $directory) {
-            $root = rtrim($directory, '/');
-            if (is_dir(self::projectRoot() . '/' . $root)) {
-                $roots[] = $root;
-            }
-        }
-        sort($roots);
-
-        return array_values(array_unique($roots));
-    }
-
-    private static function relativePath(string $path): string
-    {
-        return str_starts_with($path, self::projectRoot() . '/')
-            ? substr($path, \strlen(self::projectRoot()) + 1)
-            : $path;
-    }
-
-    private static function projectRoot(): string
-    {
-        return \dirname(__DIR__, 2);
     }
 }

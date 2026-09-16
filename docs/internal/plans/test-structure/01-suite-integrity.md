@@ -122,11 +122,16 @@ own docblocks. Decide at execution; do not leave it unstated.
 
 ## The registration checklist
 
-**A new test directory has four addresses in this repository, not one.** The
-previous draft named only `phpunit.xml.dist`, and two of the other three fail
-hard rather than quietly. Stage 04 alone creates 61 directories, so this is the
-plan's most repeated step and it lives here, once; stages 02–04 reference it
-rather than listing it from memory.
+**A new test directory has four addresses in this repository, not one — and a
+new root has ten.** The previous draft named only `phpunit.xml.dist`, and two of
+the other three fail hard rather than quietly. Stage 04 alone creates 61
+directories, so this is the plan's most repeated step and it lives here, once;
+stages 02–04 reference it rather than listing it from memory.
+
+The four-address list below is for a *directory*. The root list that follows it
+was measured against a real root in execution and is longer than this plan first
+wrote it; the count and the failure mode of each address are in the execution
+record at the end of this file.
 
 For every directory created under `tests/`, the controls root, or a tool's
 `tests/`:
@@ -150,9 +155,27 @@ For every directory created under `tests/`, the controls root, or a tool's
    project has already paid for, and no DoD in stages 02–04 catches it: they
    check G2, G3, the aggregate's suites and pinned paths, but not this scope.
 
-Then, for a new root (not for each directory): PHPStan `paths`, the cs-fixer
-finder, `autoload-dev`, and `scripts/phpunit-aggregate.py`'s `SUITES` tuple with
-its partition proof.
+Then, for a new **root** (not for each directory), all of:
+
+5. PHPStan `paths`, the cs-fixer finder, `autoload-dev`.
+6. `scripts/phpunit-aggregate.py` — the `SUITES` tuple, the partition proof in
+   its docstring, and the `--jobs` bound, which is `len(SUITES)`.
+7. `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — a
+   *third* copy of the suite tuple. It runs under `test:cross-tool`, not under
+   the aggregate, so a green `test:aggregate` says nothing about it.
+8. `ScratchPathsCarryRealEntropyTest::ROOTS` — and every other control that
+   carries its own root list. A control whose scope does not follow the root
+   stops covering it, silently.
+9. `.gitattributes` `export-ignore`, or the root ships in the composer dist
+   package; `.dockerignore` and `scripts/init-environment.sh` alongside it.
+10. `.githooks/pre-commit`'s path filter, or the root's PHP skips the local hook,
+    and `generate-modular-architecture-production-inventory.php`, whose ban on
+    `src/` importing a development namespace is a literal list of prefixes.
+11. `generate-rename-enumeration.php`'s `surfaces()` — a surface that does not
+    follow the root turns a later move into a drop in a column nobody re-derives.
+
+Addresses 8 through 11 all fail **silently**. They are the reason this list is
+worth re-deriving against the tree rather than reading from here.
 
 **A guard already exists for step 2 and the plan did not know it.** A test in an
 unregistered directory reddens `architecture:check` today, through
@@ -202,3 +225,117 @@ the full registration table from stage 02 — PHPUnit, PHPStan, cs-fixer,
 `autoload-dev`, the aggregate's suite tuple, the composer group.** Stage 02 then
 only moves files into a root that already works. A stage that leaves the root
 half-registered would be green by its own DoD and would break the next one.
+
+---
+
+## Execution record
+
+Landed on `test-structure-01` in four commits. Every number below was measured
+on this tree, not carried over from the plan.
+
+### The alias verdict
+
+`TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly` **passes on its first
+execution.** The contract was sound; the stage carries no product fix. Unit
+grows by the provider's three cases, 7575 → 7578.
+
+### Baseline for every later stage
+
+| Suite          | Tests |
+| -------------- | ----- |
+| Unit           | 7578  |
+| Integration    | 712   |
+| Functional     | 207   |
+| Infrastructure | 683   |
+| Governance     | 13    |
+
+691 PHPUnit classes, 9195 expanded cases in the inventory; the aggregate's 9193
+is that number less the two cases it excludes by group.
+
+### Registering a root costs ten addresses, not four
+
+The checklist above named four and, for a new root, four more. The root took
+**ten**, and the four the plan did not name all fail *silently*:
+
+| Address                                                                                                                                                     | Fails        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `phpunit.xml.dist`                                                                                                                                          | loudly       |
+| `scripts/phpunit-aggregate.py` — `SUITES`, the partition proof, the `--jobs` bound                                                                          | loudly       |
+| `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — a third copy of the suite tuple, run by `test:cross-tool` and not by the aggregate | loudly       |
+| the inventory generator — scan scope, `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()`                     | loudly       |
+| `phpstan.neon`, `.php-cs-fixer.dist.php`, `composer.json`                                                                                                   | loudly       |
+| `ScratchPathsCarryRealEntropyTest::ROOTS`                                                                                                                   | **silently** |
+| `.gitattributes` — the root would ship in the dist package                                                                                                  | **silently** |
+| `.githooks/pre-commit` — its PHP would skip the local hook                                                                                                  | **silently** |
+| `generate-modular-architecture-production-inventory.php` — the ban on importing a development namespace read `Qualimetrix\Tests\` only                      | **silently** |
+| `generate-rename-enumeration.php` — `surfaces()`                                                                                                            | **silently** |
+
+`surfaces()` keeps one surface over both roots, so stage 02's move of the
+`Channel/` controls will not read as a drop in a column nobody re-derives.
+
+### The fourth axis
+
+G2 grew the fourth refusal rather than a docblock sentence. It measures the
+excluded set by effect — two `--list-tests` per suite, with and without the
+aggregate's `--exclude-group` arguments — and requires it to equal a list the
+guard names. Two cases are named today. `--exclude-group=benchmark` matches
+nothing, and that is now a fact the guard would refuse rather than a claim in
+prose.
+
+### The guards bite
+
+Each planted through the aggregate, the entry point `check:code` uses, not by
+calling the guard.
+
+| Refusal                          | Planted                                          | Red                            | Green                                                 |
+| -------------------------------- | ------------------------------------------------ | ------------------------------ | ----------------------------------------------------- |
+| G1, `itXxx` without `#[Test]`    | attribute removed from a Unit test               | Governance only                | the other four suites; Unit visibly drops 7578 → 7577 |
+| G1, `#[Test]` under another name | method renamed off `itXxx`                       | Governance only                | the other four suites                                 |
+| G2, a file no suite reaches      | a test file in an unregistered directory         | Governance **and Integration** | Unit, Functional, Infrastructure                      |
+| G2, an unaccounted exclusion     | a fourth `--exclude-group` in the aggregate      | Governance only                | the rest                                              |
+| G2, an undeclared excluded case  | a third method given `live-freshness`            | Governance only                | the rest                                              |
+| G2, a stale declaration          | `live-freshness` removed from a named case       | Governance only                | the rest                                              |
+| G3, a violation outside the list | a test file whose namespace contradicts its path | Governance only                | the rest                                              |
+| G3, a stale allow-list row       | one listed namespace corrected                   | Governance only                | the rest                                              |
+
+**The G2 directory plant is not exclusive, and the reason is worth keeping.**
+`ModularArchitectureGovernanceIntegrationTest` copies the whole `tests/` tree
+into an isolated project; the planted orphan reached `classifyOwner()` there and
+refused with a different message than that control asserts. One cause, two reds.
+The plan's claim that an unregistered directory already reddens
+`architecture:check` is confirmed — G2 adds the file's name, not the detection.
+
+### G3 ships with a derived list, not an empty promise
+
+60 `*Test.php` files declare a namespace their path contradicts.
+`namespace-path-allow-list.php` is written by
+`derive-namespace-path-allow-list.php`, which exits 4 when it wrote and 5 when
+the measurement failed, never 0. A row that stops describing a violation is
+refused exactly as loudly as a violation that is missing. **Emptying the list is
+its own piece of work and has not been done.**
+
+The neighbouring counts, reconciled rather than rounded: 139 files under the dev
+roots declare both a namespace and a type and disagree with their path; 146 is
+that plus seven fixtures in the global namespace; 147 is Composer's warning
+count, one file declaring two non-compliant classes; 149 counts three more files
+that declare a namespace and no type at all. The plan's "60 (139 counting
+fixtures)" is the first and second of these.
+
+### Two defects found and deliberately not fixed
+
+- **`classifyOwner()` carries dead code.** A catch-all on `tests/Infrastructure/`
+  precedes the per-subject regex below it, which is therefore unreachable for
+  every path it was written for. Every `Infrastructure/{Subject}/Unit` row in
+  the inventory consequently publishes a flat `Infrastructure/Unit` target the
+  tree has not decided on. Reproduce with
+  `php scripts/generate-modular-architecture-test-inventory.php --classification-probe=tests/Infrastructure/Cache/Unit/CacheKeyTest.php`.
+  Repairing it moves the owner column for a couple of hundred rows — stage 04
+  will meet this.
+- **The pre-commit hook is narrower than both tools it mirrors.** `scripts/` is
+  declared in `phpstan.neon` and in the cs-fixer finder and has never been passed
+  to either through the hook. Recorded in the hook itself; not changed, because
+  widening it changes what a commit rejects.
+
+`EXPLICIT_PATH_DISPOSITIONS` no longer exists: both its entries keyed retired
+paths, and an empty map cannot be typed past PHPStan. References to it in this
+plan describe a mechanism the tree no longer carries.
