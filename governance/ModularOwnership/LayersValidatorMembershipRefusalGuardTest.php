@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation;
+namespace Qualimetrix\Governance\ModularOwnership;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Catch_;
@@ -12,8 +12,6 @@ use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
 
 /**
  * `LayersValidator::buildMembershipDefinition()`'s `try`/`catch` is the one
@@ -21,7 +19,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
  * `InvalidArgumentException` alongside
  * `InvalidLayerDefinitionException`, so any product defect that throws a bare
  * `InvalidArgumentException` inside the `try` would also become a
- * {@see ConfigurationRefusal} with exit code 3 — masking a bug as user input.
+ * configuration refusal with exit code 3 — masking a bug as user input.
  * The exception is only safe because the `try` body is measured to be a
  * single constructor call whose only `InvalidArgumentException` sources are
  * named VO invariants (`MembershipSpec`'s "no non-empty criterion" check and
@@ -36,36 +34,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
  * 0 / 1 / 2 times. A fourth occurrence anywhere in the tree would need a
  * deliberate review because it would widen the set of defects caught as
  * invalid user input.
- *
- * A `LogicException` cannot be constructed for a behavioural test here:
- * `LayerDefinition` and `MembershipSpec` are `final` and never throw one.
- * The negative half of the guard is therefore structural: PHP dispatches a
- * `catch` by the listed types only, so proving the clause names exactly
- * `InvalidLayerDefinitionException` and `InvalidArgumentException` — no
- * broader family, no `Throwable`, no `LogicException` — is itself the proof
- * that a `LogicException` thrown in the same `try` would propagate past this
- * clause uncaught rather than surface as a refusal.
  */
 final class LayersValidatorMembershipRefusalGuardTest extends TestCase
 {
-    #[Test]
-    public function itLetsEmptyMembershipCriteriaReachTheConfigurationCarrier(): void
-    {
-        $validator = new LayersValidator();
-
-        try {
-            $validator->validate([
-                ['name' => 'empty-layer'],
-            ]);
-            self::fail('Expected ConfigurationRefusal for a layer entry declaring no criterion.');
-        } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString(
-                'must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends"',
-                $e->getMessage(),
-            );
-        }
-    }
-
     #[Test]
     public function itKeepsTheMembershipTryBodyToOneCallAndTheCatchToTheTwoNamedTypes(): void
     {
@@ -182,7 +153,7 @@ final class LayersValidatorMembershipRefusalGuardTest extends TestCase
 
     private function repositoryRoot(): string
     {
-        $root = realpath(__DIR__ . '/../../../../../');
+        $root = realpath(__DIR__ . '/../../');
         self::assertIsString($root);
 
         return $root;

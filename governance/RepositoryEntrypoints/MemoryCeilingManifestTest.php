@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
+namespace Qualimetrix\Governance\RepositoryEntrypoints;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +18,7 @@ final class MemoryCeilingManifestTest extends TestCase
     #[Test]
     public function itPinsThePortableTwoGiBBenchmarkCommand(): void
     {
-        $path = \dirname(__DIR__) . '/Fixtures/BaselineV10/memory-ceiling.json';
+        $path = \dirname(__DIR__, 2) . '/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json';
 
         /**
          * @var array{
@@ -54,7 +54,7 @@ final class MemoryCeilingManifestTest extends TestCase
         self::assertMatchesRegularExpression('/^\\d{4}-\\d{2}-\\d{2}$/', $manifest['measuredDate']);
 
         /** @var array{packages: list<array{name: string, version: string, source?: array{reference?: string}}> } $lock */
-        $lock = json_decode((string) file_get_contents(\dirname(__DIR__, 5) . '/benchmarks/composer.lock'), true, flags: \JSON_THROW_ON_ERROR);
+        $lock = json_decode((string) file_get_contents(\dirname(__DIR__, 2) . '/benchmarks/composer.lock'), true, flags: \JSON_THROW_ON_ERROR);
         $package = array_find($lock['packages'], static fn(array $package): bool => $package['name'] === $manifest['package']);
 
         self::assertNotNull($package);

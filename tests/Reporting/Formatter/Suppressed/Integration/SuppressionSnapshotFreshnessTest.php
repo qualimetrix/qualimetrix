@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Runs `scripts/generate-suppression-snapshot.php --check` as a subprocess,
- * the same way {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest}
+ * the same way {@see \Qualimetrix\Governance\ModularOwnership\ModularArchitectureGovernanceIntegrationTest}
  * checks its own generated projections.
  *
  * The snapshot lives outside the test tree

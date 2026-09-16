@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\ScratchPathIsolation\Unit;
+namespace Qualimetrix\Governance\TestSuiteHygiene;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -47,7 +47,7 @@ final class ScratchPathsCarryRealEntropyTest extends TestCase
         $offenders = [];
 
         foreach (self::ROOTS as $root) {
-            foreach (self::phpFilesIn(\dirname(__DIR__, 4) . '/' . $root) as $file) {
+            foreach (self::phpFilesIn(\dirname(__DIR__, 2) . '/' . $root) as $file) {
                 // The one file the rule cannot read: it names the forbidden
                 // call twice, in the condition below and in the message. It
                 // builds no scratch path, so there is nothing here to miss.
@@ -85,11 +85,11 @@ final class ScratchPathsCarryRealEntropyTest extends TestCase
         $counted = 0;
 
         foreach (self::ROOTS as $root) {
-            $counted += \count(self::phpFilesIn(\dirname(__DIR__, 4) . '/' . $root));
+            $counted += \count(self::phpFilesIn(\dirname(__DIR__, 2) . '/' . $root));
         }
 
         self::assertGreaterThan(500, $counted);
-        self::assertNotSame([], self::phpFilesIn(\dirname(__DIR__, 4) . '/scripts'));
+        self::assertNotSame([], self::phpFilesIn(\dirname(__DIR__, 2) . '/scripts'));
     }
 
     /** @return list<string> */

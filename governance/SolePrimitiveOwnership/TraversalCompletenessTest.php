@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity;
+namespace Qualimetrix\Governance\SolePrimitiveOwnership;
 
 use FilesystemIterator;
 use PhpParser\NodeVisitor;
@@ -62,7 +62,7 @@ final class TraversalCompletenessTest extends TestCase
             $source = (string) file_get_contents($file);
             foreach (self::FORBIDDEN as $constant) {
                 if (str_contains($source, $constant)) {
-                    $offenders[] = substr($file, \strlen(\dirname(__DIR__, 6)) + 1) . ': ' . $constant;
+                    $offenders[] = substr($file, \strlen(\dirname(__DIR__, 2)) + 1) . ': ' . $constant;
                 }
             }
         }
@@ -75,7 +75,7 @@ final class TraversalCompletenessTest extends TestCase
     {
         $files = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator(\dirname(__DIR__, 6) . '/src', FilesystemIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator(\dirname(__DIR__, 2) . '/src', FilesystemIterator::SKIP_DOTS),
         );
         foreach ($iterator as $entry) {
             if ($entry instanceof SplFileInfo && $entry->getExtension() === 'php') {

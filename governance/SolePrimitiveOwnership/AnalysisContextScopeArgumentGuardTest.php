@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Integration;
+namespace Qualimetrix\Governance\SolePrimitiveOwnership;
 
 use FilesystemIterator;
 use PhpParser\Node\Expr\New_;
@@ -84,7 +84,7 @@ final class AnalysisContextScopeArgumentGuardTest extends TestCase
      */
     private static function productionFiles(): array
     {
-        $root = \dirname(__DIR__, 4) . '/src';
+        $root = \dirname(__DIR__, 2) . '/src';
         $files = [];
 
         /** @var iterable<SplFileInfo> $iterator */

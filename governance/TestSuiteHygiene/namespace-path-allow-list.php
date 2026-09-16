@@ -47,7 +47,6 @@ return [
         'tests/Analysis/Policy/Architecture/Unit/LayerSelectorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Domain\\Allow',
         'tests/Analysis/Policy/Architecture/Unit/LayerViolationOptionsTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Rules',
         'tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Rules',
-        'tests/Analysis/Policy/Architecture/Unit/LayersValidatorMembershipRefusalGuardTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Validation',
         'tests/Analysis/Policy/Architecture/Unit/LayersValidatorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Validation',
         'tests/Analysis/Policy/Architecture/Unit/TemplateLayerDefinitionTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Domain\\Layer',
         'tests/Analysis/Policy/Architecture/Unit/TupleExtractorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Processing',

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
+namespace Qualimetrix\Governance\ModularOwnership;
 
 use FilesystemIterator;
 use LogicException;
@@ -288,7 +288,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
 
     private function repositoryRoot(): string
     {
-        $root = realpath(__DIR__ . '/../../../../../');
+        $root = realpath(__DIR__ . '/../../');
         self::assertIsString($root);
 
         return $root;

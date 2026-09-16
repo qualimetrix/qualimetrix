@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
+namespace Qualimetrix\Governance\ModularOwnership;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -209,7 +209,7 @@ final class DogfoodingTopologyTest extends TestCase
 
     private function repoRoot(): string
     {
-        $root = realpath(__DIR__ . '/../../../../..');
+        $root = realpath(__DIR__ . '/../..');
         self::assertIsString($root);
 
         return $root;

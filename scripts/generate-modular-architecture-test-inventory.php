@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = '572a6001003a502d79c50e547d07cff430897e8cd784fffcfda393cb213bd0e5';
+const P6_C_BASELINE_PATHS_SHA256 = 'bbd221438a278c2b15e7de662b680f1497ed8d9b9db35c457062eb21db0b4d42';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -666,9 +666,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
         return ['System/TestRunnerConfiguration', 'P8'];
     }
-    if (str_starts_with($path, 'tests/System/ScratchPathIsolation/')) {
-        return ['System/ScratchPathIsolation', 'P8'];
-    }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
     }
@@ -1062,9 +1059,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Formatter/Sarif/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/System/TestRunnerConfiguration/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/System/DocumentationConsistency/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/System/ScratchPathIsolation/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
@@ -1078,6 +1073,10 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/RatchetArtifact/', 'suite' => 'Governance'],
         ['prefix' => 'governance/PlanningRecords/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DocumentationCensus/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ModularOwnership/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ConsoleComposition/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/SolePrimitiveOwnership/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RepositoryEntrypoints/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1496,8 +1495,6 @@ function systemSupportContents(string $root): string
 {
     $rows = [
         ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/OutputFormatSchemaConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
-        ['System/TestRunnerConfiguration', 'tests/System/TestRunnerConfiguration/Unit/CoverageIsRequestedExplicitlyTest.php', 'Repository test-runner configuration guard.', 'Unit'],
-        ['System/ScratchPathIsolation', 'tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php', 'Repository scratch-path isolation guard.', 'Unit'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],

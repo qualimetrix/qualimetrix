@@ -322,18 +322,18 @@ final class Probes
                 'seeded-fixture-copied-into-src',
                 'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
                 [self::SEEDED_LEAK => self::seededFile(self::SEEDED)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
             )->alsoReddens(
                 'both cases forbid a seeded fixture under src/, and the planted copy is one file breaking both',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc',
+                    'Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc',
                 ],
             ),
             Probe::planting(
                 'seeded-suppression-copied-into-src',
                 'a seeded @qmx-ignore appears under src/, where no enumeration would ever notice it',
                 [self::SEEDED_SUPPRESSION_LEAK => self::seededFile(self::SEEDED_SUPPRESSION)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc'],
             ),
         ];
     }

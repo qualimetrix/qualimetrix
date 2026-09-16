@@ -108,7 +108,7 @@ final class TestFilesAreExecutedTest extends TestCase
      * than in an attribute nobody reads.
      */
     private const SILENTLY_EXCLUDED = [
-        'Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest'
+        'Qualimetrix\Governance\ModularOwnership\ModularArchitectureGovernanceIntegrationTest'
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
         'Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration\SuppressionSnapshotFreshnessTest'
             . '::itMatchesAFreshSelfAnalysisOfSrc',

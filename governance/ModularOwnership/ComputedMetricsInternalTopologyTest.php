@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
+namespace Qualimetrix\Governance\ModularOwnership;
 
 use LogicException;
 use PhpParser\Node;
@@ -356,7 +356,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
 
     private function repositoryRoot(): string
     {
-        $root = realpath(__DIR__ . '/../../../../../');
+        $root = realpath(__DIR__ . '/../../');
         self::assertIsString($root);
 
         return $root;

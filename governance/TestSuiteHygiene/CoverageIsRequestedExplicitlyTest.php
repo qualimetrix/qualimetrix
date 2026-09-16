@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\System\TestRunnerConfiguration\Unit;
+namespace Qualimetrix\Governance\TestSuiteHygiene;
 
 use DOMDocument;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,7 +18,7 @@ final class CoverageIsRequestedExplicitlyTest extends TestCase
     #[Test]
     public function itKeepsTheCoverageReportWritersOutOfTheTrackedConfiguration(): void
     {
-        $configuration = file_get_contents(__DIR__ . '/../../../../phpunit.xml.dist');
+        $configuration = file_get_contents(__DIR__ . '/../../phpunit.xml.dist');
         self::assertIsString($configuration);
 
         $document = new DOMDocument();

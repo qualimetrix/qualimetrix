@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
+namespace Qualimetrix\Governance\ConsoleComposition;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -33,9 +33,9 @@ use Symfony\Component\Console\Command\Command;
 #[Group('integration')]
 final class CommandRegistrationTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
 
-    private const string BINARY = __DIR__ . '/../../../../bin/qmx';
+    private const string BINARY = __DIR__ . '/../../bin/qmx';
 
     /** @param class-string<Command> $class */
     #[Test]

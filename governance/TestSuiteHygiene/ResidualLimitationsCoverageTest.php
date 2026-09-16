@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
+namespace Qualimetrix\Governance\TestSuiteHygiene;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CboAggregateBreachTest;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\NpathSaturationCeilingTest;
 use ReflectionMethod;
 
 /**
@@ -95,7 +97,7 @@ final class ResidualLimitationsCoverageTest extends TestCase
      */
     private static function canonicalLimitIds(): array
     {
-        $adr = (string) file_get_contents(\dirname(__DIR__, 5) . '/docs/adr/0017-baseline-ceiling.md');
+        $adr = (string) file_get_contents(\dirname(__DIR__, 2) . '/docs/adr/0017-baseline-ceiling.md');
         preg_match('~^## Residual limitations$(.*)~ms', $adr, $section);
         self::assertArrayHasKey(1, $section, 'The canonical residual-limitations section is missing.');
 

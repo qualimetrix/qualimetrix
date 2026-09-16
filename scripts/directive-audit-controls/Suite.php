@@ -51,6 +51,7 @@ final readonly class Suite
         'tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php',
         'tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php',
         'tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php',
+        'governance/TestSuiteHygiene/SeededFixtureIsolationTest.php',
     ];
 
     /**
