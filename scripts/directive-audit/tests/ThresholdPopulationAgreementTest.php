@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\RuleVocabulary;
+namespace QmxDirectiveAudit\Tests;
 
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
@@ -56,7 +56,7 @@ use RuntimeException;
  */
 final class ThresholdPopulationAgreementTest extends TestCase
 {
-    private const string FIXTURE = 'tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php';
+    private const string FIXTURE = 'scripts/directive-audit/tests/Fixtures/AuthoredThresholdForms.php';
 
     /** @var list<string> scratch trees to remove, whatever the case did with them */
     private static array $trees = [];

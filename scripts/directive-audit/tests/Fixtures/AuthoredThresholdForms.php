@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\RuleVocabulary\Fixtures;
+namespace QmxDirectiveAudit\Tests\Fixtures;
 
 /**
  * The authored forms of a threshold directive, one per declaration.

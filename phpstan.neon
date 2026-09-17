@@ -32,7 +32,7 @@ parameters:
         # the day it stops being written into a failure.
         -
             identifier: phpDoc.parseError
-            path: tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php
+            path: scripts/directive-audit/tests/Fixtures/AuthoredThresholdForms.php
     treatPhpDocTypesAsCertain: false
 
 services:

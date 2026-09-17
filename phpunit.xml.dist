@@ -81,6 +81,8 @@
         <testsuite name="Tooling">
             <directory>tools/phpstan/tests</directory>
             <directory>scripts/promise-effect/tests</directory>
+            <directory>scripts/directive-audit/tests</directory>
+            <directory>scripts/directive-audit-controls/tests</directory>
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>
