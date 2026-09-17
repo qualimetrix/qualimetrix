@@ -22,7 +22,7 @@ declare(strict_types=1);
  * reflection at all — it lives inside a method body — so it comes from the AST.
  *
  * The read side is produced by {@see FromArrayKeyReader}, which lives with the
- * guard that shares it — `tests/Analysis/Finding/RuleConfiguration/Support/` —
+ * guard that shares it — `tests/Analysis/Finding/Support/` —
  * and reaches this script through composer's `autoload-dev`.
  *
  * Usage: php scripts/enumerate-rule-option-keys.php [--out-dir=DIR]
@@ -35,7 +35,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Support\FromArrayKeyReader;
+use Qualimetrix\Tests\Analysis\Finding\Support\FromArrayKeyReader;
 
 require __DIR__ . '/../vendor/autoload.php';
 

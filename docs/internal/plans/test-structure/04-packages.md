@@ -27,6 +27,36 @@ disease one step smaller. **The set is computed, never recalled:** a declared en
 belongs to the package after which nothing tracked remains beneath it, which puts
 `tests/Functional` in P2 and `tests/Unit` and `tests/Integration` in P3.
 
+**A named consumer set is a subset, and the package is told so.** Every one of
+the three move packages was handed a list of the files that consume what it
+moves, and every one of them found the list short: P1 by two, P2 by six, P3 by
+two. None of the misses broke a build — they were docblock links and prose, the
+references nothing resolves — which is exactly why enumeration missed them and
+only a sweep finds them. The cure is not a better list. It is that a brief names
+its list as the subset a sweep is expected to grow, and that the package's
+Definition of Done is the sweep rather than the list.
+
+**The sweep is six questions, not one.** Four spellings of a name — the declared
+fully qualified name, its PHP-escaped form with every backslash doubled, the bare
+basename word-anchored, and the current path literal — plus **two** prefix
+sweeps, by the directories the package fills and by the ones it empties. P3
+measured that only the emptied-prefix sweep reaches a reference that names a
+*directory* in prose (`scripts/enumerate-rule-option-keys.php` names
+`tests/Analysis/Finding/RuleConfiguration/Support/`): the path sweep matches whole
+file paths and the name sweep matches namespaces, so a directory named in a
+sentence falls between them.
+
+A seventh question is asked by
+[`measurement/stage-04/dangling-test-names.py`](measurement/stage-04/dangling-test-names.py),
+which is tracked precisely because three packages in a row wrote it from scratch
+in a scratchpad that then vanished. It asks the opposite of every sweep above —
+which `Qualimetrix\Tests\…` names in the tree resolve to no file — and it is
+the only thing that reaches a reference spelled with a name from an *earlier*
+rename. At the end of this stage it reports **9**: four rename-record halves in
+the generator, one namespace a refusal control plants on purpose, and four stale
+references older than this stage. None was created here; all four of the last
+group are stage 05's.
+
 **A package sweeps the prefixes it fills, not only the names it moves.** Every
 sweep in this stage is keyed on something that exists *before* a move — a class
 name, a path, a namespace — so none of them can reach a claim about a directory
@@ -459,9 +489,30 @@ once.
 
 ## P5 — the invariant becomes a control
 
-**Files.** A new group under `governance/`, `phpunit.xml.dist`,
-`scripts/generate-modular-architecture-test-inventory.php` (`testSuitePrefixTable()`
-row for the new group).
+**Files.** `governance/TestSuiteHygiene/` — an existing group, not a new one.
+
+The plan said "a new group"; the three cohesion tests say otherwise, and the
+deviation is recorded here rather than taken silently. **Name:** that directory
+completes "this is about whether the test tree's files are addressable,
+reachable and isolated the way the convention says", which the new control is an
+instance of. **Co-change:** it already holds `TestNamespacesFollowTheirPathTest`
+— "a test file's namespace says where the file is" — and the new control is the
+sibling sentence, "a test file's path says which subject owns it". The two break
+on the same event, a file at the wrong address, and the group already carries
+the population helper (`TestTree.php`), the derive-script and the derived
+allow-list with a ceiling that this control needs. **Counterfactual ownership:**
+under independent development both move with the test tree, and neither is
+duplicated anywhere else.
+
+`governance/ModularOwnership/` was the other candidate and loses on co-change:
+its controls judge the production dependency topology and the generated
+architecture artifacts, and change for those reasons. The new control judges the
+test tree and merely uses the manifest as its vocabulary.
+
+Consequence, and the reason this is worth the paragraph: no `<directory>` and no
+`testSuitePrefixTable()` row are added, so the two-edits-that-must-agree
+registration hazard does not arise for this package at all. The Governance case
+count still moves by N.
 
 **What changes.** A control over the population `tests/**/*Test.php` — stated as a
 pattern, so support and fixture files are excluded deliberately rather than by
@@ -472,9 +523,11 @@ distinguish the 5 that declare `#[CoversNothing]` from the 79 that declare nothi
 a row can be retired for the right reason); **B**, files covering only another owner's
 classes, ceiling 19; **C**, files whose remainder drops an interior segment, ceiling 4.
 
-Registering a governance group means two edits that must agree: a `<directory>` under
-the `Governance` suite and a row in `testSuitePrefixTable()`. An unregistered group
-reddens `composer architecture:check` by name.
+Registering a *new* governance group would mean two edits that must agree — a
+`<directory>` under the `Governance` suite and a row in `testSuitePrefixTable()`,
+with an unregistered group reddening `composer architecture:check` by name. This
+package adds no group, so it owes neither edit; the sentence stays because the
+next control that does need a group will need it.
 
 **Definition of Done.**
 

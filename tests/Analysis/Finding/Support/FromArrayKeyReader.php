@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Support;
+namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use BackedEnum;
 use PhpParser\Node;

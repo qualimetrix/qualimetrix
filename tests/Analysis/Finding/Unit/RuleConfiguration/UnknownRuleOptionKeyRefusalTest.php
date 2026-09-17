@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

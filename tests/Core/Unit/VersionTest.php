@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core;
+namespace Qualimetrix\Tests\Core\Unit;
 
 use Composer\InstalledVersions;
 use PHPUnit\Framework\Attributes\Test;

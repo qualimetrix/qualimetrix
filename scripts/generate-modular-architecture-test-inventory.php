@@ -332,24 +332,18 @@ const P8_ORPHAN_DISPOSITIONS = [
 /**
  * Test classes whose path does not yet name their manifest owner: current path
  * => [owner, target]. A transitional grant under ADR 0016's temporary-rule
- * clause, owned by the stage-04 test-structure campaign and closed when its
- * last move lands, at which point this constant and
- * `assertLegacyUnmovedShrinksOnly()` are deleted rather than emptied.
+ * clause, owned by the stage-04 test-structure campaign; its last row left with
+ * the last move, so it is empty and grants nothing. Its guard went with the
+ * rows: three arms over an empty set assert nothing, and PHPStan refuses the
+ * shape. The constant outlives them by one package so the closure is observable
+ * before it is deleted.
+ *
+ * Read by `classifyOwner()`, `dispositionFor()` and `targetPath()`, each of
+ * which now answers from the path parse for every tracked file.
  *
  * @var array<string, array{string, string}>
  */
-const LEGACY_UNMOVED = [
-    'tests/Analysis/Finding/RuleConfiguration/Unit/UnknownRuleOptionKeyRefusalTest.php' => ['Analysis/Finding', 'tests/Analysis/Finding/Unit/RuleConfiguration/UnknownRuleOptionKeyRefusalTest.php'],
-    'tests/Integration/Architecture/MaxExpandedLayersFromYamlTest.php' => ['Analysis/Policy/Architecture', 'tests/Analysis/Policy/Architecture/Integration/MaxExpandedLayersFromYamlTest.php'],
-    'tests/Integration/DependencyInjection/ContainerConfigurationStagesTest.php' => ['Analysis/Configuration', 'tests/Analysis/Configuration/Integration/Pipeline/ContainerConfigurationStagesTest.php'],
-    'tests/Unit/Core/Namespace_/NamespaceTreeTest.php' => ['Analysis/Evidence/Measurement', 'tests/Analysis/Evidence/Measurement/Unit/Contract/NamespaceTreeTest.php'],
-    'tests/Unit/Core/Observation/WorseDirectionTest.php' => ['Core', 'tests/Core/Unit/Observation/WorseDirectionTest.php'],
-    'tests/Unit/Core/Util/GlobSyntaxTest.php' => ['Core', 'tests/Core/Unit/Util/GlobSyntaxTest.php'],
-    'tests/Unit/Core/Util/NamespaceMatcherTest.php' => ['Core', 'tests/Core/Unit/Util/NamespaceMatcherTest.php'],
-    'tests/Unit/Core/Util/PathMatcherTest.php' => ['Core', 'tests/Core/Unit/Util/PathMatcherTest.php'],
-    'tests/Unit/Core/Util/StringSetTest.php' => ['Core', 'tests/Core/Unit/Util/StringSetTest.php'],
-    'tests/Unit/Core/VersionTest.php' => ['Core', 'tests/Core/Unit/VersionTest.php'],
-];
+const LEGACY_UNMOVED = [];
 
 /**
  * @var array<string, string> Artifacts a package listed and a later step then
@@ -377,7 +371,6 @@ if ($projectRoot === false) {
 assertPathLiteralsResolve($projectRoot);
 assertSuiteClassifierAgreesWithPhpunit($projectRoot);
 assertToolingTestRootRegistrationIsComplete($projectRoot);
-assertLegacyUnmovedShrinksOnly($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -764,13 +757,6 @@ function parseOwnerFromTestPath(string $path): ?string
     }
 
     return null;
-}
-
-function parsesToManifestOwner(string $path): bool
-{
-    $owner = parseOwnerFromTestPath($path);
-
-    return $owner !== null && in_array($owner, manifestOwnerPaths(), true);
 }
 
 /**
@@ -1206,14 +1192,13 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Prioritization/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Configuration/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/Analysis/Finding/RuleConfiguration/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Finding/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Inline/Integration/', 'suite' => 'Integration'],
@@ -1224,7 +1209,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Reporting/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
@@ -1381,50 +1365,6 @@ function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 
     if ($problems !== []) {
         fail("Tooling test root registration disagrees with the tree:\n  " . implode("\n  ", $problems));
-    }
-}
-
-/**
- * The allowance is judged against the disk and the manifest, never against the
- * parse it stands beside: a generator checking its own output against its own
- * rule proves nothing. Three ways a row stops being true, each refused by name —
- * the file is gone, the file already conforms and the row therefore describes
- * nothing, or the recorded target is not itself a manifest owner with its level
- * segment immediately below it.
- *
- * A fourth, "the recorded target equals the key so the row records no move", is
- * not a separate arm because it cannot survive the other two: such a key either
- * conforms, and the second arm names it, or it does not, and the third arm names
- * its target. Written out, the comparison is statically false and PHPStan says so.
- */
-function assertLegacyUnmovedShrinksOnly(string $projectRoot): void
-{
-    $problems = [];
-    foreach (LEGACY_UNMOVED as $path => [, $target]) {
-        if (!is_file($projectRoot . '/' . $path)) {
-            $problems[] = is_file($projectRoot . '/' . $target)
-                ? sprintf('%s has already moved to %s, so its row no longer describes anything unmoved.', $path, $target)
-                : sprintf('%s is allowed but absent from the worktree.', $path);
-
-            continue;
-        }
-        if (parsesToManifestOwner($path)) {
-            $problems[] = sprintf(
-                '%s already conforms, so its row describes nothing; the allowance may only shrink.',
-                $path,
-            );
-        }
-        if (!parsesToManifestOwner($target)) {
-            $problems[] = sprintf(
-                '%s records target %s, which is not at a manifest owner with its level segment immediately below it.',
-                $path,
-                $target,
-            );
-        }
-    }
-
-    if ($problems !== []) {
-        fail("The stage-04 allowance disagrees with the tree:\n  " . implode("\n  ", $problems));
     }
 }
 

@@ -25,14 +25,13 @@
 
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Unit</directory>
             <directory>tests/Core/Path/Unit</directory>
             <directory>tests/Core/Symbol/Unit</directory>
+            <directory>tests/Core/Unit</directory>
             <directory>tests/Analysis/Policy/Architecture/Unit</directory>
             <directory>tests/Analysis/Policy/Baseline/Unit</directory>
             <directory>tests/Analysis/Policy/Inline/Unit</directory>
             <directory>tests/Analysis/Finding/Unit</directory>
-            <directory>tests/Analysis/Finding/RuleConfiguration/Unit</directory>
             <directory>tests/Analysis/Evidence/CircularDependency/Unit</directory>
             <directory>tests/Analysis/Evidence/CodeSmell/Unit</directory>
             <directory>tests/Analysis/Evidence/Cohesion/Unit</directory>
@@ -54,7 +53,6 @@
             <directory>tests/Reporting/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
-            <directory>tests/Integration</directory>
             <directory>tests/Reporting/Integration</directory>
             <directory>tests/Analysis/Policy/Architecture/Integration</directory>
             <directory>tests/Analysis/Policy/Baseline/Integration</directory>

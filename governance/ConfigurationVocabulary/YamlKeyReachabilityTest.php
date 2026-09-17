@@ -425,7 +425,7 @@ final class YamlKeyReachabilityTest extends TestCase
         // survives normalization verbatim and reaches
         // ArchitectureConfigurationFactory under the snake_case spelling
         // it looks for. Independent consumer-expectation test at
-        // {@see \Qualimetrix\Tests\Integration\Architecture\MaxExpandedLayersFromYamlTest}
+        // {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\MaxExpandedLayersFromYamlTest}
         // verifies the end-to-end factory wiring.
         yield 'architecture.max_expanded_layers (PRESERVE_SUBTREE — fixed in Phase 3.5)' => [
             'architecture.max_expanded_layers (snake_case preserved verbatim by section policy)',

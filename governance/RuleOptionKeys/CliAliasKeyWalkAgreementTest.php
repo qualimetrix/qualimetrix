@@ -20,7 +20,7 @@ use Throwable;
  * Every `#[CliAlias]` the product ships addresses a key the class at that
  * flag's depth answers for — a universal property over the real registry, not
  * a per-rule case, which is why it lives apart from
- * {@see \Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Unit\UnknownRuleOptionKeyRefusalTest}.
+ * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest}.
  *
  * The two sides were only ever kept in agreement by hand — the alias names
  * an option in the attribute, the class declares its key set, and nothing
