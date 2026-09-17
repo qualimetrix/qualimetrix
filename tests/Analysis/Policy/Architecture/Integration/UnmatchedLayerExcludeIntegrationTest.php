@@ -29,7 +29,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * a producer that always fires would pass the first half alone.
  */
 #[CoversClass(LayerViolationRule::class)]
-final class UnmatchedExcludeIntegrationTest extends TestCase
+final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 {
     private string $fixture = '';
 

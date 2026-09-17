@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 
 /**
  * {@see BaselineCeilingStage::judgeAll()} is the single call that replaced

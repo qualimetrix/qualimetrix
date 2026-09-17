@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-const P6_C_BASELINE_PATHS_SHA256 = '6ec107b914a7e7df6ba2f1984792d48cc7d9c014317c7b190b859e1cdc587833';
+const P6_C_BASELINE_PATHS_SHA256 = '818d94bd58fb2ec644dfa6b30db12c1891aaa04f7362e4f1ce993b80085890ae';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -198,7 +198,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'governance/Channel/ChannelEmissionStaticGuardTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
-    'tests/Analysis/Finding/Support/FindingFactory.php',
+    'tests/Analysis/Policy/Baseline/Support/FindingFactory.php',
     'tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php',
     'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',

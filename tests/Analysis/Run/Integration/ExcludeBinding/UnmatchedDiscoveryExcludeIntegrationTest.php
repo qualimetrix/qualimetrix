@@ -32,7 +32,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 #[CoversClass(UnmatchedExcludeRule::class)]
 #[CoversClass(UnmatchedExcludeAudit::class)]
-final class UnmatchedExcludeIntegrationTest extends TestCase
+final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
 {
     private string $fixture = '';
 

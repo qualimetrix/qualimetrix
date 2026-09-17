@@ -217,6 +217,15 @@ def main():
     #    called what it is called now. The exemption is by position — left of the
     #    `=>` inside that constant — not by file, so a stale name anywhere else
     #    in the same file is still reported.
+    #
+    #    The search reads the files here rather than shelling out to `git grep
+    #    -F`, which is not a fixed-string search: it wraps the pattern in
+    #    \Q…\E and hands it to PCRE2, so a name with a segment starting with E
+    #    closes the quoting and the rest is read as a pattern. Measured on this
+    #    repository: `git grep -l -F 'Qualimetrix\Tests\Analysis\Evidence\Size'`
+    #    exits 0 having printed nothing, while the string is in three files. A
+    #    sweep that silently measures nothing is the worst instrument this
+    #    campaign has found, so this one has no escaping surface at all.
     record_keys = set()
     record_block = re.search(r"const P6_RENAMED_TEST_IDS = \[\n(.*?)\n\];", generator, re.S)
     if record_block is not None:
@@ -226,6 +235,8 @@ def main():
             if "' =>" in line
         }
 
+    generator_path = os.path.relpath(GENERATOR_PATH, REPOSITORY_ROOT)
+
     def is_rename_record_key(path, line, spelling):
         """True when every occurrence on this line sits left of the `=>`.
 
@@ -233,13 +244,12 @@ def main():
         a stale value half sits on the same line as a legitimate key, so
         exempting the line hides exactly the defect this arm exists for.
         """
-        if path != os.path.relpath(GENERATOR_PATH, REPOSITORY_ROOT):
+        if path != generator_path:
             return False
         arrow = line.find("' =>")
         if arrow < 0:
             return False
-        key = line[:arrow].strip().lstrip("'")
-        if key not in record_keys:
+        if line[:arrow].strip().lstrip("'") not in record_keys:
             return False
         occurrence = line.find(spelling)
         while occurrence >= 0:
@@ -247,6 +257,15 @@ def main():
                 return False
             occurrence = line.find(spelling, occurrence + 1)
         return True
+
+    corpus = {}
+    for path in sorted(tracked):
+        if path.startswith("docs/internal/plans/") or path.startswith("docs/adr/"):
+            continue  # plans and ADRs record history; they are not addresses
+        try:
+            corpus[path] = open(os.path.join(REPOSITORY_ROOT, path), encoding="utf-8").read().split("\n")
+        except (OSError, UnicodeDecodeError):
+            continue
 
     for row in mine:
         if not row["current"].endswith(".php"):
@@ -260,19 +279,13 @@ def main():
         if old is None:
             continue
         for spelling in (old, old.replace("\\", "\\\\")):
-            found = subprocess.run(
-                ["git", "grep", "-n", "-F", spelling], cwd=REPOSITORY_ROOT, capture_output=True, text=True
-            ).stdout.split("\n")
-            for hit in found:
-                if not hit:
-                    continue
-                path, _, rest = hit.partition(":")
-                number, _, line = rest.partition(":")
-                if path.startswith("docs/internal/plans/") or path.startswith("docs/adr/"):
-                    continue  # plans and ADRs record history; they are not addresses
-                if is_rename_record_key(path, line, spelling):
-                    continue
-                failures.append(f"{path}:{number}: still names {old}, the pre-move class name of {row['target']}")
+            for path, lines in corpus.items():
+                for number, line in enumerate(lines, start=1):
+                    if spelling not in line or is_rename_record_key(path, line, spelling):
+                        continue
+                    failures.append(
+                        f"{path}:{number}: still names {old}, the pre-move class name of {row['target']}"
+                    )
 
     # 7. A fresh clone of this commit runs. git tracks no empty directory, so a
     #    <testsuite> naming a path that the clone does not have makes PHPUnit exit

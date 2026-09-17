@@ -27,8 +27,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Time\ClockInterface;
-use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 #[CoversClass(BaselineGenerator::class)]
