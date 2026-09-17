@@ -306,7 +306,9 @@ Rule A does not reach them (a prefix can match a non-test file) and Rule B does
 not (they name no bucket root). Whether they should go is a question this
 package's measurement does not answer.
 - **`#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#`
-  is dead by shadowing, and that is a finding, not just deadness.** The broad
+  is dead by shadowing, and that is a finding, not just deadness.**
+  **[Superseded by the follow-up below: the shadowing branch is deleted, so this
+  regex is live with 4 first-hits and no longer belongs in this list.]** The broad
   `tests/Infrastructure/` branch precedes it and answers first, so the four
   `tests/Infrastructure/Console/Support/*.php` files are owned by the coarse
   `Infrastructure` where the finer branch would say `Infrastructure/Console`.
@@ -319,6 +321,9 @@ package's measurement does not answer.
   Pre-existing (the broad branch preceded the finer one before this stage too)
   and outside P4's named scope, so untouched — but it is a wrong value, not
   merely a coarse one.
+  **[Superseded by the follow-up below, which deletes the shadowing branch; these
+  four rows now read owner `Infrastructure/Console`, target equal to their own
+  path, and disposition Retain.]**
 
 ## Assumptions
 
@@ -400,7 +405,9 @@ both were green and both printed the same six suite counts.
   disagreement** for the four `tests/Infrastructure/Console/Support/*` files
   (see above). Two branches answer differently and the coarser one wins by order.
 - **63 rows now read "Retain" beside a `closure_package` that names a package
-  (`P4`, `P8`, `P3`, `P6`, `P7`).** Closure package means "which package still
+  (`P4`, `P8`, `P3`, `P6`, `P7`).**
+  **[Superseded by the follow-up below: 67, once the four Infrastructure/Console
+  support rows join them.]** Closure package means "which package still
   owes this artifact a move", so a retained row owing one is the same
   contradiction P3's D5 recorded for a single file, now visible on 63. P0 derived
   that column for test classes only; for fixtures and support it is still
@@ -417,3 +424,186 @@ both were green and both printed the same six suite counts.
   well-typed. The replica is the only instrument that saw them, and it is not
   tracked — whether that should change is the owner's call, and it is the third
   time this stage has raised it.
+
+---
+
+# Follow-up — the shadowed Infrastructure branch (post-`2edb8d33`)
+
+Requested after P4 landed, from P4's own finding. Branch
+`x30-stage-04-subject-layout`, base `2edb8d33`. Scope kept to
+`scripts/generate-modular-architecture-test-inventory.php` and the regenerated
+artifacts. Not committed.
+
+## The defect, restated as measured
+
+Exactly **4** rows carried `subject_owner: Infrastructure`:
+
+```
+tests/Infrastructure/Console/Support/PseudoTerminalRun.php
+tests/Infrastructure/Console/Support/RestoresShellVerbosityEnvironment.php
+tests/Infrastructure/Console/Support/SplitStreamConsoleOutput.php
+tests/Infrastructure/Console/Support/TerminalScreen.php
+```
+
+`Infrastructure` is not one of the 37 manifest owners — the generator refuses
+that exact string by name:
+`--classification-probe=tests/Infrastructure/Unit/ProbeTest.php` →
+`"Infrastructure" is a taxonomy above its owners, not an owner`. Each row also
+recorded `target_path: tests/Infrastructure/Support/<basename>`, a relocation to
+a root that is not an owner either, and a disposition of `Move atomically…` to
+carry it out. Wrong owner, wrong target, and a move the stage's invariant
+forbids.
+
+## The cure, and the shape chosen
+
+The broad `tests/Infrastructure/` branch sat **above** the nine-subject regex and
+answered first. The branch is **deleted**, not reordered below it.
+
+- After the regex answers first, the broad branch is reachable only by a
+  `tests/Infrastructure/{Subject}/…` path whose subject is not among the nine, or
+  by a file directly under `tests/Infrastructure/`. Measured: **0** population
+  members. So it is dead, and what it publishes when it does fire is the
+  non-owner string plus a target under a non-owner root — a wrong answer waiting
+  for the next Infrastructure subject that grows a support file.
+- Deleting it sends such a path to the ladder's existing
+  `fail('Unclassified test artifact: …')`. That is an ownership decision asked
+  for instead of answered wrongly, and it is the same fail-closed shape the file
+  already uses for an unregistered Structure test and an unregistered tooling
+  root.
+- Its three inner arms (`ViolationFilter` → P6, `Rule`/`CompilerPass` → P7,
+  otherwise permanent) went with it; measured 0 hits each, since all four rows
+  reaching the broad branch were under `Console/` and none carries those
+  substrings.
+- **Rejected: reorder and keep the broad branch as a fallback.** It preserves a
+  branch whose only possible output is a non-manifest owner. Keeping a fallback
+  that can only be wrong is what produced these four rows.
+- **Rejected: replace both with a parse of `tests/Infrastructure/{Subject}`
+  against `manifestOwnerPaths()`.** Cleaner in the abstract and it would pick up
+  `Infrastructure/Git`, which the nine-subject list omits; but it is a second
+  design decision inside a fix whose whole point is that one ordering change
+  moved four rows, and nothing on disk needs it today. Named here rather than
+  taken silently.
+
+The deletion carries a comment saying what was there and why it is not — the
+next reader would otherwise read the missing fallback as an oversight.
+
+## Census — expected answer stated first, then measured
+
+**Expected:** exactly the four rows above; `subject_owner` →
+`Infrastructure/Console`; `target_path` → each row's own path; `disposition` →
+`Retain`; no `tests/**/*Test.php` row touched, because the parse answers for
+those ahead of the whole ladder.
+
+**Measured**, `test-ownership.tsv` before vs after, joined on `current_path`:
+
+| Quantity                                    | Value |
+| ------------------------------------------- | ----: |
+| rows                                        | 921   |
+| rows with **any** change                    | **4** |
+| rows changed that are `tests/**/*Test.php`  | **0** |
+| `subject_owner` changed                     | 4     |
+| `target_path` changed                       | 4     |
+| `disposition` changed                       | 4     |
+| `closure_package` changed                   | **4** |
+| any other column changed, anywhere          | **0** |
+| `test-fixture-directories.tsv` rows changed | **0** |
+
+The four are the four named rows, and each moves identically:
+
+```
+subject_owner    Infrastructure  ->  Infrastructure/Console
+target_path      tests/Infrastructure/Support/X.php  ->  tests/Infrastructure/Console/Support/X.php
+closure_package  permanent  ->  P8
+disposition      Move atomically with the named owner and closure package.
+                 ->  Retain at the materialized subject-owned path.
+```
+
+and `target_path == current_path` is now true for all four, which is what makes
+the disposition Retain under the rule P4 installed. No fifth row.
+
+`test-fixture-directories.tsv` does not move because these are `kind: support`,
+and that artifact aggregates `kind: fixture` rows only.
+
+### The fourth column, reported rather than absorbed
+
+`closure_package` was not in the request, and it moves for the same four rows:
+`permanent` → `P8`, because the nine-subject branch carries `P8` where the
+deleted broad branch carried `permanent`. Left as `P8`, deliberately:
+
+- `P8` there is the **established** value for every other subject-owned
+  support/fixture root — `tests/Analysis/Finding/`, `tests/Reporting/`,
+  `tests/TestSupport/Logging/`, `tests/Core/*` all return `P8` and all now read
+  `Retain`. Making Infrastructure/Console `permanent` would make four rows right
+  and leave 63 wrong, with nothing to explain the difference between siblings.
+- It is the same contradiction P4 already reported — "Retain" beside a
+  `closure_package` that claims a package still owes a move — now on 67 rows
+  instead of 63. P0 derived that column for test classes only; for fixtures and
+  support it is still whatever the ladder returns. Fixing it is the separate
+  owner-level decision already on the record, not something to smuggle into an
+  ordering fix.
+
+Both readings are defensible; this one keeps the defect uniform and countable
+rather than patched in one place.
+
+## The reusable question: is any other branch shadowed the same way?
+
+A sweep extracts every address predicate of `classifyOwner()`,
+`dispositionFor()` and `targetPath()` in ladder order — `str_starts_with`
+prefixes, `$path ===` equalities, anchored regex stems, and every literal of each
+`in_array` constant — and reports any later predicate whose literal begins with
+an earlier **prefix** on a different line.
+
+**The first version of this sweep found nothing, including on the file that
+carries the defect.** It excluded pairs whose literals are *equal*, and the
+Infrastructure pair is exactly that: the regex `#^tests/Infrastructure/(Ast|…)/#`
+has stem `tests/Infrastructure/`, identical to the prefix above it. A sweep that
+cannot report the one case it was written for is a green that means nothing, so
+it is recorded here rather than quietly repaired.
+
+The corrected sweep was run on both revisions:
+
+| File                    | Shadowed pairs                                                                      | Exit |
+| ----------------------- | ----------------------------------------------------------------------------------: | ---: |
+| `2edb8d33` (pre-fix)    | **1** — `tests/Infrastructure/` regex stem below the `tests/Infrastructure/` prefix | 1    |
+| working tree (post-fix) | **0**                                                                               | 0    |
+
+So the answer is measured, not asserted: **that pair was the only one of its
+shape in the three ladders**, and it is gone.
+
+A second, empirical sweep asks the same question of the tree rather than of the
+text: for each of the **154** population members that actually reach the ladder
+(not a tooling root, not `tests/**/*Test.php`), which branches match at all, and
+does the winner differ from a later matcher?
+
+- **8** paths match more than one predicate.
+- **6** of those are an artifact of flattening: the two `str_contains` tests they
+  also match (`CircularDependency`, `/Fixtures/IgnoreSample/`) are **nested
+  inside** the `tests/Architecture/` branch, which those paths do not enter. Not
+  alternatives at all.
+- The remaining **2** —
+  `tests/Analysis/Evidence/ComputedMetrics/Health/Unit/MetricRepositoryTestHelper.php`
+  and `tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php` — are
+  won by the **finer** branch, with the coarser prefix and the substring branches
+  below it. That is the ordering working.
+
+No remaining case where a broad predicate answers ahead of a finer one that would
+answer differently.
+
+## Definition of Done for the follow-up
+
+| Item                                                                | Result                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------: |
+| owner of `tests/Infrastructure/Console/Support/TerminalScreen.php`  | `Infrastructure/Console`                                |
+| its target                                                          | its own path                                            |
+| its disposition                                                     | `Retain at the materialized subject-owned path.`        |
+| census: rows changed / of which `*Test.php`                         | 4 / **0**                                               |
+| columns moved                                                       | 4 (three requested + `closure_package`, reported above) |
+| `composer architecture:check`                                       | **0**                                                   |
+| `composer check:code`                                               | **0**                                                   |
+| `vendor/bin/phpunit … ModularArchitectureGovernanceIntegrationTest` | **0** — `OK (4 tests, 785 assertions)`                  |
+| six per-suite counts                                                | **6705 / 383 / 152 / 1029 / 179 / 748**                 |
+| files touched                                                       | the generator + `test-ownership.tsv` + this report      |
+
+`architecture:check` prints the unchanged
+`955 declarations, 37 semantic-owner layers, 0 seams, 73 exact internal grants -> 13 coarse edges`
+and `921 artifacts, 120 fixture directories, 725 PHPUnit classes, 9198 expanded cases`.

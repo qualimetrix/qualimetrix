@@ -457,6 +457,25 @@ because "is this branch reachable" is answerable only once every move has landed
   the owner's call, not P4's** — P4 states the finding and leaves the decision named.
   Deleting it is not mechanical cleanup; it is discarding history.
 
+**`closure_package` is left alone, and the reason is a measurement that
+refuted the premise for touching it.** The follow-up to P4 reported 67 rows
+reading "Retain" beside a closure package that claims to owe a move, and the
+obvious next step was to derive that column from the target exactly as the
+disposition now is. Measured over the whole artifact the figure is **272**, not
+67 — 151 of them governance and tooling roots that have read `Retain` plus `P8`
+since long before this campaign, 121 under `tests/`, spread over seven package
+labels. A number an order of magnitude larger than the one the cure was sized
+for is a sign the cure was sized against a subset.
+
+It also dissolves the contradiction it was meant to fix. Read as "which package
+still owes this artifact a move", `Retain` beside `P8` is nonsense. Read as
+"which package settled it, `permanent` meaning none was ever needed", it is
+correct and the 272 rows are right. The column is read by nothing but the
+artifact, both readings are defensible, and choosing between them is a decision
+about a record of a closed epoch — the same decision already reserved for the
+owner two entries above. So it stays, with the ambiguity written down instead of
+resolved by whoever happened to be editing next.
+
 **A support row lands with a disposition that contradicts its own target.**
 P2 and P3 each move one support class. After the move the surviving ladder
 answers about the new path and returns `target_path` equal to `current_path`

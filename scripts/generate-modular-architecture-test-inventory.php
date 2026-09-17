@@ -963,16 +963,14 @@ function classifyOwner(string $path): array
     if (str_contains($path, 'CoverageProjection') || str_contains($path, 'JsonShapePreservation')) {
         return ['Reporting/FindingProjection', 'P6'];
     }
-    if (str_starts_with($path, 'tests/Infrastructure/')) {
-        if (str_contains($path, 'ViolationFilter')) {
-            return ['Infrastructure', 'P6'];
-        }
-        if (str_contains($path, 'Rule') || str_contains($path, 'CompilerPass')) {
-            return ['Infrastructure', 'P7'];
-        }
-
-        return ['Infrastructure', 'permanent'];
-    }
+    // No broad `tests/Infrastructure/` fallback sits above this: one did, and it
+    // answered first with the bare string `Infrastructure`, which is a taxonomy
+    // above its owners and not one of the manifest owners at all — the parse
+    // refuses that exact string by name for a test class. It published a wrong
+    // owner and, with it, a move to `tests/Infrastructure/Support/`, a root that
+    // is not an owner either. An Infrastructure subject missing from this list
+    // now reaches the unclassified refusal at the end of the ladder, which is an
+    // ownership decision asked for rather than answered wrongly.
     if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#', $path, $matches) === 1) {
         return ['Infrastructure/' . $matches[1], 'P8'];
     }
