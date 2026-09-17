@@ -62,6 +62,22 @@ Address 18 is the one the first DoD dropped; `scripts` is already in `ROOTS`, so
 only the `tools/` movers were exposed. Measured: `tools/` is already clean under
 PHPStan level 8 and cs-fixer, so 13 and 14 cost no fixes.
 
+**Address 17 was mis-assigned, and P2-P4 inherited the hole.** The `tools/`
+section groups it with the addresses P1 owns, but its own text says "every new
+dev prefix" — and P1 cannot know the prefixes P2 through P6 will declare. P1
+added `Qualimetrix\PhpStan\` and stopped; P2, P3 and P4 each declared a new
+`autoload-dev` root and none added its prefix, so four of them sat unguarded
+until P4's acceptance:
+`Qualimetrix\PromiseEffect\Tests\`, `QmxDirectiveAudit\Tests\`,
+`QmxDirectiveAuditControls\Tests\`, `QmxFindingGate\Tests\`
+(`Qualimetrix\PhpStan\Tests\` is covered by its parent entry). Nothing checks
+this, so nothing complained. **Address 17 is per-mover, like 1, 4, 6-12 and 20 —
+not P1's alone**, and the four were added when the mis-assignment was found.
+
+The general shape, now seen five times in this stage: an address whose *text*
+quantifies over the whole stage while its *assignment* names one package is a
+hole with a green DoD on either side of it.
+
 **Address 19 — found after round 1, missing from this table's first revision.**
 `Dockerfile:29` is `COPY . .`, so `.dockerignore` is fully load-bearing.
 Its `tests/` and `governance/` entries are root-anchored, so they do not exclude
