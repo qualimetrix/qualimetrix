@@ -17,8 +17,9 @@ use SplFileInfo;
  * The seeded fixtures `composer directives:narrow-control` measures its
  * heterogeneous half over must stay out of `src/` and out of the enumeration
  * `composer directives:audit` judges the tree against. Split off from
- * `ThresholdPopulationAgreementTest` (which keeps the product-behaviour cases):
- * both methods here quantify over the whole tree rather than fixed input.
+ * `\QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest` (which keeps the
+ * product-behaviour cases): both methods here quantify over the whole tree
+ * rather than fixed input.
  *
  * The library has no PSR-4 entry, the same as `scripts/finding-gate/`, so this
  * test loads it the way its own scripts do.

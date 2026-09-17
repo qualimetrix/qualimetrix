@@ -99,8 +99,12 @@ src/
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
-scripts/               # Utility scripts (benchmark data collection, regression checks)
+scripts/               # Utility scripts; a tool with its own tests keeps them at scripts/<tool>/tests/
+tools/                 # Standalone dev tools (e.g. the PHPStan rule set); tests at tools/<tool>/tests/
 ```
+
+Both `scripts/` and `tools/` test directories are registered under the
+`Tooling` PHPUnit suite in `phpunit.xml.dist`, one `<directory>` per tool.
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
 
@@ -127,21 +131,29 @@ re-deriving that table against the tree before trusting it. Most of these
 addresses fail silently: the root stays unprotected, or ships where it should
 not, under a green `composer check`.
 
-| Address                                                                                                                                                                    | Fails        |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `composer.json` `autoload-dev`, `phpstan.neon` `paths`, the `.php-cs-fixer.dist.php` finder                                                                                | loudly       |
-| `phpunit.xml.dist` — a `<testsuite>` that reaches it                                                                                                                       | loudly       |
-| a `<directory>` naming a path that no longer exists — PHPUnit warns, exits 0, and hands back an **empty suite**                                                            | **silently** |
-| `scripts/phpunit-aggregate.py` — `SUITES`, the partition proof in its docstring, the `--jobs` bound                                                                        | loudly       |
-| `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — its own copy of the suite tuple, run by `test:cross-tool` and not by the aggregate                | loudly       |
-| `scripts/generate-modular-architecture-test-inventory.php` — scan scope, `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()` | loudly       |
-| `scripts/generate-modular-architecture-production-inventory.php` — the ban on `src/` importing a development namespace is a literal list of prefixes                       | **silently** |
-| `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                    | **silently** |
-| `governance/TestSuiteHygiene/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                                       | **silently** |
-| `governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php` — `createIsolatedProject()` copies the roots it names                                       | **silently** |
-| `.gitattributes` — `export-ignore`, or the root ships in the composer dist package                                                                                         | **silently** |
-| `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                               | **silently** |
-| `.dockerignore` and `scripts/init-environment.sh`                                                                                                                          | **silently** |
+| Address                                                                                                                                                                                                                                                                                                      | Fails        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `composer.json` `autoload-dev`, `phpstan.neon` `paths`, the `.php-cs-fixer.dist.php` finder                                                                                                                                                                                                                  | loudly       |
+| `phpunit.xml.dist` — a `<testsuite>` that reaches it                                                                                                                                                                                                                                                         | loudly       |
+| a `<directory>` naming a path that does not exist on disk — PHPUnit exits 2 and runs nothing (measured). The only silent variant is a directory that exists but is empty, and it cannot survive a commit: git tracks no empty directory, so a fresh clone already sees it as absent and gets the same exit 2 | loudly       |
+| `scripts/phpunit-aggregate.py` — the `SUITES` tuple                                                                                                                                                                                                                                                          | loudly       |
+| `scripts/phpunit-aggregate/tests/test_phpunit_aggregate.py` — its own copy of the suite tuple, run by `test:cross-tool` and not by the aggregate                                                                                                                                                             | loudly       |
+| `scripts/generate-modular-architecture-test-inventory.php` — the scan-scope literal (the `git ls-files` path list feeding discovery)                                                                                                                                                                         | **silently** |
+| `scripts/generate-modular-architecture-test-inventory.php` — `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()`                                                                                                                                               | loudly       |
+| `scripts/generate-modular-architecture-production-inventory.php` — the ban on `src/` importing a development namespace is a literal list of prefixes                                                                                                                                                         | **silently** |
+| `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                                                                                                                                                      | **silently** |
+| `governance/TestSuiteHygiene/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                                                                                                                                                                         | **silently** |
+| the mover's `createIsolatedProject()` helper (e.g. `scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`) — its copy list must contain every root the tracked config declares, or PHPUnit exits 2 inside the scratch project                                                      | loudly       |
+| `.gitattributes` — `export-ignore`, or the root ships in the composer dist package                                                                                                                                                                                                                           | **silently** |
+| `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                                                                                                                                                                 | **silently** |
+| `.dockerignore` and `scripts/init-environment.sh`                                                                                                                                                                                                                                                            | **silently** |
+
+Sweep for these addresses by path and by name, then separately by two other
+spellings a path-and-name sweep is blind to: a hardcoded row/element count
+asserted over a generated artifact (e.g. `assertCount(N, ...)` on a generated
+TSV), and a literal command string that embeds a path (e.g. a fixed
+`composer test:cross-tool` invocation). Both change when a root moves, and
+neither is a path or a name.
 
 ### Decision framework for new capabilities
 
