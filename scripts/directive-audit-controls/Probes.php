@@ -1775,18 +1775,22 @@ final class Probes
                 'unreadable-config-is-not-a-config-error',
                 'a configuration that failed to load is reported as an internal failure',
                 // Both declared cases reach `DirectivesCommand`'s
-                // `catch (ConfigurationRefusal)` before the retired
-                // configuration-failure taxonomy class this probe used to
-                // target is ever consulted. Mutating that
-                // retired class's exception recognition no longer reaches
-                // either case (measured: `directives:controls
-                // --only=unreadable-config-is-not-a-config-error` missed both,
-                // 0 of 179 red). The throw site itself is the fragment whose
-                // presence or absence the two tests actually depend on.
+                // `catch (ConfigurationRefusal)`, so what they depend on is
+                // that this throw site raises the refusal *carrier* rather
+                // than a plain exception. Mutating anything further down the
+                // configuration-failure taxonomy never reaches them.
+                //
+                // The fragment is an exact source quote, so it dies silently
+                // whenever the product rewrites the call. It has done so twice:
+                // once when the taxonomy class was retired, and again when
+                // `aboutDocument(ConfigurationOrigin::of(...))` became
+                // `aboutConfigFileDocument($path, ...)`. Both times the control
+                // refused rather than mutating nothing, which is the only
+                // reason the drift was visible at all.
                 self::CONFIG_FILE_STAGE,
                 [
-                    '                throw ConfigurationRefusal::aboutDocument(' . "\n"
-                        . '                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $request->configFilePath),' . "\n"
+                    '                throw ConfigurationRefusal::aboutConfigFileDocument(' . "\n"
+                        . '                    $request->configFilePath,' . "\n"
                         . '                    \sprintf(\'Configuration file not found: %s\', $request->configFilePath),' . "\n"
                         . '                );'
                         => '                throw new \RuntimeException(\sprintf(\'Configuration file not found: %s\', $request->configFilePath));',
