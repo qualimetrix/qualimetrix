@@ -62,7 +62,31 @@ in exactly one place and is cited from the others.
   `php governance/TestSuiteHygiene/derive-namespace-path-allow-list.php`**, never
   by hand.
 - `php scripts/directive-audit-controls.php` — **run directly, not through
-  `composer directives:controls`** — passes. The composer script is
+  `composer directives:controls`** — reports **exactly the pre-existing state
+  measured below, and no more**. It does not "pass": it is red on `main` before
+  this stage, for a reason no package here causes.
+
+  **The pre-existing state, measured during P1 because the composer wrapper had
+  never let this script run to completion:**
+  `120 probes, 1 not as declared, 3 cases guarded by nothing`. The one
+  disagreement is probe `unreadable-config-is-not-a-config-error`, which
+  **refuses**: its mutation target in `Probes.php` no longer occurs in
+  `src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php` — the product
+  moved in `59f08352` and the declaration did not follow. The control says so
+  itself rather than mutating nothing quietly. Its expected-reddening case is
+  therefore unguarded, which is the third `guarded by nothing` row; the other
+  two are the long-standing `DirectivesCommandTest` pair.
+
+  Isolate one probe with
+  `php scripts/directive-audit-controls.php --only=unreadable-config-is-not-a-config-error`
+  rather than re-running all 120 to check it.
+
+  **The first draft of this item demanded that the command pass, without a
+  baseline for it** — because `composer directives:controls` aborts at the red
+  coverage control and had never reached the full run. That is the same defect
+  as round 1's unreachable-command finding, one layer deeper: an oracle whose
+  baseline was never measured. Re-pointing that mutation is real work and is
+  **not** this stage's: it belongs to whoever owns the directive control rig. The composer script is
   `['@directives:controls:coverage', …]`, coverage is **already red on `main`**
   (exit 1, two pre-existing `guarded by nothing` rows, both
   `DirectivesCommandTest`), and Composer halts a chain on failure, so the

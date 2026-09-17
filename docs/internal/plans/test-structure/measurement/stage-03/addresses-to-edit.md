@@ -149,8 +149,29 @@ repo-wide one is not.
 
 **Spellings a sweep must walk, not names:** project-relative path; backslashed
 FQN; **dot-separated FQN**; `FQN::method`; bare `itXxx` method name; bare class
-name; namespace prefix with no class. The dot form is invisible to a backslash
-grep and is the one in live use.
+name; namespace prefix with no class; **and a hardcoded count over a generated
+artifact** — the spelling address 39 was written in, which carries no path and
+no name at all, so every path-and-name sweep in this stage was blind to it. The
+dot form is invisible to a backslash grep and is the one in live use.
+
+## 39 — found by executing P1, not by enumerating
+
+| #   | Address                                                        | Carrier                                                                            | L/S | Package                                                  |
+| --- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --- | -------------------------------------------------------- |
+| 39  | `assertCount(3, $this->tsv('test-system-support-owners.tsv'))` | `governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php:106` | L   | whichever package changes `systemSupportContents()` — P1 |
+
+A hardcoded row count over a generated artifact. Address 28 removes two dead
+rows from `systemSupportContents()`, which takes that artifact from 3 data rows
+to 1, and the governance test fails with "actual size 1 matches expected size
+3". Neither this table, nor `registration-addresses.md`, nor
+`pinned-references.md` enumerated it: all three swept for *paths and names*, and
+this is a **count**.
+
+**That is the fourth instance in this stage of an address the enumeration
+missed**, after round 1's three and round 2's three. The direction is always the
+same, and the lesson is not "sweep harder" — it is that a count derived from an
+artifact is a reference spelling nobody listed. Add counts to the spellings a
+sweep must walk.
 
 ## Deliberately not addresses
 
