@@ -86,6 +86,15 @@ root to the same surface** rather than a new column, exactly so a sweep would
 not read a meaningless drop. Follow it. Baseline to preserve:
 `58 channel, 54 producer, 82 metric-key rows, 113 executed`.
 
+**Add the test directory, not the tool's parent — measured in P2.** P1 could add
+`tools` wholesale because `tools/` holds nothing but the one tool. Adding
+`scripts` the same way **moves the baseline**: other tools under `scripts/` pin
+older channel and producer spellings that the surface would then begin counting,
+and P2 saw dozens of occurrence-column disagreements when it tried. So each
+mover adds its own `scripts/<tool>/tests` path. The roots list is asymmetric on
+purpose — `tools` covers a future `tools/*/tests` for free, a
+`scripts/<tool>/tests` entry covers only itself.
+
 ## Tracked literals and digests the movers invalidate
 
 | #   | Address                                                                                        | Carrier                                                          | L/S                                                                                 |
