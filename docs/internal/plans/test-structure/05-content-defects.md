@@ -114,3 +114,29 @@ the tree, not against the ledger's recorded paths.
   (see [`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt)).
   `composer architecture:check` green.
 - `composer check` green.
+
+## Handed over by stage 04: three capped exception lists this stage must read first
+
+Stage 04's invariant control caps three kinds of file it does not adjudicate. **All
+three are handed over here, with their measured overlap with this stage's ledger**, and
+the order below is by overlap, not by how interesting each list is — an earlier draft
+handed over only list B, which is the one that overlaps least.
+
+| List  | What it holds                                                                 | Ceiling | Overlap with `defect-ledger.tsv` |
+| ----- | ----------------------------------------------------------------------------- | ------: | -------------------------------- |
+| **A** | no `#[CoversClass]` at all — 5 declare `#[CoversNothing]`, 79 declare nothing | 84      | **30 files, 38 ledger rows**     |
+| **B** | covers only classes owned by another manifest owner                           | 19      | 5 files, 5 rows                  |
+| **C** | remainder drops an interior namespace segment                                 | 4       | none                             |
+
+Two consequences, and list A is where both bite hardest:
+
+- Re-deriving this stage's moving classes without reading all three will hit a ceiling
+  it does not know exists, and the failure reads as an unrelated governance refusal.
+- Every file this stage moves out of a list lowers that list's ceiling. Lowering is the
+  normal direction and needs no decision; the derive command writes it.
+
+**List B is the adapter-exclusion principle showing through** — every
+`tests/Analysis/Policy/Baseline/Functional/Baseline*CommandTest.php` covers
+`Infrastructure\Console\Command\Baseline\...`. **List C is four `Analysis/Run` files**
+whose path drops an interior `Contract` segment. Stage 04 capped all three rather than
+adjudicating them, because adjudicating them is this stage's subject.

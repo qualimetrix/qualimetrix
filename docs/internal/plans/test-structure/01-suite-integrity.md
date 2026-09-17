@@ -101,7 +101,11 @@ refuse when declared_namespace != expected
 **This is a migration, not a side effect.** The tree currently carries 60
 `*Test.php` files whose namespace does not match their path (139 counting
 fixtures). The previous draft claimed G3 would close these "as a side effect" of
-stage 04 — it will not; they are unrelated to the 96 relocated files. G3 is
+stage 04 — it will not, and this has since been measured rather than argued: of
+the 55 rows the allow-list carries today, **zero** name a file stage 04 moves, so
+the stage neither empties nor disturbs the list and its ceiling does not move
+(`php -r '$a=require "governance/TestSuiteHygiene/namespace-path-allow-list.php";'`
+intersected with `measurement/stage-04/relocation-map.csv`). G3 is
 therefore delivered in two steps: the check first, with the existing violations
 recorded as an explicit allow-list, and the allow-list emptied as its own piece
 of work. Shipping G3 red is not an option; shipping it with a silent exemption
