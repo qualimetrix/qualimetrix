@@ -126,8 +126,11 @@ def main():
         if path not in tracked:
             failures.append(f"{path}: moved, but it belongs to another package")
 
+    # Against the working tree, not against HEAD: a package is judged before it
+    # is committed, and `base..HEAD` on an uncommitted package compares a commit
+    # with itself and reports no rename at all — a vacuous arm that always agrees.
     renamed = set()
-    for line in git("diff", "--name-status", "-M", f"{arguments.base}..HEAD").split("\n"):
+    for line in git("diff", "--name-status", "-M", arguments.base).split("\n"):
         fields = line.split("\t")
         if fields[0].startswith("R") and len(fields) == 3:
             renamed.add((fields[1], fields[2]))
@@ -185,6 +188,47 @@ def main():
 
     # 6. No reference to a pre-move class name survives anywhere in the tree —
     #    the channel a sweep by path and a sweep by namespace prefix both miss.
+    #    Both spellings are swept: PHP source writes a fully qualified name with
+    #    every backslash doubled, so a single-backslash sweep returns nothing for
+    #    a stale literal inside a PHP string and reads as clean.
+    #
+    #    The one exemption is a rename record's key. `P6_RENAMED_TEST_IDS` maps
+    #    an old test id to its current one; its keys are pre-rename names by
+    #    construction, and rewriting one would assert that a test was always
+    #    called what it is called now. The exemption is by position — left of the
+    #    `=>` inside that constant — not by file, so a stale name anywhere else
+    #    in the same file is still reported.
+    record_keys = set()
+    record_block = re.search(r"const P6_RENAMED_TEST_IDS = \[\n(.*?)\n\];", generator, re.S)
+    if record_block is not None:
+        record_keys = {
+            line.split("' =>")[0].strip().lstrip("'")
+            for line in record_block.group(1).split("\n")
+            if "' =>" in line
+        }
+
+    def is_rename_record_key(path, line, spelling):
+        """True when every occurrence on this line sits left of the `=>`.
+
+        Line-level exemption is not enough and the difference is not academic:
+        a stale value half sits on the same line as a legitimate key, so
+        exempting the line hides exactly the defect this arm exists for.
+        """
+        if path != os.path.relpath(GENERATOR_PATH, REPOSITORY_ROOT):
+            return False
+        arrow = line.find("' =>")
+        if arrow < 0:
+            return False
+        key = line[:arrow].strip().lstrip("'")
+        if key not in record_keys:
+            return False
+        occurrence = line.find(spelling)
+        while occurrence >= 0:
+            if occurrence > arrow:
+                return False
+            occurrence = line.find(spelling, occurrence + 1)
+        return True
+
     for row in mine:
         if not row["current"].endswith(".php"):
             continue
@@ -196,13 +240,20 @@ def main():
         old = declared_class(before, row["current"])
         if old is None:
             continue
-        hits = subprocess.run(
-            ["git", "grep", "-l", "-F", old], cwd=REPOSITORY_ROOT, capture_output=True, text=True
-        ).stdout.split()
-        for hit in hits:
-            if hit.startswith("docs/internal/plans/") or hit.startswith("docs/adr/"):
-                continue  # plans and ADRs record history; they are not addresses
-            failures.append(f"{hit}: still names {old}, the pre-move class name of {row['target']}")
+        for spelling in (old, old.replace("\\", "\\\\")):
+            found = subprocess.run(
+                ["git", "grep", "-n", "-F", spelling], cwd=REPOSITORY_ROOT, capture_output=True, text=True
+            ).stdout.split("\n")
+            for hit in found:
+                if not hit:
+                    continue
+                path, _, rest = hit.partition(":")
+                number, _, line = rest.partition(":")
+                if path.startswith("docs/internal/plans/") or path.startswith("docs/adr/"):
+                    continue  # plans and ADRs record history; they are not addresses
+                if is_rename_record_key(path, line, spelling):
+                    continue
+                failures.append(f"{path}:{number}: still names {old}, the pre-move class name of {row['target']}")
 
     print(f"package {arguments.package}: {len(mine)} rows, allowance now {len(allowance)}")
     if failures:
