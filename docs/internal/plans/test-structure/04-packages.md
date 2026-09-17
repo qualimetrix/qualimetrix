@@ -551,9 +551,21 @@ next control that does need a group will need it.
 **Definition of Done.**
 
 - Green over `tests/**/*Test.php`.
-- **Governance count is 748 + N**, where N is this group's own case count measured by
-  `--list-tests` on the new directory. The stage's 748 was measured before this group
-  existed and stops being the expected value the moment it lands.
+- **Governance count is 748 + N**, where N is this control's own case count measured by
+  `--list-tests`. The stage's 748 was measured before this control existed and stops
+  being the expected value the moment it lands. Measured: **N = 9, total 757**, with the
+  other five suites unchanged at 6705 / 383 / 152 / 1029 / 179. Separately, the bare
+  `--list-tests` figure the generator writes into `test-phpunit-suites.txt` moves 750 to
+  759 — a different measurement of the same suite, differing by the two `live-freshness`
+  cases the runner excludes, and not a discrepancy.
+
+- **The ceilings bound growth, not substitution, and that is stated rather than
+  implied.** The sibling allow-list carries a second budget over its values; this one
+  cannot, because every row here is keyed on a path and a path does not survive a file
+  move. The consequence: retiring one exception and introducing another in the same list
+  leaves the count unchanged, so a re-derive would absorb the new one silently. Both
+  control refusals — the missing row and the stale row — still fire until someone runs
+  the derive, so what is open is the re-derive, not the drift.
 - **Observed to refuse** under every row of the table below, each planted, each
   reverted, each refusal quoted:
 
