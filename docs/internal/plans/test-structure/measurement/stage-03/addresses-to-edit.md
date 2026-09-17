@@ -198,6 +198,28 @@ same, and the lesson is not "sweep harder" — it is that a count derived from a
 artifact is a reference spelling nobody listed. Add counts to the spellings a
 sweep must walk.
 
+## 40-42 — the Python mover's dead literals, missed by the same enumeration
+
+The "literals that go dead" section was derived for the PHP movers only. P6
+moves the two Python tests, which empties `tests/System/` **entirely** and
+`tests/Analysis/Evidence/Measurement/Tests/` with it, and that invalidates three
+more literals nobody listed.
+
+| #   | Address                                                                    | Carrier                                                                           | L/S | Package |
+| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --- | ------- |
+| 40  | `classifyOwner()` prefix `tests/System/TestRunnerConfiguration/`           | inventory `:661`                                                                  | L   | P6      |
+| 41  | `systemSupportContents()` iterates `['tests/System', 'tests/TestSupport']` | inventory `:1528`                                                                 | L   | P6      |
+| 42  | the exact `test:cross-tool` command string, path included                  | `governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php:59` | L   | P6      |
+
+**Address 42 shares its carrier with address 39, and that carrier is the richest
+source of missed addresses in this stage.**
+`ModularArchitectureGovernanceIntegrationTest.php` pins repository facts as
+literals throughout: exact composer script step arrays (`:50`, `:62`), a named
+step at a fixed index (`:55`), the `test:cross-tool` command string (`:59`), and
+TSV row counts (`:105`, `:106`). None of those is a path or a name, so every
+path-and-name sweep behind this table was blind to all of them. When a later
+stage moves anything this repository declares, **read that file first.**
+
 ## Deliberately not addresses
 
 Named so that the completeness claim above means something. Each was checked.

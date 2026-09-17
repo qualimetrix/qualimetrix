@@ -165,7 +165,7 @@ Address numbers refer to
 | P3  | directive-audit and its controls       | rows 4, 5, 6, 10 + `AuthoredThresholdForms.php` | 1, 4, 6-12, 20, 31, 33-35, 37, 38                                                    |
 | P4  | finding-gate                           | row 7                                           | 1, 4, 6-12, 20, 22, 38                                                               |
 | P5  | The flat-script tools                  | rows 11-16                                      | 1, 4, 6-12, 20, 26, 36, 38                                                           |
-| P6  | The Python tooling tests               | 2 files + `Fixtures/fake_phpunit.py`            | 21, 38, and `test:cross-tool`'s `-s` paths                                           |
+| P6  | The Python tooling tests               | 2 files + `Fixtures/fake_phpunit.py`            | 6, 21, 38, 40-42, and `test:cross-tool`'s `-s` paths                                 |
 | P7  | Documentation                          | —                                               | `CLAUDE.md` corrections; affected READMEs; `CHANGELOG.md`; the five dead prose sites |
 
 Addresses 1, 4, 6-12, 20 and 38 recur in every mover because each is per-root or
