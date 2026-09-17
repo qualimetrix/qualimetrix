@@ -67,7 +67,11 @@ const P4_IGNORED_FIXTURE_PATHS = [
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations.json',
 ];
 
-/** @var list<string> Exact Measurement artifacts governed as one closed set. */
+/**
+ * @var list<string> The Measurement fixtures governed as one closed set. Their six
+ *                   test-class siblings left with the stage-04 path parse, which
+ *                   precedes this list in all three classifiers.
+ */
 const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/AnonymousClassContext.php',
     'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-collision.xml',
@@ -79,12 +83,6 @@ const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-polluted.txt',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-stale-keys.json',
-    'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/MetricDefinitionTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php',
 ];
 
 /**
@@ -258,25 +256,13 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 
-/** @var list<string> Exact subject-owned test moves. */
-const P6_D_REPORTING_TEST_PATHS = [
-    'tests/Reporting/Unit/FindingProjection/FindingProjectorTest.php',
-];
-
-/** @var list<string> Exact Prioritization subject-unit moves. */
+/**
+ * @var list<string> The Prioritization support class the subject owns. Its five
+ *                   test-class siblings left with the stage-04 path parse, which
+ *                   precedes this list in all three classifiers.
+ */
 const P6_D_PRIORITIZATION_TEST_PATHS = [
-    'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtCalculatorTest.php',
-    'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtSummaryTest.php',
-    'tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php',
-    'tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php',
-    'tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php',
     'tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php',
-];
-
-/** @var list<string> Exact Infrastructure Git adapter authorities. */
-const P6_D_GIT_TEST_PATHS = [
-    'tests/Infrastructure/Git/Integration/ReportingGitScopeQueryProjectSubdirTest.php',
-    'tests/Infrastructure/Git/Unit/ReportingGitScopeQueryTest.php',
 ];
 
 /** @var list<string> Exact live additions relative to the accepted 509/7,245 authority. */
@@ -328,22 +314,6 @@ const P8_ORPHAN_DISPOSITIONS = [
     'tests/Fixtures/CouplingProject/Service/OrderService.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
     'tests/Fixtures/CouplingProject/Service/UserService.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
 ];
-
-/**
- * Test classes whose path does not yet name their manifest owner: current path
- * => [owner, target]. A transitional grant under ADR 0016's temporary-rule
- * clause, owned by the stage-04 test-structure campaign; its last row left with
- * the last move, so it is empty and grants nothing. Its guard went with the
- * rows: three arms over an empty set assert nothing, and PHPStan refuses the
- * shape. The constant outlives them by one package so the closure is observable
- * before it is deleted.
- *
- * Read by `classifyOwner()`, `dispositionFor()` and `targetPath()`, each of
- * which now answers from the path parse for every tracked file.
- *
- * @var array<string, array{string, string}>
- */
-const LEGACY_UNMOVED = [];
 
 /**
  * @var array<string, string> Artifacts a package listed and a later step then
@@ -467,7 +437,8 @@ foreach ($worktreePaths as $path) {
             ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
             : $currentSuite)
         : 'none';
-    $disposition = dispositionFor($path, $kind);
+    $target = targetPath($path, $kind, $owner, $targetSuite);
+    $disposition = dispositionFor($path, $kind, $target);
 
     if (orphanCandidateReason($path) !== null || $kind === 'placeholder') {
         $closurePackage = 'P8';
@@ -482,7 +453,7 @@ foreach ($worktreePaths as $path) {
         'current_suite' => $currentSuite,
         'target_suite' => $targetSuite,
         'subject_owner' => $owner,
-        'target_path' => targetPath($path, $kind, $owner, $targetSuite),
+        'target_path' => $target,
         'closure_package' => $closurePackage,
         'disposition' => $disposition,
     ];
@@ -801,7 +772,7 @@ function failUnownedTestClass(string $path): never
 
     fail(sprintf(
         '%s parses to owner "%s", which is not one of the %d manifest owners: %s. Move the file under its'
-        . ' manifest owner, or record the move in LEGACY_UNMOVED.',
+        . ' manifest owner.',
         $path,
         $owner,
         count(manifestOwnerPaths()),
@@ -824,13 +795,9 @@ function classifyOwner(string $path): array
             return $owner;
         }
     }
-    // A test class declares its owner with its path. The two branches below are
-    // that rule and its transitional exception; the ladder that follows them
-    // answers for fixtures, support classes and the non-PHP artifacts, which
-    // the rule says nothing about.
-    if (array_key_exists($path, LEGACY_UNMOVED)) {
-        return [LEGACY_UNMOVED[$path][0], 'stage-04'];
-    }
+    // A test class declares its owner with its path. That rule is the branch
+    // below; the ladder that follows it answers for fixtures, support classes
+    // and the non-PHP artifacts, which the rule says nothing about.
     if (isTestClassPath($path)) {
         $declaredOwner = parseOwnerFromTestPath($path);
         if ($declaredOwner === null || !in_array($declaredOwner, manifestOwnerPaths(), true)) {
@@ -863,14 +830,8 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Analysis/Policy/Inline/')) {
         return ['Analysis/Policy/Inline', 'P8'];
     }
-    if (in_array($path, P6_D_REPORTING_TEST_PATHS, true)) {
-        return ['Reporting/FindingProjection', 'P6-D'];
-    }
     if (in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)) {
         return ['Analysis/Evidence/Prioritization', 'P6-D'];
-    }
-    if (in_array($path, P6_D_GIT_TEST_PATHS, true)) {
-        return ['Infrastructure/Git', 'P6-D'];
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Health/')) {
         return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
@@ -952,26 +913,8 @@ function classifyOwner(string $path): array
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }
-    if (
-        str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/')
-        || str_starts_with($path, 'tests/Unit/Analysis/Duplication/')
-        || str_starts_with($path, 'tests/Unit/Core/Duplication/')
-        || str_starts_with($path, 'tests/Unit/Rules/Duplication/')
-    ) {
+    if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/')) {
         return ['Analysis/Evidence/Duplication', 'P1'];
-    }
-    $p2DependencyModelTests = [
-        'tests/Unit/Core/Dependency/DependencyTest.php',
-        'tests/Unit/Core/Dependency/EmptyDependencyGraphTest.php',
-        'tests/Unit/Analysis/Collection/Dependency/DependencyGraphTest.php',
-        'tests/Unit/Analysis/Collection/Dependency/DependencyGraphBuilderTest.php',
-        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php',
-        'tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php',
-        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphTest.php',
-        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php',
-    ];
-    if (in_array($path, $p2DependencyModelTests, true)) {
-        return ['Analysis/Evidence/DependencyModel', 'P2'];
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/')) {
         return ['Analysis/Evidence/DependencyModel', 'P3'];
@@ -989,77 +932,19 @@ function classifyOwner(string $path): array
         return ['Analysis/Run', 'P3'];
     }
 
-    $p2GraphProjectionTests = [
-        'tests/Unit/Analysis/Collection/Dependency/Export/DotExporterTest.php',
-        'tests/Unit/Analysis/Collection/Dependency/Export/JsonGraphExporterTest.php',
-        'tests/Reporting/GraphProjection/Unit/DotExporterTest.php',
-        'tests/Reporting/GraphProjection/Unit/JsonGraphExporterTest.php',
-        'tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php',
-    ];
-    if (in_array($path, $p2GraphProjectionTests, true)) {
-        return ['Reporting/GraphProjection', 'P2'];
-    }
-
-    if (in_array($path, [
-        'tests/Functional/Console/Command/GraphExportCommandTest.php',
-        'tests/Infrastructure/Console/Functional/GraphExportCommandTest.php',
-    ], true)) {
-        return ['Infrastructure/Console', 'P2'];
-    }
-
-    if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
+    if (str_contains($path, 'ThresholdAnnotationParser') || str_contains($path, 'ThresholdValidatorWiring')) {
         return ['Analysis/Policy/Inline', 'P6'];
     }
-
-    if (preg_match('#^tests/Unit/Analysis/Collection/Dependency/(CircularDependencyDetector|Cycle)#', $path) === 1) {
-        return ['Analysis/Evidence/CircularDependency', 'P4'];
-    }
-    if (in_array($path, [
-        'tests/Unit/Analysis/Collection/Dependency/DependencyResolverTest.php',
-        'tests/Unit/Analysis/Collection/Dependency/DependencyVisitorTest.php',
-        'tests/Unit/Analysis/Collection/Dependency/TypeDependencyHelperTest.php',
-    ], true)) {
-        return ['Analysis/Run', 'P3'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Analysis/Repository/') || str_starts_with($path, 'tests/Unit/Core/Metric/')) {
-        return ['Analysis/Evidence/Measurement', 'P7'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Analysis/') || str_starts_with($path, 'tests/Integration/Analysis/') || str_starts_with($path, 'tests/Integration/Pipeline/')) {
-        return ['Analysis/Run', 'P3'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Baseline/Suppression/') || str_contains($path, 'ThresholdAnnotationParser') || str_contains($path, 'ThresholdValidatorWiring')) {
-        return ['Analysis/Policy/Inline', 'P6'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Baseline/') || str_starts_with($path, 'tests/Integration/Baseline') || str_starts_with($path, 'tests/Functional/Console/Command/Baseline')) {
-        return ['Analysis/Policy/Baseline', 'P6'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Core/ComputedMetric/') || str_contains($path, 'ComputedMetric') || str_contains($path, 'ComputedMetrics') || str_contains($path, 'HealthFormula')) {
+    if (str_contains($path, 'ComputedMetric') || str_contains($path, 'ComputedMetrics') || str_contains($path, 'HealthFormula')) {
         return ['Analysis/Evidence/ComputedMetrics', 'P5'];
     }
-    if (str_starts_with($path, 'tests/Unit/Core/Coupling/')) {
-        return ['Analysis/Evidence/Coupling', 'P7'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Core/Suppression/') || str_starts_with($path, 'tests/Unit/Core/Rule/Override/') || str_contains($path, 'AnalysisContextThreshold') || str_contains($path, 'ThresholdOverride')) {
+    if (str_contains($path, 'AnalysisContextThreshold') || str_contains($path, 'ThresholdOverride')) {
         return ['Analysis/Policy/Inline', 'P6'];
     }
-    if (str_starts_with($path, 'tests/Unit/Core/Rule/') || str_starts_with($path, 'tests/Unit/Core/Violation/') || str_starts_with($path, 'tests/Integration/Violation/') || str_contains($path, 'ChannelDeclaration')) {
+    if (str_contains($path, 'ChannelDeclaration')) {
         return ['Analysis/Finding', 'P6'];
     }
-    if (str_starts_with($path, 'tests/Unit/Configuration/') || str_starts_with($path, 'tests/Integration/Configuration/')) {
-        return ['Analysis/Configuration', 'P3'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Metrics/ComputedMetric/') || str_starts_with($path, 'tests/Unit/Rules/ComputedMetric/')) {
-        return ['Analysis/Evidence/ComputedMetrics', 'P5'];
-    }
-    if (preg_match('#^tests/Unit/(Metrics|Rules)/(CodeSmell|Complexity|Coupling|Design|Halstead|Maintainability|Security|Size)/#', $path, $matches) === 1) {
-        $subject = match ($matches[2]) {
-            'Halstead' => 'Maintainability',
-            default => $matches[2],
-        };
-
-        return ['Analysis/Evidence/' . $subject, 'P7'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Metrics/Structure/') || str_starts_with($path, 'tests/Unit/Rules/Structure/') || str_contains($path, 'Wmc')) {
+    if (str_contains($path, 'Wmc')) {
         $subject = match (true) {
             preg_match('/(Lcom|TccLcc)/', $path) === 1 => 'Cohesion',
             preg_match('/(Inheritance|Dit|Noc)/', $path) === 1 => 'Design',
@@ -1072,31 +957,13 @@ function classifyOwner(string $path): array
 
         return ['Analysis/Evidence/' . $subject, 'P7'];
     }
-    if (str_starts_with($path, 'tests/Integration/Metrics/')) {
-        return ['Analysis/Run', 'P3'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Metrics/')) {
-        return ['Analysis/Evidence/Measurement', 'P7'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Rules/CodeSmell/') || str_starts_with($path, 'tests/Integration/Rules/')) {
-        return ['Analysis/Evidence/CodeSmell', 'P7'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Rules/Support/') || str_starts_with($path, 'tests/Unit/Rules/AbstractRule') || str_contains($path, 'ThresholdValidatorAssignment')) {
+    if (str_contains($path, 'ThresholdValidatorAssignment')) {
         return ['Analysis/Finding', 'P6'];
     }
-    if (str_starts_with($path, 'tests/Unit/Reporting/Health/')) {
-        return ['Reporting', 'permanent'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Reporting/Impact/')) {
-        return ['Reporting/Impact', 'permanent'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Reporting/Filter/') || str_contains($path, 'CoverageProjection') || str_contains($path, 'JsonShapePreservation')) {
+    if (str_contains($path, 'CoverageProjection') || str_contains($path, 'JsonShapePreservation')) {
         return ['Reporting/FindingProjection', 'P6'];
     }
-    if (str_starts_with($path, 'tests/Unit/Reporting/') || str_starts_with($path, 'tests/Functional/Reporting/')) {
-        return ['Reporting', 'permanent'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Infrastructure/') || str_starts_with($path, 'tests/Infrastructure/') || str_starts_with($path, 'tests/Integration/Infrastructure/') || str_starts_with($path, 'tests/Integration/DependencyInjection/') || str_starts_with($path, 'tests/Integration/Profiler/')) {
+    if (str_starts_with($path, 'tests/Infrastructure/')) {
         if (str_contains($path, 'ViolationFilter')) {
             return ['Infrastructure', 'P6'];
         }
@@ -1114,24 +981,6 @@ function classifyOwner(string $path): array
     }
     if (str_contains($path, 'LayerAssignment')) {
         return ['Infrastructure/Console', 'P4'];
-    }
-    if (str_starts_with($path, 'tests/Functional/Console/Command/Hook')) {
-        return ['Infrastructure/GitHook', 'permanent'];
-    }
-    if (str_starts_with($path, 'tests/Functional/Console/')) {
-        return ['Infrastructure/Console', 'P3'];
-    }
-    if (str_starts_with($path, 'tests/Integration/Architecture/')) {
-        return ['Analysis/Policy/Architecture', 'P0'];
-    }
-    if (str_starts_with($path, 'tests/Integration/Scripts/')) {
-        return ['Analysis/Evidence/ComputedMetrics', 'P5'];
-    }
-    if (str_starts_with($path, 'tests/Unit/PhpStan/')) {
-        return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
-    }
-    if (str_starts_with($path, 'tests/Unit/Core/')) {
-        return ['Core', 'permanent'];
     }
     if (str_ends_with($path, '.gitkeep')) {
         return ['legacy-placeholder', 'P8'];
@@ -1384,35 +1233,20 @@ function isRegisteredToolingRoot(string $path): bool
     return false;
 }
 
-function dispositionFor(string $path, string $kind): string
+/**
+ * The disposition is read off the target, not off a prefix list. "Move" and
+ * "retain" answer exactly the question `targetPath()` has already answered —
+ * whether this artifact is where it belongs — so deciding them twice let the
+ * two disagree: a prefix list that had not grown a retain case for a directory
+ * printed "Move atomically" beside a target equal to the row's own path.
+ *
+ * The two arms above the derivation are the rows whose disposition is not that
+ * question. An orphan candidate carries the reason it is a candidate, and a
+ * placeholder's target is the sentinel DELETE, which is not a path it could be
+ * retained at.
+ */
+function dispositionFor(string $path, string $kind, string $target): string
 {
-    // A control is written straight into the root that holds it, so there is no
-    // move to record: a target path other than its own would assert a relocation
-    // nobody decided.
-    if (isRegisteredToolingRoot($path)) {
-        return 'Retain at the materialized subject-owned path.';
-    }
-    if (array_key_exists($path, LEGACY_UNMOVED)) {
-        return 'Move atomically with the named owner and closure package.';
-    }
-    if (isTestClassPath($path)) {
-        return 'Retain at the materialized subject-owned path.';
-    }
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
-        || in_array($path, P7_MEASUREMENT_PATHS, true)
-        // Logging's target directory is settled; its Infrastructure/{Subject}/Unit
-        // siblings (Cache, Console, Parallel, Rule, ...) do not have that decision yet.
-        || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
-        || str_starts_with($path, 'tests/Analysis/Finding/')
-        || str_starts_with($path, 'tests/Analysis/Policy/Inline/')
-        || str_starts_with($path, 'tests/Analysis/Policy/Baseline/')
-        || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
-        || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
-        || in_array($path, P6_D_GIT_TEST_PATHS, true)
-        || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
-    ) {
-        return 'Retain at the materialized subject-owned path.';
-    }
     $orphanReason = orphanCandidateReason($path);
     if ($orphanReason !== null) {
         return 'P8: retain in place until consumer proof; delete only if the orphan candidate is confirmed. ' . $orphanReason;
@@ -1421,7 +1255,9 @@ function dispositionFor(string $path, string $kind): string
         return 'P8: remove the empty legacy placeholder after its target topology exists.';
     }
 
-    return 'Move atomically with the named owner and closure package.';
+    return $target === $path
+        ? 'Retain at the materialized subject-owned path.'
+        : 'Move atomically with the named owner and closure package.';
 }
 
 function orphanCandidateReason(string $path): ?string
@@ -1440,9 +1276,6 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
     if (isRegisteredToolingRoot($path)) {
         return $path;
     }
-    if (array_key_exists($path, LEGACY_UNMOVED)) {
-        return LEGACY_UNMOVED[$path][1];
-    }
     if (isTestClassPath($path)) {
         return $path;
     }
@@ -1450,9 +1283,7 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
         || in_array($path, P7_MEASUREMENT_PATHS, true)
         || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
         || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
-        || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
         || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
-        || in_array($path, P6_D_GIT_TEST_PATHS, true)
     ) {
         return $path;
     }
@@ -1592,7 +1423,9 @@ function fixtureDirectoryRows(array $rows): array
             // A directory whose every member file is already retained in
             // place (a tooling test root, e.g.) is not a pending move — it is
             // already at its final home, and saying "move" about it asserts a
-            // relocation nobody planned. See dispositionFor()'s own retain arm.
+            // relocation nobody planned. Retained is dispositionFor()'s answer
+            // when a file's target equals its path, so this aggregate says
+            // "move" only where some member really does still owe one.
             $directories[$directory]['retained'] = ($directories[$directory]['retained'] ?? true)
                 && $row['disposition'] === 'Retain at the materialized subject-owned path.';
             $directory = dirname($directory);
@@ -1891,10 +1724,19 @@ function inventorySummary(array $rows, array $fixtureDirectories, array $discove
  *
  * Both directions are checked, because both rot: a closure entry must exist,
  * and a retired entry must not. The prefix and pattern literals inside
- * `classifyOwner()`, `currentSuite()`, `dispositionFor()` and `targetPath()`
- * are deliberately outside this check — they classify an arbitrary input path,
- * including pre-migration ones handed in through `--classification-probe=`,
- * and are claims about inputs rather than about the tree.
+ * `classifyOwner()`, `currentSuite()` and `targetPath()` are deliberately
+ * outside this check — they classify an arbitrary input path, including
+ * pre-migration ones handed in through `--classification-probe=`, and are
+ * claims about inputs rather than about the tree.
+ *
+ * What they are claims about has narrowed, deliberately and once: the literals
+ * naming `tests/Unit/`, `tests/Integration/` and `tests/Functional/` were
+ * deleted when the stage-04 campaign emptied those three roots. A probe for a
+ * path under one of them no longer resolves to the owner it had before the
+ * campaign — it is refused as an unclassified artifact, or, being a test class,
+ * refused by the parse. That is the intended end state: the classifier answers
+ * for the tree the repository has, and one epoch back is the last epoch it
+ * still answers for.
  */
 function assertPathLiteralsResolve(string $projectRoot): void
 {
@@ -1905,9 +1747,7 @@ function assertPathLiteralsResolve(string $projectRoot): void
         'P6_A_FINDING_TEST_PATHS' => P6_A_FINDING_TEST_PATHS,
         'P6_B_FINDING_TEST_PATHS' => P6_B_FINDING_TEST_PATHS,
         'P6_B_INLINE_TEST_PATHS' => P6_B_INLINE_TEST_PATHS,
-        'P6_D_REPORTING_TEST_PATHS' => P6_D_REPORTING_TEST_PATHS,
         'P6_D_PRIORITIZATION_TEST_PATHS' => P6_D_PRIORITIZATION_TEST_PATHS,
-        'P6_D_GIT_TEST_PATHS' => P6_D_GIT_TEST_PATHS,
     ];
 
     foreach ($closures as $constant => $paths) {
