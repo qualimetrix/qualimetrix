@@ -39,7 +39,7 @@ use SplFileInfo;
  */
 final class ScratchPathsCarryRealEntropyTest extends TestCase
 {
-    private const ROOTS = ['tests', 'governance', 'scripts'];
+    private const ROOTS = ['tests', 'governance', 'scripts', 'tools'];
 
     #[Test]
     public function itFindsNoClockDerivedIdentifierInTheTree(): void

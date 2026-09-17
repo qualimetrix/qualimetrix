@@ -13,14 +13,15 @@ parameters:
         - tests
         - governance
         - scripts
+        - tools
     excludePaths:
         - tests/Fixtures
         - tests/Analysis/Evidence/Measurement/Fixtures
         - tests/Analysis/Policy/Architecture/Fixtures
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
-        - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
         - governance/FormatOptionKeys/Fixtures
+        - tools/phpstan/tests/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     ignoreErrors:

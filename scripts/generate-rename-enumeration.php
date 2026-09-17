@@ -54,7 +54,7 @@ function surfaces(): array
         // the count in the same step that moves the files, so a sweep reading
         // one column would have read a drop that means nothing.
         'tests' => [
-            'roots' => ['tests', 'governance'],
+            'roots' => ['tests', 'governance', 'tools'],
             'files' => [],
             'excludeDirs' => ['__pycache__'],
             'excludeFiles' => [],

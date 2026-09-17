@@ -346,7 +346,7 @@ if ($classificationProbeArguments !== []) {
 }
 
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'tools/phpstan/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -664,8 +664,8 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
     }
-    if (str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/')) {
-        return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
+    if (str_starts_with($path, 'tools/phpstan/tests/')) {
+        return ['Tooling/PhpStan', 'P8'];
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
         return ['Analysis/Evidence/' . $matches[1], 'P7'];
@@ -1037,7 +1037,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],
@@ -1077,6 +1076,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/SymbolVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'tools/phpstan/tests/', 'suite' => 'Tooling'],
     ];
 }
 
@@ -1154,7 +1154,7 @@ function dispositionFor(string $path, string $kind): string
     // A control is written straight into the root that holds it, so there is no
     // move to record: a target path other than its own would assert a relocation
     // nobody decided.
-    if (str_starts_with($path, 'governance/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/')) {
         return 'Retain at the materialized subject-owned path.';
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
@@ -1198,7 +1198,7 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
-    if (str_starts_with($path, 'governance/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/')) {
         return $path;
     }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
@@ -1494,8 +1494,6 @@ function systemSupportContents(string $root): string
 {
     $rows = [
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
-        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
-        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
     ];
     foreach ($rows as $row) {
         if (!is_file($root . '/' . $row[1])) {

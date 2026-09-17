@@ -188,6 +188,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // there, so every root the tracked configuration declares has to
             // exist here before the inventory script can reach its own refusal.
             $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
+            $this->copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
             $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
             $this->copyDirectory(
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
@@ -211,6 +212,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'phpunit.xml.dist',
                 'tests',
                 'governance',
+                'tools',
                 'scripts',
                 'src/Reporting/Template',
             ], $projectRoot);

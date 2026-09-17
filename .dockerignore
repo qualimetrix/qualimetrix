@@ -29,6 +29,12 @@ phpunit.xml*
 coverage/
 .phpunit.cache/
 
+# Nested test directories under tooling roots (e.g. tools/phpstan/tests/):
+# the root-anchored tests/ entry above does not reach them. Matched both ways
+# so the exclusion does not depend on settling Docker's glob semantics.
+**/tests/
+tools/phpstan/tests/
+
 # Examples and documentation (reference only)
 examples/
 docs/

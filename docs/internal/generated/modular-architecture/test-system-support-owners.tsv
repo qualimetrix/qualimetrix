@@ -1,4 +1,2 @@
 owner	path	justification	suite
 TestSupport/Logging	tests/TestSupport/Logging/Support/RecordingLogger.php	"Shared PSR-3 recording helper for named Finding and Coupling tests."	support
-TestSupport/ArchitectureStaticAnalysis	tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php	"Repository PHPStan architecture guard."	Unit
-TestSupport/ArchitectureStaticAnalysis	tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php	"Repository PHPStan architecture guard."	Unit

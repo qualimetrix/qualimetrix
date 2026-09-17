@@ -19,7 +19,7 @@ TEST_ROOT = Path(__file__).parent
 PROJECT_ROOT = TEST_ROOT.parents[3]
 RUNNER = PROJECT_ROOT / "scripts/phpunit-aggregate.py"
 FAKE_PHPUNIT = TEST_ROOT / "Fixtures/fake_phpunit.py"
-SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
+SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Tooling", "Governance")
 
 
 def load_runner_module():

@@ -57,10 +57,11 @@
         "psr-4": {
             "Qualimetrix\\Tests\\": "tests/",
             "Qualimetrix\\Governance\\": "governance/",
-            "Qualimetrix\\PhpStan\\": "tools/phpstan/"
+            "Qualimetrix\\PhpStan\\": "tools/phpstan/",
+            "Qualimetrix\\PhpStan\\Tests\\": "tools/phpstan/tests/"
         },
         "classmap": [
-            "tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/"
+            "tools/phpstan/tests/Fixtures/"
         ]
     },
     "bin": [

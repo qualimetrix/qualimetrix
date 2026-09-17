@@ -28,7 +28,6 @@
             <directory>tests/Unit</directory>
             <directory>tests/Core/Path/Unit</directory>
             <directory>tests/Core/Symbol/Unit</directory>
-            <directory>tests/TestSupport/ArchitectureStaticAnalysis/Unit</directory>
             <directory>tests/Analysis/Policy/Architecture/Unit</directory>
             <directory>tests/Analysis/Policy/Baseline/Unit</directory>
             <directory>tests/Analysis/Policy/Inline/Unit</directory>
@@ -78,6 +77,9 @@
         </testsuite>
         <testsuite name="Infrastructure">
             <directory>tests/Infrastructure</directory>
+        </testsuite>
+        <testsuite name="Tooling">
+            <directory>tools/phpstan/tests</directory>
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>
