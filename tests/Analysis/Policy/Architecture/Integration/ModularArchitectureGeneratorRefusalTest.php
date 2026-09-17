@@ -199,6 +199,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/generate-modular-architecture-test-inventory.php',
                 $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
             ));
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/promise-effect/tests',
+                $projectRoot . '/scripts/promise-effect/tests',
+            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));

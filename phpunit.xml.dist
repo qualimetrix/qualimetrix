@@ -80,6 +80,7 @@
         </testsuite>
         <testsuite name="Tooling">
             <directory>tools/phpstan/tests</directory>
+            <directory>scripts/promise-effect/tests</directory>
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>
