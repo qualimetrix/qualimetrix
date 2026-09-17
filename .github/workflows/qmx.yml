@@ -159,3 +159,44 @@ jobs:
             qmx-results.json
           retention-days: 7
           if-no-files-found: ignore
+
+  docker-image:
+    name: Docker image (the documented build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # website/docs/getting-started/quick-start.md tells the reader to run
+      # `docker build -t qmx .` and then `docker run ... qmx check src/`.
+      # Nothing checked that, and both steps had been broken since the
+      # repository's first commit: composer.lock was excluded from the build
+      # context while the Dockerfile copies it, and the authoritative classmap
+      # was dumped before src/ arrived, so the image died on every invocation.
+      # This job is that documented path, run as a reader would run it.
+      - name: Build the image
+        run: docker build -t qmx .
+
+      - name: Image answers --version
+        run: docker run --rm qmx --version
+
+      # Not just "it starts": the promise is that it analyses a mounted tree.
+      # --fail-on=none because the question here is whether the image works,
+      # not whether src/Core is clean: without it `check` answers 2 for the
+      # findings it is supposed to find and pipefail turns a working image into
+      # a red job.
+      - name: Image analyses a mounted tree
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD/src/Core:/code:ro" qmx \
+            check /code --workers=0 --no-progress --format=json --fail-on=none \
+            | tee /tmp/docker-qmx.json > /dev/null
+          python3 - <<'PY'
+          import json
+          with open('/tmp/docker-qmx.json') as handle:
+              report = json.load(handle)
+          files = report['summary']['filesAnalyzed']
+          assert files > 0, f'the image analysed nothing: {files} files'
+          print(f'analysed {files} files inside the image')
+          PY
