@@ -213,3 +213,81 @@ risk and have not been re-derived.
 round 2's fixes touched only the table and two paragraphs it had itself read,
 and the remaining risk is no longer in the plan but in execution — which each
 package's own verification, not another plan review, is what establishes.
+
+---
+
+# Execution review, and the fix round
+
+Scope: `c49fc0b4..8629a5c7`, the whole stage as executed. One reviewer.
+`findings-execution.md`: 10 confirmed, **no HIGH and no CRITICAL** — 3 MEDIUM,
+7 LOW. Every one re-checked by the orchestrator against the tree.
+
+## What it found, and the one cause behind four of them
+
+**The set of tooling test roots was written out four times in the inventory
+generator and reconciled against nothing** — the scan-scope pathspec,
+`classifyOwner()`'s branches, `dispositionFor()`'s chain and `targetPath()`'s
+chain. That is why `cross-tool-comparison` reached one list and missed three,
+and why the two Python roots missed the rename surface. It is also, in
+retrospect, the mechanism behind the whole stage's recurring defect: **a set
+written out N times without reconciliation diverges exactly where nobody
+looks.**
+
+The cure was already in the same file. `assertSuiteClassifierAgreesWithPhpunit()`
+reconciles the suite map in both directions and refuses by name; the four lists
+became one `TOOLING_TEST_ROOT_OWNERS`, and a new check scans the disk
+independently and compares both ways.
+
+**Both directions shown refusing before the green was trusted:**
+
+```
+scripts/benchmark/tests/ exists on disk but is not registered in TOOLING_TEST_ROOT_OWNERS
+scripts/ghost-tool/tests/ is registered in TOOLING_TEST_ROOT_OWNERS but no longer exists on disk
+```
+
+## A hole this stage opened its own measurement with, now closed
+
+`itReadsEveryTestRootItJudges` floored two roots by name and said "the two that
+exist today". So a **declared root holding no test files passed silently** — and
+`tools/phpstan` was exactly that before P1 filled it, which this stage measured
+on its first day and then did not fix. The guard now floors every root the scan
+returns:
+
+```
+scripts/ghost-tool/tests is a declared test root with no test files
+```
+
+## One finding contradicted a commit message of this stage
+
+`2f4a3da7` called `cross-tool-comparison`'s classification "sound". It was sound
+about *existence* and wrong about *correctness*: the inventory answered
+`Analysis/Evidence/Measurement`/`P7` for a file that no longer belongs to that
+capability, while its sibling answered `Tooling/PhpunitAggregate`/`P8`. The
+reviewer declined to drop the finding on the strength of that message and wrote
+the distinction into its mechanism instead. It was right to.
+
+## Why no round 3
+
+The fix round introduced material no review had seen: a new check, and
+`classifyOwner()` refactored from thirteen branches to a loop. Both were
+verified directly rather than re-reviewed.
+
+- The new check: plant-verified in both directions, above.
+- The refactor: behavioural equivalence proved by regenerating the inventory and
+  diffing. **One line changed out of 921 artifacts** — the intended
+  `cross-tool-comparison` owner — so classification is preserved for the other
+  920.
+- The guard floor: plant-verified, above.
+- The rest is configuration and prose.
+
+`composer check` green end to end (`STAGE_GATE_EXIT=0`), all six suite counts
+unmoved, 9198 discovered, 921 artifacts, rename surface at 58/54/82/113.
+
+## What no review in this stage reached
+
+The G2/G3 refusal was reproduced on some new roots, not all ten — a full sweep
+needs an isolated copy with `vendor` **copied**, because a symlinked `vendor`
+resolves PSR-4 back to the source tree and greens falsely. No Docker image was
+built, so `.dockerignore`'s effect is reasoned from `COPY . .` rather than
+observed. And the 616 files still in `tests/` remain unread by anyone, which is
+the population this stage narrowed by 18 and did not close.
