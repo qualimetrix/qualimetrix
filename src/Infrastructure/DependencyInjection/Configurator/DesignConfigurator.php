@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  * (`param`/`return`/`property` type coverage), so under a glob the published
  * order of a finding's text would be decided by alphabetical filenames. The
  * order below is the decision the fixture
- * `tests/Analysis/Finding/Fixtures/Channels/order.txt` records. Collectors
+ * `governance/Channel/Fixtures/order.txt` records. Collectors
  * declare no channels, so they stay globbed.
  */
 final class DesignConfigurator implements ContainerConfiguratorInterface

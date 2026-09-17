@@ -17,7 +17,7 @@ declare(strict_types=1);
  */
 
 return [
-    'ceiling' => 60,
+    'ceiling' => 57,
     'rows' => [
         'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php' => 'Qualimetrix\\Tests\\Unit\\Metrics',
         'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
@@ -47,7 +47,6 @@ return [
         'tests/Analysis/Policy/Architecture/Unit/LayerSelectorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Domain\\Allow',
         'tests/Analysis/Policy/Architecture/Unit/LayerViolationOptionsTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Rules',
         'tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Rules',
-        'tests/Analysis/Policy/Architecture/Unit/LayersValidatorMembershipRefusalGuardTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Validation',
         'tests/Analysis/Policy/Architecture/Unit/LayersValidatorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Validation',
         'tests/Analysis/Policy/Architecture/Unit/TemplateLayerDefinitionTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Domain\\Layer',
         'tests/Analysis/Policy/Architecture/Unit/TupleExtractorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Processing',
@@ -75,8 +74,6 @@ return [
         'tests/Infrastructure/Profiler/Unit/Export/JsonExporterTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler\\Export',
         'tests/Infrastructure/Profiler/Unit/ProfilerTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
         'tests/Infrastructure/Profiler/Unit/SpanTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
-        'tests/System/DocumentationConsistency/Integration/ChannelPublicationConsistencyTest.php' => 'Qualimetrix\\Tests\\Integration\\Documentation',
-        'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php' => 'Qualimetrix\\Tests\\Integration\\Documentation',
         'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',
         'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',
     ],

@@ -258,7 +258,7 @@ final class Probes
                 self::HETEROGENEITY,
                 ["'effective', 'overrun', 'inert', 'unmeasured'" => "'effective', 'overrun', 'unmeasured'"],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
                 ],
             )->alsoReddens(
@@ -274,7 +274,7 @@ final class Probes
                 self::HETEROGENEITY,
                 ["        'masked',\n" => ''],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
                 ],
             )->alsoReddens(
@@ -322,18 +322,18 @@ final class Probes
                 'seeded-fixture-copied-into-src',
                 'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
                 [self::SEEDED_LEAK => self::seededFile(self::SEEDED)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
             )->alsoReddens(
                 'both cases forbid a seeded fixture under src/, and the planted copy is one file breaking both',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc',
+                    'Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc',
                 ],
             ),
             Probe::planting(
                 'seeded-suppression-copied-into-src',
                 'a seeded @qmx-ignore appears under src/, where no enumeration would ever notice it',
                 [self::SEEDED_SUPPRESSION_LEAK => self::seededFile(self::SEEDED_SUPPRESSION)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc'],
             ),
         ];
     }
@@ -376,7 +376,7 @@ final class Probes
                 self::FLOOR,
                 ["        'unmeasured' => false," => "        'unmeasured' => true,"],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
@@ -404,8 +404,8 @@ final class Probes
                 self::FLOOR,
                 ["        'inert' => true,\n" => ''],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryVerdictTheProductCanPublishAndNoOther',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itNamesEveryVerdictTheProductCanPublishAndNoOther',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
                     'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAcceptsAPopulationCarryingEveryVerdictAndEveryRefusal',
                 ],
             )->alsoReddens(
@@ -909,7 +909,7 @@ final class Probes
                 self::FINGERPRINT,
                 [$read . "\n" => ''],
                 [
-                    \sprintf('Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "%s"', $field),
+                    \sprintf('Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "%s"', $field),
                     ...self::FIELD_CASCADES[$field] ?? [],
                 ],
             );
@@ -933,7 +933,7 @@ final class Probes
                 self::FINGERPRINT,
                 ["        'severity',
 " => ''],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries'],
             ),
             Probe::breaking(
                 'report-forgets-the-run',
@@ -1028,21 +1028,21 @@ final class Probes
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeEitherDirectiveOfAMaskingPair',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRemovesEveryBindingOfOneAuthoredSite',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "acceptedLevel"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "code"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyTarget"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyType"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "location"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "metricValue"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "occurrenceKey"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "relatedLocations"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "ruleName"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "subject"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "symbolPath"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "acceptedLevel"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "code"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyTarget"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyType"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "location"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "metricValue"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "occurrenceKey"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "relatedLocations"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "ruleName"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "subject"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "symbolPath"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
                     'Qualimetrix.Tests.Analysis.Run.Integration.DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
@@ -1146,9 +1146,9 @@ final class Probes
             )->alsoReddens(
                 'the fingerprint is read positionally by the field-coverage cases, so dropping one field shifts the ones written after it',
                 [
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
                 ],
             ),
             Probe::breaking(
@@ -1156,7 +1156,7 @@ final class Probes
                 'the advice a finding gives counts as part of what the finding is rather than as prose',
                 self::FINGERPRINT,
                 ["            \$finding->recommendation ?? '',\n        ]);" => '        ]);'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"'],
             ),
             Probe::breaking(
                 'field-lists-drift-from-the-code',
@@ -1168,7 +1168,7 @@ final class Probes
                     "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation'];"
                     => "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation', 'severity'];",
                 ],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"'],
             ),
         ];
     }

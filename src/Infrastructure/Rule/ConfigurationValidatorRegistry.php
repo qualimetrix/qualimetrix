@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
  * witness beside the compiled universe. **Nothing in production asks it** —
  * the run reads the universe the pass assembled — and that is deliberate, not
  * an oversight: its one consumer is
- * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest},
+ * {@see \Qualimetrix\Governance\Channel\ChannelUniverseCoverageTest},
  * which compares the validators the container holds against the channels the
  * universe reports. A check that read only the universe would be reading the
  * same answer production reads, and would agree with it however wrong it was.

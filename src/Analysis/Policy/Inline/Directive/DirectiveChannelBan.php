@@ -63,7 +63,7 @@ final readonly class DirectiveChannelBan
      * Raw string rather than an imported `CodeDuplicationRule::NAME`: Inline
      * depends on Finding's contracts, never on another evidence capability's
      * rule class. The name is pinned by
-     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::itRequiresEveryNamedFileToStillEarnItsEntry()},
+     * {@see \Qualimetrix\Governance\RuleDeclaration\RuleIdentifierLiteralGuardTest::itRequiresEveryNamedFileToStillEarnItsEntry()},
      * whose staleness check resolves this literal to its live owning
      * capability through the container and fails if a rename on the rule's
      * side leaves this file's copy unowned.

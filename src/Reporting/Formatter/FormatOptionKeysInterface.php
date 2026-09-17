@@ -16,7 +16,7 @@ namespace Qualimetrix\Reporting\Formatter;
  * renderers: the renderer is a collaborator of exactly one formatter, and the
  * user names the formatter, not the renderer. The divergence this creates -- a
  * declaration drifting away from the reader -- is what the enumerating test
- * (`tests/Unit/Reporting/Formatter/FormatOptionKeyDeclarationTest.php`) checks.
+ * (`governance/FormatOptionKeys/FormatOptionKeyDeclarationTest.php`) checks.
  */
 interface FormatOptionKeysInterface
 {

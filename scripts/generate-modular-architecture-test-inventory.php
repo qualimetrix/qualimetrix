@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = '72b419a19c39c6dfe93240e46f58f85eb9fefe0442335a9acb978d286c2de50f';
+const P6_C_BASELINE_PATHS_SHA256 = 'bbd221438a278c2b15e7de662b680f1497ed8d9b9db35c457062eb21db0b4d42';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -93,10 +93,8 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
     'tests/Analysis/Policy/Architecture/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
-    'tests/Analysis/Configuration/Integration/Loader/YamlNormalizationCharacterizationTest.php',
     'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
-    'tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
@@ -117,7 +115,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
     'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
     'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
-    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyResolverTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyVisitorTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/Handler/TypeDependencyHelperTest.php',
@@ -165,11 +163,11 @@ const P3_TEST_PATHS = [
 
 /** @var list<string> Exact Finding test closure; future siblings require an ownership decision. */
 const P6_A_FINDING_TEST_PATHS = [
-    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
-    'tests/Analysis/Finding/Fixtures/Channels/excluded.txt',
+    'governance/Channel/Fixtures/declared.txt',
+    'governance/Channel/Fixtures/excluded.txt',
     'tests/Analysis/Finding/Integration/ChannelCoverageTest.php',
-    'tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php',
-    'tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php',
+    'governance/Channel/ChannelDeclarationFixtureDriftTest.php',
+    'governance/Channel/ChannelEmissionStaticGuardTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
     'tests/Analysis/Finding/Support/FindingFactory.php',
@@ -192,10 +190,10 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
     'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
     'tests/Analysis/Finding/Unit/RuleSelectorTest.php',
-    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Finding/Unit/SeverityTest.php',
     'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
-    'tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php',
+    'governance/ThresholdKeys/ThresholdValidatorAssignmentTest.php',
     'tests/Analysis/Finding/Unit/FindingChannelTest.php',
     'tests/Analysis/Finding/Unit/FindingFilterStageTest.php',
     'tests/Analysis/Finding/Unit/FindingTest.php',
@@ -660,14 +658,8 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'governance/')) {
         return ['Architecture.Governance', 'P8'];
     }
-    if (str_starts_with($path, 'tests/System/DocumentationConsistency/')) {
-        return ['System/DocumentationConsistency', 'P8'];
-    }
     if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
         return ['System/TestRunnerConfiguration', 'P8'];
-    }
-    if (str_starts_with($path, 'tests/System/ScratchPathIsolation/')) {
-        return ['System/ScratchPathIsolation', 'P8'];
     }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
@@ -957,9 +949,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Integration/Architecture/')) {
         return ['Analysis/Policy/Architecture', 'P0'];
     }
-    if (str_starts_with($path, 'tests/Integration/Documentation/')) {
-        return ['System/DocumentationConsistency', 'P8'];
-    }
     if (str_starts_with($path, 'tests/Integration/Scripts/')) {
         return ['Analysis/Evidence/ComputedMetrics', 'P5'];
     }
@@ -1045,7 +1034,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/FindingProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/Reporting/Formatter/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
@@ -1061,15 +1049,34 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Formatter/Sarif/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/Reporting/Formatter/Suppressed/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/System/TestRunnerConfiguration/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/System/DocumentationConsistency/Integration/', 'suite' => 'Integration'],
-        ['prefix' => 'tests/System/ScratchPathIsolation/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
         ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RuleOptionKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/Channel/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ThresholdKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RuleDeclaration/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RatchetArtifact/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PlanningRecords/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DocumentationCensus/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ModularOwnership/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ConsoleComposition/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/SolePrimitiveOwnership/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/RepositoryEntrypoints/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ConfigurationVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/HealthVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/SymbolVocabulary/', 'suite' => 'Governance'],
     ];
 }
 
@@ -1248,7 +1255,6 @@ function fixtureTail(string $path): string
         'tests/Analysis/Policy/Architecture/Fixtures/',
         'tests/Analysis/Policy/Baseline/Fixtures/',
         'tests/Analysis/Policy/Inline/Fixtures/',
-        'tests/System/DocumentationConsistency/Fixtures/',
         'tests/Architecture/Fixtures/',
         'tests/Fixtures/',
         'tests/Fixture/',
@@ -1487,9 +1493,6 @@ function orphanDispositionContents(): string
 function systemSupportContents(string $root): string
 {
     $rows = [
-        ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
-        ['System/TestRunnerConfiguration', 'tests/System/TestRunnerConfiguration/Unit/CoverageIsRequestedExplicitlyTest.php', 'Repository test-runner configuration guard.', 'Unit'],
-        ['System/ScratchPathIsolation', 'tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php', 'Repository scratch-path isolation guard.', 'Unit'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],

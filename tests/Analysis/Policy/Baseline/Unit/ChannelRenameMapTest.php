@@ -12,6 +12,11 @@ use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\ChannelRenameTsvCorpus;
 
+/**
+ * The repository-topology half of this subject —
+ * {@see \Qualimetrix\Governance\Channel\ChannelRenameMapTest} — reads the
+ * repository's own declared channel map and stays a repo-control.
+ */
 #[CoversClass(ChannelRenameMap::class)]
 final class ChannelRenameMapTest extends TestCase
 {
@@ -54,24 +59,6 @@ final class ChannelRenameMapTest extends TestCase
         self::assertSame('c.d', $map->translate('a.b'));
         self::assertNull($map->translate('c.d'));
         self::assertSame(['a.b', 'e.f'], $map->oldNames());
-    }
-
-    /**
-     * The tracked map of this repository is a live input of the carry, not
-     * only of the gate: a row that lands in it has to be one the shipped
-     * command can read.
-     */
-    #[Test]
-    public function itReadsTheRepositorysOwnDeclaredChannelMap(): void
-    {
-        $map = ChannelRenameMap::fromFile(\dirname(__DIR__, 5) . '/finding-gate/maps/channels.tsv');
-
-        self::assertCount(\count($map->oldNames()), $map->renames);
-
-        foreach ($map->renames as $old => $new) {
-            self::assertNotSame('', $old);
-            self::assertNotSame('', $new);
-        }
     }
 
     #[Test]

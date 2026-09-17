@@ -26,7 +26,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
  * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
  *
  * The characterization test
- * ({@see \Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\YamlNormalizationCharacterizationTest})
+ * ({@see \Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest})
  * proves that the loader emits {@code architecture.max_expanded_layers}
  * verbatim. This test proves the **independent** assertion that the value
  * reaches {@see ArchitectureConfiguration::$maxExpandedLayers} via the

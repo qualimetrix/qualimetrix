@@ -23,20 +23,6 @@ final class SymbolLevelProjectionTest extends TestCase
     }
 
     /**
-     * The case list is the enum's own, so a seventh {@see SymbolType} fails
-     * here rather than silently acquiring whichever level a `default` arm
-     * happened to give it.
-     */
-    #[Test]
-    public function itCoversEverySymbolType(): void
-    {
-        self::assertSame(
-            array_map(static fn(SymbolType $type): string => $type->value, SymbolType::cases()),
-            array_map(static fn(array $case): string => $case[0]->value, iterator_to_array(self::provideDeclarationKinds(), false)),
-        );
-    }
-
-    /**
      * @return iterable<string, array{SymbolType, SymbolLevel}>
      */
     public static function provideDeclarationKinds(): iterable

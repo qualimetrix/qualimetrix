@@ -27,8 +27,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * The two loops below are the two positions in
  * `CouplingCollector::computeClassMetrics()` where the predicate is called;
- * `UnmatchedFrameworkNamespaceRuleTest` pins that there are no others, because
- * nothing in the language keeps this a mirror.
+ * `FrameworkClassificationSiteCountTest` pins that there are no others,
+ * because nothing in the language keeps this a mirror.
  */
 final readonly class FrameworkClassificationSites
 {

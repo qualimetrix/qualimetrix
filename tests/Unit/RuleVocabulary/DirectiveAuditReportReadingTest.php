@@ -10,12 +10,9 @@ use PHPUnit\Framework\TestCase;
 use QmxDirectiveAudit\AuditReportError;
 use QmxDirectiveAudit\EnumeratedSite;
 use QmxDirectiveAudit\HeterogeneityFloor;
-use QmxDirectiveAudit\MeasuredEffects;
 use QmxDirectiveAudit\Population;
 use QmxDirectiveAudit\SiteEnumeration;
 use QmxDirectiveAudit\VerdictReport;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 
 /**
  * The one reader `composer directives:audit` and `directives:narrow-control`
@@ -225,35 +222,6 @@ final class DirectiveAuditReportReadingTest extends TestCase
     }
 
     /** A verdict the product can publish and the table cannot name is a floor that guesses. */
-    #[Test]
-    public function itNamesEveryVerdictTheProductCanPublishAndNoOther(): void
-    {
-        $published = array_map(static fn(DirectiveEffect $effect): string => $effect->value, DirectiveEffect::cases());
-        $named = array_keys(MeasuredEffects::TABLE);
-
-        sort($published);
-        sort($named);
-
-        self::assertSame($published, $named);
-    }
-
-    /**
-     * The table must still say what the condition it replaced said. Completeness
-     * alone would pass a table with a boolean flipped, and so would a live run:
-     * nothing in this tree publishes an unmeasured-only report.
-     */
-    #[Test]
-    public function itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday(): void
-    {
-        foreach (DirectiveEffect::cases() as $effect) {
-            self::assertSame(
-                $effect->value !== 'unmeasured',
-                MeasuredEffects::isMeasured($effect->value),
-                $effect->value,
-            );
-        }
-    }
-
     /**
      * `reason` is nullable and still required. A reader that accepted the key's
      * absence would read a report that stopped publishing refusals as a
@@ -269,39 +237,6 @@ final class DirectiveAuditReportReadingTest extends TestCase
         $this->expectException(AuditReportError::class);
 
         VerdictReport::fromJson(self::reportJson([$row], 2));
-    }
-
-    /** A verdict the product can publish and the floor cannot name is a floor that guesses. */
-    #[Test]
-    public function itAsksForEveryVerdictTheProductCanPublishAndNoOther(): void
-    {
-        $published = array_map(static fn(DirectiveEffect $effect): string => $effect->value, DirectiveEffect::cases());
-        $required = HeterogeneityFloor::REQUIRED_EFFECTS;
-
-        sort($published);
-        sort($required);
-
-        self::assertSame($published, $required);
-    }
-
-    /**
-     * The same in the other vocabulary, and the one that carries the point: a
-     * masking coalition is `unmeasured` like any other refusal, so a floor
-     * written over verdicts alone never asks for it.
-     */
-    #[Test]
-    public function itAsksForEveryRefusalTheProductCanPublishAndNoOther(): void
-    {
-        $published = array_map(
-            static fn(DirectiveUnmeasurableReason $reason): string => $reason->value,
-            DirectiveUnmeasurableReason::cases(),
-        );
-        $required = HeterogeneityFloor::REQUIRED_REASONS;
-
-        sort($published);
-        sort($required);
-
-        self::assertSame($published, $required);
     }
 
     #[Test]

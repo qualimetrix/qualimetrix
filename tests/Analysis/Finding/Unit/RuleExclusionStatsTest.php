@@ -73,7 +73,7 @@ final class RuleExclusionStatsTest extends TestCase
      * `suppress_namespaces`/`suppress_namespace_channels` and `suppress_paths`.
      * `Reporting\FindingProjection\SuppressionMechanism::ledgerHalves()` is
      * beholden to that count (its own test,
-     * `Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest`,
+     * `Governance\FindingVocabulary\SuppressionMechanismTest`,
      * checks the enum side); this test reads the count structurally, off the
      * `*ByRule` constructor parameters, so a third half added to this VO
      * fails here rather than silently under-reporting the `suppressed`

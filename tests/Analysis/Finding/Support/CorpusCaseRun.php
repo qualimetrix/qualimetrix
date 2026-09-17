@@ -13,9 +13,9 @@ use RuntimeException;
  * is *observed* doing rather than against what it says about itself.
  *
  * It is shared rather than copied because two such guards now exist —
- * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest}
+ * {@see \Qualimetrix\Governance\Channel\ChannelLevelDeclarationDriftTest}
  * for the levels a channel reports at and
- * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelJudgedMetricDriftTest}
+ * {@see \Qualimetrix\Governance\Channel\ChannelJudgedMetricDriftTest}
  * for the metric its magnitude comes from — and both need the same three
  * things: the case definitions, a run of `bin/qmx` under a case's own
  * configuration, and the refusal below to treat a partial run as an

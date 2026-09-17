@@ -79,7 +79,7 @@ abstract class AbstractRule implements RuleInterface
      * than from its options, so that a producer which reports at a level its
      * options cannot express is visible as a disagreement instead of silently
      * reading as "disabled". That agreement is asserted for every producer by
-     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest}.
+     * {@see \Qualimetrix\Governance\Channel\LevelActivityCoversEveryDeclaredLevelTest}.
      *
      * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule}
      * overrides this: one instance hosts producers that have no class of their

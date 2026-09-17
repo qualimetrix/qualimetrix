@@ -1302,7 +1302,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # ends the freeze and moves `occurrence` for the channel's accepted entries.
 # Every other occurrence the row's surface counts include (selectors,
 # `@qmx-ignore` targets, other tests, docs, config) renames normally.
-# `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceKindFreezeGuardTest.php`
 # re-derives the same frozen set independently on every `composer test` run
 # and fails if the count drifts, if a
 # frozen constant no longer equals its own pin, or if the constant is no
@@ -1350,7 +1350,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `SecurityPatternCollector::PATTERN_TYPES`, its `CodeSmellLocation('<leaf>'`
 # / equivalent producer literal in the capability's visitor, and the
 # `'codeSmell.<leaf>'` / `'security.<leaf>'` bag keys throughout tests/.
-# `tests/Analysis/Finding/Integration/OccurrenceLeafFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceLeafFreezeGuardTest.php`
 # re-derives this set independently on every `composer test` run and fails if
 # the twelve drift, if a leaf stops matching its own pin, or if a family
 # loses its pin — a consistent sweep that renamed a leaf everywhere at once

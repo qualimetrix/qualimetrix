@@ -62,7 +62,7 @@ final readonly class Finding
      * **Being the only such place does not make the copy self-maintaining.**
      * A field added to the constructor with a default is copied nowhere and
      * compiles fine, so what actually catches the omission is a test:
-     * `FindingTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach()`
+     * `Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach()`
      * reads the constructor's parameters reflectively and fails on any it
      * has not been told is either copied here or rewritten here.
      */
@@ -107,7 +107,7 @@ final readonly class Finding
      * one into its name, and nothing on this object repeats it. Emission
      * therefore cannot disagree with what is published, and what a channel
      * *declares* is compared against this by
-     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest}
+     * {@see \Qualimetrix\Governance\Channel\ChannelLevelDeclarationDriftTest}
      * over the whole corpus.
      */
     public function level(): SymbolLevel

@@ -266,7 +266,7 @@ one option set is routinely run through several formats.
 
 The declaration sits on the formatter even when the key is read by one of its
 renderers (`rank-by`, `top`, `project-name`), so
-`tests/Unit/Reporting/Formatter/FormatOptionKeyDeclarationTest.php` enumerates
+`governance/FormatOptionKeys/FormatOptionKeyDeclarationTest.php` enumerates
 the reading sites from the source and holds declaration and reader in agreement
 in both directions.
 

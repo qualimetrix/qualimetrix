@@ -60,21 +60,6 @@ final class ChannelLevelSelectorTest extends TestCase
     }
 
     /**
-     * The whole level vocabulary and nothing else, read from the enum so a
-     * sixth level is covered the day it is added.
-     */
-    #[Test]
-    public function itParsesEveryLevelOfTheVocabulary(): void
-    {
-        foreach (SymbolLevel::cases() as $level) {
-            $selector = ChannelLevelSelector::tryParse('demo.rule:' . $level->value);
-
-            self::assertNotNull($selector, $level->value);
-            self::assertSame($level, $selector->level());
-        }
-    }
-
-    /**
      * @param string $raw text that is not a selector
      */
     #[Test]

@@ -109,9 +109,18 @@ about this repository — that an artifact is fresh, that documentation agrees
 with the tree, that every registered thing has some property — rather than about
 product behaviour. It is grouped by the subject each control guards, never by
 the kind of artifact the control happens to read. Registering a new group means
-`phpunit.xml.dist`, `currentSuite()` in
-`scripts/generate-modular-architecture-test-inventory.php`, and nothing else —
-an unregistered group reddens `composer architecture:check` by name.
+two edits that must agree: a `<directory>` under the `Governance` suite in
+`phpunit.xml.dist`, and a row in
+`testSuitePrefixTable()` in
+`scripts/generate-modular-architecture-test-inventory.php`. Nothing else — an
+unregistered group reddens `composer architecture:check` by name. Declaring the
+root as a single `<directory>` instead of one per group is deliberately not
+done: it hides layout defects.
+
+A group's directory is flat, so every file in it reaches the repository root
+with `\dirname(__DIR__, 2)`. A stale depth does not fail — it resolves to a
+directory above the repository, a walk of it returns nothing, and a control
+asserting a property of every member of an empty set passes.
 
 Registering a new test **root** means every address in the table below, and
 re-deriving that table against the tree before trusting it. Most of these
@@ -122,13 +131,14 @@ not, under a green `composer check`.
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | `composer.json` `autoload-dev`, `phpstan.neon` `paths`, the `.php-cs-fixer.dist.php` finder                                                                                | loudly       |
 | `phpunit.xml.dist` — a `<testsuite>` that reaches it                                                                                                                       | loudly       |
+| a `<directory>` naming a path that no longer exists — PHPUnit warns, exits 0, and hands back an **empty suite**                                                            | **silently** |
 | `scripts/phpunit-aggregate.py` — `SUITES`, the partition proof in its docstring, the `--jobs` bound                                                                        | loudly       |
 | `tests/System/TestRunnerConfiguration/Tests/test_phpunit_aggregate.py` — its own copy of the suite tuple, run by `test:cross-tool` and not by the aggregate                | loudly       |
 | `scripts/generate-modular-architecture-test-inventory.php` — scan scope, `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()` | loudly       |
 | `scripts/generate-modular-architecture-production-inventory.php` — the ban on `src/` importing a development namespace is a literal list of prefixes                       | **silently** |
 | `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                    | **silently** |
-| `tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                            | **silently** |
-| `tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php` — `createIsolatedProject()` copies the roots it names                    | **silently** |
+| `governance/TestSuiteHygiene/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                                       | **silently** |
+| `governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php` — `createIsolatedProject()` copies the roots it names                                       | **silently** |
 | `.gitattributes` — `export-ignore`, or the root ships in the composer dist package                                                                                         | **silently** |
 | `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                               | **silently** |
 | `.dockerignore` and `scripts/init-environment.sh`                                                                                                                          | **silently** |

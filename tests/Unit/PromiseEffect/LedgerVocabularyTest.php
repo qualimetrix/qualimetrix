@@ -38,17 +38,6 @@ final class LedgerVocabularyTest extends TestCase
     }
 
     #[Test]
-    public function itLoadsTheRepositorysOwnLedger(): void
-    {
-        // The guard is worth nothing if it only passes on a fixture: the set it
-        // declares has to be the one the tracked ledger actually uses.
-        $ledger = Ledger::load(\dirname(__DIR__, 3));
-
-        self::assertNotSame([], $ledger->compositions, 'a ledger carrying no composition row would pass the promise guard by carrying nothing');
-        self::assertNotSame([], $ledger->pairs, 'the same, for the coexistence guard');
-    }
-
-    #[Test]
     public function itRefusesACompositionPromiseNoClassifierBranchAwards(): void
     {
         $this->expectException(LedgerError::class);

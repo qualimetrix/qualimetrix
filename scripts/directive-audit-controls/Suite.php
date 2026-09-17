@@ -44,13 +44,15 @@ final readonly class Suite
     public const array FILES = [
         'tests/Analysis/Policy/Inline/Integration/DirectiveUsageTest.php',
         'tests/Analysis/Policy/Inline/Integration/ThresholdDirectiveAuditTest.php',
-        'tests/Analysis/Policy/Inline/Unit/Directive/ExecutionFingerprintFieldCoverageTest.php',
         'tests/Analysis/Run/Integration/DirectiveAuditPipelineTest.php',
         'tests/Infrastructure/Console/Functional/DirectivesCommandTest.php',
         'tests/Infrastructure/Console/Unit/DirectiveAuditSummaryProjectionTest.php',
         'tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php',
         'tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php',
         'tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php',
+        'governance/DirectiveVocabulary/DirectiveEffectVocabularyAgreementTest.php',
+        'governance/DirectiveVocabulary/ExecutionFingerprintFieldCoverageTest.php',
+        'governance/TestSuiteHygiene/SeededFixtureIsolationTest.php',
     ];
 
     /**

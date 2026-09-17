@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -39,32 +38,6 @@ final class AllowAliasExpanderTest extends TestCase
             [DependencyType::StaticCall, DependencyType::Extends, DependencyType::Attribute],
             $result,
         );
-    }
-
-    /**
-     * Reflective drift test: every existing {@see DependencyType} case must
-     * round-trip through the expander unchanged. This is the mechanism that
-     * keeps the user-facing surface in sync with the collector: when a new
-     * case is added to the enum, this data-provider grows automatically and
-     * the test will fail loudly if the expander accidentally hard-codes the
-     * accepted list instead of consulting {@see DependencyType::cases()}.
-     *
-     * @return iterable<string, array{DependencyType}>
-     */
-    public static function everyDependencyTypeCase(): iterable
-    {
-        foreach (DependencyType::cases() as $case) {
-            yield $case->value => [$case];
-        }
-    }
-
-    #[Test]
-    #[DataProvider('everyDependencyTypeCase')]
-    public function itAcceptsEveryDependencyTypeCaseAsADirectToken(DependencyType $case): void
-    {
-        $result = AllowAliasExpander::expand([$case->value], 'architecture.allow.app[0]');
-
-        self::assertSame([$case], $result);
     }
 
     // -------------------------------------------------------------------------

@@ -98,7 +98,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      * (every subclass of this base is occurrence-shaped); if one starts
      * overriding `analyze()` to emit a real magnitude, it must also override
      * this method, or the drift guard will catch the mismatch against
-     * `tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
+     * `governance/Channel/Fixtures/declared.txt`.
      *
      * @return array<string, ChannelDeclaration>
      */

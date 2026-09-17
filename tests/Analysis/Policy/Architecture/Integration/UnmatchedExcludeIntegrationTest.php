@@ -193,22 +193,6 @@ final class UnmatchedExcludeIntegrationTest extends TestCase
         self::assertSame(2, $tester->getStatusCode(), 'Findings at or above --fail-on exit 2.');
     }
 
-    /** The five declaration verdicts stayed five: nothing moved into the validator. */
-    #[Test]
-    public function itLeavesTheDeclarationValidatorWithItsFiveChannels(): void
-    {
-        self::assertSame(
-            [
-                'architecture.coverage-gap',
-                'architecture.unreachable-layer',
-                'architecture.potential-shadow',
-                'architecture.empty-template',
-                'architecture.pending-layer-matched',
-            ],
-            array_keys(LayerDeclarationValidator::channelDeclarations()),
-        );
-    }
-
     /**
      * A template layer is one `exclude:` clause in the file and one layer per
      * observed module after expansion. Judged instance by instance, a clause
