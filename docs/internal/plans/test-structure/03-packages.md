@@ -19,8 +19,10 @@ in exactly one place and is cited from the others.
   `tests/TestSupport/ArchitectureStaticAnalysis/` no longer exist.
 - **Every address in
   [`measurement/stage-03/addresses-to-edit.md`](measurement/stage-03/addresses-to-edit.md)
-  is edited or explicitly retired.** That file is the checklist — 31 addresses,
-  each graded loud or silent, each assigned. It exists because three review
+  is edited or explicitly retired.** That file is the checklist: every address,
+  each graded loud or silent, each assigned. **The count lives there and is not
+  restated here** — it was restated as 31, and grew past that twice while this
+  sentence did not, which is the defect this document's own preamble forbids. It exists because three review
   findings shared one cause: an address the measurement found and this plan did
   not carry. Do not restate it here; a second copy would drift.
 - **The two totals are unchanged: 9198 discovered, 9196 executed**, and the
@@ -203,7 +205,7 @@ P3 leaves `tests/Unit/RuleVocabulary/` alive, as above. P6 is last so it can be
 dropped without re-cutting anything.
 
 **Files of this stage's subject that no package owns.** None of the 16, none of
-their fixtures, and none of the 31 addresses. Deliberately out of scope, named
+their fixtures, and no address in the checklist. Deliberately out of scope, named
 so rather than omitted: the entry scripts of the six flat tools (D3-3);
 `scripts/input-doors` and `scripts/promise-effect-controls`, which have no test
 to move; the five dead prose sites (P7);
