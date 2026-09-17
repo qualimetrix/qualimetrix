@@ -3,10 +3,25 @@
 .gitignore
 .gitattributes
 
-# Dependencies (will be installed in container)
+# Dependencies (will be installed in container).
+#
+# The bare forms are root-anchored, so they miss every nested copy: measured
+# on this tree, benchmarks/vendor/ and website/.venv/ alone put ~238 MB of
+# build artifacts into the context, and the final stage copies /build
+# wholesale. Everything below is reproducible from a manifest and is never
+# needed by an image that installs its own dependencies.
+#
+# composer.lock is deliberately absent from this list. It was excluded here
+# from the repository's first commit while Dockerfile:17 copies it, so
+# `docker build` failed with "CopyIgnoredFile" on every attempt since — and no
+# workflow builds the image, so nothing ever said so. The lock is what makes
+# the install reproducible; excluding it is wrong in both directions.
 vendor/
-composer.lock
 node_modules/
+**/vendor/
+**/node_modules/
+**/__pycache__/
+**/.venv/
 
 # Development files
 .env
@@ -28,6 +43,25 @@ governance/
 phpunit.xml*
 coverage/
 .phpunit.cache/
+
+# Nested test directories under tooling roots (e.g. tools/phpstan/tests/):
+# the root-anchored tests/ entry above does not reach them. Matched both ways
+# so the exclusion does not depend on settling Docker's glob semantics — every
+# nested tooling test root is listed explicitly, mirroring
+# TOOLING_TEST_ROOT_OWNERS in scripts/generate-modular-architecture-test-inventory.php.
+**/tests/
+tools/phpstan/tests/
+scripts/promise-effect/tests/
+scripts/directive-audit/tests/
+scripts/directive-audit-controls/tests/
+scripts/finding-gate/tests/
+scripts/suppression-snapshot/tests/
+scripts/rename-enumeration/tests/
+scripts/health-calibration/tests/
+scripts/benchmark/tests/
+scripts/modular-architecture/tests/
+scripts/cross-tool-comparison/tests/
+scripts/phpunit-aggregate/tests/
 
 # Examples and documentation (reference only)
 examples/

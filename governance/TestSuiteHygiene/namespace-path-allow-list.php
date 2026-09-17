@@ -17,7 +17,7 @@ declare(strict_types=1);
  */
 
 return [
-    'ceiling' => 57,
+    'ceiling' => 55,
     'rows' => [
         'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php' => 'Qualimetrix\\Tests\\Unit\\Metrics',
         'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
@@ -74,7 +74,5 @@ return [
         'tests/Infrastructure/Profiler/Unit/Export/JsonExporterTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler\\Export',
         'tests/Infrastructure/Profiler/Unit/ProfilerTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
         'tests/Infrastructure/Profiler/Unit/SpanTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
-        'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',
-        'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php' => 'Qualimetrix\\Tests\\Unit\\PhpStan\\Rules',
     ],
 ];

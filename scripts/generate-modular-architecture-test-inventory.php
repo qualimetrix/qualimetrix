@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = 'bbd221438a278c2b15e7de662b680f1497ed8d9b9db35c457062eb21db0b4d42';
+const P6_C_BASELINE_PATHS_SHA256 = '6ec107b914a7e7df6ba2f1984792d48cc7d9c014317c7b190b859e1cdc587833';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -78,13 +78,42 @@ const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-polluted.txt',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-stale-keys.json',
-    'tests/Analysis/Evidence/Measurement/Tests/test_cross_tool_comparison.py',
     'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/MetricDefinitionTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php',
+];
+
+/**
+ * The single source for every tooling test root: which directory, which
+ * subject owner and closure package, in the order registration happened.
+ * Every one of these files, once retained in place, is written straight into
+ * its final home, so `classifyOwner()`, `dispositionFor()`/`targetPath()`
+ * (via `isRegisteredToolingRoot()`) and the `git ls-files` scan-scope pathspec
+ * all read this map instead of repeating its keys — a directory named here
+ * once reaches all three. `assertToolingTestRootRegistrationIsComplete()`
+ * cross-checks the map against the tree itself (independent of this file),
+ * so an added or removed `scripts/*\/tests` or `tools/*\/tests` directory that
+ * is not mirrored here fails loudly instead of silently mis-registering.
+ *
+ * @var array<string, array{string, string}>
+ */
+const TOOLING_TEST_ROOT_OWNERS = [
+    'governance/' => ['Architecture.Governance', 'P8'],
+    'tools/phpstan/tests/' => ['Tooling/PhpStan', 'P8'],
+    'scripts/promise-effect/tests/' => ['Tooling/PromiseEffect', 'P8'],
+    'scripts/directive-audit/tests/' => ['Tooling/DirectiveAudit', 'P8'],
+    'scripts/directive-audit-controls/tests/' => ['Tooling/DirectiveAuditControls', 'P8'],
+    'scripts/finding-gate/tests/' => ['Tooling/FindingGate', 'P8'],
+    'scripts/suppression-snapshot/tests/' => ['Tooling/SuppressionSnapshot', 'P8'],
+    'scripts/rename-enumeration/tests/' => ['Tooling/RenameEnumeration', 'P8'],
+    'scripts/health-calibration/tests/' => ['Tooling/HealthCalibration', 'P8'],
+    'scripts/benchmark/tests/' => ['Tooling/Benchmark', 'P8'],
+    'scripts/modular-architecture/tests/' => ['Tooling/ModularArchitecture', 'P8'],
+    'scripts/cross-tool-comparison/tests/' => ['Tooling/CrossToolComparison', 'P8'],
+    'scripts/phpunit-aggregate/tests/' => ['Tooling/PhpunitAggregate', 'P8'],
 ];
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
@@ -324,6 +353,7 @@ if ($projectRoot === false) {
 }
 assertPathLiteralsResolve($projectRoot);
 assertSuiteClassifierAgreesWithPhpunit($projectRoot);
+assertToolingTestRootRegistrationIsComplete($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -345,8 +375,18 @@ if ($classificationProbeArguments !== []) {
     exit(0);
 }
 
+// The tooling-root portion of this pathspec is every TOOLING_TEST_ROOT_OWNERS
+// key, trimmed of its trailing slash; 'scripts/tests' is dead scan-scope left
+// over from before the roots below existed (its directory is gone, see the
+// coverage note in the stage-03 review), and the `src/Reporting/Template/*`
+// entries are the unrelated HtmlTemplate closure, not a tooling root.
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    [
+        'git', 'ls-files', '--cached', '--others', '--exclude-standard', '--',
+        'tests', 'scripts/tests',
+        ...array_map(static fn(string $prefix): string => rtrim($prefix, '/'), array_keys(TOOLING_TEST_ROOT_OWNERS)),
+        'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js',
+    ],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -654,18 +694,16 @@ function classifyOwner(string $path): array
 {
     // The repository-controls root is not a test tree: every file under it
     // asserts something about this repository, so the governance that owns the
-    // repository owns all of it, whichever subject a group guards.
-    if (str_starts_with($path, 'governance/')) {
-        return ['Architecture.Governance', 'P8'];
-    }
-    if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
-        return ['System/TestRunnerConfiguration', 'P8'];
+    // repository owns all of it, whichever subject a group guards; every other
+    // tooling test root is a subject the tool itself owns. Both come from the
+    // single TOOLING_TEST_ROOT_OWNERS map — see its docblock.
+    foreach (TOOLING_TEST_ROOT_OWNERS as $prefix => $owner) {
+        if (str_starts_with($path, $prefix)) {
+            return $owner;
+        }
     }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
-    }
-    if (str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/')) {
-        return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
         return ['Analysis/Evidence/' . $matches[1], 'P7'];
@@ -955,17 +993,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Unit/PhpStan/')) {
         return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
     }
-    // The rule-vocabulary enumeration is repository tooling, not a capability:
-    // its owner is the governance that owns the plan's instruments.
-    if (str_starts_with($path, 'tests/Unit/RuleVocabulary/')) {
-        return ['Architecture.Governance', 'P8'];
-    }
-    // The promise-effect stand is repository tooling for the same reason, and
-    // its floor is the part of it that has unit tests: the classifier that
-    // decides which grid rows a round is required to call defective.
-    if (str_starts_with($path, 'tests/Unit/PromiseEffect/')) {
-        return ['Architecture.Governance', 'P8'];
-    }
     if (str_starts_with($path, 'tests/Unit/Core/')) {
         return ['Core', 'permanent'];
     }
@@ -1037,7 +1064,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
-        ['prefix' => 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],
@@ -1077,6 +1103,16 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/SymbolVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'tools/phpstan/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/promise-effect/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/directive-audit/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/directive-audit-controls/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/finding-gate/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/suppression-snapshot/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/rename-enumeration/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/health-calibration/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/benchmark/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/modular-architecture/tests/', 'suite' => 'Tooling'],
     ];
 }
 
@@ -1149,12 +1185,78 @@ function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
     }
 }
 
+/**
+ * @return list<string> every 'scripts/<tool>/tests/' and 'tools/<tool>/tests/'
+ *                      directory that actually exists on disk, independent of
+ *                      TOOLING_TEST_ROOT_OWNERS — the source this function
+ *                      checks that map against.
+ */
+function actualToolingTestRootsOnDisk(string $projectRoot): array
+{
+    $roots = [];
+    foreach (['scripts', 'tools'] as $parent) {
+        $directories = glob($projectRoot . '/' . $parent . '/*/tests', GLOB_ONLYDIR);
+        foreach ($directories === false ? [] : $directories as $directory) {
+            $roots[] = $parent . '/' . basename(dirname($directory)) . '/tests/';
+        }
+    }
+    sort($roots, SORT_STRING);
+
+    return $roots;
+}
+
+/**
+ * The four sites that used to spell out the tooling-root set now all read
+ * TOOLING_TEST_ROOT_OWNERS, so they cannot drift from each other — but the map
+ * itself can still drift from the tree: a new `scripts/<tool>/tests/` or
+ * `tools/<tool>/tests/` directory landing without a registration, or a
+ * registered root whose directory is gone. This is that check, against a
+ * listing this file does not otherwise use for anything.
+ */
+function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
+{
+    $onDisk = actualToolingTestRootsOnDisk($projectRoot);
+    $registered = array_values(array_filter(
+        array_keys(TOOLING_TEST_ROOT_OWNERS),
+        static fn(string $prefix): bool => $prefix !== 'governance/',
+    ));
+    sort($registered, SORT_STRING);
+
+    $problems = [];
+    foreach (array_diff($onDisk, $registered) as $root) {
+        $problems[] = $root . ' exists on disk but is not registered in TOOLING_TEST_ROOT_OWNERS';
+    }
+    foreach (array_diff($registered, $onDisk) as $root) {
+        $problems[] = $root . ' is registered in TOOLING_TEST_ROOT_OWNERS but no longer exists on disk';
+    }
+
+    if ($problems !== []) {
+        fail("Tooling test root registration disagrees with the tree:\n  " . implode("\n  ", $problems));
+    }
+}
+
+/**
+ * Whether `$path` falls under one of the registered tooling test roots — the
+ * single TOOLING_TEST_ROOT_OWNERS map that `classifyOwner()` and the
+ * scan-scope pathspec also read.
+ */
+function isRegisteredToolingRoot(string $path): bool
+{
+    foreach (array_keys(TOOLING_TEST_ROOT_OWNERS) as $prefix) {
+        if (str_starts_with($path, $prefix)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function dispositionFor(string $path, string $kind): string
 {
     // A control is written straight into the root that holds it, so there is no
     // move to record: a target path other than its own would assert a relocation
     // nobody decided.
-    if (str_starts_with($path, 'governance/')) {
+    if (isRegisteredToolingRoot($path)) {
         return 'Retain at the materialized subject-owned path.';
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
@@ -1198,7 +1300,7 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
-    if (str_starts_with($path, 'governance/')) {
+    if (isRegisteredToolingRoot($path)) {
         return $path;
     }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
@@ -1412,6 +1514,12 @@ function fixtureDirectoryRows(array $rows): array
             $directories[$directory]['packages'][$row['closure_package']] = true;
             $directories[$directory]['orphan'] = ($directories[$directory]['orphan'] ?? true)
                 && orphanCandidateReason($row['current_path']) !== null;
+            // A directory whose every member file is already retained in
+            // place (a tooling test root, e.g.) is not a pending move — it is
+            // already at its final home, and saying "move" about it asserts a
+            // relocation nobody planned. See dispositionFor()'s own retain arm.
+            $directories[$directory]['retained'] = ($directories[$directory]['retained'] ?? true)
+                && $row['disposition'] === 'Retain at the materialized subject-owned path.';
             $directory = dirname($directory);
         }
     }
@@ -1429,7 +1537,9 @@ function fixtureDirectoryRows(array $rows): array
             'closure_packages' => implode(',', $packages),
             'disposition' => $data['orphan']
                 ? 'P8: retain until consumer proof; delete only if confirmed orphan.'
-                : (count($owners) > 1 ? 'Split by file owner and closure package.' : 'Move atomically with the owning subject.'),
+                : ($data['retained']
+                    ? 'Retain at the materialized subject-owned path.'
+                    : (count($owners) > 1 ? 'Split by file owner and closure package.' : 'Move atomically with the owning subject.')),
         ];
     }
 
@@ -1494,15 +1604,13 @@ function systemSupportContents(string $root): string
 {
     $rows = [
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
-        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
-        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
     ];
     foreach ($rows as $row) {
         if (!is_file($root . '/' . $row[1])) {
             fail('missing System/TestSupport artifact: ' . $row[1]);
         }
     }
-    foreach (['tests/System', 'tests/TestSupport'] as $taxonomy) {
+    foreach (['tests/TestSupport'] as $taxonomy) {
         $children = glob($root . '/' . $taxonomy . '/*');
         if ($children === false) {
             $children = [];

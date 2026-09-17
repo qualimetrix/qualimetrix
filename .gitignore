@@ -86,7 +86,14 @@ examples/
 # code needs, and breach/baseline.json is the accepted ceiling whose exceeding
 # is the only route to a non-null `acceptedLevel`. Swallowed, the guard's
 # scenarios cannot be reproduced from a fresh clone.
-!/tests/System/DocumentationConsistency/Fixtures/**/*.json
+#
+# This negation used to name tests/System/DocumentationConsistency/Fixtures,
+# which stopped existing when the controls moved to governance/. The rule went
+# inert and nothing said so: the twenty fixture files were already tracked, so
+# they kept working, and only a *newly added* fixture would have been swallowed
+# in silence — the failure this comment describes, arriving later than the
+# change that caused it.
+!/governance/FormatOptionKeys/Fixtures/**/*.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

@@ -994,6 +994,16 @@ usort($fanInRows, static fn(array $left, array $right): int => $left <=> $right)
 const DEVELOPMENT_NAMESPACE_PREFIXES = [
     'Qualimetrix\\Tests\\',
     'Qualimetrix\\Governance\\',
+    'Qualimetrix\\PhpStan\\',
+    'Qualimetrix\\PromiseEffect\\Tests\\',
+    'QmxDirectiveAudit\\Tests\\',
+    'QmxDirectiveAuditControls\\Tests\\',
+    'QmxFindingGate\\Tests\\',
+    'Qualimetrix\\SuppressionSnapshot\\Tests\\',
+    'Qualimetrix\\RenameEnumeration\\Tests\\',
+    'Qualimetrix\\HealthCalibration\\Tests\\',
+    'Qualimetrix\\Benchmark\\Tests\\',
+    'Qualimetrix\\ModularArchitecture\\Tests\\',
 ];
 
 $productionToTestRows = [];

@@ -39,7 +39,7 @@ from typing import Sequence
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Governance")
+SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Tooling", "Governance")
 # Named rather than left to PHPUnit's search, which takes a local phpunit.xml
 # ahead of phpunit.xml.dist: that file is git-ignored, so a developer's tree
 # would run a different configuration than CI while both reported success.

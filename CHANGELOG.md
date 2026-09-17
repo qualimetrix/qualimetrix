@@ -312,6 +312,10 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Changed
 
+- The `tools/` directory (PHPStan extensions and their tests) no longer ships
+  in the `composer create-project`/dist package; it is development-only and is
+  now excluded via `.gitattributes` `export-ignore`, alongside the project's
+  other dev-only trees.
 - Every health dimension now publishes what share of its subject it was
   computed over. `--format=json` gains a `coverage` object per dimension
   (measured count, eligible population, ratio, unit and the `.count` it came
@@ -387,6 +391,14 @@ accepted set in the seam's wording and arrives before the rule is built.
   and neither a path nor a formula is a number.
 
 ### Fixed
+
+- The Docker image documented in the quick start now builds and runs. Both
+  `docker build -t qmx .` and the `docker run ... qmx check src/` that follows
+  it had been broken since the first release: `composer.lock` was excluded from
+  the build context while the Dockerfile copies it, and the autoloader's
+  authoritative classmap was built before the source was in place, so an image
+  that did build answered `Class "...ContainerFactory" not found` on every
+  invocation. A CI job now builds the image and analyses a mounted tree with it.
 
 - **A health score's breakdown now lists the inputs that score was computed
   from, with the targets its own formula applies.** The breakdown carried one

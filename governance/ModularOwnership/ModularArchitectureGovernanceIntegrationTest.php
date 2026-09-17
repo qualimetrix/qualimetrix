@@ -56,7 +56,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains(
-            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
         self::assertSame(['@gate:self-test', '@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
@@ -103,7 +103,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     public function itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports(): void
     {
         self::assertCount(28, $this->tsv('test-orphan-dispositions.tsv'));
-        self::assertCount(3, $this->tsv('test-system-support-owners.tsv'));
+        self::assertCount(1, $this->tsv('test-system-support-owners.tsv'));
         self::assertSame([], $this->tsv('production-to-test-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-public-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-module-fan-in.tsv'));

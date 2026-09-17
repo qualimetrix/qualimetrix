@@ -57,10 +57,20 @@
         "psr-4": {
             "Qualimetrix\\Tests\\": "tests/",
             "Qualimetrix\\Governance\\": "governance/",
-            "Qualimetrix\\PhpStan\\": "tools/phpstan/"
+            "Qualimetrix\\PhpStan\\": "tools/phpstan/",
+            "Qualimetrix\\PhpStan\\Tests\\": "tools/phpstan/tests/",
+            "Qualimetrix\\PromiseEffect\\Tests\\": "scripts/promise-effect/tests/",
+            "QmxDirectiveAudit\\Tests\\": "scripts/directive-audit/tests/",
+            "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/",
+            "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/",
+            "Qualimetrix\\SuppressionSnapshot\\Tests\\": "scripts/suppression-snapshot/tests/",
+            "Qualimetrix\\RenameEnumeration\\Tests\\": "scripts/rename-enumeration/tests/",
+            "Qualimetrix\\HealthCalibration\\Tests\\": "scripts/health-calibration/tests/",
+            "Qualimetrix\\Benchmark\\Tests\\": "scripts/benchmark/tests/",
+            "Qualimetrix\\ModularArchitecture\\Tests\\": "scripts/modular-architecture/tests/"
         },
         "classmap": [
-            "tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/"
+            "tools/phpstan/tests/Fixtures/"
         ]
     },
     "bin": [
@@ -83,8 +93,8 @@
         "test:js": "cd src/Reporting/Template && npm test",
         "test:cross-tool": [
             "python3 --version",
-            "python3 -m unittest discover -s tests/Analysis/Evidence/Measurement/Tests -p 'test_*.py'",
-            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'"
+            "python3 -m unittest discover -s scripts/cross-tool-comparison/tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'"
         ],
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",

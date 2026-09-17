@@ -11,8 +11,10 @@ independent problems work against that purpose:
 2. **Repository controls live among tests.** 40 files, plus control methods
    inside 17 more, assert facts about the repository — artefact freshness,
    `docs/` agreement, `src/` vocabulary invariants — not product behaviour. A
-   further 9 files test repository tooling, which is behavioural testing of a
-   non-`src` subject.
+   further 16 files, plus 2 Python files, test repository tooling, which is
+   behavioural testing of a non-`src` subject. That count is stage 03's
+   re-derivation; this overview first claimed 9, from a census taken before
+   stage 02 split the mixed files.
 3. **Two layouts coexist.** 583 files follow ADR 0022 (`{subject}/{level}`); 96
    remain in the pre-migration role buckets.
 
@@ -60,13 +62,13 @@ full account is in [01](01-suite-integrity.md).
 
 ## Stages
 
-| Stage                           | Subject                            | Scope                                       | Depends on     |
-| ------------------------------- | ---------------------------------- | ------------------------------------------- | -------------- |
-| [01](01-suite-integrity.md)     | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
-| [02](02-controls-extraction.md) | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
-| [03](03-tooling-tests.md)       | Tooling tests move to their code   | 9 files + 4 partials                        | 01, 02         |
-| [04](04-subject-layout.md)      | ADR 0022 completed                 | 96 files                                    | 01, 02, 03     |
-| [05](05-content-defects.md)     | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
+| Stage                                                  | Subject                            | Scope                                       | Depends on     |
+| ------------------------------------------------------ | ---------------------------------- | ------------------------------------------- | -------------- |
+| [01](01-suite-integrity.md)                            | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
+| [02](02-controls-extraction.md)                        | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
+| [03](03-tooling-tests.md) + [packages](03-packages.md) | Tooling tests move to their code   | 16 files + 2 Python                         | 01, 02         |
+| [04](04-subject-layout.md)                             | ADR 0022 completed                 | 96 files                                    | 01, 02, 03     |
+| [05](05-content-defects.md)                            | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
 
 **The stages are not independent, and the first draft claimed they were.**
 Measured intersections: 39 ledger files also appear in the relocation map, 42
@@ -93,6 +95,16 @@ under `tests/`; the stages touch 125 of them (02: 45, 03: 12, 04: 17, 05: 108)
 ([`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt)).
 Each touched path means editing the generator and regenerating
 `docs/internal/generated/modular-architecture/`, or `architecture:check` reddens.
+
+**Stage 03's figure of 12 is superseded and understated.** It was derived from
+the 9-file population, and it counted only this one generator's `tests/`
+literals. The re-derived stage-03 population is 16 files plus 2 Python, and its
+addresses reach further than pinned paths — into two other generator constants,
+a tracked digest, `.dockerignore` and the rename-enumeration surface. The
+current list is
+[`measurement/stage-03/addresses-to-edit.md`](measurement/stage-03/addresses-to-edit.md);
+the other stages' figures here have not been re-derived and carry the same
+risk.
 
 ## Measurement this plan stands on
 

@@ -9,12 +9,13 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\PromiseEffect\Ledger;
 
 /**
- * The guard {@see \Qualimetrix\Tests\Unit\PromiseEffect\LedgerVocabularyTest}
+ * The guard {@see \Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest}
  * builds is worth nothing if it only passes on a fixture: the set it declares
  * has to be the one the repository's own tracked ledger actually uses.
  *
  * `scripts/promise-effect.php` runs on include and exits, so `Ledger` is
- * required directly, the way `FloorTest` reaches its own subject.
+ * required directly, the way `\Qualimetrix\PromiseEffect\Tests\FloorTest`
+ * reaches its own subject.
  */
 final class TrackedLedgerNonEmptinessTest extends TestCase
 {

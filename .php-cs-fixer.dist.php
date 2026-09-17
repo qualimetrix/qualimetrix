@@ -8,6 +8,7 @@ $finder = PhpCsFixer\Finder::create()
         __DIR__ . '/tests',
         __DIR__ . '/governance',
         __DIR__ . '/scripts',
+        __DIR__ . '/tools',
     ])
     ->name('*.php')
     ->ignoreDotFiles(true)

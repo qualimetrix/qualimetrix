@@ -14,6 +14,7 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /tests/                 export-ignore
 /governance/            export-ignore
 /scripts/               export-ignore
+/tools/                 export-ignore
 /directive-audit/**     export-ignore
 /finding-gate/**        export-ignore
 /input-doors/**         export-ignore
