@@ -28,6 +28,20 @@ RUN composer install \
 # Copy source code
 COPY . .
 
+# Re-dump the autoloader now that src/ exists.
+#
+# The install above runs before the source arrives, on purpose: it keeps the
+# dependency layer cacheable. But --classmap-authoritative makes the map
+# closed, so an autoloader built at that point contains no Qualimetrix class
+# and refuses to fall back to PSR-4 scanning — the image built and then died
+# on `Class "...ContainerFactory" not found` at every invocation. Nothing
+# caught it because no workflow builds this image.
+RUN composer dump-autoload \
+    --no-dev \
+    --no-interaction \
+    --optimize \
+    --classmap-authoritative
+
 # Final stage
 FROM php:8.4-cli-alpine
 
