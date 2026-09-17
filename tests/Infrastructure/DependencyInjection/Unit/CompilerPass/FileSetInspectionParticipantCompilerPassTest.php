@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Unit;
+namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
 
 use Closure;
 use InvalidArgumentException;

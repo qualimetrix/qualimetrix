@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Integration\Infrastructure\Cache;
+namespace Qualimetrix\Tests\Infrastructure\Cache\Integration;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;

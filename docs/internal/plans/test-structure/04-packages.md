@@ -395,6 +395,33 @@ vendor/bin/phpunit --testsuite=Governance --no-coverage \
   --filter=ModularArchitectureGovernanceIntegrationTest
 ```
 
+**What the move packages hand to P4, measured as they ran.** Each is a constant
+whose literals still resolve — so `assertPathLiteralsResolve()` stays green — while
+nothing can reach them any more. They are listed here rather than pruned piecemeal,
+because "is this branch reachable" is answerable only once every move has landed:
+
+- `P6_D_GIT_TEST_PATHS` became unreachable in all three of its consumers with P1: the
+  test-class parse precedes them in `classifyOwner()`, `dispositionFor()` and
+  `targetPath()`. `P6_D_REPORTING_TEST_PATHS` goes the same way with P2, and the
+  `*Test.php` half of `P6_D_PRIORITIZATION_TEST_PATHS` and `P7_MEASUREMENT_PATHS`
+  with them. One sweep retires them together.
+- `P6_LIVE_ADDED_TEST_IDS` and `P6_RENAMED_TEST_IDS` are **read by nothing** —
+  declarations with no consumer, which is why their literals rot unnoticed. One
+  already has: row 3's value half names
+  `Qualimetrix\Tests\Infrastructure\Integration\RuleExclusionStatsWiringTest`,
+  a namespace the file has not had since stage 02 or 03, and no sweep reaches it
+  because the name is PHP-escaped, carries no path, and is not the *current* name of
+  anything. **Whether a record of the closed migration epoch should survive at all is
+  the owner's call, not P4's** — P4 states the finding and leaves the decision named.
+  Deleting it is not mechanical cleanup; it is discarding history.
+
+**The earlier-epoch reference channel is this stage's new finding.** A reference
+spelled with a name from *two* renames ago is invisible to every sweep the campaign
+has used, including each move package's own old-FQCN grep, which by construction
+searches for the name as of that package's base. Two members are known — the docblock
+P1 repaired in `RuleExclusionStatsWiringTest.php` and the rename record above. Nothing
+here proves there are only two.
+
 **Definition of Done.** The three bucket directories do not exist and nothing declares
 them. `LEGACY_UNMOVED` and its guard are gone. The tree diffed against the map's
 `target` column matches row for row **in both directions**, which is the stage's

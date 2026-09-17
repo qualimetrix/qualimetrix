@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel;
+namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

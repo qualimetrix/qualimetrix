@@ -344,7 +344,7 @@ final class CheckCommandInputValidationTest extends TestCase
      * directly and the `InvalidOptionException` comes out of `Command::run()`
      * uncaught, never touching a `catch` clause — so this goes through the
      * real `Application::doRun()` ladder in-process instead, the same
-     * mechanism {@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest}
+     * mechanism {@see \Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest}
      * proves synthetically. `setCatchExceptions(false)` keeps Symfony's own
      * `run()` out of the way so a wrong answer here fails the assertion
      * instead of being swallowed by the base class's fallback handling.

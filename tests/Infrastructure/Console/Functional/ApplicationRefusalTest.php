@@ -16,7 +16,7 @@ use RuntimeException;
  *
  * Everything here needs an actual process exit code, an actual PHP fatal (or
  * its absence), or non-interactive stdin — none of which an in-process
- * `doRun()` call can show. `tests/Unit/Infrastructure/Console/ApplicationTest.php`
+ * `doRun()` call can show. `tests/Infrastructure/Console/Unit/ApplicationTest.php`
  * covers the clause logic itself, including the live-progress-frame case
  * (`SplitStreamConsoleOutput` gives that one a decorated stream without a
  * real terminal); this file checks the process boundary.
@@ -153,7 +153,7 @@ final class ApplicationRefusalTest extends TestCase
 
     /**
      * The bare-`ConsoleExceptionInterface` route
-     * ({@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier()}
+     * ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier()}
      * proves the mechanism synthetically) is asserted here as a real-input
      * fact about the surface, not just the mechanism: an unknown option is
      * refused through `Application::doRun()`'s ladder — never reaching a

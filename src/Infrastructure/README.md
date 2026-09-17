@@ -333,7 +333,7 @@ remain independent because configuration is keyed by producer rule name.
 - Injects it into `ThresholdOverrideExtractor` without instantiating rules
 
 Each compiler pass has a dedicated unit test. Most live in
-`tests/Infrastructure/Unit/`, named after the pass; the channel-declaration pass
+`tests/Infrastructure/DependencyInjection/Unit/CompilerPass/`, named after the pass; the channel-declaration pass
 is tested with its subject in `tests/Analysis/Finding/Unit/`, and threshold
 validator wiring by
 `tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php`.

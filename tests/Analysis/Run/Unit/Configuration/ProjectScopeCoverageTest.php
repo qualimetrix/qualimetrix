@@ -19,7 +19,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * The verdict a scope-conditioned channel reads before it speaks.
  *
  * The message the console builds from the same answer is proved by
- * {@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest}.
+ * {@see \Qualimetrix\Tests\Infrastructure\Console\Unit\ScopeWarningCheckerTest}.
  *
  * **Every target these fixtures declare exists on disk.** A declared path that
  * does not resolve is skipped by the measurement, which opens the gate — so a

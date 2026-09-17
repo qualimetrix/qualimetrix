@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Ast;
+namespace Qualimetrix\Tests\Infrastructure\Ast\Unit;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
