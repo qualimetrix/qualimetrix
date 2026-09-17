@@ -9,9 +9,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-MEASUREMENT_ROOT = Path(__file__).parents[1]
-SCRIPT = Path(__file__).parents[5] / "scripts" / "cross-tool-comparison.py"
-FIXTURES = MEASUREMENT_ROOT / "Fixtures"
+PROJECT_ROOT = Path(__file__).parents[3]
+SCRIPT = PROJECT_ROOT / "scripts" / "cross-tool-comparison.py"
+FIXTURES = PROJECT_ROOT / "tests" / "Analysis" / "Evidence" / "Measurement" / "Fixtures"
 SPEC = importlib.util.spec_from_file_location("cross_tool_comparison", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)

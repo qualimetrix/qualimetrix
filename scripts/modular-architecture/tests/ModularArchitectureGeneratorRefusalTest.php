@@ -235,6 +235,14 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/modular-architecture/tests',
                 $projectRoot . '/scripts/modular-architecture/tests',
             );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/cross-tool-comparison/tests',
+                $projectRoot . '/scripts/cross-tool-comparison/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/phpunit-aggregate/tests',
+                $projectRoot . '/scripts/phpunit-aggregate/tests',
+            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));

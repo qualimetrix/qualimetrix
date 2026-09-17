@@ -15,6 +15,7 @@ governance/FormatOptionKeys/Fixtures/OutputFormats/full/src/Service	Architecture
 governance/FormatOptionKeys/Fixtures/OutputFormats/suppressed	Architecture.Governance	P8	"Move atomically with the owning subject."
 governance/FormatOptionKeys/Fixtures/OutputFormats/suppressed/src	Architecture.Governance	P8	"Move atomically with the owning subject."
 scripts/directive-audit/tests/Fixtures	Tooling/DirectiveAudit	P8	"Move atomically with the owning subject."
+scripts/phpunit-aggregate/tests/Fixtures	Tooling/PhpunitAggregate	P8	"Move atomically with the owning subject."
 tests/Analysis/Configuration/Fixtures	Analysis/Configuration	P3	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures	Analysis/Evidence/Measurement	P3,P7	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GlobalNamespaceOnly	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
@@ -117,5 +118,4 @@ tests/Analysis/Run/Fixtures/CouplingProject/Service	Analysis/Run	P3	"Move atomic
 tests/Fixtures	Infrastructure/Ast,Reporting/Sarif	permanent	"Split by file owner and closure package."
 tests/Fixtures/Ast	Infrastructure/Ast	permanent	"Move atomically with the owning subject."
 tests/Fixtures/Schema	Reporting/Sarif	permanent	"Move atomically with the owning subject."
-tests/System/TestRunnerConfiguration/Tests/Fixtures	System/TestRunnerConfiguration	P8	"Move atomically with the owning subject."
 tools/phpstan/tests/Fixtures	Tooling/PhpStan	P8	"Move atomically with the owning subject."

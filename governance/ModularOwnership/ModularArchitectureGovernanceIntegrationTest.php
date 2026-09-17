@@ -56,7 +56,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains(
-            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
         self::assertSame(['@gate:self-test', '@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);

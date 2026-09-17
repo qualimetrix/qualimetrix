@@ -78,7 +78,7 @@ const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-polluted.txt',
     'tests/Analysis/Evidence/Measurement/Fixtures/qmx-stale-keys.json',
-    'tests/Analysis/Evidence/Measurement/Tests/test_cross_tool_comparison.py',
+    'scripts/cross-tool-comparison/tests/test_cross_tool_comparison.py',
     'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php',
@@ -346,7 +346,7 @@ if ($classificationProbeArguments !== []) {
 }
 
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'tools/phpstan/tests', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/finding-gate/tests', 'scripts/suppression-snapshot/tests', 'scripts/rename-enumeration/tests', 'scripts/health-calibration/tests', 'scripts/benchmark/tests', 'scripts/modular-architecture/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'tools/phpstan/tests', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/finding-gate/tests', 'scripts/suppression-snapshot/tests', 'scripts/rename-enumeration/tests', 'scripts/health-calibration/tests', 'scripts/benchmark/tests', 'scripts/modular-architecture/tests', 'scripts/cross-tool-comparison/tests', 'scripts/phpunit-aggregate/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -658,8 +658,8 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'governance/')) {
         return ['Architecture.Governance', 'P8'];
     }
-    if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
-        return ['System/TestRunnerConfiguration', 'P8'];
+    if (str_starts_with($path, 'scripts/phpunit-aggregate/tests/')) {
+        return ['Tooling/PhpunitAggregate', 'P8'];
     }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
@@ -1179,7 +1179,7 @@ function dispositionFor(string $path, string $kind): string
     // A control is written straight into the root that holds it, so there is no
     // move to record: a target path other than its own would assert a relocation
     // nobody decided.
-    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/') || str_starts_with($path, 'scripts/suppression-snapshot/tests/') || str_starts_with($path, 'scripts/rename-enumeration/tests/') || str_starts_with($path, 'scripts/health-calibration/tests/') || str_starts_with($path, 'scripts/benchmark/tests/') || str_starts_with($path, 'scripts/modular-architecture/tests/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/') || str_starts_with($path, 'scripts/suppression-snapshot/tests/') || str_starts_with($path, 'scripts/rename-enumeration/tests/') || str_starts_with($path, 'scripts/health-calibration/tests/') || str_starts_with($path, 'scripts/benchmark/tests/') || str_starts_with($path, 'scripts/modular-architecture/tests/') || str_starts_with($path, 'scripts/phpunit-aggregate/tests/')) {
         return 'Retain at the materialized subject-owned path.';
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
@@ -1223,7 +1223,7 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
-    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/') || str_starts_with($path, 'scripts/suppression-snapshot/tests/') || str_starts_with($path, 'scripts/rename-enumeration/tests/') || str_starts_with($path, 'scripts/health-calibration/tests/') || str_starts_with($path, 'scripts/benchmark/tests/') || str_starts_with($path, 'scripts/modular-architecture/tests/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/') || str_starts_with($path, 'scripts/suppression-snapshot/tests/') || str_starts_with($path, 'scripts/rename-enumeration/tests/') || str_starts_with($path, 'scripts/health-calibration/tests/') || str_starts_with($path, 'scripts/benchmark/tests/') || str_starts_with($path, 'scripts/modular-architecture/tests/') || str_starts_with($path, 'scripts/phpunit-aggregate/tests/')) {
         return $path;
     }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
@@ -1525,7 +1525,7 @@ function systemSupportContents(string $root): string
             fail('missing System/TestSupport artifact: ' . $row[1]);
         }
     }
-    foreach (['tests/System', 'tests/TestSupport'] as $taxonomy) {
+    foreach (['tests/TestSupport'] as $taxonomy) {
         $children = glob($root . '/' . $taxonomy . '/*');
         if ($children === false) {
             $children = [];
