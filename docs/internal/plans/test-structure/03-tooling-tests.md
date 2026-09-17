@@ -223,9 +223,13 @@ The two-step plant, the Definition of Done and the seven work packages are in
 [`03-packages.md`](03-packages.md). They were split out when this file passed
 the 400-line threshold; that file executes what this one decides.
 
-## `CLAUDE.md` corrections P7 owes
+## `AGENTS.md` corrections P7 owes
 
-Four, each established here rather than reasoned:
+**Edit `AGENTS.md`, not `CLAUDE.md`** — the latter is a symlink to the former,
+so a patch aimed at `CLAUDE.md` either follows the link silently or, worse,
+replaces the link with a regular file and forks the canon in two.
+
+Five, each established here rather than reasoned:
 
 1. The "`<directory>` naming a path that no longer exists — PHPUnit warns, exits
    0, empty suite / **silently**" row is false: exit 2, measured four ways.
@@ -234,7 +238,10 @@ Four, each established here rather than reasoned:
    (**loud**).
 3. The `scripts/phpunit-aggregate.py` row names three addresses where there is
    one; the second real address is the Python test's own copy of the tuple.
-4. `createIsolatedProject()` is no longer in the governance file — stage 02 split
+4. The repository tree diagram omits `tools/` entirely, and describes `scripts/`
+   as "utility scripts" — both now also hold test directories. Ten of them, at
+   `tools/phpstan/tests/` and `scripts/<tool>/tests/`.
+5. `createIsolatedProject()` is no longer in the governance file — stage 02 split
    it into `tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGeneratorRefusalTest.php`.
    The tree diagram also omits `tools/`.
 
