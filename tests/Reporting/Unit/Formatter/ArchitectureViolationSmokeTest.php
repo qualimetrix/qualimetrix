@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter;
 
 use DOMDocument;
 
@@ -57,7 +57,7 @@ use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
+use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
 
 /**
  * Smoke coverage for every output formatter against the full set of

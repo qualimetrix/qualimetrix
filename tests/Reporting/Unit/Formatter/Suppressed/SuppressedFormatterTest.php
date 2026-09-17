@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

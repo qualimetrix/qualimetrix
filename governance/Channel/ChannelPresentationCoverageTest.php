@@ -76,7 +76,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * configuration, so the computed-metric catalog is empty and every
      * `computed.*` / `health.*` channel is invisible to it — see this class's
      * own `itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel()`
-     * and {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest},
+     * and {@see \Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest},
      * whose docblocks both say so. The static sweep alone leaves configured
      * `computed.*` / `health.*` definitions unchecked. This resolves the six built-in
      * health-score definitions the same way a real run would (through

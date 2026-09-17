@@ -27,6 +27,18 @@ disease one step smaller. **The set is computed, never recalled:** a declared en
 belongs to the package after which nothing tracked remains beneath it, which puts
 `tests/Functional` in P2 and `tests/Unit` and `tests/Integration` in P3.
 
+**A package sweeps the prefixes it fills, not only the names it moves.** Every
+sweep in this stage is keyed on something that exists *before* a move — a class
+name, a path, a namespace — so none of them can reach a claim about a directory
+that exists only *after* it. P2 found the shape by having `composer check:code`
+go red: the generator's own no-suite control planted its probe at
+`tests/Reporting/Functional`, the directory P2 creates and declares, and started
+failing on "this directory should not exist" before reaching the refusal it is
+about. The rule is therefore a second sweep, by the target prefixes the package
+creates, and P2 ran it: exactly one member. This is the same defect class as the
+earlier-epoch reference channel — a claim whose spelling no sweep over the
+current tree can produce.
+
 **A package's file set is derived, not narrated.** Each Files section below states the
 derivation from `relocation-map.csv` and from the generator's own constants. A
 narrated file set is how P6 came to omit the two generator guards that would have
@@ -414,6 +426,18 @@ because "is this branch reachable" is answerable only once every move has landed
   anything. **Whether a record of the closed migration epoch should survive at all is
   the owner's call, not P4's** — P4 states the finding and leaves the decision named.
   Deleting it is not mechanical cleanup; it is discarding history.
+
+**A support row lands with a disposition that contradicts its own target.**
+P2 and P3 each move one support class. After the move the surviving ladder
+answers about the new path and returns `target_path` equal to `current_path`
+while `dispositionFor()` still falls through to "Move atomically…", because that
+function decides from a list of prefixes rather than from the target it is
+describing. Owner and target — the two columns anything downstream reads — are
+right; the disposition is a sentence disagreeing with the row it sits in. The
+cure is to derive the disposition from the target instead of from a prefix list,
+which also retires the last "Move atomically" rows whose target is their own
+path. It belongs here and not in P2 or P3 because it changes the answer for
+fixtures those packages do not own.
 
 **The earlier-epoch reference channel is this stage's new finding.** A reference
 spelled with a name from *two* renames ago is invisible to every sweep the campaign

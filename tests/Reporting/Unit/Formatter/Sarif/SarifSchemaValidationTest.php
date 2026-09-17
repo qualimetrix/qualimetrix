@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif;
 
 use JsonSchema\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -18,7 +18,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
+use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
 
 /**
  * Validates {@see SarifFormatter} output against the official SARIF 2.1.0

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -32,7 +32,7 @@ use Qualimetrix\Reporting\ReportBuilder;
  * channel/rule join. Real container so rule descriptions that ARE real
  * channels (`cohesion.lcom`, `design.dit`, `code-smell.boolean-argument`)
  * assert their actual text; see
- * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`
+ * `tests/Reporting/Integration/Formatter/Sarif/SarifRuleDescriptorCoverageTest.php`
  * for the guard that sweeps every real channel.
  */
 #[CoversClass(SarifFormatter::class)]

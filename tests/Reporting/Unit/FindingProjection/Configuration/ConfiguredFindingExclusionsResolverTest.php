@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\FindingProjection\Unit;
+namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

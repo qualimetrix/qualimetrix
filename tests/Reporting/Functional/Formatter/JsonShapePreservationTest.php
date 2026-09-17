@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Functional\Reporting;
+namespace Qualimetrix\Tests\Reporting\Functional\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,7 +33,7 @@ use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
+use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
 
 /**
  * ADR 0015 Phase 4 contract pin: after the RelativePath VO migration the

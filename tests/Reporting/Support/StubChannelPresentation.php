@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support;
+namespace Qualimetrix\Tests\Reporting\Support;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
  * exercise SARIF JSON shape (fingerprints, locations, schema conformance),
  * never description or `helpUri` text, so a single deterministic answer is
  * enough. Coverage of the real join lives in
- * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`.
+ * `tests/Reporting/Integration/Formatter/Sarif/SarifRuleDescriptorCoverageTest.php`.
  */
 final class StubChannelPresentation implements ChannelPresentationInterface
 {

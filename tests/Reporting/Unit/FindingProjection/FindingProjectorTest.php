@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\FindingProjection\Unit;
+namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;

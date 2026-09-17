@@ -33,7 +33,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
  * table's 9 unreachable arms and 42 unreached channels go unnoticed.
  *
  * The other half of this subject —
- * {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest} —
+ * {@see \Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest} —
  * checks the humanised fallback for an unknown code and stays a product test.
  */
 #[CoversClass(SarifRuleCollector::class)]

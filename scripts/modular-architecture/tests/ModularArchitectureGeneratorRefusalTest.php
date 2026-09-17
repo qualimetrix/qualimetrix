@@ -65,12 +65,22 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * silently omitted from `composer test`. Plant a temporary class in an
      * isolated project under such a directory and assert that the inventory
      * check names it and fails.
+     *
+     * The probe directory has to be one no `<testsuite>` declares while still
+     * parsing to a manifest owner and a level, or the generator refuses it
+     * earlier for the wrong reason and the control never reaches the suite
+     * classification it is about. The previous address stopped satisfying that
+     * when `tests/Reporting/Functional` became a declared suite directory.
+     * Registering this one breaks the control loudly rather than quietly: if it
+     * is declared and filled, `assertDirectoryDoesNotExist()` fails; if it is
+     * declared and empty, PHPUnit exits 2 inside the isolated project; and if
+     * the probe class does land in a suite, the exit-code assertion fails.
      */
     #[Test]
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
     {
         $this->withIsolatedProject(function (string $projectRoot): void {
-            $directory = $projectRoot . '/tests/Reporting/Functional';
+            $directory = $projectRoot . '/tests/Reporting/GraphProjection/Functional';
             $probePath = $directory . '/GuardProbeTest.php';
 
             self::assertDirectoryDoesNotExist($directory);
@@ -80,7 +90,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
                 declare(strict_types=1);
 
-                namespace Qualimetrix\Tests\Reporting\Functional;
+                namespace Qualimetrix\Tests\Reporting\GraphProjection\Functional;
 
                 use PHPUnit\Framework\Attributes\Test;
                 use PHPUnit\Framework\TestCase;
@@ -104,7 +114,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
             self::assertNotSame(0, $exitCode, $output);
             self::assertStringContainsString('classified as suite "none"', $output);
-            self::assertStringContainsString('tests/Reporting/Functional/GuardProbeTest.php', $output);
+            self::assertStringContainsString('tests/Reporting/GraphProjection/Functional/GuardProbeTest.php', $output);
         });
     }
 

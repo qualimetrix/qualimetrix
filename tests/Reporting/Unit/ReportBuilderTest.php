@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting;
+namespace Qualimetrix\Tests\Reporting\Unit;
 
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;

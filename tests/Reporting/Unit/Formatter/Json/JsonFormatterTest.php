@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Json;
 
 use DateTimeImmutable;
 use DateTimeInterface;

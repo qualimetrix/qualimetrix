@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration;
+namespace Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

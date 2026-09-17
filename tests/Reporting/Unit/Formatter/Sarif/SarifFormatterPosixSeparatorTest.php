@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,7 +16,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
+use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
 
 /**
  * ADR 0015 Phase 4 regression pin: SARIF output uses POSIX separators
