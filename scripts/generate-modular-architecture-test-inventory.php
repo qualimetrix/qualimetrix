@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = 'bbd221438a278c2b15e7de662b680f1497ed8d9b9db35c457062eb21db0b4d42';
+const P6_C_BASELINE_PATHS_SHA256 = '6ec107b914a7e7df6ba2f1984792d48cc7d9c014317c7b190b859e1cdc587833';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -346,7 +346,7 @@ if ($classificationProbeArguments !== []) {
 }
 
 $worktreePaths = commandLines(
-    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'tools/phpstan/tests', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'governance', 'scripts/tests', 'tools/phpstan/tests', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/finding-gate/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -675,6 +675,9 @@ function classifyOwner(string $path): array
     }
     if (str_starts_with($path, 'scripts/directive-audit-controls/tests/')) {
         return ['Tooling/DirectiveAuditControls', 'P8'];
+    }
+    if (str_starts_with($path, 'scripts/finding-gate/tests/')) {
+        return ['Tooling/FindingGate', 'P8'];
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
         return ['Analysis/Evidence/' . $matches[1], 'P7'];
@@ -1083,6 +1086,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'scripts/promise-effect/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit-controls/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/finding-gate/tests/', 'suite' => 'Tooling'],
     ];
 }
 
@@ -1160,7 +1164,7 @@ function dispositionFor(string $path, string $kind): string
     // A control is written straight into the root that holds it, so there is no
     // move to record: a target path other than its own would assert a relocation
     // nobody decided.
-    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/')) {
         return 'Retain at the materialized subject-owned path.';
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
@@ -1204,7 +1208,7 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
-    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/')) {
+    if (str_starts_with($path, 'governance/') || str_starts_with($path, 'tools/phpstan/tests/') || str_starts_with($path, 'scripts/promise-effect/tests/') || str_starts_with($path, 'scripts/directive-audit/tests/') || str_starts_with($path, 'scripts/directive-audit-controls/tests/') || str_starts_with($path, 'scripts/finding-gate/tests/')) {
         return $path;
     }
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {

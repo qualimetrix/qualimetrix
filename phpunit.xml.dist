@@ -83,6 +83,7 @@
             <directory>scripts/promise-effect/tests</directory>
             <directory>scripts/directive-audit/tests</directory>
             <directory>scripts/directive-audit-controls/tests</directory>
+            <directory>scripts/finding-gate/tests</directory>
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>

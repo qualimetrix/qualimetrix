@@ -61,7 +61,8 @@
             "Qualimetrix\\PhpStan\\Tests\\": "tools/phpstan/tests/",
             "Qualimetrix\\PromiseEffect\\Tests\\": "scripts/promise-effect/tests/",
             "QmxDirectiveAudit\\Tests\\": "scripts/directive-audit/tests/",
-            "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/"
+            "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/",
+            "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/"
         },
         "classmap": [
             "tools/phpstan/tests/Fixtures/"

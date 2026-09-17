@@ -211,6 +211,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/directive-audit-controls/tests',
                 $projectRoot . '/scripts/directive-audit-controls/tests',
             );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/finding-gate/tests',
+                $projectRoot . '/scripts/finding-gate/tests',
+            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
+namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,10 +21,9 @@ use Throwable;
  * a verdict has to move the corpus too, and the five deliberate divergences
  * are pinned as declarations rather than discovered later as surprises.
  *
- * The gate is not on the production autoloader — `composer.json` maps
- * `Qualimetrix\` to `src/` and nothing to `scripts/` — so its classes are
- * required by hand. That is the same fact the corpus exists because of: the
- * two readers cannot be one.
+ * The gate's own classes (`QmxFindingGate\`) have no autoload root — only this
+ * test directory does — so its classes are required by hand. That is the same
+ * fact the corpus exists because of: the two readers cannot be one.
  */
 final class ChannelRenameTsvGateAgreementTest extends TestCase
 {
@@ -35,7 +34,7 @@ final class ChannelRenameTsvGateAgreementTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $gate = \dirname(__DIR__, 5) . '/scripts/finding-gate';
+        $gate = \dirname(__DIR__);
 
         foreach (['GateError.php', 'Fs.php', 'Tsv.php', 'MetricVocabulary.php', 'RenameMaps.php'] as $file) {
             require_once $gate . '/' . $file;

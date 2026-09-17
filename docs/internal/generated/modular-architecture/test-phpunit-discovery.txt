@@ -64,6 +64,23 @@ Available tests:
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"crlf-line-endings"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"empty-new-field"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-only"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-with-extra-column"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"leading-space-in-old"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"name-carrying-a-level-separator"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"one-row"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"renames-nothing"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"retired-pair-spelling"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"row-missing-a-field"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"the-same-row-twice"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
+ - QmxFindingGate\Tests\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
  - Qualimetrix\Governance\Channel\ChannelDeclarationFixtureDriftTest::itDeclaresConfigurationErrorForExactlyTheLayerPolicyAndDirectiveDiagnostics
  - Qualimetrix\Governance\Channel\ChannelDeclarationFixtureDriftTest::itFindsNoExcludedFixtureLineNamingAChannelTheRegistryDeclares
  - Qualimetrix\Governance\Channel\ChannelDeclarationFixtureDriftTest::itKeepsEveryFixtureLineDeclaredInCode
@@ -6344,23 +6361,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itReadsTheRowsItAccepted
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itRefusesAMapFileItCannotRead
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"chain"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"collapse-two-olds-onto-one-new"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"comment-and-blank-lines"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"crlf-line-endings"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"empty-new-field"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-only"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"header-with-extra-column"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"leading-space-in-old"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"name-carrying-a-level-separator"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"one-row"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"renames-nothing"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"retired-pair-spelling"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"row-missing-a-field"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"the-same-row-twice"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"trailing-space-in-new"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"two-rows-for-one-old"
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameTsvGateAgreementTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itDoesNotCaptureAConfigurationErrorFindingIntoAGeneratedBaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itListsSuchAnEntryForCleanupOnItsOwnReasonEvenWhileTheFindingIsStillMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itNeverAcceptsAConfigurationErrorGroupAtTheCeilingAndReportsTheEntryAsInert
