@@ -11,6 +11,13 @@ from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).parents[3]
 SCRIPT = PROJECT_ROOT / "scripts" / "cross-tool-comparison.py"
+# Deliberately left in tests/Analysis/Evidence/Measurement/Fixtures rather than
+# moving alongside this test. The nine files this test reads are governed as
+# part of that directory's closed fixture set (see P7_MEASUREMENT_PATHS in
+# scripts/generate-modular-architecture-test-inventory.php) even though this
+# tool is their only consumer; this is a legitimate cross-root dev-to-dev
+# read, the same shape as the shared corpus finding-gate reads from outside
+# its own tree, not an unfinished move.
 FIXTURES = PROJECT_ROOT / "tests" / "Analysis" / "Evidence" / "Measurement" / "Fixtures"
 SPEC = importlib.util.spec_from_file_location("cross_tool_comparison", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None

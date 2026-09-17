@@ -312,6 +312,10 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Changed
 
+- The `tools/` directory (PHPStan extensions and their tests) no longer ships
+  in the `composer create-project`/dist package; it is development-only and is
+  now excluded via `.gitattributes` `export-ignore`, alongside the project's
+  other dev-only trees.
 - Every health dimension now publishes what share of its subject it was
   computed over. `--format=json` gains a `coverage` object per dimension
   (measured count, eligible population, ratio, unit and the `.count` it came

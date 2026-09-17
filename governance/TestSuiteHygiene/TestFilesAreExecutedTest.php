@@ -395,7 +395,7 @@ final class TestFilesAreExecutedTest extends TestCase
 
         self::assertContains('Unit', $suites);
         self::assertContains('Governance', $suites);
-        self::assertGreaterThanOrEqual(5, \count($suites));
+        self::assertGreaterThanOrEqual(6, \count($suites));
 
         foreach ($suites as $suite) {
             self::assertNotEmpty(self::listing(self::reachableCommand($suite)), $suite);

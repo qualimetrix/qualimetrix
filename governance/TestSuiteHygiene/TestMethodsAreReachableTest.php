@@ -168,10 +168,13 @@ final class TestMethodsAreReachableTest extends TestCase
     }
 
     /**
-     * Proves the scan reaches every root it claims, and names the two that
-     * exist today as a floor rather than a ceiling: a root added to
-     * `autoload-dev` joins the scan on its own, but neither of these may
-     * silently drop out of it.
+     * Proves the scan reaches every root it claims, and that none of them
+     * comes back empty: a root added to `autoload-dev` joins the scan on its
+     * own, so this floors every root that shows up rather than naming each
+     * one by hand. `tests` and `governance` additionally get a floor sized to
+     * their current bulk — a large root silently going empty is a different
+     * failure than a small one losing its last few files, and this class of
+     * root is unlikely to ever shrink that far.
      */
     #[Test]
     public function itReadsEveryTestRootItJudges(): void
@@ -186,6 +189,11 @@ final class TestMethodsAreReachableTest extends TestCase
         self::assertArrayHasKey('governance', $perRoot);
         self::assertGreaterThan(500, $perRoot['tests']);
         self::assertGreaterThan(0, $perRoot['governance']);
+
+        foreach ($perRoot as $root => $fileCount) {
+            self::assertGreaterThan(0, $fileCount, $root . ' is a declared test root with no test files');
+        }
+
         self::assertGreaterThan(500, \count(TestTree::testFiles()));
     }
 
