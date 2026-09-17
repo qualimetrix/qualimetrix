@@ -94,7 +94,11 @@ def main():
         with open(INVENTORY_PATH, newline="", encoding="utf-8") as handle:
             inventory = {row["current_path"]: row for row in csv.DictReader(handle, delimiter="\t")}
         generator = open(GENERATOR_PATH, encoding="utf-8").read()
+        # The index minus what the working tree no longer has. `git ls-files`
+        # alone answers about the index, so a file removed without git still
+        # reads as tracked and every arm below agrees about a file that is gone.
         tracked = set(git("ls-files").split("\n")) - {""}
+        tracked -= set(git("ls-files", "--deleted").split("\n")) - {""}
     except OSError as error:
         print(f"cannot read an input: {error}", file=sys.stderr)
         return 2
@@ -110,7 +114,19 @@ def main():
             " a row belonging to no package would be moved by nobody"
         )
     mine = partition[arguments.package]
-    others = {row["current"] for name, rows in partition.items() if name != arguments.package for row in rows}
+    # Every map row outside the package under test, as `current => target`. Both
+    # endpoints are needed: the packages that ran earlier have already executed
+    # their rows, so "this path is no longer where the map found it" is the
+    # normal state for them and an alarm only for a row nobody has moved. An
+    # earlier version of this arm held only the `current` paths and therefore
+    # reported every row of every finished package — a rule stated over a
+    # population that includes the work already done.
+    others = {
+        row["current"]: row["target"]
+        for name, rows in partition.items()
+        if name != arguments.package
+        for row in rows
+    }
 
     # 1. Every row of this package executed, and the file is where the map says.
     for row in mine:
@@ -119,12 +135,12 @@ def main():
         if row["target"] not in tracked:
             failures.append(f"{row['target']}: the map's target is not tracked")
 
-    # 2. No file outside this package moved. The map's other rows must be exactly
-    #    where they were; anything else that git records as a rename is a file
-    #    this package had no business touching.
-    for path in others:
-        if path not in tracked:
-            failures.append(f"{path}: moved, but it belongs to another package")
+    # 2. No file outside this package went missing: another package's row is
+    #    either still at its pre-move path, or already at the target the map
+    #    records for it. Neither means it was moved somewhere nobody decided.
+    for current, target in sorted(others.items()):
+        if current not in tracked and target not in tracked:
+            failures.append(f"{current}: gone from the tree, and not at the map's target {target}")
 
     # Against the working tree, not against HEAD: a package is judged before it
     # is committed, and `base..HEAD` on an uncommitted package compares a commit
@@ -168,7 +184,10 @@ def main():
         if row["current"] in allowance:
             failures.append(f"{row['current']}: still in LEGACY_UNMOVED after its package moved it")
     for path in sorted(others):
-        if path.endswith("Test.php") and path not in allowance:
+        # Only a row still at its pre-move path still needs its allowance entry;
+        # a package that has already run took its own rows out, which is the
+        # allowance shrinking as designed rather than shrinking early.
+        if path.endswith("Test.php") and path in tracked and path not in allowance:
             failures.append(f"{path}: left LEGACY_UNMOVED early — its package has not run")
 
     # 5. Namespace follows path. PHPUnit discovers by file, so a stale namespace
@@ -254,6 +273,16 @@ def main():
                 if is_rename_record_key(path, line, spelling):
                     continue
                 failures.append(f"{path}:{number}: still names {old}, the pre-move class name of {row['target']}")
+
+    # 7. A fresh clone of this commit runs. git tracks no empty directory, so a
+    #    <testsuite> naming a path that the clone does not have makes PHPUnit exit
+    #    2 having run nothing — and a package that empties a declared directory
+    #    without removing its entry is how that happens.
+    configuration = open(os.path.join(REPOSITORY_ROOT, "phpunit.xml.dist"), encoding="utf-8").read()
+    for declared in re.findall(r"<directory>([^<]+)</directory>", configuration):
+        declared = declared.strip().rstrip("/")
+        if not any(path.startswith(declared + "/") for path in tracked):
+            failures.append(f"{declared}: declared in phpunit.xml.dist, but git tracks no file under it")
 
     print(f"package {arguments.package}: {len(mine)} rows, allowance now {len(allowance)}")
     if failures:
