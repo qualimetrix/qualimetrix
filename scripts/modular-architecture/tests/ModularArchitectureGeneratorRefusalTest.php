@@ -70,7 +70,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
     {
         $this->withIsolatedProject(function (string $projectRoot): void {
-            $directory = $projectRoot . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
+            $directory = $projectRoot . '/tests/Reporting/Functional';
             $probePath = $directory . '/GuardProbeTest.php';
 
             self::assertDirectoryDoesNotExist($directory);
@@ -80,7 +80,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
                 declare(strict_types=1);
 
-                namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
+                namespace Qualimetrix\Tests\Reporting\Functional;
 
                 use PHPUnit\Framework\Attributes\Test;
                 use PHPUnit\Framework\TestCase;
@@ -104,7 +104,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
             self::assertNotSame(0, $exitCode, $output);
             self::assertStringContainsString('classified as suite "none"', $output);
-            self::assertStringContainsString('tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe/GuardProbeTest.php', $output);
+            self::assertStringContainsString('tests/Reporting/Functional/GuardProbeTest.php', $output);
         });
     }
 
@@ -194,6 +194,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
                 $projectRoot . '/docs/internal/generated/modular-architecture',
             );
+            // The generator validates every test path against the manifest owners,
+            // so the isolated project needs the manifest itself, not only what
+            // the generator writes from it.
+            self::assertTrue(copy(
+                $sourceRoot . '/docs/internal/modular-architecture-manifest.json',
+                $projectRoot . '/docs/internal/modular-architecture-manifest.json',
+            ));
             self::assertTrue(mkdir($projectRoot . '/scripts'));
             self::assertTrue(copy(
                 $sourceRoot . '/scripts/generate-modular-architecture-test-inventory.php',

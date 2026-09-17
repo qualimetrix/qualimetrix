@@ -14,6 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
+const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
 const P6_C_BASELINE_PATHS_SHA256 = '6ec107b914a7e7df6ba2f1984792d48cc7d9c014317c7b190b859e1cdc587833';
 
 $arguments = $_SERVER['argv'] ?? [];
@@ -329,6 +330,130 @@ const P8_ORPHAN_DISPOSITIONS = [
 ];
 
 /**
+ * Test classes whose path does not yet name their manifest owner: current path
+ * => [owner, target]. A transitional grant under ADR 0016's temporary-rule
+ * clause, owned by the stage-04 test-structure campaign and closed when its
+ * last move lands, at which point this constant and
+ * `assertLegacyUnmovedShrinksOnly()` are deleted rather than emptied.
+ *
+ * @var array<string, array{string, string}>
+ */
+const LEGACY_UNMOVED = [
+    'tests/Analysis/Finding/RuleConfiguration/Unit/UnknownRuleOptionKeyRefusalTest.php' => ['Analysis/Finding', 'tests/Analysis/Finding/Unit/RuleConfiguration/UnknownRuleOptionKeyRefusalTest.php'],
+    'tests/Functional/Console/Command/HookInstallCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php'],
+    'tests/Functional/Console/Command/HookStatusCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php'],
+    'tests/Functional/Console/Command/HookUninstallCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Functional/Command/HookUninstallCommandTest.php'],
+    'tests/Functional/Console/LayerAssignmentCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Functional/Command/Debug/LayerAssignmentCommandTest.php'],
+    'tests/Functional/Reporting/CoverageProjectionFormatterTest.php' => ['Reporting', 'tests/Reporting/Functional/CoverageProjectionFormatterTest.php'],
+    'tests/Functional/Reporting/JsonShapePreservationTest.php' => ['Reporting', 'tests/Reporting/Functional/Formatter/JsonShapePreservationTest.php'],
+    'tests/Infrastructure/Integration/RulesCommandWiringTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Integration/RulesCommandWiringTest.php'],
+    'tests/Infrastructure/Integration/SharedRuleOptionsContainerTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Integration/CompilerPass/SharedRuleOptionsContainerTest.php'],
+    'tests/Infrastructure/Unit/ChannelUniverseTest.php' => ['Infrastructure/Rule', 'tests/Infrastructure/Rule/Unit/ChannelUniverseTest.php'],
+    'tests/Infrastructure/Unit/CollectorCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/CollectorCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/ConfigurationStageCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ConfigurationStageCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/ConfigurationValidatorCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ConfigurationValidatorCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/FileSetInspectionParticipantCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/FileSetInspectionParticipantCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/FormatterCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/FormatterCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/GlobalCollectorCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/GlobalCollectorCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/KnownRuleNamesAdapterTest.php' => ['Infrastructure/Rule', 'tests/Infrastructure/Rule/Unit/KnownRuleNamesAdapterTest.php'],
+    'tests/Infrastructure/Unit/ParallelCollectorClassesCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ParallelCollectorClassesCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/RuleCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/RuleOptionsCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleOptionsCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/RuleRegistryCompilerPassTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleRegistryCompilerPassTest.php'],
+    'tests/Infrastructure/Unit/RuleRegistryTest.php' => ['Infrastructure/Rule', 'tests/Infrastructure/Rule/Unit/RuleRegistryTest.php'],
+    'tests/Infrastructure/Unit/RulesCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/Command/RulesCommandTest.php'],
+    'tests/Integration/Architecture/MaxExpandedLayersFromYamlTest.php' => ['Analysis/Policy/Architecture', 'tests/Analysis/Policy/Architecture/Integration/MaxExpandedLayersFromYamlTest.php'],
+    'tests/Integration/DependencyInjection/ContainerConfigurationStagesTest.php' => ['Analysis/Configuration', 'tests/Analysis/Configuration/Integration/Pipeline/ContainerConfigurationStagesTest.php'],
+    'tests/Integration/DependencyInjection/ContainerFactoryTest.php' => ['Infrastructure/DependencyInjection', 'tests/Infrastructure/DependencyInjection/Integration/ContainerFactoryTest.php'],
+    'tests/Integration/Infrastructure/Cache/CacheKeyGeneratorVOTest.php' => ['Infrastructure/Cache', 'tests/Infrastructure/Cache/Integration/CacheKeyGeneratorVOTest.php'],
+    'tests/Integration/Infrastructure/Git/GitSubdirScopeTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Integration/GitSubdirScopeTest.php'],
+    'tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Integration/ReportingGitScopeQueryProjectSubdirTest.php'],
+    'tests/Reporting/FindingProjection/Unit/ConfigurationErrorProjectionTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/ConfigurationErrorProjectionTest.php'],
+    'tests/Reporting/FindingProjection/Unit/ConfiguredFindingExclusionsResolverTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/Configuration/ConfiguredFindingExclusionsResolverTest.php'],
+    'tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/DeclaredChannelFileScopeTest.php'],
+    'tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/FindingProjectorTest.php'],
+    'tests/Reporting/FindingProjection/Unit/ProjectScopedChannelProjectionTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/ProjectScopedChannelProjectionTest.php'],
+    'tests/Reporting/FindingProjection/Unit/SuppressionCompositionBuilderTest.php' => ['Reporting', 'tests/Reporting/Unit/FindingProjection/SuppressionCompositionBuilderTest.php'],
+    'tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php' => ['Reporting', 'tests/Reporting/Integration/Formatter/Sarif/SarifRuleDescriptorCoverageTest.php'],
+    'tests/Reporting/Formatter/Suppressed/Unit/SuppressedFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Suppressed/SuppressedFormatterTest.php'],
+    'tests/Unit/Core/Namespace_/NamespaceTreeTest.php' => ['Analysis/Evidence/Measurement', 'tests/Analysis/Evidence/Measurement/Unit/Contract/NamespaceTreeTest.php'],
+    'tests/Unit/Core/Observation/WorseDirectionTest.php' => ['Core', 'tests/Core/Unit/Observation/WorseDirectionTest.php'],
+    'tests/Unit/Core/Util/GlobSyntaxTest.php' => ['Core', 'tests/Core/Unit/Util/GlobSyntaxTest.php'],
+    'tests/Unit/Core/Util/NamespaceMatcherTest.php' => ['Core', 'tests/Core/Unit/Util/NamespaceMatcherTest.php'],
+    'tests/Unit/Core/Util/PathMatcherTest.php' => ['Core', 'tests/Core/Unit/Util/PathMatcherTest.php'],
+    'tests/Unit/Core/Util/StringSetTest.php' => ['Core', 'tests/Core/Unit/Util/StringSetTest.php'],
+    'tests/Unit/Core/VersionTest.php' => ['Core', 'tests/Core/Unit/VersionTest.php'],
+    'tests/Unit/Infrastructure/Ast/CachedFileParserTest.php' => ['Infrastructure/Ast', 'tests/Infrastructure/Ast/Unit/CachedFileParserTest.php'],
+    'tests/Unit/Infrastructure/Ast/FileParserFactoryTest.php' => ['Infrastructure/Ast', 'tests/Infrastructure/Ast/Unit/FileParserFactoryTest.php'],
+    'tests/Unit/Infrastructure/Ast/PhpFileParserTest.php' => ['Infrastructure/Ast', 'tests/Infrastructure/Ast/Unit/PhpFileParserTest.php'],
+    'tests/Unit/Infrastructure/Cache/CacheKeyGeneratorTest.php' => ['Infrastructure/Cache', 'tests/Infrastructure/Cache/Unit/CacheKeyGeneratorTest.php'],
+    'tests/Unit/Infrastructure/Cache/FileCacheTest.php' => ['Infrastructure/Cache', 'tests/Infrastructure/Cache/Unit/FileCacheTest.php'],
+    'tests/Unit/Infrastructure/Console/ApplicationTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/ApplicationTest.php'],
+    'tests/Unit/Infrastructure/Console/CheckCommandDefinitionTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/CheckCommandDefinitionTest.php'],
+    'tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/CheckScopeResolverTest.php'],
+    'tests/Unit/Infrastructure/Console/CliOptionsParserTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/CliOptionsParserTest.php'],
+    'tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php'],
+    'tests/Unit/Infrastructure/Console/FilteredInputDefinitionTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/FilteredInputDefinitionTest.php'],
+    'tests/Unit/Infrastructure/Console/FormatterContextFactoryTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/FormatterContextFactoryTest.php'],
+    'tests/Unit/Infrastructure/Console/MeasuredFindingSetTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/MeasuredFindingSetTest.php'],
+    'tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/RuntimeLoggerConfiguratorTest.php'],
+    'tests/Unit/Infrastructure/Console/ScopeWarningCheckerTest.php' => ['Infrastructure/Console', 'tests/Infrastructure/Console/Unit/ScopeWarningCheckerTest.php'],
+    'tests/Unit/Infrastructure/Git/ChangedFileTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/ChangedFileTest.php'],
+    'tests/Unit/Infrastructure/Git/GitClientTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/GitClientTest.php'],
+    'tests/Unit/Infrastructure/Git/GitRepositoryLocatorTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/GitRepositoryLocatorTest.php'],
+    'tests/Unit/Infrastructure/Git/GitScopeParserTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/GitScopeParserTest.php'],
+    'tests/Unit/Infrastructure/Git/GitScopeResolverTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/GitScopeResolverTest.php'],
+    'tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php' => ['Infrastructure/Git', 'tests/Infrastructure/Git/Unit/ReportingGitScopeQueryTest.php'],
+    'tests/Unit/Infrastructure/Parallel/FileProcessingResultWireFormatTest.php' => ['Infrastructure/Parallel', 'tests/Infrastructure/Parallel/Unit/FileProcessingResultWireFormatTest.php'],
+    'tests/Unit/Infrastructure/Parallel/FileProcessingTaskFactoryTest.php' => ['Infrastructure/Parallel', 'tests/Infrastructure/Parallel/Unit/FileProcessingTaskFactoryTest.php'],
+    'tests/Unit/Infrastructure/Parallel/Strategy/AmphpParallelStrategyTest.php' => ['Infrastructure/Parallel', 'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php'],
+    'tests/Unit/Infrastructure/Parallel/WorkerBootstrapTest.php' => ['Infrastructure/Parallel', 'tests/Infrastructure/Parallel/Unit/WorkerBootstrapTest.php'],
+    'tests/Unit/Infrastructure/Serializer/IgbinarySerializerTest.php' => ['Infrastructure/Serializer', 'tests/Infrastructure/Serializer/Unit/IgbinarySerializerTest.php'],
+    'tests/Unit/Infrastructure/Serializer/PhpSerializerTest.php' => ['Infrastructure/Serializer', 'tests/Infrastructure/Serializer/Unit/PhpSerializerTest.php'],
+    'tests/Unit/Infrastructure/Serializer/SerializerSelectorTest.php' => ['Infrastructure/Serializer', 'tests/Infrastructure/Serializer/Unit/SerializerSelectorTest.php'],
+    'tests/Unit/Reporting/Filter/FindingFilterTest.php' => ['Reporting', 'tests/Reporting/Unit/Filter/FindingFilterTest.php'],
+    'tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/ArchitectureViolationSmokeTest.php'],
+    'tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/CheckstyleFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/FormatterRegistryTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/FormatterRegistryTest.php'],
+    'tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/GitLabCodeQualityFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/GithubActionsFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/HealthTextFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Health/HealthTextFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Html/HtmlDebtCalculatorTest.php'],
+    'tests/Unit/Reporting/Formatter/Html/HtmlFindingPartitionerTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Html/HtmlFindingPartitionerTest.php'],
+    'tests/Unit/Reporting/Formatter/Html/HtmlMetricAggregatorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Html/HtmlMetricAggregatorTest.php'],
+    'tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Html/HtmlTreeBuilderTest.php'],
+    'tests/Unit/Reporting/Formatter/HtmlFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Html/HtmlFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/Json/JsonFindingSectionTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Json/JsonFindingSectionTest.php'],
+    'tests/Unit/Reporting/Formatter/Json/JsonHealthSectionTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Json/JsonHealthSectionTest.php'],
+    'tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Json/JsonOffenderSectionDensityTest.php'],
+    'tests/Unit/Reporting/Formatter/Json/JsonSanitizerTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Json/JsonSanitizerTest.php'],
+    'tests/Unit/Reporting/Formatter/JsonFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Json/JsonFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/MetricsJsonFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/MetricsJsonFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php'],
+    'tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Sarif/SarifRuleCollectorTest.php'],
+    'tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Sarif/SarifSchemaValidationTest.php'],
+    'tests/Unit/Reporting/Formatter/SarifFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Sarif/SarifFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/Summary/FindingSummaryRendererTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/FindingSummaryRendererTest.php'],
+    'tests/Unit/Reporting/Formatter/Summary/HealthBarRendererTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/HealthBarRendererTest.php'],
+    'tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/HintRendererTest.php'],
+    'tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/OffenderListRendererDensityTest.php'],
+    'tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/TopIssuesRendererTest.php'],
+    'tests/Unit/Reporting/Formatter/SummaryFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Summary/SummaryFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Support/AcceptedLevelNarratorTest.php'],
+    'tests/Unit/Reporting/Formatter/Support/AnsiColorTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Support/AnsiColorTest.php'],
+    'tests/Unit/Reporting/Formatter/Support/DetailedFindingRendererTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Support/DetailedFindingRendererTest.php'],
+    'tests/Unit/Reporting/Formatter/Support/FindingSorterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/Support/FindingSorterTest.php'],
+    'tests/Unit/Reporting/Formatter/TextFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/TextFormatterTest.php'],
+    'tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php' => ['Reporting', 'tests/Reporting/Unit/Formatter/TextVerboseFormatterTest.php'],
+    'tests/Unit/Reporting/FormatterContextTest.php' => ['Reporting', 'tests/Reporting/Unit/FormatterContextTest.php'],
+    'tests/Unit/Reporting/Health/HealthHintProjectorTest.php' => ['Reporting', 'tests/Reporting/Unit/Health/HealthHintProjectorTest.php'],
+    'tests/Unit/Reporting/Health/HealthScoreResolverTest.php' => ['Reporting', 'tests/Reporting/Unit/Health/HealthScoreResolverTest.php'],
+    'tests/Unit/Reporting/Health/SummaryEnricherTest.php' => ['Reporting', 'tests/Reporting/Unit/Health/SummaryEnricherTest.php'],
+    'tests/Unit/Reporting/ReportBuilderTest.php' => ['Reporting', 'tests/Reporting/Unit/ReportBuilderTest.php'],
+    'tests/Unit/Reporting/ReportTest.php' => ['Reporting', 'tests/Reporting/Unit/ReportTest.php'],
+];
+
+/**
  * @var array<string, string> Artifacts a package listed and a later step then
  *                            removed. Kept because the alternative to naming
  *                            them is a closure that silently shrinks, and
@@ -354,6 +479,7 @@ if ($projectRoot === false) {
 assertPathLiteralsResolve($projectRoot);
 assertSuiteClassifierAgreesWithPhpunit($projectRoot);
 assertToolingTestRootRegistrationIsComplete($projectRoot);
+assertLegacyUnmovedShrinksOnly($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -472,7 +598,6 @@ foreach ($worktreePaths as $path) {
 }
 
 validateInventory($rows, $discoveredCaseCounts);
-validateP4Topology($rows);
 $fixtureDirectoryRows = fixtureDirectoryRows($rows);
 
 $outputDirectory = $outputDirectoryArguments === []
@@ -688,6 +813,119 @@ function p6CBaselinePaths(string $projectRoot): array
 }
 
 /**
+ * The manifest owners, spelled the way the tree spells them. Core.Neutral is
+ * the one owner whose name is not a namespace: its tests live at tests/Core.
+ *
+ * @return list<string>
+ */
+function manifestOwnerPaths(): array
+{
+    /** @var list<string>|null $cached */
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    $manifestPath = __DIR__ . '/../docs/internal/modular-architecture-manifest.json';
+    $contents = file_get_contents($manifestPath);
+    if ($contents === false) {
+        fail('Cannot read the modular-architecture manifest: ' . $manifestPath);
+    }
+    $decoded = json_decode($contents, true);
+    if (!is_array($decoded) || !isset($decoded['owners']) || !is_array($decoded['owners'])) {
+        fail('The modular-architecture manifest declares no owner list: ' . $manifestPath);
+    }
+
+    $owners = [];
+    foreach ($decoded['owners'] as $owner) {
+        if (!is_string($owner)) {
+            fail('The modular-architecture manifest declares a non-string owner.');
+        }
+        $owners[] = $owner === 'Core.Neutral' ? 'Core' : str_replace('.', '/', $owner);
+    }
+    sort($owners, SORT_STRING);
+    $cached = $owners;
+
+    return $cached;
+}
+
+/** The population the owner parse answers for; path-based, because it is read before the kind is known. */
+function isTestClassPath(string $path): bool
+{
+    return str_starts_with($path, 'tests/') && str_ends_with($path, 'Test.php');
+}
+
+/** The owner a test path declares: the segments before its level segment, or null when it names no level. */
+function parseOwnerFromTestPath(string $path): ?string
+{
+    $segments = explode('/', substr($path, strlen('tests/')));
+    foreach ($segments as $index => $segment) {
+        if (in_array($segment, TEST_LEVELS, true)) {
+            return implode('/', array_slice($segments, 0, $index));
+        }
+    }
+
+    return null;
+}
+
+function parsesToManifestOwner(string $path): bool
+{
+    $owner = parseOwnerFromTestPath($path);
+
+    return $owner !== null && in_array($owner, manifestOwnerPaths(), true);
+}
+
+/**
+ * Why a parsed owner is not a manifest owner. The two cases read differently to
+ * whoever has to fix the path: a segment that leaves the manifest names the
+ * wrong subject, while a taxonomy above the owners names no subject at all.
+ */
+function ownerRefusalReason(string $owner): string
+{
+    $prefix = '';
+    foreach (explode('/', $owner) as $segment) {
+        $prefix = $prefix === '' ? $segment : $prefix . '/' . $segment;
+        $candidates = array_filter(
+            manifestOwnerPaths(),
+            static fn(string $candidate): bool => $candidate === $prefix || str_starts_with($candidate, $prefix . '/'),
+        );
+        if ($candidates === []) {
+            return sprintf('the segment "%s" leaves the manifest', $segment);
+        }
+    }
+
+    return sprintf('"%s" is a taxonomy above its owners, not an owner', $owner);
+}
+
+function failUnownedTestClass(string $path): never
+{
+    $owner = parseOwnerFromTestPath($path);
+    if ($owner === null) {
+        fail(sprintf(
+            '%s names no test level, so it declares no owner. A test class lives at'
+            . ' tests/{manifest owner}/{Unit|Integration|Functional}/...',
+            $path,
+        ));
+    }
+    if ($owner === '') {
+        fail(sprintf(
+            '%s has no segment before its level segment, so it declares no owner. A test class lives at'
+            . ' tests/{manifest owner}/{Unit|Integration|Functional}/...',
+            $path,
+        ));
+    }
+
+    fail(sprintf(
+        '%s parses to owner "%s", which is not one of the %d manifest owners: %s. Move the file under its'
+        . ' manifest owner, or record the move in LEGACY_UNMOVED.',
+        $path,
+        $owner,
+        count(manifestOwnerPaths()),
+        ownerRefusalReason($owner),
+    ));
+}
+
+/**
  * @return array{string, string}
  */
 function classifyOwner(string $path): array
@@ -701,6 +939,21 @@ function classifyOwner(string $path): array
         if (str_starts_with($path, $prefix)) {
             return $owner;
         }
+    }
+    // A test class declares its owner with its path. The two branches below are
+    // that rule and its transitional exception; the ladder that follows them
+    // answers for fixtures, support classes and the non-PHP artifacts, which
+    // the rule says nothing about.
+    if (array_key_exists($path, LEGACY_UNMOVED)) {
+        return [LEGACY_UNMOVED[$path][0], 'stage-04'];
+    }
+    if (isTestClassPath($path)) {
+        $declaredOwner = parseOwnerFromTestPath($path);
+        if ($declaredOwner === null || !in_array($declaredOwner, manifestOwnerPaths(), true)) {
+            failUnownedTestClass($path);
+        }
+
+        return [$declaredOwner, 'permanent'];
     }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
@@ -1236,6 +1489,50 @@ function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 }
 
 /**
+ * The allowance is judged against the disk and the manifest, never against the
+ * parse it stands beside: a generator checking its own output against its own
+ * rule proves nothing. Three ways a row stops being true, each refused by name —
+ * the file is gone, the file already conforms and the row therefore describes
+ * nothing, or the recorded target is not itself a manifest owner with its level
+ * segment immediately below it.
+ *
+ * A fourth, "the recorded target equals the key so the row records no move", is
+ * not a separate arm because it cannot survive the other two: such a key either
+ * conforms, and the second arm names it, or it does not, and the third arm names
+ * its target. Written out, the comparison is statically false and PHPStan says so.
+ */
+function assertLegacyUnmovedShrinksOnly(string $projectRoot): void
+{
+    $problems = [];
+    foreach (LEGACY_UNMOVED as $path => [, $target]) {
+        if (!is_file($projectRoot . '/' . $path)) {
+            $problems[] = is_file($projectRoot . '/' . $target)
+                ? sprintf('%s has already moved to %s, so its row no longer describes anything unmoved.', $path, $target)
+                : sprintf('%s is allowed but absent from the worktree.', $path);
+
+            continue;
+        }
+        if (parsesToManifestOwner($path)) {
+            $problems[] = sprintf(
+                '%s already conforms, so its row describes nothing; the allowance may only shrink.',
+                $path,
+            );
+        }
+        if (!parsesToManifestOwner($target)) {
+            $problems[] = sprintf(
+                '%s records target %s, which is not at a manifest owner with its level segment immediately below it.',
+                $path,
+                $target,
+            );
+        }
+    }
+
+    if ($problems !== []) {
+        fail("The stage-04 allowance disagrees with the tree:\n  " . implode("\n  ", $problems));
+    }
+}
+
+/**
  * Whether `$path` falls under one of the registered tooling test roots — the
  * single TOOLING_TEST_ROOT_OWNERS map that `classifyOwner()` and the
  * scan-scope pathspec also read.
@@ -1259,9 +1556,14 @@ function dispositionFor(string $path, string $kind): string
     if (isRegisteredToolingRoot($path)) {
         return 'Retain at the materialized subject-owned path.';
     }
+    if (array_key_exists($path, LEGACY_UNMOVED)) {
+        return 'Move atomically with the named owner and closure package.';
+    }
+    if (isTestClassPath($path)) {
+        return 'Retain at the materialized subject-owned path.';
+    }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
         || in_array($path, P7_MEASUREMENT_PATHS, true)
-        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
         // Logging's target directory is settled; its Infrastructure/{Subject}/Unit
         // siblings (Cache, Console, Parallel, Rule, ...) do not have that decision yet.
         || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
@@ -1272,7 +1574,6 @@ function dispositionFor(string $path, string $kind): string
         || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
         || in_array($path, P6_D_GIT_TEST_PATHS, true)
         || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
-        || str_starts_with($path, 'tests/Unit/Reporting/Health/')
     ) {
         return 'Retain at the materialized subject-owned path.';
     }
@@ -1303,22 +1604,19 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
     if (isRegisteredToolingRoot($path)) {
         return $path;
     }
-    if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
-        return 'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php';
+    if (array_key_exists($path, LEGACY_UNMOVED)) {
+        return LEGACY_UNMOVED[$path][1];
+    }
+    if (isTestClassPath($path)) {
+        return $path;
     }
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
         || in_array($path, P7_MEASUREMENT_PATHS, true)
-        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
         || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
         || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
-        || str_starts_with($path, 'tests/Unit/Reporting/Health/')
         || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
         || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
         || in_array($path, P6_D_GIT_TEST_PATHS, true)
-        || in_array($path, [
-            'tests/Analysis/Policy/Inline/Unit/Extraction/DeclarationControlBindingsTest.php',
-            'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php',
-        ], true)
     ) {
         return $path;
     }
@@ -1434,65 +1732,6 @@ function validateInventory(array $rows, array $discoveredCaseCounts): void
         fail(sprintf('Target collision at %s: %s', $target, implode(', ', $uniquePaths)));
     }
 
-}
-
-/** @param list<array<string, string>> $rows */
-function validateP4Topology(array $rows): void
-{
-    $p4Rows = array_values(array_filter(
-        $rows,
-        static fn(array $row): bool => $row['closure_package'] === 'P4',
-    ));
-    $classes = array_values(array_filter(
-        $p4Rows,
-        static fn(array $row): bool => $row['kind'] === 'phpunit-test-class',
-    ));
-    $fixtures = array_values(array_filter(
-        $p4Rows,
-        static fn(array $row): bool => $row['kind'] === 'fixture',
-    ));
-    $supports = array_values(array_filter(
-        $p4Rows,
-        static fn(array $row): bool => $row['kind'] === 'support',
-    ));
-    $testIds = array_sum(array_map(
-        static fn(array $row): int => (int) $row['discovered_test_cases'],
-        $classes,
-    ));
-    foreach ($p4Rows as $row) {
-        if (str_contains($row['current_path'], 'InlineSuppressionLayerViolationIntegrationTest')
-            || str_contains($row['current_path'], '/Fixtures/IgnoreSample/')
-        ) {
-            fail('P4 test topology must not enroll P6-owned InlineSuppression or IgnoreSample artifacts: ' . $row['current_path']);
-        }
-    }
-    $architectureClasses = array_values(array_filter(
-        $classes,
-        static fn(array $row): bool => $row['subject_owner'] === 'Analysis/Policy/Architecture',
-    ));
-    $circularClasses = array_values(array_filter(
-        $classes,
-        static fn(array $row): bool => $row['subject_owner'] === 'Analysis/Evidence/CircularDependency',
-    ));
-    $consoleClasses = array_values(array_filter(
-        $classes,
-        static fn(array $row): bool => $row['subject_owner'] === 'Infrastructure/Console',
-    ));
-    foreach ($architectureClasses as $row) {
-        if (!str_starts_with($row['target_path'], 'tests/Analysis/Policy/Architecture/')) {
-            fail('P4 Architecture test has an unexpected target path: ' . $row['target_path']);
-        }
-    }
-    foreach ($circularClasses as $row) {
-        if (!str_starts_with($row['target_path'], 'tests/Analysis/Evidence/CircularDependency/')) {
-            fail('P4 CircularDependency test has an unexpected target path: ' . $row['target_path']);
-        }
-    }
-    if (count($consoleClasses) !== 1
-        || $consoleClasses[0]['target_path'] !== 'tests/Infrastructure/Console/Functional/LayerAssignmentCommandTest.php'
-    ) {
-        fail('P4 must retain exactly LayerAssignmentCommandTest under the Infrastructure Console adapter target');
-    }
 }
 
 /**

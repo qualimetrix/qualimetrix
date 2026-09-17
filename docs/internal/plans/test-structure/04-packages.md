@@ -120,13 +120,21 @@ What replaces it is not a restatement of the parse — a generator checking its
 own output against its own rule proves nothing. `assertLegacyUnmovedShrinksOnly()`
 checks the allowance against **the disk and the manifest**:
 
-1. every key is a file on disk;
-2. every key's recorded target differs from the key;
-3. every key parses to an owner that is **not** among the 37 — a key that
+1. every key is a file on disk — and when it is not, the refusal distinguishes
+   "gone" from "already moved to its recorded target", because those are two
+   different mistakes;
+2. every key parses to an owner that is **not** among the 37 — a key that
    already conforms is a row that describes nothing;
-4. every recorded target parses to an owner that **is** among the 37, with the
+3. every recorded target parses to an owner that **is** among the 37, with the
    level segment immediately below it — which is what refuses a target of the
    shape the rejected map proposed.
+
+A fourth arm was specified and then measured out of existence: "the recorded
+target differs from the key" is statically false, and PHPStan says so. It is not
+a gap, because such a key cannot escape the other two — it either conforms, and
+arm 2 names it, or it does not, and arm 3 names its target. The implication is
+written into the function's docblock rather than left for the next reader to
+re-derive.
 
 **Definition of Done.**
 
@@ -180,18 +188,22 @@ Then the guard is **observed to refuse**. Every row of the table below is
 planted, reverted after its refusal is recorded, each quoted in the package
 report:
 
-| Planted                                                                  | Expected refusal                                  |
-| ------------------------------------------------------------------------ | ------------------------------------------------- |
-| add a row to `LEGACY_UNMOVED` naming a file that is not on disk          | the path is allowed but absent                    |
-| add a row for a file that is on disk and already conforms                | the allowance may only shrink                     |
-| delete a row without moving its file                                     | on disk, in no allowance, does not conform        |
-| move a file to its target but leave its row in place                     | the row no longer describes anything unmoved      |
-| change a row's recorded target to `tests/Reporting/Formatter/Unit/X.php` | the target itself is not at a manifest owner      |
-| `--classification-probe=tests/Reporting/Formatter/Unit/X.php`            | `Reporting/Formatter` is not one of the 37 owners |
+| Planted                                                                      | Expected refusal                                  |
+| ---------------------------------------------------------------------------- | ------------------------------------------------- |
+| add a row to `LEGACY_UNMOVED` naming a file that is not on disk              | the path is allowed but absent                    |
+| add a row for a file that is on disk and already conforms                    | the allowance may only shrink                     |
+| delete a row without moving its file                                         | on disk, in no allowance, does not conform        |
+| move a file to its target but leave its row in place                         | the row no longer describes anything unmoved      |
+| change a row's recorded target to `tests/Reporting/Formatter/Unit/XTest.php` | the target itself is not at a manifest owner      |
+| `--classification-probe=tests/Reporting/Formatter/Unit/XTest.php`            | `Reporting/Formatter` is not one of the 37 owners |
 
 The probe row is not optional: `tests/Reporting/Formatter/Unit` is exactly the
 layout the rejected map proposed, and a guard that accepts it has not understood
-the rule. The stale-row row is the one two drafts asserted in prose — "a stale
+the rule. Its literal ends in `Test.php` because the parse's population is
+`tests/**/*Test.php` and nothing else: an earlier draft wrote `X.php`, which the
+parse correctly never sees, so the row would have been satisfied by the ladder
+answering about a file the rule does not claim. A probe outside the population
+under test proves nothing about the population. The stale-row row is the one two drafts asserted in prose — "a stale
 row is refused as loudly as a missing one" — and planted zero times.
 
 **What the guard does not refuse, recorded rather than papered over.** The
