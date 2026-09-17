@@ -133,3 +133,83 @@ mechanism rather than patched one by one, because three of them share one cause:
 the sixth `tools/` guard, the dead prefixes). That is a transport defect between
 `measurement/stage-03/` and the package table, so the fix is a derived table in
 the plan rather than three more prose sentences.
+
+---
+
+# Round 2 — narrow, on the fix diff
+
+Scope: commit `7e94911b` only, plus the artifact it created. One reviewer
+(native), because the trigger was "the fixes touched material the first round
+never saw" — `addresses-to-edit.md` was 92 new lines nobody had reviewed.
+`findings-claude-round2.md`: 14 findings, 13 confirmed, 6 self-refuted.
+
+## The finding that matters most
+
+**The cure reproduced the disease, three times.** Round 1's three worst findings
+shared one cause — an address the measurement found and the plan did not carry —
+and the cure was a table of every address. Round 2 found three addresses that
+the table's **own declared sources** name and the table omits:
+
+| Missing address                     | Carrier                    | Why it bites                                                                                                           |
+| ----------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `dispositionFor()` / `targetPath()` | inventory `:1152`, `:1199` | named by the table's source; each needs a branch per new path                                                          |
+| `P7_MEASUREMENT_PATHS:81`           | inventory `:70-81`         | pins `test_cross_tool_comparison.py`, which P6 moves; `assertPathLiteralsResolve()` refuses                            |
+| `P6_C_BASELINE_PATHS_SHA256`        | inventory `:17`, `:328`    | a digest over every file under `tests/Analysis/Policy/Baseline`, which row 7 leaves — P4's, and P4 had no such address |
+
+A fourth, `.dockerignore`, the orchestrator found separately while closing a
+blind spot the measurements had declared. `Dockerfile:29` is `COPY . .` and
+`tests/` is root-anchored, so every test directory this stage creates ships in
+the image.
+
+**The structural response, rather than a fourth patch:** addresses live in one
+table and nowhere else, and no prose in either plan file restates a count. Both
+rounds found the same shape — a number copied into prose, left to go stale —
+and round 2's two `contract` findings were exactly that: a paragraph still
+saying "five" guards where the DoD said six, and a paragraph still carrying a
+claim `baseline.md` had refuted.
+
+## Four addresses that were wrong, not missing
+
+- **`createIsolatedProject()` (HIGH)** was assigned to P1 alone. Every mover
+  declares a `<directory>`, and every declared root must exist in the scratch
+  copy or PHPUnit exits 2 there. So every mover touches it.
+- **`Unclassified test artifact`** is `classifyOwner()`'s refusal at `:976`, not
+  `classifyKind()`'s — which has a different message at `:1003`. And a
+  `classifyKind()` branch is not automatically wanted: classifying a new path as
+  `placeholder` would silence the guard that a test was never discovered.
+- **The allow-list pair** was graded loud. Removing a row is loud; lowering the
+  `ceiling` is not, and a stale-high ceiling silently absorbs a future
+  violation — the file says so itself.
+- **The G2/G3 proof was over-claimed.** It reproduces as executed only under
+  `tools/phpstan`, which already has a parent PSR-4 root. A `scripts/**` probe
+  is invisible to `TestTree` until its own root is declared, so those packages
+  must declare the root first, then plant.
+
+## Reviewer honesty worth recording
+
+Round 2 declared what it did not do rather than padding coverage: it ran none of
+`composer check`, `architecture:check`, the aggregate, the full directive
+control or the plant, and took `baseline.md`'s four-way exit-2 measurement as
+given — while noting that its own HIGH finding rests on it. It also did not
+re-derive the 119 pinned literals, reporting that a line-by-line count gives
+16 / 37 / 49, consistent with several literals per line but **not** an
+independent reproduction of the totals. That caveat is now in the table, with
+the instruction that P3 re-derives rather than trusts.
+
+It also half-refuted the brief's own premise: `registration-addresses.md` does
+measure `.dockerignore` and `init-environment.sh`, so only one of the two named
+blind spots was live. CI workflow YAML it read itself — no addresses there.
+
+## Disposition
+
+All 13 confirmed findings applied. The plan passed 400 lines, so execution split
+into `03-packages.md`. Two measurement artifacts orphaned by the round-1 rewrite
+are cited again. The overview's stage-03 row, its "further 9 files" and its
+shared-cost figure of 12 pinned paths were all stale and are corrected or marked
+superseded — with the note that the other stages' figures there carry the same
+risk and have not been re-derived.
+
+**No round 3.** The trigger for one would be fixes touching unseen material;
+round 2's fixes touched only the table and two paragraphs it had itself read,
+and the remaining risk is no longer in the plan but in execution — which each
+package's own verification, not another plan review, is what establishes.
