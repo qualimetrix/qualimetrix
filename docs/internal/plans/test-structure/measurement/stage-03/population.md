@@ -120,13 +120,27 @@ doubly-covered file is judged once.
   `witness-b-population.md`. Its own recorded lesson: a first pathspec
   `scripts/**/*.php` missed the top-level `scripts/*.php` files and undercounted
   the namespace roster by 3, because those files sit in no subdirectory.
-- **The blind spot both share, and it is not small.** Neither witness read all
-  632 files. Both narrowed to files carrying the literal substring `scripts`,
-  `tools` or a tooling namespace. A tooling test that reaches its SUT with no
-  such substring anywhere in the file is invisible to **both**, and agreement
-  between them says nothing about it. This is the same open population the
-  project already records as "491 files nobody read"; this stage narrows it by
-  16 and does not close it.
+- **A third channel, run afterwards, in the opposite direction.** Both
+  witnesses searched *tests for tool strings*. This one enumerated the 131 tool
+  files under `scripts/ tools/ benchmarks/ website/hooks/ .githooks/` and
+  `git grep -F`-ed each **exact basename** inside `tests/`. It returned the same
+  16 and nothing else. It surfaced one file neither witness had examined —
+  `tests/Functional/Console/Command/HookStatusCommandTest.php`, via
+  `pre-commit-hook.sh` — and that file is a product test: it carries
+  `#[CoversClass(HookStatusCommand::class)]` and the path it names is the
+  fabricated `/fake/target/pre-commit-hook.sh`, never the real tool. Both plan
+  reviewers also failed to find a 17th.
+- **The narrowest true form of the claim, which is not "the population is
+  complete".** No witness read all 632 files. Two searched tests for tool
+  strings; the third searched tools for their own basenames. So the claim
+  established is: *no test file under `tests/` references a tool by its
+  namespace, by a literal `scripts`/`tools` path, or by the tool's own
+  basename, other than these 16.* What survives outside it is a test reaching
+  its SUT with none of those three spellings anywhere in the file — for
+  instance through a constant defined in a shared base class, or a helper that
+  assembles the path from segments. Nothing here rules that out; the stage
+  narrows the project's standing "files nobody read" population by 16 and does
+  not close it.
 - Not covered by either: a test whose SUT is a repository tool written in a
   language neither witness swept (there is none in `.githooks/` with a test),
   and CI workflow YAML, which nobody read.

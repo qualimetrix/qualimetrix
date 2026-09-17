@@ -81,6 +81,14 @@ exit 0. That is the shape this stage can actually produce, and it is caught by
 `<directory>`/`testSuitePrefixTable()` pair must stay symmetric — neither side
 checks that the pair still describes a directory holding tests.
 
+**But that silence does not survive a clone, which makes removing a stale
+`<directory>` mandatory rather than tidy.** Git tracks no empty directory. A
+directory this stage empties still exists on the author's disk — so the local
+run is the silent, green, exit-0 case — and does not exist in a fresh checkout,
+where the identical tree hits the *absent* case and PHPUnit exits 2. Local green
+and CI red would be the same commit. Raised by the plan review; the two halves
+of it are each measured above.
+
 **A separate silent-green mechanism, found by accident and not this stage's:**
 an unreadable `bootstrap` gives `Cannot open bootstrap script "…"` and
 **exit 0**, running nothing. Reached by pointing `--configuration` at a copy of
