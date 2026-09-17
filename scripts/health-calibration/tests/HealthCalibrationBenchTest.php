@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
+namespace Qualimetrix\HealthCalibration\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +36,7 @@ final class HealthCalibrationBenchTest extends TestCase
 {
     protected function setUp(): void
     {
-        require_once \dirname(__DIR__, 5) . '/scripts/health-calibration.php';
+        require_once \dirname(__DIR__, 3) . '/scripts/health-calibration.php';
     }
 
     #[Test]

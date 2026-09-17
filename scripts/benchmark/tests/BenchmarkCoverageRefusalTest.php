@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration;
+namespace Qualimetrix\Benchmark\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -122,7 +122,7 @@ final class BenchmarkCoverageRefusalTest extends TestCase
 
     private function copyScript(string $script, string $fixtureRoot): void
     {
-        $source = \dirname(__DIR__, 5) . '/scripts/' . $script;
+        $source = \dirname(__DIR__, 3) . '/scripts/' . $script;
         if (!copy($source, $fixtureRoot . '/scripts/' . $script)) {
             throw new RuntimeException('Failed to copy benchmark script');
         }

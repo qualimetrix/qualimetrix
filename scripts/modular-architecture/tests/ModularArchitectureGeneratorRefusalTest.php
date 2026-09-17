@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
+namespace Qualimetrix\ModularArchitecture\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
@@ -215,6 +215,26 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/finding-gate/tests',
                 $projectRoot . '/scripts/finding-gate/tests',
             );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/suppression-snapshot/tests',
+                $projectRoot . '/scripts/suppression-snapshot/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/rename-enumeration/tests',
+                $projectRoot . '/scripts/rename-enumeration/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/health-calibration/tests',
+                $projectRoot . '/scripts/health-calibration/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/benchmark/tests',
+                $projectRoot . '/scripts/benchmark/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/modular-architecture/tests',
+                $projectRoot . '/scripts/modular-architecture/tests',
+            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));
@@ -301,7 +321,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
     private function root(): string
     {
-        $root = realpath(__DIR__ . '/../../../../../');
+        $root = realpath(__DIR__ . '/../../../');
         self::assertIsString($root);
 
         return $root;

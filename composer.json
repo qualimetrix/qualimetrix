@@ -62,7 +62,12 @@
             "Qualimetrix\\PromiseEffect\\Tests\\": "scripts/promise-effect/tests/",
             "QmxDirectiveAudit\\Tests\\": "scripts/directive-audit/tests/",
             "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/",
-            "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/"
+            "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/",
+            "Qualimetrix\\SuppressionSnapshot\\Tests\\": "scripts/suppression-snapshot/tests/",
+            "Qualimetrix\\RenameEnumeration\\Tests\\": "scripts/rename-enumeration/tests/",
+            "Qualimetrix\\HealthCalibration\\Tests\\": "scripts/health-calibration/tests/",
+            "Qualimetrix\\Benchmark\\Tests\\": "scripts/benchmark/tests/",
+            "Qualimetrix\\ModularArchitecture\\Tests\\": "scripts/modular-architecture/tests/"
         },
         "classmap": [
             "tools/phpstan/tests/Fixtures/"

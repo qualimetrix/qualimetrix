@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration;
+namespace Qualimetrix\Benchmark\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -433,7 +433,7 @@ PHP);
 
     private function copyScript(string $fixtureRoot): void
     {
-        $source = \dirname(__DIR__, 5) . '/scripts/benchmark-regression.php';
+        $source = \dirname(__DIR__, 3) . '/scripts/benchmark-regression.php';
         if (!copy($source, $fixtureRoot . '/scripts/benchmark-regression.php')) {
             throw new RuntimeException('Failed to copy benchmark-regression.php');
         }

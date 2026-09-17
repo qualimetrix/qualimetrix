@@ -999,6 +999,11 @@ const DEVELOPMENT_NAMESPACE_PREFIXES = [
     'QmxDirectiveAudit\\Tests\\',
     'QmxDirectiveAuditControls\\Tests\\',
     'QmxFindingGate\\Tests\\',
+    'Qualimetrix\\SuppressionSnapshot\\Tests\\',
+    'Qualimetrix\\RenameEnumeration\\Tests\\',
+    'Qualimetrix\\HealthCalibration\\Tests\\',
+    'Qualimetrix\\Benchmark\\Tests\\',
+    'Qualimetrix\\ModularArchitecture\\Tests\\',
 ];
 
 $productionToTestRows = [];

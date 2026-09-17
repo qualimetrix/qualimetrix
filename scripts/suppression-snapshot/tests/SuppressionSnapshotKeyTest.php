@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit;
+namespace Qualimetrix\SuppressionSnapshot\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ final class SuppressionSnapshotKeyTest extends TestCase
 {
     public static function setUpBeforeClass(): void
     {
-        require_once \dirname(__DIR__, 5) . '/scripts/generate-suppression-snapshot.php';
+        require_once \dirname(__DIR__, 3) . '/scripts/generate-suppression-snapshot.php';
     }
 
     /**
