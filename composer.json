@@ -194,9 +194,9 @@
         ],
         "check:code": [
             "@cs-check",
-            "@dangling-names",
             "@phpstan",
             "@test:aggregate",
+            "@dangling-names",
             "@test:js",
             "@test:cross-tool"
         ],
