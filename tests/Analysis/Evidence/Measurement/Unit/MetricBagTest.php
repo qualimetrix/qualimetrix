@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Metric;
+namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -56,10 +56,13 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())->with('size.loc', 100);
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('Required metric "complexity.ccn" not found');
-
-        $bag->require('complexity.ccn');
+        try {
+            $bag->require('complexity.ccn');
+            self::fail('A bag without the metric must refuse to require it');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString('complexity.ccn', $exception->getMessage());
+            self::assertStringContainsString('size.loc', $exception->getMessage());
+        }
     }
 
     #[Test]
@@ -67,10 +70,12 @@ final class MetricBagTest extends TestCase
     {
         $bag = new MetricBag();
 
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('(empty)');
-
-        $bag->require('anything');
+        try {
+            $bag->require('anything');
+            self::fail('An empty bag must refuse to require anything');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString('anything', $exception->getMessage());
+        }
     }
 
     #[Test]

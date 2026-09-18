@@ -15,7 +15,13 @@ declare(strict_types=1);
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-const P6_C_BASELINE_PATHS_SHA256 = '818d94bd58fb2ec644dfa6b30db12c1891aaa04f7362e4f1ce993b80085890ae';
+// 65 paths. Stage 05 moved four of them from Unit/ to Integration/ --
+// BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
+// ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
+// not because the set changed: no file entered or left the tree, and the count
+// is the same on both sides of the move. Re-hash only against a diff of the
+// path list; a digest refreshed to make the generator run again asserts nothing.
+const P6_C_BASELINE_PATHS_SHA256 = 'c8620ffa4e9199f0acd82954a306942839a9e5c3ada3e51daa878b2d347867b8';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -105,6 +111,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/promise-effect/tests/' => ['Tooling/PromiseEffect', 'P8'],
     'scripts/directive-audit/tests/' => ['Tooling/DirectiveAudit', 'P8'],
     'scripts/directive-audit-controls/tests/' => ['Tooling/DirectiveAuditControls', 'P8'],
+    'scripts/tautology-controls/tests/' => ['Tooling/TautologyControls', 'P8'],
     'scripts/finding-gate/tests/' => ['Tooling/FindingGate', 'P8'],
     'scripts/suppression-snapshot/tests/' => ['Tooling/SuppressionSnapshot', 'P8'],
     'scripts/rename-enumeration/tests/' => ['Tooling/RenameEnumeration', 'P8'],
@@ -117,13 +124,12 @@ const TOOLING_TEST_ROOT_OWNERS = [
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
 const P3_TEST_PATHS = [
-    'tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php',
+    'tests/Analysis/Configuration/Unit/ConfigSchemaCoverageTest.php',
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
     'tests/Analysis/Policy/Architecture/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
-    'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
     'tests/Analysis/Configuration/Unit/ConfigurationHolderTest.php',
@@ -184,7 +190,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php',
     'tests/Analysis/Run/Unit/RuleProducerPreparationTest.php',
     'tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php',
-    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutionTest.php',
     'tests/Infrastructure/Console/Unit/CheckScopeResolverTest.php',
     'tests/Infrastructure/Console/Unit/RuntimeLoggerConfiguratorTest.php',
 ];
@@ -199,10 +205,10 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
     'tests/Analysis/Policy/Baseline/Support/FindingFactory.php',
-    'tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php',
+    'tests/Analysis/Finding/Unit/AbstractRuleThresholdSeamTest.php',
     'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
-    'tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php',
+    'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
@@ -211,7 +217,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/OccurrenceKeyTest.php',
     'tests/Analysis/Finding/Unit/PathExclusionFilterTest.php',
     'tests/Analysis/Finding/Unit/PredicateFilterStageTest.php',
-    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutionTest.php',
     'tests/Analysis/Finding/Unit/RuleNameReaderTest.php',
     'tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php',
     'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
@@ -242,6 +248,7 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Service/CustomerService.php',
     'tests/Analysis/Policy/Inline/Integration/InlineSuppressionLayerViolationIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php',
+    'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php',
     'tests/Analysis/Policy/Inline/Unit/Extraction/DeclarationControlBindingsTest.php',
     'tests/Analysis/Policy/Inline/Unit/IndependentAxisValidatorTest.php',
@@ -252,7 +259,6 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionTest.php',
     'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php',
-    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 
@@ -267,7 +273,7 @@ const P6_D_PRIORITIZATION_TEST_PATHS = [
 
 /** @var list<string> Exact live additions relative to the accepted 509/7,245 authority. */
 const P6_LIVE_ADDED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances',
+    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleExecutionTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances',
     'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceExclusionsWithoutProviderAccess',
     'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceChannelExclusionsWithoutProviderAccess',
     'Qualimetrix\\Tests\\Analysis\\Policy\\Inline\\Unit\\Extraction\\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings',
@@ -1000,13 +1006,10 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Fixtures/Schema/')) {
         return ['Reporting', 'permanent'];
     }
-    if (str_starts_with($path, 'tests/Fixtures/Ast/')) {
-        return ['Infrastructure/Ast', 'permanent'];
-    }
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }
-    if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/')) {
+    if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/')) {
         return ['Analysis/Evidence/Duplication', 'P1'];
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/')) {
@@ -1141,6 +1144,8 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Coupling/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Duplication/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Duplication/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Duplication/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Analysis/Evidence/Maintainability/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Security/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Size/Unit/', 'suite' => 'Unit'],
@@ -1171,7 +1176,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
-        ['prefix' => 'tests/Reporting/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
         ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
         ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
@@ -1205,6 +1209,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'scripts/promise-effect/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit-controls/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/tautology-controls/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/finding-gate/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/suppression-snapshot/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/rename-enumeration/tests/', 'suite' => 'Tooling'],

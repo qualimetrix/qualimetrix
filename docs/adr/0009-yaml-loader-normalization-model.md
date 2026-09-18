@@ -84,6 +84,6 @@ The two-layer test discipline (loader characterization + consumer expectation) i
 - Schema registry: `src/Configuration/ConfigSchema.php`
 - Policy enum: `src/Configuration/Loader/SectionNormalizationPolicy.php`
 - Characterization tests: `tests/Integration/Configuration/Loader/YamlNormalizationCharacterizationTest.php`
-- Coverage invariant: `tests/Integration/Configuration/ConfigSchemaCoverageTest.php`
+- Coverage invariant: `tests/Analysis/Configuration/Unit/ConfigSchemaCoverageTest.php`
 - Architecture migration: `src/Architecture/Configuration/ArchitectureConfigurationFactory.php` and matching consumer-expectation tests
 - Related: [ADR 0008](0008-architecture-processor-service.md) (same fail-fast philosophy applied to a different invariant)

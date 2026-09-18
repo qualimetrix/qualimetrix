@@ -306,10 +306,11 @@ final class TestPathsNameTheirSubjectTest extends TestCase
         $population = TestSubjectPaths::population();
 
         // 616 today. A floor of 500 left room for a sixth of the tree to stop
-        // being scanned without a word; this one leaves sixteen files, so a
+        // being scanned without a word; this one leaves fifteen files — the
+        // assertion is strict, so 601 is the lowest passing count — and a
         // discovery that quietly stopped walking is the failure it was meant to
         // be. Lowering it is a hand edit, which is the admission — and stage 05
-        // will owe one if adjudicating list A retires more than sixteen files.
+        // will owe one if adjudicating list A retires more than fifteen files.
         self::assertGreaterThan(600, \count($population));
         self::assertSame($population, array_keys($judged));
 

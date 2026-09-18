@@ -43,7 +43,11 @@ final class CheckCommandPathInputTest extends TestCase
 
     protected function tearDown(): void
     {
-        // chdir() leaks across tests; restore eagerly even if assertions fail.
+        // Redundant, and deliberately kept: PHPUnit restores the working
+        // directory itself after tearDown(), on a failed case too, so nothing
+        // here or in any later case depends on this line. It said the opposite
+        // until someone measured the runner -- do not copy it elsewhere as a
+        // leak guard, because there is no leak to guard.
         @chdir($this->originalCwd);
 
         if (is_dir($this->tempDir)) {

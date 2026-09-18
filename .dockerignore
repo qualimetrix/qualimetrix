@@ -54,6 +54,7 @@ tools/phpstan/tests/
 scripts/promise-effect/tests/
 scripts/directive-audit/tests/
 scripts/directive-audit-controls/tests/
+scripts/tautology-controls/tests/
 scripts/finding-gate/tests/
 scripts/suppression-snapshot/tests/
 scripts/rename-enumeration/tests/

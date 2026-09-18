@@ -110,9 +110,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     #[Test]
     public function itValidatesEveryMaterializedArchitectureDeclarationAgainstTheFrozenZoneDag(): void
     {
-        $root = $this->repositoryRoot();
-        $manifest = json_decode((string) file_get_contents($root . '/docs/internal/modular-architecture-manifest.json'), true, flags: \JSON_THROW_ON_ERROR);
-        $targets = $manifest['declarations'];
+        $targets = ModularArchitectureManifest::read()['declarations'];
         $expected = array_filter(
             $targets,
             static fn(mixed $target): bool => \is_array($target) && ($target['owner'] ?? null) === 'Analysis.Policy.Architecture',
@@ -128,7 +126,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         self::assertSame('Analysis.Policy.Architecture', $resolvedArchitecturePolicy['owner']);
 
         foreach ($expected as $fqcn => $target) {
-            $path = $root . '/' . $target['path'];
+            $path = ModularArchitectureManifest::repositoryRoot() . '/' . $target['path'];
             self::assertFileExists($path, $fqcn);
             $sourceZone = $this->zoneForPath($target['path']);
             self::assertSame(
@@ -183,7 +181,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     #[Test]
     public function itLeavesNoValidationNamespaceOrDirectoryInTheArchitectureLeaf(): void
     {
-        $root = $this->repositoryRoot() . '/src/Analysis/Policy/Architecture';
+        $root = ModularArchitectureManifest::repositoryRoot() . '/src/Analysis/Policy/Architecture';
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $file) {
             self::assertStringNotContainsString('/Validation/', $file->getPathname());
@@ -286,11 +284,4 @@ final class ArchitectureInternalTopologyTest extends TestCase
         return $result;
     }
 
-    private function repositoryRoot(): string
-    {
-        $root = realpath(__DIR__ . '/../../');
-        self::assertIsString($root);
-
-        return $root;
-    }
 }

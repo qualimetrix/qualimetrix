@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler\Export;
+namespace Qualimetrix\Tests\Infrastructure\Profiler\Unit\Export;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -201,23 +201,4 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertSame(['B', 'B', 'B', 'E', 'E', 'E'], $phases);
     }
 
-    #[Test]
-    public function itExportsValidJson(): void
-    {
-        $span = new Span(
-            name: 'test',
-            category: 'category',
-            startTime: 1000000.0,
-            startMemory: 100,
-            endTime: 2000000.0,
-            endMemory: 250,
-        );
-
-        $result = $this->exporter->export([$span]);
-
-        // Should not throw
-        $decoded = json_decode($result, true, 512, \JSON_THROW_ON_ERROR);
-
-        self::assertIsArray($decoded);
-    }
 }

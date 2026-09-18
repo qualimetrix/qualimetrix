@@ -9,18 +9,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry;
 use ReflectionClass;
 use ReflectionClassConstant;
 use RuntimeException;
-use SplFileInfo;
-use Symfony\Component\Finder\Finder;
 
 /**
  * Drift guard for {@see RuleThresholdKeyGroupRegistry}.
@@ -35,7 +31,7 @@ use Symfony\Component\Finder\Finder;
  * real rule capability roots and the real `Options::fromArray()` behavior.
  *
  * This test derives its expectations entirely from the real code, the same
- * way {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
+ * way {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
  * reflective drift test iterates `DependencyType::cases()` instead of a
  * hand-typed list: nothing here is a second handwritten catalog of rules or
  * keys.
@@ -146,7 +142,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
      */
     public static function provideRegistryEntries(): iterable
     {
-        foreach (self::readRegisteredGroups() as $ruleName => $byPath) {
+        foreach (ThresholdRuleDiscovery::registeredGroups() as $ruleName => $byPath) {
             foreach (array_keys($byPath) as $path) {
                 yield $ruleName . '::' . $path => [$ruleName, $path];
             }
@@ -182,7 +178,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
      */
     public static function provideDeclaredKeys(): iterable
     {
-        foreach (self::readRegisteredGroups() as $ruleName => $byPath) {
+        foreach (ThresholdRuleDiscovery::registeredGroups() as $ruleName => $byPath) {
             foreach ($byPath as $path => $groupList) {
                 foreach ($groupList as $groupIndex => $group) {
                     foreach (['warning', 'error', 'threshold'] as $role) {
@@ -207,7 +203,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     #[DataProvider('provideDeclaredKeys')]
     public function itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance(string $ruleName, string $path, string $key): void
     {
-        $optionsClass = self::ruleNameToOptionsClass()[$ruleName] ?? null;
+        $optionsClass = ThresholdRuleDiscovery::ruleNameToOptionsClass()[$ruleName] ?? null;
         self::assertNotNull($optionsClass, \sprintf('No Options class found for rule "%s" — registry is stale.', $ruleName));
 
         if (!is_a($optionsClass, RuleOptionsInterface::class, true)) {
@@ -270,8 +266,8 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
         $requirements = [];
 
-        foreach (self::ruleNameToOptionsClass() as $ruleName => $optionsClass) {
-            foreach (self::sourceFilesByPath($optionsClass) as $path => $sourceFile) {
+        foreach (ThresholdRuleDiscovery::ruleNameToOptionsClass() as $ruleName => $optionsClass) {
+            foreach (ThresholdRuleDiscovery::sourceFilesByPath($optionsClass) as $path => $sourceFile) {
                 $source = file_get_contents($sourceFile);
                 if ($source === false) {
                     throw new RuntimeException(\sprintf('Could not read %s.', $sourceFile));
@@ -316,141 +312,6 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         }
 
         return $codeOnly;
-    }
-
-    /**
-     * @return array<string, class-string>
-     */
-    private static function ruleNameToOptionsClass(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $map = [];
-
-        foreach (self::discoverRuleClasses() as $ruleClass) {
-            $ruleName = RuleNameReader::read($ruleClass);
-            $map[$ruleName] = $ruleClass::getOptionsClass();
-        }
-
-        return $cache = $map;
-    }
-
-    /**
-     * Scans the whole of `src/` for `*Rule.php` files, so extraction — of a
-     * threshold rule from ANY capability, not only the ones a hand-typed
-     * root list happened to name — cannot silently remove it from this
-     * drift guard. The FQN is derived from each file's path via the
-     * project's single PSR-4 root (`Qualimetrix\` => `src/`), the same
-     * mapping Composer's own autoloader uses.
-     *
-     * @return list<class-string<RuleDefinitionInterface>>
-     */
-    private static function discoverRuleClasses(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $classes = [];
-        $srcDir = \dirname(__DIR__, 2) . '/src';
-
-        $finder = (new Finder())->files()->in($srcDir)->name('*Rule.php');
-
-        foreach ($finder as $file) {
-            $absolutePath = self::realOrPathname($file);
-            $relative = str_starts_with($absolutePath, $srcDir . '/')
-                ? substr($absolutePath, \strlen($srcDir) + 1)
-                : throw new RuntimeException(\sprintf('%s is not under %s.', $absolutePath, $srcDir));
-            $class = 'Qualimetrix\\' . str_replace('/', '\\', substr($relative, 0, -4));
-
-            if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
-                continue;
-            }
-
-            // Matches the service-registration Abstract*.php exclusion,
-            // generalized via reflection so nested abstract bases are
-            // skipped without a second name catalog.
-            if ((new ReflectionClass($class))->isAbstract()) {
-                continue;
-            }
-
-            /** @var class-string<RuleInterface> $class */
-            $classes[] = $class;
-        }
-
-        return $cache = $classes;
-    }
-
-    /**
-     * `SplFileInfo::getRealPath()` returns `false` only when the path cannot
-     * be resolved (a dangling symlink, a file removed mid-scan) — never for
-     * a real file `Finder` just found, but the return type carries the
-     * possibility regardless.
-     */
-    private static function realOrPathname(SplFileInfo $file): string
-    {
-        $real = $file->getRealPath();
-
-        return $real !== false ? $real : $file->getPathname();
-    }
-
-    /**
-     * @param class-string $optionsClass
-     *
-     * @return array<string, string> path => absolute source file path
-     */
-    private static function sourceFilesByPath(string $optionsClass): array
-    {
-        $paths = ['' => self::fileNameOf($optionsClass)];
-
-        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
-            return $paths;
-        }
-
-        /** @var HierarchicalRuleOptionsInterface $instance */
-        $instance = new $optionsClass();
-
-        foreach ($instance->getSupportedLevels() as $level) {
-            $levelObject = $instance->forLevel($level);
-            $paths[$level->value] = self::fileNameOf($levelObject::class);
-        }
-
-        return $paths;
-    }
-
-    /**
-     * @param class-string $class
-     */
-    private static function fileNameOf(string $class): string
-    {
-        $file = (new ReflectionClass($class))->getFileName();
-
-        if ($file === false) {
-            throw new RuntimeException(\sprintf('Could not locate the source file for %s.', $class));
-        }
-
-        return $file;
-    }
-
-    /**
-     * @return array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>}>>>
-     */
-    private static function readRegisteredGroups(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $reflectionConstant = new ReflectionClassConstant(RuleThresholdKeyGroupRegistry::class, 'GROUPS');
-        /** @var array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>}>>> $value */
-        $value = $reflectionConstant->getValue();
-
-        return $cache = $value;
     }
 
     /**

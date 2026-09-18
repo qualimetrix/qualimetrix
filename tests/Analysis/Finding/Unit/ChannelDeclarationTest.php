@@ -69,7 +69,7 @@ final class ChannelDeclarationTest extends TestCase
      * checks this at run time any more — {@see \Qualimetrix\Analysis\Finding\Contract\ChannelShape} is a producer
      * property now, and registry assembly is what checks a producer's
      * declared shape against this nullability (see
-     * {@see \Qualimetrix\Tests\Infrastructure\Unit\ChannelDeclarationCompilerPassTest}).
+     * {@see \Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest}).
      * This pins that the two signatures still make the mismatch
      * unrepresentable in the first place.
      */

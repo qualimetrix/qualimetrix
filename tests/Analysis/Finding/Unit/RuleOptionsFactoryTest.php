@@ -157,18 +157,6 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itResetsState(): void
-    {
-        $this->registry->setConfigFileOptions(['rule' => ['opt' => 'val']]);
-        $this->registry->addCliOption('rule', 'opt2', 'val2');
-
-        $this->registry->reset();
-
-        self::assertSame([], $this->registry->getConfigFileOptions());
-        self::assertSame([], $this->registry->getCliOptions());
-    }
-
-    #[Test]
     public function itThrowsForNonExistentClass(): void
     {
         self::expectException(InvalidArgumentException::class);

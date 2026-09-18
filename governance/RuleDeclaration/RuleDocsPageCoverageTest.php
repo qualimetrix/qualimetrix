@@ -12,8 +12,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 
 /**
@@ -30,19 +28,17 @@ use ReflectionClass;
  *
  * The number of rule **classes** is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement. It is 48 and is a count of `RuleRegistryInterface::getClasses()`;
- * `bin/qmx rules` now reports 54, because it counts producers.
+ * agreement. The population and its size live in {@see RegisteredRules}, which
+ * the other sweep in this group reads too.
  */
 #[CoversClass(RuleDocsPageReader::class)]
 final class RuleDocsPageCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 48;
-
     #[Test]
     public function itRequiresEveryRegisteredRuleToDeclareItsOwnDocsPage(): void
     {
-        $ruleClasses = self::ruleClasses();
-        self::assertCount(self::REGISTERED_RULE_COUNT, $ruleClasses);
+        $ruleClasses = RegisteredRules::classes();
+        self::assertCount(RegisteredRules::COUNT, $ruleClasses);
 
         foreach ($ruleClasses as $ruleClass) {
             $reflection = new ReflectionClass($ruleClass);
@@ -74,11 +70,11 @@ final class RuleDocsPageCoverageTest extends TestCase
     #[Test]
     public function itRequiresEveryDeclaredDocsPageToCarryTheRulesOwnAnchor(): void
     {
-        foreach (self::ruleClasses() as $ruleClass) {
+        foreach (RegisteredRules::classes() as $ruleClass) {
             $ruleName = RuleNameReader::read($ruleClass);
             $docsPage = RuleDocsPageReader::read($ruleClass);
 
-            $path = self::docsRoot() . '/' . $docsPage;
+            $path = RegisteredRules::docsRoot() . '/' . $docsPage;
             self::assertFileExists($path, \sprintf('%s (rule %s) names a page that does not exist.', $ruleClass, $ruleName));
 
             $contents = file_get_contents($path);
@@ -106,7 +102,7 @@ final class RuleDocsPageCoverageTest extends TestCase
     #[Test]
     public function itRequiresEveryClasslessComputedMetricProducerToCarryItsAnchor(): void
     {
-        $path = self::docsRoot() . '/' . ComputedMetricChannelFamily::DOCS_PAGE;
+        $path = RegisteredRules::docsRoot() . '/' . ComputedMetricChannelFamily::DOCS_PAGE;
         self::assertFileExists($path);
 
         $contents = file_get_contents($path);
@@ -139,17 +135,4 @@ final class RuleDocsPageCoverageTest extends TestCase
         self::assertSame('reference/health-scores.md', RuleDocsPageReader::read(ComputedMetricRule::class));
     }
 
-    private static function docsRoot(): string
-    {
-        return \dirname(__DIR__, 2) . '/website/docs';
-    }
-
-    /** @return list<class-string> */
-    private static function ruleClasses(): array
-    {
-        $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
-        \assert($registry instanceof RuleRegistryInterface);
-
-        return $registry->getClasses();
-    }
 }

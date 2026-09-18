@@ -25,43 +25,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Integration test for WMC metric.
  *
  * Verifies that:
- * - WMC metric is available after aggregation
- * - WMC equals ccn.sum for all classes
- * - WMC can be used in rules
+ * - WMC and ccn.sum are the same number, not two separately derived ones
+ * - a class with no callables reaches the repository at no level
+ * - each class gets its own sum rather than the file's
  */
 final class WmcIntegrationTest extends TestCase
 {
-    #[Test]
-    public function itMakesWmcMetricAvailableAfterAggregation(): void
-    {
-        // Setup repository with callable-level CCN metrics
-        $repository = new InMemoryMetricRepository();
-
-        $classPath = SymbolPath::forClass('App\Service', 'OrderProcessor');
-        $method1Path = SymbolPath::forMethod('App\Service', 'OrderProcessor', 'process');
-        $method2Path = SymbolPath::forMethod('App\Service', 'OrderProcessor', 'validate');
-        $method3Path = SymbolPath::forMethod('App\Service', 'OrderProcessor', 'save');
-
-        // Add method metrics: CCN values
-        $this->addMethod($repository, $method1Path, $classPath, 5, 100);
-        $this->addMethod($repository, $method2Path, $classPath, 3, 200);
-        $this->addMethod($repository, $method3Path, $classPath, 2, 300);
-
-        // Create aggregator with CCN collector
-        $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
-
-        // Aggregate
-        $aggregator->aggregate($repository);
-
-        // Verify class has WMC metric
-        $classBag = $repository->get($classPath);
-        $wmc = $classBag->get('complexity.wmc');
-
-        self::assertNotNull($wmc, 'WMC metric should be available for class');
-        self::assertSame(10, (int) $wmc, 'WMC should equal sum of method CCN values (5+3+2=10)');
-    }
-
     #[Test]
     public function itVerifiesWmcEqualsCcnSum(): void
     {

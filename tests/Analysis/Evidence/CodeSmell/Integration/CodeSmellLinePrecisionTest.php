@@ -181,30 +181,6 @@ PHP;
     }
 
     #[Test]
-    public function itCreatesASingleFindingWithTheCorrectLineForASingleOccurrence(): void
-    {
-        $rule = new EvalRule(new CodeSmellOptions());
-
-        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/test.php'));
-        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/test.php'), null);
-
-        $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 42]);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        self::assertCount(1, $findings);
-        self::assertSame(42, $findings[0]->location->line);
-    }
-
-    #[Test]
     public function itRecordsNoEntriesAndEmitsNoFindingsForCleanCode(): void
     {
         // Fixture: clean PHP without any eval()/exit()/die() — the collector

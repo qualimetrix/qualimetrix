@@ -7,6 +7,9 @@ namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
@@ -54,6 +57,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule;
@@ -67,8 +71,10 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
@@ -87,7 +93,9 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationReso
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -576,24 +584,56 @@ PHP;
     }
 
     #[Test]
-    public function itRegistersAllCollectorsViaCompilerPass(): void
-    {
-        $container = $this->factory->create();
-
-        // CompositeCollector is private/inlined, but we can verify via AnalysisPipeline
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
-    }
-
-    #[Test]
     public function itInjectsRulesIntoRuleExecution(): void
     {
         $container = $this->factory->create();
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
 
-        // If container compiles successfully and AnalysisPipeline is available,
-        // rules were injected by RuleCompilerPass
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
+        $execution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecution::class, $execution);
+
+        /** @var list<object> $rules */
+        $rules = (new ReflectionProperty(RuleExecution::class, 'allRules'))->getValue($execution);
+
+        self::assertNotSame([], $rules, 'RuleCompilerPass injected no rules at all.');
+        self::assertContainsOnlyInstancesOf(RuleInterface::class, $rules);
+    }
+
+    /**
+     * The `rules:` vocabulary the configuration pipeline validates against is
+     * the one ChannelDeclarationCompilerPass assembles, not a second
+     * enumeration over rule classes: the six built-in health dimensions are
+     * addressable names that no NAME constant declares, and deriving the list
+     * from the classes is what used to leave them unaddressable.
+     */
+    #[Test]
+    public function itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares(): void
+    {
+        $container = $this->factory->create();
+        $pipeline = $container->get(ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(ConfigurationPipelineInterface::class, $pipeline);
+
+        $classless = $this->tempDir . '/classless-producer.yaml';
+        file_put_contents($classless, "rules:\n  health.cohesion:\n    warning: 50\n");
+
+        $document = $pipeline->resolve(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->tempDir),
+            $classless,
+        ));
+
+        self::assertArrayHasKey(
+            'health.cohesion',
+            array_merge(...array_values($document->contributions('rules'))),
+        );
+
+        $invented = $this->tempDir . '/invented-producer.yaml';
+        file_put_contents($invented, "rules:\n  not.a.producer:\n    warning: 50\n");
+
+        $this->expectException(ConfigurationRefusal::class);
+
+        $pipeline->resolve(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->tempDir),
+            $invented,
+        ));
     }
 
     #[Test]
@@ -643,16 +683,6 @@ PHP;
             ParallelConfigurationStoreInterface::class,
             (new ReflectionProperty(RuntimeConfigurator::class, 'parallelConfigurationStore'))->getValue($runtimeConfigurator),
         );
-    }
-
-    #[Test]
-    public function itCreatesContainerWithDefaultConfiguration(): void
-    {
-        // ContainerFactory is created without arguments
-        $container = $this->factory->create();
-
-        self::assertTrue($container->isCompiled());
-        self::assertTrue($container->has(AnalysisPipelineInterface::class));
     }
 
     /**
@@ -771,9 +801,23 @@ PHP;
     {
         $container = $this->factory->create();
 
-        // If AnalysisPipeline can be created, global collectors were wired correctly
+        // The aggregation service is private and inlined, so it is reached
+        // through the pipeline that consumes it.
         $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
+        self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
+
+        $aggregation = (new ReflectionProperty(AnalysisPipeline::class, 'measurementAggregation'))->getValue($pipeline);
+        self::assertInstanceOf(MeasurementAggregationService::class, $aggregation);
+
+        /** @var list<object> $collectors */
+        $collectors = (new ReflectionProperty(MeasurementAggregationService::class, 'sortedCollectors'))
+            ->getValue($aggregation);
+
+        self::assertContainsOnlyInstancesOf(GlobalContextCollectorInterface::class, $collectors);
+        self::assertContains(
+            DitGlobalCollector::class,
+            array_map(static fn(object $collector): string => $collector::class, $collectors),
+        );
     }
 
     /**

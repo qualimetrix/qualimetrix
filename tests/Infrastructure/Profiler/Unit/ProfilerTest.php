@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
+namespace Qualimetrix\Tests\Infrastructure\Profiler\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -357,33 +357,38 @@ final class ProfilerTest extends TestCase
         self::assertGreaterThanOrEqual(0, $summary['operation']['peak_memory']);
     }
 
+    /**
+     * Three instances each raise the process peak by about a megabyte and hold
+     * it, so each one's own rise is about a third of the root span's. Summing
+     * them would give the root's figure; taking the maximum gives a third of
+     * it, and only one of the two can be strictly less than the root.
+     */
     #[Test]
     public function itTakesPeakMemoryMaxAcrossInstances(): void
     {
+        /** @var list<string> $held */
+        $held = [];
+
         $this->profiler->start('root');
 
-        // First instance — allocate some memory
-        $this->profiler->start('op');
-        /** @var list<string> $buf1 */
-        $buf1 = [str_repeat('a', 1024)];
-        $this->profiler->stop('op');
-        unset($buf1);
-
-        // Second instance — allocate more memory
-        $this->profiler->start('op');
-        /** @var list<string> $buf2 */
-        $buf2 = [];
-        for ($i = 0; $i < 200; $i++) {
-            $buf2[] = str_repeat('b', 1024);
+        for ($instance = 0; $instance < 3; ++$instance) {
+            $this->profiler->start('op');
+            $held[] = str_repeat('a', 1024 * 1024);
+            $this->profiler->stop('op');
         }
-        $this->profiler->stop('op');
-        unset($buf2);
 
         $this->profiler->stop('root');
 
         $summary = $this->profiler->getSummary();
-        // peak_memory is the max across instances, not a sum
-        self::assertSame(2, $summary['op']['count']);
-        self::assertGreaterThanOrEqual(0, $summary['op']['peak_memory']);
+
+        self::assertSame(3, $summary['op']['count']);
+        self::assertGreaterThan(0, $summary['op']['peak_memory']);
+        self::assertLessThan(
+            $summary['root']['peak_memory'],
+            $summary['op']['peak_memory'],
+            'peak_memory is the largest instance, not the instances added up',
+        );
+
+        unset($held);
     }
 }

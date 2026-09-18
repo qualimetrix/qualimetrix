@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Governance\ProjectScopeCoverage;
 
 use FilesystemIterator;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeFinder;
@@ -31,6 +33,14 @@ use SplFileInfo;
  * looked at the whole project" without having measured it, which is the silent
  * acceptance the field exists to prevent, and the direction of that error is
  * a channel accusing an author of a correct configuration.
+ *
+ * Writing the literal out makes the same unmeasured claim, so the argument's
+ * value is checked as well as its presence: a boolean literal is refused and
+ * anything else — a property, a call, a variable — is taken as an answer some
+ * measurement produced. `false` is refused with `true` rather than tolerated
+ * as the safe direction, because the promise in the method name is a
+ * *measured* answer, and a site that hardcodes "this is a slice" has measured
+ * nothing either.
  */
 final class AnalysisContextScopeArgumentGuardTest extends TestCase
 {
@@ -58,16 +68,29 @@ final class AnalysisContextScopeArgumentGuardTest extends TestCase
             foreach ($constructions as $construction) {
                 ++$sites;
 
-                $named = false;
+                $answer = null;
                 foreach ($construction->args as $index => $argument) {
+                    if (!$argument instanceof Arg) {
+                        continue;
+                    }
+
                     $name = $argument->name?->toString();
                     if ($name === self::ARGUMENT || ($name === null && $index === self::POSITION - 1)) {
-                        $named = true;
+                        $answer = $argument->value;
                     }
                 }
 
-                if (!$named) {
-                    $offenders[] = $file . ':' . $construction->getStartLine();
+                $site = $file . ':' . $construction->getStartLine();
+
+                if ($answer === null) {
+                    $offenders[] = $site . ' (the argument is absent, so the default answers for it)';
+
+                    continue;
+                }
+
+                if ($answer instanceof ConstFetch
+                    && \in_array(strtolower($answer->name->toString()), ['true', 'false'], true)) {
+                    $offenders[] = $site . ' (' . strtolower($answer->name->toString()) . ' is written out, not measured)';
                 }
             }
         }

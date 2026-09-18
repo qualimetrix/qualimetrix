@@ -18,12 +18,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
-use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry;
-use ReflectionClass;
 use ReflectionClassConstant;
 use RuntimeException;
-use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -62,7 +59,7 @@ use Symfony\Component\Finder\Finder;
  *    judges an unfolded key exactly as a written one;
  * 4. the universe both sides above compare against — every real rule class
  *    this codebase ships — is itself discovered from the tree
- *    ({@see self::discoverRuleClasses()} scans the whole of `src/`), not
+ *    ({@see ThresholdRuleDiscovery::ruleClasses()} scans the whole of `src/`), not
  *    named by a hand-typed list of roots that could omit a real one;
  * 5. no `ThresholdParser::parse()` call site anywhere in `src/` lies outside
  *    the set of files the discovery above actually visited
@@ -176,7 +173,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
      */
     public static function provideRegistryEntries(): iterable
     {
-        foreach (self::readRegisteredGroups() as $ruleName => $byPath) {
+        foreach (ThresholdRuleDiscovery::registeredGroups() as $ruleName => $byPath) {
             foreach (array_keys($byPath) as $path) {
                 yield $ruleName . '::' . $path => [$ruleName, $path];
             }
@@ -234,7 +231,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         $callSiteGroup = $callSite['groups'][0];
         self::assertNotSame([], $callSiteGroup['warning'], 'Declared exception\'s call site must actually name a warning key — otherwise it is not this exception.');
 
-        $optionsClass = self::ruleNameToOptionsClass()[$ruleName];
+        $optionsClass = ThresholdRuleDiscovery::ruleNameToOptionsClass()[$ruleName];
         $acceptedHere = $optionsClass::acceptedOptionKeys();
 
         foreach ($callSiteGroup['warning'] as $literalKey) {
@@ -270,7 +267,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
     #[Test]
     public function itDeclaresLoneThresholdExceptionsForEveryEmptyPairGroup(): void
     {
-        foreach (self::readRegisteredGroups() as $ruleName => $byPath) {
+        foreach (ThresholdRuleDiscovery::registeredGroups() as $ruleName => $byPath) {
             foreach ($byPath as $path => $groups) {
                 foreach ($groups as $group) {
                     if ($group['warning'] !== [] || $group['error'] !== []) {
@@ -301,7 +298,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
      */
     public static function provideWritableGroups(): iterable
     {
-        foreach (self::readRegisteredGroups() as $ruleName => $byPath) {
+        foreach (ThresholdRuleDiscovery::registeredGroups() as $ruleName => $byPath) {
             foreach ($byPath as $path => $groups) {
                 foreach (array_keys($groups) as $index) {
                     if ($groups[$index]['warning'] === []) {
@@ -378,7 +375,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
      * Closes the gap a hand-typed list of "the roots rules live under" would
      * otherwise leave open: {@see self::discoverCallSites()} only ever looks
      * at the source files of options classes reachable from
-     * {@see self::discoverRuleClasses()} — a rule whose Options class lived
+     * {@see ThresholdRuleDiscovery::ruleClasses()} — a rule whose Options class lived
      * outside whatever that discovery visits would be invisible to every
      * other assertion in this file without ever failing one. This test asks
      * the opposite question directly, over the whole of `src/`: does any
@@ -389,17 +386,17 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
     public function itLeavesNoThresholdParserCallSiteOutsideTheDiscoveredOptionsClasses(): void
     {
         $consideredFiles = [];
-        foreach (self::ruleNameToOptionsClass() as $optionsClass) {
-            foreach (self::sourceFilesByPath($optionsClass) as $sourceFile) {
+        foreach (ThresholdRuleDiscovery::ruleNameToOptionsClass() as $optionsClass) {
+            foreach (ThresholdRuleDiscovery::sourceFilesByPath($optionsClass) as $sourceFile) {
                 $consideredFiles[$sourceFile] = true;
             }
         }
 
         $escaped = [];
-        $finder = (new Finder())->files()->in(self::srcDir())->name('*.php');
+        $finder = (new Finder())->files()->in(ThresholdRuleDiscovery::srcDir())->name('*.php');
 
         foreach ($finder as $file) {
-            $path = self::realOrPathname($file);
+            $path = ThresholdRuleDiscovery::realOrPathname($file);
 
             if (isset($consideredFiles[$path])) {
                 continue;
@@ -440,8 +437,8 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
 
         $result = [];
 
-        foreach (self::ruleNameToOptionsClass() as $ruleName => $optionsClass) {
-            foreach (self::sourceFilesByPath($optionsClass) as $path => $sourceFile) {
+        foreach (ThresholdRuleDiscovery::ruleNameToOptionsClass() as $ruleName => $optionsClass) {
+            foreach (ThresholdRuleDiscovery::sourceFilesByPath($optionsClass) as $path => $sourceFile) {
                 $groups = self::extractCallSiteGroups($sourceFile);
                 if ($groups === []) {
                     continue;
@@ -607,141 +604,9 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         ));
     }
 
-    /**
-     * @return array<string, class-string>
-     */
-    private static function ruleNameToOptionsClass(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $map = [];
-        foreach (self::discoverRuleClasses() as $ruleClass) {
-            $ruleName = RuleNameReader::read($ruleClass);
-            $map[$ruleName] = $ruleClass::getOptionsClass();
-        }
-
-        return $cache = $map;
-    }
-
-    /**
-     * Scans the whole of `src/` for `*Rule.php` files and derives each one's
-     * FQN mechanically from its path via the project's PSR-4 root
-     * (`Qualimetrix\` => `src/`) — never from a hand-typed list of "the
-     * directories rules live in", which can omit a real one silently (see
-     * this class's docblock, point 4: this is what makes {@see self::readRegisteredGroups()}'s
-     * completeness claim reach every rule this codebase ships, not just the
-     * ones a maintainer remembered to list).
-     *
-     * @return list<class-string<RuleDefinitionInterface>>
-     */
-    private static function discoverRuleClasses(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $classes = [];
-        $srcDir = self::srcDir();
-
-        $finder = (new Finder())->files()->in($srcDir)->name('*Rule.php');
-
-        foreach ($finder as $file) {
-            $class = self::classFromSourcePath(self::realOrPathname($file));
-
-            if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
-                continue;
-            }
-
-            if ((new ReflectionClass($class))->isAbstract()) {
-                continue;
-            }
-
-            /** @var class-string<RuleInterface> $class */
-            $classes[] = $class;
-        }
-
-        return $cache = $classes;
-    }
-
-    private static function srcDir(): string
-    {
-        return \dirname(__DIR__, 2) . '/src';
-    }
-
-    /**
-     * `SplFileInfo::getRealPath()` returns `false` only when the path cannot
-     * be resolved (a dangling symlink, a file removed mid-scan) — never for
-     * a real file `Finder` just found, but the return type carries the
-     * possibility regardless.
-     */
-    private static function realOrPathname(SplFileInfo $file): string
-    {
-        $real = $file->getRealPath();
-
-        return $real !== false ? $real : $file->getPathname();
-    }
-
-    /**
-     * Derives a class's FQN from its absolute source path under `src/`,
-     * using the project's single PSR-4 root (`Qualimetrix\` => `src/`,
-     * `composer.json`'s `autoload.psr-4`) — the same mapping Composer's own
-     * autoloader uses, not a re-declared copy of it.
-     */
-    private static function classFromSourcePath(string $absolutePath): string
-    {
-        $srcDir = self::srcDir();
-        $relative = str_starts_with($absolutePath, $srcDir . '/')
-            ? substr($absolutePath, \strlen($srcDir) + 1)
-            : throw new RuntimeException(\sprintf('%s is not under %s.', $absolutePath, $srcDir));
-
-        return 'Qualimetrix\\' . str_replace('/', '\\', substr($relative, 0, -4));
-    }
-
-    /**
-     * @param class-string $optionsClass
-     *
-     * @return array<string, string> path => absolute source file path
-     */
-    private static function sourceFilesByPath(string $optionsClass): array
-    {
-        $paths = ['' => self::fileNameOf($optionsClass)];
-
-        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
-            return $paths;
-        }
-
-        /** @var HierarchicalRuleOptionsInterface $instance */
-        $instance = new $optionsClass();
-
-        foreach ($instance->getSupportedLevels() as $level) {
-            $levelObject = $instance->forLevel($level);
-            $paths[$level->value] = self::fileNameOf($levelObject::class);
-        }
-
-        return $paths;
-    }
-
-    /**
-     * @param class-string $class
-     */
-    private static function fileNameOf(string $class): string
-    {
-        $file = (new ReflectionClass($class))->getFileName();
-
-        if ($file === false) {
-            throw new RuntimeException(\sprintf('Could not locate the source file for %s.', $class));
-        }
-
-        return $file;
-    }
-
     private static function acceptedKeysAt(string $ruleName, string $path): RuleOptionKeySet
     {
-        $optionsClass = self::ruleNameToOptionsClass()[$ruleName];
+        $optionsClass = ThresholdRuleDiscovery::ruleNameToOptionsClass()[$ruleName];
 
         if ($path === '') {
             return $optionsClass::acceptedOptionKeys();
@@ -772,22 +637,5 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         }
 
         return null;
-    }
-
-    /**
-     * @return array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>, form: RuleOptionValueForm}>>>
-     */
-    private static function readRegisteredGroups(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        $reflectionConstant = new ReflectionClassConstant(RuleThresholdKeyGroupRegistry::class, 'GROUPS');
-        /** @var array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>, form: RuleOptionValueForm}>>> $value */
-        $value = $reflectionConstant->getValue();
-
-        return $cache = $value;
     }
 }

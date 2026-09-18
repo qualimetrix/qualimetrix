@@ -32,7 +32,7 @@ final class DogfoodingTopologyTest extends TestCase
     #[Test]
     public function itProjectsEveryManifestDeclarationToItsOwnerOrSingletonSeam(): void
     {
-        $manifest = $this->manifest();
+        $manifest = ModularArchitectureManifest::read();
         $architecture = $this->loadProjectArchitecture();
         $declared = array_map(
             self::entryName(...),
@@ -123,17 +123,6 @@ final class DogfoodingTopologyTest extends TestCase
         self::assertNull($this->resolveFqcn($architecture, 'Qualimetrix\\UnlistedModule\\FutureType'));
     }
 
-    /** @return array<string, mixed> */
-    private function manifest(): array
-    {
-        $contents = file_get_contents($this->repoRoot() . '/docs/internal/modular-architecture-manifest.json');
-        self::assertIsString($contents);
-        $manifest = json_decode($contents, true, flags: \JSON_THROW_ON_ERROR);
-        self::assertIsArray($manifest);
-
-        return $manifest;
-    }
-
     private static function ownerLayerName(string $owner): string
     {
         return strtolower(str_replace('.', '-', $owner));
@@ -191,7 +180,7 @@ final class DogfoodingTopologyTest extends TestCase
 
     private function loadProjectArchitecture(): ArchitectureConfiguration
     {
-        $repoRoot = $this->repoRoot();
+        $repoRoot = ModularArchitectureManifest::repositoryRoot();
         $loader = new YamlConfigLoader();
         $pipeline = new ConfigurationPipeline();
         $pipeline->addStage(new DefaultsStage());
@@ -207,17 +196,9 @@ final class DogfoodingTopologyTest extends TestCase
             ->configuration;
     }
 
-    private function repoRoot(): string
-    {
-        $root = realpath(__DIR__ . '/../..');
-        self::assertIsString($root);
-
-        return $root;
-    }
-
     private function enforcementSummaryCount(string $metric): int
     {
-        $path = $this->repoRoot() . '/docs/internal/generated/modular-architecture/manifest-enforcement-summary.tsv';
+        $path = ModularArchitectureManifest::repositoryRoot() . '/docs/internal/generated/modular-architecture/manifest-enforcement-summary.tsv';
         $rows = file($path, \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES);
         self::assertIsArray($rows);
 
@@ -232,4 +213,5 @@ final class DogfoodingTopologyTest extends TestCase
 
         self::fail("Missing {$metric} in {$path}");
     }
+
 }

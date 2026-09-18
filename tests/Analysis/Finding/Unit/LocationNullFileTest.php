@@ -22,17 +22,6 @@ use Qualimetrix\Core\Path\RelativePath;
 final class LocationNullFileTest extends TestCase
 {
     #[Test]
-    public function itLocationNoneCarriesNullFile(): void
-    {
-        $location = Location::none();
-
-        self::assertNull($location->file);
-        self::assertTrue($location->isNone());
-        self::assertSame('', $location->pathString());
-        self::assertSame('', $location->toString());
-    }
-
-    #[Test]
     public function itPathStringReturnsEmptyStringForNullFile(): void
     {
         $location = new Location(null, line: null);

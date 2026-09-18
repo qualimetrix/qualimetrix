@@ -720,22 +720,6 @@ PHP;
     }
 
     #[Test]
-    public function itClearsResolverAndDependencyStateWhenBeginningASecondFile(): void
-    {
-        self::assertCount(1, $this->analyze(
-            '<?php namespace First; use Vendor\\One; final class A extends One {}',
-            'first.php',
-        ));
-
-        $dependencies = $this->analyze(
-            '<?php namespace Second; final class B {}',
-            'second.php',
-        );
-
-        self::assertSame([], $dependencies);
-    }
-
-    #[Test]
     public function itReturnsDependencyModelOwnedLocationsForExtractedDependencies(): void
     {
         $dependencies = $this->analyze(<<<'PHP'

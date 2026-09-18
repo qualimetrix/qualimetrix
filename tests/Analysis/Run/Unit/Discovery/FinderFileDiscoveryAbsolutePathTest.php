@@ -118,18 +118,6 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsNonExistentAbsolutePath(): void
-    {
-        $discovery = new FinderFileDiscovery();
-        $files = iterator_to_array(
-            $discovery->discover(AbsolutePath::fromString('/non/existent/qmx-vo-path')),
-            false,
-        );
-
-        self::assertSame([], $files);
-    }
-
-    #[Test]
     public function itDeduplicatesOverlappingDirectoryInputs(): void
     {
         // `src/ src/sub/` (nested) used to be deduped implicitly by

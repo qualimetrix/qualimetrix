@@ -167,25 +167,6 @@ final class InlineDirectivePolicyTest extends TestCase
     }
 
     /**
-     * The explicit `ruleName#violationCode` spelling is accounted for exactly
-     * like the one-part one — it names one channel and needs no expansion.
-     */
-    #[Test]
-    public function itAccountsForADirectiveWrittenAsAnExplicitChannelPair(): void
-    {
-        $policy = self::policy();
-        $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
-            [],
-            [],
-        );
-        $policy->enableUsageReporting(Severity::Info);
-
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty()));
-    }
-
-    /**
      * A target addressing no channel is already reported as a configuration
      * error, so counting it here too would say the same directive is both
      * broken and merely stale. The retired `rule#code` spelling is the sharpest

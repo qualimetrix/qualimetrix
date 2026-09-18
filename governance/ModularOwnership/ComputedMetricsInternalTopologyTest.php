@@ -18,6 +18,28 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
+/**
+ * The ComputedMetrics leaf's own import direction, which owner-level policy
+ * cannot state.
+ *
+ * This file used to carry a second thing as well: a hand-written list of every
+ * cross-owner import of a ComputedMetrics contract, with its own pinned counts.
+ * That list is the manifest's `consumers` field, and `composer
+ * architecture:check` already enforces it in both directions — an observed
+ * cross-owner import with no matching consumer entry fails as "unapproved
+ * exact internal import" or "contract import ... has N matching consumer
+ * entries", and a consumer entry no import uses fails as "unused contract
+ * consumer entry" ({@see \Qualimetrix\Governance\ModularOwnership\ModularArchitectureManifest},
+ * `validateAuthorizations()` in
+ * `scripts/generate-modular-architecture-production-inventory.php`). Keeping a
+ * copy here meant a second place to edit for every contract consumer the
+ * project gains.
+ *
+ * What stays is what the manifest does not express: `ComputedMetrics` and
+ * `ComputedMetrics.Health` are owners, and the checker skips a pair that shares
+ * one — so nothing outside this file says that a root Contract may not import
+ * root Internal.
+ */
 final class ComputedMetricsInternalTopologyTest extends TestCase
 {
     private const string ROOT_PREFIX = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\';
@@ -31,63 +53,6 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         'HealthContractImplementation' => ['RootContract', 'HealthContract', 'HealthInternal'],
         'HealthInternal' => ['RootContract', 'HealthContract', 'HealthContractImplementation'],
         'Reporting' => ['RootContract', 'HealthContract', 'HealthContractImplementation'],
-    ];
-
-    /** @var list<array{string, string}> */
-    private const array EXPECTED_RELATIONS = [
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface', 'Qualimetrix\\Infrastructure\\Console\\AnalysisRuntimeConfigurator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface', 'Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions', 'Qualimetrix\\Infrastructure\\Console\\AnalysisRuntimeConfigurator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions', 'Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions', 'Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator', 'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily', 'Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily', 'Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ComputedMetricsConfigurator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\HealthFormulaExclusionInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\DecompositionItem', 'Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\DecompositionItem', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\DecompositionItem', 'Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthContributor', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage', 'Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown', 'Qualimetrix\\Reporting\\Health\\HealthScoreResolver'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown', 'Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\RankedOffenderLevels', 'Qualimetrix\\Infrastructure\\Console\\DrillDownBinding'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Filter\\FindingFilter'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder', 'Qualimetrix\\Reporting\\Health\\SummaryEnricher'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummary', 'Qualimetrix\\Reporting\\Health\\SummaryEnricher'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Metadata\\HealthMetricMetadataProviderInterface', 'Qualimetrix\\Reporting\\Health\\HealthHintProjector'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Metadata\\HealthMetricMetadataCollection', 'Qualimetrix\\Reporting\\Health\\HealthHintProjector'],
-    ];
-
-    /** @var list<array{string, string}> */
-    private const array COMPOSED_CARRIER_RELATIONS = [
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Report'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthContributor', 'Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Health\\HealthScoreResolver'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthScore', 'Qualimetrix\\Reporting\\Report'],
     ];
 
     #[Test]
@@ -106,26 +71,6 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
                 self::assertTrue($this->allows($sourceZone, $this->zone($target)), "$source cannot import $target");
             }
         }
-
-        $relations = [];
-        foreach ($this->projectDeclarations() as $source => $path) {
-            foreach ($this->imports($path) as $target) {
-                if (isset($declarations[$target])
-                    && str_contains($target, '\\Contract\\')
-                    && $this->relationOwner($source) !== $this->relationOwner($target)) {
-                    $relations[] = [$target, $source];
-                }
-            }
-        }
-
-        sort($relations);
-        $expected = [...self::EXPECTED_RELATIONS, ...self::COMPOSED_CARRIER_RELATIONS];
-        sort($expected);
-        self::assertSame($expected, $relations, 'Every raw cross-owner Contract import must be explicitly classified.');
-        self::assertCount(49, $relations);
-        self::assertCount(44, self::EXPECTED_RELATIONS);
-        self::assertCount(25, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
-        self::assertCount(19, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => str_contains($relation[0], '\\Health\\Contract\\')));
 
         $source = implode("\n", array_map(static fn(string $path): string => (string) file_get_contents($path), $declarations));
         $obsoleteNames = [
@@ -166,25 +111,8 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         foreach (self::ZONE_DAG as $allowed) {
             self::assertNotContains('*', $allowed);
         }
-        self::assertNotContains([
-            self::ROOT_PREFIX . 'Contract\\Definition\\HealthDimension',
-            self::HEALTH_PREFIX . 'Metadata\\HealthMetricCatalog',
-        ], self::EXPECTED_RELATIONS, 'A DAG-valid but undeclared relation must not be silently accepted.');
-
         $this->expectException(LogicException::class);
         $this->zone('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Future\\Unknown');
-    }
-
-    private function relationOwner(string $fqcn): string
-    {
-        if (str_starts_with($fqcn, self::HEALTH_PREFIX)) {
-            return 'Health';
-        }
-        if (str_starts_with($fqcn, self::ROOT_PREFIX)) {
-            return 'Root';
-        }
-
-        return 'External';
     }
 
     /** @return array<string, string> */

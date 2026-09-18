@@ -241,9 +241,17 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('architecture.circular-dependency', 'Circular dependencies');
 
-        $tester = new CommandTester($this->createCommand([$rule]));
+        // The channel is declared and produced; what it has no answer for is
+        // the catalog metric. An earlier version of this case registered no
+        // channel at all, so the silence it asserted came from a rule that
+        // produced nothing, not from a channel that judges nothing.
+        $tester = new CommandTester($this->createCommand(
+            [$rule],
+            ['architecture.circular-dependency' => ['architecture.circular-dependency' => []]],
+        ));
         $tester->execute([], ['decorated' => false]);
 
+        self::assertStringContainsString('architecture.circular-dependency', $tester->getDisplay());
         self::assertStringNotContainsString('judges', $tester->getDisplay());
     }
 
@@ -259,10 +267,11 @@ final class RulesCommandTest extends TestCase
     }
 
     /**
-     * A channel absent from `$judged` is declared without judged metrics.
+     * A rule absent from `$judged` produces no channel at all; a channel
+     * mapped to an empty list is declared, produced, and judges no metric.
      *
      * @param list<RuleInterface> $rules
-     * @param array<string, array<string, non-empty-list<string>>> $judged rule name => channel code => judged metric keys
+     * @param array<string, array<string, list<string>>> $judged rule name => channel code => judged metric keys
      */
     private function createCommand(array $rules, array $judged = []): RulesCommand
     {
@@ -284,11 +293,13 @@ final class RulesCommandTest extends TestCase
         foreach ($judged as $ruleName => $byChannel) {
             foreach ($byChannel as $code => $metricKeys) {
                 $channelsByRule[$ruleName][] = new FindingChannel($code);
-                $declarationByCode[$code] = ChannelDeclaration::judging(
-                    WorseDirection::Higher,
-                    JudgedMetrics::of(...$metricKeys),
-                    SymbolLevel::Class_,
-                );
+                $declarationByCode[$code] = $metricKeys === []
+                    ? ChannelDeclaration::occurrence(SymbolLevel::Class_)
+                    : ChannelDeclaration::judging(
+                        WorseDirection::Higher,
+                        JudgedMetrics::of(...$metricKeys),
+                        SymbolLevel::Class_,
+                    );
             }
         }
 

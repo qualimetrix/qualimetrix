@@ -79,23 +79,34 @@ completion log through its implementation.
 
 ## Test ownership
 
-The module owns eight Unit test classes under
-`tests/Analysis/Evidence/Duplication/Unit/`:
+The module owns test classes at three levels, and the level is decided by what
+the body does rather than by where the class started out.
+
+Seven Unit classes under `tests/Analysis/Evidence/Duplication/Unit/`, all of
+them in memory:
 
 - `ContentHintExtractorTest`
 - `DataDeclarationTaggerTest`
-- `DuplicationDetectorTest`
-- `DuplicationMemoryLimitProcessTest`
+- `DuplicateBlockFinderTest`
 - `SaturatingCandidateFilterTest`
 - `TokenNormalizerTest`
 - `DuplicateBlockIdentityTest`
 - `CodeDuplicationRuleTest`
 
-The process test protects the bounded-memory candidate index and the real CLI
-path. Run the complete owned suite with:
+One Integration class under `tests/Analysis/Evidence/Duplication/Integration/`:
+`DuplicationDetectorTest`, which writes real files into a temporary directory
+and runs the detector's whole pipeline over them.
+
+One Functional class under `tests/Analysis/Evidence/Duplication/Functional/`:
+`DuplicationMemoryLimitProcessTest`, which builds a temporary project and runs
+`bin/qmx` in a real PHP subprocess under a `memory_limit`. It protects the
+bounded-memory candidate index and the real CLI path, and it is the reason the
+module has a Functional level at all.
+
+Run the complete owned suite with:
 
 ```bash
-vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication/Unit
+vendor/bin/phpunit --no-coverage tests/Analysis/Evidence/Duplication
 ```
 
 ## Extension registration

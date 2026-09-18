@@ -75,6 +75,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * is declared and filled, `assertDirectoryDoesNotExist()` fails; if it is
      * declared and empty, PHPUnit exits 2 inside the isolated project; and if
      * the probe class does land in a suite, the exit-code assertion fails.
+     *
+     * The probe declares no namespace on purpose. Both the suite classification
+     * and the level check read the path, so a namespace adds nothing here, and
+     * one written in this heredoc is a name the tree spells and no file
+     * declares -- which is what `scripts/dangling-test-names.py` reports. A
+     * probe per refusal would mean a pinned name per refusal, and a census that
+     * grows one entry per instance of a recurring form has stopped being a set.
      */
     #[Test]
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
@@ -89,8 +96,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 <?php
 
                 declare(strict_types=1);
-
-                namespace Qualimetrix\Tests\Reporting\GraphProjection\Functional;
 
                 use PHPUnit\Framework\Attributes\Test;
                 use PHPUnit\Framework\TestCase;
@@ -169,6 +174,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      *
      * The probe directory has to be a real level segment under a real manifest
      * owner, or the parse refuses it earlier for the wrong reason.
+     *
+     * The probe declares no namespace on purpose. Both the suite classification
+     * and the level check read the path, so a namespace adds nothing here, and
+     * one written in this heredoc is a name the tree spells and no file
+     * declares -- which is what `scripts/dangling-test-names.py` reports. A
+     * probe per refusal would mean a pinned name per refusal, and a census that
+     * grows one entry per instance of a recurring form has stopped being a set.
      */
     #[Test]
     public function itFailsWhenATestClassNamesTwoLevels(): void
@@ -183,8 +195,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 <?php
 
                 declare(strict_types=1);
-
-                namespace Qualimetrix\Tests\Core\Unit\Integration;
 
                 use PHPUnit\Framework\Attributes\Test;
                 use PHPUnit\Framework\TestCase;
@@ -324,6 +334,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             $this->copyDirectory(
                 $sourceRoot . '/scripts/directive-audit-controls/tests',
                 $projectRoot . '/scripts/directive-audit-controls/tests',
+            );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/tautology-controls/tests',
+                $projectRoot . '/scripts/tautology-controls/tests',
             );
             $this->copyDirectory(
                 $sourceRoot . '/scripts/finding-gate/tests',

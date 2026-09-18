@@ -56,7 +56,8 @@ fi
 STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=ACMR \
     | grep -E '^(src|tests|governance|scripts|tools)/' \
     | grep '\.php$' \
-    | grep -v 'Fixtures/Ast/invalid_syntax.php' \
+    | grep -v 'Infrastructure/Ast/Fixtures/invalid_syntax.php' \
+    | grep -v 'Infrastructure/Console/Fixtures/parser_refuses_it.php' \
     | grep -v 'Fixtures/OutputFormats/broken/src/Unparsable.php' || true)
 
 if [ -z "$STAGED_PHP_FILES" ]; then

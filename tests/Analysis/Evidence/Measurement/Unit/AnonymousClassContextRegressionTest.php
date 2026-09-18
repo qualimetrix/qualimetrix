@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Metrics;
+namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit;
 
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;

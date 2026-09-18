@@ -28,8 +28,14 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
+    /**
+     * The key an override is filed under is not part of the match: resolution
+     * reads the subject the override itself carries. Filing one under another
+     * file's key changes nothing, which is worth stating because the shape of
+     * the map says otherwise.
+     */
     #[Test]
-    public function itGetThresholdOverrideReturnsNullForUnknownFile(): void
+    public function itMatchesOnTheSubjectAndIgnoresTheMapKey(): void
     {
         $override = self::override('complexity.ccn', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -75,24 +81,18 @@ final class AnalysisContextThresholdTest extends TestCase
     }
 
     #[Test]
-    public function itGetThresholdOverrideRespectsLineScope(): void
+    public function itIgnoresAnOverrideRecordedForAnotherSubject(): void
     {
-        $override = self::override('complexity.ccn', 15, 25, 10, 50);
+        $elsewhere = self::override('complexity.ccn', 15, 25, 10, 50, subject: self::otherSubject());
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
-                'src/Foo.php' => [$override],
+                'src/Foo.php' => [$elsewhere],
             ],
         );
 
-        // Inside scope
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-
-        // Outside scope
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($elsewhere, $context->getThresholdOverride('complexity.ccn', self::otherSubject()));
     }
 
     #[Test]
@@ -109,21 +109,25 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('coupling.cbo', self::subject()));
     }
 
+    /**
+     * Scope first, span second. The two neighbouring cases cannot separate the
+     * rules — in both of them the narrower scope also carries the smaller span
+     * — so this is the one that says which of the two decides.
+     */
     #[Test]
-    public function itGetThresholdOverrideWithNullEndLine(): void
+    public function itPrefersTheNarrowerControlScopeOverTheSmallerSpan(): void
     {
-        $override = self::override('complexity.ccn', 15, 25, 10, null);
+        $tightClass = self::override('complexity.ccn', 15, 25, 10, 11, ControlScope::Class_);
+        $wideCallable = self::override('complexity.ccn', 30, 50, 1, null);
+
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
-                'src/Foo.php' => [$override],
+                'src/Foo.php' => [$tightClass, $wideCallable],
             ],
         );
 
-        // With null endLine, any line >= startLine matches
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($wideCallable, $context->getThresholdOverride('complexity.ccn', self::subject()));
     }
 
     #[Test]
@@ -161,10 +165,6 @@ final class AnalysisContextThresholdTest extends TestCase
         // Line 30 is within both scopes — callable-level (narrower) wins
         $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($methodOverride, $result);
-
-        // Resolution is declaration-bound, so the callable control remains the winner.
-        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
-        self::assertSame($methodOverride, $result);
     }
 
     #[Test]
@@ -183,10 +183,6 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Line 20 is within both — bounded (smaller span) wins
-        $result = $context->getThresholdOverride('complexity.ccn', self::subject());
-        self::assertSame($bounded, $result);
-
-        // Source lines are presentation metadata and do not change subject matching.
         $result = $context->getThresholdOverride('complexity.ccn', self::subject());
         self::assertSame($bounded, $result);
     }
@@ -212,8 +208,20 @@ final class AnalysisContextThresholdTest extends TestCase
         return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')));
     }
 
-    private static function override(string $rule, int|float|null $warning, int|float|null $error, int $line, ?int $endLine, ControlScope $scope = ControlScope::Callable): ThresholdOverride
+    private static function otherSubject(): MetricSubject
     {
-        return new ThresholdOverride($rule, $warning, $error, $line, self::subject(), $scope, $endLine);
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Bar.php')));
+    }
+
+    private static function override(
+        string $rule,
+        int|float|null $warning,
+        int|float|null $error,
+        int $line,
+        ?int $endLine,
+        ControlScope $scope = ControlScope::Callable,
+        ?MetricSubject $subject = null,
+    ): ThresholdOverride {
+        return new ThresholdOverride($rule, $warning, $error, $line, $subject ?? self::subject(), $scope, $endLine);
     }
 }

@@ -32,11 +32,19 @@ final class HealthDecompositionCatalogTest extends TestCase
             ['coupling.distance.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max'],
             $this->provider->getDecomposition('health.coupling', SymbolLevel::Project),
         );
-        self::assertSame([], $this->provider->getDecomposition('health.typing', SymbolLevel::Project));
         self::assertSame(
             ['maintainability.mi.avg', 'maintainability.mi.p5', 'maintainability.mi.min'],
             $this->provider->getDecomposition('health.maintainability', SymbolLevel::Project),
         );
+    }
+
+    #[Test]
+    public function itGetDecompositionDimensionThatDecomposesIntoNothing(): void
+    {
+        // Two dimensions answer the empty list, for two reasons: typing is a
+        // single measured ratio with nothing under it, and overall is a score
+        // over the other dimensions rather than over metric keys.
+        self::assertSame([], $this->provider->getDecomposition('health.typing', SymbolLevel::Project));
         self::assertSame([], $this->provider->getDecomposition('health.overall', SymbolLevel::Project));
     }
 

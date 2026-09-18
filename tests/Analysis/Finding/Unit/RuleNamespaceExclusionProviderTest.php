@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 
 #[CoversClass(RuleNamespaceExclusionProvider::class)]
+#[CoversClass(RuleOptionsRegistry::class)]
 final class RuleNamespaceExclusionProviderTest extends TestCase
 {
     private RuleNamespaceExclusionProvider $provider;

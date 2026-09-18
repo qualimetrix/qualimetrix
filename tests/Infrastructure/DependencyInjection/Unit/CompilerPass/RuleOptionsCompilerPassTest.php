@@ -45,6 +45,10 @@ final class RuleOptionsCompilerPassTest extends TestCase
 
         $optionsReference = $container->getDefinition(ComplexityRule::class)->getArgument('$options');
         self::assertInstanceOf(Reference::class, $optionsReference);
+        self::assertSame(
+            self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class),
+            (string) $optionsReference,
+        );
 
         // Options should use RuleOptionsFactory::create as factory
         $optionsDef = $container->getDefinition((string) $optionsReference);
@@ -58,28 +62,6 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $args = $optionsDef->getArguments();
         self::assertSame(ComplexityRule::NAME, $args[0]);
         self::assertSame(ComplexityOptions::class, $args[1]);
-    }
-
-    #[Test]
-    public function itInjectsTheOptionsServiceAsAnArgumentToTheRule(): void
-    {
-        $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
-        $container->register(ComplexityRule::class)
-            ->setClass(ComplexityRule::class)
-            ->addTag(RuleCompilerPass::TAG);
-
-        $pass = new RuleOptionsCompilerPass();
-        $pass->process($container);
-
-        $ruleDef = $container->getDefinition(ComplexityRule::class);
-        $optionsRef = $ruleDef->getArgument('$options');
-
-        self::assertInstanceOf(Reference::class, $optionsRef);
-        self::assertSame(
-            self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class),
-            (string) $optionsRef,
-        );
     }
 
     #[Test]
@@ -110,10 +92,14 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $pass = new RuleOptionsCompilerPass();
         $pass->process($container);
 
-        // Should not throw, just skip — no Options services registered
+        // The pass skips it rather than throwing: the definition it could not
+        // read a class from comes back with no options argument, and the pass
+        // registered nothing beside the two definitions the container started
+        // with.
+        self::assertSame([], $container->getDefinition('rule.null_class')->getArguments());
         self::assertSame(
-            ['rule.null_class'],
-            array_keys($container->findTaggedServiceIds(RuleCompilerPass::TAG)),
+            ['service_container', RuleOptionsFactory::class, 'rule.null_class'],
+            array_keys($container->getDefinitions()),
         );
     }
 

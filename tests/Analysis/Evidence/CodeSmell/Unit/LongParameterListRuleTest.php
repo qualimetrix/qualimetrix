@@ -28,6 +28,12 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+/**
+ * The VO cases here drive the rule from a hand-built MetricBag, so they say
+ * nothing about whether the collector ever sets the flag. That half is
+ * ParameterCountCollectorTest's, and the seam between them is
+ * LongParameterListVoPropagationTest's.
+ */
 #[CoversClass(LongParameterListRule::class)]
 #[CoversClass(LongParameterListOptions::class)]
 final class LongParameterListRuleTest extends TestCase
@@ -199,20 +205,6 @@ final class LongParameterListRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(8, $findings[0]->metricValue);
-    }
-
-    #[Test]
-    public function itCustomThresholds(): void
-    {
-        $options = LongParameterListOptions::fromArray([
-            'enabled' => true,
-            'warning' => 3,
-            'error' => 5,
-        ]);
-
-        self::assertTrue($options->isEnabled());
-        self::assertSame(3, $options->warning);
-        self::assertSame(5, $options->error);
     }
 
     #[DataProvider('thresholdDataProvider')]

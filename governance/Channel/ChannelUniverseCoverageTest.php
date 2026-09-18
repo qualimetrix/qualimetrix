@@ -61,8 +61,17 @@ final class ChannelUniverseCoverageTest extends TestCase
      * The count is asserted so that a silently shrinking enumeration cannot
      * pass by agreeing with itself on a smaller set. It is obtained, not
      * remembered: `grep -vc '^#\|^$' governance/Channel/Fixtures/declared.txt`.
+     *
+     * Public because it is the group's one declaration of this number.
+     * {@see ChannelPresentationCoverageTest} and
+     * {@see SarifRuleDescriptorCoverageTest} sweep the same universe and each
+     * used to restate it, with a docblock naming the other copies in place of
+     * a check — so a change that moved one and not the others would have read
+     * as two controls disagreeing about the tree rather than as a stale
+     * literal. This file is where it is derived: against the tracked fixture
+     * and against the rule classes read directly.
      */
-    private const int DECLARED_CHANNEL_COUNT = 58;
+    public const int DECLARED_CHANNEL_COUNT = 58;
 
     /**
      * Nine subclasses of `AbstractCodeSmellRule`, three of

@@ -999,6 +999,7 @@ const DEVELOPMENT_NAMESPACE_PREFIXES = [
     'QmxDirectiveAudit\\Tests\\',
     'QmxDirectiveAuditControls\\Tests\\',
     'QmxFindingGate\\Tests\\',
+    'QmxTautologyControls\\Tests\\',
     'Qualimetrix\\SuppressionSnapshot\\Tests\\',
     'Qualimetrix\\RenameEnumeration\\Tests\\',
     'Qualimetrix\\HealthCalibration\\Tests\\',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 
+use Error;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -169,13 +170,15 @@ final class DependencyTest extends TestCase
     }
 
     #[Test]
-    public function itDependencyIsReadonly(): void
+    public function itRefusesAWriteToAConstructedDependency(): void
     {
         $dependency = $this->dependency('Source', 'Target', DependencyType::New_, new Location(RelativePath::fromString('test.php')));
 
-        // This test verifies that Dependency is readonly
-        // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(Dependency::class, $dependency); // @phpstan-ignore staticMethod.alreadyNarrowedType
+        self::expectException(Error::class);
+        self::expectExceptionMessage('Cannot modify readonly property');
+
+        // @phpstan-ignore assign.propertyProtectedSet
+        $dependency->type = DependencyType::Extends;
     }
 
     private function dependency(string $source, string $target, DependencyType $type, Location $location): Dependency

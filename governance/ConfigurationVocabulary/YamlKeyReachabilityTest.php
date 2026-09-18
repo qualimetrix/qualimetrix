@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * Static guard for YAML key reachability through {@see YamlConfigLoader::load()}.
@@ -648,14 +650,23 @@ final class YamlKeyReachabilityTest extends TestCase
     {
         $covered = [];
 
-        $allCases = [
-            ...iterator_to_array(self::provideTopLevelKeyCases(), false),
-            ...iterator_to_array(self::provideSectionSubKeyCases(), false),
-            ...iterator_to_array(self::provideIdentifierSectionCases(), false),
-            ...iterator_to_array(self::provideArchitectureSubKeyCases(), false),
-            ...iterator_to_array(self::provideArchitectureLayerEntryCases(), false),
-            ...iterator_to_array(self::provideArchitectureAllowCases(), false),
-        ];
+        // Read by reflection rather than named six times: a seventh provider
+        // added beside a seventh case would otherwise be invisible here, and
+        // this control would go on reporting full coverage over a smaller set
+        // than the file actually carries.
+        $allCases = [];
+
+        foreach ((new ReflectionClass(self::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if (!$method->isStatic() || !str_starts_with($method->getName(), 'provide')) {
+                continue;
+            }
+
+            /** @var iterable<mixed> $cases */
+            $cases = $method->invoke(null);
+            $allCases = [...$allCases, ...iterator_to_array($cases, false)];
+        }
+
+        self::assertNotSame([], $allCases, 'No reachability provider was found, so this control measures nothing.');
 
         foreach ($allCases as $case) {
             $first = $case[2][0] ?? null;

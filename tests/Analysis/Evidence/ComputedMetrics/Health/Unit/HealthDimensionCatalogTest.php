@@ -20,14 +20,6 @@ final class HealthDimensionCatalogTest extends TestCase
         $this->provider = new HealthDimensionCatalog();
     }
 
-    // --- getLabel ---
-
-    // --- getExplanation ---
-
-    // --- getGoodValue ---
-
-    // --- getDirection ---
-
     // --- getScoreLabel ---
 
     /**

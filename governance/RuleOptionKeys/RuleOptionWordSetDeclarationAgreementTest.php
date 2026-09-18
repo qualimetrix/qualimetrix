@@ -6,6 +6,7 @@ namespace Qualimetrix\Governance\RuleOptionKeys;
 
 use BackedEnum;
 use Closure;
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,6 +19,8 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOption
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Throwable;
 
 /**
@@ -39,6 +42,11 @@ use Throwable;
  * declares {@see RuleOptionShape::oneOf()} (case-sensitive) in front of a
  * reader that also compares strictly, so the two already agree by
  * construction and folding would be the wrong thing to test for it.
+ *
+ * "Every declaration in the tree" is a hand-written provider, so
+ * {@see itPairsEveryOneOfIgnoringCaseDeclarationInTheTreeWithAReader()} reads
+ * the tree and holds the provider to it: a fourth declaration added without a
+ * row is the silent gap the sentence above would otherwise be covering for.
  */
 #[CoversClass(RuleOptionShape::class)]
 final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
@@ -156,6 +164,73 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
             self::readerAccepts($optionsClass, $buildConfig('bogus-word')),
             \sprintf('%s::fromArray() should refuse an undeclared word', $optionsClass),
         );
+    }
+
+    /**
+     * The provider is a hand list; this is the tree. Every
+     * `RuleOptionShape::oneOfIgnoringCase()` declaration in `src/` must own a
+     * row above, and every row must name a declaration that is still there.
+     *
+     * The scan reads source text rather than reflecting the options classes,
+     * because a class the provider forgot is a class nothing here would load.
+     */
+    #[Test]
+    public function itPairsEveryOneOfIgnoringCaseDeclarationInTheTreeWithAReader(): void
+    {
+        $declared = [];
+
+        foreach (self::provideDeclaredReaders() as [$optionsClass, $key]) {
+            $declared[] = $optionsClass . '::' . $key;
+        }
+
+        sort($declared);
+
+        $found = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(\dirname(__DIR__, 2) . '/src', FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $entry) {
+            if (!$entry->isFile() || $entry->getExtension() !== 'php') {
+                continue;
+            }
+
+            $source = (string) file_get_contents($entry->getPathname());
+
+            if (preg_match_all(
+                "/'([^']+)'\\s*=>\\s*RuleOptionShape::oneOfIgnoringCase\\(/",
+                $source,
+                $matches,
+            ) === 0) {
+                continue;
+            }
+
+            if (preg_match('/^namespace\\s+([\\w\\\\]+);/m', $source, $namespace) !== 1
+                || preg_match('/^(?:final\\s+)?(?:readonly\\s+)?class\\s+(\\w+)/m', $source, $class) !== 1) {
+                self::fail(\sprintf('%s declares a word set but no single class this scan can name.', $entry->getPathname()));
+            }
+
+            foreach ($matches[1] as $key) {
+                $found[] = $namespace[1] . '\\' . $class[1] . '::' . $key;
+            }
+        }
+
+        sort($found);
+
+        self::assertSame($declared, $found, \sprintf(
+            'provideDeclaredReaders() and the tree disagree about which option keys declare a'
+            . ' case-folding word set. Only in the provider: %s. Only in the tree: %s.',
+            self::listOrNone(array_diff($declared, $found)),
+            self::listOrNone(array_diff($found, $declared)),
+        ));
+    }
+
+    /**
+     * @param array<int, string> $items
+     */
+    private static function listOrNone(array $items): string
+    {
+        return $items === [] ? '(none)' : implode(', ', $items);
     }
 
     /**

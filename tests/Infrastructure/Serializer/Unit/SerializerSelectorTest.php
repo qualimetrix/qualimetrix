@@ -122,25 +122,28 @@ final class SerializerSelectorTest extends TestCase
         self::assertTrue($selected->isAvailable());
     }
 
+    /**
+     * Equal priorities are only about the tie-break, and asserting that one of
+     * the two came back leaves exactly that unchecked. PHP's sort is stable,
+     * so the tie goes to the earlier entry; the second half swaps the two so a
+     * winner picked by identity rather than by position is caught.
+     */
     #[Test]
-    public function itHandlesEqualPriorities(): void
+    public function itBreaksAPriorityTieByRegistrationOrder(): void
     {
-        $serializer1 = self::createStub(SerializerInterface::class);
-        $serializer1->method('isAvailable')->willReturn(true);
-        $serializer1->method('getPriority')->willReturn(50);
+        $first = $this->availableSerializerWithPriority(50);
+        $second = $this->availableSerializerWithPriority(50);
 
-        $serializer2 = self::createStub(SerializerInterface::class);
-        $serializer2->method('isAvailable')->willReturn(true);
-        $serializer2->method('getPriority')->willReturn(50);
+        self::assertSame($first, (new SerializerSelector([$first, $second]))->select());
+        self::assertSame($second, (new SerializerSelector([$second, $first]))->select());
+    }
 
-        $selector = new SerializerSelector([
-            $serializer1,
-            $serializer2,
-        ]);
+    private function availableSerializerWithPriority(int $priority): SerializerInterface
+    {
+        $serializer = self::createStub(SerializerInterface::class);
+        $serializer->method('isAvailable')->willReturn(true);
+        $serializer->method('getPriority')->willReturn($priority);
 
-        $selected = $selector->select();
-
-        // With equal priority, one of them should be selected
-        self::assertContains($selected, [$serializer1, $serializer2]);
+        return $serializer;
     }
 }

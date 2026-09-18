@@ -59,7 +59,7 @@ written without its namespace, is reached by nothing in this campaign. Stated as
 uncovered rather than left to be discovered uncovered.
 
 A seventh question is asked by
-[`measurement/stage-04/dangling-test-names.py`](measurement/stage-04/dangling-test-names.py),
+[`scripts/dangling-test-names.py`](../../../../scripts/dangling-test-names.py),
 which is tracked precisely because three packages in a row wrote it from scratch
 in a scratchpad that then vanished. It asks the opposite of every sweep above —
 which `Qualimetrix\Tests\…` names in the tree resolve to no file — and it is

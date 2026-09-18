@@ -7,8 +7,11 @@ namespace Qualimetrix\Governance\Channel;
 use FilesystemIterator;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
@@ -19,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RuntimeException;
 
 /**
  * ADR 0031: {@see ChannelShape} moved off
@@ -50,14 +52,17 @@ use RuntimeException;
  * never inspects them; excluding them by name would make the guard trust a
  * list instead of the fact that they build no channel at all.
  *
- * **What this guard does not see**, honestly: it inspects the *enclosing
- * method's* body, so a `ChannelShape` reference smuggled through a call to a
- * private helper the enclosing method invokes would not be caught — the same
- * class of gap this file's own model, {@see ChannelLevelAssemblyTopologyTest},
- * names for its level-suffix check. Verified by deliberately reintroducing the
- * finding in a scratch copy of a production rule during this guard's own
- * development: a reference in the *same* method fails loudly; one routed
- * through a second method does not.
+ * **A helper hop is inside the guard, not outside it.** The enclosing method's
+ * own body was once all this read, which left one edit — move the
+ * `ChannelShape` reference into a private method and call it — sufficient to
+ * pass. The search now walks the methods the enclosing method reaches inside
+ * its own class, through `$this->x()`, `self::x()` and `static::x()`,
+ * transitively. {@see itSeesAChannelShapeReferenceRoutedThroughAPrivateHelper()}
+ * is that edit, written down as a case.
+ *
+ * **What it still does not see**, honestly: a hop out of the class — a
+ * collaborator, a closure passed elsewhere, a call built from a variable
+ * method name. Those are named here rather than discovered later.
  */
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelShapeNotDeclaredByChannelTopologyTest extends TestCase
@@ -69,41 +74,9 @@ final class ChannelShapeNotDeclaredByChannelTopologyTest extends TestCase
         $channelBuildingCallCount = 0;
 
         foreach (self::productionFiles() as $file) {
-            $ast = self::parse($file);
-            $finder = new NodeFinder();
-
-            /** @var list<StaticCall> $calls */
-            $calls = $finder->find($ast, static fn(Node $node): bool => $node instanceof StaticCall
-                && $node->class instanceof Name
-                && $node->class->toString() === 'ChannelDeclaration'
-                && $node->name instanceof Node\Identifier
-                && \in_array($node->name->toString(), ['magnitude', 'occurrence'], true));
-
-            foreach ($calls as $call) {
-                $channelBuildingCallCount++;
-
-                $method = self::enclosingMethod($ast, $call);
-
-                if ($method === null) {
-                    continue;
-                }
-
-                $shapeReferences = $finder->find(
-                    $method,
-                    static fn(Node $node): bool => $node instanceof ClassConstFetch
-                        && $node->class instanceof Name
-                        && $node->class->toString() === 'ChannelShape',
-                );
-
-                if ($shapeReferences !== []) {
-                    $offenders[] = \sprintf(
-                        '%s:%d in %s()',
-                        self::relative($file),
-                        $call->getStartLine(),
-                        $method->name->toString(),
-                    );
-                }
-            }
+            $report = self::inspect((string) file_get_contents($file), self::relative($file));
+            $channelBuildingCallCount += $report['calls'];
+            $offenders = [...$offenders, ...$report['offenders']];
         }
 
         self::assertGreaterThan(
@@ -118,6 +91,177 @@ final class ChannelShapeNotDeclaredByChannelTopologyTest extends TestCase
             . ' Shape is a producer-level fact (its own shape() method / SHAPE constant) since ADR 0031 — a'
             . ' channel-building method has no reason to compute one.',
         );
+    }
+
+    /**
+     * The detector, on inputs written here by hand: one that must be caught
+     * directly, one that must be caught through a helper hop, and one that
+     * must not be caught at all. Without the third, "it fires" would be the
+     * only thing proved, and a detector that fires on everything is no
+     * cheaper to satisfy than one that fires on nothing.
+     */
+    #[Test]
+    public function itSeesAChannelShapeReferenceInTheChannelBuildingMethodItself(): void
+    {
+        $report = self::inspect(self::probe('return ChannelDeclaration::magnitude($this->name(), ChannelShape::Magnitude);'), 'probe');
+
+        self::assertSame(1, $report['calls']);
+        self::assertCount(1, $report['offenders']);
+        self::assertStringContainsString('build()', $report['offenders'][0]);
+    }
+
+    #[Test]
+    public function itSeesAChannelShapeReferenceRoutedThroughAPrivateHelper(): void
+    {
+        $report = self::inspect(
+            self::probe(
+                'return ChannelDeclaration::magnitude($this->name(), $this->shape());',
+                'private function shape(): ChannelShape { return ChannelShape::Magnitude; }',
+            ),
+            'probe',
+        );
+
+        self::assertSame(1, $report['calls']);
+        self::assertCount(1, $report['offenders'], 'A helper hop must not be a way out of this guard.');
+    }
+
+    #[Test]
+    public function itLeavesAChannelShapeReferenceInAMethodTheBuilderNeverCallsAlone(): void
+    {
+        $report = self::inspect(
+            self::probe(
+                'return ChannelDeclaration::magnitude($this->name(), $this->name());',
+                'private function elsewhere(): ChannelShape { return ChannelShape::Magnitude; }',
+            ),
+            'probe',
+        );
+
+        self::assertSame(1, $report['calls']);
+        self::assertSame([], $report['offenders'], 'A reference the builder never reaches is not this guard\'s business.');
+    }
+
+    private static function probe(string $buildBody, string $extraMethod = ''): string
+    {
+        return <<<PHP
+            <?php
+            class Probe {
+                public function build(): ChannelDeclaration { {$buildBody} }
+                private function name(): string { return 'probe'; }
+                {$extraMethod}
+            }
+            PHP;
+    }
+
+    /**
+     * @return array{offenders: list<string>, calls: int}
+     */
+    private static function inspect(string $source, string $label): array
+    {
+        $ast = (new ParserFactory())->createForHostVersion()->parse($source) ?? [];
+        $finder = new NodeFinder();
+
+        /** @var list<StaticCall> $calls */
+        $calls = $finder->find($ast, static fn(Node $node): bool => $node instanceof StaticCall
+            && $node->class instanceof Name
+            && $node->class->toString() === 'ChannelDeclaration'
+            && $node->name instanceof Node\Identifier
+            && \in_array($node->name->toString(), ['magnitude', 'occurrence'], true));
+
+        $offenders = [];
+
+        foreach ($calls as $call) {
+            $method = self::enclosingMethod($ast, $call);
+
+            if ($method === null) {
+                continue;
+            }
+
+            foreach (self::methodsReachedFrom($ast, $method) as $reached) {
+                $shapeReferences = $finder->find(
+                    $reached,
+                    static fn(Node $node): bool => $node instanceof ClassConstFetch
+                        && $node->class instanceof Name
+                        && $node->class->toString() === 'ChannelShape',
+                );
+
+                if ($shapeReferences === []) {
+                    continue;
+                }
+
+                $offenders[] = \sprintf(
+                    '%s:%d in %s()%s',
+                    $label,
+                    $call->getStartLine(),
+                    $method->name->toString(),
+                    $reached === $method ? '' : ' via ' . $reached->name->toString() . '()',
+                );
+
+                break;
+            }
+        }
+
+        return ['offenders' => $offenders, 'calls' => \count($calls)];
+    }
+
+    /**
+     * The method itself plus every method of its own class it reaches through
+     * `$this->x()`, `self::x()` or `static::x()`, transitively.
+     *
+     * @param array<Node> $ast
+     *
+     * @return list<ClassMethod>
+     */
+    private static function methodsReachedFrom(array $ast, ClassMethod $entry): array
+    {
+        $finder = new NodeFinder();
+        $siblings = [];
+
+        /** @var list<Class_> $classes */
+        $classes = $finder->findInstanceOf($ast, Class_::class);
+
+        foreach ($classes as $class) {
+            $methods = $finder->findInstanceOf($class, ClassMethod::class);
+
+            if (!\in_array($entry, $methods, true)) {
+                continue;
+            }
+
+            foreach ($methods as $method) {
+                $siblings[$method->name->toString()] = $method;
+            }
+        }
+
+        $reached = [$entry];
+        $queue = [$entry];
+
+        while ($queue !== []) {
+            $current = array_shift($queue);
+
+            /** @var list<MethodCall|StaticCall> $invocations */
+            $invocations = $finder->find($current, static fn(Node $node): bool => ($node instanceof MethodCall
+                    && $node->var instanceof Variable
+                    && $node->var->name === 'this')
+                || ($node instanceof StaticCall
+                    && $node->class instanceof Name
+                    && \in_array($node->class->toString(), ['self', 'static'], true)));
+
+            foreach ($invocations as $invocation) {
+                if (!$invocation->name instanceof Node\Identifier) {
+                    continue;
+                }
+
+                $target = $siblings[$invocation->name->toString()] ?? null;
+
+                if ($target === null || \in_array($target, $reached, true)) {
+                    continue;
+                }
+
+                $reached[] = $target;
+                $queue[] = $target;
+            }
+        }
+
+        return $reached;
     }
 
     /**
@@ -159,20 +303,6 @@ final class ChannelShapeNotDeclaredByChannelTopologyTest extends TestCase
         sort($files);
 
         return $files;
-    }
-
-    /**
-     * @return array<Node>
-     */
-    private static function parse(string $file): array
-    {
-        $contents = file_get_contents($file);
-
-        if ($contents === false) {
-            throw new RuntimeException(\sprintf('Could not read %s.', $file));
-        }
-
-        return (new ParserFactory())->createForHostVersion()->parse($contents) ?? [];
     }
 
     private static function sourceRoot(): string

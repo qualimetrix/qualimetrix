@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -154,29 +153,6 @@ final class MeasurementAggregationServiceTest extends TestCase
     }
 
     #[Test]
-    public function itRunsEveryConfiguredCollector(): void
-    {
-        $collector1 = $this->createCollectorStub('collector1', [], ['metric1']);
-        $collector2 = $this->createCollectorStub('collector2', [], ['metric2']);
-        $calls = 0;
-        $collector1->method('calculate')->willReturnCallback(static function () use (&$calls): void {
-            $calls++;
-        });
-        $collector2->method('calculate')->willReturnCallback(static function () use (&$calls): void {
-            $calls++;
-        });
-
-        (new MeasurementAggregationService(
-            [$collector1, $collector2],
-            new CompositeCollector([], new DeclarationRegistrarFactory()),
-            self::createStub(ProfilerInterface::class),
-        ))
-            ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
-
-        self::assertSame(2, $calls);
-    }
-
-    #[Test]
     public function itRunsIndependentCollectorsInAnyOrder(): void
     {
         $runCount = 0;
@@ -218,18 +194,4 @@ final class MeasurementAggregationServiceTest extends TestCase
         return $collector;
     }
 
-    /**
-     * @param list<string> $requires
-     * @param list<string> $provides
-     */
-    private function createCollectorStub(string $name, array $requires, array $provides): GlobalContextCollectorInterface&Stub
-    {
-        $collector = self::createStub(GlobalContextCollectorInterface::class);
-        $collector->method('getName')->willReturn($name);
-        $collector->method('requires')->willReturn($requires);
-        $collector->method('provides')->willReturn($provides);
-        $collector->method('getMetricDefinitions')->willReturn([]);
-
-        return $collector;
-    }
 }

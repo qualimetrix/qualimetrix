@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
@@ -11,6 +12,7 @@ use Qualimetrix\Infrastructure\Logging\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[CoversClass(ConsoleLogger::class)]
 final class ConsoleLoggerTest extends TestCase
 {
     #[Test]
