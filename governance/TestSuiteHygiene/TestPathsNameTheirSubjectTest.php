@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\TestSuiteHygiene;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -245,11 +246,23 @@ final class TestPathsNameTheirSubjectTest extends TestCase
             TestSubjectPaths::EXACT,
             self::probe('tests/Probe/Unit/FlatTest.php', ['Qualimetrix\Other\Adapter\Command', 'Qualimetrix\Probe\Flat'])['verdict'],
         );
-        // A claim the manifest does not declare is not a claim about another owner.
-        self::assertSame(
-            TestSubjectPaths::NOT_A_PREFIX,
-            self::probe('tests/Probe/Unit/StrangerTest.php', ['Qualimetrix\Nobody\Stranger'])['verdict'],
-        );
+        // A claim the manifest does not declare is not a verdict at all: it used
+        // to fall through to not-a-prefix and take a slot on that list, under a
+        // refusal telling the reader to rename a directory. Refused on any such
+        // claim, not only when every claim is one — otherwise the partial case
+        // keeps dropping a claim in silence.
+        foreach ([
+            ['Qualimetrix\Nobody\Stranger'],
+            ['Qualimetrix\Probe\Flat', 'Qualimetrix\Nobody\Stranger'],
+        ] as $claims) {
+            try {
+                self::probe('tests/Probe/Unit/StrangerTest.php', $claims);
+                self::fail('A claim outside the manifest was judged rather than refused: ' . implode(', ', $claims));
+            } catch (LogicException $refusal) {
+                self::assertStringContainsString('Qualimetrix\Nobody\Stranger', $refusal->getMessage());
+                self::assertStringContainsString('the manifest does not declare', $refusal->getMessage());
+            }
+        }
 
         // The two ways a file states no subject, which are not the same statement.
         self::assertSame(
@@ -293,7 +306,12 @@ final class TestPathsNameTheirSubjectTest extends TestCase
         $judged = self::judged();
         $population = TestSubjectPaths::population();
 
-        self::assertGreaterThan(500, \count($population));
+        // 616 today. A floor of 500 left room for a sixth of the tree to stop
+        // being scanned without a word; this one leaves sixteen files, so a
+        // discovery that quietly stopped walking is the failure it was meant to
+        // be. Lowering it is a hand edit, which is the admission — and stage 05
+        // will owe one if adjudicating list A retires more than sixteen files.
+        self::assertGreaterThan(600, \count($population));
         self::assertSame($population, array_keys($judged));
 
         $unreached = [];

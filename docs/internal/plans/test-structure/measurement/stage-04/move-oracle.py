@@ -4,7 +4,9 @@
 Each of them executes one owner-partition of `relocation-map.csv` and nothing
 else. "Nothing else" is the half that is easy to assert and easy to skip, so it
 is asserted in both directions: every row of the partition was executed, and no
-file outside the partition moved.
+file outside the partition moved. The second half is asked twice — of git's
+rename detection, and of the tracked file sets — because a file moved and
+heavily edited is not a rename to git at all.
 
 The package's own rows are read from the map, which is the independent witness
 (each file's `#[CoversClass]` resolved through the manifest). The pre-move fully
@@ -75,9 +77,15 @@ def expected_namespace(path):
 
 
 def parse_owner(path):
-    parts = path[len("tests/"):].split("/")
+    """The segments before the path's one level segment, or None.
+
+    Exactly one, not the first of several: the generator and
+    `TestSubjectPaths::judge()` both refuse a path naming two, so an oracle that
+    took the first match would certify a target neither would publish.
+    """
+    parts = path[len("tests/"):].split("/")[:-1]
     levels = [index for index, segment in enumerate(parts) if segment in LEVELS]
-    return "/".join(parts[: levels[0]]) if levels else None
+    return "/".join(parts[: levels[0]]) if len(levels) == 1 else None
 
 
 def main():
@@ -153,6 +161,33 @@ def main():
     expected_renames = {(row["current"], row["target"]) for row in mine}
     for rename in sorted(renamed - expected_renames):
         failures.append(f"{rename[0]} -> {rename[1]}: a rename the map does not name")
+
+    # The same question asked of the file sets rather than of git's opinion of
+    # them. `-M` reports a rename only while the two versions stay similar
+    # enough, so a file moved *and* heavily edited arrives as a delete plus an
+    # add and the loop above sees neither half — the one shape this arm exists
+    # to catch is the one it was blind to. Pairing the two sets by basename
+    # finds it without inventing noise: a package legitimately adds files (its
+    # own report, a new control) and legitimately removes them, and reporting
+    # every such path would drown the signal in work the package was asked to do.
+    #
+    # What stays invisible, stated rather than left to be discovered: a
+    # relocation that also *renames* the file. Nothing here pairs its two halves,
+    # and neither does git once the content has drifted.
+    base_tracked = set(git("ls-tree", "-r", "--name-only", arguments.base).split("\n")) - {""}
+    expected_gone = {row["current"] for row in mine}
+    expected_new = {row["target"] for row in mine}
+    gone = {path for path in base_tracked - tracked if path not in expected_gone}
+    appeared = {path for path in tracked - base_tracked if path not in expected_new}
+    arrivals = {}
+    for path in appeared:
+        arrivals.setdefault(os.path.basename(path), []).append(path)
+    for path in sorted(gone):
+        for arrival in sorted(arrivals.get(os.path.basename(path), [])):
+            failures.append(
+                f"{path} -> {arrival}: a move the map does not name."
+                " git reports it as a delete and an add, so rename detection does not see it"
+            )
 
     # 3. The regenerated inventory agrees about every moved file.
     for row in mine:
@@ -285,6 +320,28 @@ def main():
                         continue
                     failures.append(
                         f"{path}:{number}: still names {old}, the pre-move class name of {row['target']}"
+                    )
+
+    # 6b. No pre-move *path* literal survives either. `04-packages.md` calls the
+    #     sweep six questions; this is the one that was asked by hand in every
+    #     package and lived in no tool, which is the same way the old-FQCN sweep
+    #     was rewritten from scratch three times. It reaches a workflow file, a
+    #     .gitattributes line or a phpstan path that no sweep over class names
+    #     touches. Measured over P3's rows at the end of the stage: 0 hits, so
+    #     this is a floor being nailed down rather than a backlog being opened.
+    #
+    #     The seventh question, a sweep by the moved class's bare basename, is
+    #     deliberately not here. It belongs to a *rename*, and a move keeps the
+    #     class name: measured over the same 11 rows it returns 206 legitimate
+    #     hits, so as an arm of a move judge it is 206 lines of noise and an
+    #     allow-list nobody would read. That channel stays uncovered and is
+    #     named as uncovered in `04-packages.md`.
+    for row in mine:
+        for path, lines in corpus.items():
+            for number, line in enumerate(lines, start=1):
+                if row["current"] in line:
+                    failures.append(
+                        f"{path}:{number}: still names the path {row['current']}, which this package emptied"
                     )
 
     # 7. A fresh clone of this commit runs. git tracks no empty directory, so a

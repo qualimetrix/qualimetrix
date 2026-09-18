@@ -21,12 +21,20 @@ use Throwable;
  *   retired for the right reason rather than for either.
  * - **covers another owner**: every class the file covers belongs to a
  *   different owner. This is the adapter-exclusion principle showing through,
- *   and it is a real signal rather than noise.
+ *   and it is a real signal rather than noise. **A member leaves this list by
+ *   gaining a claim on its own owner as legitimately as by being refiled**, and
+ *   the derive then lowers the ceiling for good — intended, and argued in
+ *   {@see TestSubjectPaths}'s docblock, where the measurement that rules out
+ *   the stricter alternative is. The count here is a live measurement; the
+ *   census stage 05 adjudicates is the one this stage recorded.
  * - **remainder is not a prefix**: the path owner is among the covered owners
  *   and the path below the level is still not a prefix of the subject's
  *   namespace. Every current member truncates in the *middle* — `Unit/Collection/`
  *   against an actual `Contract/Collection` — which a reader scanning the tree
- *   does not notice and a prefix test does.
+ *   does not notice and a prefix test does. That entry condition is now true by
+ *   construction: a claim the manifest cannot resolve is refused by
+ *   {@see TestSubjectPaths::judge()} before any verdict, where it used to land
+ *   here and spend one of four slots on a file this definition excludes.
  *
  * **The lists are measured, never typed.** They are written by
  * `php governance/TestSuiteHygiene/derive-subject-path-exceptions.php`, and a

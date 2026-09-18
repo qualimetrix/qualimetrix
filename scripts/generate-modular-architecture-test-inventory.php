@@ -334,6 +334,39 @@ const RETIRED_PATH_ASSERTIONS = [
     'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'The P8 LoggerFactory coverage consolidation described for this path has happened.',
 ];
 
+/**
+ * The owner vocabulary is the manifest's, for fixtures as much as for test
+ * classes — and these two names are not in it.
+ *
+ * One vocabulary is the point. A fixture used to be published under
+ * `Reporting/Sarif`, which the manifest does not declare, and so the inventory
+ * prescribed moving it into `tests/Reporting/Sarif/` — a root the invariant
+ * forbids a test class to sit in, reached through the one kind the invariant
+ * does not judge. Nothing said so, because the fixture branch of
+ * `classifyOwner()` answered from a vocabulary of its own.
+ *
+ * The count is part of the entry, so the allowance is closed in both
+ * directions: a third owner name, an eleventh HtmlTemplate row, or the
+ * disappearance of one, each refuses here and is settled by editing this
+ * constant, which is the admission rather than the side effect.
+ *
+ * @var array<string, array{rows: int, reason: string}>
+ */
+const NON_MANIFEST_TEST_OWNERS = [
+    'Reporting/HtmlTemplate' => [
+        'rows' => 10,
+        'reason' => 'the JS bundle tests and configs under src/Reporting/Template/. Their target root is not a'
+            . ' manifest owner either, and the relocation they assert is named to no package — one of the rows'
+            . ' 04-packages.md hands to the owner.',
+    ],
+    'TestSupport/Logging' => [
+        'rows' => 1,
+        'reason' => 'the shared PSR-3 recording helper, published as its own support owner in'
+            . ' test-system-support-owners.tsv. It is retained where it is, so it prescribes no move into a root'
+            . ' that does not exist.',
+    ],
+];
+
 $projectRoot = realpath(__DIR__ . '/..');
 if ($projectRoot === false) {
     fail('Cannot resolve the project root.');
@@ -350,14 +383,30 @@ if ($classificationProbeArguments !== []) {
     $path = substr($classificationProbeArguments[0], strlen('--classification-probe='));
     [$owner, $closurePackage] = classifyOwner($path);
     $currentSuite = currentSuite($path);
-    $targetSuite = $currentSuite === 'Infrastructure'
-        ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
-        : $currentSuite;
+    // The kind is derived, not assumed. Hardcoding 'phpunit-test-class' here
+    // answered for a path the probe was not given: a support file came back
+    // with a target under `{owner}/none/`, a directory the main pass would
+    // never produce for it. There is no PHPUnit discovery in a probe, so the
+    // kind comes from the path, and classifyKind() answers the rest.
+    //
+    // The proxy is the basename and deliberately not isTestClassPath(), which is
+    // `tests/`-scoped because it answers the owner parse — a different question.
+    // A test class outside that root (`governance/Other/ProbeTest.php`,
+    // `tools/phpstan/tests/Unit/FooTest.php`) would fall to classifyKind(), whose
+    // support branch excludes `*Test.php` by name, and be refused as an
+    // unclassified kind. Those are the probes the unregistered-group claim in
+    // AGENTS.md is checked with.
+    $kind = str_ends_with($path, 'Test.php') ? 'phpunit-test-class' : classifyKind($path, []);
+    $targetSuite = $kind === 'phpunit-test-class'
+        ? ($currentSuite === 'Infrastructure'
+            ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
+            : $currentSuite)
+        : 'none';
     fwrite(STDOUT, implode("\t", [
         $owner,
         $closurePackage,
         $currentSuite,
-        targetPath($path, 'phpunit-test-class', $owner, $targetSuite),
+        targetPath($path, $kind, $owner, $targetSuite),
     ]) . "\n");
     exit(0);
 }
@@ -460,6 +509,7 @@ foreach ($worktreePaths as $path) {
 }
 
 validateInventory($rows, $discoveredCaseCounts);
+assertTestOwnersAreManifestOwners($rows);
 $fixtureDirectoryRows = fixtureDirectoryRows($rows);
 
 $outputDirectory = $outputDirectoryArguments === []
@@ -717,17 +767,42 @@ function isTestClassPath(string $path): bool
     return str_starts_with($path, 'tests/') && str_ends_with($path, 'Test.php');
 }
 
-/** The owner a test path declares: the segments before its level segment, or null when it names no level. */
-function parseOwnerFromTestPath(string $path): ?string
+/**
+ * Where every directory segment naming a test level sits, by index.
+ *
+ * The basename is dropped first: only a directory can be the level segment, and
+ * a file called `UnitTest.php` is not one.
+ *
+ * @return list<int>
+ */
+function testLevelSegments(string $path): array
 {
     $segments = explode('/', substr($path, strlen('tests/')));
-    foreach ($segments as $index => $segment) {
-        if (in_array($segment, TEST_LEVELS, true)) {
-            return implode('/', array_slice($segments, 0, $index));
-        }
+    array_pop($segments);
+
+    return array_keys(array_filter(
+        $segments,
+        static fn(string $segment): bool => in_array($segment, TEST_LEVELS, true),
+    ));
+}
+
+/**
+ * The owner a test path declares: the segments before its one level segment.
+ *
+ * Null when the path does not name **exactly one** level, which is the stated
+ * rule and not merely this function's convenience. Taking the first match
+ * instead published a conforming row for a two-level path that
+ * `TestSubjectPaths::judge()` refuses outright — one rule answered in two
+ * places, with the loud half in the control and the silent half here.
+ */
+function parseOwnerFromTestPath(string $path): ?string
+{
+    $levels = testLevelSegments($path);
+    if (count($levels) !== 1) {
+        return null;
     }
 
-    return null;
+    return implode('/', array_slice(explode('/', substr($path, strlen('tests/'))), 0, $levels[0]));
 }
 
 /**
@@ -754,6 +829,17 @@ function ownerRefusalReason(string $owner): string
 
 function failUnownedTestClass(string $path): never
 {
+    $levels = testLevelSegments($path);
+    if (count($levels) > 1) {
+        fail(sprintf(
+            '%s names %d of %s, and a test file names exactly one. A test class lives at'
+            . ' tests/{manifest owner}/{Unit|Integration|Functional}/...',
+            $path,
+            count($levels),
+            implode(', ', TEST_LEVELS),
+        ));
+    }
+
     $owner = parseOwnerFromTestPath($path);
     if ($owner === null) {
         fail(sprintf(
@@ -809,6 +895,13 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
     }
+    // Empty today for the same reason the retaining disjuncts removed from
+    // targetPath() were — every file under these eight roots is a test class,
+    // which the arm above answers for. It stays where they went because it is
+    // not redundant with anything: for the first fixture or support file filed
+    // under one of them it is the only branch that names an owner, and the
+    // owner it names is right. Deleting it would turn that file into an
+    // unclassified refusal for a question the manifest already answers.
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
         return ['Analysis/Evidence/' . $matches[1], 'P7'];
     }
@@ -905,7 +998,7 @@ function classifyOwner(string $path): array
         return ['Analysis/Evidence/Design', 'P7'];
     }
     if (str_starts_with($path, 'tests/Fixtures/Schema/')) {
-        return ['Reporting/Sarif', 'permanent'];
+        return ['Reporting', 'permanent'];
     }
     if (str_starts_with($path, 'tests/Fixtures/Ast/')) {
         return ['Infrastructure/Ast', 'permanent'];
@@ -1015,13 +1108,23 @@ function classifyKind(string $path, array $discoveredClasses): string
 }
 
 /**
- * Single source of truth for the plain-prefix branches of currentSuite().
+ * Single source of truth for currentSuite(), with no branch beside it.
  * Order matters: a more specific prefix must precede a shorter one it nests
  * under (e.g. the Baseline/Functional entry before the bare Functional
  * entry). assertSuiteClassifierAgreesWithPhpunit() walks this
  * same table to check the reverse direction, so a literal added here without
  * a matching phpunit.xml.dist <directory> fails the same way a <directory>
  * without a matching literal already did.
+ *
+ * **Sole source is what makes that reconciliation bidirectional**, and it was
+ * not one. Two regexes above the walk classified eleven `Analysis/Evidence/*`
+ * directories that no row named — per-capability prefixes written as a pattern
+ * because they were regular, not because they were unknowable. The backward
+ * half walks this table, so those eleven were checked in one direction only:
+ * deleting such a `<directory>` from phpunit.xml.dist left the classifier
+ * answering `Unit` for a path PHPUnit no longer runs, and nothing here said so.
+ * They are rows now. A family regular enough to write as a pattern is regular
+ * enough to enumerate, and enumeration is what the reverse direction can read.
  *
  * @return list<array{prefix: string, suite: string}>
  */
@@ -1032,7 +1135,15 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Policy/Baseline/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Policy/Inline/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/CircularDependency/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/CodeSmell/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Cohesion/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Complexity/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Coupling/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Design/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Duplication/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Maintainability/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Security/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Size/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/DependencyModel/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Measurement/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/', 'suite' => 'Unit'],
@@ -1054,6 +1165,9 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Measurement/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/CodeSmell/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Complexity/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Coupling/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
@@ -1098,12 +1212,6 @@ function testSuitePrefixTable(): array
 
 function currentSuite(string $path): string
 {
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1) {
-        return 'Unit';
-    }
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity|Coupling)/Integration/#', $path) === 1) {
-        return 'Integration';
-    }
     foreach (testSuitePrefixTable() as $entry) {
         if (str_starts_with($path, $entry['prefix'])) {
             return $entry['suite'];
@@ -1125,6 +1233,11 @@ function currentSuite(string $path): string
  * testSuitePrefixTable() literal with no matching <directory> declared for
  * that suite (backward — a stale literal PHPUnit never runs, the same silent
  * outcome through the opposite door).
+ *
+ * The backward half reads the table, so the symmetry holds exactly while the
+ * table is everything currentSuite() knows. It is; see that function's own
+ * docblock for the eleven directories that were once outside it and were
+ * therefore checked forward only.
  */
 function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
 {
@@ -1277,9 +1390,16 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
     if (isTestClassPath($path)) {
         return $path;
     }
-    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
-        || in_array($path, P7_MEASUREMENT_PATHS, true)
-        || str_starts_with($path, 'tests/Infrastructure/Logging/Unit/')
+    // Two disjuncts stood here and no longer do: the eight
+    // `tests/Analysis/Evidence/{CodeSmell…Size}/` roots, and
+    // `tests/Infrastructure/Logging/Unit/`. Both prescribed retention for a
+    // population that is entirely test classes — 119 files and 5, every one of
+    // them `*Test.php` — so the arm above answered for all of them first and
+    // neither disjunct could reach anything. The general rule below is also the
+    // right answer for the non-test-class file that would arrive there next: a
+    // support class under one of those roots belongs at `{owner}/Support/`, and
+    // a retaining prefix would have held it where it fell.
+    if (in_array($path, P7_MEASUREMENT_PATHS, true)
         || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
         || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
     ) {
@@ -1333,6 +1453,70 @@ function fixtureTail(string $path): string
     }
 
     return basename($path);
+}
+
+/**
+ * Every row that touches `tests/` names a manifest owner, whichever kind it is.
+ *
+ * Tooling roots are outside this rule by position rather than by exemption:
+ * neither their current nor their target path lies under `tests/`, so the
+ * vocabulary they use is their own tree's and not this one's.
+ *
+ * @param list<array<string, string>> $rows
+ */
+function assertTestOwnersAreManifestOwners(array $rows): void
+{
+    $owners = manifestOwnerPaths();
+    $unknown = [];
+    $allowed = array_fill_keys(array_keys(NON_MANIFEST_TEST_OWNERS), 0);
+
+    foreach ($rows as $row) {
+        if (!str_starts_with($row['current_path'], 'tests/') && !str_starts_with($row['target_path'], 'tests/')) {
+            continue;
+        }
+        if (in_array($row['subject_owner'], $owners, true)) {
+            continue;
+        }
+        if (isset($allowed[$row['subject_owner']])) {
+            ++$allowed[$row['subject_owner']];
+
+            continue;
+        }
+
+        $unknown[$row['subject_owner']][] = $row['current_path'];
+    }
+
+    $mismatches = [];
+    foreach ($unknown as $owner => $paths) {
+        $mismatches[] = sprintf(
+            '%s is not one of the %d manifest owners, and %d row(s) under tests/ publish it: %s',
+            $owner,
+            count($owners),
+            count($paths),
+            implode(', ', $paths),
+        );
+    }
+
+    foreach (NON_MANIFEST_TEST_OWNERS as $owner => $entry) {
+        if ($allowed[$owner] !== $entry['rows']) {
+            $mismatches[] = sprintf(
+                '%s is allowed here for %d row(s) and the tree now has %d (%s)',
+                $owner,
+                $entry['rows'],
+                $allowed[$owner],
+                $entry['reason'],
+            );
+        }
+    }
+
+    if ($mismatches !== []) {
+        fail(
+            "A test artifact's owner is a manifest owner, and these are not:\n  "
+            . implode("\n  ", $mismatches)
+            . "\nEither file the artifact under the owner that owns it, or name the exception in"
+            . ' NON_MANIFEST_TEST_OWNERS with the reason and the row count.',
+        );
+    }
 }
 
 /**

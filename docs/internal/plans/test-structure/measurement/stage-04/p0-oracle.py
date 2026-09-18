@@ -64,10 +64,15 @@ def read_tsv(path):
 
 
 def parse_owner(path):
-    """The rule P0 installs: the segments before the level segment name the owner."""
-    parts = path[len("tests/"):].split("/")
+    """The rule P0 installs: the segments before the one level segment name the owner.
+
+    Exactly one, not the first of several: a path naming two levels is refused by
+    the generator and by `TestSubjectPaths::judge()`, and an oracle that answered
+    it the lenient way would agree with a row neither of them would publish.
+    """
+    parts = path[len("tests/"):].split("/")[:-1]
     levels = [index for index, segment in enumerate(parts) if segment in LEVELS]
-    if not levels:
+    if len(levels) != 1:
         return None
     return "/".join(parts[: levels[0]])
 

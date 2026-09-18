@@ -31,16 +31,45 @@ use LogicException;
  * covering `Reporting\Formatter\Html\X` gives remainder `Formatter/Whatever`
  * against an actual `Formatter/Html`, which is not a prefix of it.
  *
+ * **Part 3 asks "for at least one" deliberately, and it is what lets a mixed
+ * file through.** Measured: 11 files cover their own owner *and* somebody
+ * else's — a wiring test naming the container and the thing wired, a threshold
+ * test naming the four metrics it thresholds — and every one of them is filed
+ * where it belongs. Requiring all claims, or a majority, would refuse those 11
+ * and overflow two ceilings on the first run. The consequence, named rather
+ * than discovered: a file on the `covers_another_owner` list leaves it by
+ * *gaining* a claim on its own owner, not only by being refiled, and deriving
+ * then lowers that ceiling for good. That is the intended exit — a test that
+ * starts covering what it is filed under has stopped being the exception — and
+ * a claim written to silence this control rather than to state what the test
+ * does is a lie in the test, which no path rule can see and review can.
+ *
+ * **A `#[CoversClass]` that the manifest does not declare is not judged, it is
+ * refused.** Under `tests/` a coverage claim names production code, so a name
+ * the manifest has never heard of is stale, mistyped, or points at a class that
+ * belongs in `src/` — and none of those is a question about the path. It used
+ * to fall through to `not-a-prefix` and take a slot on that list under a
+ * refusal telling the reader to rename a directory, which would not have cured
+ * it. Measured at the time of writing: 0 of 759 claims in the tree.
+ *
  * **The asymmetry, stated rather than left for the next reader: this validates
  * paths against owners, never owners against paths.** `Core.Profiler` is a
  * manifest owner with no `tests/Core/Profiler` directory and no test class
  * anywhere beneath it, and that is not a failure here — it is a question this
  * does not ask.
  *
- * **Population is `tests/**\/*Test.php`, stated as a pattern.** Support and
- * fixture files have no level segment and are excluded deliberately, not by
- * omission: a control that judged them would refuse
+ * **Population is `tests/**\/*Test.php`, stated as a pattern and implemented as
+ * one**: {@see TestTree::testFilesIn()} walks the directory and keeps the files
+ * whose name ends `Test.php`. Support and fixture files are excluded because of
+ * that name and not because they carry no level segment — four files under a
+ * `Support/` segment *are* judged, and pass, because they are test classes and
+ * `Support` there is a segment of the subject rather than a bucket. A control
+ * that judged the rest would refuse
  * `tests/Reporting/Support/StubChannelPresentation.php` for being what it is.
+ * What the pattern cannot see is a test class whose file is not named
+ * `*Test.php`; that boundary is asserted elsewhere and over the other
+ * population — `validateInventory()` in the inventory generator and
+ * {@see TestFilesAreExecutedTest} both answer from what PHPUnit discovers.
  *
  * The three verdicts that are neither exact nor prefix are the ones
  * {@see SubjectPathExceptions} carries under a ceiling. They are not degrees of
@@ -245,15 +274,34 @@ final class TestSubjectPaths
                 : 'declares no coverage attribute'];
         }
 
-        $coveredOwners = [];
-        $subjects = [];
-        $prefix = false;
+        $owners = [];
+        $undeclared = [];
         foreach ($covered as $class) {
             $coveredOwner = $declarationOwners[$class] ?? null;
             if ($coveredOwner === null) {
+                $undeclared[] = $class;
+
                 continue;
             }
 
+            $owners[$class] = $coveredOwner;
+        }
+
+        if ($undeclared !== []) {
+            throw new LogicException(\sprintf(
+                '%s claims to cover %s, which the manifest does not declare. Under %s/ a #[CoversClass] names'
+                . ' production code and production code is what the manifest declares, so this is a stale name,'
+                . ' a typo, or a class that belongs in src/ — none of which part 3 can be asked about.',
+                $path,
+                implode(' + ', $undeclared),
+                self::ROOT,
+            ));
+        }
+
+        $coveredOwners = [];
+        $subjects = [];
+        $prefix = false;
+        foreach ($owners as $class => $coveredOwner) {
             $coveredOwners[$coveredOwner] = true;
             if ($coveredOwner !== $owner) {
                 continue;
@@ -286,10 +334,17 @@ final class TestSubjectPaths
             )];
         }
 
+        // Reaching here means at least one claim named the path's own owner, so
+        // there is always a subject to name back. The branch that printed
+        // "(nothing the manifest declares)" here belonged to the case the throw
+        // above now takes, and it was list C's definition being contradicted in
+        // its own implementation: a file whose every claim resolved to nothing
+        // landed on a list whose entry condition is that the path owner is among
+        // the covered owners.
         return ['verdict' => self::NOT_A_PREFIX, 'detail' => \sprintf(
             '%s against %s',
             self::spell($remainder),
-            $subjects === [] ? '(nothing the manifest declares)' : implode(' / ', array_unique($subjects)),
+            implode(' / ', array_unique($subjects)),
         )];
     }
 

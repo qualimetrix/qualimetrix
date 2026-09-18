@@ -46,6 +46,18 @@ measured that only the emptied-prefix sweep reaches a reference that names a
 file paths and the name sweep matches namespaces, so a directory named in a
 sentence falls between them.
 
+**Two of those six now live in `move-oracle.py` and one deliberately does not.**
+The path-literal sweep is arm 6b, next to the old-FQCN sweep it belongs with:
+measured over P3's rows at the end of the stage it returns 0, so it is a floor
+being nailed down rather than a backlog being opened, and it reaches a workflow
+file or a `.gitattributes` line that no sweep over class names touches. The
+bare-basename sweep stays out of that judge on measurement: a *move* keeps the
+class name, so over the same 11 rows the basename returns **206** legitimate
+hits. It is a rename channel, not a move channel, and there is no tracked
+instrument for it — a reference like `{@see UnmatchedExcludeIntegrationTest}`,
+written without its namespace, is reached by nothing in this campaign. Stated as
+uncovered rather than left to be discovered uncovered.
+
 A seventh question is asked by
 [`measurement/stage-04/dangling-test-names.py`](measurement/stage-04/dangling-test-names.py),
 which is tracked precisely because three packages in a row wrote it from scratch
@@ -55,7 +67,11 @@ the only thing that reaches a reference spelled with a name from an *earlier*
 rename. At the end of this stage it reports **9**: four rename-record halves in
 the generator, one namespace a refusal control plants on purpose, and four stale
 references older than this stage. None was created here; all four of the last
-group are stage 05's.
+group are stage 05's. Those nine are **pinned inside the detector**, each with
+its reason, and it exits 0 when the tree carries exactly them, 1 when it carries
+a name nobody pinned, and 3 when a pinned name has stopped dangling. Before that
+it exited 1 on the nine, which meant a tenth was a number one greater than a
+number in a report — indistinguishable without diffing two outputs by hand.
 
 **A package sweeps the prefixes it fills, not only the names it moves.** Every
 sweep in this stage is keyed on something that exists *before* a move — a class
@@ -457,24 +473,55 @@ because "is this branch reachable" is answerable only once every move has landed
   the owner's call, not P4's** — P4 states the finding and leaves the decision named.
   Deleting it is not mechanical cleanup; it is discarding history.
 
-**`closure_package` is left alone, and the reason is a measurement that
-refuted the premise for touching it.** The follow-up to P4 reported 67 rows
-reading "Retain" beside a closure package that claims to owe a move, and the
-obvious next step was to derive that column from the target exactly as the
-disposition now is. Measured over the whole artifact the figure is **272**, not
-67 — 151 of them governance and tooling roots that have read `Retain` plus `P8`
-since long before this campaign, 121 under `tests/`, spread over seven package
-labels. A number an order of magnitude larger than the one the cure was sized
-for is a sign the cure was sized against a subset.
+**`closure_package` is left alone, and it is incoherent rather than ambiguous.**
+The follow-up to P4 reported 67 rows reading "Retain" beside a closure package
+that claims to owe a move, and the obvious next step was to derive that column
+from the target exactly as the disposition now is. Measured over the whole
+artifact the figure is **277**, not 67 — **156** of them outside `tests/`
+altogether (132 `governance/`, 18 `scripts/`, 6 `tools/`), roots that have read
+`Retain` beside a package label since long before this campaign, and **121**
+under `tests/`. The whole 277 spreads over seven labels: P3 4, P4 57, P5 1,
+P6-C 25, P6-D 1, P7 10, P8 179. (An earlier draft wrote 151 and 121 here; the
+151 was measured when the total was 272 and was carried forward into the 277
+sentence without being measured again, which is the same defect the next
+paragraph is about.) A number an order of magnitude larger than the one the cure
+was sized for is a sign the cure was sized against a subset.
 
-It also dissolves the contradiction it was meant to fix. Read as "which package
-still owes this artifact a move", `Retain` beside `P8` is nonsense. Read as
-"which package settled it, `permanent` meaning none was ever needed", it is
-correct and the 272 rows are right. The column is read by nothing but the
-artifact, both readings are defensible, and choosing between them is a decision
-about a record of a closed epoch — the same decision already reserved for the
-owner two entries above. So it stays, with the ambiguity written down instead of
-resolved by whoever happened to be editing next.
+An earlier draft of this paragraph stopped there and concluded the column was
+ambiguous but readable either way: `Retain` beside `P8` is nonsense under "which
+package still owes this artifact a move", and correct under "which package
+settled it, `permanent` meaning none was ever needed". That conclusion was drawn
+from measuring the first half only, which is the defect this stage keeps
+finding in itself. The second half refutes the second reading as flatly as the
+277 refute the first: **14 rows carry a pending move — `target_path` differs
+from `current_path`, disposition "Move atomically…" — while labelled
+`permanent`.** `permanent` there cannot mean "no move was ever needed"; the row
+next to it prescribes one. The only subgroup either reading survives is the 19
+pending rows labelled `P3`, and a column that is right about 19 of 926 rows
+means neither thing.
+
+It stays anyway, because the cure is not a derivation. Deriving the column from
+`target_path` would relabel those 14 as owing a move to a package — and there is
+no package to name. Ten are the JS artifacts under `src/Reporting/Template/` and
+four are fixtures (`tests/Fixtures/Ast/`, `tests/Fixtures/Schema/`); every one of
+them predates this stage, and no package of this stage or the next is chartered
+to move them.
+
+> **Owner's question, recorded rather than cleaned up: 14 rows assert a
+> relocation that no package is named to perform.** They are the ten
+> `src/Reporting/Template/**` JS artifacts plus three `tests/Fixtures/Ast/` and
+> one `tests/Fixtures/Schema/` fixture. Ten of the fourteen — the JS ones —
+> also target `tests/Reporting/HtmlTemplate/`, a root no manifest owner is
+> spelled with, and are carried for that reason in the generator's
+> `NON_MANIFEST_TEST_OWNERS`. The decision is whether those relocations are
+> still wanted, and by whom; until it is made, deriving the column would turn a
+> question into an assertion.
+
+One correction to the previous text while it is being rewritten: "the column is
+read by nothing but the artifact" was wrong. `move-oracle.py` arm 3 requires
+`permanent` on a moved test class, `p0-oracle.py` expects the same value, and
+`inventorySummary()` publishes `closure_package_counts`. All three read it under
+the second reading, so no consumer breaks either way — but the column is read.
 
 **A support row lands with a disposition that contradicts its own target.**
 P2 and P3 each move one support class. After the move the surviving ladder
@@ -491,9 +538,18 @@ fixtures those packages do not own.
 **The earlier-epoch reference channel is this stage's new finding.** A reference
 spelled with a name from *two* renames ago is invisible to every sweep the campaign
 has used, including each move package's own old-FQCN grep, which by construction
-searches for the name as of that package's base. Two members are known — the docblock
-P1 repaired in `RuleExclusionStatsWiringTest.php` and the rename record above. Nothing
-here proves there are only two.
+searches for the name as of that package's base. An earlier draft of this paragraph
+said "two members are known" — the docblock P1 repaired in
+`RuleExclusionStatsWiringTest.php`, and the rename record above. Both were counted by
+reading this stage's own work. The detector counts the tree, and at the end of the
+stage **five of the names it prints are live references from an earlier epoch**: the
+rename record's value half, plus four in carriers nobody here touched —
+`governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php`,
+`governance/ConfigurationVocabulary/YamlNormalizationCharacterizationTest.php`,
+`tests/Analysis/Finding/Unit/ChannelDeclarationTest.php`, and the two carriers naming
+`ChannelDeclarationFixtureDriftTest`. Nothing here proves there are only five — but
+the nine are now pinned in the detector, so a sixth prints under its own heading
+instead of blending into a count.
 
 **Definition of Done.** The three bucket directories do not exist and nothing declares
 them. `LEGACY_UNMOVED` and its guard are gone. The tree diffed against the map's
