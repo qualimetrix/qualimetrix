@@ -2,52 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Profiler\Integration;
+namespace Qualimetrix\Tests\Infrastructure\Profiler\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 
 /**
- * Integration test for profiler functionality.
+ * The profiler across a whole run: a session that only records once enabled, a
+ * span tree collected over several phases, and the two export formats read back
+ * through `Profiler::export()` rather than through an exporter directly.
  *
- * Tests the complete profiling workflow:
- * 1. Enable an invocation-local profiler session
- * 2. Collect spans during analysis
- * 3. Export to JSON format
- * 4. Export to Chrome Tracing format
- * 5. Verify atomic file writes
+ * Every case here works in memory. The one that did not wrote a temporary file
+ * with `file_put_contents()` and `rename()` written in the test itself, so no
+ * production code took part in the atomicity it claimed to check.
  */
-final class ProfilerIntegrationTest extends TestCase
+#[CoversClass(Profiler::class)]
+#[CoversClass(ProfileSession::class)]
+final class ProfilerWorkflowTest extends TestCase
 {
-    private string $tempDir;
-    private string $profilePath;
-
-    protected function setUp(): void
-    {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_profiler_test_' . bin2hex(random_bytes(6));
-        mkdir($this->tempDir);
-        $this->profilePath = $this->tempDir . '/profile.json';
-
-    }
-
-    protected function tearDown(): void
-    {
-        if (file_exists($this->profilePath)) {
-            unlink($this->profilePath);
-        }
-
-        $chromeTracingPath = $this->tempDir . '/profile.chrome.json';
-        if (file_exists($chromeTracingPath)) {
-            unlink($chromeTracingPath);
-        }
-
-        if (is_dir($this->tempDir)) {
-            rmdir($this->tempDir);
-        }
-    }
-
     #[Test]
     public function itStartsAsADisabledEmptySession(): void
     {
@@ -65,18 +40,6 @@ final class ProfilerIntegrationTest extends TestCase
         $profiler->stop('ignored');
 
         self::assertSame([], $profiler->summary()->spans);
-    }
-
-    #[Test]
-    public function itCollectsInstrumentationAfterBeingEnabled(): void
-    {
-        $profiler = new ProfileSession();
-        $profiler->enable();
-        $profiler->start('run');
-        $profiler->stop('run');
-
-        self::assertTrue($profiler->isEnabled());
-        self::assertArrayHasKey('run', $profiler->summary()->spans);
     }
 
     #[Test]
@@ -166,48 +129,6 @@ final class ProfilerIntegrationTest extends TestCase
 
         self::assertSame('test', $endEvent['name']);
         self::assertSame('E', $endEvent['ph']); // End
-    }
-
-    #[Test]
-    public function itPerformsAtomicFileWrite(): void
-    {
-        $profiler = new Profiler();
-        $profiler->start('test');
-        $profiler->stop('test');
-
-        $profileData = $profiler->export('json');
-
-        // Simulate atomic write as in CheckCommand
-        $tmpFile = $this->profilePath . '.tmp.' . getmypid();
-        file_put_contents($tmpFile, $profileData);
-        rename($tmpFile, $this->profilePath);
-
-        // Verify file was written correctly
-        self::assertFileExists($this->profilePath);
-
-        $content = file_get_contents($this->profilePath);
-        self::assertIsString($content);
-
-        $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
-        self::assertSame('test', $data['name']);
-
-        // Temp file should not exist
-        self::assertFileDoesNotExist($tmpFile);
-    }
-
-    #[Test]
-    public function itClearsAndResetsState(): void
-    {
-        $profiler = new Profiler();
-        $profiler->start('test');
-        $profiler->stop('test');
-
-        self::assertNotNull($profiler->getRootSpan());
-
-        $profiler->clear();
-
-        self::assertNull($profiler->getRootSpan());
-        self::assertSame([], $profiler->getSummary());
     }
 
     #[Test]

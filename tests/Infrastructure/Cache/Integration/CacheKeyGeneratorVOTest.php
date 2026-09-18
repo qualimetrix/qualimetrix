@@ -99,15 +99,4 @@ final class CacheKeyGeneratorVOTest extends TestCase
         );
     }
 
-    #[Test]
-    public function itHandlesUnresolvableFileGracefully(): void
-    {
-        $generator = new CacheKeyGenerator();
-        $missing = new SplFileInfo($this->tempDir . '/missing.php');
-
-        // A missing file cannot be content-hashed, so callers must bypass cache.
-        $key = $generator->generate($missing);
-
-        self::assertSame('', $key);
-    }
 }

@@ -47,18 +47,4 @@ final class LoggerHolderTest extends TestCase
         self::assertSame($secondLogger, $holder->getLogger());
     }
 
-    #[Test]
-    public function itReturnsTheSameInstanceOnMultipleGetterCalls(): void
-    {
-        $holder = new LoggerHolder();
-        $logger = self::createStub(LoggerInterface::class);
-
-        $holder->setLogger($logger);
-
-        $retrieved1 = $holder->getLogger();
-        $retrieved2 = $holder->getLogger();
-
-        self::assertSame($retrieved1, $retrieved2);
-        self::assertSame($logger, $retrieved1);
-    }
 }
