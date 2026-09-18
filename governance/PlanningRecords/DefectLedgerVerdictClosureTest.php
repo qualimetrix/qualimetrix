@@ -146,6 +146,37 @@ final class DefectLedgerVerdictClosureTest extends TestCase
     }
 
     /**
+     * A non-empty cell is not the rule the vocabulary states: `fixed` and
+     * `already-fixed` name the commit, and "fixed, see the PR" closes a row on
+     * something nothing here can read.
+     *
+     * A hash is recognised as seven to forty lowercase hex digits carrying at
+     * least one digit -- the digit is what keeps an English word spelled from
+     * a-f out. A hash that happens to be all letters is rejected; write it
+     * longer.
+     */
+    #[Test]
+    public function itNamesACommitOnEveryVerdictThatClaimsOne(): void
+    {
+        $unsourced = [];
+
+        foreach (self::verdicts() as $verdict) {
+            if (!\in_array($verdict['verdict'], ['fixed', 'already-fixed'], true)) {
+                continue;
+            }
+
+            if (preg_match('~(?<![0-9a-z])(?=[0-9a-f]{7,40}(?![0-9a-z]))[a-f]*[0-9][0-9a-f]*(?![0-9a-z])~', $verdict['evidence']) !== 1) {
+                $unsourced[] = $verdict['source'] . ': ' . $verdict['row_id'] . ' says "' . $verdict['evidence'] . '"';
+            }
+        }
+
+        self::assertSame([], $unsourced, \sprintf(
+            "A fixed or already-fixed verdict names no commit:\n%s",
+            implode("\n", $unsourced),
+        ));
+    }
+
+    /**
      * @return list<string>
      */
     private static function ledgerRowIds(): array

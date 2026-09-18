@@ -414,6 +414,7 @@ Available tests:
  - Qualimetrix\Governance\PlanningRecords\DefectLedgerVerdictClosureTest::itAnswersOnlyRowsTheLedgerCarries
  - Qualimetrix\Governance\PlanningRecords\DefectLedgerVerdictClosureTest::itCarriesAVerdictForEveryLedgerRow
  - Qualimetrix\Governance\PlanningRecords\DefectLedgerVerdictClosureTest::itCarriesEvidenceOnEveryVerdict
+ - Qualimetrix\Governance\PlanningRecords\DefectLedgerVerdictClosureTest::itNamesACommitOnEveryVerdictThatClaimsOne
  - Qualimetrix\Governance\PlanningRecords\DefectLedgerVerdictClosureTest::itUsesOnlyTheThreeWordsThatAreVerdicts
  - Qualimetrix\Governance\PlanningRecords\PlanningRecordIsolationTest::itIndexesEveryActivePlanDirectory
  - Qualimetrix\Governance\PlanningRecords\PlanningRecordIsolationTest::itKeepsExecutableSourcesIndependentFromPlanningRecords

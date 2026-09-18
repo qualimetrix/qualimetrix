@@ -84,8 +84,9 @@ what `c49fc0b4` moved out of the test tree. That shape dominates the `other`
 notes and would otherwise have been the largest source of dismissals.
 
 The eight dismissals are not one shape and are argued individually in the TSV's
-`reason` column. Five of them (`R015`, `R016`, `R041`, `R275`, and `R101` for the
-adjacent reason) share one ruling, stated once here:
+`reason` column. Four of them — `R015`, `R016`, `R275`, and `R101` for the
+adjacent reason — share one ruling, stated once here; `R041` is the fifth case of
+it, ruled the same way by the population adjudication rather than here:
 
 **A control's oracle self-test is the design, not a defect.** This repository
 requires a control to be shown able to refuse — `composer gate:controls`,

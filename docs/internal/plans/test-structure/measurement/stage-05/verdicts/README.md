@@ -20,7 +20,11 @@ values and nothing else is a verdict:
 | `already-fixed` | stages 01-04 closed it in passing                  | the commit that did |
 | `wont-fix`      | the row does not describe a defect worth repairing | the reason          |
 
-`evidence` is never empty: a verdict without it closes a row on nothing.
+`evidence` is never empty, and on `fixed` and `already-fixed` it names the
+commit: both are checked, so "fixed, see the PR" closes a row on nothing the
+repository can read. A hash is seven to forty lowercase hex digits carrying at
+least one digit; one that happens to be all letters is rejected, so write it
+longer.
 
 Every row of the ledger needs exactly one verdict across the whole directory. A
 second verdict for the same `row_id`, a verdict naming a `row_id` the ledger does
