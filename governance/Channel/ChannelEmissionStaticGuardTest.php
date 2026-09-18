@@ -100,6 +100,9 @@ use SplFileInfo;
  */
 final class ChannelEmissionStaticGuardTest extends TestCase
 {
+    /** The site id {@see self::unresolvableProbeSite()} produces, spelled once. */
+    private const string PROBE_SITE_ID = AbstractRule::class . '::emitProbe()#code';
+
     /**
      * Every entry is `"<declaringClass>::<method>()#<argName>"` — the
      * emission site whose argument expression this resolver gives up on —
@@ -166,6 +169,99 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 implode(', ', $staleSkipEntries),
             ),
         );
+    }
+
+    /**
+     * The give-up path, proved rather than assumed.
+     *
+     * {@see self::skipList()} is empty and the resolver currently evaluates
+     * every real emission site, so nothing in a green run ever reaches the
+     * branch that turns an unresolvable argument into a failure, or the branch
+     * that lets a named site through and records the entry as used. Both are
+     * driven here from a hand-built site whose `code:` argument is a function
+     * call — a form {@see self::resolveExpr()} deliberately does not evaluate.
+     *
+     * The three cases are one input read three ways: without a skip entry it
+     * must fail, with its own entry it must pass and mark the entry used, and
+     * with somebody else's entry it must fail and leave that entry unused —
+     * which is what makes the stale-entry assertion above able to fire at all.
+     */
+    #[Test]
+    public function itRefusesAnEmissionSiteWhoseArgumentItCannotEvaluate(): void
+    {
+        $usedSkipEntries = [];
+        $failures = [];
+
+        $resolved = self::resolveArgOrRecordFailure(
+            self::unresolvableProbeSite(),
+            'code',
+            AbstractRule::class,
+            [],
+            $usedSkipEntries,
+            $failures,
+        );
+
+        self::assertNull($resolved);
+        self::assertSame([], $usedSkipEntries);
+        self::assertCount(1, $failures);
+        self::assertStringContainsString('add "' . self::PROBE_SITE_ID . '" to skipList() with a reason', $failures[0]);
+    }
+
+    #[Test]
+    public function itLetsASkipListEntryAnswerForThatSiteAndRecordsItAsUsed(): void
+    {
+        $usedSkipEntries = [];
+        $failures = [];
+
+        $resolved = self::resolveArgOrRecordFailure(
+            self::unresolvableProbeSite(),
+            'code',
+            AbstractRule::class,
+            [self::PROBE_SITE_ID => 'a hand-built probe, not a real site'],
+            $usedSkipEntries,
+            $failures,
+        );
+
+        self::assertNull($resolved);
+        self::assertSame([], $failures);
+        self::assertSame([self::PROBE_SITE_ID => true], $usedSkipEntries);
+    }
+
+    #[Test]
+    public function itLeavesASkipListEntryForAnotherSiteUnusedAndStillRefuses(): void
+    {
+        $usedSkipEntries = [];
+        $failures = [];
+
+        self::resolveArgOrRecordFailure(
+            self::unresolvableProbeSite(),
+            'code',
+            AbstractRule::class,
+            ['Some\\Other\\Class::emit()#code' => 'names a site this run never reaches'],
+            $usedSkipEntries,
+            $failures,
+        );
+
+        self::assertSame([], $usedSkipEntries, 'A skip entry naming another site must stay unused, or it can never read as stale.');
+        self::assertCount(1, $failures);
+    }
+
+    /**
+     * @return array{declaringClass: class-string, method: string, file: string, line: int, args: array<string, Expr>, methodNode: ClassMethod}
+     */
+    private static function unresolvableProbeSite(): array
+    {
+        return [
+            'declaringClass' => AbstractRule::class,
+            'method' => 'emitProbe',
+            'file' => 'probe',
+            'line' => 1,
+            'args' => [
+                'ruleName' => new String_('probe.rule'),
+                'code' => new Expr\FuncCall(new Name('strtoupper'), [new Arg(new Variable('unknown'))]),
+            ],
+            'methodNode' => new ClassMethod('emitProbe'),
+        ];
     }
 
     /**
