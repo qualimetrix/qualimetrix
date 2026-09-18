@@ -83,6 +83,10 @@ final class DefectLedgerVerdictClosureTest extends TestCase
 
     private const array VOCABULARY = ['fixed', 'already-fixed', 'wont-fix'];
 
+    private const int LEDGER_ROWS = 276;
+
+    private const string LEDGER_SHA256 = '934b71a0075dfaeeab4dbb1f51517d2d037b69231488493af267a7bfadddb434';
+
     private const string HASH_SHAPED = '~(?<![0-9a-z])(?=[0-9a-f]{7,40}(?![0-9a-z]))[a-f]*[0-9][0-9a-f]*(?![0-9a-z])~';
 
     private static string $projectRoot;
@@ -90,6 +94,64 @@ final class DefectLedgerVerdictClosureTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$projectRoot = \dirname(__DIR__, 2);
+    }
+
+    /**
+     * The ledger is exactly the file that was measured, byte for byte.
+     *
+     * **This is what makes removing the commit-existence check legitimate, and
+     * the two decisions are one decision.** That check resolved every hash a
+     * verdict names and required type `commit`; it was removed because it
+     * cannot run in a shallow clone or after a squash, and the argument for
+     * removing it rather than replacing it was that its subject is empty -- the
+     * ledger is frozen, every row is answered, and no verdict row can ever
+     * appear that nobody checked. Until this digest existed that was a sentence
+     * in a README and nothing else. Measured: a row appended to the ledger and
+     * answered `fixed` with the invented hash `1c6ec21e` passed all six
+     * methods, `OK (6 tests, 2318 assertions)`.
+     *
+     * So the digest is not a check on what the ledger says. It is the thing that
+     * turns "no new row can appear" from a promise into a fact, and without it
+     * the removal above is unargued.
+     *
+     * **There is no legitimate reason to update this constant.** The ledger is a
+     * measurement taken at `585b7c72` and frozen; the one change it was ever
+     * allowed -- minting `row_id` -- happened before the freeze. A digest
+     * refreshed to make a red test go green asserts nothing, and here it would
+     * also silently re-open the hole the removed check used to cover. If the
+     * campaign ever genuinely reopens the ledger, what is owed is not a new
+     * hash: it is the commit-existence check back, or its argument made again
+     * against whatever the ledger has become.
+     *
+     * **What this does not cover, measured rather than assumed.** The digest is
+     * over the ledger, not over the verdict files. Editing an existing
+     * `evidence` cell -- `c49fc0b4` to `deadbee1` in a row already written --
+     * still passes: `OK (6 tests, 2310 assertions)`. Closing that would mean
+     * freezing files this control does not own, which is a decision for whoever
+     * owns them.
+     */
+    #[Test]
+    public function itFindsTheLedgerExactlyAsItWasMeasured(): void
+    {
+        $path = self::$projectRoot . '/' . self::LEDGER;
+
+        self::assertFileExists($path, 'The frozen ledger is missing: ' . self::LEDGER);
+
+        $contents = file_get_contents($path);
+        \assert($contents !== false);
+
+        $rows = substr_count(rtrim($contents, "\n"), "\n");
+
+        self::assertSame(self::LEDGER_SHA256, hash('sha256', $contents), \sprintf(
+            "%s is not the file that was measured: it carries %d rows against the %d it was frozen with,"
+            . " and its digest does not match.\n"
+            . "Nothing legitimately changes this file. A row added here needs a verdict nothing checked the"
+            . " commit of, which is exactly what removing itNamesCommitsTheRepositoryCarries relied on being"
+            . " impossible -- see this method's docblock before touching the constant.",
+            self::LEDGER,
+            $rows,
+            self::LEDGER_ROWS,
+        ));
     }
 
     #[Test]

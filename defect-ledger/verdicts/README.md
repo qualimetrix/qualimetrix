@@ -43,9 +43,39 @@ cut -f3 defect-ledger/verdicts/*.tsv | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u \
   | xargs -n1 git cat-file -t | sort | uniq -c
 ```
 
-**51 distinct tokens, every one of them `commit`.** Separately, each row's commit
-was checked to touch that row's file or its counterpart: 159 of 163, the four
-misses being renames where the commit changed the file's name itself.
+**51 distinct tokens, every one of them `commit`.**
+
+Separately, each row's commit was checked to touch the row's file, its
+counterpart, or the heir `packages.tsv` gives it. That one is re-derivable and
+its command is tracked, because a number no command produces is not a
+measurement:
+
+```
+python3 defect-ledger/reproduce-commit-reach.py
+```
+
+**197 of 201** verdicts claiming a commit reach their row. The four that do not
+are `R009`, `R023`, `R171` and `R172`, and they are legitimate: each verdict
+describes a rename, and git reports a rename as the new path only, so the name
+the ledger recorded never appears in the commit. Measured — `5e11234e` lists
+`ProfilerWorkflowTest.php` and not `ProfilerIntegrationTest.php`, `f346979c`
+lists `RuleExecutionTest.php` and not `RuleExecutorTest.php`.
+
+An earlier version of this file said "159 of 163". That number came from the
+same script run when P1 had not yet written its verdicts and P3's were
+incomplete — a figure recorded without the population it was measured over,
+which is the defect this campaign keeps finding in other people's work. It is
+replaced by the figure above, measured over all seven verdict files, and by the
+script that re-derives it.
+
+## What is left to a reader after the squash
+
+The 45 branch-local hashes stop resolving the moment this branch is squashed.
+What replaces them as an address is the **pull request** and the single squash
+commit it becomes: the work every branch-local hash names went into that one
+commit. So a hash in a verdict is read after the merge as a historical pointer
+into the branch that produced it, not as something to hand to `git show`. It is
+worth knowing before trying, rather than after.
 
 What still runs is the half that needs no history: a `fixed` or `already-fixed`
 verdict must carry a hash-shaped token. That survives a shallow clone and a

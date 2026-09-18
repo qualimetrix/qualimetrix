@@ -1,11 +1,14 @@
 # The test-content defect ledger
 
-| File                     | Holds                                                                    |
-| ------------------------ | ------------------------------------------------------------------------ |
-| `defect-ledger.tsv`      | 276 defects over 219 test files, measured at `585b7c72` and frozen there |
-| `verdicts/<package>.tsv` | how each row was answered, one file per package working the stage        |
+| File                        | Holds                                                                    |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `defect-ledger.tsv`         | 276 defects over 219 test files, measured at `585b7c72` and frozen there |
+| `verdicts/<package>.tsv`    | how each row was answered, one file per package working the stage        |
+| `reproduce-commit-reach.py` | re-derives whether each verdict's commit touches the row it closes       |
 
-`defect-ledger.tsv` is a measurement, not a worklist: it is not edited. The one
+`defect-ledger.tsv` is a measurement, not a worklist: it is not edited, and
+`DefectLedgerVerdictClosureTest` carries its digest so that is a fact rather
+than a convention. The one
 exception already happened — a `row_id` column was minted so verdicts have a key
 to join on, because `file` + `class` + `line` is not one (a row carries no line).
 
