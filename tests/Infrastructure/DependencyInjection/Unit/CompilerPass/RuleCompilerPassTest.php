@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -32,34 +33,10 @@ final class RuleCompilerPassTest extends TestCase
         $pass->process($container);
 
         $definition = $container->getDefinition(RuleExecution::class);
-        $rules = $definition->getArgument(0);
 
-        self::assertCount(2, $rules);
-        self::assertInstanceOf(Reference::class, $rules[0]);
-        self::assertInstanceOf(Reference::class, $rules[1]);
-    }
-
-    #[Test]
-    public function itCollectsTaggedRulesIntoRulesCommand(): void
-    {
-        $container = new ContainerBuilder();
-        $container->register(RuleExecution::class);
-        $container->register(RulesCommand::class)->setArguments([new Reference(RuleExecution::class)]);
-        $container->register(ComplexityRule::class)
-            ->addTag(RuleCompilerPass::TAG);
-        $container->register(ClassCountRule::class)
-            ->addTag(RuleCompilerPass::TAG);
-
-        $pass = new RuleCompilerPass();
-        $pass->process($container);
-
-        $rules = $container->getDefinition(RuleExecution::class)->getArgument(0);
-
-        self::assertCount(2, $rules);
-        self::assertContainsOnlyInstancesOf(Reference::class, $rules);
         self::assertEquals(
-            new Reference(RuleExecution::class),
-            $container->getDefinition(RulesCommand::class)->getArgument(0),
+            [new Reference(ComplexityRule::class), new Reference(ClassCountRule::class)],
+            $definition->getArgument(0),
         );
     }
 
@@ -77,23 +54,42 @@ final class RuleCompilerPassTest extends TestCase
         self::assertFalse($container->hasDefinition(RulesCommand::class));
     }
 
+    /**
+     * The consumers are read off the pass's own declaration rather than named
+     * here: a consumer added to that list and not injected into is the defect
+     * a hand-written list in this file would be edited past.
+     */
     #[Test]
-    public function itInjectsIntoEveryRegisteredConsumerAtOnce(): void
+    public function itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse(): void
     {
+        /** @var array<string, int> $consumers */
+        $consumers = (new ReflectionClass(RuleCompilerPass::class))->getConstant('CONSUMERS');
+
+        self::assertNotSame([], $consumers, 'The pass declares no consumers, so this case checked nothing.');
+
         $container = new ContainerBuilder();
-        $container->register(RuleExecution::class);
-        $container->register(RulesCommand::class)->setArguments([new Reference(RuleExecution::class)]);
-        $container->register(ComplexityRule::class)
-            ->addTag(RuleCompilerPass::TAG);
+
+        foreach (array_keys($consumers) as $consumerId) {
+            $container->register($consumerId);
+        }
+
+        // Registered, tagged by nobody and not a declared consumer: the pass
+        // must leave it exactly as it found it.
+        $container->register(RulesCommand::class);
+        $container->register(ComplexityRule::class)->addTag(RuleCompilerPass::TAG);
 
         $pass = new RuleCompilerPass();
         $pass->process($container);
 
-        self::assertCount(1, $container->getDefinition(RuleExecution::class)->getArgument(0));
-        self::assertEquals(
-            new Reference(RuleExecution::class),
-            $container->getDefinition(RulesCommand::class)->getArgument(0),
-        );
+        foreach ($consumers as $consumerId => $argumentIndex) {
+            self::assertEquals(
+                [new Reference(ComplexityRule::class)],
+                $container->getDefinition($consumerId)->getArgument($argumentIndex),
+                $consumerId,
+            );
+        }
+
+        self::assertSame([], $container->getDefinition(RulesCommand::class)->getArguments());
     }
 
     #[Test]

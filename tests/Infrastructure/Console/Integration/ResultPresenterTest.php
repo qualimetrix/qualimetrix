@@ -48,6 +48,7 @@ use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use ReflectionMethod;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -360,6 +361,34 @@ final class ResultPresenterTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('mutually exclusive', $refusal->summary());
         }
+    }
+
+    /**
+     * A failure message names paths from two worlds. A file inside the project
+     * is shown relative, because the rest of the report is; a dependency
+     * outside it has no relative form and keeps the absolute one.
+     *
+     * The method is private and its result reaches no public surface of this
+     * class, so reflection is the only oracle there is. It used to be reached
+     * this way from a CheckCommand functional case, which put a probe of one
+     * class's private method behind a whole CLI run.
+     */
+    #[Test]
+    public function itRelativizesProjectPathsInAFailureMessageAndKeepsOutsidersAbsolute(): void
+    {
+        $projectRoot = '/project';
+        $outsider = '/elsewhere/vendor/Dependency.php';
+
+        $relativized = (new ReflectionMethod(ResultPresenter::class, 'relativizeFailureMessage'))->invoke(
+            $this->presenter(self::createStub(FormatterRegistryInterface::class)),
+            'Parse error in ' . $projectRoot . '/src/Broken.php; dependency ' . $outsider,
+            AbsolutePath::fromString($projectRoot),
+        );
+
+        self::assertIsString($relativized);
+        self::assertStringNotContainsString($projectRoot . '/', $relativized);
+        self::assertStringContainsString('src/Broken.php', $relativized);
+        self::assertStringContainsString($outsider, $relativized);
     }
 
     private function presenter(FormatterRegistryInterface $registry): ResultPresenter

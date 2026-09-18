@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -24,7 +25,13 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-final class AbstractRuleSubjectControlTest extends TestCase
+/**
+ * AbstractRule hands the subject through to threshold resolution, so an override
+ * written against one declaration decides that declaration's severity and no
+ * other. The harness below is the smallest rule that can be asked.
+ */
+#[CoversClass(AbstractRule::class)]
+final class AbstractRuleThresholdSeamTest extends TestCase
 {
     #[Test]
     public function itPassesTheMetricSubjectToTheThresholdResolutionSeam(): void

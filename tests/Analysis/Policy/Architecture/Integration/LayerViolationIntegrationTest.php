@@ -34,7 +34,8 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolation
  *   - Service -> Repository (allowed)
  *   - Repository -> Domain (allowed)
  *   - Controller -> Repository (FORBIDDEN — produces findings)
- *   - Controller -> Domain (forbidden by allow-list, but expected once via type hint)
+ *   - Controller -> Domain (allowed: a controller may type its I/O against
+ *     domain DTOs, which is why buildPolicy() lists domain under controller)
  */
 #[Group('integration')]
 final class LayerViolationIntegrationTest extends TestCase

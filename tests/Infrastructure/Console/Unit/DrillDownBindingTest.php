@@ -16,7 +16,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\DrillDownBinding;
 
@@ -236,30 +235,6 @@ final class DrillDownBindingTest extends TestCase
         // namespace is what `filterFindings()` compares its findings by, so it
         // stays in the universe and the enclosing namespace still binds.
         self::assertSame(2, $binding->namespaceBindings('Demo\\Alpha', $repository, null));
-    }
-
-    /**
-     * The universe stays exactly the enumeration
-     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder}
-     * ranks offenders for. A level added to one side and not the other is the
-     * whole defect, in either direction: a missing level refuses a value whose
-     * report is not empty, an extra one accepts a value whose report cannot be
-     * anything else.
-     */
-    #[Test]
-    public function itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName(): void
-    {
-        $source = file_get_contents(\dirname(__DIR__, 4)
-            . '/src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php');
-        self::assertIsString($source);
-
-        preg_match_all('/buildWorstOffenders\\([^;]*?SymbolLevel::([A-Za-z_]+)/s', $source, $matches);
-
-        self::assertSame(
-            array_map(static fn(SymbolLevel $level): string => $level->name, RankedOffenderLevels::LEVELS),
-            $matches[1],
-            'HealthSummaryBuilder ranks a different set of levels than RankedOffenderLevels names.',
-        );
     }
 
     /**

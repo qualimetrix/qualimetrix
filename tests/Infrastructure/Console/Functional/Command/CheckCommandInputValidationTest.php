@@ -7,16 +7,12 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use ReflectionMethod;
-use ReflectionProperty;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -30,36 +26,23 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertNotFalse($workingDirectory);
         $projectRoot = realpath($workingDirectory);
         self::assertNotFalse($projectRoot);
-        $externalPath = tempnam(sys_get_temp_dir(), 'qmx-external-invalid-');
-        self::assertNotFalse($externalPath);
-        file_put_contents($externalPath, '<?php function broken( {');
 
         $tester = $this->tester();
-        try {
-            $tester->execute(
-                [
-                    'paths' => ['tests/Fixtures/Ast/invalid_syntax.php'],
-                    '--format' => 'json',
-                    '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
-                ],
-                ['capture_stderr_separately' => true],
-            );
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/invalid_syntax.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
 
-            self::assertSame(4, $tester->getStatusCode());
-            $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
-            self::assertFalse($payload['coverage']['complete']);
-            self::assertSame(1, $payload['coverage']['failed']);
-            self::assertStringNotContainsString($projectRoot . '/', $tester->getDisplay());
-            $relativizedMessage = $this->relativizeFailureMessage(
-                'Parse error in ' . $projectRoot . '/tests/Fixtures/Ast/invalid_syntax.php; dependency ' . $externalPath,
-                $projectRoot,
-            );
-            self::assertStringNotContainsString($projectRoot . '/', $relativizedMessage);
-            self::assertStringContainsString($externalPath, $relativizedMessage);
-            self::assertStringContainsString('Parse error', $tester->getErrorOutput());
-        } finally {
-            unlink($externalPath);
-        }
+        self::assertSame(4, $tester->getStatusCode());
+        $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertFalse($payload['coverage']['complete']);
+        self::assertSame(1, $payload['coverage']['failed']);
+        self::assertStringNotContainsString($projectRoot . '/', $tester->getDisplay());
+        self::assertStringContainsString('Parse error', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -453,19 +436,5 @@ final class CheckCommandInputValidationTest extends TestCase
         $application->addCommand($command);
 
         return new CommandTester($command);
-    }
-
-    private function relativizeFailureMessage(string $message, string $projectRoot): string
-    {
-        $container = (new ContainerFactory())->create();
-        $command = $container->get(CheckCommand::class);
-        self::assertInstanceOf(CheckCommand::class, $command);
-        $presenter = (new ReflectionProperty(CheckCommand::class, 'resultPresenter'))->getValue($command);
-        self::assertInstanceOf(ResultPresenter::class, $presenter);
-        $method = new ReflectionMethod(ResultPresenter::class, 'relativizeFailureMessage');
-        $result = $method->invoke($presenter, $message, AbsolutePath::fromString($projectRoot));
-        self::assertIsString($result);
-
-        return $result;
     }
 }
