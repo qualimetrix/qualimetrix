@@ -1,174 +1,190 @@
 path	where	form	context
 scripts/generate-modular-architecture-production-inventory.php	824	name	$row['closure_package'] = $entry['closure_package'];
-scripts/generate-modular-architecture-production-inventory.php	824	name	$row['closure_package'] = $entry['closure_package'];
 scripts/generate-modular-architecture-production-inventory.php	860	name	$byName[$dependency]['closure_package'],
 scripts/generate-modular-architecture-production-inventory.php	934	name	$row['closure_package'],
-scripts/generate-modular-architecture-production-inventory.php	1078	name	$reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target_owner'], 
-scripts/generate-modular-architecture-production-inventory.php	1092	name	$stateRows[] = [$row['path'], $row['fqcn'], $row['proposed_owner'], $row['closure_package'], stateScope($row),
-scripts/generate-modular-architecture-production-inventory.php	1103	name	'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'closure_packa
-scripts/generate-modular-architecture-production-inventory.php	1106	name	'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency_owner', '
-scripts/generate-modular-architecture-production-inventory.php	1111	name	'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_scope', 'm
-scripts/generate-modular-architecture-production-inventory.php	1113	name	'production-reporting-classification.tsv' => tsv(['path', 'fqcn', 'classification', 'target_owner', 'closure_p
+scripts/generate-modular-architecture-production-inventory.php	1078	name	$reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target
+scripts/generate-modular-architecture-production-inventory.php	1092	name	$stateRows[] = [$row['path'], $row['fqcn'], $row['proposed_owner'], $row['closure_package'], stateSc
+scripts/generate-modular-architecture-production-inventory.php	1103	name	'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'clo
+scripts/generate-modular-architecture-production-inventory.php	1106	name	'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency
+scripts/generate-modular-architecture-production-inventory.php	1111	name	'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_
+scripts/generate-modular-architecture-production-inventory.php	1113	name	'production-reporting-classification.tsv' => tsv(['path', 'fqcn', 'classification', 'target_owner', 
 scripts/generate-modular-architecture-production-inventory.php	1327	name	static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
+scripts/generate-modular-architecture-production-inventory.php	1327	value:P	static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
+scripts/generate-modular-architecture-production-inventory.php	1435	value:P	if ($entry['closes_in'] === 'P4') {
+scripts/generate-modular-architecture-production-inventory.php	1448	value:P	static fn(array $grant): bool => $grant['closes_in'] === 'P4',
 scripts/generate-modular-architecture-production-inventory.php	2420	name	return tsv(['current_path', 'subject_owner', 'closure_package', 'disposition'], $rows);
+scripts/generate-modular-architecture-production-inventory.php	2457	value:P	return ['Architecture.Governance', 'P0-D', 'P0 governance documentation; review with the manifest an
+scripts/generate-modular-architecture-production-inventory.php	2461	value:P	'AGENTS.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2462	value:P	'CHANGELOG.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2463	value:P	'docs/ARCHITECTURE.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2464	value:P	'docs/adr/0001-computed-metrics.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2465	value:P	'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
+scripts/generate-modular-architecture-production-inventory.php	2466	value:P	'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evi
+scripts/generate-modular-architecture-production-inventory.php	2467	value:P	'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2468	value:P	'docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md' => ['Analysis.Evidence.Design',
+scripts/generate-modular-architecture-production-inventory.php	2469	value:P	'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8']
+scripts/generate-modular-architecture-production-inventory.php	2470	value:P	'docs/adr/0029-channel-presentation-join.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2471	value:P	'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => ['Analysis.Evidence.Design', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2472	value:P	'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2473	value:P	'docs/adr/0046-a-channel-declares-the-metric-it-judges.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2474	value:P	'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2475	value:P	'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2476	value:P	'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2477	value:P	'docs/adr/0035-a-metric-key-names-its-family-in-kebab.md' => ['Analysis.Evidence.Measurement', 'P3']
+scripts/generate-modular-architecture-production-inventory.php	2478	value:P	'docs/adr/0036-a-formula-addresses-a-metric-by-its-key.md' => ['Analysis.Evidence.ComputedMetrics', 
+scripts/generate-modular-architecture-production-inventory.php	2479	value:P	'docs/adr/0037-suppressed-format-and-produced-findings.md' => ['Reporting', 'P6-D'],
+scripts/generate-modular-architecture-production-inventory.php	2480	value:P	'docs/adr/0047-suppression-is-not-exclusion.md' => ['Reporting', 'P6-D'],
+scripts/generate-modular-architecture-production-inventory.php	2481	value:P	'docs/adr/0049-rule-option-key-recognition.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2482	value:P	'docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2483	value:P	'docs/adr/0050-configuration-refusal-carrier.md' => ['Analysis.Configuration', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2484	value:P	'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => ['Architecture.Governance', 
+scripts/generate-modular-architecture-production-inventory.php	2485	value:P	'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2486	value:P	'src/Analysis/Configuration/README.md' => ['Analysis.Configuration', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2487	value:P	'src/Analysis/Evidence/CircularDependency/README.md' => ['Analysis.Evidence.CircularDependency', 'P4
+scripts/generate-modular-architecture-production-inventory.php	2488	value:P	'src/Analysis/Evidence/ComputedMetrics/README.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2489	value:P	'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2490	value:P	'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
+scripts/generate-modular-architecture-production-inventory.php	2491	value:P	'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2492	value:P	'src/Analysis/Evidence/Prioritization/README.md' => ['Analysis.Evidence.Prioritization', 'P6-D'],
+scripts/generate-modular-architecture-production-inventory.php	2493	value:P	'src/Analysis/Evidence/CodeSmell/README.md' => ['Analysis.Evidence.CodeSmell', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2494	value:P	'src/Analysis/Evidence/Cohesion/README.md' => ['Analysis.Evidence.Cohesion', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2495	value:P	'src/Analysis/Evidence/Complexity/README.md' => ['Analysis.Evidence.Complexity', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2496	value:P	'src/Analysis/Evidence/Coupling/README.md' => ['Analysis.Evidence.Coupling', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2497	value:P	'src/Analysis/Evidence/Design/README.md' => ['Analysis.Evidence.Design', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2498	value:P	'src/Analysis/Evidence/Maintainability/README.md' => ['Analysis.Evidence.Maintainability', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2499	value:P	'src/Analysis/Evidence/Security/README.md' => ['Analysis.Evidence.Security', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2500	value:P	'src/Analysis/Evidence/Size/README.md' => ['Analysis.Evidence.Size', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2501	value:P	'src/Analysis/Finding/README.md' => ['Analysis.Finding', 'P6-A'],
+scripts/generate-modular-architecture-production-inventory.php	2502	value:P	'src/Analysis/Policy/Inline/README.md' => ['Analysis.Policy.Inline', 'P6-B'],
+scripts/generate-modular-architecture-production-inventory.php	2503	value:P	'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2504	value:P	'src/Analysis/Policy/Architecture/README.md' => ['Analysis.Policy.Architecture', 'P4'],
+scripts/generate-modular-architecture-production-inventory.php	2505	value:P	'src/Analysis/Policy/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6-C'],
+scripts/generate-modular-architecture-production-inventory.php	2506	value:P	'src/Core/README.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2507	value:P	'src/Core/Profiler/README.md' => ['Core.Profiler', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2508	value:P	'src/Core/Symbol/README.md' => ['Core.Symbol', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2509	value:P	'src/Infrastructure/Ast/README.md' => ['Infrastructure.Ast', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2510	value:P	'src/Infrastructure/DependencyInjection/README.md' => ['Infrastructure.DependencyInjection', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2511	value:P	'src/Infrastructure/Parallel/README.md' => ['Infrastructure.Parallel', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2512	value:P	'src/Infrastructure/Rule/README.md' => ['Infrastructure.Rule', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2513	value:P	'src/Infrastructure/Serializer/README.md' => ['Infrastructure.Serializer', 'P8'],
+scripts/generate-modular-architecture-production-inventory.php	2514	value:P	'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2515	value:P	'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2516	value:P	'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2517	value:P	'src/Reporting/README.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2518	value:P	'website/docs/getting-started/configuration.md' => ['Analysis.Run', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2519	value:P	'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],
+scripts/generate-modular-architecture-production-inventory.php	2520	value:P	'website/docs/reference/health-scores.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2521	value:P	'website/docs/reference/health-scores.ru.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2522	value:P	'website/docs/reference/remediation-time.md' => ['Analysis.Evidence.Prioritization', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2523	value:P	'website/docs/reference/remediation-time.ru.md' => ['Analysis.Evidence.Prioritization', 'P5'],
+scripts/generate-modular-architecture-production-inventory.php	2524	value:P	'website/docs/rules/duplication.md' => ['Analysis.Evidence.Duplication', 'P1'],
+scripts/generate-modular-architecture-production-inventory.php	2525	value:P	'website/docs/rules/duplication.ru.md' => ['Analysis.Evidence.Duplication', 'P1'],
+scripts/generate-modular-architecture-production-inventory.php	2526	value:P	'website/docs/rules/architecture.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2527	value:P	'website/docs/rules/architecture.ru.md' => ['Architecture.Governance', 'P2'],
+scripts/generate-modular-architecture-production-inventory.php	2528	value:P	'website/docs/usage/baseline.md' => ['Analysis.Policy.Baseline', 'P6'],
+scripts/generate-modular-architecture-production-inventory.php	2529	value:P	'website/docs/usage/baseline.ru.md' => ['Analysis.Policy.Baseline', 'P6'],
+scripts/generate-modular-architecture-production-inventory.php	2530	value:P	'website/docs/usage/output-formats.md' => ['Analysis.Finding', 'P6'],
+scripts/generate-modular-architecture-production-inventory.php	2531	value:P	'website/docs/usage/output-formats.ru.md' => ['Analysis.Finding', 'P6'],
+scripts/generate-modular-architecture-production-inventory.php	2540	value:P	'website/docs/rules/annotation' => ['Analysis.Policy.Inline', 'P6-B'],
+scripts/generate-modular-architecture-production-inventory.php	2541	value:P	'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2542	value:P	'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2543	value:P	'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2544	value:P	'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2545	value:P	'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2546	value:non-P	'website/docs/rules/discovery' => ['Analysis.Run', 'Run documentation'],
+scripts/generate-modular-architecture-production-inventory.php	2547	value:P	'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2548	value:P	'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2549	value:non-P	'website/docs/rules/suppression' => ['Analysis.Finding', 'Finding documentation'],
+scripts/generate-modular-architecture-production-inventory.php	2550	value:P	'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
+scripts/generate-modular-architecture-production-inventory.php	2623	value:non-P	return ['Architecture.Governance', 'shared', 'Shared repository documentation; retain in place and u
+scripts/generate-modular-architecture-test-inventory.php	109	value:P	'governance/' => ['Architecture.Governance', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	110	value:P	'tools/phpstan/tests/' => ['Tooling/PhpStan', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	111	value:P	'scripts/promise-effect/tests/' => ['Tooling/PromiseEffect', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	112	value:P	'scripts/directive-audit/tests/' => ['Tooling/DirectiveAudit', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	113	value:P	'scripts/directive-audit-controls/tests/' => ['Tooling/DirectiveAuditControls', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	114	value:P	'scripts/tautology-controls/tests/' => ['Tooling/TautologyControls', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	115	value:P	'scripts/finding-gate/tests/' => ['Tooling/FindingGate', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	116	value:P	'scripts/suppression-snapshot/tests/' => ['Tooling/SuppressionSnapshot', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	117	value:P	'scripts/rename-enumeration/tests/' => ['Tooling/RenameEnumeration', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	118	value:P	'scripts/health-calibration/tests/' => ['Tooling/HealthCalibration', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	119	value:P	'scripts/benchmark/tests/' => ['Tooling/Benchmark', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	120	value:P	'scripts/modular-architecture/tests/' => ['Tooling/ModularArchitecture', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	121	value:P	'scripts/cross-tool-comparison/tests/' => ['Tooling/CrossToolComparison', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	122	value:P	'scripts/phpunit-aggregate/tests/' => ['Tooling/PhpunitAggregate', 'P8'],
+scripts/generate-modular-architecture-test-inventory.php	499	value:P	$closurePackage = 'P8';
 scripts/generate-modular-architecture-test-inventory.php	512	name	'closure_package' => $closurePackage,
+scripts/generate-modular-architecture-test-inventory.php	899	value:non-P	return [$declaredOwner, 'permanent'];
+scripts/generate-modular-architecture-test-inventory.php	902	value:P	return ['TestSupport/Logging', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	912	value:P	return ['Analysis/Evidence/' . $matches[1], 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	915	value:P	return ['Analysis/Evidence/Measurement', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	924	value:P	return ['Analysis/Policy/Baseline', 'P6-C'];
+scripts/generate-modular-architecture-test-inventory.php	927	value:P	return ['Analysis/Finding', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	930	value:P	return ['Analysis/Policy/Inline', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	933	value:P	return ['Analysis/Evidence/Prioritization', 'P6-D'];
+scripts/generate-modular-architecture-test-inventory.php	936	value:P	return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
+scripts/generate-modular-architecture-test-inventory.php	939	value:P	return ['Analysis/Evidence/ComputedMetrics', 'P5'];
+scripts/generate-modular-architecture-test-inventory.php	942	value:P	return ['Analysis/Policy/Architecture', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	945	value:P	return ['Analysis/Evidence/CircularDependency', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	948	value:P	return ['Analysis/Evidence/Measurement', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	951	value:non-P	return ['Reporting/HtmlTemplate', 'permanent'];
+scripts/generate-modular-architecture-test-inventory.php	955	value:P	return ['Analysis/Evidence/CircularDependency', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	958	value:P	return ['Analysis/Policy/Inline', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	961	value:P	return ['Analysis/Policy/Architecture', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	964	value:P	return ['Analysis/Policy/Baseline', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	967	value:P	return ['Analysis/Evidence/CircularDependency', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	970	value:P	return ['TestSupport/Logging', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	973	value:P	return ['Analysis/Run', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	976	value:P	return ['Analysis/Finding', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	979	value:P	return ['Analysis/Configuration', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	983	value:P	return ['Analysis/Evidence/Design', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	986	value:P	return ['Analysis/Configuration', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	989	value:P	return ['Analysis/Policy/Baseline', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	992	value:P	return ['Analysis/Finding', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	995	value:P	return ['Analysis/Evidence/CircularDependency', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	998	value:P	return ['Analysis/Evidence/Coupling', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	1001	value:P	return ['Analysis/Run', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	1004	value:P	return ['Analysis/Evidence/Design', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	1007	value:non-P	return ['Reporting', 'permanent'];
+scripts/generate-modular-architecture-test-inventory.php	1010	value:P	return ['Analysis/Evidence/Measurement', 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	1013	value:P	return ['Analysis/Evidence/Duplication', 'P1'];
+scripts/generate-modular-architecture-test-inventory.php	1016	value:P	return ['Analysis/Evidence/DependencyModel', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	1019	value:P	return ['Core/' . $matches[1], 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	1022	value:P	return ['Core/Neutral', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	1025	value:P	return ['Analysis/Evidence/Measurement', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	1028	value:P	return ['Analysis/Run', 'P3'];
+scripts/generate-modular-architecture-test-inventory.php	1032	value:P	return ['Analysis/Policy/Inline', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	1035	value:P	return ['Analysis/Evidence/ComputedMetrics', 'P5'];
+scripts/generate-modular-architecture-test-inventory.php	1038	value:P	return ['Analysis/Policy/Inline', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	1041	value:P	return ['Analysis/Finding', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	1054	value:P	return ['Analysis/Evidence/' . $subject, 'P7'];
+scripts/generate-modular-architecture-test-inventory.php	1057	value:P	return ['Analysis/Finding', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	1060	value:P	return ['Reporting/FindingProjection', 'P6'];
+scripts/generate-modular-architecture-test-inventory.php	1071	value:P	return ['Infrastructure/' . $matches[1], 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	1074	value:P	return ['Reporting', 'P8'];
+scripts/generate-modular-architecture-test-inventory.php	1077	value:P	return ['Infrastructure/Console', 'P4'];
+scripts/generate-modular-architecture-test-inventory.php	1080	value:P	return ['legacy-placeholder', 'P8'];
 scripts/generate-modular-architecture-test-inventory.php	1612	name	$directories[$directory]['packages'][$row['closure_package']] = true;
 scripts/generate-modular-architecture-test-inventory.php	1637	plural	'closure_packages' => implode(',', $packages),
 scripts/generate-modular-architecture-test-inventory.php	1872	name	$packageCounts = array_count_values(array_column($rows, 'closure_package'));
 scripts/generate-modular-architecture-test-inventory.php	1903	name	'closure_package_counts' => $packageCounts,
-scripts/generate-modular-architecture-production-inventory.php	1327	literal	static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
-scripts/generate-modular-architecture-production-inventory.php	1435	literal	if ($entry['closes_in'] === 'P4') {
-scripts/generate-modular-architecture-production-inventory.php	1448	literal	static fn(array $grant): bool => $grant['closes_in'] === 'P4',
-scripts/generate-modular-architecture-production-inventory.php	2457	literal	return ['Architecture.Governance', 'P0-D', 'P0 governance documentation; review with the manifest and generate
-scripts/generate-modular-architecture-production-inventory.php	2461	literal	'AGENTS.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2462	literal	'CHANGELOG.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2463	literal	'docs/ARCHITECTURE.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2464	literal	'docs/adr/0001-computed-metrics.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2465	literal	'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
-scripts/generate-modular-architecture-production-inventory.php	2466	literal	'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.Depe
-scripts/generate-modular-architecture-production-inventory.php	2467	literal	'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2468	literal	'docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md' => ['Analysis.Evidence.Design', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2469	literal	'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2470	literal	'docs/adr/0029-channel-presentation-join.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2471	literal	'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => ['Analysis.Evidence.Design', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2472	literal	'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2473	literal	'docs/adr/0046-a-channel-declares-the-metric-it-judges.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2474	literal	'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2475	literal	'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2476	literal	'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2477	literal	'docs/adr/0035-a-metric-key-names-its-family-in-kebab.md' => ['Analysis.Evidence.Measurement', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2478	literal	'docs/adr/0036-a-formula-addresses-a-metric-by-its-key.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2479	literal	'docs/adr/0037-suppressed-format-and-produced-findings.md' => ['Reporting', 'P6-D'],
-scripts/generate-modular-architecture-production-inventory.php	2480	literal	'docs/adr/0047-suppression-is-not-exclusion.md' => ['Reporting', 'P6-D'],
-scripts/generate-modular-architecture-production-inventory.php	2481	literal	'docs/adr/0049-rule-option-key-recognition.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2482	literal	'docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2483	literal	'docs/adr/0050-configuration-refusal-carrier.md' => ['Analysis.Configuration', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2484	literal	'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2485	literal	'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2486	literal	'src/Analysis/Configuration/README.md' => ['Analysis.Configuration', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2487	literal	'src/Analysis/Evidence/CircularDependency/README.md' => ['Analysis.Evidence.CircularDependency', 'P4'],
-scripts/generate-modular-architecture-production-inventory.php	2488	literal	'src/Analysis/Evidence/ComputedMetrics/README.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2489	literal	'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2490	literal	'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
-scripts/generate-modular-architecture-production-inventory.php	2491	literal	'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2492	literal	'src/Analysis/Evidence/Prioritization/README.md' => ['Analysis.Evidence.Prioritization', 'P6-D'],
-scripts/generate-modular-architecture-production-inventory.php	2493	literal	'src/Analysis/Evidence/CodeSmell/README.md' => ['Analysis.Evidence.CodeSmell', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2494	literal	'src/Analysis/Evidence/Cohesion/README.md' => ['Analysis.Evidence.Cohesion', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2495	literal	'src/Analysis/Evidence/Complexity/README.md' => ['Analysis.Evidence.Complexity', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2496	literal	'src/Analysis/Evidence/Coupling/README.md' => ['Analysis.Evidence.Coupling', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2497	literal	'src/Analysis/Evidence/Design/README.md' => ['Analysis.Evidence.Design', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2498	literal	'src/Analysis/Evidence/Maintainability/README.md' => ['Analysis.Evidence.Maintainability', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2499	literal	'src/Analysis/Evidence/Security/README.md' => ['Analysis.Evidence.Security', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2500	literal	'src/Analysis/Evidence/Size/README.md' => ['Analysis.Evidence.Size', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2501	literal	'src/Analysis/Finding/README.md' => ['Analysis.Finding', 'P6-A'],
-scripts/generate-modular-architecture-production-inventory.php	2502	literal	'src/Analysis/Policy/Inline/README.md' => ['Analysis.Policy.Inline', 'P6-B'],
-scripts/generate-modular-architecture-production-inventory.php	2503	literal	'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2504	literal	'src/Analysis/Policy/Architecture/README.md' => ['Analysis.Policy.Architecture', 'P4'],
-scripts/generate-modular-architecture-production-inventory.php	2505	literal	'src/Analysis/Policy/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6-C'],
-scripts/generate-modular-architecture-production-inventory.php	2506	literal	'src/Core/README.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2507	literal	'src/Core/Profiler/README.md' => ['Core.Profiler', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2508	literal	'src/Core/Symbol/README.md' => ['Core.Symbol', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2509	literal	'src/Infrastructure/Ast/README.md' => ['Infrastructure.Ast', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2510	literal	'src/Infrastructure/DependencyInjection/README.md' => ['Infrastructure.DependencyInjection', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2511	literal	'src/Infrastructure/Parallel/README.md' => ['Infrastructure.Parallel', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2512	literal	'src/Infrastructure/Rule/README.md' => ['Infrastructure.Rule', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2513	literal	'src/Infrastructure/Serializer/README.md' => ['Infrastructure.Serializer', 'P8'],
-scripts/generate-modular-architecture-production-inventory.php	2514	literal	'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2515	literal	'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2516	literal	'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2517	literal	'src/Reporting/README.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2518	literal	'website/docs/getting-started/configuration.md' => ['Analysis.Run', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2519	literal	'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],
-scripts/generate-modular-architecture-production-inventory.php	2520	literal	'website/docs/reference/health-scores.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2521	literal	'website/docs/reference/health-scores.ru.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2522	literal	'website/docs/reference/remediation-time.md' => ['Analysis.Evidence.Prioritization', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2523	literal	'website/docs/reference/remediation-time.ru.md' => ['Analysis.Evidence.Prioritization', 'P5'],
-scripts/generate-modular-architecture-production-inventory.php	2524	literal	'website/docs/rules/duplication.md' => ['Analysis.Evidence.Duplication', 'P1'],
-scripts/generate-modular-architecture-production-inventory.php	2525	literal	'website/docs/rules/duplication.ru.md' => ['Analysis.Evidence.Duplication', 'P1'],
-scripts/generate-modular-architecture-production-inventory.php	2526	literal	'website/docs/rules/architecture.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2527	literal	'website/docs/rules/architecture.ru.md' => ['Architecture.Governance', 'P2'],
-scripts/generate-modular-architecture-production-inventory.php	2528	literal	'website/docs/usage/baseline.md' => ['Analysis.Policy.Baseline', 'P6'],
-scripts/generate-modular-architecture-production-inventory.php	2529	literal	'website/docs/usage/baseline.ru.md' => ['Analysis.Policy.Baseline', 'P6'],
-scripts/generate-modular-architecture-production-inventory.php	2530	literal	'website/docs/usage/output-formats.md' => ['Analysis.Finding', 'P6'],
-scripts/generate-modular-architecture-production-inventory.php	2531	literal	'website/docs/usage/output-formats.ru.md' => ['Analysis.Finding', 'P6'],
-scripts/generate-modular-architecture-production-inventory.php	2540	literal	'website/docs/rules/annotation' => ['Analysis.Policy.Inline', 'P6-B'],
-scripts/generate-modular-architecture-production-inventory.php	2541	literal	'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2542	literal	'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2543	literal	'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2544	literal	'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2545	literal	'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2547	literal	'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2548	literal	'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
-scripts/generate-modular-architecture-production-inventory.php	2550	literal	'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
-scripts/generate-modular-architecture-test-inventory.php	109	literal	'governance/' => ['Architecture.Governance', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	110	literal	'tools/phpstan/tests/' => ['Tooling/PhpStan', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	111	literal	'scripts/promise-effect/tests/' => ['Tooling/PromiseEffect', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	112	literal	'scripts/directive-audit/tests/' => ['Tooling/DirectiveAudit', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	113	literal	'scripts/directive-audit-controls/tests/' => ['Tooling/DirectiveAuditControls', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	114	literal	'scripts/tautology-controls/tests/' => ['Tooling/TautologyControls', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	115	literal	'scripts/finding-gate/tests/' => ['Tooling/FindingGate', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	116	literal	'scripts/suppression-snapshot/tests/' => ['Tooling/SuppressionSnapshot', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	117	literal	'scripts/rename-enumeration/tests/' => ['Tooling/RenameEnumeration', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	118	literal	'scripts/health-calibration/tests/' => ['Tooling/HealthCalibration', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	119	literal	'scripts/benchmark/tests/' => ['Tooling/Benchmark', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	120	literal	'scripts/modular-architecture/tests/' => ['Tooling/ModularArchitecture', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	121	literal	'scripts/cross-tool-comparison/tests/' => ['Tooling/CrossToolComparison', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	122	literal	'scripts/phpunit-aggregate/tests/' => ['Tooling/PhpunitAggregate', 'P8'],
-scripts/generate-modular-architecture-test-inventory.php	499	literal	$closurePackage = 'P8';
-scripts/generate-modular-architecture-test-inventory.php	902	literal	return ['TestSupport/Logging', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	912	literal	return ['Analysis/Evidence/' . $matches[1], 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	915	literal	return ['Analysis/Evidence/Measurement', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	924	literal	return ['Analysis/Policy/Baseline', 'P6-C'];
-scripts/generate-modular-architecture-test-inventory.php	927	literal	return ['Analysis/Finding', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	930	literal	return ['Analysis/Policy/Inline', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	933	literal	return ['Analysis/Evidence/Prioritization', 'P6-D'];
-scripts/generate-modular-architecture-test-inventory.php	936	literal	return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
-scripts/generate-modular-architecture-test-inventory.php	939	literal	return ['Analysis/Evidence/ComputedMetrics', 'P5'];
-scripts/generate-modular-architecture-test-inventory.php	942	literal	return ['Analysis/Policy/Architecture', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	945	literal	return ['Analysis/Evidence/CircularDependency', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	948	literal	return ['Analysis/Evidence/Measurement', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	955	literal	return ['Analysis/Evidence/CircularDependency', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	958	literal	return ['Analysis/Policy/Inline', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	961	literal	return ['Analysis/Policy/Architecture', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	964	literal	return ['Analysis/Policy/Baseline', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	967	literal	return ['Analysis/Evidence/CircularDependency', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	970	literal	return ['TestSupport/Logging', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	973	literal	return ['Analysis/Run', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	976	literal	return ['Analysis/Finding', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	979	literal	return ['Analysis/Configuration', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	983	literal	return ['Analysis/Evidence/Design', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	986	literal	return ['Analysis/Configuration', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	989	literal	return ['Analysis/Policy/Baseline', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	992	literal	return ['Analysis/Finding', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	995	literal	return ['Analysis/Evidence/CircularDependency', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	998	literal	return ['Analysis/Evidence/Coupling', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	1001	literal	return ['Analysis/Run', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	1004	literal	return ['Analysis/Evidence/Design', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	1010	literal	return ['Analysis/Evidence/Measurement', 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	1013	literal	return ['Analysis/Evidence/Duplication', 'P1'];
-scripts/generate-modular-architecture-test-inventory.php	1016	literal	return ['Analysis/Evidence/DependencyModel', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	1019	literal	return ['Core/' . $matches[1], 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	1022	literal	return ['Core/Neutral', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	1025	literal	return ['Analysis/Evidence/Measurement', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	1028	literal	return ['Analysis/Run', 'P3'];
-scripts/generate-modular-architecture-test-inventory.php	1032	literal	return ['Analysis/Policy/Inline', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	1035	literal	return ['Analysis/Evidence/ComputedMetrics', 'P5'];
-scripts/generate-modular-architecture-test-inventory.php	1038	literal	return ['Analysis/Policy/Inline', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	1041	literal	return ['Analysis/Finding', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	1054	literal	return ['Analysis/Evidence/' . $subject, 'P7'];
-scripts/generate-modular-architecture-test-inventory.php	1057	literal	return ['Analysis/Finding', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	1060	literal	return ['Reporting/FindingProjection', 'P6'];
-scripts/generate-modular-architecture-test-inventory.php	1071	literal	return ['Infrastructure/' . $matches[1], 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	1074	literal	return ['Reporting', 'P8'];
-scripts/generate-modular-architecture-test-inventory.php	1077	literal	return ['Infrastructure/Console', 'P4'];
-scripts/generate-modular-architecture-test-inventory.php	1080	literal	return ['legacy-placeholder', 'P8'];
-docs/internal/modular-architecture-manifest.schema.json	48	schema	"closure_package",
-docs/internal/modular-architecture-manifest.schema.json	74	schema	"closure_package": {
-docs/internal/modular-architecture-manifest.json	0 declarations	manifest-field	closure_package on every declaration
-docs/internal/generated/modular-architecture/documentation-ownership.tsv	col 3	artifact-column	closure_package; 160 data rows
-docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	col 6	artifact-column	closure_package; 2493 data rows
-docs/internal/generated/modular-architecture/production-ownership.tsv	col 6	artifact-column	closure_package; 955 data rows
-docs/internal/generated/modular-architecture/production-reporting-classification.tsv	col 5	artifact-column	closure_package; 78 data rows
-docs/internal/generated/modular-architecture/production-state-services.tsv	col 4	artifact-column	closure_package; 102 data rows
-docs/internal/generated/modular-architecture/test-fixture-directories.tsv	col 3	artifact-column	closure_packages; 121 data rows
-docs/internal/generated/modular-architecture/test-ownership.tsv	col 10	artifact-column	closure_package; 933 data rows
+docs/internal/modular-architecture-manifest.schema.json	15	schema:version	"const": 2
+docs/internal/modular-architecture-manifest.schema.json	48	schema:field	"closure_package",
+docs/internal/modular-architecture-manifest.schema.json	74	schema:field	"closure_package": {
+docs/internal/modular-architecture-manifest.schema.json	75	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	149	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	290	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	313	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php	69	consumer:version	self::assertSame(2, $manifest['version']);
+governance/RepositoryEntrypoints/MemoryCeilingManifestTest.php	44	consumer:version	self::assertNotSame('', $manifest['version']);
+governance/RepositoryEntrypoints/MemoryCeilingManifestTest.php	61	consumer:version	self::assertSame($package['version'], $manifest['version']);
+docs/internal/modular-architecture-manifest.json	0 declarations	manifest:field	closure_package per declaration
+docs/internal/modular-architecture-manifest.json	1	manifest:version	version = 2
+docs/internal/generated/modular-architecture/documentation-ownership.tsv	col 3	artifact:column	closure_package; 160 data rows
+docs/internal/generated/modular-architecture/documentation-ownership.tsv	93 rows	artifact:prose	published sentence naming the concept
+docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	col 6	artifact:column	closure_package; 2493 data rows
+docs/internal/generated/modular-architecture/production-ownership.tsv	col 6	artifact:column	closure_package; 955 data rows
+docs/internal/generated/modular-architecture/production-reporting-classification.tsv	col 5	artifact:column	closure_package; 78 data rows
+docs/internal/generated/modular-architecture/production-state-services.tsv	col 4	artifact:column	closure_package; 102 data rows
+docs/internal/generated/modular-architecture/test-ownership.tsv	col 10	artifact:column	closure_package; 933 data rows
+docs/internal/generated/modular-architecture/test-ownership.tsv	30 rows	artifact:prose	published sentence naming the concept
+docs/internal/generated/modular-architecture/test-fixture-directories.tsv	col 3	artifact:column	closure_packages; 121 data rows
