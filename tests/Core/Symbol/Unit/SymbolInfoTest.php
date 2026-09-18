@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
+use Error;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -15,103 +17,48 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class SymbolInfoTest extends TestCase
 {
     #[Test]
-    public function itConstructorWithAllProperties(): void
+    public function itKeepsTheExactSubjectItWasConstructedFrom(): void
+    {
+        $subject = MetricSubject::aggregate(SymbolPath::forNamespace('App\Domain'));
+
+        $symbolInfo = new SymbolInfo(
+            symbolPath: $subject,
+            file: RelativePath::fromString('src/Domain/User.php'),
+            line: 10,
+        );
+
+        self::assertSame($subject, $symbolInfo->subject);
+        self::assertEquals($subject->toSymbolPath(), $symbolInfo->symbolPath);
+    }
+
+    #[Test]
+    public function itCarriesNoSubjectWhenConstructedFromALogicalPath(): void
     {
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
             file: RelativePath::fromString('src/Service/UserService.php'),
             line: 42,
         );
 
+        self::assertNull($symbolInfo->subject);
         self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Service/UserService.php', $symbolInfo->file?->value());
-        self::assertSame(42, $symbolInfo->line);
     }
 
     #[Test]
-    public function itConstructorForClassSymbol(): void
+    public function itRefusesAWriteToAConstructedSymbolInfo(): void
     {
-        $symbolPath = SymbolPath::forClass('App\Domain', 'User');
         $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
-            file: RelativePath::fromString('src/Domain/User.php'),
-            line: 10,
-        );
-
-        self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Domain/User.php', $symbolInfo->file?->value());
-        self::assertSame(10, $symbolInfo->line);
-    }
-
-    #[Test]
-    public function itConstructorForNamespaceSymbol(): void
-    {
-        $symbolPath = SymbolPath::forNamespace('App\Service');
-        $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
-            file: RelativePath::fromString('src/Service/UserService.php'),
-            line: 1,
-        );
-
-        self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Service/UserService.php', $symbolInfo->file?->value());
-        self::assertSame(1, $symbolInfo->line);
-    }
-
-    #[Test]
-    public function itConstructorForFileSymbol(): void
-    {
-        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php'));
-        $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
-            file: RelativePath::fromString('src/bootstrap.php'),
-            line: 1,
-        );
-
-        self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/bootstrap.php', $symbolInfo->file?->value());
-        self::assertSame(1, $symbolInfo->line);
-    }
-
-    #[Test]
-    public function itSymbolInfoIsReadonly(): void
-    {
-        $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
+            symbolPath: SymbolPath::forMethod('App', 'Test', 'method'),
             file: RelativePath::fromString('test.php'),
             line: 5,
         );
 
-        // This test verifies that SymbolInfo is readonly
-        // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(SymbolInfo::class, $symbolInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
-    }
+        self::expectException(Error::class);
+        self::expectExceptionMessage('Cannot modify readonly property');
 
-    #[Test]
-    public function itConstructorWithLineOne(): void
-    {
-        $symbolPath = SymbolPath::forClass('', 'Test');
-        $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
-            file: RelativePath::fromString('test.php'),
-            line: 1,
-        );
-
-        self::assertSame(1, $symbolInfo->line);
-    }
-
-    #[Test]
-    public function itConstructorWithLargeLine(): void
-    {
-        $symbolPath = SymbolPath::forMethod('App', 'LargeClass', 'method');
-        $symbolInfo = new SymbolInfo(
-            symbolPath: $symbolPath,
-            file: RelativePath::fromString('large.php'),
-            line: 99999,
-        );
-
-        self::assertSame(99999, $symbolInfo->line);
+        // @phpstan-ignore assign.propertyProtectedSet
+        $symbolInfo->line = 6;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
+use Error;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -77,13 +78,15 @@ final class LocationTest extends TestCase
     }
 
     #[Test]
-    public function itLocationIsReadonly(): void
+    public function itRefusesAWriteToAConstructedLocation(): void
     {
         $location = new Location(RelativePath::fromString('src/test.php'), 10);
 
-        // This test verifies that Location is readonly by attempting to create a new instance
-        // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(Location::class, $location); // @phpstan-ignore staticMethod.alreadyNarrowedType
+        self::expectException(Error::class);
+        self::expectExceptionMessage('Cannot modify readonly property');
+
+        // @phpstan-ignore assign.propertyProtectedSet
+        $location->line = 11;
     }
 
     #[Test]

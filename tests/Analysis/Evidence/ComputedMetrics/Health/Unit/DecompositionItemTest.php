@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit;
 
+use Error;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\Decompos
 final class DecompositionItemTest extends TestCase
 {
     #[Test]
-    public function itConstructs(): void
+    public function itRefusesAWriteToAConstructedItem(): void
     {
         $item = new DecompositionItem(
             metricKey: 'complexity.ccn.avg',
@@ -24,11 +25,10 @@ final class DecompositionItemTest extends TestCase
             explanation: 'manageable branching',
         );
 
-        self::assertSame('complexity.ccn.avg', $item->metricKey);
-        self::assertSame('Cyclomatic (avg)', $item->humanName);
-        self::assertSame(3.5, $item->value);
-        self::assertSame('below 4', $item->goodValue);
-        self::assertSame('lower_is_better', $item->direction);
-        self::assertSame('manageable branching', $item->explanation);
+        self::expectException(Error::class);
+        self::expectExceptionMessage('Cannot modify readonly property');
+
+        // @phpstan-ignore assign.propertyProtectedSet
+        $item->value = 4.5;
     }
 }
