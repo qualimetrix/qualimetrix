@@ -17,15 +17,8 @@ declare(strict_types=1);
  */
 
 return [
-    'ceiling' => 55,
+    'ceiling' => 44,
     'rows' => [
-        'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php' => 'Qualimetrix\\Tests\\Unit\\Metrics',
-        'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
-        'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
-        'tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
-        'tests/Analysis/Evidence/Measurement/Unit/MetricDefinitionTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Metric',
-        'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php' => 'Qualimetrix\\Tests\\Unit\\Metrics',
-        'tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php' => 'Qualimetrix\\Tests\\Unit\\Analysis\\RuleExecution',
         'tests/Analysis/Policy/Architecture/Unit/AllowAliasExpanderTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Allow',
         'tests/Analysis/Policy/Architecture/Unit/AllowValidatorTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration\\Validation',
         'tests/Analysis/Policy/Architecture/Unit/ArchitectureConfigurationFactoryTest.php' => 'Qualimetrix\\Tests\\Analysis\\Policy\\Architecture\\Unit\\Configuration',
@@ -70,9 +63,5 @@ return [
         'tests/Core/Symbol/Unit/SymbolPathTest.php' => 'Qualimetrix\\Tests\\Unit\\Core\\Symbol',
         'tests/Infrastructure/Console/Unit/Progress/ConsoleProgressBarTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Console\\Progress',
         'tests/Infrastructure/Parallel/Unit/Strategy/WorkerCountDetectorTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Parallel\\Strategy',
-        'tests/Infrastructure/Profiler/Unit/Export/ChromeTracingExporterTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler\\Export',
-        'tests/Infrastructure/Profiler/Unit/Export/JsonExporterTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler\\Export',
-        'tests/Infrastructure/Profiler/Unit/ProfilerTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
-        'tests/Infrastructure/Profiler/Unit/SpanTest.php' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\Profiler',
     ],
 ];
