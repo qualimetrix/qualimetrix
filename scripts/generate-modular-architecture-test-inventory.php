@@ -242,6 +242,7 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Service/CustomerService.php',
     'tests/Analysis/Policy/Inline/Integration/InlineSuppressionLayerViolationIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php',
+    'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php',
     'tests/Analysis/Policy/Inline/Unit/Extraction/DeclarationControlBindingsTest.php',
     'tests/Analysis/Policy/Inline/Unit/IndependentAxisValidatorTest.php',
@@ -252,7 +253,6 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionTest.php',
     'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php',
-    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php',
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 
