@@ -44,6 +44,36 @@ use SplFileInfo;
  * campaign is what it answers to, not because it reads a plan path -- it reads
  * `defect-ledger/` at the repository root, which is where a verification asset
  * a control depends on has to live if the plan is ever to be swept.
+ *
+ * **One thing this control checked is now a frozen measurement rather than a
+ * check, and the difference is not that the check was weakened.** It required
+ * every hash a verdict names to resolve to an object of type `commit`. It
+ * cannot run where this repository is published: the `check` job checks out at
+ * the default depth of one (`.github/workflows/qmx.yml`, where only
+ * `commit-messages` asks for `fetch-depth: 0`), and `main` is a chain of
+ * squash-merges, one commit per pull request. Measured on a `--depth 1` clone of
+ * this branch: all 51 tokens read `missing` and the method printed 428 refusal
+ * lines while the other six methods passed. Measured against `main`: 45 of the
+ * 51 are branch-local and stop existing the moment the branch is squashed. A
+ * control that is red on `main` from the day of the merge is worse than a
+ * vacuous green -- it teaches a reader to stop looking at red.
+ *
+ * So the fact is recorded instead of re-derived, which is honest because the
+ * ledger is frozen: 276 rows, all answered, and no verdict row will ever be
+ * added. Measured once, on `c40b1981`, against the full history:
+ *
+ *     cut -f3 defect-ledger/verdicts/*.tsv | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u \
+ *       | xargs -n1 git cat-file -t | sort | uniq -c
+ *
+ * gave **51 distinct tokens, every one of them `commit`**. Separately, each
+ * row's commit was checked to touch that row's file or its counterpart: 159 of
+ * 163, and the four misses were renames, where the commit changed the file's
+ * name itself.
+ *
+ * What survives here is the half that needs no git and no history:
+ * `itNamesACommitOnEveryVerdictThatClaimsOne`, which refuses a `fixed` or
+ * `already-fixed` verdict carrying no hash-shaped token at all. That one holds
+ * in a shallow clone and after a squash.
  */
 final class DefectLedgerVerdictClosureTest extends TestCase
 {
@@ -189,69 +219,6 @@ final class DefectLedgerVerdictClosureTest extends TestCase
     }
 
     /**
-     * The shape of a hash is not the existence of one. A verdict carrying
-     * `1c6ec21e` -- eight hex digits naming nothing in this repository -- passed
-     * the check above, which is the defect this stage exists to repair: a guard
-     * reading the spelling instead of the subject. It was found by a hash
-     * somebody invented, not by anybody reading the guard.
-     *
-     * **Every** hash-shaped token is resolved, not the first: evidence like
-     * "c49fc0b4 then 666d8679" makes two claims and a reader following the
-     * second one deserves it to be true.
-     *
-     * The object has to be a commit. A token resolving to a tree or a blob is a
-     * real object and still not a commit anyone can read a change out of, and
-     * the two are indistinguishable by spelling. Where a cell genuinely needs a
-     * hex token that is not a commit, reword it -- a verdict is read by people,
-     * and eight hex digits in it mean a commit.
-     *
-     * One `git cat-file --batch-check` for the whole set, because the tokens
-     * repeat across files and a process per token would put a hundred-odd of
-     * them in every Governance run. Its output is positional: one line per input
-     * line, `<oid> <type> <size>` for an object that exists and
-     * `<input> missing` for one that does not, so the answers are zipped back
-     * onto the inputs by index rather than matched by name -- the oid it prints
-     * for a short hash is the full one, which is not the token that was asked
-     * about.
-     */
-    #[Test]
-    public function itNamesCommitsTheRepositoryCarries(): void
-    {
-        $claims = [];
-
-        foreach (self::verdicts() as $verdict) {
-            if (!\in_array($verdict['verdict'], ['fixed', 'already-fixed'], true)) {
-                continue;
-            }
-
-            foreach (self::hashShapedTokens($verdict['evidence']) as $token) {
-                $claims[$token][] = $verdict['source'] . ': ' . $verdict['row_id'];
-            }
-        }
-
-        $tokens = array_keys($claims);
-        self::assertNotSame([], $tokens, 'No verdict claims a commit; this control would pass on nothing.');
-
-        $types = self::gitObjectTypes($tokens);
-        $unresolved = [];
-
-        foreach ($claims as $token => $carriers) {
-            $type = $types[(string) $token];
-
-            if ($type !== 'commit') {
-                foreach ($carriers as $carrier) {
-                    $unresolved[] = \sprintf('%s names %s, which is %s', $carrier, $token, $type);
-                }
-            }
-        }
-
-        self::assertSame([], $unresolved, \sprintf(
-            "A verdict names a commit this repository does not carry:\n%s",
-            implode("\n", $unresolved),
-        ));
-    }
-
-    /**
      * @return list<string>
      */
     private static function hashShapedTokens(string $evidence): array
@@ -259,55 +226,6 @@ final class DefectLedgerVerdictClosureTest extends TestCase
         preg_match_all(self::HASH_SHAPED, $evidence, $matches);
 
         return array_values(array_unique($matches[0]));
-    }
-
-    /**
-     * @param list<string> $tokens
-     *
-     * @return array<string, string> each token mapped to its object type, or to why it has none
-     */
-    private static function gitObjectTypes(array $tokens): array
-    {
-        $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-        $pipes = [];
-        $process = proc_open(['git', 'cat-file', '--batch-check'], $descriptors, $pipes, self::$projectRoot);
-
-        // Not being able to ask is not the same as an answer. A control that
-        // passes when its oracle is unavailable is the shape this whole stage is
-        // about, so an unusable git is a refusal.
-        self::assertIsResource($process, 'git cat-file could not be started, so no verdict here was checked.');
-
-        fwrite($pipes[0], implode("\n", $tokens) . "\n");
-        fclose($pipes[0]);
-        $output = stream_get_contents($pipes[1]);
-        $errors = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
-
-        self::assertIsString($output, 'git cat-file produced no readable output.');
-
-        $lines = explode("\n", rtrim($output, "\n"));
-
-        self::assertCount(
-            \count($tokens),
-            $lines,
-            \sprintf(
-                "git cat-file answered %d of %d tokens, so the answers cannot be zipped onto them.\n%s",
-                \count($lines),
-                \count($tokens),
-                \is_string($errors) ? $errors : '',
-            ),
-        );
-
-        $types = [];
-
-        foreach ($tokens as $index => $token) {
-            $fields = explode(' ', $lines[$index]);
-            $types[$token] = $fields[1] ?? 'unanswered';
-        }
-
-        return $types;
     }
 
     /**
