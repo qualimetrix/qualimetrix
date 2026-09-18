@@ -19,7 +19,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * suppress.
  *
  * The unit sweep in
- * {@see \Qualimetrix\Tests\Reporting\Unit\FindingProjection\ConfigurationErrorProjectionTest}
+ * {@see \Qualimetrix\Tests\Reporting\Integration\FindingProjection\ConfigurationErrorProjectionTest}
  * pins the same guarantee per pipeline stage; this class exists because the
  * defect it guards against was only visible end to end. `check` gates on the
  * list the projection returns, so every stage that could drop the finding
