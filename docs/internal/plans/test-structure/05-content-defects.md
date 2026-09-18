@@ -142,76 +142,144 @@ a file's recorded level says nothing about the level it carries today. Take the
 current path from `population.tsv` and re-read the body: `category-wrong` is a
 claim about what the test *does*, and only the body settles it.
 
+## `misplaced`, `stale-doc` and `other`: 116 rows an earlier draft left without a rule
+
+Three classes — 42% of the ledger — had no repair rule beyond the one-line
+description in the table above. They have one now.
+
+**`misplaced` (46 rows) is mostly already fixed, and the stage must predict that
+before it looks.** Stage 04's entire subject was putting every test file at its
+manifest owner. By file status: **37 of the 46 rows sit on files that have since
+moved** (34 `moved-agreed`, plus one each `ambiguous-heirs`, `moved-rename-only`,
+`WITNESSES-DISAGREE`), and only 9 are still `at-path`. The prediction is
+therefore: most of this class closes as `already-fixed`, and a `misplaced` row
+that survives re-confirmation is a file stage 04's invariant *permits* — which
+makes it a question about the invariant, not a misfiling. Compare the predicted
+share against the observed one, as the DoD requires for the test count.
+
+**`category-wrong` (32 rows) is the opposite and the plan already says so**: 20 of
+32 are still `at-path`, so the body decides, not the directory.
+
+**`stale-doc` (8 rows)** — the docblock is rewritten to match the code, or the
+code is wrong and the row is re-classified. A docblock is not deleted to resolve
+the row: it is the only statement of intent the next reader gets.
+
+**`other` (62 rows) is adjudicated once, by P0, not seven times.** It is the
+largest class after `dupe` and its ledger description is "mixed observations,
+triage before acting". Seven packages triaging independently produce seven
+standards. P0 reads all 62 notes and assigns each a real class or a `wont-fix`
+reason; the packages then work the assigned class. **P0 may not leave a row as
+`other`** — a row still called `other` at the end of P0 is a row nobody agreed
+how to judge.
+
 ## Definition of Done
 
-- Every ledger row is resolved: fixed, or marked won't-fix with a reason in the
-  TSV. A row left untouched without a verdict is not done.
-- All 24 `high` rows fixed.
-- For each tautology, the replacement assertion is **shown to fail** when the
-  guarded property is broken. An assertion that cannot be made to fail is
-  another tautology, and this is the only check that tells them apart.
-- Executed-test count stated before and after. It will legitimately drop here —
-  predict the drop first, compare against the observed one, and explain any
-  difference. An unexplained difference is a lost test.
-- Pinned paths: **the recorded figure "108 of the 346" holds on neither side and
-  `measurement/pinned-paths-impact.txt` is stale** — it was written at `585b7c72`
-  and the generator has moved since. Measured on `56c0792f`: the generator pins
-  **245 distinct `tests/` literals**, and of the 108 paths the file lists for this
-  stage **only 66 are still pinned**. Re-derive the impact list against the
-  generator before working it, and do not cite the tracked file as the
-  denominator. `composer architecture:check` green.
+**The verdict address.** `defect-ledger.tsv` is a measurement taken at
+`585b7c72` and is not edited: mutating it destroys the record the stage is
+judged against. Verdicts go to a separate append-only
+`measurement/stage-05/verdicts.tsv`, one line per ledger row, joined on a
+`row_id` **P0 mints into the ledger once** — the natural key
+(`file` + `class` + `line`) does not work, because at least one row has an empty
+`line`. Minting that column is the single change to the ledger P0 is allowed to
+make; the other six columns and their meanings stay.
+
+The verdict vocabulary is exactly three values, and nothing else is a verdict:
+
+| Verdict         | Means                                              | Must carry          |
+| --------------- | -------------------------------------------------- | ------------------- |
+| `fixed`         | the defect was there and is gone                   | the commit          |
+| `already-fixed` | stages 01-04 closed it in passing                  | the commit that did |
+| `wont-fix`      | the row does not describe a defect worth repairing | the reason          |
+
+- **A control makes incompleteness loud.** Today **nothing in the repository
+  reads `defect-ledger.tsv`** — no script, no test — so no command can tell 276
+  resolved rows from 276 untouched ones. The stage adds a governance control that
+  fails while any ledger row has no verdict, and it is the DoD item that is red
+  on day one. Every other machine item below is green before the stage starts,
+  and therefore proves nothing about it.
 - **Every row is re-confirmed against the current body before it is worked**, and
-  a row the tree no longer carries is closed as `already-fixed` naming the commit
-  that fixed it. The ledger describes `585b7c72`; a row worked on trust is a
-  repair to a defect that may not be there.
-- **No exception list ends above its ceiling and the population stays above 600.**
-  All three lists are full today and the floor allows 15 retirements, so both are
-  live constraints rather than formalities. A package that needs either to move
-  says so in its commit and takes it to the owner.
-- **`bin/qmx directives` and the dangling-name detector both exit 0**, the second
-  of which requires it to be executable by `composer check` at all — see P0.
-- `composer check` green.
+  the verdict says which of the three it got. The ledger describes `585b7c72`.
+- All 24 `high` rows carry `fixed`.
+- **Each tautology's replacement is proven by a tracked command, not by prose in
+  a report.** The stage adds a controls stand in the shape the repository already
+  uses (`composer gate:controls`, `composer directives:controls`): one declared
+  case per tautology, each planting one break and requiring that it redden that
+  case and no other, plus the coverage check that removing a declaration reddens
+  exactly its own case. **The stand runs in an isolated clone whose `vendor` is
+  copied, not symlinked** — a symlinked `vendor` resolves PSR-4 into the source
+  tree and has produced five consecutive false greens in this repository — and it
+  rolls a plant back from a copy taken beforehand, never with `git checkout --`.
+- **The executed-test count is 9208**: the six suites under the runner's own
+  exclusions. The discovery artifact reports 9210, which is 9208 plus the two
+  `live-freshness` cases the aggregate never runs; say which number you mean.
+  **The prediction is the orchestrator's, made once before the packages run and
+  compared once after** — a package cannot attribute a global delta to itself
+  while four others are running. An unexplained difference is a lost test.
+- **No list ends above its ceiling and the population stays above 600.** All four
+  lists are full and the floor allows 15 retirements. Neither is machine-proof
+  against substitution (see below), so a package that swaps or retires says so in
+  its commit.
+- Pinned paths: **"108 of the 346" holds on neither side and
+  `measurement/pinned-paths-impact.txt` is stale.** Measured on `56c0792f`, the
+  generator pins **245** distinct `tests/` literals excluding the bare `'tests/'`
+  prefix (246 with it), of which **55 are already dead**, and of the 108 paths the
+  stale file lists only **66** are still pinned. Re-derive with
+  `grep -o "'[^']*'" scripts/generate-modular-architecture-test-inventory.php | tr -d "'" | grep '^tests/' | grep -v '^tests/$' | sort -u`
+  and do not cite the tracked file as the denominator.
+- `bin/qmx directives src/` exits 0, and the dangling-name detector exits 0 —
+  the second **requires first making it something `composer check` runs**, which
+  is P0's, and reaching exit 0 is the orchestrator's at the end, not any
+  package's: the census is a global counter that several packages move.
+- `composer architecture:check` green, `composer check` green.
 
-## Handed over by stage 04: three capped exception lists, all of them full
+## Handed over by stage 04: four capped lists, every one of them full
 
-Stage 04's invariant control caps three kinds of file it does not adjudicate.
-All three are handed over here. **Measured on `56c0792f`, every one of them sits
-exactly on its ceiling**, so this stage cannot park a single new exception
-anywhere:
+Stage 04 capped the kinds of file its invariant does not adjudicate. **An earlier
+draft of this section said there were three. There are four**, and the fourth is
+the one this stage is most likely to move, because renaming a class or changing a
+test's level moves the namespace/path pair it guards.
 
-| List (`SubjectPathExceptions::LISTS` key) | Holds                               | Rows / ceiling | Overlap with the ledger |
-| ----------------------------------------- | ----------------------------------- | -------------: | ----------------------- |
-| `declares_no_coverage`                    | no `#[CoversClass]` at all          | **84 / 84**    | 30 files, 38 rows       |
-| `covers_another_owner`                    | covers only another owner's classes | **19 / 19**    | 5 files, 5 rows         |
-| `remainder_is_not_a_prefix`               | remainder drops an interior segment | **4 / 4**      | none                    |
+Measured on `56c0792f`; the overlap column is counted **against each row's current
+heir**, not against the ledger's recorded path, and the two differ:
 
-Four consequences, and the first two are hard limits rather than advice:
+| List                        | Where                                               | Rows / ceiling | Overlap (by heir) | Overlap (by ledger path) |
+| --------------------------- | --------------------------------------------------- | -------------: | ----------------- | ------------------------ |
+| `declares_no_coverage`      | `subject-path-exceptions.php`                       | **84 / 84**    | 34 files, 42 rows | 25 files, 31 rows        |
+| `covers_another_owner`      | `subject-path-exceptions.php`                       | **19 / 19**    | 5 files, 5 rows   | 5 files, 5 rows          |
+| `remainder_is_not_a_prefix` | `subject-path-exceptions.php`                       | **4 / 4**      | none              | none                     |
+| namespace allow-list        | `namespace-path-allow-list.php` (from stage **01**) | **55 / 55**    | 16 files, 20 rows | 16 files, 20 rows        |
 
-- **A ceiling can only be lowered, never raised by machine.** `derive-subject-path-exceptions.php`
-  writes `min(ceiling, count(rows))` and refuses with `ABOVE_CEILING` when the
-  tree carries more than the list admits, telling the caller to "raise that
-  ceiling by hand and say in the commit why the tree is allowed to get worse".
-  Any package that makes a file *newly* excusable is therefore a package that
-  must argue for regression in its commit message, in front of the owner.
-- **The population floor leaves 15 files, not 16.** The same control asserts
-  `assertGreaterThan(600, count($population))` against a population of 616.
-  Greater-than means 601 is the lowest passing value, so **retiring a sixteenth
-  file reddens it**. Adjudicating list A is the likeliest way this stage retires
-  files; count before deleting.
+An earlier draft put list A's overlap at "30 files, 38 rows", which reproduces
+under neither counting method. The figure matters because list A is the likeliest
+source of retirements and the population floor is tight.
+
+- **The ceiling catches growth, not substitution.** The gate is
+  `count($rows) > $ceiling`, and deriving writes `min($ceiling, count($rows))`.
+  A package that retires one exception and introduces another leaves the count
+  unchanged, so **the derive passes silently and no one is asked to justify the
+  new one**. Saying "the lists are full, so nothing new can be parked" is
+  therefore too strong: what cannot be parked is a *net additional* exception.
+  Any package that swaps says so in its commit; nothing machine-checkable will.
+- **The population floor leaves 15 files, not 16.**
+  `assertGreaterThan(600, count($population))` against 616 means 601 is the
+  lowest passing value. The comment beside that assertion says "sixteen" twice
+  and is wrong by one; P0 corrects it.
 - **Deriving is a write, not a check.** The script never exits 0: 4 means it
-  wrote, 5-8 are refusals that leave the tracked file untouched. A package that
-  runs it and reads exit 0 as success has misread it.
-- **Stale rows refuse loudly, missing rows refuse differently.** A row whose
-  exception no longer exists fails `itCarriesNoStaleExceptionRow`; a row naming a
-  file the scan never reached fails `itJudgesEveryTestFileUnderTheTestsRoot`.
-  Both are recoverable by re-deriving; neither is recoverable by hand-editing.
+  wrote, 5-8 are refusals that leave the tracked file untouched. Reading exit 0
+  as success is a misreading of a command that cannot produce it.
+- **Stale rows and missing rows refuse differently.** A row whose exception no
+  longer exists fails `itCarriesNoStaleExceptionRow`; a row naming a file the scan
+  never reached fails `itJudgesEveryTestFileUnderTheTestsRoot`. Both are fixed by
+  re-deriving, neither by hand-editing.
 
 **List B is the adapter-exclusion principle showing through** — every
 `tests/Analysis/Policy/Baseline/Functional/Baseline*CommandTest.php` covers
 `Infrastructure\Console\Command\Baseline\...`. **List C is four `Analysis/Run`
-files** whose path drops an interior `Contract` segment. Stage 04 capped all
-three rather than adjudicating them, because adjudicating them is this stage's
-subject.
+files** whose path drops an interior `Contract` segment. The first three were
+capped by stage 04; the namespace allow-list has been capped since stage 01
+(`52eae218`), which is why an inventory that reads only stage 04's handover
+misses it. Each was capped rather than adjudicated because adjudicating them is
+this stage's subject.
 
 ## Three things stage 04 left without an owner, and one that rotted
 
