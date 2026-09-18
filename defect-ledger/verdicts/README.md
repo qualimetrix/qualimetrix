@@ -22,9 +22,19 @@ values and nothing else is a verdict:
 
 `evidence` is never empty, and on `fixed` and `already-fixed` it names the
 commit: both are checked, so "fixed, see the PR" closes a row on nothing the
-repository can read. A hash is seven to forty lowercase hex digits carrying at
-least one digit; one that happens to be all letters is rejected, so write it
-longer.
+repository can read.
+
+**The commit has to exist.** Every hash-shaped token in a `fixed` or
+`already-fixed` cell is resolved with `git cat-file`, and each one must be an
+object of type `commit` in this repository — **every** token, not the first, so
+"c49fc0b4 then 666d8679" makes two claims and both are checked. Checking the
+spelling alone was not enough: a verdict once carried `1c6ec21e`, eight hex
+digits naming nothing, and passed.
+
+A hash is seven to forty lowercase hex digits carrying at least one digit; one
+that happens to be all letters is rejected, so write it longer. If a reason
+genuinely needs a hex token that is not a commit, reword it — in a verdict, eight
+hex digits mean a commit, and the control reads them that way.
 
 Every row of the ledger needs exactly one verdict across the whole directory. A
 second verdict for the same `row_id`, a verdict naming a `row_id` the ledger does

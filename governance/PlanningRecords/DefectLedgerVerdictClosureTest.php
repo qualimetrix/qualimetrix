@@ -53,6 +53,8 @@ final class DefectLedgerVerdictClosureTest extends TestCase
 
     private const array VOCABULARY = ['fixed', 'already-fixed', 'wont-fix'];
 
+    private const string HASH_SHAPED = '~(?<![0-9a-z])(?=[0-9a-f]{7,40}(?![0-9a-z]))[a-f]*[0-9][0-9a-f]*(?![0-9a-z])~';
+
     private static string $projectRoot;
 
     public static function setUpBeforeClass(): void
@@ -175,7 +177,7 @@ final class DefectLedgerVerdictClosureTest extends TestCase
                 continue;
             }
 
-            if (preg_match('~(?<![0-9a-z])(?=[0-9a-f]{7,40}(?![0-9a-z]))[a-f]*[0-9][0-9a-f]*(?![0-9a-z])~', $verdict['evidence']) !== 1) {
+            if (self::hashShapedTokens($verdict['evidence']) === []) {
                 $unsourced[] = $verdict['source'] . ': ' . $verdict['row_id'] . ' says "' . $verdict['evidence'] . '"';
             }
         }
@@ -184,6 +186,128 @@ final class DefectLedgerVerdictClosureTest extends TestCase
             "A fixed or already-fixed verdict names no commit:\n%s",
             implode("\n", $unsourced),
         ));
+    }
+
+    /**
+     * The shape of a hash is not the existence of one. A verdict carrying
+     * `1c6ec21e` -- eight hex digits naming nothing in this repository -- passed
+     * the check above, which is the defect this stage exists to repair: a guard
+     * reading the spelling instead of the subject. It was found by a hash
+     * somebody invented, not by anybody reading the guard.
+     *
+     * **Every** hash-shaped token is resolved, not the first: evidence like
+     * "c49fc0b4 then 666d8679" makes two claims and a reader following the
+     * second one deserves it to be true.
+     *
+     * The object has to be a commit. A token resolving to a tree or a blob is a
+     * real object and still not a commit anyone can read a change out of, and
+     * the two are indistinguishable by spelling. Where a cell genuinely needs a
+     * hex token that is not a commit, reword it -- a verdict is read by people,
+     * and eight hex digits in it mean a commit.
+     *
+     * One `git cat-file --batch-check` for the whole set, because the tokens
+     * repeat across files and a process per token would put a hundred-odd of
+     * them in every Governance run. Its output is positional: one line per input
+     * line, `<oid> <type> <size>` for an object that exists and
+     * `<input> missing` for one that does not, so the answers are zipped back
+     * onto the inputs by index rather than matched by name -- the oid it prints
+     * for a short hash is the full one, which is not the token that was asked
+     * about.
+     */
+    #[Test]
+    public function itNamesCommitsTheRepositoryCarries(): void
+    {
+        $claims = [];
+
+        foreach (self::verdicts() as $verdict) {
+            if (!\in_array($verdict['verdict'], ['fixed', 'already-fixed'], true)) {
+                continue;
+            }
+
+            foreach (self::hashShapedTokens($verdict['evidence']) as $token) {
+                $claims[$token][] = $verdict['source'] . ': ' . $verdict['row_id'];
+            }
+        }
+
+        $tokens = array_keys($claims);
+        self::assertNotSame([], $tokens, 'No verdict claims a commit; this control would pass on nothing.');
+
+        $types = self::gitObjectTypes($tokens);
+        $unresolved = [];
+
+        foreach ($claims as $token => $carriers) {
+            $type = $types[(string) $token];
+
+            if ($type !== 'commit') {
+                foreach ($carriers as $carrier) {
+                    $unresolved[] = \sprintf('%s names %s, which is %s', $carrier, $token, $type);
+                }
+            }
+        }
+
+        self::assertSame([], $unresolved, \sprintf(
+            "A verdict names a commit this repository does not carry:\n%s",
+            implode("\n", $unresolved),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function hashShapedTokens(string $evidence): array
+    {
+        preg_match_all(self::HASH_SHAPED, $evidence, $matches);
+
+        return array_values(array_unique($matches[0]));
+    }
+
+    /**
+     * @param list<string> $tokens
+     *
+     * @return array<string, string> each token mapped to its object type, or to why it has none
+     */
+    private static function gitObjectTypes(array $tokens): array
+    {
+        $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $pipes = [];
+        $process = proc_open(['git', 'cat-file', '--batch-check'], $descriptors, $pipes, self::$projectRoot);
+
+        // Not being able to ask is not the same as an answer. A control that
+        // passes when its oracle is unavailable is the shape this whole stage is
+        // about, so an unusable git is a refusal.
+        self::assertIsResource($process, 'git cat-file could not be started, so no verdict here was checked.');
+
+        fwrite($pipes[0], implode("\n", $tokens) . "\n");
+        fclose($pipes[0]);
+        $output = stream_get_contents($pipes[1]);
+        $errors = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($process);
+
+        self::assertIsString($output, 'git cat-file produced no readable output.');
+
+        $lines = explode("\n", rtrim($output, "\n"));
+
+        self::assertCount(
+            \count($tokens),
+            $lines,
+            \sprintf(
+                "git cat-file answered %d of %d tokens, so the answers cannot be zipped onto them.\n%s",
+                \count($lines),
+                \count($tokens),
+                \is_string($errors) ? $errors : '',
+            ),
+        );
+
+        $types = [];
+
+        foreach ($tokens as $index => $token) {
+            $fields = explode(' ', $lines[$index]);
+            $types[$token] = $fields[1] ?? 'unanswered';
+        }
+
+        return $types;
     }
 
     /**
