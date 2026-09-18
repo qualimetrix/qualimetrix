@@ -83,10 +83,6 @@ CLASS_SHAPED_BEFORE = ("new ", "extends ", "implements ", "instanceof ", "use ")
 # being a set. Those probes declare no namespace instead; see
 # scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php.
 KNOWN = {
-    "Qualimetrix\\Tests\\Infrastructure\\Unit\\ChannelDeclarationCompilerPassTest":
-        "a stale reference from stage 02/03, in a live test docblock; stage 05's",
-    "Qualimetrix\\Tests\\Integration\\Infrastructure\\Rule\\ChannelDeclarationFixtureDriftTest":
-        "a stale reference from an epoch before stage 04, in two live carriers; stage 05's",
     "Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest":
         "a P6_RENAMED_TEST_IDS key: a pre-rename name by construction, and rewriting it would assert"
         " the test was always called what it is called now",
@@ -139,7 +135,7 @@ def main():
     parser.add_argument(
         "--include-history",
         action="store_true",
-        help="also report plans, ADRs and generated artifacts, which record names rather than address them",
+        help="also report plans, ADRs, generated artifacts and the defect ledger, which record names rather than address them",
     )
     arguments = parser.parse_args()
 
@@ -150,10 +146,22 @@ def main():
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
 
-    # Plans, ADRs and generated artifacts name what the tree used to carry; that
-    # is the record working, not an address rotting. Everything else that spells
-    # a name is asserting the name exists.
-    history = ("docs/internal/plans/", "docs/adr/", "docs/internal/generated/", "CHANGELOG.md")
+    # Plans, ADRs, generated artifacts and the frozen defect ledger name what the
+    # tree used to carry; that is the record working, not an address rotting.
+    # Everything else that spells a name is asserting the name exists.
+    #
+    # defect-ledger/ earns the same treatment for a stronger reason than the
+    # others: a row there exists *because* the name it spells was stale, and the
+    # ledger is a measurement that is never edited. Reading it as an address made
+    # a repaired reference indistinguishable from an unrepaired one -- the pin on
+    # ChannelDeclarationCompilerPassTest survived its own repair that way.
+    history = (
+        "docs/internal/plans/",
+        "docs/adr/",
+        "docs/internal/generated/",
+        "CHANGELOG.md",
+        "defect-ledger/",
+    )
 
     # KNOWN spells every pinned name, so a census that read this file would
     # carry every one of them itself and no pin could ever be reported GONE: the exit-3
