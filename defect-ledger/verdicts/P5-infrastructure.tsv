@@ -1,0 +1,56 @@
+row_id	verdict	evidence
+R042	wont-fix	PHPUnit restores the working directory itself: runBare() captures getcwd() before setUp() and chdir()s back after tearDown() at vendor/phpunit/phpunit/src/Framework/TestCase.php:673, on failure too. Measured before any edit: vendor/bin/phpunit --order-by=default --do-not-cache-result over HookInstallCommandTest then GitRepositoryLocatorTest, whose itFindsTheGitDirInTheCurrentRepository reads the cwd, passed 13/13, and a probe asserting getcwd() after the hook file returned the repository root
+R043	wont-fix	the same as R042: the row states a leak into later tests and PHPUnit's runBare() restores the working directory after every case
+R044	wont-fix	the same as R042
+R045	fixed	5e11234e deleted CheckCommandTest::itHandlesNonExistentPath; CheckCommandPathInputTest::itRejectsNonExistentPath makes the same three assertions about the same command built the same way
+R046	fixed	1c32d10e moved the private-method probe out of the functional CLI case into ResultPresenterTest, where the subject is; the case reddens when the relativizer stops relativizing
+R048	fixed	1292c0d2 moved RuleExclusionStatsWiringTest to Console/Functional/: it runs the whole command through CommandTester over a container it compiles
+R049	fixed	1292c0d2 moved SuppressedFormatWiringTest to Console/Functional/ for the same reason
+R050	fixed	1292c0d2 moved FindingFilterOrchestratorBaselineReportingTest to Console/Integration/: it writes a temporary baseline file and wires a real FindingProjector, SuppressionFilter and BaselineLoader
+R051	fixed	1292c0d2 moved FindingFilterOrchestratorTest to Console/Integration/ for the same reason
+R052	fixed	1292c0d2 moved ResultPresenterTest to Console/Integration/: real SummaryEnricher, DebtCalculator and HealthSummaryBuilder, plus mkdir and chmod for the write precheck
+R053	fixed	1292c0d2 moved RuntimeConfiguratorTest to Console/Integration/: real stores and factory over a temporary project root
+R054	wont-fix	read both bodies: the unit case builds the configurator by hand from stubs and asserts that the cache factory hands out a new instance after a reset, while RuntimeConfigurationIsolationTest resolves the same services from the compiled production container. Different wiring, so the unit case cannot see what the integration one is for
+R055	fixed	1292c0d2 moved RuleOptionKeyDoorSymmetryTest to Console/Functional/: ContainerFactory, CheckCommand and CommandTester in one case
+R056	fixed	1292c0d2 moved TranslatedRefusalVocabularyTest to Console/Functional/: twenty-two full CLI runs
+R057	fixed	1c32d10e moved the HealthSummaryBuilder source scan to governance/HealthVocabulary/RankedOffenderLevelsAgreeWithTheBuilderTest.php, with a guard against the regex matching nothing
+R058	fixed	bf868f28 replaced two substring assertions with the whole rendering plus the empty-summary branch; printing the memory field the fixture carries now fails it
+R059	already-fixed	7a89a3ad put the file at tests/Infrastructure/DependencyInjection/Integration/RulesCommandWiringTest.php, beside its siblings rather than one level above them
+R162	fixed	5e11234e deleted CacheKeyGeneratorVOTest::itHandlesUnresolvableFileGracefully; CacheKeyGeneratorTest::itReturnsEmptyKeyForNonExistentFile is the same SUT and the same assertion
+R163	fixed	1292c0d2 moved CacheKeyGeneratorVOTest to Cache/Unit/: one class over temporary files, exactly as the Unit test beside it
+R164	fixed	bf868f28 replaced expectNotToPerformAssertions() with a case that shows the messages sent before a logger is installed went nowhere; capturing the holder's logger once instead of reading it per call fails it
+R165	fixed	5e11234e deleted LoggerHolderTest::itReturnsTheSameInstanceOnMultipleGetterCalls: its second assertion is itCanSetCustomLogger and its first compares two results of one getter
+R166	fixed	bf868f28 added #[CoversClass(ConsoleLogger::class)], the class the body exercises
+R167	fixed	bf868f28 added #[CoversClass(FileLogger::class)], the class the body exercises
+R171	fixed	5e11234e deleted itClearsAndResetsState and itCollectsInstrumentationAfterBeingEnabled, which ProfilerTest::itResetsProfilerOnClear and ProfileSessionTest::itClearsRecordedStateOnEveryModeTransition already make. The other four named cases were cleared on reading: the two export cases assert category, peak_memory_delta_bytes, children and the event names that the unit cases do not
+R172	fixed	5e11234e turned ProfilerIntegrationTest into tests/Infrastructure/Profiler/Unit/ProfilerWorkflowTest.php after deleting itPerformsAtomicFileWrite, whose write and rename were written in the test so no production code took part in the atomicity; nothing left in the file touches the filesystem
+R174	fixed	5e11234e corrected the namespace to Qualimetrix\Tests\Infrastructure\Profiler\Unit\Export, which is the path the file sits at
+R175	fixed	5e11234e corrected the namespace to Qualimetrix\Tests\Infrastructure\Profiler\Unit\Export
+R177	fixed	5e11234e corrected the namespace to Qualimetrix\Tests\Infrastructure\Profiler\Unit
+R181	fixed	bf868f28 added itHandsEveryTaggedValidatorToTheExecutorAndTheRegistry, the arrival the two refusals exist to protect; collecting the class but not the reference leaves the executor an empty list and fails it
+R182	fixed	1e8ce904 restores both swapped fixture statics in tearDown(). Proved by a reader case added first: run in one process after the two refusals, it errored with EmptyIdParticipant::participantId() must return a non-empty string, and passes with the restore
+R185	fixed	5e11234e folded the service-id assertion into the case above it and deleted itInjectsTheOptionsServiceAsAnArgumentToTheRule, and itSkipsTaggedServicesWithoutAClass now asserts what the pass did rather than Symfony's tag index
+R189	fixed	1292c0d2 moved GitClientTest to Git/Integration/: it runs git as a real process
+R190	fixed	1292c0d2 moved GitRepositoryLocatorTest to Git/Integration/: it runs a real git init
+R191	fixed	1292c0d2: in Integration/ a case that only passes inside a git repository is admissible, which is what itFindsTheGitDirInTheCurrentRepository is; rewriting it to pass an explicit path would have duplicated itAcceptsAnExplicitWorkingDirectory
+R192	fixed	1292c0d2 moved ReportingGitScopeQueryTest to Git/Integration/: real git calls
+R193	fixed	bf868f28 replaced assertContains over both options with itBreaksAPriorityTieByRegistrationOrder, which runs the pair both ways round; taking the last entry after the sort fails it
+R194	fixed	bf868f28 deleted the wording pin: what the option is for is asserted where it is read, by FindingFilterOrchestratorTest::itPrintsResolvedEntriesOnARunThatStaysGreen
+R195	fixed	bf868f28 kept the command name, which a user types, as itIsAddressedAsHookStatus and dropped the description sentence; execute() is covered by the functional file of the same name, which carries seven cases for it
+R196	already-fixed	7a89a3ad moved the file to tests/Infrastructure/DependencyInjection/Unit/CompilerPass/, the owner of its SUT
+R197	already-fixed	7a89a3ad, as above
+R198	already-fixed	7a89a3ad, as above
+R199	already-fixed	7a89a3ad, as above
+R200	already-fixed	7a89a3ad, as above
+R201	already-fixed	7a89a3ad, as above
+R202	already-fixed	7a89a3ad, as above
+R204	already-fixed	7a89a3ad, as above
+R205	already-fixed	7a89a3ad, as above
+R209	wont-fix	read both bodies: the unit case asserts definition-level identity of the options services the pass registers, and SharedRuleOptionsContainerTest compiles the container, instantiates the ten rules and asserts that per-rule configuration reaches only its own producer. The ten-producer list is duplicated input, not a duplicated assertion
+R210	wont-fix	read both bodies: RulesCommandWiringTest resolves the command from the production container over the real rule set and exists because the unit file builds it from rule mocks, which is what its docblock says and what an ArgumentCountError once proved. The second named case, itFiltersByGroupAgainstTheRealRuleSet, no longer exists in the file
+R244	wont-fix	the bodies are identical because the round-trip contract is one; the subjects are two independent implementations, PhpSerializer and IgbinarySerializer, neither sharing a base class, and each file is its own implementation's only proof of that value shape
+R245	wont-fix	the same pair as R244, seen from the other side
+R246	wont-fix	the same as R244 for the integer round trip
+R247	wont-fix	the same pair as R246, seen from the other side
+R268	fixed	5e11234e deleted ChromeTracingExporterTest::itExportsValidJson: itExportsSingleSpan in the same file decodes the same single-span export and reads its fields, so an output that does not decode fails there first
+R269	fixed	5e11234e deleted JsonExporterTest::itExportsValidJson for the same reason
