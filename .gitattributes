@@ -19,6 +19,20 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /finding-gate/**        export-ignore
 /input-doors/**         export-ignore
 /promise-effect/**      export-ignore
+
+# The HTML report is an npm project living inside the PSR-4 root. A consumer
+# needs only the four assets HtmlFormatter reads at runtime; before these lines
+# the dist package carried 33 entries under it, including the eight vitest files,
+# the sources they test, the lockfile and the vite config. Measured with
+# `git archive --worktree-attributes`: 33 -> 6. The four that stay are load-bearing,
+# so this is a list of what leaves, never an export-ignore on the tree.
+/src/Reporting/Template/src/              export-ignore
+/src/Reporting/Template/tests/            export-ignore
+/src/Reporting/Template/scripts/          export-ignore
+/src/Reporting/Template/package.json      export-ignore
+/src/Reporting/Template/package-lock.json export-ignore
+/src/Reporting/Template/vite.config.js    export-ignore
+/src/Reporting/Template/dev.html          export-ignore
 /defect-ledger/**       export-ignore
 /benchmark-results/     export-ignore
 /coverage/              export-ignore

@@ -392,6 +392,11 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Fixed
 
+- The composer package no longer carries the HTML report's JavaScript sources,
+  its eight vitest files, the lockfile, the vite config or `dev.html`. A consumer
+  receives the four assets the report is rendered from and nothing else — 33
+  entries under that tree became 6.
+
 - The Docker image documented in the quick start now builds and runs. Both
   `docker build -t qmx .` and the `docker run ... qmx check src/` that follows
   it had been broken since the first release: `composer.lock` was excluded from
