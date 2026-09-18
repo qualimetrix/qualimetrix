@@ -171,12 +171,18 @@ def main():
     # own report, a new control) and legitimately removes them, and reporting
     # every such path would drown the signal in work the package was asked to do.
     #
+    # Every endpoint `-M` already paired is subtracted from both sides, so this
+    # arm speaks only about the pairs the loop above could not see. Without that
+    # subtraction a detected rename is reported twice — once as a rename and once
+    # here, under a sentence saying git did not detect it, which is false of
+    # every line it would print about a pair git had in fact detected.
+    #
     # What stays invisible, stated rather than left to be discovered: a
     # relocation that also *renames* the file. Nothing here pairs its two halves,
     # and neither does git once the content has drifted.
     base_tracked = set(git("ls-tree", "-r", "--name-only", arguments.base).split("\n")) - {""}
-    expected_gone = {row["current"] for row in mine}
-    expected_new = {row["target"] for row in mine}
+    expected_gone = {row["current"] for row in mine} | {rename[0] for rename in renamed}
+    expected_new = {row["target"] for row in mine} | {rename[1] for rename in renamed}
     gone = {path for path in base_tracked - tracked if path not in expected_gone}
     appeared = {path for path in tracked - base_tracked if path not in expected_new}
     arrivals = {}

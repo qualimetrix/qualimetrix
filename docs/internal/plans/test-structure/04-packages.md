@@ -610,7 +610,11 @@ next control that does need a group will need it.
 - **Governance count is 748 + N**, where N is this control's own case count measured by
   `--list-tests`. The stage's 748 was measured before this control existed and stops
   being the expected value the moment it lands. Measured: **N = 9, total 757**, with the
-  other five suites unchanged at 6705 / 383 / 152 / 1029 / 179. Separately, the bare
+  other five suites unchanged at 6705 / 383 / 152 / 1029 / 179. **Tooling later
+moved 179 to 181**, when the review's second round asked for a tracked control
+behind two generator refusals this stage added: they had been observed to refuse
+by hand, and nothing kept them working. Every other table in this plan quotes the
+179 that was true when it was written. Separately, the bare
   `--list-tests` figure the generator writes into `test-phpunit-suites.txt` moves 750 to
   759 — a different measurement of the same suite, differing by the two `live-freshness`
   cases the runner excludes, and not a discrepancy.

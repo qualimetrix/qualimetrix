@@ -74,6 +74,16 @@ full account is in [01](01-suite-integrity.md).
 | [05](05-content-defects.md)                             | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
 | [06](06-governance-subject-groups.md)                   | `SolePrimitiveOwnership` is split  | 7 controls                                  | 04             |
 
+**Landed:** 01, 02 and 03 are in `main` (`52eae218`, `c49fc0b4`, `e15c7f42`).
+**04 is executed on `x30-stage-04-subject-layout` and is not merged** — the role
+buckets are gone, every test class sits at its manifest owner, and the invariant
+is a control in `governance/TestSuiteHygiene/` rather than a batch of moves.
+Suite counts after it: 6705 / 383 / 152 / 1029 / 179 / 757, the last of which is
+748 plus the nine cases the new control adds. What 04 hands on is written in its
+packages file, not here; the two entries stage 05 must read before re-deriving
+its own population are the three capped exception lists and the fourteen
+inventory rows that promise a relocation no package is named to perform.
+
 **The stages are not independent, and the first draft claimed they were.**
 Measured intersections: 39 ledger files also appear in the relocation map, 42
 also carry a controls verdict, 66 are touched by some other stage. Of the 78

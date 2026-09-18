@@ -159,6 +159,103 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         });
     }
 
+    /**
+     * A test class whose path names two levels is refused by
+     * `failUnownedTestClass()` with a sentence of its own, rather than published
+     * under an owner parsed from whichever level the walk met first. No path in
+     * the tree names two levels, so that branch has an empty population and
+     * nothing but a hand plant has ever executed it -- and a refusal that never
+     * fires reads from the outside exactly like one that cannot.
+     *
+     * The probe directory has to be a real level segment under a real manifest
+     * owner, or the parse refuses it earlier for the wrong reason.
+     */
+    #[Test]
+    public function itFailsWhenATestClassNamesTwoLevels(): void
+    {
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $directory = $projectRoot . '/tests/Core/Unit/Integration';
+            $probePath = $directory . '/GuardProbeTest.php';
+
+            self::assertDirectoryDoesNotExist($directory);
+            self::assertTrue(mkdir($directory));
+            self::assertNotFalse(file_put_contents($probePath, <<<'PHP'
+                <?php
+
+                declare(strict_types=1);
+
+                namespace Qualimetrix\Tests\Core\Unit\Integration;
+
+                use PHPUnit\Framework\Attributes\Test;
+                use PHPUnit\Framework\TestCase;
+
+                final class GuardProbeTest extends TestCase
+                {
+                    #[Test]
+                    public function itIsNeverActuallyRun(): void
+                    {
+                        self::assertTrue(true);
+                    }
+                }
+
+                PHP));
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ], $projectRoot);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString(
+                'tests/Core/Unit/Integration/GuardProbeTest.php names 2 of Unit, Integration, Functional,'
+                . ' and a test file names exactly one',
+                $output,
+            );
+        });
+    }
+
+    /**
+     * `assertTestOwnersAreManifestOwners()` refuses a row touching `tests/`
+     * whose owner is neither a manifest owner nor one of the counted
+     * `NON_MANIFEST_TEST_OWNERS` allowances. Every row in the tree takes one of
+     * those two paths, so the refusing branch has no live population either --
+     * the counted half of the same check runs on every row, this half runs on
+     * none.
+     *
+     * The `.gitkeep` is the cheapest way in: `classifyOwner()` publishes the
+     * non-owner `legacy-placeholder` for one by design. What this proves is the
+     * refusal and not the placeholder, so an edit that retires that branch owes
+     * this control another shape rather than its deletion.
+     */
+    #[Test]
+    public function itFailsWhenARowUnderTestsPublishesANonManifestOwner(): void
+    {
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $directory = $projectRoot . '/tests/Probe';
+
+            self::assertDirectoryDoesNotExist($directory);
+            self::assertTrue(mkdir($directory));
+            self::assertNotFalse(file_put_contents($directory . '/.gitkeep', ''));
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ], $projectRoot);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString(
+                'legacy-placeholder is not one of the',
+                $output,
+            );
+            self::assertStringContainsString(
+                'manifest owners, and 1 row(s) under tests/ publish it: tests/Probe/.gitkeep',
+                $output,
+            );
+        });
+    }
+
     private function sourcePath(string $filename): string
     {
         $paths = glob($this->root() . '/src/Infrastructure/DependencyInjection/{Configurator,CompilerPass}/' . $filename, \GLOB_BRACE);

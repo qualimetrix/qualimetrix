@@ -595,3 +595,278 @@ All six pinned counts hold. `git status --porcelain` lists ten modified files �
 the generator, three governance files, three stage-04 measurement scripts,
 `04-packages.md` and the two regenerated TSVs — plus this untracked review
 directory, and nothing else.
+
+---
+
+# Round 2 — the three findings of `findings-round-2.md`
+
+Material: the same branch, one round-2 review of commit `d0acd677`. Three
+findings, all MEDIUM, all confirmed, none blocking. The four hypotheses the
+reviewer refuted are re-measured at the end rather than cited.
+
+## claude-r2-01 — the stray-move arm fired on moves git *does* detect
+
+**The cure.** Arm 6b subtracts every endpoint rename detection already paired
+before it pairs anything of its own: the `renamed` set the arm above it computes
+is unioned into `expected_gone` (its sources) and `expected_new` (its targets).
+The arm now speaks only about pairs `-M` could not see, which is what its
+sentence claims and what it was added for. One paragraph of the comment above it
+says so, in place of leaving the subtraction to be inferred.
+
+**Rejected alternative.** Keeping the pairing as it was and weakening the
+sentence to "git may or may not report this as a rename". It is cheaper and it
+is worse twice over: the duplicate line stays, and an arm whose whole purpose is
+to make one specific blind spot visible would stop naming the blind spot. The
+finding is that the sentence and the code disagree; the code is the half that was
+right about what the arm is for.
+
+**Verification — it still refuses a genuine move-plus-heavy-edit.** Plant:
+`tests/Analysis/Evidence/Size/Unit/LocCollectorTest.php` moved to `…/Unit/Deep/`
+with its body replaced, `git add`ed so the tracked sets see it (the oracle reads
+`git ls-files`, so an unstaged plant is invisible to every arm). git's own view
+first:
+
+```
+$ git diff --name-status -M ef090d27 | grep LocCollectorTest
+A	tests/Analysis/Evidence/Size/Unit/Deep/LocCollectorTest.php
+D	tests/Analysis/Evidence/Size/Unit/LocCollectorTest.php
+```
+
+and the oracle, 4 disagreements, the plant among them:
+
+```
+$ python3 …/stage-04/move-oracle.py --package=P3 --base=ef090d27
+4 disagreement(s):
+  …
+  tests/Analysis/Evidence/Size/Unit/LocCollectorTest.php ->
+  tests/Analysis/Evidence/Size/Unit/Deep/LocCollectorTest.php: a move the map does not name.
+  git reports it as a delete and an add, so rename detection does not see it
+```
+
+**Verification — it stays quiet on an ordinary rename.** Plant reverted, at HEAD
+the same command now prints **3** disagreements where it printed 4, and the
+`FindingFactory` move — `R098` to git — appears once, under the arm that is true
+about it:
+
+```
+3 disagreement(s):
+  tests/Analysis/Finding/Support/FindingFactory.php -> tests/Analysis/Policy/Baseline/Support/FindingFactory.php: a rename the map does not name
+  tests/Analysis/Policy/Architecture/Integration/UnmatchedExcludeIntegrationTest.php -> …/UnmatchedLayerExcludeIntegrationTest.php: a rename the map does not name
+  tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedExcludeIntegrationTest.php -> …/UnmatchedDiscoveryExcludeIntegrationTest.php: a rename the map does not name
+package P3: 11 rows, allowance now 0
+exit=1
+```
+
+Round 1's closing note — "at HEAD it reports 4 disagreements for P3" — reads 3
+from here on, and for the same reason: three admitted P6 exceptions, each named
+once.
+
+## claude-r2-02 — the refusal was wider than intended and named the wrong cause
+
+**The cure, half one: the predicate moved off the individual claim.** The throw
+is now `if ($owners === [])` after the resolution loop, so it fires when the
+manifest resolves *no* claim of the file, not when it fails to resolve one of
+them. A file covering one class the manifest declares and one it does not is
+judged on the claim that resolves: part 3 already asks "for at least one", and a
+single resolving claim answers it completely, so aborting the scan over the other
+name refuses a path nothing is wrong with. The consequence is stated rather than
+left to be found — the unresolvable claim is dropped — in the class docblock,
+which is rewritten as two paragraphs (the refusal, then the predicate) in place
+of the one that argued for "any".
+
+**The cure, half two: the message names the cause this repository will meet.**
+Verified before writing it: **nothing writes
+`docs/internal/modular-architecture-manifest.json`** — no script in `scripts/`
+emits it, it is hand-maintained, and
+`generate-modular-architecture-production-inventory.php` only *checks* it against
+the production AST. So the reviewer's phrasing "the manifest has not been
+regenerated" is loose, and "regenerate the manifest" would have been a fourth
+wrong cure in a message whose defect is naming wrong cures. The sentence names
+the command that settles the cause and stops there: a first draft also said
+`composer check` reaches that group only after the tests, which is true today and
+is read off `composer.json` — a class asserting a fact about the environment it
+cannot check is r2-01's defect with the roles swapped, so it was cut.
+
+It answers the second half of the fix direction explicitly: a claim on a class
+outside `src/` is **never** legitimate, said in the sentence rather than left to
+be inferred, because the manifest and the `src/` class-likes are the same set in
+both directions.
+
+**Rejected alternative.** Keeping the wide predicate and adding an opt-out —
+a fourth exception list, or an `#[CoversClass]` allow-list beside
+`NON_MANIFEST_TEST_OWNERS` — so that a partial file could declare itself
+legitimate. It buys nothing the narrow predicate does not: the file with a
+resolving claim needs no excuse, and the file with none has no path question to
+answer. It also costs a list with a ceiling that `derive` would have to write,
+and the DoD pins Governance at 757 cases.
+
+**Verification — the narrowing, on the real corpus.** Plant: a second
+`#[CoversClass(\Qualimetrix\Nobody\Stranger::class)]` beside the existing
+`#[CoversClass(AbsolutePath::class)]` on
+`tests/Core/Path/Unit/AbsolutePathTest.php`. Measured both ways on that one
+plant rather than argued: with the pre-fix predicate (`$undeclared !== []`)
+temporarily restored, the group is `There were 9 errors` — the scan aborted over
+a file whose first claim answered the question. With the narrowed predicate the
+whole group is green, the file judged on the claim that resolves:
+
+```
+$ vendor/bin/phpunit --testsuite Governance --filter TestPathsNameTheirSubjectTest
+OK (9 tests, 29 assertions)
+```
+
+**Verification — the throw still fires when nothing resolves.** Same file, the
+resolvable claim *replaced* by the stranger rather than joined by it — eight of
+the nine cases error with the new sentence (the ninth is the handed-in-facts
+probe, which by design never touches the corpus):
+
+```
+There were 8 errors:
+LogicException: tests/Core/Path/Unit/AbsolutePathTest.php covers Qualimetrix\Nobody\Stranger, and
+the manifest declares none of them. Under tests/ a #[CoversClass] names production code, and the
+manifest declares exactly the class-likes under src/, so a claim on a class it does not carry is
+never a legitimate one. Usually the class is new in src/ and
+docs/internal/modular-architecture-manifest.json has no entry for it yet — `composer
+architecture:check` refuses that by name, and is the check to run first. Otherwise the name is stale
+or mistyped. None of these is a question about the path.
+```
+
+Both plants reverted. The probe in
+`TestPathsNameTheirSubjectTest::itRefusesEachWayOnThePathsItIsGiven` is rewritten
+to the same pair — the all-unresolvable file refused, the partial file answering
+`exact` — and its comment with it; no `#[Test]` was added or removed. The
+list-C bullet in `SubjectPathExceptions` is rewritten too, because "a claim the
+manifest cannot resolve is refused before any verdict" stopped being the true
+sentence about the entry condition: it is now "a file whose every claim".
+
+**One consequence, not a separate finding.** With the throw leaving at least one
+resolved claim behind it, PHPStan proves `$coveredOwners !== []` always true and
+refuses the redundant conjunct at level 8. It is removed, with the reason written
+where the asymmetry would otherwise read as an oversight.
+
+**Exception lists untouched**, which is what the DoD asks the narrowing to prove
+about itself: `git diff --exit-code governance/TestSuiteHygiene/subject-path-exceptions.php`
+is empty, and `itCarriesNoStaleExceptionRow` is the live witness that no member
+moved — a widening that had been absorbing a real case would have reddened it.
+
+## claude-r2-03 — two new generator refusals nothing tracked proved bite
+
+**The cure.** Two cases added to
+`scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`,
+in the shape its four existing cases use — an isolated project, a planted input,
+the generator run with `--check`, a non-zero exit and the sentence asserted:
+
+- `itFailsWhenATestClassNamesTwoLevels` plants
+  `tests/Core/Unit/Integration/GuardProbeTest.php`. The probe directory has to be
+  a real level under a real manifest owner, or the parse refuses it earlier for
+  the wrong reason and the control never reaches the branch it is about.
+- `itFailsWhenARowUnderTestsPublishesANonManifestOwner` plants
+  `tests/Probe/.gitkeep`. `classifyOwner()` publishes the non-owner
+  `legacy-placeholder` for a `.gitkeep` by design, which is the cheapest live
+  route into the `$unknown` arm; the docblock says so, so that an edit retiring
+  that branch owes the control another shape rather than its deletion.
+
+**Rejected alternative.** Giving the two branches a live population instead — a
+tracked `.gitkeep` and a two-level path carried under some allowance — so that
+every run exercises them. That is the counted half's design, and it does not
+transfer: both branches exist to refuse a shape the tree must not contain, so a
+population for them is a tree that is already wrong.
+
+**Verification — both cases pass:**
+
+```
+$ vendor/bin/phpunit --filter 'itFailsWhenATestClassNamesTwoLevels|itFailsWhenARowUnderTestsPublishesANonManifestOwner' \
+    scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php
+OK (2 tests, 38667 assertions)
+```
+
+**Verification — both cases bite.** Passing is not the claim; being reddened by
+the breakage they guard is. Each refusal was disarmed in the generator in turn
+and the matching case re-run. Removing the `$unknown` collection:
+
+```
+1) …::itFailsWhenARowUnderTestsPublishesANonManifestOwner
+Failed asserting that 'Generated artifact is stale: …/test-ownership.tsv\n'
+contains "legacy-placeholder is not one of the".
+```
+
+Removing the two-level `fail()` from `failUnownedTestClass()`, which drops the
+path onto the sentence below it:
+
+```
+1) …::itFailsWhenATestClassNamesTwoLevels
+Failed asserting that 'tests/Core/Unit/Integration/GuardProbeTest.php names no test level, so it
+declares no owner. …' contains "…names 2 of Unit, Integration, Functional, and a test file names
+exactly one".
+```
+
+Both mutations reverted with `git checkout --`. The isolated project copies the
+generator's *source*, so a mutation reaches it; the symlinked `vendor` cannot
+mask this one.
+
+## Counts
+
+**Tooling moves 179 → 181**, two cases, as intended. Its assertion count moves
+with it, from 39112 to roughly 77.8k, and is not a number to pin: each
+isolated-project case asserts once per copied file, so it drifts with whatever
+the fixture roots hold at the moment of the run (77797 and 77789 on two runs of
+this tree). The case count is the stable figure. The five other suite *counts* are unchanged at 6705 / 383 / 152 / 1029 /
+757, from the aggregate:
+
+```
+===== PHPUnit suite: Unit (exit 0)           =====  OK (6705 tests, 16633 assertions)
+===== PHPUnit suite: Integration (exit 0)    =====  OK (383 tests, 2199 assertions)
+===== PHPUnit suite: Functional (exit 0)     =====  OK (152 tests, 486 assertions)
+===== PHPUnit suite: Infrastructure (exit 0) =====  Tests: 1029, Assertions: 3529, Skipped: 1
+===== PHPUnit suite: Tooling (exit 0)        =====  OK (181 tests, 77789 assertions)
+===== PHPUnit suite: Governance (exit 0)     =====  OK (757 tests, 15537 assertions)
+Checked modular-architecture governance: 955 declarations, 37 semantic-owner layers,
+0 seams, 73 exact internal grants -> 13 coarse edges.
+Checked 926 artifacts, 120 fixture directories, 726 PHPUnit classes, and 9209 expanded cases.
+exit=0
+```
+
+Governance loses one *assertion* (15538 → 15537) and no case: the rewritten probe
+is one throw asserted twice plus one verdict compared, where it was a two-element
+loop asserting twice per element.
+
+The generated artifacts move with the two new cases and nothing else:
+`test-ownership.tsv` records 5 discovered cases for
+`ModularArchitectureGeneratorRefusalTest.php` where it recorded 3,
+`test-topology.tsv` records `phpunit_ids 9209` where it recorded 9207, and the
+two new exact ids appear in `test-phpunit-discovery.txt` /
+`test-phpunit-suites.txt`. `composer architecture:generate` wrote them; nothing
+else in the four files changed.
+
+## What round 2 proved clean, re-measured
+
+- **Suite classification unchanged.** `composer architecture:check` exit 0 is
+  that check and is named as the decision: `--check` re-derives `current_suite`
+  for every path and diffs it against the tracked `test-ownership.tsv`, and
+  `assertSuiteClassifierAgreesWithPhpunit()` runs inside the same invocation. No
+  row's suite moved; the only diff is the case count named above.
+- **The four owner-parse implementations still agree.** Re-run, not cited: a
+  scratch script imports `parse_owner` from `move-oracle.py` and `p0-oracle.py`
+  as modules, extracts `parseOwnerFromTestPath()` and `testLevelSegments()` from
+  the generator by source (it executes on include), and reads
+  `TestSubjectPaths::judge()` through its verdicts — an empty owner table turns a
+  no-single-level parse into `level` and anything else into `unknown-owner`, and
+  a one-entry table naming the owner the other three claim turns agreement into
+  `no-coverage`. Over every tracked file under `tests/` plus the ten awkward
+  shapes the round-1 brief names: `770 paths, 4 implementations, 0
+  disagreement(s)`. The script was itself controlled — one parser monkeypatched
+  to a constant gives `770 disagreement(s)`, so a silent agreement is not what
+  0 means here.
+
+## Commands run
+
+```
+python3 …/stage-04/move-oracle.py --package=P3 --base=ef090d27   # exit 1, three P6 exceptions
+vendor/bin/phpunit --filter … scripts/modular-architecture/tests/…RefusalTest.php  # exit 0
+vendor/bin/phpunit --testsuite Governance --filter TestPathsNameTheirSubjectTest   # exit 0
+composer architecture:generate                   # exit 0, 9209 expanded cases
+composer cs-check                                # exit 0
+composer phpstan                                 # exit 0, 1846 files
+composer architecture:check                      # exit 0
+vendor/bin/phpunit --testsuite Tooling           # exit 0, 181 tests
+composer check                                   # run last, tree otherwise quiet
+```

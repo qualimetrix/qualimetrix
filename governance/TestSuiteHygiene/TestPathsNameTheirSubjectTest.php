@@ -246,23 +246,22 @@ final class TestPathsNameTheirSubjectTest extends TestCase
             TestSubjectPaths::EXACT,
             self::probe('tests/Probe/Unit/FlatTest.php', ['Qualimetrix\Other\Adapter\Command', 'Qualimetrix\Probe\Flat'])['verdict'],
         );
-        // A claim the manifest does not declare is not a verdict at all: it used
-        // to fall through to not-a-prefix and take a slot on that list, under a
-        // refusal telling the reader to rename a directory. Refused on any such
-        // claim, not only when every claim is one — otherwise the partial case
-        // keeps dropping a claim in silence.
-        foreach ([
-            ['Qualimetrix\Nobody\Stranger'],
-            ['Qualimetrix\Probe\Flat', 'Qualimetrix\Nobody\Stranger'],
-        ] as $claims) {
-            try {
-                self::probe('tests/Probe/Unit/StrangerTest.php', $claims);
-                self::fail('A claim outside the manifest was judged rather than refused: ' . implode(', ', $claims));
-            } catch (LogicException $refusal) {
-                self::assertStringContainsString('Qualimetrix\Nobody\Stranger', $refusal->getMessage());
-                self::assertStringContainsString('the manifest does not declare', $refusal->getMessage());
-            }
+        // A file whose every claim the manifest cannot resolve is not a verdict
+        // at all: it used to fall through to not-a-prefix and take a slot on
+        // that list, under a refusal telling the reader to rename a directory.
+        try {
+            self::probe('tests/Probe/Unit/StrangerTest.php', ['Qualimetrix\Nobody\Stranger']);
+            self::fail('A file whose every claim lies outside the manifest was judged rather than refused.');
+        } catch (LogicException $refusal) {
+            self::assertStringContainsString('Qualimetrix\Nobody\Stranger', $refusal->getMessage());
+            self::assertStringContainsString('the manifest declares none of them', $refusal->getMessage());
         }
+        // One claim that does resolve answers part 3 by itself, so the file is
+        // judged on that claim rather than aborting the scan over the other name.
+        self::assertSame(
+            TestSubjectPaths::EXACT,
+            self::probe('tests/Probe/Unit/FlatTest.php', ['Qualimetrix\Probe\Flat', 'Qualimetrix\Nobody\Stranger'])['verdict'],
+        );
 
         // The two ways a file states no subject, which are not the same statement.
         self::assertSame(

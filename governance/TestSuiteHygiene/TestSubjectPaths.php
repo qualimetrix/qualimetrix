@@ -44,13 +44,22 @@ use LogicException;
  * a claim written to silence this control rather than to state what the test
  * does is a lie in the test, which no path rule can see and review can.
  *
- * **A `#[CoversClass]` that the manifest does not declare is not judged, it is
- * refused.** Under `tests/` a coverage claim names production code, so a name
- * the manifest has never heard of is stale, mistyped, or points at a class that
- * belongs in `src/` — and none of those is a question about the path. It used
- * to fall through to `not-a-prefix` and take a slot on that list under a
- * refusal telling the reader to rename a directory, which would not have cured
- * it. Measured at the time of writing: 0 of 759 claims in the tree.
+ * **A file whose every `#[CoversClass]` the manifest does not declare is not
+ * judged, it is refused.** Under `tests/` a coverage claim names production
+ * code, and the manifest declares exactly the class-likes under `src/`, so a
+ * claim on a class it does not carry is never a legitimate one: the class is
+ * new in `src/` and has no manifest entry yet, or the name is stale or
+ * mistyped. None of those is a question about the path. It used to fall through
+ * to `not-a-prefix` and take a slot on that list under a refusal telling the
+ * reader to rename a directory, which would not have cured it either.
+ *
+ * **The refusal asks about the claims together, not about each claim.** A
+ * single claim that does resolve answers part 3 by itself — the same "for at
+ * least one" the paragraph above rests on — so a file naming its own subject
+ * beside a name the manifest lacks is judged on the claim that resolves, and
+ * the other is dropped. Refusing on any unresolvable claim would abort the whole
+ * scan over a file whose verdict was never in question. Measured at the time of
+ * writing: 0 of 759 claims in the tree, so both forms are silent on it today.
  *
  * **The asymmetry, stated rather than left for the next reader: this validates
  * paths against owners, never owners against paths.** `Core.Profiler` is a
@@ -287,14 +296,18 @@ final class TestSubjectPaths
             $owners[$class] = $coveredOwner;
         }
 
-        if ($undeclared !== []) {
+        if ($owners === []) {
             throw new LogicException(\sprintf(
-                '%s claims to cover %s, which the manifest does not declare. Under %s/ a #[CoversClass] names'
-                . ' production code and production code is what the manifest declares, so this is a stale name,'
-                . ' a typo, or a class that belongs in src/ — none of which part 3 can be asked about.',
+                '%s covers %s, and the manifest declares none of them. Under %s/ a #[CoversClass] names'
+                . ' production code, and the manifest declares exactly the class-likes under src/, so a claim'
+                . ' on a class it does not carry is never a legitimate one. Usually the class is new in src/'
+                . ' and %s has no entry for it yet — `composer architecture:check` refuses that by name, and'
+                . ' is the check to run first. Otherwise the name is stale or mistyped. None of these is a'
+                . ' question about the path.',
                 $path,
                 implode(' + ', $undeclared),
                 self::ROOT,
+                self::MANIFEST,
             ));
         }
 
@@ -320,7 +333,9 @@ final class TestSubjectPaths
             return ['verdict' => self::PREFIX, 'detail' => self::spell($remainder)];
         }
 
-        if ($coveredOwners !== [] && !isset($coveredOwners[$owner])) {
+        // No emptiness check beside the lookup: the throw above leaves at least
+        // one resolved claim, so there is always an owner to name back here.
+        if (!isset($coveredOwners[$owner])) {
             $names = array_map(
                 static fn(string $path): string => $ownerPaths[$path] ?? $path,
                 array_keys($coveredOwners),

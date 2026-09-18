@@ -32,9 +32,11 @@ use Throwable;
  *   namespace. Every current member truncates in the *middle* — `Unit/Collection/`
  *   against an actual `Contract/Collection` — which a reader scanning the tree
  *   does not notice and a prefix test does. That entry condition is now true by
- *   construction: a claim the manifest cannot resolve is refused by
- *   {@see TestSubjectPaths::judge()} before any verdict, where it used to land
- *   here and spend one of four slots on a file this definition excludes.
+ *   construction: a file whose every claim the manifest cannot resolve is
+ *   refused by {@see TestSubjectPaths::judge()} before any verdict, where it
+ *   used to land here and spend one of four slots on a file this definition
+ *   excludes. A file with one claim that does resolve reaches a verdict on that
+ *   claim, so it can only arrive here with its own owner among the covered ones.
  *
  * **The lists are measured, never typed.** They are written by
  * `php governance/TestSuiteHygiene/derive-subject-path-exceptions.php`, and a
