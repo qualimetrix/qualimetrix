@@ -33,7 +33,7 @@ tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthDimensionCatalogTest.p
 tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php
 tests/Analysis/Evidence/ComputedMetrics/Health/Unit/MetricHintCatalogTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/MetricHintCatalogTest.php
 tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstOffenderEvidenceTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstOffenderEvidenceTest.php
-tests/Analysis/Evidence/ComputedMetrics/Integration/BenchmarkConsumersCoverageTest.php	1	moved-rename-only	scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php
+tests/Analysis/Evidence/ComputedMetrics/Integration/BenchmarkConsumersCoverageTest.php	1	adjudicated	scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php
 tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricAnalysisTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricAnalysisTest.php
 tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricContributionReaderTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricContributionReaderTest.php
 tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleOptionsTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleOptionsTest.php
@@ -85,7 +85,7 @@ tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	1	moved-a
 tests/Analysis/Finding/Integration/ChannelPresentationCoverageTest.php	1	moved-agreed	governance/Channel/ChannelPresentationCoverageTest.php
 tests/Analysis/Finding/Integration/ChannelShapeNotDeclaredByChannelTopologyTest.php	1	moved-agreed	governance/Channel/ChannelShapeNotDeclaredByChannelTopologyTest.php
 tests/Analysis/Finding/Integration/ChannelSuggestionTieTest.php	1	at-path	tests/Analysis/Finding/Integration/ChannelSuggestionTieTest.php
-tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	1	ambiguous-heirs	governance/Channel/ConfigurationErrorClassificationTopologyTest.php|tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
+tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	1	adjudicated	governance/Channel/ConfigurationErrorClassificationTopologyTest.php|tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
 tests/Analysis/Finding/Integration/RuleRemediationMinutesCoverageTest.php	1	moved-agreed	governance/RuleDeclaration/RuleRemediationMinutesCoverageTest.php
 tests/Analysis/Finding/Support/FindingFactory.php	1	moved-agreed	tests/Analysis/Policy/Baseline/Support/FindingFactory.php
 tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php	1	at-path	tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php
@@ -104,7 +104,7 @@ tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	1	at-path	tes
 tests/Analysis/Finding/Unit/RuleOptionWordSetDeclarationAgreementTest.php	1	moved-agreed	governance/RuleOptionKeys/RuleOptionWordSetDeclarationAgreementTest.php
 tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryCompletenessTest.php	1	moved-agreed	governance/ThresholdKeys/RuleThresholdKeyGroupRegistryCompletenessTest.php
 tests/Analysis/Policy/Architecture/Integration/LayerViolationIntegrationTest.php	1	at-path	tests/Analysis/Policy/Architecture/Integration/LayerViolationIntegrationTest.php
-tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php	1	WITNESSES-DISAGREE	scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php|governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php
+tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php	1	adjudicated	scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php|governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php
 tests/Analysis/Policy/Architecture/Integration/Phase1ConfigCompatibilityTest.php	1	at-path	tests/Analysis/Policy/Architecture/Integration/Phase1ConfigCompatibilityTest.php
 tests/Analysis/Policy/Architecture/Unit/ArchitectureInternalTopologyTest.php	1	moved-agreed	governance/ModularOwnership/ArchitectureInternalTopologyTest.php
 tests/Analysis/Policy/Baseline/Functional/BaselineCommandOptionSurfaceTest.php	1	at-path	tests/Analysis/Policy/Baseline/Functional/BaselineCommandOptionSurfaceTest.php
@@ -114,14 +114,14 @@ tests/Analysis/Policy/Baseline/Integration/ResidualLimitationsCoverageTest.php	1
 tests/Analysis/Policy/Baseline/Unit/BaselineChannelRenamerTest.php	1	at-path	tests/Analysis/Policy/Baseline/Unit/BaselineChannelRenamerTest.php
 tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php	1	at-path	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php
 tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php	1	at-path	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php
-tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php	1	ambiguous-heirs	governance/Channel/ChannelRenameMapTest.php|tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php
+tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php	1	adjudicated	tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php
 tests/Analysis/Policy/Baseline/Unit/ChannelRenameTsvGateAgreementTest.php	1	moved-agreed	scripts/finding-gate/tests/ChannelRenameTsvGateAgreementTest.php
 tests/Analysis/Policy/Baseline/Unit/ConfigurationErrorChannelRejectionTest.php	1	at-path	tests/Analysis/Policy/Baseline/Unit/ConfigurationErrorChannelRejectionTest.php
 tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php	2	at-path	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php
 tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php	6	at-path	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php
 tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php	5	at-path	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php
 tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	1	at-path	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php
-tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedExcludeIntegrationTest.php	1	moved-rename-only	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedDiscoveryExcludeIntegrationTest.php
+tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedExcludeIntegrationTest.php	1	adjudicated	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedDiscoveryExcludeIntegrationTest.php
 tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	1	at-path	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php
 tests/Analysis/Run/Unit/Discovery/FinderFileDiscoveryAbsolutePathTest.php	1	at-path	tests/Analysis/Run/Unit/Discovery/FinderFileDiscoveryAbsolutePathTest.php
 tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php	1	at-path	tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php
@@ -130,7 +130,7 @@ tests/Core/Symbol/Unit/CallableKindTest.php	1	at-path	tests/Core/Symbol/Unit/Cal
 tests/Core/Symbol/Unit/FileDeclarationIndexTest.php	1	at-path	tests/Core/Symbol/Unit/FileDeclarationIndexTest.php
 tests/Core/Symbol/Unit/SymbolInfoTest.php	2	at-path	tests/Core/Symbol/Unit/SymbolInfoTest.php
 tests/Functional/Console/Command/HookInstallCommandTest.php	1	moved-agreed	tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php
-tests/Functional/Console/Command/HookStatusCommandTest.php	1	ambiguous-heirs	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php|tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
+tests/Functional/Console/Command/HookStatusCommandTest.php	1	adjudicated	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php
 tests/Functional/Console/Command/HookUninstallCommandTest.php	1	moved-agreed	tests/Infrastructure/Console/Functional/Command/HookUninstallCommandTest.php
 tests/Functional/Reporting/CoverageProjectionFormatterTest.php	1	moved-agreed	tests/Reporting/Functional/CoverageProjectionFormatterTest.php
 tests/Functional/Reporting/JsonShapePreservationTest.php	1	moved-agreed	tests/Reporting/Functional/Formatter/JsonShapePreservationTest.php
@@ -181,11 +181,11 @@ tests/Reporting/FindingProjection/Unit/ConfigurationErrorProjectionTest.php	1	mo
 tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php	1	moved-agreed	tests/Reporting/Unit/FindingProjection/DeclaredChannelFileScopeTest.php
 tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php	1	moved-agreed	tests/Reporting/Unit/FindingProjection/FindingProjectorTest.php
 tests/Reporting/FindingProjection/Unit/ProjectScopedChannelProjectionTest.php	1	moved-agreed	tests/Reporting/Unit/FindingProjection/ProjectScopedChannelProjectionTest.php
-tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	1	ambiguous-heirs	governance/Channel/SarifRuleDescriptorCoverageTest.php|tests/Reporting/Integration/Formatter/Sarif/SarifRuleDescriptorCoverageTest.php
+tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	1	adjudicated	governance/Channel/SarifRuleDescriptorCoverageTest.php
 tests/Reporting/Unit/FindingExclusionShapeRefusalTest.php	2	at-path	tests/Reporting/Unit/FindingExclusionShapeRefusalTest.php
 tests/Reporting/Unit/OutputFormatRefusesUnexecutableValuesTest.php	1	at-path	tests/Reporting/Unit/OutputFormatRefusesUnexecutableValuesTest.php
 tests/Reporting/Unit/OutputFormatResolverTest.php	1	at-path	tests/Reporting/Unit/OutputFormatResolverTest.php
-tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	1	UNRESOLVED	
+tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	1	adjudicated	governance/PlanningRecords/PlanningRecordIsolationTest.php
 tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php	1	moved-agreed	tools/phpstan/tests/BannedStringPathPromotedPropertyRuleTest.php
 tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php	1	moved-agreed	tools/phpstan/tests/BannedStringPathPropertyRuleTest.php
 tests/Unit/Core/Namespace_/NamespaceTreeTest.php	1	moved-agreed	tests/Analysis/Evidence/Measurement/Unit/Contract/NamespaceTreeTest.php
@@ -193,7 +193,7 @@ tests/Unit/Core/Util/GlobSyntaxTest.php	1	moved-agreed	tests/Core/Unit/Util/Glob
 tests/Unit/Core/Util/NamespaceMatcherTest.php	1	moved-agreed	tests/Core/Unit/Util/NamespaceMatcherTest.php
 tests/Unit/Core/VersionTest.php	1	moved-agreed	tests/Core/Unit/VersionTest.php
 tests/Unit/Infrastructure/Console/CheckCommandDefinitionTest.php	1	moved-agreed	tests/Infrastructure/Console/Unit/CheckCommandDefinitionTest.php
-tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php	2	ambiguous-heirs	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php|tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
+tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php	2	adjudicated	tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
 tests/Unit/Infrastructure/Git/GitClientTest.php	1	moved-agreed	tests/Infrastructure/Git/Unit/GitClientTest.php
 tests/Unit/Infrastructure/Git/GitRepositoryLocatorTest.php	2	moved-agreed	tests/Infrastructure/Git/Unit/GitRepositoryLocatorTest.php
 tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php	1	moved-agreed	tests/Infrastructure/Git/Unit/ReportingGitScopeQueryTest.php

@@ -1,13 +1,13 @@
 package	ledger_file	ledger_rows	status	current_heirs
-P0-population	tests/Analysis/Evidence/ComputedMetrics/Integration/BenchmarkConsumersCoverageTest.php	1	moved-rename-only	scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php
-P0-population	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	1	ambiguous-heirs	governance/Channel/ConfigurationErrorClassificationTopologyTest.php|tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
-P0-population	tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php	1	WITNESSES-DISAGREE	scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php|governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php
-P0-population	tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php	1	ambiguous-heirs	governance/Channel/ChannelRenameMapTest.php|tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php
-P0-population	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedExcludeIntegrationTest.php	1	moved-rename-only	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedDiscoveryExcludeIntegrationTest.php
-P0-population	tests/Functional/Console/Command/HookStatusCommandTest.php	1	ambiguous-heirs	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php|tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
-P0-population	tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	1	ambiguous-heirs	governance/Channel/SarifRuleDescriptorCoverageTest.php|tests/Reporting/Integration/Formatter/Sarif/SarifRuleDescriptorCoverageTest.php
-P0-population	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	1	UNRESOLVED	
-P0-population	tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php	2	ambiguous-heirs	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php|tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
+P0-population	tests/Analysis/Evidence/ComputedMetrics/Integration/BenchmarkConsumersCoverageTest.php	1	adjudicated	scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php
+P0-population	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	1	adjudicated	governance/Channel/ConfigurationErrorClassificationTopologyTest.php|tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
+P0-population	tests/Analysis/Policy/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php	1	adjudicated	scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php|governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php
+P1-high	tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php	1	adjudicated	tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php
+P0-population	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedExcludeIntegrationTest.php	1	adjudicated	tests/Analysis/Run/Integration/ExcludeBinding/UnmatchedDiscoveryExcludeIntegrationTest.php
+P5-infrastructure	tests/Functional/Console/Command/HookStatusCommandTest.php	1	adjudicated	tests/Infrastructure/Console/Functional/Command/HookStatusCommandTest.php
+P7-governance-tooling	tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	1	adjudicated	governance/Channel/SarifRuleDescriptorCoverageTest.php
+P0-population	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	1	adjudicated	governance/PlanningRecords/PlanningRecordIsolationTest.php
+P5-infrastructure	tests/Unit/Infrastructure/Console/Command/HookStatusCommandTest.php	2	adjudicated	tests/Infrastructure/Console/Unit/Command/HookStatusCommandTest.php
 P1-high	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionCollectorTest.php	1	at-path	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionCollectorTest.php
 P1-high	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/DecompositionItemTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/DecompositionItemTest.php
 P1-high	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php	1	at-path	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php

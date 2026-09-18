@@ -1,1 +1,7 @@
 row_id	verdict	evidence
+R019	already-fixed	c49fc0b4 split the file: the three AST-based control cases went to governance/Channel/, the four fixture-based build cases stayed under tests/Analysis/Finding/Integration/, and the genre mixing the row records went with the split
+R034	already-fixed	c49fc0b4 and e15c7f42: the generated-projection control sits in governance/ModularOwnership/, the generator's own refusal cases sit beside the generator in scripts/modular-architecture/tests/, and neither heir is under Architecture
+R041	wont-fix	itRecognizesPlanningChronologyOnlyInsideComments feeds the control's comment extractor one string that must match and one that must not; that is the proof the detector can refuse, which this repository requires of its controls and gets by putting the case beside the detector
+R095	already-fixed	e15c7f42 moved the file to scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php, beside the two scripts it runs as subprocesses
+R211	already-fixed	7a89a3ad put both halves of HookStatusCommand under tests/Infrastructure/Console/, one manifest owner; the remaining Unit/Functional pair is the level taxonomy, not two roots
+R212	already-fixed	7a89a3ad renamed both sides of the basename collision, to UnmatchedDiscoveryExcludeIntegrationTest and UnmatchedLayerExcludeIntegrationTest
