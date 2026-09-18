@@ -136,6 +136,10 @@ PHP;
         self::assertSame(66.67, $metrics->get('design.type-coverage.param:App\MixedService'));
         // 0 out of 1 method has return type = 0%
         self::assertSame(0.0, $metrics->get('design.type-coverage.return:App\MixedService'));
+        // The scale is 0-100, not 0-1: on a ratio scale this partial coverage
+        // would read 0.6667, and every threshold configured against the metric
+        // would then silently compare a percentage with a ratio.
+        self::assertGreaterThan(1.0, $metrics->get('design.type-coverage.param:App\MixedService'));
     }
 
     #[Test]
