@@ -65,14 +65,14 @@ full account is in [01](01-suite-integrity.md).
 
 ## Stages
 
-| Stage                                                   | Subject                            | Scope                                       | Depends on     |
-| ------------------------------------------------------- | ---------------------------------- | ------------------------------------------- | -------------- |
-| [01](01-suite-integrity.md)                             | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
-| [02](02-controls-extraction.md)                         | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
-| [03](03-tooling-tests.md) + [packages](03-packages.md)  | Tooling tests move to their code   | 16 files + 2 Python                         | 01, 02         |
-| [04](04-subject-layout.md) + [packages](04-packages.md) | Every test file sits at its owner  | 114 files + 3 named cases                   | 01, 02, 03     |
-| [05](05-content-defects.md)                             | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
-| [06](06-governance-subject-groups.md)                   | `SolePrimitiveOwnership` is split  | 7 controls                                  | 04             |
+| Stage                                                    | Subject                            | Scope                                       | Depends on     |
+| -------------------------------------------------------- | ---------------------------------- | ------------------------------------------- | -------------- |
+| [01](01-suite-integrity.md)                              | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
+| [02](02-controls-extraction.md)                          | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
+| [03](03-tooling-tests.md) + [packages](03-packages.md)   | Tooling tests move to their code   | 16 files + 2 Python                         | 01, 02         |
+| [04](04-subject-layout.md) + [packages](04-packages.md)  | Every test file sits at its owner  | 114 files + 3 named cases                   | 01, 02, 03     |
+| [05](05-content-defects.md) + [packages](05-packages.md) | Ledger defects                     | 219 files, 276 rows                         | 01, 02, 03, 04 |
+| [06](06-governance-subject-groups.md)                    | `SolePrimitiveOwnership` is split  | 7 controls                                  | 04             |
 
 **Landed:** every stage but 05 is in `main` — 01, 02, 03, 04 and 06
 (`52eae218`, `c49fc0b4`, `e15c7f42`, `7a89a3ad`, `666d8679`). The role buckets
