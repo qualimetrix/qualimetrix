@@ -7,34 +7,31 @@ namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope;
 
 /**
- * The roll-call is complete: every capability that declares project-scoped
- * channels is actually asked.
+ * What the assembled scope answers, against channel names written out here.
  *
- * A capability could publish `PROJECT_SCOPED_CHANNELS` and be silently left
- * out of the assembly, which would restore the exclusion bypass this whole
- * mechanism exists to close — and no filter test would notice, because a
- * filter test builds the scope from the declarations directly.
+ * The roll-call — that every capability declaring project-scoped channels is
+ * in the assembly at all — is read off the tree by
+ * {@see \Qualimetrix\Governance\Channel\ProjectScopedChannelRollCallTest}.
+ * It cannot be stated here: listing the declaring capabilities in this file
+ * would be the same list the assembly carries, and the omission it exists to
+ * catch would be edited into both at once.
  */
 #[CoversClass(DeclaredChannelFileScope::class)]
 final class DeclaredChannelFileScopeTest extends TestCase
 {
     #[Test]
-    public function itMarksEveryDeclaredChannelAsProjectScoped(): void
+    public function itMarksAChannelBothCapabilitiesDeclareAsProjectScoped(): void
     {
         $scope = DeclaredChannelFileScope::create();
 
-        foreach (self::declaredKeys() as $key) {
-            self::assertFalse(
-                $scope->isFileScoped(new FindingChannel($key)),
-                \sprintf('%s is declared project-scoped but the assembled scope does not say so', $key),
-            );
-        }
+        self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.layer-violation')));
+        self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.coverage-gap')));
+        self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.circular-dependency')));
     }
 
     #[Test]
@@ -49,14 +46,5 @@ final class DeclaredChannelFileScopeTest extends TestCase
         self::assertTrue($scope->isFileScoped(new FindingChannel(
             LayerPolicyPreparationInterface::PRODUCER_RULE_NAME . '.invented',
         )));
-    }
-
-    /** @return list<string> */
-    private static function declaredKeys(): array
-    {
-        return [
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
-            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
-        ];
     }
 }

@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use ReflectionClass;
+use ReflectionParameter;
 
 #[CoversClass(EmptyDependencyGraph::class)]
 final class EmptyDependencyGraphTest extends TestCase
@@ -87,32 +89,34 @@ final class EmptyDependencyGraphTest extends TestCase
         self::assertSame([], $this->graph->getAllDependencies());
     }
 
+    /**
+     * The roll-call, read off the contract rather than restated here: every
+     * method the graph promises answers emptily, so a method added to the
+     * interface cannot arrive with a non-empty answer on the null object.
+     */
     #[Test]
-    public function itMultipleCallsReturnConsistentResults(): void
+    public function itAnswersEveryMethodTheContractDeclaresWithNothing(): void
     {
-        $classPath = SymbolPath::fromClassFqn('App\Test');
-        // First calls
-        self::assertSame([], $this->graph->getClassDependencies($classPath));
-        self::assertSame(0, $this->graph->getClassCe($classPath));
-        self::assertSame([], $this->graph->getAllClasses());
+        $answered = [];
+        $implementation = new ReflectionClass($this->graph);
 
-        // Second calls - should return same results
-        self::assertSame([], $this->graph->getClassDependencies($classPath));
-        self::assertSame(0, $this->graph->getClassCe($classPath));
-        self::assertSame([], $this->graph->getAllClasses());
-    }
+        foreach ((new ReflectionClass(DependencyGraphInterface::class))->getMethods() as $declared) {
+            $arguments = array_map(
+                static fn(ReflectionParameter $parameter): SymbolPath => str_contains($parameter->getName(), 'namespace')
+                    ? SymbolPath::fromNamespaceFqn('App\\Service')
+                    : SymbolPath::fromClassFqn('App\\Service\\UserService'),
+                $declared->getParameters(),
+            );
 
-    #[Test]
-    public function itDifferentInstancesReturnSameResults(): void
-    {
-        $graph1 = new EmptyDependencyGraph();
-        $graph2 = new EmptyDependencyGraph();
+            $answered[$declared->getName()] = $implementation
+                ->getMethod($declared->getName())
+                ->invokeArgs($this->graph, $arguments);
+        }
 
-        self::assertEquals($graph1->getAllClasses(), $graph2->getAllClasses());
-        self::assertEquals(
-            $graph1->getClassCe(SymbolPath::fromClassFqn('Test')),
-            $graph2->getClassCe(SymbolPath::fromClassFqn('Test')),
-        );
-        self::assertEquals($graph1->getAllDependencies(), $graph2->getAllDependencies());
+        self::assertNotSame([], $answered, 'The contract declared no methods, so this case checked nothing.');
+
+        foreach ($answered as $name => $answer) {
+            self::assertContains($answer, [[], 0], \sprintf('%s() is not empty on the empty graph', $name));
+        }
     }
 }
