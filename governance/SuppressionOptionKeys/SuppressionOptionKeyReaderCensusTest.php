@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Governance\SolePrimitiveOwnership;
+namespace Qualimetrix\Governance\SuppressionOptionKeys;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

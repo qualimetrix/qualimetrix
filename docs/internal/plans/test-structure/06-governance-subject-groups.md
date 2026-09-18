@@ -39,7 +39,7 @@ because they were suspected and cleared:
 | `FrameworkClassificationSiteCountTest`     | `Analysis.Evidence.Coupling` — the mirror of the two call sites stays a mirror |
 | `GlobAlphabetSoleEnumerationTest`          | `Core` — one list of glob characters, not two                                  |
 | `NamespaceMatcherNormalizationSurfaceTest` | `Core` — every call site leaves normalization to the primitive                 |
-| `SuppressionOptionKeyReaderCensusTest`     | `Analysis.Policy.Inline` — one reader of suppression option keys               |
+| `SuppressionOptionKeyReaderCensusTest`     | `Analysis.Finding` — one reader of suppression option keys                     |
 | `TraversalCompletenessTest`                | `Analysis.Evidence.Measurement` — no visitor cuts traversal short              |
 | `VersionRootPackageIndependenceTest`       | `Core` — `Version` does not depend on the root package                         |
 
