@@ -15,8 +15,8 @@ use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
  * is the functional file of the same name, under Functional/Command/.
  *
  * The name is a promise: it is what a user types and what the hook
- * documentation tells them to type. The description was pinned beside it word
- * for word, which promised nothing and broke on rewording.
+ * documentation tells them to type. The description is not, so it is not
+ * pinned here.
  */
 #[CoversClass(HookStatusCommand::class)]
 final class HookStatusCommandTest extends TestCase

@@ -15,9 +15,7 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
  * span tree collected over several phases, and the two export formats read back
  * through `Profiler::export()` rather than through an exporter directly.
  *
- * Every case here works in memory. The one that did not wrote a temporary file
- * with `file_put_contents()` and `rename()` written in the test itself, so no
- * production code took part in the atomicity it claimed to check.
+ * Every case here works in memory.
  */
 #[CoversClass(Profiler::class)]
 #[CoversClass(ProfileSession::class)]

@@ -18,9 +18,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * extra one accepts a value whose report cannot be anything else.
  *
  * It reads a production file's text, which is a claim about this repository
- * rather than about a subject's behaviour, so it lives here. It used to sit in
- * DrillDownBindingTest, where a unit case for one console class also carried a
- * cross-module invariant nothing said it carried.
+ * rather than about a subject's behaviour, so it lives here rather than beside
+ * either of the two classes it compares.
  */
 final class RankedOffenderLevelsAgreeWithTheBuilderTest extends TestCase
 {

@@ -25,9 +25,8 @@ use Symfony\Component\DependencyInjection\Reference;
  * nothing, and no second reader would notice: the channel pass reads the same
  * tag and would be missing the same member. Both failures are therefore loud.
  *
- * The docblock said that and the file carried only the two refusals, so the
- * arrival the refusals exist to protect was the one thing nothing here
- * checked: a pass that dropped every validator on the floor passed both.
+ * The arrival is asserted beside them: a pass that dropped every validator on
+ * the floor would satisfy both refusals.
  */
 #[CoversClass(ConfigurationValidatorCompilerPass::class)]
 final class ConfigurationValidatorCompilerPassTest extends TestCase

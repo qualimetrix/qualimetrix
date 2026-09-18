@@ -369,9 +369,7 @@ final class ResultPresenterTest extends TestCase
      * outside it has no relative form and keeps the absolute one.
      *
      * The method is private and its result reaches no public surface of this
-     * class, so reflection is the only oracle there is. It used to be reached
-     * this way from a CheckCommand functional case, which put a probe of one
-     * class's private method behind a whole CLI run.
+     * class, so reflection is the only oracle there is.
      */
     #[Test]
     public function itRelativizesProjectPathsInAFailureMessageAndKeepsOutsidersAbsolute(): void
