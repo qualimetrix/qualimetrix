@@ -24,6 +24,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
+use ReflectionProperty;
 
 #[CoversClass(VisitorCallableScope::class)]
 #[CoversClass(VisitorLexicalScope::class)]
@@ -40,10 +41,7 @@ final class VisitorMethodContextTest extends TestCase
 
         foreach (['namespace', 'class', 'member', 'logicalFqn', 'traversalKey', 'kind', 'ordinal'] as $property) {
             try {
-                $write = static function (VisitorCallableScope $target, string $name): void {
-                    $target->{$name} = null;
-                };
-                $write($scope, $property);
+                (new ReflectionProperty(VisitorCallableScope::class, $property))->setValue($scope, null);
                 self::fail(\sprintf('A callable scope accepted a write to %s', $property));
             } catch (Error $error) {
                 self::assertStringContainsString('readonly', $error->getMessage());
