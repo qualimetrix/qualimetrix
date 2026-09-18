@@ -38,7 +38,7 @@ drift the recorded prediction exists to make visible.
 | `never-runs`         | ledger  | not executed                                                                                                   |
 | `weak-oracle`        | **new** | the assertion can fail, but not for the defect the name or docblock promises to catch                          |
 | `brittle-pin`        | **new** | the expectation is an incidental literal — message wording, a name list, a structural snapshot — not behaviour |
-| `state-leak`         | **new** | the case mutates process or static state and does not restore it                                               |
+| `state-leak`         | **new** | the case mutates state the runner does not restore — a static, a singleton, a swapped service — and leaves it  |
 | `undeclared-subject` | **new** | the file carries no `#[CoversClass]`, so it declares no subject at all                                         |
 
 `weak-oracle` is deliberately not `tautology`: a tautology cannot fail at all and
@@ -93,19 +93,48 @@ is the only oracle there is — that is why `R047` is `wont-fix` and not
 this literal changing? Then it is a promise. Would only this test notice? Then it
 is a pin.
 
-**`state-leak` is repaired when the same construct that mutated the state
-restores it, and the restore runs on failure too.** `tearDown()`, or
-`try`/`finally` inside the case — never a restore at the end of a happy path,
-which is exactly the line a failing assertion skips. For the three `chdir()` rows
-(`R042`, `R043`, `R044`) that means capturing `getcwd()` in `setUp()` and
-returning to it in `tearDown()`; for `R182` it means restoring the swapped static
-the same way.
+**`state-leak` covers state the runner does not restore for you, and only
+that.** Statics, singletons, a swapped service, a registry entry, a stream
+wrapper — anything PHPUnit has no hook for. It is repaired when the same
+construct that mutated the state restores it, and the restore runs on failure
+too: `tearDown()`, or `try`/`finally` inside the case, never a restore at the end
+of a happy path, which is exactly the line a failing assertion skips. `R182`,
+which swaps a static on a fixture participant through reflection, is the class's
+specimen.
+
+**The working directory is not in this class, and an earlier draft of this rule
+said it was.** It prescribed capturing `getcwd()` in `setUp()` and returning to
+it in `tearDown()` for the three `chdir()` rows, on the premise that a `chdir()`
+with no restore reaches every later case in the run. The premise is false:
+PHPUnit restores the working directory itself. `TestCase::runBare()` takes
+`getcwd()` at line 496, before the hook methods, and at lines 672-673 — after
+`tearDown()` and outside the try/catch, so a failing case reaches it too —
+`chdir()`s back to it.
+
+That is a fact about the runner, so the rule states how it was established
+rather than asserting it. Two independent witnesses, because reading a source
+and running it can disagree:
+
+```
+sed -n '496p;671,673p' vendor/phpunit/phpunit/src/Framework/TestCase.php
+```
+
+and a probe of four cases in one class and one process: one `chdir()`s away and
+returns, one asserts the original directory, one `chdir()`s away and then fails,
+one asserts the original directory again. Only the deliberate failure fails. The
+directory does not leak, not even out of a failed case.
+
+So `R042`, `R043` and `R044` are `wont-fix`, and the general lesson is the one
+this stage keeps re-learning: **a prescribed cure is a hypothesis until something
+measures it.** This one was written into a repair rule before anyone ran it, and
+it named a defect the runner had already handled.
 
 Done is checkable and the package runs it: **execute the leaking case and then,
 in the same process, a case that depends on the pre-state, in that order.**
-`--filter` over both, or `--order-by=defects`. A repair proved only by the
-repaired file passing alone has proved nothing — the leak was never about that
-file.
+`--filter` over both, or `--order-by=defects`. That is also how a candidate row
+is admitted to this class in the first place — a leak the probe cannot reproduce
+is not a leak. A repair proved only by the repaired file passing alone has proved
+nothing; the leak was never about that file.
 
 **`undeclared-subject` is repaired when the file declares, through
 `#[CoversClass]`, the class its body exercises.** `R166`, `R167`, `R187` each
@@ -155,19 +184,29 @@ both, which is why it is a proof rather than a decoration.
 | -------------------- | ---: |
 | `category-wrong`     | 13   |
 | `misplaced`          | 11   |
-| `wont-fix`           | 8    |
+| `wont-fix`           | 11   |
 | `weak-oracle`        | 8    |
 | `brittle-pin`        | 7    |
 | `name-lies`          | 5    |
-| `state-leak`         | 4    |
 | `dupe`               | 3    |
 | `undeclared-subject` | 3    |
+| `state-leak`         | 1    |
+
+P0a ruled 8 of those `wont-fix`. The other three are `R042`, `R043` and `R044`,
+which P0a called `state-leak` and which measurement withdrew — see the rule
+above. They are counted here because this table is what the tree now says, and
+they are held out of the prediction comparison below, which is about P0a's own
+judgement.
 
 ## The `wont-fix` share against the prediction
 
 `orchestrator-predictions.md` predicted **12-20 rows (20-32%), centre 16**, and
-asked for a row-by-row account of any overshoot. The observed share is **8 rows,
-12.9%** — below the band, so the account owed is the opposite one.
+asked for a row-by-row account of any overshoot. The prediction is about P0a's
+own drift, so it is compared against what P0a ruled and not against what the
+column says today: **8 rows, 12.9%** — below the band, so the account owed is the
+opposite one. (`R042`, `R043` and `R044` became `wont-fix` afterwards, on a
+measurement P0a did not make. Folding them in would move the figure to 11 and
+17.7% by crediting P0a with a call it got wrong in the other direction.)
 
 Three readings of the same 62 rows:
 
@@ -186,8 +225,8 @@ are one shape: a control invariant living inside a unit file, which is precisely
 what `c49fc0b4` moved out of the test tree. That shape dominates the `other`
 notes and would otherwise have been the largest source of dismissals.
 
-The eight dismissals are not one shape and are argued individually in the TSV's
-`reason` column. Four of them — `R015`, `R016`, `R275`, and `R101` for the
+P0a's eight dismissals are not one shape and are argued individually in the
+TSV's `reason` column. Four of them — `R015`, `R016`, `R275`, and `R101` for the
 adjacent reason — share one ruling, stated once here; `R041` is the fifth case of
 it, ruled the same way by the population adjudication rather than here:
 

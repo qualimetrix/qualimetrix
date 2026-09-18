@@ -12,9 +12,9 @@ R024	category-wrong	already-fixed by c49fc0b4: the fragment reading action.yml, 
 R039	misplaced	already-fixed by e15c7f42: the file sits at tools/phpstan/tests/ and declares Qualimetrix\PhpStan\Tests, the namespace that root owns
 R040	misplaced	already-fixed by e15c7f42, as above
 R041	wont-fix	itRecognizesPlanningChronologyOnlyInsideComments is the detector's refusal proof; see population-adjudication.md
-R042	state-leak	chdir() in setUp() with no tearDown() restoring the working directory, so the process state reaches every later test in the run
-R043	state-leak	the same chdir() without a restore, on the functional heir
-R044	state-leak	the same chdir() without a restore
+R042	wont-fix	PHPUnit restores the working directory itself (TestCase::runBare takes getcwd() at line 496 and chdir()s back at 672-673, outside the try/catch), so a chdir() with no restore reaches no later case; P0a assigned state-leak on an unmeasured premise and measurement withdrew it
+R043	wont-fix	the same, on the functional heir
+R044	wont-fix	the same
 R046	category-wrong	a functional file reaching a private ResultPresenter method through ReflectionMethod is a unit case carried at the functional level
 R047	wont-fix	a refusal that names every known key is the promise; the list breaking when a key is added is the control biting, and deriving the expectation from the registry would make it a tautology
 R057	category-wrong	a unit file reading HealthSummaryBuilder.php as text with a regex is a control invariant carried at the unit level
