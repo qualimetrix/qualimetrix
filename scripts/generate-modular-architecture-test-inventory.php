@@ -15,7 +15,13 @@ declare(strict_types=1);
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-const P6_C_BASELINE_PATHS_SHA256 = '818d94bd58fb2ec644dfa6b30db12c1891aaa04f7362e4f1ce993b80085890ae';
+// 65 paths. Stage 05 moved four of them from Unit/ to Integration/ --
+// BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
+// ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
+// not because the set changed: no file entered or left the tree, and the count
+// is the same on both sides of the move. Re-hash only against a diff of the
+// path list; a digest refreshed to make the generator run again asserts nothing.
+const P6_C_BASELINE_PATHS_SHA256 = 'c8620ffa4e9199f0acd82954a306942839a9e5c3ada3e51daa878b2d347867b8';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
