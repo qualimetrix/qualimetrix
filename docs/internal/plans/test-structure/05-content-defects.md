@@ -225,7 +225,13 @@ The verdict vocabulary is exactly three values, and nothing else is a verdict:
   and therefore proves nothing about it.
 - **Every row is re-confirmed against the current body before it is worked**, and
   the verdict says which of the three it got. The ledger describes `585b7c72`.
-- All 24 `high` rows carry `fixed`.
+- **23 of the 24 `high` rows carry `fixed`, and the twenty-fourth carries
+  `already-fixed`.** An earlier draft of this line demanded `fixed` on all
+  twenty-four, which the vocabulary makes impossible for one of them: R129 is
+  the `never-runs` row, stage 01 is recorded as having closed it, and a row
+  closed by an earlier stage takes `already-fixed` by definition. Demanding
+  `fixed` there would have asked the stage either to re-break the test or to
+  write a verdict it had not earned.
 - **Each tautology's replacement is proven by a tracked command, not by prose in
   a report.** The stage adds a controls stand in the shape the repository already
   uses (`composer gate:controls`, `composer directives:controls`): one declared

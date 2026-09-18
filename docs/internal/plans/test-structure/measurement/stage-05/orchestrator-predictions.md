@@ -66,7 +66,9 @@ A package cannot make this prediction, because it cannot attribute a global delt
 to itself while four others are running. So the reconciliation rule is the point
 of the exercise: **each package reports the methods it deleted and the cases it
 added, by name, and the sum of those reports must equal the observed global
-delta.** A difference that no package claims is a lost test, not a rounding error.
+delta.** A difference the reports cannot account for is a question about the
+reports; whether a test file stopped being executed is a different question,
+and the repository answers it mechanically rather than by arithmetic.
 
 ### What moves the count, and what only looks like it does
 
@@ -222,6 +224,23 @@ data-provider rows from a single file — a shape the row-count model did not
 have. The `itDeliberatelyDoesNotProvideCallableMetrics` sub-prediction held
 exactly: ruled legitimate, zero deletions.
 
-A one-case residue between −78 and −77 is not chased by hand across six reports.
-Whether any file stopped being executed is a question the repository already
-answers mechanically, and that control — not this arithmetic — is what settles it.
+The residue between −78 and −77 is one case, and it is report arithmetic: P6's
+own prose miscounted its verdict split (it wrote 6/5/8 where its file carries
+7/5/7), so a one-case slip in the same report is the likeliest source and is
+not worth six re-audits.
+
+**It is emphatically not evidence that nothing was lost, and it was not used as
+such.** That question belongs to `TestFilesAreExecutedTest`, which asserts that
+every test class the tree declares is executed by some suite and that no
+executed class sits outside the corpus it judges. It passes — nine tests,
+thirty-four assertions. Arithmetic across six prose reports could not have
+settled it either way.
+
+**And a green run of that control is only evidence from a tree a fresh clone
+would produce.** This stage proved why: `tests/Reporting/Functional` lost both
+its files to level repairs and stayed registered in `phpunit.xml.dist`. Git
+tracks no empty directory, so the path survived only in the working copy that
+emptied it, and three green aggregates were green for that reason — a fresh
+clone got PHPUnit exit 2 and ran nothing at all. The final aggregate is
+therefore taken from a clean clone with a copied vendor, never from the working
+copy.

@@ -22,18 +22,58 @@ use SplFileInfo;
  * assembly cannot see that: it would have to list the declaring capabilities,
  * and an omission would be edited into that list and into the assembly at
  * once. The roll-call has to be read off the tree, so it lives here.
+ *
+ * **A scan that reads half the tree is the same defect wearing the scan's
+ * clothes.** Every way of failing to read a file used to be a `continue`: a
+ * declaration spelled without its type, a namespace the pattern did not
+ * parse, a constant reflection could not see. The count floor below catches
+ * "the scan read nothing" and cannot catch "the scan read two of three" —
+ * exactly the invisible denominator this control exists to replace. So every
+ * file that *names* the constant is accounted for: it declares it readably, or
+ * it is one of the named non-declaring mentions, or the run says so by name.
  */
 final class ProjectScopedChannelRollCallTest extends TestCase
 {
     private const string CONSTANT = 'PROJECT_SCOPED_CHANNELS';
 
-    /** How many declarers the tree is known to carry, so an empty scan cannot pass. */
+    /**
+     * How many declarers the tree is known to carry.
+     *
+     * This is the floor for "the scan died altogether", and nothing else: it
+     * is equal to the number of declarers today, so it carries no slack and a
+     * fourth declarer arriving unread is caught by
+     * {@see itReadsEveryFileThatNamesTheConstant}, not by this number.
+     */
     private const int KNOWN_DECLARERS = 2;
+
+    /**
+     * Files that name the constant without declaring one, each with the reason.
+     *
+     * Hand-written, and checked for staleness by
+     * {@see itCarriesNoStaleNonDeclaringMentionRow}: a row naming a file that
+     * is gone, that stopped naming the constant, or that has since started
+     * declaring it is a refusal. A file that arrives here unlisted and unread
+     * is a refusal too — which is what keeps this list from becoming the
+     * silent `continue` it replaced.
+     *
+     * `src/Core/README.md` names the constant as well and is not here: the
+     * scan reads `.php` files only, so prose never reaches this list.
+     *
+     * @var array<string, string>
+     */
+    private const array NON_DECLARING_MENTIONS = [
+        'src/Analysis/Finding/Contract/Filter/ChannelFileScope.php'
+            => 'a {@see} in the docblock of the type the declarations are assembled into',
+        'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php'
+            => 'a {@see} in a docblock explaining what one capability declares about one channel',
+        'src/Reporting/FindingProjection/DeclaredChannelFileScope.php'
+            => 'the assembly under test: it spreads every declaration into the scope',
+    ];
 
     #[Test]
     public function itAsksEveryCapabilityThatDeclaresProjectScopedChannels(): void
     {
-        $declarers = self::declarers();
+        $declarers = self::scan()['declarers'];
 
         self::assertGreaterThanOrEqual(
             self::KNOWN_DECLARERS,
@@ -56,24 +96,111 @@ final class ProjectScopedChannelRollCallTest extends TestCase
     }
 
     /**
-     * Every production type declaring the constant, with the channels it names.
+     * The denominator, made loud.
      *
-     * @return array<class-string, list<string>>
+     * A file naming the constant is a declaration the roll-call has to read or
+     * a mention someone has accounted for. Anything else means the scan is
+     * narrower than the tree and says nothing about it.
      */
-    private static function declarers(): array
+    #[Test]
+    public function itReadsEveryFileThatNamesTheConstant(): void
+    {
+        $unread = self::scan()['unread'];
+
+        self::assertSame([], $unread, implode("\n", $unread));
+    }
+
+    #[Test]
+    public function itCarriesNoStaleNonDeclaringMentionRow(): void
+    {
+        $root = self::sourceRoot();
+        $stale = [];
+
+        foreach (self::NON_DECLARING_MENTIONS as $path => $reason) {
+            $absolute = \dirname(__DIR__, 2) . '/' . $path;
+
+            if (!is_file($absolute)) {
+                $stale[] = \sprintf('%s is excused as "%s" and is not there any more', $path, $reason);
+
+                continue;
+            }
+
+            $source = (string) file_get_contents($absolute);
+
+            if (!str_contains($source, self::CONSTANT)) {
+                $stale[] = \sprintf('%s is excused as "%s" and no longer names the constant', $path, $reason);
+
+                continue;
+            }
+
+            if (self::declaresTheConstant($source)) {
+                $stale[] = \sprintf('%s is excused as "%s" and now declares the constant', $path, $reason);
+            }
+
+            if (!str_starts_with($absolute, $root)) {
+                $stale[] = \sprintf('%s is excused and is outside the scanned root', $path);
+            }
+        }
+
+        self::assertSame([], $stale, implode("\n", $stale));
+    }
+
+    /**
+     * Every file under `src/` that names the constant, split into what the
+     * roll-call could read and what it could not.
+     *
+     * @return array{declarers: array<class-string, list<string>>, unread: list<string>}
+     */
+    private static function scan(): array
     {
         $declarers = [];
+        $unread = [];
 
         foreach (self::sourceFiles() as $file) {
+            $relative = substr($file->getPathname(), \strlen(\dirname(__DIR__, 2)) + 1);
             $source = (string) file_get_contents($file->getPathname());
 
-            if (!str_contains($source, 'const array ' . self::CONSTANT)) {
+            if (!str_contains($source, self::CONSTANT)) {
+                continue;
+            }
+
+            if (!self::declaresTheConstant($source)) {
+                if (!isset(self::NON_DECLARING_MENTIONS[$relative])) {
+                    $unread[] = \sprintf(
+                        '%s names %s and declares no constant the scan can recognise. Either it declares one in a'
+                        . ' spelling this control cannot read — which would drop a capability from the roll-call'
+                        . ' silently — or it mentions the name for some other reason, which belongs in'
+                        . ' NON_DECLARING_MENTIONS with its reason.',
+                        $relative,
+                        self::CONSTANT,
+                    );
+                }
+
                 continue;
             }
 
             $type = self::declaredTypeIn($source);
 
-            if ($type === null || !\defined($type . '::' . self::CONSTANT)) {
+            if ($type === null) {
+                $unread[] = \sprintf(
+                    '%s declares %s and the scan cannot read the type that carries it, so its channels never reach'
+                    . ' the roll-call.',
+                    $relative,
+                    self::CONSTANT,
+                );
+
+                continue;
+            }
+
+            if (!\defined($type . '::' . self::CONSTANT)) {
+                $unread[] = \sprintf(
+                    '%s declares %s on %s and the constant is not visible to reflection, so its channels never reach'
+                    . ' the roll-call.',
+                    $relative,
+                    self::CONSTANT,
+                    $type,
+                );
+
                 continue;
             }
 
@@ -82,7 +209,25 @@ final class ProjectScopedChannelRollCallTest extends TestCase
             $declarers[$type] = $channels;
         }
 
-        return $declarers;
+        return ['declarers' => $declarers, 'unread' => $unread];
+    }
+
+    /**
+     * Whether the source declares the constant, rather than naming it.
+     *
+     * Deliberately tolerant of everything PHP allows between `const` and the
+     * name — visibility, `final`, and the type the current declarations write
+     * — because a declaration this pattern misses is a capability dropped from
+     * the roll-call. What it must not match is `{@see Foo::PROJECT_...}` or
+     * `...Foo::PROJECT_...` in an expression, which is why the name has to be
+     * preceded by `const` and followed by an assignment.
+     */
+    private static function declaresTheConstant(string $source): bool
+    {
+        return preg_match(
+            '/(?:^|[\s(])const\s+(?:[\w\\\\|?]+\s+)?' . self::CONSTANT . '\s*=/m',
+            $source,
+        ) === 1;
     }
 
     /** @return class-string|null */
@@ -101,15 +246,19 @@ final class ProjectScopedChannelRollCallTest extends TestCase
         return $type;
     }
 
+    private static function sourceRoot(): string
+    {
+        return \dirname(__DIR__, 2) . '/src';
+    }
+
     /** @return list<SplFileInfo> */
     private static function sourceFiles(): array
     {
-        $root = \dirname(__DIR__, 2) . '/src';
         $files = [];
 
         /** @var iterable<SplFileInfo> $iterator */
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator(self::sourceRoot(), FilesystemIterator::SKIP_DOTS),
         );
 
         foreach ($iterator as $file) {
