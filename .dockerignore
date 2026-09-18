@@ -13,9 +13,10 @@
 #
 # composer.lock is deliberately absent from this list. It was excluded here
 # from the repository's first commit while Dockerfile:17 copies it, so
-# `docker build` failed with "CopyIgnoredFile" on every attempt since — and no
-# workflow builds the image, so nothing ever said so. The lock is what makes
-# the install reproducible; excluding it is wrong in both directions.
+# `docker build` failed with "CopyIgnoredFile" on every attempt since, and
+# nothing said so until the `docker-image` job in .github/workflows/qmx.yml
+# started building the documented path. The lock is what makes the install
+# reproducible; excluding it is wrong in both directions.
 vendor/
 node_modules/
 **/vendor/
