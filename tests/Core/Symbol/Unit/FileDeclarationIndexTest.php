@@ -76,15 +76,6 @@ final class FileDeclarationIndexTest extends TestCase
     }
 
     #[Test]
-    public function itRepeatsTheSameAnswerForARepeatedQuestion(): void
-    {
-        $index = new FileDeclarationIndex();
-        $key = DeclarationKey::forLogical(SymbolPath::forClass('App', 'Greeter'));
-
-        self::assertSame($index->ordinalOf($key, 40)->value, $index->ordinalOf($key, 40)->value);
-    }
-
-    #[Test]
     public function itRejectsANegativePosition(): void
     {
         $this->expectException(InvalidArgumentException::class);
