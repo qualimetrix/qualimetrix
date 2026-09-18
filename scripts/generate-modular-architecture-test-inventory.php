@@ -117,13 +117,12 @@ const TOOLING_TEST_ROOT_OWNERS = [
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
 const P3_TEST_PATHS = [
-    'tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php',
+    'tests/Analysis/Configuration/Unit/ConfigSchemaCoverageTest.php',
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
     'tests/Analysis/Policy/Architecture/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
-    'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
     'tests/Analysis/Configuration/Unit/ConfigurationHolderTest.php',

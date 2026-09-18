@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
+namespace Qualimetrix\Tests\Analysis\Configuration\Unit;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,5 +31,4 @@ final class ConfigSchemaCoverageTest extends TestCase
 
         ConfigSchema::policyFor('__definitely_not_a_real_root__');
     }
-
 }

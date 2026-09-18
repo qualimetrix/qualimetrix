@@ -30,24 +30,6 @@ final class ContainerConfigurationStagesTest extends TestCase
     }
 
     #[Test]
-    public function itRegistersThePresetStageInThePipeline(): void
-    {
-        $stages = $this->pipeline->stages();
-
-        $presetStage = null;
-        foreach ($stages as $stage) {
-            if ($stage->name() === 'preset') {
-                $presetStage = $stage;
-                break;
-            }
-        }
-
-        self::assertNotNull($presetStage, 'PresetStage must be registered in the container');
-        self::assertSame(15, $presetStage->priority());
-        self::assertSame('preset', $presetStage->name());
-    }
-
-    #[Test]
     public function itRegistersAllStagesWithTheCorrectPriorities(): void
     {
         $stages = $this->pipeline->stages();
