@@ -5,3 +5,18 @@ R041	wont-fix	itRecognizesPlanningChronologyOnlyInsideComments feeds the control
 R095	already-fixed	e15c7f42 moved the file to scripts/benchmark/tests/BenchmarkCoverageRefusalTest.php, beside the two scripts it runs as subprocesses
 R211	already-fixed	7a89a3ad put both halves of HookStatusCommand under tests/Infrastructure/Console/, one manifest owner; the remaining Unit/Functional pair is the level taxonomy, not two roots
 R212	already-fixed	7a89a3ad renamed both sides of the basename collision, to UnmatchedDiscoveryExcludeIntegrationTest and UnmatchedLayerExcludeIntegrationTest
+R015	wont-fix	the detector case is that control's refusal proof; see other-adjudication.tsv
+R016	wont-fix	the three detector cases are that control's refusal proof, one of them explicitly about spelling variants; see other-adjudication.tsv
+R024	already-fixed	c49fc0b4 moved the fragment reading action.yml, docker-compose.yml and the hook script into governance/RepositoryEntrypoints/BaselineLifecycleEntrypointSurfaceTest.php
+R039	already-fixed	e15c7f42 moved the file to tools/phpstan/tests/, where Qualimetrix\PhpStan\Tests is the namespace the root owns
+R040	already-fixed	e15c7f42, as above
+R047	wont-fix	a refusal that names every known key is the promise; deriving the expectation from the registry would make the case a tautology
+R101	wont-fix	the oracle parses the grammar independently because no product parser exists to call, and independence is the shape this stage prescribes
+R121	already-fixed	c49fc0b4 moved the site count to governance/FrameworkClassification/FrameworkClassificationSiteCountTest.php
+R138	wont-fix	the promise is about the public surface and an absence has no behaviour to observe, so reflection is the only oracle there is
+R139	wont-fix	the same as R138
+R140	already-fixed	c49fc0b4 moved the src/ scan to governance/ConfigurationVocabulary/ConfigSchemaEntryClosureTest.php
+R158	already-fixed	c49fc0b4 then 666d8679 moved the scan to governance/SelectorSyntax/GlobAlphabetSoleEnumerationTest.php
+R159	already-fixed	c49fc0b4 moved SELECTOR_SURFACES to governance/SelectorSyntax/NamespaceMatcherNormalizationSurfaceTest.php
+R160	already-fixed	c49fc0b4 moved the grep to governance/PackageVersion/VersionRootPackageIndependenceTest.php
+R275	wont-fix	the case proves the levelOf() oracle covers the forms the corpus produces; a control whose oracle carries no such case is a control nobody measured
