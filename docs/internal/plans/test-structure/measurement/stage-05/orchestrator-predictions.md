@@ -123,3 +123,52 @@ file under `scripts/<tool>/tests/`, which lands in `Tooling`: **+1 to +8**.
 stand. Outside the band is not automatically wrong; it is the point at which the
 per-package reports must account for the difference by name before the stage is
 called done.
+
+## The four capped lists, predicted before deriving
+
+Deriving rewrites each list from the tree, so the result is a measurement and the
+arithmetic below is a prediction against it. It is assembled from what the six
+packages reported, each of which named its rows rather than its count.
+
+| List                            | Now | Predicted | Made of                                    |
+| ------------------------------- | --: | --------: | ------------------------------------------ |
+| `declares_no_coverage` (A)      | 84  | **74**    | P4 −3, P5 −4, P3 −2, P1 −1, P6 ±0 (a swap) |
+| `covers_another_owner` (B)      | 19  | **16**    | P4 −3                                      |
+| `remainder_is_not_a_prefix` (C) | 4   | **4**     | nobody named a row                         |
+| namespace allow-list            | 55  | **44**    | P3 −6, P5 −3, P4 −1, P1 −1                 |
+
+**The prediction's known weakness, named before it is tested.** Deriving recomputes
+each list from the whole tree, so it can *add* rows no package asked for: this
+stage created new files — P7's three support classes, P1's new governance test and
+its tooling root, P5's relocated fixtures — and any of them that declares no
+coverage attribute earns a row. The packages reported removals because removals
+are what they caused; additions are what the derive discovers. A result above the
+predicted count is therefore the expected direction of error, and each added row
+has to be read rather than accepted.
+
+**The swap that no machine will ask about.** P6 moved two files up a level, so two
+`declares_no_coverage` rows die and two appear with the same reasons — the count
+stays 84 through that change alone. The gate is `count($rows) > $ceiling`, so a
+substitution passes silently; the plan's rule is that the package which swaps says
+so in its commit, and P6 could not, because the list is a file no package may edit.
+The obligation therefore lands on the derive commit, which is the only durable
+place left for it.
+
+## The test count, reconciled two ways
+
+The prediction was 9214 → 9178, band 9161-9195. It is checked against **two**
+independent things, and they answer different questions:
+
+- **the sum of the packages' own reports** — P1 −8, P3 −41 (plus 19 provider rows),
+  P4 −8, P5 −6, P6 −3, P7 +7 — which asks whether the delta is attributable;
+- **the band** — which asks whether the prediction held.
+
+A run that lands above the band means fewer tests were removed than predicted, and
+the reason is already measured: `identical-bodies.txt` overcounts duplicates
+wherever the distinguishing input sits in a heredoc (7 groups of 20, 15 methods of
+58), in `$this->detector`'s concrete type, or in a `#[DataProvider]` attribute
+outside the hashed body. Three packages reached that conclusion independently.
+
+A run that lands *below* the band is the dangerous direction: it means a file
+stopped being executed. The first place to look is a `<directory>` that no longer
+matches where a file went.
