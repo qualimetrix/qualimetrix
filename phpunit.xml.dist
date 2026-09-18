@@ -66,11 +66,13 @@
             <directory>tests/Analysis/Evidence/Design/Integration</directory>
             <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
-        </testsuite>
+                    <directory>tests/Analysis/Evidence/Duplication/Integration</directory>
+</testsuite>
         <testsuite name="Functional">
             <directory>tests/Analysis/Policy/Baseline/Functional</directory>
             <directory>tests/Reporting/Functional</directory>
-        </testsuite>
+                    <directory>tests/Analysis/Evidence/Duplication/Functional</directory>
+</testsuite>
         <testsuite name="Infrastructure">
             <directory>tests/Infrastructure</directory>
         </testsuite>
