@@ -30,7 +30,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/invalid_syntax.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parser_refuses_it.php'],
                 '--format' => 'json',
                 '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ],
@@ -56,7 +56,7 @@ final class CheckCommandInputValidationTest extends TestCase
         try {
             $tester->execute(
                 [
-                    'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                    'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                     '--format' => 'json',
                     '--config' => $config,
                     '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
@@ -79,7 +79,7 @@ final class CheckCommandInputValidationTest extends TestCase
     {
         $tester = $this->tester();
         $tester->execute(
-            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--only-rule' => ['security.eval']],
+            ['paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--format' => 'json', '--only-rule' => ['security.eval']],
             ['capture_stderr_separately' => true],
         );
 
@@ -99,7 +99,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--only-rule' => ['complexity.ccn#complexity.ccn'],
             ],
@@ -124,7 +124,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--disable-rule' => ['coupling.cbo:file'],
             ],
@@ -142,7 +142,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--disable-rule' => ['coupling.cbo:namespace'],
             ],
@@ -159,7 +159,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--disable-rule' => ['coupling.cbo:klass'],
             ],
@@ -175,7 +175,7 @@ final class CheckCommandInputValidationTest extends TestCase
     {
         $tester = $this->tester();
         $tester->execute(
-            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--rule-opt' => ['complexity.ccn#callable:warning=8']],
+            ['paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--format' => 'json', '--rule-opt' => ['complexity.ccn#callable:warning=8']],
             ['capture_stderr_separately' => true],
         );
 
@@ -188,7 +188,7 @@ final class CheckCommandInputValidationTest extends TestCase
     {
         $tester = $this->tester();
         $tester->execute(
-            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
+            ['paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
             ['capture_stderr_separately' => true],
         );
 
@@ -203,7 +203,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ],
@@ -229,7 +229,7 @@ final class CheckCommandInputValidationTest extends TestCase
         try {
             foreach (['computed', 'health.complexity', 'health.*', 'computed.a'] as $selector) {
                 $tester->execute([
-                    'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                    'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                     '--format' => 'json',
                     '--config' => $configA,
                     '--only-rule' => [$selector],
@@ -238,7 +238,7 @@ final class CheckCommandInputValidationTest extends TestCase
             }
 
             $tester->execute([
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--config' => $configB,
                 '--only-rule' => ['computed.a'],
@@ -247,7 +247,7 @@ final class CheckCommandInputValidationTest extends TestCase
             self::assertStringContainsString('does not match any registered', self::envelopeError($tester));
 
             $tester->execute([
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--config' => $configB,
                 '--only-rule' => ['computed.b'],
@@ -278,7 +278,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 $retired => 'src/Entity',
             ],
@@ -303,7 +303,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--suppress-path' => ['--exclude-path'],
             ],
@@ -336,7 +336,7 @@ final class CheckCommandInputValidationTest extends TestCase
     public function itRejectsAnUnknownOptionThroughTheApplicationLadder(): void
     {
         [$exitCode, $display] = $this->runThroughApplication(
-            new StringInput('check tests/Fixtures/Ast/empty_file.php --this-option-does-not-exist'),
+            new StringInput('check tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php --this-option-does-not-exist'),
         );
 
         self::assertSame(3, $exitCode);
@@ -400,7 +400,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $tester = $this->tester();
         $tester->execute(
             [
-                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'],
                 '--format' => 'json',
                 '--rule-opt' => ['code-smell.long-parameter-list:exclude-paths=src/Entity'],
             ],

@@ -999,9 +999,6 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Fixtures/Schema/')) {
         return ['Reporting', 'permanent'];
     }
-    if (str_starts_with($path, 'tests/Fixtures/Ast/')) {
-        return ['Infrastructure/Ast', 'permanent'];
-    }
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }

@@ -32,7 +32,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversNothing]
 final class TranslatedRefusalVocabularyTest extends TestCase
 {
-    private const string ANALYSED_PATH = 'tests/Fixtures/Ast/empty_file.php';
+    private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     private const string CCN = 'complexity.ccn';
 

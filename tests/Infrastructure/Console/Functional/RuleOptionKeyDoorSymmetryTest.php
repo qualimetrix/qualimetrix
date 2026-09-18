@@ -39,7 +39,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(RuleOptionsFactory::class)]
 final class RuleOptionKeyDoorSymmetryTest extends TestCase
 {
-    private const string ANALYSED_PATH = 'tests/Fixtures/Ast/empty_file.php';
+    private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     /** @var list<string> */
     private array $cleanUp = [];

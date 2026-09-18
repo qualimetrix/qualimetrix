@@ -27,7 +27,7 @@ final class PhpFileParserTest extends TestCase
     protected function setUp(): void
     {
         $this->parser = new PhpFileParser();
-        $this->fixturesPath = \dirname(__DIR__, 3) . '/Fixtures/Ast';
+        $this->fixturesPath = \dirname(__DIR__) . '/Fixtures';
     }
 
     #[Test]
