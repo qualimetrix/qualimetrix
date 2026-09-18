@@ -96,6 +96,7 @@
             "python3 -m unittest discover -s scripts/cross-tool-comparison/tests -p 'test_*.py'",
             "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'"
         ],
+        "dangling-names": "python3 scripts/dangling-test-names.py",
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
@@ -193,6 +194,7 @@
         ],
         "check:code": [
             "@cs-check",
+            "@dangling-names",
             "@phpstan",
             "@test:aggregate",
             "@test:js",
@@ -225,6 +227,7 @@
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
         "test:cross-tool": "Run deterministic cross-tool methodology tests (Python 3, no external analyzers)",
+        "dangling-names": "Report every Qualimetrix\\Tests name the tree spells and no file declares; 0 exactly the pinned census, 1 a name nobody pinned, 2 an unreadable input, 3 a pin that no longer dangles",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
         "check-leaks": "Fail if tracked files contain developer home paths or private project names",
@@ -244,7 +247,7 @@
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
         "check": "Everything below, in the order a failure is cheapest to read",
-        "check:code": "What a code change invalidates: style, static analysis, tests",
+        "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",

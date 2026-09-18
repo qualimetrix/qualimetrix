@@ -16,8 +16,8 @@ Both spellings are read. PHP source writes a fully qualified name with every
 backslash doubled, so a single-backslash sweep silently returns nothing for a
 stale literal inside a PHP string.
 
-    python3 docs/internal/plans/test-structure/measurement/stage-04/dangling-test-names.py
-    python3 .../dangling-test-names.py --names-like NamespaceTree   # only these
+    composer dangling-names                                 # the census, as check runs it
+    python3 scripts/dangling-test-names.py --names-like NamespaceTree   # only these
 
 A name is reported only when no file declares it **and** nothing is declared
 beneath it: a namespace with live classes under it is a namespace, not a stale
@@ -31,21 +31,29 @@ way a class is written — followed by `::`, or preceded by `new`, `extends`,
 beneath it. What stays invisible is a stale name of that shape mentioned in
 prose or in a bare string.
 
-**The nine are pinned, in KNOWN below.** Nine names in a report is a number, and
-a tenth is indistinguishable from the nine until someone diffs two outputs by
-hand. Pinned, the tenth prints under its own heading. The population is fixed
+**The pins are in KNOWN below.** A count in a report is a number, and one more
+name is indistinguishable from it until someone diffs two outputs by hand.
+Pinned, the next one prints under its own heading. The population is fixed
 in both directions: a pinned name that stops dangling is its own verdict, on the
 same terms as this repository's other tracked lists, because a pin describing
 nothing hides the next name that would need one.
 
-Exit codes: 0 the tree carries exactly the pinned nine, 1 a name nobody pinned,
+Exit codes: 0 the tree carries exactly the pinned set, 1 a name nobody pinned,
 2 an input could not be read, 3 a pinned name that no longer dangles. A filtered
 run (`--names-like`, `--include-history`) is a query over another population and
 says so instead of judging: 0 nothing matched, 1 something did.
 
-**Pinned is not guarded.** Nothing in `composer check` runs this, so the census
-below can rot exactly the way `P6_RENAMED_TEST_IDS` did — a declaration whose
-literals nobody re-reads. It is run by hand, by the package that needs it.
+**The census is guarded now.** `composer check:code` runs it, which is what the
+list below needs to stay true: while it was run by hand it rotted exactly the way
+`P6_RENAMED_TEST_IDS` did — a declaration whose literals nobody re-reads — and
+grew a tenth name nobody noticed.
+
+This lives in `scripts/` rather than beside a measurement because a script
+`composer check` runs is a tool, not a record, and because `REPOSITORY_ROOT`
+below is a depth: a file that moves without correcting it walks off the
+repository. That mistake is loud here — `git ls-files` refuses outside a work
+tree — but it would be silent for any destination that happened to sit inside
+another one.
 """
 
 import argparse
@@ -54,7 +62,7 @@ import re
 import subprocess
 import sys
 
-REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), *[".."] * 6))
+REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 NAME = re.compile(r"Qualimetrix(?:\\\\|\\)Tests(?:(?:\\\\|\\)\w+)+")
 
 # Written left of a name, these make it a class however many namespaces live
@@ -64,9 +72,16 @@ NAME = re.compile(r"Qualimetrix(?:\\\\|\\)Tests(?:(?:\\\\|\\)\w+)+")
 CLASS_SHAPED_BEFORE = ("new ", "extends ", "implements ", "instanceof ", "use ")
 
 # The names this tree is known to carry, each with why. Pinning them is what
-# makes a tenth one distinguishable from the nine: the tool was a measurement
-# whose output had to be diffed by hand against a number in a report, and a
-# number in a report is not a set.
+# makes the next one distinguishable from them: the tool was a measurement whose
+# output had to be diffed by hand against a number in a report, and a number in a
+# report is not a set.
+#
+# Every entry is a stale reference in a live carrier -- a name a file writes and
+# no file declares. A name planted on purpose, in the heredoc of a probe an
+# isolated project runs, does not belong here: it is not stale, it recurs once
+# per probe, and a census that grows an entry per instance of a form has stopped
+# being a set. Those probes declare no namespace instead; see
+# scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php.
 KNOWN = {
     "Qualimetrix\\Tests\\Architecture\\Unit\\Configuration\\Allow\\AllowAliasExpanderTest":
         "a stale reference from an epoch before stage 04, in a live governance control; stage 05's",
@@ -86,9 +101,6 @@ KNOWN = {
     "Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest":
         "the *value* half of that same record, and stale: the file has not carried this namespace since"
         " stage 02/03. The owner's call is whether the record survives at all",
-    "Qualimetrix\\Tests\\Reporting\\GraphProjection\\Functional":
-        "the namespace ModularArchitectureGeneratorRefusalTest plants on purpose inside an isolated"
-        " project, so nothing declares it here and nothing should",
 }
 
 
@@ -147,8 +159,17 @@ def main():
     # a name is asserting the name exists.
     history = ("docs/internal/plans/", "docs/adr/", "docs/internal/generated/", "CHANGELOG.md")
 
+    # KNOWN spells every pinned name, so a census that read this file would
+    # carry all nine itself and no pin could ever be reported GONE: the exit-3
+    # branch would be dead code. The exclusion is unconditional, including under
+    # --include-history, because that flag widens the population and cannot make
+    # a detector's own declaration evidence about the tree.
+    self_path = os.path.relpath(os.path.abspath(__file__), REPOSITORY_ROOT)
+
     dangling = {}
     for path in tracked:
+        if path == self_path:
+            continue
         if not arguments.include_history and path.startswith(history):
             continue
         try:
