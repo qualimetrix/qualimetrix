@@ -42,3 +42,6 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 # Generated ratchet snapshot: collapse its diff by default in both forges
 qmx-baseline.json linguist-generated
 qmx-baseline.json gitlab-generated
+
+# Stage 05 verdicts are appended, never rewritten: union-merge them.
+docs/internal/plans/test-structure/measurement/stage-05/verdicts/*.tsv merge=union
