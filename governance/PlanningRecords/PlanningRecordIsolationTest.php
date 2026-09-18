@@ -16,6 +16,20 @@ use SplFileInfo;
  * plan directory exactly once, and executable sources must reach no planning
  * record: a plan path, a plan-local filename, or a package-chronology marker
  * inside a comment.
+ *
+ * **Known gap: `$roots` is not every root that holds executable source.**
+ * Measured on the tree that retired the test-structure campaign: `tools/` (9
+ * PHP files), `finding-gate/` (73), `input-doors/` (24) and `promise-effect/`
+ * (18) carry code this control never reads -- 124 files. The extensions list
+ * below already covers `py`, so the omission is the root list, not the filter.
+ *
+ * This is not hypothetical. `defect-ledger/reproduce-commit-reach.py`
+ * hard-coded a concrete plan path and quoted, three lines above it, the very
+ * refusal it was violating; it survived every run because its root is not
+ * here. It was deleted with the campaign rather than fixed, so the gap now
+ * guards nothing that is known to break -- which is exactly when a widening
+ * is cheap. Widening it changes governance coverage for four roots at once,
+ * so it wants its own package and its own planted proof per root.
  */
 final class PlanningRecordIsolationTest extends TestCase
 {
