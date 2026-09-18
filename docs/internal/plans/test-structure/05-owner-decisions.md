@@ -72,3 +72,48 @@ Adjudicating without executing would leave the generator still promising a move
 nobody makes, which is the promise-without-effect shape this repository has been
 bitten by before. It is bounded: two copies, five test files, two excluders, one
 generator function, re-derived artifacts.
+
+## Found while closing stage 05, deliberately not fixed here
+
+Two measured defects that predate this stage. Both were proven by planting, both
+are someone else's subject, and fixing either inside a stage about ledger defects
+would bury it.
+
+### The development-namespace ban cannot fire for four of its thirteen entries
+
+`DEVELOPMENT_NAMESPACE_PREFIXES` in
+`scripts/generate-modular-architecture-production-inventory.php` is the list that
+refuses production code importing a development-only namespace —
+`CLAUDE.md`'s table marks it as failing **silently**. Its consumer filters
+dependencies with `str_starts_with($dependency, 'Qualimetrix\\')`, so every entry
+spelled `Qmx*` is unreachable:
+
+| Entry                              | Reachable | Age         |
+| ---------------------------------- | --------- | ----------- |
+| `QmxDirectiveAudit\Tests\`         | **no**    | before this |
+| `QmxDirectiveAuditControls\Tests\` | **no**    | before this |
+| `QmxFindingGate\Tests\`            | **no**    | before this |
+| `QmxTautologyControls\Tests\`      | **no**    | added here  |
+| the other nine (`Qualimetrix\…`)   | yes       | —           |
+
+Proven both ways in an isolated generator run: planting
+`use QmxTautologyControls\Tests\…` into `src/Core/Version.php` leaves the
+generator at exit 0, while planting `use Qualimetrix\PromiseEffect\Tests\…`
+refuses with
+`production source imports a development-only namespace`. Stage 05 added its
+entry for consistency with the list it joined; the entry is aligned, not armed,
+and saying otherwise would be the sort of claim this campaign exists to stop.
+
+The repair is not a line: the ban needs a second accumulator keyed by the
+development prefixes, and it changes governance coverage for three roots older
+than this stage — each needing its own planted proof and a review. Its own
+package.
+
+### `.gitignore`'s blanket `*.json` swallows anything added under `defect-ledger/`
+
+Measured: `git check-ignore -q defect-ledger/anything.json` exits 0 — ignored —
+where `finding-gate/anything.json` exits 1, because that root carries a negation
+and this one does not. Latent rather than live: the ledger holds only `.tsv` and
+`.md` today, and `.tsv` is not swallowed, so verdict appends were never at risk.
+It becomes live the day anything there is JSON, and it fails by the file simply
+not being there.
