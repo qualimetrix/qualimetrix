@@ -1,7 +1,7 @@
 # Stage 05 — defects in what the tests assert
 
 276 defects across 219 files are recorded in
-[`measurement/defect-ledger.tsv`](measurement/defect-ledger.tsv), typed and
+[`defect-ledger/defect-ledger.tsv`](../../../../defect-ledger/defect-ledger.tsv), typed and
 ranked, with provenance in
 [`measurement/ledger-provenance.md`](measurement/ledger-provenance.md). Work the
 TSV, not this file: prose counts go stale, the table is the authority.
@@ -164,6 +164,14 @@ share against the observed one, as the DoD requires for the test count.
 code is wrong and the row is re-classified. A docblock is not deleted to resolve
 the row: it is the only statement of intent the next reader gets.
 
+**The seven classes above became eleven.** Four `other` rows in ten described a
+defect none of the seven names — a `chdir()` with no restore is not "labelled
+unit but does I/O" — so P0a declared `weak-oracle`, `brittle-pin`, `state-leak`
+and `undeclared-subject`, each with a repair rule of the same kind as the rules
+in this file. Those rules, and the one ruling five `wont-fix` rows stand on, are
+in [`measurement/stage-05/other-adjudication.md`](measurement/stage-05/other-adjudication.md);
+a package working a row of one of those classes works that rule.
+
 **`other` (62 rows) is adjudicated once, by P0, not seven times.** It is the
 largest class after `dupe` and its ledger description is "mixed observations,
 triage before acting". Seven packages triaging independently produce seven
@@ -176,12 +184,22 @@ how to judge.
 
 **The verdict address.** `defect-ledger.tsv` is a measurement taken at
 `585b7c72` and is not edited: mutating it destroys the record the stage is
-judged against. Verdicts go to a separate append-only
-`measurement/stage-05/verdicts.tsv`, one line per ledger row, joined on a
+judged against. Verdicts are append-only, one line per ledger row, joined on a
 `row_id` **P0 mints into the ledger once** — the natural key
 (`file` + `class` + `line`) does not work, because at least one row has an empty
 `line`. Minting that column is the single change to the ledger P0 is allowed to
 make; the other six columns and their meanings stay.
+
+**Both live at the repository root, in `defect-ledger/`, not under this plan.**
+A control that reads a planning record is a control that dies with the plan
+directory, and `PlanningRecordIsolationTest` enforces exactly that: it refuses
+any executable source naming a concrete plan path. The plan index states the
+rule the refusal serves — a completed plan is removed once its verification
+assets have moved to their permanent owners — and the ledger with its verdicts
+is one such asset. The root mirrors `promise-effect/`: `export-ignore`d, with
+`merge=union` on the verdict files. Each package writes
+`defect-ledger/verdicts/<package>.tsv`; one file per package, because several
+packages work one tree at once and an editing tool rewrites a file whole.
 
 The verdict vocabulary is exactly three values, and nothing else is a verdict:
 

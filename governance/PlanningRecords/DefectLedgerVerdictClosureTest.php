@@ -30,16 +30,26 @@ use SplFileInfo;
  * file per package, because several packages work one tree at once and an
  * editing tool rewrites a file whole.
  *
- * This sits with the planning records because the ledger is one. It belongs
- * beside the ledger, so if the ledger ever becomes a tracked artifact in its own
- * right -- the shape `promise-effect/promise-ledger.tsv` already has -- this
- * control moves to a group named for that artifact.
+ * What this control is warranted to guard, and for how long. The ledger is
+ * frozen and finite: 276 rows that will never become 277. So on the day the last
+ * row is answered this control passes, and passes for ever after, whatever the
+ * repository does next -- it can no longer fail, which in a stage whose subject
+ * is tautologies is worth saying out loud. It guards the closing of stage 05 and
+ * nothing else. When the campaign's plan directory is retired, `defect-ledger/`
+ * and this file are candidates for retirement with it. That is a decision for
+ * whoever sweeps the campaign; what it must not become is the default, which is
+ * what happens to a green test nobody remembers the warrant for.
+ *
+ * It sits with the planning records because the ledger began as one and the
+ * campaign is what it answers to, not because it reads a plan path -- it reads
+ * `defect-ledger/` at the repository root, which is where a verification asset
+ * a control depends on has to live if the plan is ever to be swept.
  */
 final class DefectLedgerVerdictClosureTest extends TestCase
 {
-    private const string LEDGER = 'docs/internal/plans/test-structure/measurement/defect-ledger.tsv';
+    private const string LEDGER = 'defect-ledger/defect-ledger.tsv';
 
-    private const string VERDICT_DIRECTORY = 'docs/internal/plans/test-structure/measurement/stage-05/verdicts';
+    private const string VERDICT_DIRECTORY = 'defect-ledger/verdicts';
 
     private const array VOCABULARY = ['fixed', 'already-fixed', 'wont-fix'];
 

@@ -40,8 +40,10 @@ or `moved-agreed`. One of its ten rows is a `tautology`, so P0a owns one of the
   is split too** — and `population.tsv`, `counterparts.tsv` and `packages.tsv`
   are re-derived in the same commit, because their totals (219/276) become wrong
   the moment a row is added.
-- `row_id` is minted into `defect-ledger.tsv` and `verdicts.tsv` is created. This
-  is the one change to the ledger's column set anyone is allowed to make.
+- `row_id` is minted into `defect-ledger.tsv`, and the ledger moves with its new
+  `verdicts/` directory to the repository root, out of reach of the plan
+  directory this stage's own control may not depend on. This is the one change to
+  the ledger's column set anyone is allowed to make.
 - The 62 `other` rows are adjudicated to a real class or a `wont-fix` reason. No
   row may still be `other` when P0a ends.
 - The dangling-name census becomes something `composer check` runs. All ten names
@@ -129,7 +131,7 @@ sized by the number of controls-stand cases it must build, not by its 36 rows.
 is 14 files: 13 in P3 and the fourteenth
 (`IdenticalSubExpressionCollectorTest`) in P1, because it carries a `name-lies`
 row. P1 decides whether the repeated statement of intent is legitimate and
-**records the ruling in `verdicts.tsv` against its own row**, in terms P3 can
+**records the ruling in its verdict file against its own row**, in terms P3 can
 apply without re-reading the group. That record is the whole of the dependency.
 
 **One defect is split across P1 and P3 by the by-file rule.**
@@ -152,7 +154,7 @@ the one likely to need splitting when executed, and it splits by capability.
 Each package's own DoD:
 
 - Every row in its slice of `packages.tsv` carries one of the three verdicts in
-  `verdicts.tsv`, with its commit or its reason.
+  `defect-ledger/verdicts/<package>.tsv`, with its commit or its reason.
 - Every row was re-confirmed against the body before being worked.
 - `composer check:code` plus `composer architecture:check`. The full aggregate is
   the orchestrator's, once before review and once after fixes.
@@ -177,10 +179,11 @@ when the counterpart belongs to another package's subject.
 
 **Shared files every package writes.**
 
-- `defect-ledger.tsv` — `row_id` only, minted once by P0a.
-- `verdicts.tsv` — append-only, one line per row. The hazard is two packages
-  appending at once, which git resolves as a conflict rather than a silent loss;
-  the rule is one line per row and no rewriting of other packages' lines.
+- `defect-ledger/defect-ledger.tsv` — `row_id` only, minted once by P0a.
+- `defect-ledger/verdicts/` — append-only, one **file per package** and one line
+  per row. A single shared file is what two packages appending at once would
+  lose, because an editing tool rewrites a file whole; separate files turn that
+  into nothing at all. No package rewrites another's file.
 - `phpunit.xml.dist` — **five packages write it.** `category-wrong` is 32 rows
   spread over P3 (5), P4 (6), P5 (13), P6 (7) and P7 (1), and every level change
   is a `<directory>` edit. An earlier draft called the ledger "the one shared file
