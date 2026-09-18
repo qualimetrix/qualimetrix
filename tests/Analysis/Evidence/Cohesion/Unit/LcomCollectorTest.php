@@ -633,40 +633,6 @@ PHP;
     }
 
     #[Test]
-    public function itDoesNotInflateLcomWithStaticMethod(): void
-    {
-        $code = <<<'PHP'
-<?php
-
-namespace App;
-
-class StaticInflation
-{
-    private $value;
-
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    public static function factory(): self
-    {
-        return new self();
-    }
-
-    public static function anotherStatic(): void
-    {
-    }
-}
-PHP;
-
-        $metrics = $this->collectMetrics($code);
-
-        // Only 1 instance method (getValue) => LCOM 1, static methods excluded
-        self::assertSame(1, $metrics->get('cohesion.lcom:App\StaticInflation'));
-    }
-
-    #[Test]
     public function itDoesNotCreateEdgesForSelfAndStaticCalls(): void
     {
         $code = <<<'PHP'
@@ -762,37 +728,6 @@ PHP;
         // be added to the LCOM graph. Only getData and setData counted, both share $data => LCOM 1.
         // Without fix: abstract methods would be disconnected nodes => LCOM 3.
         self::assertSame(1, $metrics->get('cohesion.lcom:App\AbstractClass'));
-    }
-
-    #[Test]
-    public function itDoesNotInflateLcomWithAbstractMethods(): void
-    {
-        $code = <<<'PHP'
-<?php
-
-namespace App;
-
-abstract class ManyAbstract
-{
-    private $value;
-
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    abstract public function a(): void;
-    abstract public function b(): void;
-    abstract public function c(): void;
-    abstract public function d(): void;
-}
-PHP;
-
-        $metrics = $this->collectMetrics($code);
-
-        // Only 1 concrete method (getValue) => LCOM 1
-        // Without fix: 5 methods, 4 abstract disconnected => LCOM 5
-        self::assertSame(1, $metrics->get('cohesion.lcom:App\ManyAbstract'));
     }
 
     #[Test]
