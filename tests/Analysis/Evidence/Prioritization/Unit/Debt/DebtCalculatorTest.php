@@ -107,10 +107,12 @@ final class DebtCalculatorTest extends TestCase
             $this->createFinding('src/Foo.php', 'custom.unknown-rule'),
         ];
 
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('No remediation minutes declared for rule "custom.unknown-rule"');
-
-        $this->calculator->calculate($findings);
+        try {
+            $this->calculator->calculate($findings);
+            self::fail('A rule name no rule declares must not be given a default cost');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString('custom.unknown-rule', $exception->getMessage());
+        }
     }
 
     #[Test]

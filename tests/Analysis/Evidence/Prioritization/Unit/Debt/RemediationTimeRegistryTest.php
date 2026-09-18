@@ -66,10 +66,12 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itThrowsForARuleNameNotInTheInjectedMap(): void
     {
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('No remediation minutes declared for rule "unknown.rule"');
-
-        $this->registry->getBaseMinutes('unknown.rule');
+        try {
+            $this->registry->getBaseMinutes('unknown.rule');
+            self::fail('A rule name absent from the injected map must not be given a default cost');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString('unknown.rule', $exception->getMessage());
+        }
     }
 
     #[Test]

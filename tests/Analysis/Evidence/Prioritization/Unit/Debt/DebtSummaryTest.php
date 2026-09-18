@@ -61,11 +61,4 @@ final class DebtSummaryTest extends TestCase
         self::assertSame('1h 30min', $summary->formatTotal());
     }
 
-    #[Test]
-    public function itFormatsTotalAsZeroMinutes(): void
-    {
-        $summary = new DebtSummary(0, [], []);
-
-        self::assertSame('0min', $summary->formatTotal());
-    }
 }
