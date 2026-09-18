@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Functional;
+namespace Qualimetrix\Tests\Reporting\Integration;
 
 use DOMDocument;
 use PHPUnit\Framework\Attributes\DataProvider;
