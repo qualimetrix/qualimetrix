@@ -98,7 +98,11 @@
             <directory>governance/DocumentationCensus</directory>
             <directory>governance/ModularOwnership</directory>
             <directory>governance/ConsoleComposition</directory>
-            <directory>governance/SolePrimitiveOwnership</directory>
+            <directory>governance/FrameworkClassification</directory>
+            <directory>governance/PackageVersion</directory>
+            <directory>governance/ProjectScopeCoverage</directory>
+            <directory>governance/SelectorSyntax</directory>
+            <directory>governance/SuppressionOptionKeys</directory>
             <directory>governance/RepositoryEntrypoints</directory>
             <directory>governance/ConfigurationVocabulary</directory>
             <directory>governance/MeasurementVocabulary</directory>

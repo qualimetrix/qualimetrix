@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Governance\SolePrimitiveOwnership;
+namespace Qualimetrix\Governance\MeasurementIdentity;
 
 use FilesystemIterator;
 use PhpParser\NodeVisitor;
