@@ -19,11 +19,12 @@ use PHPUnit\Framework\TestCase;
  * naming it still resolves, and `composer check` is green. On any other clone
  * the path is simply absent, and PHPUnit answers an absent `<directory>` by
  * exiting 2 without executing a single test — not one, from any suite. So the
- * branch that looks most thoroughly validated is the one that runs no tests at
- * all. This repository has already paid for that shape once: `tests/Reporting/
- * Functional` lost both its files and kept its registration, and three green
- * `composer check` runs on the emptying branch were green for exactly that
- * reason.
+ * one worktree where the suite still runs is the one holding the defect, and it
+ * is the one reporting green; CI, a colleague and a fresh checkout of the very
+ * same commit report nothing, because the run never starts. This repository has
+ * already paid for that shape once: `tests/Reporting/Functional` lost both its
+ * files and kept its registration, and three `composer check` runs on the
+ * emptying branch were green for exactly that reason.
  *
  * **Tracked, not present.** `is_dir()` answers about this machine and would
  * have called that registration healthy — it was a real directory here, all
