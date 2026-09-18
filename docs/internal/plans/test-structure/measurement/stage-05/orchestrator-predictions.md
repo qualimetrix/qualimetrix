@@ -54,3 +54,72 @@ Measured on the branch point: `TestSubjectPaths::population()` returns **616**,
 so `assertGreaterThan(600, …)` permits 601 and the margin is **15 files, not
 sixteen**. The comment beside that assertion says "sixteen" twice and is
 corrected by P0a.
+
+## The delta prediction for P1 and P3-P7
+
+Recorded after P0a landed and before any other package started, which is the only
+window in which it is a prediction. P0a's own effect is already measured and is
+not part of it: **+6 in `Governance`, all six the completeness control's methods,
+taking the total from 9208 to 9214.** Everything below is measured against 9214.
+
+A package cannot make this prediction, because it cannot attribute a global delta
+to itself while four others are running. So the reconciliation rule is the point
+of the exercise: **each package reports the methods it deleted and the cases it
+added, by name, and the sum of those reports must equal the observed global
+delta.** A difference that no package claims is a lost test, not a rounding error.
+
+### What moves the count, and what only looks like it does
+
+Count-neutral by construction, and named here so a change in them is a signal
+rather than noise: `category-wrong` (38 open rows) and `misplaced` (52) move files
+and directories; `tautology` (14) replaces an assertion in place; `weak-oracle`,
+`brittle-pin`, `state-leak` and `undeclared-subject` (22 together) strengthen a
+case without removing it. An explicitly skipped case still counts as a case.
+
+**The hazard inside the neutral classes:** a file moved into a directory that
+`phpunit.xml.dist` does not enumerate stops being executed, and the count falls
+with nothing failing. `Functional` registers only two directories today against
+`Unit`'s 26, so a level change upward is the likeliest place for it. A fall this
+stage cannot attribute to a named deletion is assumed to be this until proven
+otherwise.
+
+### The driver: 107 open `dupe` rows
+
+| Package | Open `dupe` rows | Predicted deletions |
+| ------- | ---------------: | ------------------- |
+| P3      | 46               | −10 to −18          |
+| P4      | 23               | −7 to −12           |
+| P5      | 14               | −4 to −8            |
+| P7      | 14               | −4 to −8            |
+| P1      | 6                | −1 to −4            |
+| P6      | 4                | −1 to −3            |
+| total   | **107**          | **−27 to −53**      |
+
+Deletions are predicted well below the row count for three measured reasons. The
+byte-identical instrument holds 20 groups and 58 methods, so collapsing every
+group to one removes at most 38 — the other ~50 `dupe` rows were found by reading
+and a row found by reading may resolve by merging rather than deleting. The audit
+cleared five suspected pairs on reading, so resemblance already has a measured
+false-positive rate here. And **P3's 46 is damped hardest**: 13 of them are the
+`itDeliberatelyDoesNotProvideCallableMetrics` group.
+
+**A named sub-prediction, because P1 rules on it and the ruling is falsifiable:**
+that group is ruled **legitimate** and deletes nothing. The plan calls it
+"plausibly legitimate — one deliberate statement of intent per collector", and the
+byte-identical instrument undercounts the conceptual group (14 files, not 13),
+which is the shape of an intent restated per collector rather than a copied
+assertion. If P1 rules the other way, P3's range moves by about −13 and the
+prediction was wrong in a way worth saying out loud.
+
+### The one addition
+
+P1 builds a controls stand for the tautologies. In the shape the repository
+already uses (`scripts/directive-audit-controls/`), a stand carries its own test
+file under `scripts/<tool>/tests/`, which lands in `Tooling`: **+1 to +8**.
+
+### The number
+
+**9214 → 9178, band 9161 to 9195.** Centre is −40 from deletions and +4 from the
+stand. Outside the band is not automatically wrong; it is the point at which the
+per-package reports must account for the difference by name before the stage is
+called done.
