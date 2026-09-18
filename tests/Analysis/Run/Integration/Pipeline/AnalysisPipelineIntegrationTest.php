@@ -98,15 +98,18 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
- * Integration tests for AnalysisPipeline.
+ * Regression guard for three wiring defects AnalysisPipeline once carried, run
+ * against the real pipeline rather than a double:
  *
- * These tests expose known bugs in the pipeline where:
- * 1. dependencyGraph is not passed to AnalysisContext (line 127 of AnalysisPipeline)
- * 2. CircularDependencyDetector is never invoked, so AnalysisContext::$cycles is empty
- * 3. Global collector MetricDefinitions are not included in MetricAggregator,
- *    so their metrics are never aggregated to namespace/project level
+ * 1. the dependency graph never reached AnalysisContext;
+ * 2. CircularDependencyDetector was never invoked, so AnalysisContext::$cycles
+ *    stayed empty;
+ * 3. global collectors' MetricDefinitions were left out of MetricAggregator, so
+ *    their metrics never aggregated to namespace or project level.
  *
- * All tests are expected to FAIL until the pipeline is fixed.
+ * All three are fixed, and these cases are green. They are kept because each
+ * defect was a silent one — the pipeline returned a complete-looking result
+ * with a piece of it missing — and only an end-to-end run observes that.
  */
 #[Group('regression')]
 final class AnalysisPipelineIntegrationTest extends TestCase

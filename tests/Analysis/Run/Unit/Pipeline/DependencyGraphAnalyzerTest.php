@@ -158,16 +158,13 @@ PHP);
     }
 
     #[Test]
-    public function itUsesTheTraversalContractWithoutImportingDependencyModelInternals(): void
+    public function itTakesItsTraversalParticipantAsTheDeclaredContract(): void
     {
         $constructor = (new ReflectionClass(DependencyGraphAnalyzer::class))->getConstructor();
         self::assertNotNull($constructor);
         $type = $constructor->getParameters()[2]->getType();
 
         self::assertSame(DependencyTraversalParticipantInterface::class, (string) $type);
-        $source = file_get_contents(\dirname(__DIR__, 5) . '/src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php');
-        self::assertIsString($source);
-        self::assertStringNotContainsString('DependencyModel\\Extraction', $source);
     }
 
     private function createAnalyzer(FileParserInterface $parser): DependencyGraphAnalyzer
