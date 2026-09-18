@@ -1,6 +1,7 @@
 path	where	form	context
 scripts/generate-modular-architecture-production-inventory.php	824	name	$row['closure_package'] = $entry['closure_package'];
 scripts/generate-modular-architecture-production-inventory.php	860	name	$byName[$dependency]['closure_package'],
+scripts/generate-modular-architecture-production-inventory.php	921	seam:read	static fn(array $consumer): bool => $consumer['closes_in'] !== null,
 scripts/generate-modular-architecture-production-inventory.php	934	name	$row['closure_package'],
 scripts/generate-modular-architecture-production-inventory.php	1078	name	$reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target
 scripts/generate-modular-architecture-production-inventory.php	1092	name	$stateRows[] = [$row['path'], $row['fqcn'], $row['proposed_owner'], $row['closure_package'], stateSc
@@ -8,10 +9,17 @@ scripts/generate-modular-architecture-production-inventory.php	1103	name	'produc
 scripts/generate-modular-architecture-production-inventory.php	1106	name	'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency
 scripts/generate-modular-architecture-production-inventory.php	1111	name	'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_
 scripts/generate-modular-architecture-production-inventory.php	1113	name	'production-reporting-classification.tsv' => tsv(['path', 'fqcn', 'classification', 'target_owner', 
+scripts/generate-modular-architecture-production-inventory.php	1221	seam:read	|| $consumer['closes_in'] !== null
+scripts/generate-modular-architecture-production-inventory.php	1238	seam:read	if (!is_string($consumer['source_fqcn']) || $consumer['closes_in'] !== null) {
+scripts/generate-modular-architecture-production-inventory.php	1255	seam:read	$permanentOwnerWide = $consumer['source_fqcn'] === null && $consumer['closes_in'] === null;
+scripts/generate-modular-architecture-production-inventory.php	1256	seam:read	$permanentExact = is_string($consumer['source_fqcn']) && $consumer['closes_in'] === null;
+scripts/generate-modular-architecture-production-inventory.php	1257	seam:read	$temporary = is_string($consumer['source_fqcn']) && is_string($consumer['closes_in']);
 scripts/generate-modular-architecture-production-inventory.php	1327	name	static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
 scripts/generate-modular-architecture-production-inventory.php	1327	value:P	static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
 scripts/generate-modular-architecture-production-inventory.php	1435	value:P	if ($entry['closes_in'] === 'P4') {
+scripts/generate-modular-architecture-production-inventory.php	1435	seam:read	if ($entry['closes_in'] === 'P4') {
 scripts/generate-modular-architecture-production-inventory.php	1448	value:P	static fn(array $grant): bool => $grant['closes_in'] === 'P4',
+scripts/generate-modular-architecture-production-inventory.php	1448	seam:read	static fn(array $grant): bool => $grant['closes_in'] === 'P4',
 scripts/generate-modular-architecture-production-inventory.php	2420	name	return tsv(['current_path', 'subject_owner', 'closure_package', 'disposition'], $rows);
 scripts/generate-modular-architecture-production-inventory.php	2457	value:P	return ['Architecture.Governance', 'P0-D', 'P0 governance documentation; review with the manifest an
 scripts/generate-modular-architecture-production-inventory.php	2461	value:P	'AGENTS.md' => ['Architecture.Governance', 'P2'],
@@ -171,20 +179,39 @@ docs/internal/modular-architecture-manifest.schema.json	15	schema:version	"const
 docs/internal/modular-architecture-manifest.schema.json	48	schema:field	"closure_package",
 docs/internal/modular-architecture-manifest.schema.json	74	schema:field	"closure_package": {
 docs/internal/modular-architecture-manifest.schema.json	75	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	93	schema:seam	"closes_in"
+docs/internal/modular-architecture-manifest.schema.json	103	schema:seam	"closes_in": {
+docs/internal/modular-architecture-manifest.schema.json	114	schema:seam	"closes_in"
+docs/internal/modular-architecture-manifest.schema.json	125	schema:seam	"closes_in": {
+docs/internal/modular-architecture-manifest.schema.json	136	schema:seam	"closes_in"
+docs/internal/modular-architecture-manifest.schema.json	147	schema:seam	"closes_in": {
 docs/internal/modular-architecture-manifest.schema.json	149	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	160	schema:seam	"closes_in",
+docs/internal/modular-architecture-manifest.schema.json	175	schema:seam	"closes_in": {
+docs/internal/modular-architecture-manifest.schema.json	195	schema:seam	"closes_in",
+docs/internal/modular-architecture-manifest.schema.json	210	schema:seam	"closes_in": {
+docs/internal/modular-architecture-manifest.schema.json	226	schema:seam	"closes_in",
+docs/internal/modular-architecture-manifest.schema.json	240	schema:seam	"closes_in": {
+docs/internal/modular-architecture-manifest.schema.json	269	schema:seam	"closes_in"
+docs/internal/modular-architecture-manifest.schema.json	288	schema:seam	"closes_in": {
 docs/internal/modular-architecture-manifest.schema.json	290	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
+docs/internal/modular-architecture-manifest.schema.json	300	schema:seam	"closes_in"
+docs/internal/modular-architecture-manifest.schema.json	311	schema:seam	"closes_in": {
 docs/internal/modular-architecture-manifest.schema.json	313	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
 governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php	69	consumer:version	self::assertSame(2, $manifest['version']);
-governance/RepositoryEntrypoints/MemoryCeilingManifestTest.php	44	consumer:version	self::assertNotSame('', $manifest['version']);
-governance/RepositoryEntrypoints/MemoryCeilingManifestTest.php	61	consumer:version	self::assertSame($package['version'], $manifest['version']);
-docs/internal/modular-architecture-manifest.json	0 declarations	manifest:field	closure_package per declaration
+docs/internal/modular-architecture-manifest.json	955 declarations	manifest:field	closure_package per declaration
+docs/internal/modular-architecture-manifest.json	2501 consumers	manifest:seam	closes_in, null on every one
 docs/internal/modular-architecture-manifest.json	1	manifest:version	version = 2
 docs/internal/generated/modular-architecture/documentation-ownership.tsv	col 3	artifact:column	closure_package; 160 data rows
-docs/internal/generated/modular-architecture/documentation-ownership.tsv	93 rows	artifact:prose	published sentence naming the concept
 docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	col 6	artifact:column	closure_package; 2493 data rows
 docs/internal/generated/modular-architecture/production-ownership.tsv	col 6	artifact:column	closure_package; 955 data rows
 docs/internal/generated/modular-architecture/production-reporting-classification.tsv	col 5	artifact:column	closure_package; 78 data rows
 docs/internal/generated/modular-architecture/production-state-services.tsv	col 4	artifact:column	closure_package; 102 data rows
 docs/internal/generated/modular-architecture/test-ownership.tsv	col 10	artifact:column	closure_package; 933 data rows
-docs/internal/generated/modular-architecture/test-ownership.tsv	30 rows	artifact:prose	published sentence naming the concept
 docs/internal/generated/modular-architecture/test-fixture-directories.tsv	col 3	artifact:column	closure_packages; 121 data rows
+docs/internal/generated/modular-architecture/documentation-ownership.tsv	93 rows	artifact:prose	disposition prose
+docs/internal/generated/modular-architecture/documentation-ownership.tsv	5 rows	artifact:prose	disposition prose, P-token inside
+docs/internal/generated/modular-architecture/test-ownership.tsv	30 rows	artifact:prose	disposition prose
+docs/internal/generated/modular-architecture/production-ownership.tsv	364 rows	artifact:seam	closes_in inside the consumers JSON cell
+qmx.yaml	1538	config:prose	# domain-VO sub-namespace. The P4 Layer root contains the Architecture leaf's
+qmx.yaml	1543	config:prose	# Core tree (including the umbrella namespace itself, D=0.71) and the P4
