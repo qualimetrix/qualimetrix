@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration;
+namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 
 use PhpParser\Node;
 use PhpParser\NodeFinder;
