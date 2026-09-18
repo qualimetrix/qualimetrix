@@ -25,6 +25,19 @@ final class FileSetInspectionParticipantCompilerPassTest extends TestCase
 {
     private const string COMPOSITE_ID = 'qmx.analysis.run.file_set_inspection_composite';
 
+    /**
+     * Two cases swap a fixture's static provider to make the pass refuse, and a
+     * static outlives the case that wrote it. The restore lives here rather
+     * than at the end of each case because an assertion that fails skips
+     * whatever follows it.
+     */
+    protected function tearDown(): void
+    {
+        foreach ([EmptyIdParticipant::class, EmptyRuleParticipant::class] as $fixture) {
+            (new ReflectionProperty($fixture, 'provider'))->setValue(null, null);
+        }
+    }
+
     #[Test]
     public function itInjectsParticipantsInLexicalIdOrderIndependentOfRegistrationOrder(): void
     {
@@ -66,6 +79,26 @@ final class FileSetInspectionParticipantCompilerPassTest extends TestCase
         $this->expectExceptionMessage('File-set inspection participant ' . EmptyRuleParticipant::class . '::producerRuleName() must return a non-empty string.');
 
         (new FileSetInspectionParticipantCompilerPass())->process($container);
+    }
+
+    /**
+     * The reader the two refusals above need: each swaps a fixture's static
+     * provider, and `??=` keeps whatever was swapped in, so a case asking the
+     * same fixture for its default answers from the previous case unless
+     * something puts the static back.
+     */
+    #[Test]
+    public function itStillReadsTheFixtureDefaultsAfterTheRefusalsThatSwapThem(): void
+    {
+        $container = $this->containerWithComposite();
+        $this->registerParticipant($container, 'default-id', EmptyIdParticipant::class);
+        $this->registerParticipant($container, 'default-rule', EmptyRuleParticipant::class);
+
+        (new FileSetInspectionParticipantCompilerPass())->process($container);
+
+        $references = $container->getDefinition(self::COMPOSITE_ID)->getArgument('$participants');
+        self::assertIsArray($references);
+        self::assertCount(2, $references);
     }
 
     #[Test]
