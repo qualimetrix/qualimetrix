@@ -1186,6 +1186,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/RatchetArtifact/', 'suite' => 'Governance'],
         ['prefix' => 'governance/PlanningRecords/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DocumentationCensus/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DistributedPackage/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ModularOwnership/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ConsoleComposition/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FrameworkClassification/', 'suite' => 'Governance'],

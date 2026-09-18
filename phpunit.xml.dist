@@ -98,6 +98,7 @@
             <directory>governance/RatchetArtifact</directory>
             <directory>governance/PlanningRecords</directory>
             <directory>governance/DocumentationCensus</directory>
+            <directory>governance/DistributedPackage</directory>
             <directory>governance/ModularOwnership</directory>
             <directory>governance/ConsoleComposition</directory>
             <directory>governance/FrameworkClassification</directory>
