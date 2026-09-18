@@ -25,7 +25,7 @@ use RuntimeException;
  * added to any Options class without updating its `withOverride()` method —
  * a property of the whole `ThresholdAwareOptionsInterface` population, not of
  * any one rule, which is why it lives apart from the per-class cases in
- * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest}.
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdOverrideIntegrationTest}.
  */
 final class ThresholdAwareOptionsFieldPreservationTest extends TestCase
 {
