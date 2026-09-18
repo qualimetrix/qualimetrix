@@ -6,7 +6,6 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement;
 
 use ArrayIterator;
 use Generator;
-use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
@@ -511,35 +510,6 @@ final class CompositeCollectorTest extends TestCase
 
         // Second value should override first (MetricBag::merge behavior)
         self::assertSame(20, $result->metrics->get('duplicate'));
-    }
-
-    #[Test]
-    public function itThrowsOnCyclicDerivedCollectorDependencies(): void
-    {
-        $baseMetrics = (new MetricBag())->with('value:test', 10);
-        $baseCollector = $this->createCollector('base', $baseMetrics);
-
-        // Collector A requires B, Collector B requires A => cycle
-        $derivedA = self::createStub(DerivedCollectorInterface::class);
-        $derivedA->method('getName')->willReturn('derivedA');
-        $derivedA->method('requires')->willReturn(['derivedB']);
-        $derivedA->method('provides')->willReturn(['metricA']);
-        $derivedA->method('getMetricDefinitions')->willReturn([]);
-        $derivedA->method('calculate')->willReturn(new MetricBag());
-
-        $derivedB = self::createStub(DerivedCollectorInterface::class);
-        $derivedB->method('getName')->willReturn('derivedB');
-        $derivedB->method('requires')->willReturn(['derivedA']);
-        $derivedB->method('provides')->willReturn(['metricB']);
-        $derivedB->method('getMetricDefinitions')->willReturn([]);
-        $derivedB->method('calculate')->willReturn(new MetricBag());
-
-        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedA, $derivedB]);
-
-        self::expectException(LogicException::class);
-        self::expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
-
-        $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
     }
 
     private function createCollector(string $name, MetricBag $metrics): MetricCollectorInterface

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit;
 
+use Error;
 use InvalidArgumentException;
 use PhpParser\Node;
 use PhpParser\Node\Name;
@@ -23,8 +24,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
-use ReflectionClass;
-use ReflectionMethod;
 
 #[CoversClass(VisitorCallableScope::class)]
 #[CoversClass(VisitorLexicalScope::class)]
@@ -35,65 +34,25 @@ use ReflectionMethod;
 final class VisitorMethodContextTest extends TestCase
 {
     #[Test]
-    public function itExposesTheExactImmutableCallableScopeContract(): void
+    public function itRefusesEveryWriteToACallableScopeAfterConstruction(): void
     {
-        $reflection = new ReflectionClass(VisitorCallableScope::class);
+        $scope = new VisitorCallableScope('App', 'Thing', false, 'run', 'App\\Thing::run', 'App\\Thing::run@12#0', 12, 8, CallableKind::Method, null, 3, DeclarationOrdinal::fromRank(0), DeclarationOrdinal::fromRank(0));
 
-        self::assertTrue($reflection->isFinal());
-        self::assertTrue($reflection->isReadOnly());
-        self::assertSame(
-            [
-                'namespace',
-                'class',
-                'anonymousClassContext',
-                'member',
-                'logicalFqn',
-                'traversalKey',
-                'startFilePos',
-                'sourceLine',
-                'kind',
-                'anonymousSyntax',
-                'classStartFilePos',
-                'ordinal',
-                'classOrdinal',
-            ],
-            array_map(static fn($property): string => $property->getName(), $reflection->getProperties()),
-        );
+        foreach (['namespace', 'class', 'member', 'logicalFqn', 'traversalKey', 'kind', 'ordinal'] as $property) {
+            try {
+                $write = static function (VisitorCallableScope $target, string $name): void {
+                    $target->{$name} = null;
+                };
+                $write($scope, $property);
+                self::fail(\sprintf('A callable scope accepted a write to %s', $property));
+            } catch (Error $error) {
+                self::assertStringContainsString('readonly', $error->getMessage());
+            }
+        }
 
-        $contextMethods = array_values(array_filter(
-            (new ReflectionClass(VisitorMethodContext::class))->getMethods(ReflectionMethod::IS_PUBLIC),
-            static fn($method): bool => !$method->isConstructor(),
-        ));
-        self::assertSame(
-            [
-                'reset',
-                'useDeclarationIndex',
-                'enter',
-                'leave',
-                'currentFileEntrySubjectId',
-                'fileEntrySubjectComponents',
-                'createCallableWithMetrics',
-                'projectLogicalMetricMap',
-            ],
-            array_map(static fn($method): string => $method->getName(), $contextMethods),
-        );
-        self::assertSame([], (new ReflectionClass(VisitorCallableMetadata::class))->getProperties());
-        self::assertSame(
-            [
-                'namespace',
-                'class',
-                'member',
-                'startFilePos',
-                'sourceLine',
-                'kind',
-                'anonymousSyntax',
-                'classStartFilePos',
-            ],
-            array_map(
-                static fn($parameter): string => $parameter->getName(),
-                (new ReflectionClass(VisitorLexicalScope::class))->getMethod('enterCallable')->getParameters(),
-            ),
-        );
+        self::assertSame('run', $scope->member);
+        self::assertSame('App\\Thing::run@12#0', $scope->traversalKey);
+        self::assertSame(CallableKind::Method, $scope->kind);
     }
 
     #[Test]

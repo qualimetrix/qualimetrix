@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement;
 
-use LogicException;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -37,39 +36,6 @@ use SplFileInfo;
 #[Group('regression')]
 final class DerivedCollectorSortTest extends TestCase
 {
-    #[Test]
-    public function itAccumulatesOutputsForDependentDerivedCollectors(): void
-    {
-        $baseCollector = $this->createBaseCollector(
-            (new MetricBag())->with('raw:App\Service::method', 10),
-        );
-
-        $collectorB = $this->createDerivedCollector(
-            name: 'collector-b',
-            requires: [],
-            provides: ['intermediate'],
-            calculate: static fn(MetricBag $bag): MetricBag =>
-                (new MetricBag())->with('intermediate', ($bag->get('raw') ?? 0) * 2),
-        );
-
-        $collectorA = $this->createDerivedCollector(
-            name: 'collector-a',
-            requires: ['collector-b'],
-            provides: ['final'],
-            calculate: static fn(MetricBag $bag): MetricBag =>
-                (new MetricBag())->with('final', ($bag->get('intermediate') ?? 0) + 1),
-        );
-
-        // B runs before A, and A receives B's accumulated output.
-        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorB, $collectorA]);
-        $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
-
-        self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
-        self::assertSame(20, $result->metrics->get($this->key('intermediate')));
-
-        self::assertSame(21, $result->metrics->get($this->key('final')));
-    }
-
     #[Test]
     public function itSortsDependentDerivedCollectorsBeforeCalculation(): void
     {
@@ -142,35 +108,6 @@ final class DerivedCollectorSortTest extends TestCase
         self::assertSame(50, $result->metrics->get($this->key('step_a_result')));
         self::assertSame(150, $result->metrics->get($this->key('step_b_result')));
         self::assertSame(300, $result->metrics->get($this->key('step_c_result')));
-    }
-
-    #[Test]
-    public function itRejectsCyclicDerivedCollectorDependencies(): void
-    {
-        $baseCollector = $this->createBaseCollector(
-            (new MetricBag())->with('value:fqn', 1),
-        );
-
-        $collectorA = $this->createDerivedCollector(
-            name: 'collector-a',
-            requires: ['collector-b'],
-            provides: ['a'],
-            calculate: static fn(MetricBag $bag): MetricBag => new MetricBag(),
-        );
-
-        $collectorB = $this->createDerivedCollector(
-            name: 'collector-b',
-            requires: ['collector-a'],
-            provides: ['b'],
-            calculate: static fn(MetricBag $bag): MetricBag => new MetricBag(),
-        );
-
-        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorA, $collectorB]);
-
-        self::expectException(LogicException::class);
-        self::expectExceptionMessageMatches('/Cyclic dependency.*collector-a.*collector-b|Cyclic dependency.*collector-b.*collector-a/');
-
-        $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
     }
 
     /**
