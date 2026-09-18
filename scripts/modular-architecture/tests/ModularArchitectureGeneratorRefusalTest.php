@@ -336,6 +336,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/directive-audit-controls/tests',
             );
             $this->copyDirectory(
+                $sourceRoot . '/scripts/tautology-controls/tests',
+                $projectRoot . '/scripts/tautology-controls/tests',
+            );
+            $this->copyDirectory(
                 $sourceRoot . '/scripts/finding-gate/tests',
                 $projectRoot . '/scripts/finding-gate/tests',
             );
