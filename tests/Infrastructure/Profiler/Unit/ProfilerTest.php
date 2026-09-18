@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
+namespace Qualimetrix\Tests\Infrastructure\Profiler\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;

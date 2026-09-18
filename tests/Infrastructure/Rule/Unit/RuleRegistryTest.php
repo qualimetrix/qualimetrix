@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Rule\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
@@ -14,6 +15,7 @@ use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use ReflectionClass;
 
+#[CoversClass(RuleRegistry::class)]
 final class RuleRegistryTest extends TestCase
 {
     // The registry deliberately exposes no rule factory: rules may declare
