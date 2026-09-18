@@ -116,8 +116,11 @@ the kind of artifact the control happens to read. Registering a new group means
 two edits that must agree: a `<directory>` under the `Governance` suite in
 `phpunit.xml.dist`, and a row in
 `testSuitePrefixTable()` in
-`scripts/generate-modular-architecture-test-inventory.php`. Nothing else — an
-unregistered group reddens `composer architecture:check` by name. Declaring the
+`scripts/generate-modular-architecture-test-inventory.php`. Nothing else
+registers it — an unregistered group reddens `composer architecture:check` by
+name. A group that carries fixture files needs two more, and both fail silently
+because each names a group directory literally: the `.gitignore` negation that
+unignores the fixtures, and `phpstan.neon`'s `excludePaths`. Declaring the
 root as a single `<directory>` instead of one per group is deliberately not
 done: it hides layout defects.
 
