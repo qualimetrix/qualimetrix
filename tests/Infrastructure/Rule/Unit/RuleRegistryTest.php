@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use ReflectionClass;
@@ -84,18 +85,23 @@ final class RuleRegistryTest extends TestCase
         self::assertSame([], $registry->getAllCliAliases());
     }
 
+    /**
+     * LayerViolationRule takes an ArchitecturePolicy collaborator beyond its
+     * Options object, so it cannot be built without the container. A registry
+     * that reached for an instance to read a rule's name would raise an
+     * ArgumentCountError here instead of answering.
+     */
     #[Test]
-    public function itReadsTheNameConstantWithoutInstantiatingRules(): void
+    public function itReadsMetadataOffARuleClassItCouldNotHaveBuilt(): void
     {
-        // This test verifies that getAllCliAliases uses reflection to get NAME constant
-        // Both rules have NAME constant, so no instances should be created for metadata
-        $registry = new RuleRegistry([
-            ComplexityRule::class,
-        ]);
+        $registry = new RuleRegistry([LayerViolationRule::class]);
 
-        $aliases = $registry->getAllCliAliases();
-
-        // Verify the NAME constant is used correctly
-        self::assertSame(ComplexityRule::NAME, $aliases['cyclomatic-warning']['rule']);
+        self::assertSame(
+            [
+                'layer-violation' => ['rule' => LayerViolationRule::NAME, 'option' => 'enabled'],
+                'layer-violation-severity' => ['rule' => LayerViolationRule::NAME, 'option' => 'severity'],
+            ],
+            $registry->getAllCliAliases(),
+        );
     }
 }
