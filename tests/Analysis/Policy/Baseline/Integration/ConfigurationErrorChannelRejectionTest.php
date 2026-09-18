@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
+namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -56,6 +56,11 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
  * a user to delete a line when the fix is to repair their configuration.
  */
 #[CoversClass(ChannelDeclaration::class)]
+#[CoversClass(BaselineEntryParser::class)]
+#[CoversClass(BaselineGenerator::class)]
+#[CoversClass(BaselineUpdater::class)]
+#[CoversClass(BaselineCleaner::class)]
+#[CoversClass(BaselineCeilingStage::class)]
 final class ConfigurationErrorChannelRejectionTest extends TestCase
 {
     private const string RULE_NAME = 'architecture.coverage-gap';
