@@ -1009,7 +1009,7 @@ function classifyOwner(string $path): array
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }
-    if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/')) {
+    if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/')) {
         return ['Analysis/Evidence/Duplication', 'P1'];
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/')) {
@@ -1144,6 +1144,8 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Coupling/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Duplication/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Duplication/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Duplication/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Analysis/Evidence/Maintainability/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Security/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Size/Unit/', 'suite' => 'Unit'],
