@@ -56,15 +56,26 @@ final class CacheFactoryTest extends TestCase
     #[Test]
     public function itUsesTheCacheDirFromTheConfigurationAtFirstCall(): void
     {
+        $cache = $this->makeFactoryWithCacheDir('/tmp/qmx-initial-cache')->create();
+
+        self::assertInstanceOf(FileCache::class, $cache);
+        self::assertSame('/tmp/qmx-initial-cache', $cache->getDirectory()->value());
+    }
+
+    #[Test]
+    public function itTakesTheCacheDirAsItWasAtTheFirstCall(): void
+    {
         $store = new CacheConfigurationStore();
         $store->replace(new CacheConfiguration(AbsolutePath::fromString('/tmp/qmx-initial-cache')));
 
         $factory = new CacheFactory($store);
-        $cache = $factory->create();
+        $first = $factory->create();
 
-        // FileCache stores the cacheDir; can't read it directly,
-        // but we verify the factory dispatched to the provider's configuration.
-        self::assertInstanceOf(FileCache::class, $cache);
+        $store->replace(new CacheConfiguration(AbsolutePath::fromString('/tmp/qmx-second-cache')));
+
+        self::assertInstanceOf(FileCache::class, $first);
+        self::assertSame('/tmp/qmx-initial-cache', $first->getDirectory()->value());
+        self::assertSame($first, $factory->create());
     }
 
     private function makeFactoryWithCacheDir(string $cacheDir): CacheFactory

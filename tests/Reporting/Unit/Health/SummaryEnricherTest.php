@@ -483,6 +483,11 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame('0 classes analyzed', $typing->label);
     }
 
+    /**
+     * The typing dimension is added beside other health dimensions, not on its
+     * own: with none of them present there is nothing for it to sit beside.
+     * The neighbouring case shows the other half, where it is added as N/A.
+     */
     #[Test]
     public function itTypingNotAddedWhenNoDimensions(): void
     {
@@ -505,7 +510,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        self::assertSame([], $result->healthScores);
+        self::assertArrayNotHasKey('typing', $result->healthScores);
     }
 
 }

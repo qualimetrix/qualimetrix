@@ -106,43 +106,6 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itEnforcesMinimumMinFilesForParallelOfOne(): void
-    {
-        $this->strategy->setMinFilesForParallel(0);
-
-        // Should be clamped to 1 - verify by using 1 file which should now pass threshold
-        // (though other conditions like projectRoot will cause fallback)
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
-    public function itSetsProjectRoot(): void
-    {
-        $this->strategy->setProjectRoot(AbsolutePath::fromString('/path/to/project'));
-
-        // We can't directly verify the private property, but method should not throw
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
-    public function itSetsCacheDir(): void
-    {
-        $this->strategy->setCacheDir(AbsolutePath::fromString('/path/to/cache'));
-
-        // We can't directly verify the private property, but method should not throw
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
-    public function itSetsCacheDirToNull(): void
-    {
-        $this->strategy->setCacheDir(null);
-
-        // Should accept null to disable caching
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
     public function itForwardsTheDependencyTraversalParticipantClassToEverySerializedTask(): void
     {
         if (!$this->strategy->isAvailable()) {
@@ -345,16 +308,6 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itAllowsSettingMinFilesForParallelToOne(): void
-    {
-        $this->strategy->setMinFilesForParallel(1);
-
-        // Verify that single file can theoretically pass threshold
-        // (though other conditions will cause fallback in practice)
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
     public function itDefaultsToFourWorkers(): void
     {
         $strategy = $this->createStrategy();
@@ -390,11 +343,15 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itFallsBackToSequentialWhenParallelNotAvailableWithAllConditionsMet(): void
     {
-        // This test simulates a scenario where all conditions are met
-        // (enough files, project root set, collectors configured)
-        // but parallel processing is not available on the system
+        // Every other condition is met, so the fallback under test is the
+        // availability one, and on a machine where parallel *is* available the
+        // case cannot reach it. Skipping loudly is the point: the claim used
+        // to sit inside this same condition, so it was silently satisfied here
+        // and checked nowhere.
+        if ($this->strategy->isAvailable()) {
+            self::markTestSkipped('Parallel is available, so the unavailable fallback cannot be reached.');
+        }
 
-        // Setup strategy with all required configuration
         $this->strategy = $this->createStrategy([LocCollector::class], derivedCollectorClasses: [MaintainabilityIndexCollector::class]);
         $this->strategy->setMinFilesForParallel(10);
         $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
@@ -408,17 +365,9 @@ final class AmphpParallelStrategyTest extends TestCase
             return $file->getPathname();
         };
 
-        // Execute - will fall back to sequential either because:
-        // 1. Parallel is not available (no ext-parallel or pcntl_fork)
-        // 2. Or will execute parallel (in which case processor won't be called)
         $results = $this->strategy->execute($files, $processor, canParallelize: true);
 
-        // If parallel was available, processor wouldn't be called
-        // If parallel wasn't available, should fall back to sequential
-        if (!$this->strategy->isAvailable()) {
-            self::assertSame(20, $callCount, 'Should fall back to sequential when parallel not available');
-        }
-
+        self::assertSame(20, $callCount, 'Should fall back to sequential when parallel not available');
         self::assertCount(20, $results);
     }
 

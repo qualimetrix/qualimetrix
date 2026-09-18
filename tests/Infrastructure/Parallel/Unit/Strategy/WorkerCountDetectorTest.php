@@ -22,17 +22,23 @@ final class WorkerCountDetectorTest extends TestCase
         self::assertGreaterThan(0, $count);
     }
 
+    /**
+     * The one branch a test can drive. The others read /proc, shell out, or
+     * are the fallback that only a machine with none of them reaches, and the
+     * detector takes no seam for any of them — so the fallback the old name
+     * here promised was, and remains, unreachable from a test.
+     */
     #[Test]
-    public function itReturnsFallbackWhenDetectionFails(): void
+    public function itReadsTheProcessorCountFromTheWindowsEnvironmentVariable(): void
     {
-        $detector = new WorkerCountDetector();
+        $before = getenv('NUMBER_OF_PROCESSORS');
+        putenv('NUMBER_OF_PROCESSORS=7');
 
-        // Ensure the method returns a valid value
-        // Different systems may have different core counts,
-        // but the minimum should be the fallback (4)
-        $count = $detector->detect();
-
-        self::assertGreaterThanOrEqual(1, $count);
+        try {
+            self::assertSame(7, (new WorkerCountDetector())->detect());
+        } finally {
+            putenv($before === false ? 'NUMBER_OF_PROCESSORS' : 'NUMBER_OF_PROCESSORS=' . $before);
+        }
     }
 
     #[Test]
