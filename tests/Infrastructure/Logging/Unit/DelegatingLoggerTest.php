@@ -89,18 +89,27 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame('Second message', $secondLogger->records[0]['message']);
     }
 
+    /**
+     * The holder starts with a NullLogger, and what a NullLogger does is
+     * discard. The absence of an exception cannot tell that apart from a
+     * delegate that swallowed the call itself, so the two messages sent before
+     * anything is installed have to be shown to have gone nowhere: the logger
+     * installed afterwards carries only what was sent after it.
+     */
     #[Test]
-    public function itDelegatesToNullLoggerInitially(): void
+    public function itDiscardsThroughTheNullLoggerTheHolderStartsWith(): void
     {
-        $holder = new LoggerHolder(); // Contains NullLogger by default
+        $holder = new LoggerHolder();
         $delegating = new DelegatingLogger($holder);
 
-        // Should not throw, NullLogger silently discards
-        $delegating->info('Test message');
-        $delegating->error('Error message');
+        $delegating->info('Sent before a logger is installed');
+        $delegating->error('Sent before a logger is installed');
 
-        // No exception thrown = test passes
-        self::expectNotToPerformAssertions();
+        $installed = new InMemoryLogger();
+        $holder->setLogger($installed);
+        $delegating->info('Sent after');
+
+        self::assertSame(['Sent after'], array_column($installed->records, 'message'));
     }
 
     #[Test]

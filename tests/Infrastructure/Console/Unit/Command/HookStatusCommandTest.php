@@ -11,20 +11,22 @@ use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 /**
- * Smoke tests for HookStatusCommand. Configuration tests only — execute()
- * scenarios such as "not a git repo" can now be added by stubbing
- * GitRepositoryLocatorInterface.
+ * How the command is addressed and what it accepts. What it does when it runs
+ * is the functional file of the same name, under Functional/Command/.
+ *
+ * The name is a promise: it is what a user types and what the hook
+ * documentation tells them to type. The description was pinned beside it word
+ * for word, which promised nothing and broke on rewording.
  */
 #[CoversClass(HookStatusCommand::class)]
 final class HookStatusCommandTest extends TestCase
 {
     #[Test]
-    public function itConfiguresItsNameAndDescription(): void
+    public function itIsAddressedAsHookStatus(): void
     {
         $command = new HookStatusCommand(new GitRepositoryLocator());
 
         self::assertSame('hook:status', $command->getName());
-        self::assertSame('Show status of git pre-commit hook', $command->getDescription());
     }
 
     #[Test]

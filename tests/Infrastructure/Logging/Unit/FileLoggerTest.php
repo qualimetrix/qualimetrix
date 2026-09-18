@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Qualimetrix\Infrastructure\Logging\FileLogger;
 
+#[CoversClass(FileLogger::class)]
 final class FileLoggerTest extends TestCase
 {
     private string $tempDir;
