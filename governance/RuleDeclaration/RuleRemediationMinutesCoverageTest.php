@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -28,19 +27,17 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  *
  * The number of rule **classes** is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement. It is 48 and counts `RuleRegistryInterface::getClasses()`;
- * `bin/qmx rules` reports 54, because it counts producers.
+ * agreement. The population and its size live in {@see RegisteredRules}, which
+ * the other sweep in this group reads too.
  */
 #[CoversClass(RuleRemediationMinutesReader::class)]
 final class RuleRemediationMinutesCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 48;
-
     #[Test]
     public function itRequiresEveryRegisteredRuleToDeclareItsOwnRemediationMinutes(): void
     {
-        $ruleClasses = self::ruleClasses();
-        self::assertCount(self::REGISTERED_RULE_COUNT, $ruleClasses);
+        $ruleClasses = RegisteredRules::classes();
+        self::assertCount(RegisteredRules::COUNT, $ruleClasses);
 
         foreach ($ruleClasses as $ruleClass) {
             $reflection = new ReflectionClass($ruleClass);
@@ -85,12 +82,12 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
 
     private function assertReferencePageMatchesDeclaredMinutes(string $relativePage): void
     {
-        $page = self::readFile(self::docsRoot() . '/' . $relativePage);
+        $page = self::readFile(RegisteredRules::docsRoot() . '/' . $relativePage);
 
         $missing = [];
         $mismatched = [];
 
-        foreach (self::ruleClasses() as $ruleClass) {
+        foreach (RegisteredRules::classes() as $ruleClass) {
             $ruleName = RuleNameReader::read($ruleClass);
             $declared = RuleRemediationMinutesReader::read($ruleClass);
 
@@ -120,7 +117,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
     public function itRequiresEveryProducerOfTheComputedFamilyToBeOnTheReferencePage(): void
     {
         foreach (['reference/remediation-time.md', 'reference/remediation-time.ru.md'] as $relativePage) {
-            $page = self::readFile(self::docsRoot() . '/' . $relativePage);
+            $page = self::readFile(RegisteredRules::docsRoot() . '/' . $relativePage);
 
             foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
                 self::assertSame(
@@ -197,17 +194,4 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
         return $content;
     }
 
-    private static function docsRoot(): string
-    {
-        return \dirname(__DIR__, 2) . '/website/docs';
-    }
-
-    /** @return list<class-string> */
-    private static function ruleClasses(): array
-    {
-        $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
-        \assert($registry instanceof RuleRegistryInterface);
-
-        return $registry->getClasses();
-    }
 }
