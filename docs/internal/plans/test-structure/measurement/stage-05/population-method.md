@@ -41,6 +41,16 @@ finds the failure below.
 **91 of 219 ledger paths (42%) no longer exist**, carrying 120 of 276 rows. Nine
 files need a person; the other 210, and all 60 counterparts, are mechanical.
 
+**This table is the derivation's output, and `population.tsv` has moved past it.**
+The bottom four statuses were the question, not an answer: those nine files have
+since been read and decided, and all nine now read `adjudicated`, leaving
+`at-path` 126, `moved-agreed` 84 and `adjudicated` 9. The table is kept as
+measured, because what the two witnesses could and could not settle is the point
+of this document. Which heir each of the nine got, and why, is
+[`population-adjudication.md`](population-adjudication.md) — and one of them,
+`DocumentationConsistencyTest`, is why the threshold discussion below settles
+nothing on its own.
+
 ## What the method cannot see
 
 - **A split is invisible to W1.** When a stage divided a file, one heir inherits

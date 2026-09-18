@@ -53,8 +53,13 @@ Three facts from it that change how this stage is executed:
   with no edge pointing at it.
 - **Two witnesses are the detector, not a belt-and-braces.** Git rename closure
   and basename matching agree on 84 files and disagree on one; the disagreement
-  is exactly the split above. Nine files in total need a person; the other 210
-  are mechanical.
+  is exactly the split above. Nine files in total needed a person and the other
+  210 were mechanical. The nine have been read and decided — they read
+  `adjudicated` in `population.tsv`, and
+  [`measurement/stage-05/population-adjudication.md`](measurement/stage-05/population-adjudication.md)
+  gives each one's heir and the reason. One of the nine is why the rename
+  threshold is not the identity: `DocumentationConsistencyTest` split four ways,
+  and the edge names a heir the row's method never went to.
 - **Neither witness reads bodies.** A row states a defect as of `585b7c72`.
   Stages 01-04 may have repaired some in passing, so **every row is
   re-confirmed against the current body before it is worked**, and a row that no
@@ -150,12 +155,15 @@ description in the table above. They have one now.
 **`misplaced` (46 rows) is mostly already fixed, and the stage must predict that
 before it looks.** Stage 04's entire subject was putting every test file at its
 manifest owner. By file status: **37 of the 46 rows sit on files that have since
-moved** (34 `moved-agreed`, plus one each `ambiguous-heirs`, `moved-rename-only`,
-`WITNESSES-DISAGREE`), and only 9 are still `at-path`. The prediction is
+moved** — 34 `moved-agreed`, plus the three that P0a adjudicated and that now
+read `adjudicated` — and only 9 are still `at-path`. The prediction is
 therefore: most of this class closes as `already-fixed`, and a `misplaced` row
 that survives re-confirmation is a file stage 04's invariant *permits* — which
 makes it a question about the invariant, not a misfiling. Compare the predicted
 share against the observed one, as the DoD requires for the test count.
+
+**The three P0a settled went the way the prediction says**: all three closed
+`already-fixed`, which is 3 of 3 and says nothing yet about the remaining 34.
 
 **`category-wrong` (32 rows) is the opposite and the plan already says so**: 20 of
 32 are still `at-path`, so the body decides, not the directory.

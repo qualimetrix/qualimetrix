@@ -9,17 +9,27 @@ carries the current heir of each path rather than the ledger's recorded path.
 **The assignment is by file, not by defect class**: a file often carries rows of
 several classes, and splitting by class would put two packages in one file.
 
+**These sizes are P0a's output, not the decomposition's input.** P0a existed to
+decide nine files no witness could place, and four of them turned out to belong
+to another package. The table below is what `packages.tsv` carries after that
+adjudication; `measurement/stage-05/population-adjudication.md` says which file
+went where and why.
+
 | Package                            | Files   | Rows    | Blocks           | Depends on       |
 | ---------------------------------- | ------: | ------: | ---------------- | ---------------- |
-| P0a — population adjudication      | 9       | 10      | everything       | —                |
+| P0a — population adjudication      | 5       | 5       | everything       | —                |
 | P0b — the owner's decisions, taken | 0       | 0       | nothing          | —                |
-| P1 — the high rows                 | 22      | 36      | P3 (ruling only) | P0a              |
+| P1 — the high rows                 | 23      | 37      | P3 (ruling only) | P0a              |
 | P3 — Evidence capabilities         | 58      | 68      | —                | P0a, P1's ruling |
 | P4 — Analysis core and `Core`      | 41      | 52      | —                | P0a              |
-| P5 — Infrastructure                | 42      | 54      | —                | P0a              |
+| P5 — Infrastructure                | 44      | 57      | —                | P0a              |
 | P6 — Reporting                     | 16      | 19      | —                | P0a              |
-| P7 — Governance and Tooling        | 31      | 37      | —                | P0a              |
+| P7 — Governance and Tooling        | 32      | 38      | —                | P0a              |
 | **total**                          | **219** | **276** |                  |                  |
+
+P3, P4 and P6 did not move. P0a kept only the files whose every row it closed
+itself; a file with a row still open went to the package owning its decided heir,
+which is the same rule that built P3-P7.
 
 There is no P2: the numbering follows the defect classes' priority order, and
 `name-lies` folded into P1 because its nine rows share files with the tautologies.
@@ -31,15 +41,21 @@ packages for one ruling.
 
 ## P0a — population adjudication (blocking)
 
-Its nine files are the ones `population.tsv` marks anything other than `at-path`
-or `moved-agreed`. One of its ten rows is a `tautology`, so P0a owns one of the
-24 high rows.
+It took the nine files `population.tsv` marked anything other than `at-path` or
+`moved-agreed`, and their ten rows, and decided each against the body of its
+heirs. It ends holding five: the files whose every row it closed itself. The
+other four carry a row a package still has to work, so they went to the package
+owning the decided heir — two to P5, one to P7, and the `tautology` to P1, which
+is why **P1 now holds all 24 `high` rows and P0a none**.
+
+No row split, so the 219/276 totals never moved and `counterparts.tsv` was not
+re-derived.
 
 - Each ambiguous file's row is attached to the heir that carries the defect,
-  decided by reading both heirs. **Where a split put the defect in both, the row
-  is split too** — and `population.tsv`, `counterparts.tsv` and `packages.tsv`
-  are re-derived in the same commit, because their totals (219/276) become wrong
-  the moment a row is added.
+  decided by reading both heirs. **Where a split puts the defect in both, the row
+  splits too** — and `population.tsv`, `counterparts.tsv` and `packages.tsv` are
+  re-derived in the same commit, because their totals become wrong the moment a
+  row is added. That case did not arise.
 - `row_id` is minted into `defect-ledger.tsv`, and the ledger moves with its new
   `verdicts/` directory to the repository root, out of reach of the plan
   directory this stage's own control may not depend on. This is the one change to
@@ -119,13 +135,22 @@ which pins `src/Reporting/Template/dev.html`. One is user-visible:
 
 ## P1 — the high rows
 
-23 of the 24 `high` rows across 22 files: 13 tautologies, 9 `name-lies`, and one
+All 24 `high` rows, across 23 files: 14 tautologies, 9 `name-lies`, and one
 `never-runs` that stage 01 is recorded as having fixed and that this package only
 re-confirms.
 
-P1's 22 files span **14 manifest owners**, so its validation is closer to a full
-run than to one subject's tests — it is the stage's critical path and should be
-sized by the number of controls-stand cases it must build, not by its 36 rows.
+An earlier draft said 23 rows across 22 files, because the fourteenth tautology —
+`ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared` — sat on a file no
+witness could place, and P0a held it. P0a read both heirs, found the tautology
+live in the Baseline one, and handed the file here: a tautology whose replacement
+is proven by a case in the controls stand does not want repairing in a package
+that is not building that stand.
+
+P1's 23 files span **15 manifest owners** — the fifteenth is
+`Analysis/Policy/Baseline`, which arrived with that file — so its validation is
+closer to a full run than to one subject's tests. It is the stage's critical path
+and should be sized by the number of controls-stand cases it must build, not by
+its 37 rows.
 
 **The ruling P3 waits on.** The group `itDeliberatelyDoesNotProvideCallableMetrics`
 is 14 files: 13 in P3 and the fourteenth
