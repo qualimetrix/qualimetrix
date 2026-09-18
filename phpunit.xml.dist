@@ -70,7 +70,6 @@
 </testsuite>
         <testsuite name="Functional">
             <directory>tests/Analysis/Policy/Baseline/Functional</directory>
-            <directory>tests/Reporting/Functional</directory>
                     <directory>tests/Analysis/Evidence/Duplication/Functional</directory>
 </testsuite>
         <testsuite name="Infrastructure">

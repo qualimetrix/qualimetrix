@@ -1176,7 +1176,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Reporting/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
-        ['prefix' => 'tests/Reporting/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
         ['prefix' => 'governance/TestSuiteHygiene/', 'suite' => 'Governance'],
         ['prefix' => 'governance/Occurrence/', 'suite' => 'Governance'],
