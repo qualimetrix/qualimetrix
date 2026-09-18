@@ -32,6 +32,7 @@ final readonly class Suite
         'tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php',
         'tests/Analysis/Finding/Unit/LocationTest.php',
         'tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php',
+        'tests/Core/Symbol/Unit/CallableKindTest.php',
         'tests/Core/Symbol/Unit/SymbolInfoTest.php',
         'tests/Infrastructure/DependencyInjection/Integration/ContainerFactoryTest.php',
         'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleCompilerPassTest.php',

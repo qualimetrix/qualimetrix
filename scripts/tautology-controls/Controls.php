@@ -13,12 +13,9 @@ namespace QmxTautologyControls;
  * compared an expression with itself and no edit to the product could have
  * moved one side without moving the other.
  *
- * Thirteen of the ledger's fourteen `tautology` rows are here. The fourteenth,
- * `R153`, was re-read and closed `wont-fix`: its expected side is hand-written
- * and the enum values it pins are published in the metrics JSON, so by the
- * ruling in `other-adjudication.md` it is a refusal proof rather than a
- * tautology. Two `name-lies` repairs that share a file with a tautology are
- * here as well, because their edits are disjoint from it and the bench is the
+ * All fourteen of the ledger's `tautology` rows are here, plus one `name-lies`
+ * repair that shares a file with one of them — SymbolInfo's readonly promise —
+ * because its edit is disjoint from the tautology's and the bench is the
  * cheapest place to say so.
  */
 final class Controls
@@ -47,6 +44,7 @@ final class Controls
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
             'Qualimetrix.Tests.Reporting.Unit.FindingProjection.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+            'Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
         ];
@@ -92,6 +90,15 @@ final class Controls
                 'src/Core/Symbol/SymbolInfo.php',
                 ['$this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;' => '$this->subject = null;'],
                 ['Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+            ),
+
+            Control::breaking(
+                'callable-kind-values-stay-usable-as-keys',
+                'R153',
+                'a CallableKind value cannot carry a separator the composite keys built from it use',
+                'src/Core/Symbol/CallableKind.php',
+                ["case Method = 'method';" => "case Method = 'met:hod';"],
+                ['Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace'],
             ),
 
             Control::breaking(
