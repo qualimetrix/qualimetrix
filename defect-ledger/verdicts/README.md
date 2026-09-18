@@ -34,9 +34,23 @@ and 45 of the 51 are branch-local and stop existing the moment the branch is
 squashed. Red on `main` from the day of the merge is worse than vacuously green:
 it teaches a reader to stop looking at red in Governance.
 
-Recording the fact is honest here because the ledger is frozen — 276 rows, all
-answered, no verdict row will ever be added. Measured once, on `c40b1981`,
-against the full history:
+**Recording a measurement instead of re-deriving it is only honest while nothing
+measured can change, and a bogus hash has two doors**: a row nobody has answered
+yet, and a row already answered, edited afterwards. Both were open, and both were
+measured open rather than argued about — a row appended to the ledger and
+answered `fixed` with `1c6ec21e` passed, and `c49fc0b4` rewritten to `deadbee1`
+inside a row already written passed too. The second is the door the defect came
+through the first time, which is what asked for the commit-existence check at
+all.
+
+Both are shut now, by a digest each: `DefectLedgerVerdictClosureTest` carries one
+over `defect-ledger.tsv` and one over this directory, counting the files as well
+as hashing their contents. They are one argument rather than two facts — the
+removed check has nothing left to guard only if **both** doors are shut — and
+neither constant has a legitimate reason to be refreshed. If either file ever
+genuinely reopens, what is owed is the check back, not a new hash.
+
+Measured once, on `c40b1981`, against the full history:
 
 ```
 cut -f3 defect-ledger/verdicts/*.tsv | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u \

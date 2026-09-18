@@ -7,8 +7,9 @@
 | `reproduce-commit-reach.py` | re-derives whether each verdict's commit touches the row it closes       |
 
 `defect-ledger.tsv` is a measurement, not a worklist: it is not edited, and
-`DefectLedgerVerdictClosureTest` carries its digest so that is a fact rather
-than a convention. The one
+neither is a verdict once written. `DefectLedgerVerdictClosureTest` carries a
+digest over each, so both are facts rather than conventions — and they are what
+makes the commit-existence check it used to run safe to have removed. The one
 exception already happened — a `row_id` column was minted so verdicts have a key
 to join on, because `file` + `class` + `line` is not one (a row carries no line).
 
