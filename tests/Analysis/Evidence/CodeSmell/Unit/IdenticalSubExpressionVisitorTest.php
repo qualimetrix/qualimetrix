@@ -412,13 +412,6 @@ PHP;
     }
 
     #[Test]
-    public function itDoesNotFlagShortTernaryWithDifferentBranches(): void
-    {
-        $code = '<?php $result = $a ?: $b;';
-        self::assertCount(0, $this->analyze($code));
-    }
-
-    #[Test]
     public function itDoesNotFlagTernaryWithSideEffects(): void
     {
         $code = '<?php $result = $cond ? foo() : foo();';

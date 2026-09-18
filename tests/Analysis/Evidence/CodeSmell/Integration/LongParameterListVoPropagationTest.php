@@ -39,6 +39,10 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
  * This test wires the real ParameterCountCollector output straight into the
  * real LongParameterListRule, mirroring exactly the data FileProcessor would
  * produce, without touching FileProcessor itself.
+ *
+ * It owns the seam only. Detection and the flag on the per-method MetricBag are
+ * ParameterCountCollectorTest's, the threshold branch that reads the flag is
+ * LongParameterListRuleTest's, and neither can fail for a seam that drops it.
  */
 #[CoversClass(ParameterCountVisitor::class)]
 #[CoversClass(ParameterCountCollector::class)]

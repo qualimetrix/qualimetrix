@@ -22,6 +22,14 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
+/**
+ * One half of the isVoConstructor story: detection, and the flag reaching the
+ * per-method MetricBag. The threshold branch that reads the flag is asserted in
+ * LongParameterListRuleTest against a hand-built bag, and the seam between the
+ * two - real collector output driving the real rule - in
+ * LongParameterListVoPropagationTest. Deleting a case here without reading those
+ * leaves the omission direction, which no case there covers, unguarded.
+ */
 #[CoversClass(ParameterCountCollector::class)]
 #[CoversClass(ParameterCountVisitor::class)]
 final class ParameterCountCollectorTest extends TestCase
