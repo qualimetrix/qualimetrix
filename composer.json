@@ -63,6 +63,7 @@
             "QmxDirectiveAudit\\Tests\\": "scripts/directive-audit/tests/",
             "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/",
             "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/",
+            "QmxTautologyControls\\Tests\\": "scripts/tautology-controls/tests/",
             "Qualimetrix\\SuppressionSnapshot\\Tests\\": "scripts/suppression-snapshot/tests/",
             "Qualimetrix\\RenameEnumeration\\Tests\\": "scripts/rename-enumeration/tests/",
             "Qualimetrix\\HealthCalibration\\Tests\\": "scripts/health-calibration/tests/",
@@ -177,6 +178,12 @@
             "php scripts/directive-audit-controls.php"
         ],
         "directives:controls:coverage": "php scripts/directive-audit-coverage-control.php",
+        "tautology:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "@tautology:controls:coverage",
+            "php scripts/tautology-controls.php"
+        ],
+        "tautology:controls:coverage": "php scripts/tautology-coverage-control.php",
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml --require-heterogeneity --min-measured=3",
@@ -253,6 +260,8 @@
         "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",
         "directives:controls:coverage": "Prove the negative-controls stand's own coverage arithmetic: removing a case's declaration makes exactly that case read as guarded by nothing, and a declaration naming a case absent from the run is a distinct stale-declaration refusal",
+        "tautology:controls": "Plant, one at a time, the production edit each repaired tautology is supposed to reject, and prove that repair's own case goes red and no undeclared case does; runs tautology:controls:coverage first",
+        "tautology:controls:coverage": "Prove the tautology stand's own arithmetic: removing a repaired case's declaration leaves exactly that case guarded by nothing, and a declaration naming a case the run never carried is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
     },
