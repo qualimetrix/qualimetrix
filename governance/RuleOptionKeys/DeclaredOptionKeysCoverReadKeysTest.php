@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Tests\Analysis\Finding\RuleConfiguration\Support\FromArrayKeyReader;
+use Qualimetrix\Tests\Analysis\Finding\Support\FromArrayKeyReader;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;

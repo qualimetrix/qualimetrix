@@ -1,0 +1,551 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter;
+
+use DOMDocument;
+
+use DOMElement;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
+use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
+use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
+use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
+use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
+use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
+use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
+use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
+use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
+use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
+use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
+use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
+use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
+use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
+use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
+use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
+use Qualimetrix\Reporting\Formatter\TextFormatter;
+use Qualimetrix\Reporting\Formatter\TextVerboseFormatter;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\HealthHintProjector;
+use Qualimetrix\Reporting\Health\HealthScoreResolver;
+use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
+
+/**
+ * Smoke coverage for every output formatter against the full set of
+ * architecture-domain finding flavours.
+ *
+ * The goal is "formatter runs without error AND emits format-appropriate
+ * output for architecture findings" — assertions are intentionally
+ * containment- or structure-based, not full-string snapshots, so that
+ * formatters can evolve without rewriting these tests.
+ *
+ * The fixture mixes per-class findings with project-level diagnostics
+ * (which carry {@see SymbolPath::forProject()} and {@see Location::none()})
+ * so the format-specific handling of fileless / project-level locations
+ * is exercised on the path through every formatter.
+ */
+#[CoversNothing]
+final class ArchitectureViolationSmokeTest extends TestCase
+{
+    private const string SOURCE_NAMESPACE = 'App\\Infrastructure\\Console';
+    private const string SOURCE_CLASS = 'UserCommand';
+    private const string TARGET_NAMESPACE = 'App\\Infrastructure\\Persistence';
+    private const string TARGET_CLASS = 'UserRepository';
+    private const string SOURCE_FILE = 'src/Infrastructure/Console/UserCommand.php';
+    private const int SOURCE_LINE = 42;
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaTextFormatter(): void
+    {
+        $formatter = $this->createTextFormatter();
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext(useColor: false));
+
+        self::assertNonEmptyOutput($output);
+        self::assertStringContainsString(LayerViolationRule::NAME, $output);
+        self::assertStringContainsString(CircularDependencyRule::NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $output);
+        // Source/target class names should appear in the layer-violation row
+        self::assertStringContainsString(self::SOURCE_CLASS, $output);
+        // Dependency-type detail (the human description) should appear too
+        self::assertStringContainsString(DependencyType::Extends->description(), $output);
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
+    {
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
+        $detailedRenderer = new DetailedFindingRenderer($debtCalculator);
+        $textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
+        $formatter = new TextVerboseFormatter($textFormatter);
+
+        $report = $this->buildArchitectureReport();
+        $output = $formatter->format($report, new FormatterContext(useColor: false));
+
+        self::assertNonEmptyOutput($output);
+        self::assertStringContainsString(LayerViolationRule::NAME, $output);
+        self::assertStringContainsString(CircularDependencyRule::NAME, $output);
+        // text-verbose enables --detail, so recommendation text must surface.
+        // DetailedFindingRenderer inlines the recommendation without a
+        // 'Recommendation:' label, so we assert on a stable substring from
+        // the layer-violation recommendation copy itself.
+        self::assertStringContainsString(
+            'Introduce an interface in the console layer',
+            $output,
+        );
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaJsonFormatter(): void
+    {
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $sanitizer = new JsonSanitizer();
+        $findingFilter = new FindingFilter();
+        $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
+        $formatter = new JsonFormatter(
+            new DebtCalculator($remediationTimeRegistry),
+            new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $findingFilter, $sanitizer),
+            new JsonFindingSection($remediationTimeRegistry, $sanitizer),
+        );
+
+        $report = $this->buildArchitectureReport();
+        $output = $formatter->format($report, new FormatterContext());
+
+        self::assertJson($output);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertIsArray($data['violations']);
+        self::assertSame($this->expectedViolationCount(), \count($data['violations']));
+
+        $rulesPresent = array_map(static fn(array $row): string => $row['rule'], $data['violations']);
+        foreach ($this->expectedRuleNames() as $expected) {
+            self::assertContains($expected, $rulesPresent, "JSON output should mention rule {$expected}");
+        }
+
+        foreach ($data['violations'] as $row) {
+            self::assertArrayHasKey('severity', $row);
+            self::assertArrayHasKey('message', $row);
+            // file/line can be null for project-level diagnostics — that's the test
+            self::assertArrayHasKey('file', $row);
+            self::assertArrayHasKey('line', $row);
+        }
+    }
+
+    #[Test]
+    public function itRunsMetricsJsonFormatterOnArchitectureOnlyReport(): void
+    {
+        $formatter = new MetricsJsonFormatter();
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext());
+
+        self::assertJson($output);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // MetricsJsonFormatter exports metric symbols, not findings directly —
+        // but the summary block should reflect the finding totals so this
+        // assertion proves architecture findings actually flow through.
+        self::assertArrayHasKey('summary', $data);
+        self::assertSame($this->expectedViolationCount(), $data['summary']['violations']);
+        // With no metric repository wired in, symbols is just an empty list
+        self::assertArrayHasKey('symbols', $data);
+        self::assertSame([], $data['symbols']);
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaHtmlFormatter(): void
+    {
+        $formatter = new HtmlFormatter(
+            new HtmlTreeBuilder(
+                new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
+                self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            ),
+            new HealthHintProjector(new HealthMetricCatalog()),
+        );
+
+        $report = $this->buildArchitectureReport();
+        $output = $formatter->format($report, new FormatterContext());
+
+        // The HTML formatter attaches findings to tree nodes built from
+        // the metric repository (see HtmlFindingPartitioner): project-level
+        // findings and findings whose owning class/namespace node has no
+        // entry are intentionally dropped. With an architecture-only report
+        // (no MetricRepositoryInterface wired in) the tree is empty, so the
+        // smoke contract is that the formatter still produces a valid,
+        // self-contained HTML document carrying the report-level totals,
+        // not that every rule appears in the embedded JSON.
+        self::assertStringContainsString('<!DOCTYPE html>', $output);
+        self::assertStringContainsString('</html>', $output);
+        self::assertStringContainsString('id="report-data"', $output);
+        self::assertStringContainsString('"totalViolations":' . $this->expectedViolationCount(), $output);
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaCheckstyleFormatter(): void
+    {
+        $formatter = new CheckstyleFormatter();
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext());
+
+        // Output must parse as XML
+        $previousErrors = libxml_use_internal_errors(true);
+
+        try {
+            $doc = new DOMDocument();
+            self::assertTrue($doc->loadXML($output), 'Checkstyle output must be valid XML');
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previousErrors);
+        }
+
+        $files = $doc->getElementsByTagName('file');
+        self::assertGreaterThan(0, $files->length, 'Expected at least one <file> element');
+
+        $errors = $doc->getElementsByTagName('error');
+        self::assertSame($this->expectedViolationCount(), $errors->length);
+
+        $sources = [];
+        foreach ($errors as $errorNode) {
+            self::assertInstanceOf(DOMElement::class, $errorNode);
+            self::assertNotSame('', $errorNode->getAttribute('severity'));
+            self::assertNotSame('', $errorNode->getAttribute('message'));
+            $sources[] = $errorNode->getAttribute('source');
+        }
+
+        foreach ($this->expectedRuleNames() as $rule) {
+            self::assertContains('qmx.' . $rule, $sources, "Checkstyle should emit source for rule {$rule}");
+        }
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaSarifFormatter(): void
+    {
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext());
+
+        self::assertJson($output);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame('2.1.0', $data['version']);
+        $run = $data['runs'][0];
+
+        $ruleIds = array_map(
+            static fn(array $rule): string => $rule['id'],
+            $run['tool']['driver']['rules'],
+        );
+        foreach ($this->expectedRuleNames() as $rule) {
+            self::assertContains($rule, $ruleIds, "SARIF tool.driver.rules should list {$rule}");
+        }
+
+        $resultRuleIds = array_map(
+            static fn(array $result): string => $result['ruleId'],
+            $run['results'],
+        );
+        foreach ($this->expectedRuleNames() as $rule) {
+            self::assertContains($rule, $resultRuleIds, "SARIF results should include a hit for {$rule}");
+        }
+
+        self::assertSame($this->expectedViolationCount(), \count($run['results']));
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaGitLabCodeQualityFormatter(): void
+    {
+        $formatter = new GitLabCodeQualityFormatter();
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext());
+
+        self::assertJson($output);
+        $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertIsArray($issues);
+        self::assertSame($this->expectedViolationCount(), \count($issues));
+
+        $checkNames = array_map(static fn(array $issue): string => $issue['check_name'], $issues);
+        foreach ($this->expectedRuleNames() as $rule) {
+            self::assertContains($rule, $checkNames, "GitLab should emit issue for {$rule}");
+        }
+
+        $severities = array_unique(array_map(static fn(array $issue): string => $issue['severity'], $issues));
+        // Severity must be one of the GitLab Code Quality enum values
+        $validSeverities = ['blocker', 'critical', 'major', 'minor', 'info', 'unknown'];
+        foreach ($severities as $severity) {
+            self::assertContains($severity, $validSeverities, "GitLab severity '{$severity}' is not in the spec");
+        }
+
+        // Project-level diagnostics must collapse to the documented '_project' sentinel
+        $paths = array_map(static fn(array $issue): string => $issue['location']['path'], $issues);
+        self::assertContains('_project', $paths, 'Project-level diagnostics should map to _project path');
+    }
+
+    #[Test]
+    public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
+    {
+        $hintProvider = new HealthMetricCatalog();
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $resolver = new HealthScoreResolver($drillDown);
+        $formatter = new HealthTextFormatter($resolver);
+
+        $report = $this->buildArchitectureReport();
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+
+        // The architecture rule emits no health score; the formatter must
+        // still produce a non-empty rendering (header / "no data" notice) and
+        // must not contain the rule names (they're not part of health output).
+        self::assertNonEmptyOutput($output);
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaSummaryFormatter(): void
+    {
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
+        $debtCalculator = new DebtCalculator($registry);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $findingFilter = new FindingFilter();
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
+        $formatter = new SummaryFormatter(
+            new DetailedFindingRenderer($debtCalculator),
+            new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
+            $offenderListRenderer,
+            new TopIssuesRenderer(),
+            new FindingSummaryRenderer($findingFilter, $registry),
+            new HintRenderer($offenderListRenderer),
+        );
+
+        $report = $this->buildArchitectureReport();
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+
+        self::assertNonEmptyOutput($output);
+        // Summary aggregates by severity. The fixture has 1 error, 2 warnings,
+        // 3 info findings, so the summary line must mention those counts.
+        self::assertStringContainsString('violation', $output);
+        self::assertStringContainsString('error', $output);
+        self::assertStringContainsString('warning', $output);
+        self::assertStringContainsString('info', $output);
+    }
+
+    #[Test]
+    public function itRendersArchitectureViolationsViaGithubActionsFormatter(): void
+    {
+        $formatter = new GithubActionsFormatter();
+        $report = $this->buildArchitectureReport();
+
+        $output = $formatter->format($report, new FormatterContext());
+
+        self::assertNonEmptyOutput($output);
+
+        $lines = array_values(array_filter(explode("\n", $output), static fn(string $l): bool => $l !== ''));
+        self::assertSame($this->expectedViolationCount(), \count($lines));
+
+        foreach ($lines as $line) {
+            self::assertMatchesRegularExpression(
+                '/^::(error|warning|notice) /',
+                $line,
+                'Every GitHub Actions annotation must start with ::error::, ::warning::, or ::notice::',
+            );
+        }
+
+        // Per-rule titles flow into title= property
+        $combined = implode("\n", $lines);
+        foreach ($this->expectedRuleNames() as $rule) {
+            self::assertStringContainsString($rule, $combined, "GitHub Actions output should mention {$rule}");
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Fixture / helpers
+    // ---------------------------------------------------------------
+
+    /**
+     * Asserts the rendered output is non-empty after trimming whitespace.
+     *
+     * Architecture-only reports should never produce a fully empty string —
+     * every formatter has at least a header or a wrapper to emit. Used as a
+     * baseline "didn't crash and didn't return ''" check.
+     */
+    private static function assertNonEmptyOutput(string $output): void
+    {
+        self::assertNotSame('', trim($output));
+    }
+
+    private function createTextFormatter(): TextFormatter
+    {
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
+
+        return new TextFormatter($debtCalculator, new DetailedFindingRenderer($debtCalculator));
+    }
+
+    /**
+     * Builds a report containing exactly one of each architecture finding
+     * flavour the rules emit in production.
+     *
+     * Severities mirror production defaults:
+     *  - layer-violation     → Warning   (per LayerViolationOptions default)
+     *  - circular-dependency → Error     (per CircularDependencyOptions default)
+     *  - coverage            → Error     (CoverageMode::Error path)
+     *  - empty-template      → Warning
+     *  - unreachable-layer   → Info
+     *  - potential-shadow    → Info
+     */
+    private function buildArchitectureReport(): Report
+    {
+        $sourcePath = SymbolPath::forClass(self::SOURCE_NAMESPACE, self::SOURCE_CLASS);
+        $targetPath = SymbolPath::forClass(self::TARGET_NAMESPACE, self::TARGET_CLASS);
+
+        $findings = [
+            // architecture.layer-violation — per-class, with dependency metadata
+            self::finding(
+                location: new Location(RelativePath::fromString(self::SOURCE_FILE), self::SOURCE_LINE, precise: true),
+                symbolPath: $sourcePath,
+                ruleName: LayerViolationRule::NAME,
+                code: LayerViolationRule::NAME,
+                message: \sprintf(
+                    'Layer "console" must not depend on layer "persistence" (%s → %s, %s)',
+                    $sourcePath->toString(),
+                    $targetPath->toString(),
+                    DependencyType::Extends->description(),
+                ),
+                severity: Severity::Warning,
+                recommendation: 'Introduce an interface in the console layer and depend on the abstraction instead.',
+                dependencyTarget: $targetPath,
+                dependencyType: DependencyType::Extends,
+            ),
+
+            // architecture.circular-dependency — per-class, no dependency metadata
+            self::finding(
+                location: Location::none(),
+                symbolPath: SymbolPath::forClass('App\\Service', 'A'),
+                ruleName: CircularDependencyRule::NAME,
+                code: CircularDependencyRule::NAME,
+                message: 'Circular dependency (3 classes): App\\Service\\A → App\\Service\\B → App\\Service\\C → App\\Service\\A',
+                severity: Severity::Error,
+                metricValue: 3,
+                recommendation: 'Break the cycle by extracting a common abstraction or moving shared state.',
+            ),
+
+            // architecture.coverage-gap — project-level diagnostic
+            self::finding(
+                location: Location::none(),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                message: 'Architecture coverage-gap: 0 edge(s) with unmatched source layer, 0 edge(s) with unmatched target layer, 7 class(es) outside all declared layers.',
+                severity: Severity::Error,
+                recommendation: 'Declare layers covering the remaining classes or accept the gap by leaving coverage-gap on "ignore".',
+            ),
+
+            // architecture.empty-template — project-level diagnostic
+            self::finding(
+                location: Location::none(),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                message: 'Template layer "module-{name}" expanded to zero concrete layers — no class in the analysed codebase matched the template\'s criteria.',
+                severity: Severity::Warning,
+                recommendation: 'Verify the template patterns against the project structure, or remove the template if no longer relevant.',
+            ),
+
+            // architecture.unreachable-layer — project-level diagnostic
+            self::finding(
+                location: Location::none(),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                message: 'Layer "legacy" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier, (2) the declared criteria match no class in the analysed codebase.',
+                severity: Severity::Info,
+                recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
+            ),
+
+            // architecture.potential-shadow — project-level diagnostic (per shadow pair)
+            self::finding(
+                location: Location::none(),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                message: 'Layer "core" (pattern App\\Core\\**) shadows layer "core-domain" (pattern App\\Core\\Domain\\**) for 3 class(es).',
+                severity: Severity::Info,
+                recommendation: 'If layer "core-domain" should own these classes, declare it BEFORE "core" (declaration order, first match wins).',
+            ),
+        ];
+
+        return ReportBuilder::create()
+            ->addFindings($findings)
+            ->filesAnalyzed(12)
+            ->filesSkipped(0)
+            ->duration(0.42)
+            ->build();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function expectedRuleNames(): array
+    {
+        return [
+            LayerViolationRule::NAME,
+            CircularDependencyRule::NAME,
+            LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        ];
+    }
+
+    private function expectedViolationCount(): int
+    {
+        return \count($this->expectedRuleNames());
+    }
+
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
+        };
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
+}

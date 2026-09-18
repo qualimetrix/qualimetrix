@@ -40,7 +40,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * would silently turn the feature into a no-op with every existing test still
  * green. This test runs the real production container end-to-end via
  * `CommandTester`, mirroring
- * {@see \Qualimetrix\Tests\Integration\Infrastructure\Console\RulesCommandWiringTest}.
+ * {@see \Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\RulesCommandWiringTest}.
  */
 #[CoversClass(FindingFilterOrchestrator::class)]
 final class RuleExclusionStatsWiringTest extends TestCase

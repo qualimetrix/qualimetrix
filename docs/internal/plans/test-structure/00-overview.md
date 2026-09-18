@@ -15,8 +15,11 @@ independent problems work against that purpose:
    behavioural testing of a non-`src` subject. That count is stage 03's
    re-derivation; this overview first claimed 9, from a census taken before
    stage 02 split the mixed files.
-3. **Two layouts coexist.** 583 files follow ADR 0022 (`{subject}/{level}`); 96
-   remain in the pre-migration role buckets.
+3. **Two layouts coexist.** Re-measured after stages 02 and 03: of the 529 test
+   classes outside the buckets, 504 already sit at their manifest owner. 87 remain
+   in the pre-migration role buckets, and a further 25 sit under an owner the
+   manifest does not have. Stage 04 moves all of them, 114 files including two
+   support classes, and states the rule the 504 were already obeying.
 
 Plus 276 content defects across 219 files: duplicates, tautologies that cannot
 fail, tests whose name contradicts their body.
@@ -24,7 +27,7 @@ fail, tests whose name contradicts their body.
 ## Decisions, with the alternative rejected
 
 **D1. Finish ADR 0022; do not reverse it.** Layout stays `{subject}/{level}`.
-Rejected: `{level}/{subject}`, which moves 583 files instead of 96, requires
+Rejected: `{level}/{subject}`, which moves 529 files instead of 114, requires
 rewriting ADR 0022 and CLAUDE.md, and puts at the top of `tests/` the role
 bucket ADR 0016 forbids for `src/`. The project already votes for D1: every test
 written since August lands in the subject layout.
@@ -62,13 +65,24 @@ full account is in [01](01-suite-integrity.md).
 
 ## Stages
 
-| Stage                                                  | Subject                            | Scope                                       | Depends on     |
-| ------------------------------------------------------ | ---------------------------------- | ------------------------------------------- | -------------- |
-| [01](01-suite-integrity.md)                            | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
-| [02](02-controls-extraction.md)                        | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
-| [03](03-tooling-tests.md) + [packages](03-packages.md) | Tooling tests move to their code   | 16 files + 2 Python                         | 01, 02         |
-| [04](04-subject-layout.md)                             | ADR 0022 completed                 | 96 files                                    | 01, 02, 03     |
-| [05](05-content-defects.md)                            | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
+| Stage                                                   | Subject                            | Scope                                       | Depends on     |
+| ------------------------------------------------------- | ---------------------------------- | ------------------------------------------- | -------------- |
+| [01](01-suite-integrity.md)                             | The suite runs what it contains    | 1 test, 3 guards, config, the controls root | —              |
+| [02](02-controls-extraction.md)                         | Repository controls leave `tests/` | 40 files + 33 methods in 17                 | 01             |
+| [03](03-tooling-tests.md) + [packages](03-packages.md)  | Tooling tests move to their code   | 16 files + 2 Python                         | 01, 02         |
+| [04](04-subject-layout.md) + [packages](04-packages.md) | Every test file sits at its owner  | 114 files + 3 named cases                   | 01, 02, 03     |
+| [05](05-content-defects.md)                             | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
+| [06](06-governance-subject-groups.md)                   | `SolePrimitiveOwnership` is split  | 7 controls                                  | 04             |
+
+**Landed:** 01, 02 and 03 are in `main` (`52eae218`, `c49fc0b4`, `e15c7f42`).
+**04 is executed on `x30-stage-04-subject-layout` and is not merged** — the role
+buckets are gone, every test class sits at its manifest owner, and the invariant
+is a control in `governance/TestSuiteHygiene/` rather than a batch of moves.
+Suite counts after it: 6705 / 383 / 152 / 1029 / 179 / 757, the last of which is
+748 plus the nine cases the new control adds. What 04 hands on is written in its
+packages file, not here; the two entries stage 05 must read before re-deriving
+its own population are the three capped exception lists and the fourteen
+inventory rows that promise a relocation no package is named to perform.
 
 **The stages are not independent, and the first draft claimed they were.**
 Measured intersections: 39 ledger files also appear in the relocation map, 42
@@ -90,11 +104,20 @@ the next one.
 
 ## Cost the stages share
 
-`scripts/generate-modular-architecture-test-inventory.php` hardcodes 346 paths
-under `tests/`; the stages touch 125 of them (02: 45, 03: 12, 04: 17, 05: 108)
-([`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt)).
-Each touched path means editing the generator and regenerating
-`docs/internal/generated/modular-architecture/`, or `architecture:check` reddens.
+`scripts/generate-modular-architecture-test-inventory.php` hardcodes path
+literals under `tests/`; re-measured on `main` @ e15c7f42 there are **320, of which
+103 are already dead**. Each live touched path means editing the generator and
+regenerating `docs/internal/generated/modular-architecture/`, or
+`architecture:check` reddens.
+
+The per-stage split in
+[`measurement/pinned-paths-impact.txt`](measurement/pinned-paths-impact.txt) is
+superseded for stage 04 and was an overestimate of the wrong thing. Stage 04 does
+not edit its share of the literals: 5 name a moving file exactly and 21 are
+directory prefixes covering one, but the stage **deletes the ladder those literals
+live in** rather than following it, so the count that matters is not how many it
+edits. The dead 103 are the argument: the ladder is the one place in that file
+`assertPathLiteralsResolve()` does not guard, so a stale prefix there is silent.
 
 **Stage 03's figure of 12 is superseded and understated.** It was derived from
 the 9-file population, and it counted only this one generator's `tests/`
@@ -111,14 +134,16 @@ risk.
 Tables are in [`measurement/`](measurement/); read them there rather than
 trusting counts in prose.
 
-| Artifact                                                           | Holds                                                                | Obtained by                                                                                                    | Cannot see                                                                   |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `slice-reports/*.md`                                               | per-file SUT, category, defects; 679/679 files                       | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not                    | judgement, not execution — no test was run                                   |
-| `defect-ledger.tsv` + `ledger-provenance.md`                       | 276 defects over 219 files                                           | union of all slice reports, the body-hash pass and the never-runs scan                                         | only defects some reader named                                               |
-| `controls-verdict.tsv` + `controls-taxonomy.md`                    | 81 files → 15/40/9/17                                                | D5 applied by reading each file                                                                                | its input list, which was built by the older criterion                       |
-| `identical-bodies.txt`                                             | 20 groups, 58 methods, byte-identical                                | hashing normalised bodies, whole tree                                                                          | near-duplicates differing by one literal                                     |
-| `legacy-relocation-snapped.csv` + `relocation-map-corrections.txt` | 96 files → targets; witness, owning stage and open decisions per row | the file's own `#[CoversClass]`; name match for 3; refuses where the claim is absent or names several subjects | `#[CoversClass]` is a claim, not a proof; 12 rows need a person              |
-| `pinned-paths-impact.txt`                                          | 346 pinned paths, 125 touched across stages                          | enumerating the generator's literals                                                                           | paths built at runtime; directory pins counted as touched are an upper bound |
+| Artifact                                                                   | Holds                                                         | Obtained by                                                                                                              | Cannot see                                                                                              |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `slice-reports/*.md`                                                       | per-file SUT, category, defects; 679/679 files                | 10 agents read the tree; 5 more read method bodies where the first pass admitted it had not                              | judgement, not execution — no test was run                                                              |
+| `defect-ledger.tsv` + `ledger-provenance.md`                               | 276 defects over 219 files                                    | union of all slice reports, the body-hash pass and the never-runs scan                                                   | only defects some reader named                                                                          |
+| `controls-verdict.tsv` + `controls-taxonomy.md`                            | 81 files → 15/40/9/17                                         | D5 applied by reading each file                                                                                          | its input list, which was built by the older criterion                                                  |
+| `identical-bodies.txt`                                                     | 20 groups, 58 methods, byte-identical                         | hashing normalised bodies, whole tree                                                                                    | near-duplicates differing by one literal                                                                |
+| `stage-04/relocation-map.csv` (supersedes `legacy-relocation-snapped.csv`) | 114 files → targets, owner, witness, current and target suite | `#[CoversClass]` resolved through `use` to an FQCN, looked up in the 37-owner manifest; 11 rows read and decided by hand | `#[CoversClass]` is a claim, not a proof; says nothing about whether the *level* is right               |
+| `stage-04/addresses.md` + two witness reports                              | registration addresses stage 04 breaks, loud and silent       | two independent enumerations, one by the stage-03 taxonomy and one derived from the code with that taxonomy withheld     | dynamically built class names, paths carried in data; neither witness ran the generator on a moved tree |
+| `stage-04/prediction.md`                                                   | per-suite case counts, baseline and after each package        | `phpunit --list-tests` per suite and per file                                                                            | a data provider whose row count depends on the filesystem would move with the tree                      |
+| `pinned-paths-impact.txt`                                                  | 346 pinned paths, 125 touched across stages                   | enumerating the generator's literals                                                                                     | paths built at runtime; directory pins counted as touched are an upper bound                            |
 
 **Three witnesses, and they disagreed usefully.** The mechanical import scan
 produced 17 false accusations out of 21 and still found 4 real controls the

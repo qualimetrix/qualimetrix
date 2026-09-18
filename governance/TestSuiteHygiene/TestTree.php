@@ -7,6 +7,11 @@ namespace Qualimetrix\Governance\TestSuiteHygiene;
 use JsonException;
 use LogicException;
 use PhpParser\Node;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -23,11 +28,11 @@ use SplFileInfo;
 /**
  * The corpus every hygiene guard judges, read once.
  *
- * Three guards ask the same two questions — which directories hold test
- * classes, and what does a given file actually declare — and a guard that
- * answers them for itself is a second copy of a map that can drift from the
- * first. That is the defect class this whole group exists to make loud, so the
- * answers live here and the guards share them.
+ * Four guards ask the same three questions — which directories hold test
+ * classes, what does a given file actually declare, and what does it claim to
+ * cover — and a guard that answers them for itself is a second copy of a map
+ * that can drift from the first. That is the defect class this whole group
+ * exists to make loud, so the answers live here and the guards share them.
  *
  * **Scope is the PSR-4 dev roots**, taken from `composer.json`: a root
  * registered for autoloading is judged from the moment it is registered, so a
@@ -56,6 +61,17 @@ final class TestTree
     public const TEST_ATTRIBUTE = 'PHPUnit\Framework\Attributes\Test';
 
     /**
+     * The attribute that names a class a file claims to cover.
+     */
+    public const COVERS_CLASS_ATTRIBUTE = 'PHPUnit\Framework\Attributes\CoversClass';
+
+    /**
+     * The attribute that declares a file covers nothing nameable, which is a
+     * different statement from declaring no coverage at all.
+     */
+    public const COVERS_NOTHING_ATTRIBUTE = 'PHPUnit\Framework\Attributes\CoversNothing';
+
+    /**
      * Base classes that make a descendant a test class although the corpus
      * cannot see them. Measured, not assumed: these are the only two
      * out-of-corpus parents in this tree that are test bases at all — every
@@ -67,7 +83,7 @@ final class TestTree
      */
     private const FOREIGN_TEST_BASE_PREFIXES = ['PHPUnit\\', 'PHPStan\\Testing\\'];
 
-    /** @var array<string, array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}> */
+    /** @var array<string, array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>, covers: array{classes: list<string>, nothing: bool}}> */
     private static array $declarations = [];
 
     /** @var array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>|null */
@@ -227,7 +243,7 @@ final class TestTree
     /**
      * What a file declares, cached per path because two guards ask for it.
      *
-     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}
+     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>, covers: array{classes: list<string>, nothing: bool}}
      */
     public static function declarationsIn(string $relativePath): array
     {
@@ -250,7 +266,13 @@ final class TestTree
      * Trait `insteadof` and `as` adaptations are not read: they rename and
      * resolve members, and this only asks whether a trait brings a case at all.
      *
-     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>}
+     * `covers` carries what the file claims to cover, read file-wide rather
+     * than per class-like: a file may declare a helper alongside its test
+     * class, and which of the two carries the attribute says nothing about
+     * what the file is about. Only the `Name::class` form is read, because it
+     * is the only one this tree uses — measured, not assumed.
+     *
+     * @return array{namespaces: list<string>, classes: list<string>, declarations: array<string, array{concrete: bool, declaresCase: bool, parents: list<string>}>, covers: array{classes: list<string>, nothing: bool}}
      */
     public static function parseDeclarations(string $displayPath, string $code): array
     {
@@ -266,6 +288,11 @@ final class TestTree
             /** @var list<array{name: string, node: ClassLike}> */
             public array $classes = [];
 
+            /** @var list<string> */
+            public array $covered = [];
+
+            public bool $coversNothing = false;
+
             public function enterNode(Node $node): null
             {
                 if ($node instanceof Namespace_) {
@@ -280,6 +307,46 @@ final class TestTree
                 }
 
                 return null;
+            }
+
+            /**
+             * Read on the way out: the resolver replaces a name as it enters
+             * the node holding it, so the class inside `X::class` is still the
+             * short name while the attribute itself is being entered.
+             */
+            public function leaveNode(Node $node): null
+            {
+                if ($node instanceof Attribute) {
+                    $this->readCoverageAttribute($node);
+                }
+
+                return null;
+            }
+
+            private function readCoverageAttribute(Attribute $attribute): void
+            {
+                $name = $attribute->name->toString();
+                if ($name === TestTree::COVERS_NOTHING_ATTRIBUTE) {
+                    $this->coversNothing = true;
+
+                    return;
+                }
+
+                if ($name !== TestTree::COVERS_CLASS_ATTRIBUTE) {
+                    return;
+                }
+
+                $first = $attribute->args[0] ?? null;
+                $argument = $first instanceof Arg ? $first->value : null;
+                if (!$argument instanceof ClassConstFetch
+                    || !$argument->class instanceof Name
+                    || !$argument->name instanceof Identifier
+                    || strtolower($argument->name->toString()) !== 'class'
+                ) {
+                    return;
+                }
+
+                $this->covered[] = $argument->class->toString();
             }
         };
 
@@ -301,7 +368,12 @@ final class TestTree
             ];
         }
 
-        return ['namespaces' => $collector->namespaces, 'classes' => $classes, 'declarations' => $declarations];
+        return [
+            'namespaces' => $collector->namespaces,
+            'classes' => $classes,
+            'declarations' => $declarations,
+            'covers' => ['classes' => $collector->covered, 'nothing' => $collector->coversNothing],
+        ];
     }
 
     /**

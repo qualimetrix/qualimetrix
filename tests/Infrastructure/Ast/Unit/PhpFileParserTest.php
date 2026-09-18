@@ -1,0 +1,186 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Infrastructure\Ast\Unit;
+
+use PhpParser\Node;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Declare_;
+use PhpParser\Node\Stmt\Namespace_;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Constraint\IsType;
+use PHPUnit\Framework\NativeType;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use RuntimeException;
+use SplFileInfo;
+
+#[CoversClass(PhpFileParser::class)]
+final class PhpFileParserTest extends TestCase
+{
+    private PhpFileParser $parser;
+    private string $fixturesPath;
+
+    protected function setUp(): void
+    {
+        $this->parser = new PhpFileParser();
+        $this->fixturesPath = \dirname(__DIR__, 3) . '/Fixtures/Ast';
+    }
+
+    #[Test]
+    public function itParsesValidPhpFile(): void
+    {
+        $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
+
+        $ast = $this->parser->parse($file);
+
+        self::assertNotEmpty($ast);
+        self::assertContainsOnlyInstancesOf(Node::class, $ast);
+    }
+
+    #[Test]
+    public function itParsesAndReturnsCorrectAstStructure(): void
+    {
+        $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
+
+        $ast = $this->parser->parse($file);
+
+        // First node should be declare(strict_types=1)
+        self::assertInstanceOf(Declare_::class, $ast[0]);
+
+        // Second node should be namespace
+        self::assertInstanceOf(Namespace_::class, $ast[1]);
+
+        // Namespace should contain the class
+        $namespaceNode = $ast[1];
+        self::assertInstanceOf(Namespace_::class, $namespaceNode); // @phpstan-ignore staticMethod.alreadyNarrowedType
+        self::assertNotEmpty($namespaceNode->stmts);
+
+        $classNode = $namespaceNode->stmts[0];
+        self::assertInstanceOf(Class_::class, $classNode);
+        self::assertNotNull($classNode->name);
+        self::assertSame('ValidClass', $classNode->name->toString());
+    }
+
+    #[Test]
+    public function itParsesMinimalPhpFile(): void
+    {
+        $file = new SplFileInfo($this->fixturesPath . '/empty_file.php');
+
+        $ast = $this->parser->parse($file);
+
+        // Minimal PHP file with only declare(strict_types=1) parses successfully
+        // and produces exactly one Declare_ node
+        self::assertCount(1, $ast);
+        self::assertInstanceOf(Declare_::class, $ast[0]);
+    }
+
+    #[Test]
+    public function itThrowsExceptionForInvalidSyntax(): void
+    {
+        $file = new SplFileInfo($this->fixturesPath . '/invalid_syntax.php');
+
+        self::expectException(ParseException::class);
+        self::expectExceptionMessageMatches('/Failed to parse.*invalid_syntax\.php/');
+
+        $this->parser->parse($file);
+    }
+
+    #[Test]
+    public function itThrowsExceptionForNonExistentFile(): void
+    {
+        $file = new SplFileInfo($this->fixturesPath . '/nonexistent.php');
+
+        self::expectException(ParseException::class);
+        self::expectExceptionMessage('File does not exist or is not a regular file');
+
+        $this->parser->parse($file);
+    }
+
+    #[Test]
+    public function itIncludesFilePathInParseException(): void
+    {
+        $filePath = $this->fixturesPath . '/nonexistent.php';
+        $file = new SplFileInfo($filePath);
+
+        try {
+            $this->parser->parse($file);
+            self::fail('Expected ParseException was not thrown');
+        } catch (ParseException $e) {
+            self::assertSame($filePath, $e->filePath->value());
+            self::assertStringContainsString($filePath, $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itPreservesOriginalFileIdentityForProvidedInvalidContent(): void
+    {
+        $filePath = $this->fixturesPath . '/nonexistent.php';
+
+        try {
+            $this->parser->parseContent(new SplFileInfo($filePath), '<?php function broken( {');
+            self::fail('Expected ParseException');
+        } catch (ParseException $exception) {
+            self::assertSame($filePath, $exception->filePath->value());
+            self::assertStringContainsString($filePath, $exception->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itAllowsCustomParserInjection(): void
+    {
+        // Test that a custom parser can be injected (for testing purposes)
+        $mockParser = $this->createMock(\PhpParser\Parser::class);
+        $mockParser->expects(self::once())
+            ->method('parse')
+            ->with(new IsType(NativeType::String))
+            ->willReturn([]);
+
+        $fileParser = new PhpFileParser($mockParser);
+        $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
+
+        $ast = $fileParser->parse($file);
+
+        self::assertSame([], $ast);
+    }
+
+    #[Test]
+    public function itThrowsExceptionWhenParserReturnsNull(): void
+    {
+        $mockParser = self::createStub(\PhpParser\Parser::class);
+        $mockParser->method('parse')
+            ->willReturn(null);
+
+        $fileParser = new PhpFileParser($mockParser);
+        $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
+
+        self::expectException(ParseException::class);
+        self::expectExceptionMessage('Parser returned null');
+
+        $fileParser->parse($file);
+    }
+
+    #[Test]
+    public function itPreservesPreviousExceptionOnParseError(): void
+    {
+        $originalException = new RuntimeException('Original error');
+
+        $mockParser = self::createStub(\PhpParser\Parser::class);
+        $mockParser->method('parse')
+            ->willThrowException($originalException);
+
+        $fileParser = new PhpFileParser($mockParser);
+        $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
+
+        try {
+            $fileParser->parse($file);
+            self::fail('Expected ParseException was not thrown');
+        } catch (ParseException $e) {
+            self::assertSame($originalException, $e->getPrevious());
+            self::assertStringContainsString('Original error', $e->getMessage());
+        }
+    }
+}

@@ -1,0 +1,143 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Core\Path\AbsolutePath;
+
+/**
+ * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
+ *
+ * The characterization test
+ * ({@see \Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest})
+ * proves that the loader emits {@code architecture.max_expanded_layers}
+ * verbatim. This test proves the **independent** assertion that the value
+ * reaches {@see ArchitectureConfiguration::$maxExpandedLayers} via the
+ * complete {@see ConfigurationPipeline} →
+ * {@see ArchitectureConfigurationFactory} wiring. A regression at any layer
+ * (loader, pipeline merge, factory) trips a row here even if the
+ * characterization snapshot is silently updated.
+ *
+ * Pinned bug class: C1 (ADR 0009) — pre-Phase 3.5 the scalar leaf under the
+ * MIXED {@code architecture} root was silently camelCased to
+ * {@code maxExpandedLayers}, the factory's snake_case lookup fell back to
+ * {@see ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}, and the
+ * user's value was lost without warning.
+ */
+#[CoversClass(ArchitectureConfigurationFactory::class)]
+#[CoversClass(ConfigurationPipeline::class)]
+final class MaxExpandedLayersFromYamlTest extends TestCase
+{
+    private string $tempDir;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/qmx_max_expanded_layers_' . bin2hex(random_bytes(6));
+        mkdir($this->tempDir, 0o755, true);
+    }
+
+    protected function tearDown(): void
+    {
+        if (!is_dir($this->tempDir)) {
+            return;
+        }
+        $files = glob($this->tempDir . '/*');
+        if ($files === false) {
+            $files = [];
+        }
+        foreach ($files as $file) {
+            @unlink($file);
+        }
+        @rmdir($this->tempDir);
+    }
+
+    #[Test]
+    public function itLetsAUserProvidedMaxExpandedLayersReachTheConfiguration(): void
+    {
+        $this->writeYaml(<<<'YAML'
+            architecture:
+              layers:
+                - name: app
+                  patterns:
+                    - 'App\\App'
+              max_expanded_layers: 17
+            YAML);
+
+        $architecture = $this->resolveArchitecture();
+
+        self::assertSame(
+            17,
+            $architecture->maxExpandedLayers,
+            'architecture.max_expanded_layers must round-trip through YAML → loader → pipeline → factory '
+            . 'and reach ArchitectureConfiguration::$maxExpandedLayers verbatim (ADR 0009 C1 closure).',
+        );
+    }
+
+    #[Test]
+    public function itFallsBackToTheDefaultWhenMaxExpandedLayersIsOmitted(): void
+    {
+        $this->writeYaml(<<<'YAML'
+            architecture:
+              layers:
+                - name: app
+                  patterns:
+                    - 'App\\App'
+            YAML);
+
+        $architecture = $this->resolveArchitecture();
+
+        self::assertSame(
+            ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
+            $architecture->maxExpandedLayers,
+            'When max_expanded_layers is absent from YAML, the factory must use '
+            . 'ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS (negative-control case).',
+        );
+    }
+
+    private function resolveArchitecture(): ArchitectureConfiguration
+    {
+        $document = $this->resolveFullPipeline();
+
+        return (new ArchitectureConfigurationFactory())
+            ->fromContributions($document->contributions('architecture'))
+            ->configuration;
+    }
+
+    private function writeYaml(string $contents): void
+    {
+        file_put_contents($this->tempDir . '/qmx.yaml', $contents);
+    }
+
+    private function resolveFullPipeline(): ConfigurationDocument
+    {
+        $loader = new YamlConfigLoader();
+        $resolver = new PresetResolver();
+        $composerReader = new ComposerReader();
+
+        $pipeline = new ConfigurationPipeline();
+        $pipeline->addStage(new DefaultsStage());
+        $pipeline->addStage(new ComposerDiscoveryStage($composerReader));
+        $pipeline->addStage(new PresetStage($loader, $resolver));
+        $pipeline->addStage(new ConfigFileStage($loader));
+        $pipeline->addStage(new CliStage());
+
+        return $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)));
+    }
+}

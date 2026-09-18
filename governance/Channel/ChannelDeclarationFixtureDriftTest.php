@@ -37,7 +37,7 @@ use RuntimeException;
  * any `computed_metrics:` configured, the declared set would contain
  * channels this file — a fixed line list — could never enumerate. The
  * open `computed.*`/`health.*` family is guarded separately by
- * {@see \Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest}'s
+ * {@see \Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest}'s
  * run-time resolution cases.
  */
 #[CoversClass(ChannelDeclarationRegistryInterface::class)]

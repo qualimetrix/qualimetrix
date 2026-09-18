@@ -55,7 +55,7 @@
 # here no longer declared in code fails. It is scoped to the STATIC set
 # only — the run-time computed.*/health.* family is guarded separately (see
 # excluded.txt's note and
-# tests/Infrastructure/Unit/ChannelUniverseTest.php's
+# tests/Infrastructure/Rule/Unit/ChannelUniverseTest.php's
 # run-time resolution cases) because its vocabulary is open-ended and no
 # fixture line could enumerate it.
 #

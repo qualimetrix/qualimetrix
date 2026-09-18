@@ -65,12 +65,22 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * silently omitted from `composer test`. Plant a temporary class in an
      * isolated project under such a directory and assert that the inventory
      * check names it and fails.
+     *
+     * The probe directory has to be one no `<testsuite>` declares while still
+     * parsing to a manifest owner and a level, or the generator refuses it
+     * earlier for the wrong reason and the control never reaches the suite
+     * classification it is about. The previous address stopped satisfying that
+     * when `tests/Reporting/Functional` became a declared suite directory.
+     * Registering this one breaks the control loudly rather than quietly: if it
+     * is declared and filled, `assertDirectoryDoesNotExist()` fails; if it is
+     * declared and empty, PHPUnit exits 2 inside the isolated project; and if
+     * the probe class does land in a suite, the exit-code assertion fails.
      */
     #[Test]
     public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
     {
         $this->withIsolatedProject(function (string $projectRoot): void {
-            $directory = $projectRoot . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
+            $directory = $projectRoot . '/tests/Reporting/GraphProjection/Functional';
             $probePath = $directory . '/GuardProbeTest.php';
 
             self::assertDirectoryDoesNotExist($directory);
@@ -80,7 +90,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
                 declare(strict_types=1);
 
-                namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
+                namespace Qualimetrix\Tests\Reporting\GraphProjection\Functional;
 
                 use PHPUnit\Framework\Attributes\Test;
                 use PHPUnit\Framework\TestCase;
@@ -104,7 +114,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
             self::assertNotSame(0, $exitCode, $output);
             self::assertStringContainsString('classified as suite "none"', $output);
-            self::assertStringContainsString('tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe/GuardProbeTest.php', $output);
+            self::assertStringContainsString('tests/Reporting/GraphProjection/Functional/GuardProbeTest.php', $output);
         });
     }
 
@@ -144,6 +154,103 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             self::assertStringContainsString(
                 'tests/Analysis/Policy/Baseline/Functional is suite Functional in currentSuite()'
                 . ' but is not declared under that <testsuite> in phpunit.xml.dist',
+                $output,
+            );
+        });
+    }
+
+    /**
+     * A test class whose path names two levels is refused by
+     * `failUnownedTestClass()` with a sentence of its own, rather than published
+     * under an owner parsed from whichever level the walk met first. No path in
+     * the tree names two levels, so that branch has an empty population and
+     * nothing but a hand plant has ever executed it -- and a refusal that never
+     * fires reads from the outside exactly like one that cannot.
+     *
+     * The probe directory has to be a real level segment under a real manifest
+     * owner, or the parse refuses it earlier for the wrong reason.
+     */
+    #[Test]
+    public function itFailsWhenATestClassNamesTwoLevels(): void
+    {
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $directory = $projectRoot . '/tests/Core/Unit/Integration';
+            $probePath = $directory . '/GuardProbeTest.php';
+
+            self::assertDirectoryDoesNotExist($directory);
+            self::assertTrue(mkdir($directory));
+            self::assertNotFalse(file_put_contents($probePath, <<<'PHP'
+                <?php
+
+                declare(strict_types=1);
+
+                namespace Qualimetrix\Tests\Core\Unit\Integration;
+
+                use PHPUnit\Framework\Attributes\Test;
+                use PHPUnit\Framework\TestCase;
+
+                final class GuardProbeTest extends TestCase
+                {
+                    #[Test]
+                    public function itIsNeverActuallyRun(): void
+                    {
+                        self::assertTrue(true);
+                    }
+                }
+
+                PHP));
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ], $projectRoot);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString(
+                'tests/Core/Unit/Integration/GuardProbeTest.php names 2 of Unit, Integration, Functional,'
+                . ' and a test file names exactly one',
+                $output,
+            );
+        });
+    }
+
+    /**
+     * `assertTestOwnersAreManifestOwners()` refuses a row touching `tests/`
+     * whose owner is neither a manifest owner nor one of the counted
+     * `NON_MANIFEST_TEST_OWNERS` allowances. Every row in the tree takes one of
+     * those two paths, so the refusing branch has no live population either --
+     * the counted half of the same check runs on every row, this half runs on
+     * none.
+     *
+     * The `.gitkeep` is the cheapest way in: `classifyOwner()` publishes the
+     * non-owner `legacy-placeholder` for one by design. What this proves is the
+     * refusal and not the placeholder, so an edit that retires that branch owes
+     * this control another shape rather than its deletion.
+     */
+    #[Test]
+    public function itFailsWhenARowUnderTestsPublishesANonManifestOwner(): void
+    {
+        $this->withIsolatedProject(function (string $projectRoot): void {
+            $directory = $projectRoot . '/tests/Probe';
+
+            self::assertDirectoryDoesNotExist($directory);
+            self::assertTrue(mkdir($directory));
+            self::assertNotFalse(file_put_contents($directory . '/.gitkeep', ''));
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ], $projectRoot);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString(
+                'legacy-placeholder is not one of the',
+                $output,
+            );
+            self::assertStringContainsString(
+                'manifest owners, and 1 row(s) under tests/ publish it: tests/Probe/.gitkeep',
                 $output,
             );
         });
@@ -194,6 +301,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
                 $projectRoot . '/docs/internal/generated/modular-architecture',
             );
+            // The generator validates every test path against the manifest owners,
+            // so the isolated project needs the manifest itself, not only what
+            // the generator writes from it.
+            self::assertTrue(copy(
+                $sourceRoot . '/docs/internal/modular-architecture-manifest.json',
+                $projectRoot . '/docs/internal/modular-architecture-manifest.json',
+            ));
             self::assertTrue(mkdir($projectRoot . '/scripts'));
             self::assertTrue(copy(
                 $sourceRoot . '/scripts/generate-modular-architecture-test-inventory.php',
