@@ -74,12 +74,15 @@ full account is in [01](01-suite-integrity.md).
 | [05](05-content-defects.md)                             | Ledger defects                     | 219 files                                   | 01, 02, 03, 04 |
 | [06](06-governance-subject-groups.md)                   | `SolePrimitiveOwnership` is split  | 7 controls                                  | 04             |
 
-**Landed:** 01, 02 and 03 are in `main` (`52eae218`, `c49fc0b4`, `e15c7f42`).
-**04 is executed on `x30-stage-04-subject-layout` and is not merged** — the role
-buckets are gone, every test class sits at its manifest owner, and the invariant
-is a control in `governance/TestSuiteHygiene/` rather than a batch of moves.
-Suite counts after it: 6705 / 383 / 152 / 1029 / 179 / 757, the last of which is
-748 plus the nine cases the new control adds. What 04 hands on is written in its
+**Landed:** every stage but 05 is in `main` — 01, 02, 03, 04 and 06
+(`52eae218`, `c49fc0b4`, `e15c7f42`, `7a89a3ad`, `666d8679`). The role buckets
+are gone, every test class sits at its manifest owner, the invariant is a control
+in `governance/TestSuiteHygiene/` rather than a batch of moves, and `governance/`
+no longer carries a group named for the form of its assertion. **05 is the only
+stage left.** Suite counts measured on `666d8679` with the runner's own
+exclusions: 6705 / 383 / 152 / 1029 / 181 / 758. Governance was 757 after 04 —
+748 plus the nine cases that stage's control adds — and 06 added the one case
+that makes the glob-alphabet guard prove it looked. What 04 hands on is written in its
 packages file, not here; the two entries stage 05 must read before re-deriving
 its own population are the three capped exception lists and the fourteen
 inventory rows that promise a relocation no package is named to perform.
