@@ -135,7 +135,7 @@ def main():
     parser.add_argument(
         "--include-history",
         action="store_true",
-        help="also report plans, ADRs, generated artifacts and the defect ledger, which record names rather than address them",
+        help="also report plans, ADRs and generated artifacts, which record names rather than address them",
     )
     arguments = parser.parse_args()
 
@@ -146,8 +146,8 @@ def main():
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
 
-    # Plans, ADRs, generated artifacts and the frozen defect ledger name what the
-    # tree used to carry; that is the record working, not an address rotting.
+    # Plans, ADRs and generated artifacts name what the tree used to carry;
+    # that is the record working, not an address rotting.
     # Everything else that spells a name is asserting the name exists.
     history = (
         "docs/internal/plans/",

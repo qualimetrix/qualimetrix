@@ -57,4 +57,3 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 qmx-baseline.json linguist-generated
 qmx-baseline.json gitlab-generated
 
-# Stage 05 verdicts are appended, never rewritten: union-merge them.
