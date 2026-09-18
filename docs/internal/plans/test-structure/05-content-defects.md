@@ -281,33 +281,33 @@ capped by stage 04; the namespace allow-list has been capped since stage 01
 misses it. Each was capped rather than adjudicated because adjudicating them is
 this stage's subject.
 
-## Three things stage 04 left without an owner, and one that rotted
+## What stage 04 left without an owner, and what was decided about it
 
-These are not ledger rows. They are decisions this stage inherits, and P0 exists
-to close them before any package re-derives anything.
+These are not ledger rows. Two are settled; one is work.
 
-- **The dangling-name census has rotted, exactly as its own docblock predicted.**
-  `dangling-test-names.py` reports **10 names, not the 9 recorded**, exits 1, and
-  flags one as `NEW`: `Qualimetrix\Tests\Core\Unit\Integration`, a namespace
-  planted inside a probe project's heredoc — the same shape as an already-pinned
-  entry, so the census describes one instance of a form that now has two.
-  **Nothing in `composer check` runs this script**, which is why it could rot.
-  Making it a check is P0's job; pinning the new name to quiet it is the one
-  repair the script's own text forbids.
-- **Fourteen inventory rows promise a relocation no package performs.** They are
-  the rows in `test-ownership.tsv` carrying both
-  `disposition = "Move atomically with the named owner and closure package."`
-  and `closure_package = permanent` — 10 JavaScript artifacts under
-  `src/Reporting/Template/` (8 `*.test.js`, plus `package.json` and
-  `vite.config.js`, owner `Reporting/HtmlTemplate`) and 4 fixtures (three
-  `tests/Fixtures/Ast/`, one `tests/Fixtures/Schema/sarif-2.1.0.schema.json`).
-  While they read `permanent`, the `closure_package` column means two different
-  things at once and must not be derived as one.
-- **Two generator constants are read by nothing, and one is stale.**
-  `P6_LIVE_ADDED_TEST_IDS` holds 6 entries, all of which still resolve.
-  `P6_RENAMED_TEST_IDS` holds 4, whose keys are pre-rename names by construction
-  and **one of whose values is false on both halves** — it names a namespace the
-  file does not carry and a method declared nowhere. That value half is one of
-  the ten dangling names above. Neither constant is guarded by
-  `assertPathLiteralsResolve()`. Whether the record survives at all is the
-  owner's call, not this stage's.
+**The dangling-name census has rotted, exactly as its own docblock predicted.**
+`dangling-test-names.py` reports **10 names, not the 9 recorded**, exits 1, and
+flags one as `NEW`: `Qualimetrix\Tests\Core\Unit\Integration`, a namespace
+planted inside a probe project's heredoc — the same shape as an already-pinned
+entry, so the census describes one instance of a form that now has two.
+**Nothing in `composer check` runs this script**, which is why it could rot.
+Making it a check is P0a's; pinning the new name to quiet it is the one repair the
+script's own text forbids, since a pinned name that no longer dangles exits 3.
+
+**Both unread generator constants are deleted.** `P6_LIVE_ADDED_TEST_IDS` and
+`P6_RENAMED_TEST_IDS` occur once each in the whole repository, at their own
+declaration, and one record of the second is already false on both halves.
+
+**The `closure_package` column is deleted**, as its own package after this stage.
+It decides nothing: its only semantic consumer is a function that is never called
+and that reads a manifest key which does not exist. Its apparent incoherence is
+two different values sharing one name — a manifest field on 955 production
+declarations, always a package label, and a test-side value computed separately
+that can read `permanent`.
+
+**The 14 rows promising an unowned relocation split in two.** `disposition` is
+derived from whether `targetPath()` differs from the current path, so the promise
+is retracted by fixing the target, not the prose. Ten are JavaScript artifacts of
+a self-contained npm project that stays intact and moves to its own root after
+the campaign; four are fixtures, two of which are shared across two manifest
+owners and therefore need adjudication rather than a move.
