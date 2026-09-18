@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `docker run qmx` with no arguments prints usage instead of failing. The image
+  declared a default command named `analyze`, which has never existed, so the
+  invocation exited 3 with `Command "analyze" is not defined.` There is now no
+  default command: an image handed no command says so, rather than analysing
+  whatever happens to be at `/app`.
+
 ## [0.27.0] - 2026-09-18
 
 ### Breaking

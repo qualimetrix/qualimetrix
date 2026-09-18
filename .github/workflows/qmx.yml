@@ -181,6 +181,18 @@ jobs:
       - name: Image answers --version
         run: docker run --rm qmx --version
 
+      # The default path - no command, nothing mounted - is the one a reader
+      # hits first and the one this job never exercised: every other step
+      # passes arguments. It printed `Command "analyze" is not defined.` for
+      # the repository's whole history, and the obvious repair would have made
+      # it silently green on an empty /app instead.
+      - name: Image handed no command prints usage, not a clean bill of health
+        run: |
+          set -o pipefail
+          docker run --rm qmx | tee /tmp/docker-qmx-default.txt
+          grep -q 'Usage:' /tmp/docker-qmx-default.txt
+          ! grep -q 'No violations found' /tmp/docker-qmx-default.txt
+
       # Not just "it starts": the promise is that it analyses a mounted tree.
       # --fail-on=none because the question here is whether the image works,
       # not whether src/Core is clean: without it `check` answers 2 for the
