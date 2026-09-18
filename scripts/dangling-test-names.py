@@ -149,18 +149,11 @@ def main():
     # Plans, ADRs, generated artifacts and the frozen defect ledger name what the
     # tree used to carry; that is the record working, not an address rotting.
     # Everything else that spells a name is asserting the name exists.
-    #
-    # defect-ledger/ earns the same treatment for a stronger reason than the
-    # others: a row there exists *because* the name it spells was stale, and the
-    # ledger is a measurement that is never edited. Reading it as an address made
-    # a repaired reference indistinguishable from an unrepaired one -- the pin on
-    # ChannelDeclarationCompilerPassTest survived its own repair that way.
     history = (
         "docs/internal/plans/",
         "docs/adr/",
         "docs/internal/generated/",
         "CHANGELOG.md",
-        "defect-ledger/",
     )
 
     # KNOWN spells every pinned name, so a census that read this file would

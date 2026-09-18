@@ -33,7 +33,6 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /src/Reporting/Template/package-lock.json export-ignore
 /src/Reporting/Template/vite.config.js    export-ignore
 /src/Reporting/Template/dev.html          export-ignore
-/defect-ledger/**       export-ignore
 /benchmark-results/     export-ignore
 /coverage/              export-ignore
 /.gitattributes         export-ignore
@@ -59,4 +58,3 @@ qmx-baseline.json linguist-generated
 qmx-baseline.json gitlab-generated
 
 # Stage 05 verdicts are appended, never rewritten: union-merge them.
-defect-ledger/verdicts/*.tsv merge=union
