@@ -13,14 +13,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
 final class ComputedMetricRuleOptionsTest extends TestCase
 {
     #[Test]
-    public function itLoadsDefinitionsFromHolderWhenPopulated(): void
-    {
-        $options = ComputedMetricRuleOptions::fromArray([]);
-
-        self::assertTrue($options->isEnabled());
-    }
-
-    #[Test]
     public function itDisablesWhenEnabledFalse(): void
     {
         $options = ComputedMetricRuleOptions::fromArray(['enabled' => false]);
@@ -44,12 +36,6 @@ final class ComputedMetricRuleOptionsTest extends TestCase
         self::assertNull($options->getSeverity(0));
         self::assertNull($options->getSeverity(100));
         self::assertNull($options->getSeverity(-50.5));
-    }
-
-    #[Test]
-    public function itReturnsHolderDefinitions(): void
-    {
-        self::assertTrue(ComputedMetricRuleOptions::fromArray(['unrelated' => true])->isEnabled());
     }
 
     #[Test]

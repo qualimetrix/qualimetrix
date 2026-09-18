@@ -200,11 +200,4 @@ final class MetricHintCatalogTest extends TestCase
     {
         self::assertNull($this->provider->getDirection('nonexistent'));
     }
-
-    // --- getDecomposition ---
-
-    // --- getScoreLabel ---
-
-    // --- getHealthDimensionLabel ---
-
 }
