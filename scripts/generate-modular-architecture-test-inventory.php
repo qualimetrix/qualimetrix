@@ -184,7 +184,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php',
     'tests/Analysis/Run/Unit/RuleProducerPreparationTest.php',
     'tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php',
-    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutionTest.php',
     'tests/Infrastructure/Console/Unit/CheckScopeResolverTest.php',
     'tests/Infrastructure/Console/Unit/RuntimeLoggerConfiguratorTest.php',
 ];
@@ -211,7 +211,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/OccurrenceKeyTest.php',
     'tests/Analysis/Finding/Unit/PathExclusionFilterTest.php',
     'tests/Analysis/Finding/Unit/PredicateFilterStageTest.php',
-    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutionTest.php',
     'tests/Analysis/Finding/Unit/RuleNameReaderTest.php',
     'tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php',
     'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
@@ -267,7 +267,7 @@ const P6_D_PRIORITIZATION_TEST_PATHS = [
 
 /** @var list<string> Exact live additions relative to the accepted 509/7,245 authority. */
 const P6_LIVE_ADDED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances',
+    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleExecutionTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances',
     'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceExclusionsWithoutProviderAccess',
     'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceChannelExclusionsWithoutProviderAccess',
     'Qualimetrix\\Tests\\Analysis\\Policy\\Inline\\Unit\\Extraction\\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings',

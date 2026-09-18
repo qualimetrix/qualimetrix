@@ -38,7 +38,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(RuleExecution::class)]
-final class RuleExecutorTest extends TestCase
+final class RuleExecutionTest extends TestCase
 {
     private bool $captureExcludedFindings = true;
 

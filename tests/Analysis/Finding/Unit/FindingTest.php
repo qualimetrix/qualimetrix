@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -23,101 +24,62 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(Finding::class)]
 final class FindingTest extends TestCase
 {
+    /**
+     * The fingerprint is built from the subject, not from the symbol path or
+     * the location the finding also carries, so the five symbol-path shapes a
+     * finding can name must all fingerprint the same. Five cases used to state
+     * that one fact five times; the provider states it once and still exercises
+     * every shape.
+     */
     #[Test]
-    public function itGetFingerprintForMethod(): void
-    {
+    #[DataProvider('provideSymbolPathShapes')]
+    public function itFingerprintsBySubjectWhateverSymbolPathAndLocationItCarries(
+        SymbolPath $symbolPath,
+        Location $location,
+    ): void {
         $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            location: $location,
             subject: self::subject(),
-            symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            symbolPath: $symbolPath,
             ruleName: 'cyclomatic-complexity',
             code: 'cyclomatic-complexity',
-            message: 'Method has complexity of 15',
+            message: 'Reported somewhere else than the subject names',
             severity: Severity::Warning,
             metricValue: 15,
         );
 
-        self::assertSame(
-            'cyclomatic-complexity:file:src/test.php',
-            $finding->getFingerprint(),
-        );
+        self::assertSame('cyclomatic-complexity:file:src/test.php', $finding->getFingerprint());
     }
 
-    #[Test]
-    public function itGetFingerprintForClass(): void
+    /**
+     * @return iterable<string, array{SymbolPath, Location}>
+     */
+    public static function provideSymbolPathShapes(): iterable
     {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-            ruleName: 'class-size',
-            code: 'class-size',
-            message: 'Class is too large',
-            severity: Severity::Error,
-        );
+        yield 'method' => [
+            SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+        ];
 
-        self::assertSame(
-            'class-size:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
+        yield 'class' => [
+            SymbolPath::forClass('App\Service', 'UserService'),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
+        ];
 
-    #[Test]
-    public function itGetFingerprintForNamespace(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php')),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forNamespace('App\Service'),
-            ruleName: 'namespace-size',
-            code: 'namespace-size',
-            message: 'Namespace has too many classes',
-            severity: Severity::Warning,
-            metricValue: 50,
-        );
+        yield 'namespace' => [
+            SymbolPath::forNamespace('App\Service'),
+            new Location(RelativePath::fromString('src/Service/UserService.php')),
+        ];
 
-        self::assertSame(
-            'namespace-size:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
+        yield 'file' => [
+            SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
+            new Location(RelativePath::fromString('src/bootstrap.php')),
+        ];
 
-    #[Test]
-    public function itGetFingerprintForFile(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/bootstrap.php')),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
-            ruleName: 'file-length',
-            code: 'file-length',
-            message: 'File is too long',
-            severity: Severity::Warning,
-        );
-
-        self::assertSame(
-            'file-length:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
-
-    #[Test]
-    public function itGetFingerprintForGlobalFunction(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/functions.php'), 5),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forGlobalFunction('', 'myFunction'),
-            ruleName: 'cyclomatic-complexity',
-            code: 'cyclomatic-complexity',
-            message: 'Function has high complexity',
-            severity: Severity::Warning,
-        );
-
-        self::assertSame(
-            'cyclomatic-complexity:file:src/test.php',
-            $finding->getFingerprint(),
-        );
+        yield 'global function' => [
+            SymbolPath::forGlobalFunction('', 'myFunction'),
+            new Location(RelativePath::fromString('src/functions.php'), 5),
+        ];
     }
 
     #[Test]
