@@ -29,7 +29,7 @@ use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
  *    an inline marker documenting the migration. Existing positive
  *    assertions for non-architecture roots remain untouched.
  *
- * Distinct from {@see \Qualimetrix\Tests\Integration\Configuration\YamlKeyReachabilityTest}:
+ * Distinct from {@see YamlKeyReachabilityTest}:
  *
  *  - Reachability test: documented-key coverage (every YAML key in
  *    `ConfigSchema::ENTRIES` survives to the spelling the factory looks

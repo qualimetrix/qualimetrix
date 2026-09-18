@@ -45,7 +45,7 @@ use SplFileInfo;
 
 /**
  * Closes the seam {@see ChannelCoverageTest} and
- * {@see \Qualimetrix\Tests\Integration\Infrastructure\Rule\ChannelDeclarationFixtureDriftTest}
+ * {@see ChannelDeclarationFixtureDriftTest}
  * cannot: both compare the **declared** set against itself (the fixture) or
  * against a 12-case hand-written corpus — neither reads what a rule actually
  * *emits*. A rule whose `code:` argument drifts from its

@@ -35,7 +35,7 @@ use Symfony\Component\Finder\Finder;
  * real rule capability roots and the real `Options::fromArray()` behavior.
  *
  * This test derives its expectations entirely from the real code, the same
- * way {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
+ * way {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
  * reflective drift test iterates `DependencyType::cases()` instead of a
  * hand-typed list: nothing here is a second handwritten catalog of rules or
  * keys.

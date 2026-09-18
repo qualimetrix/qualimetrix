@@ -83,12 +83,8 @@ CLASS_SHAPED_BEFORE = ("new ", "extends ", "implements ", "instanceof ", "use ")
 # being a set. Those probes declare no namespace instead; see
 # scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php.
 KNOWN = {
-    "Qualimetrix\\Tests\\Architecture\\Unit\\Configuration\\Allow\\AllowAliasExpanderTest":
-        "a stale reference from an epoch before stage 04, in a live governance control; stage 05's",
     "Qualimetrix\\Tests\\Infrastructure\\Unit\\ChannelDeclarationCompilerPassTest":
         "a stale reference from stage 02/03, in a live test docblock; stage 05's",
-    "Qualimetrix\\Tests\\Integration\\Configuration\\YamlKeyReachabilityTest":
-        "a stale reference from an epoch before stage 04, in a live governance control; stage 05's",
     "Qualimetrix\\Tests\\Integration\\Infrastructure\\Rule\\ChannelDeclarationFixtureDriftTest":
         "a stale reference from an epoch before stage 04, in two live carriers; stage 05's",
     "Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest":
@@ -160,7 +156,7 @@ def main():
     history = ("docs/internal/plans/", "docs/adr/", "docs/internal/generated/", "CHANGELOG.md")
 
     # KNOWN spells every pinned name, so a census that read this file would
-    # carry all nine itself and no pin could ever be reported GONE: the exit-3
+    # carry every one of them itself and no pin could ever be reported GONE: the exit-3
     # branch would be dead code. The exclusion is unconditional, including under
     # --include-history, because that flag widens the population and cannot make
     # a detector's own declaration evidence about the tree.
