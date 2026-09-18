@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
+namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Git\Unit;
+namespace Qualimetrix\Tests\Infrastructure\Git\Integration;
 
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;

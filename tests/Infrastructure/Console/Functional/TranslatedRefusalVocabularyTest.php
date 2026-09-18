@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
+namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversNothing;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
+namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -34,7 +34,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * publishes under seven producer names, so the tally either says which
  * dimension was silenced or hides all seven behind the class.
  *
- * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\FindingFilterOrchestratorTest})
+ * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest})
  * builds `AnalysisResult` by hand, so it cannot see a wiring regression (e.g.
  * the pipeline forgetting to pass its `RuleExecutionResult` through) — that
  * would silently turn the feature into a no-op with every existing test still
