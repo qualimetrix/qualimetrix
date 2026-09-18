@@ -23,13 +23,6 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 #[CoversClass(ChannelPresentationInterface::class)]
 final class ChannelPresentationCoverageTest extends TestCase
 {
-    /**
-     * Matches {@see ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT}: both
-     * read the same real container's static declarations, so a divergence
-     * between the two counts would itself be a regression.
-     */
-    private const int DECLARED_CHANNEL_COUNT = 58;
-
     #[Test]
     public function itResolvesARealDescriptionAndAnExistingDocsPageForEveryStaticChannel(): void
     {
@@ -42,7 +35,7 @@ final class ChannelPresentationCoverageTest extends TestCase
         \assert($presentation instanceof ChannelPresentationInterface);
 
         $channelKeys = array_keys($universe->staticDeclarations());
-        self::assertCount(self::DECLARED_CHANNEL_COUNT, $channelKeys);
+        self::assertCount(ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT, $channelKeys);
 
         $missing = [];
         foreach ($channelKeys as $key) {
@@ -103,7 +96,7 @@ final class ChannelPresentationCoverageTest extends TestCase
 
         $channels = $universe->channels();
         self::assertCount(
-            self::DECLARED_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()),
+            ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()),
             $channels,
             'The universe should now report the 52 static channels plus the 6 built-in computed/health definitions.',
         );

@@ -40,15 +40,6 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 final class SarifRuleDescriptorCoverageTest extends TestCase
 {
     /**
-     * Matches {@see \Qualimetrix\Governance\Channel\ChannelPresentationCoverageTest}:
-     * a real container built without a resolved run configuration carries
-     * only the statically declared channels — the computed-metric catalog is
-     * empty until configuration resolves it, so `channels()` and
-     * `staticDeclarations()` agree here.
-     */
-    private const int UNIVERSE_CHANNEL_COUNT = 58;
-
-    /**
      * Mirrors {@see SarifRuleCollector}'s own private `DOCS_BASE_URI` — kept
      * as a literal here rather than exposed, the same trade the collector's
      * own {@see SarifRuleCollector::INFORMATION_URI} constant avoids by being
@@ -71,7 +62,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
         $collector = new SarifRuleCollector($presentationView);
 
         $channels = $universe->channels();
-        self::assertCount(self::UNIVERSE_CHANNEL_COUNT, $channels);
+        self::assertCount(ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT, $channels);
 
         $failures = [];
 
@@ -84,7 +75,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
 
     /**
      * The sweep above builds its container without a resolved run
-     * configuration — see this class's own `UNIVERSE_CHANNEL_COUNT` docblock
+     * configuration — see {@see ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT}'s docblock
      * — so it never exercises a single `computed.*` / `health.*` code. This
      * resolves the six built-in health-score definitions the same way a real
      * run would (through {@see ComputedMetricConfiguratorInterface::resolve()}
@@ -110,7 +101,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
         $collector = new SarifRuleCollector($presentationView);
 
         $channels = $universe->channels();
-        self::assertCount(self::UNIVERSE_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()), $channels);
+        self::assertCount(ChannelUniverseCoverageTest::DECLARED_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()), $channels);
 
         $failures = [];
 
