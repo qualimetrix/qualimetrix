@@ -55,11 +55,4 @@ final class CallableKindTest extends TestCase
         self::assertSame([], $unusable, implode("\n", $unusable));
     }
 
-    #[Test]
-    public function itRoundTripsEveryValueBackToItsCase(): void
-    {
-        foreach (CallableKind::cases() as $kind) {
-            self::assertSame($kind, CallableKind::from($kind->value));
-        }
-    }
 }

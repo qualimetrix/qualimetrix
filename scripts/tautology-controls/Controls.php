@@ -21,10 +21,17 @@ namespace QmxTautologyControls;
 final class Controls
 {
     /**
-     * The cases stage 05's P1 package created or rewrote, which some control
-     * has to claim. This is the denominator {@see Report::unguarded()} uses —
-     * not the population, which carries hundreds of cases this stage never
-     * touched.
+     * The case each control is required to claim: one per ledger row repaired
+     * here, plus SymbolInfo's readonly promise, which shares a file with a
+     * tautology and is broken by a different edit.
+     *
+     * Fifteen of the sixteen were written or rewritten by that repair. The
+     * sixteenth, `itUsesLoggerForDebugMessages`, was already there: `R169`'s
+     * repair was the removal of five cases that asserted nothing, and this is
+     * the case that carries what they were named for.
+     *
+     * This is the denominator {@see Report::unguarded()} uses — not the
+     * population, which carries hundreds of cases this stage never touched.
      *
      * @return list<string>
      */
