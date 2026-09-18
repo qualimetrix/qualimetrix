@@ -172,3 +172,56 @@ outside the hashed body. Three packages reached that conclusion independently.
 A run that lands *below* the band is the dangerous direction: it means a file
 stopped being executed. The first place to look is a `<directory>` that no longer
 matches where a file went.
+
+## What was measured, against what was predicted
+
+### The four lists
+
+| List                        | Predicted | Measured | Miss |
+| --------------------------- | --------: | -------: | ---: |
+| `declares_no_coverage`      | 74        | **77**   | +3   |
+| `covers_another_owner`      | 16        | **17**   | +1   |
+| `remainder_is_not_a_prefix` | 4         | **4**    | 0    |
+| namespace allow-list        | 44        | **44**   | 0    |
+
+The miss is arithmetic, not a surprise in the tree: the packages reported the
+rows they retired, and a relocation reports as a retirement while also adding a
+row at the new path. Counting one side of nine relocations and not the other is
+exactly +3 and +1 across the two lists that carry them.
+
+**Audited by path, which is the claim that matters.** Of the nine rows the derive
+added, **nine are the same file at a new path and zero are a new exception**;
+nine more retired outright. The allow-list added nothing. Every ceiling ratcheted
+down. The stage parked nothing.
+
+### The executed-test count
+
+Measured on the same population as the baseline (six suites, `benchmark` and
+`live-freshness` excluded): **9214 → 9137, a fall of 77**. The predicted band was
+9161-9195, so the run came in **24 below it**.
+
+| Suite          | Before | After | Δ    |
+| -------------- | -----: | ----: | ---: |
+| Unit           | 6705   | 6458  | −247 |
+| Integration    | 383    | 595   | +212 |
+| Functional     | 152    | 94    | −58  |
+| Infrastructure | 1029   | 1029  | 0    |
+| Tooling        | 181    | 185   | +4   |
+| Governance     | 764    | 776   | +12  |
+
+The three large movements are not deletions: they are `category-wrong` repairs
+moving cases between levels, which is why they nearly cancel. Tooling's +4 is the
+controls stand's own test; Governance's +12 is the new controls the packages added.
+
+**Below the band is the dangerous direction, so it was reconciled against the
+second baseline rather than explained.** The packages' own named reports sum to
+−78 (P1 −8, P3 −60, P4 −8, P5 −6, P6 −3, P7 +7) against an observed −77. The
+delta is attributable; the prediction was simply wrong, and wrong in one place:
+P3 was predicted at −10 to −18 and delivered −60, because it removed nineteen
+data-provider rows from a single file — a shape the row-count model did not
+have. The `itDeliberatelyDoesNotProvideCallableMetrics` sub-prediction held
+exactly: ruled legitimate, zero deletions.
+
+A one-case residue between −78 and −77 is not chased by hand across six reports.
+Whether any file stopped being executed is a question the repository already
+answers mechanically, and that control — not this arithmetic — is what settles it.
