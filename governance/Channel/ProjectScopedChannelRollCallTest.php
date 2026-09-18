@@ -49,15 +49,21 @@ final class ProjectScopedChannelRollCallTest extends TestCase
     /**
      * Files that name the constant without declaring one, each with the reason.
      *
-     * Hand-written, and checked for staleness by
-     * {@see itCarriesNoStaleNonDeclaringMentionRow}: a row naming a file that
-     * is gone, that stopped naming the constant, or that has since started
-     * declaring it is a refusal. A file that arrives here unlisted and unread
-     * is a refusal too — which is what keeps this list from becoming the
-     * silent `continue` it replaced.
+     * Hand-written, and checked by {@see itCarriesNoStaleNonDeclaringMentionRow}
+     * against the only thing that makes a row worth carrying: the scan must
+     * have refused this file and been answered by this row. Every way a row can
+     * stop doing that is the same refusal — the file is gone, it stopped naming
+     * the constant, it has since started declaring one, it sits outside the
+     * scanned root, or the scan simply never reaches it. The last one is why
+     * "the file still names the constant" is not the test: `src/Core/README.md`
+     * names it too, exists, declares nothing and sits under `src/`, and a row
+     * for it would satisfy every one of those conditions while excusing
+     * nothing, because the scan reads `.php` files only. A list that can grow
+     * by rows with no subject is longer than its subject, and its length stops
+     * meaning anything.
      *
-     * `src/Core/README.md` names the constant as well and is not here: the
-     * scan reads `.php` files only, so prose never reaches this list.
+     * A file that arrives here unlisted and unread is a refusal too — which is
+     * what keeps this list from becoming the silent `continue` it replaced.
      *
      * @var array<string, string>
      */
@@ -110,13 +116,28 @@ final class ProjectScopedChannelRollCallTest extends TestCase
         self::assertSame([], $unread, implode("\n", $unread));
     }
 
+    /**
+     * A row earns its place by answering a refusal, and by nothing else.
+     *
+     * The scan reports which rows it consulted, so the question is asked in the
+     * one direction that cannot be satisfied by a coincidence: a row the scan
+     * never consulted excuses nothing, whatever else is true of the file it
+     * names. The narrower diagnoses below only say *why* a given row went
+     * unconsulted, and the last branch is the one a checklist of those
+     * conditions cannot reach.
+     */
     #[Test]
     public function itCarriesNoStaleNonDeclaringMentionRow(): void
     {
         $root = self::sourceRoot();
+        $consulted = self::scan()['consulted'];
         $stale = [];
 
         foreach (self::NON_DECLARING_MENTIONS as $path => $reason) {
+            if (\in_array($path, $consulted, true)) {
+                continue;
+            }
+
             $absolute = \dirname(__DIR__, 2) . '/' . $path;
 
             if (!is_file($absolute)) {
@@ -135,11 +156,23 @@ final class ProjectScopedChannelRollCallTest extends TestCase
 
             if (self::declaresTheConstant($source)) {
                 $stale[] = \sprintf('%s is excused as "%s" and now declares the constant', $path, $reason);
+
+                continue;
             }
 
             if (!str_starts_with($absolute, $root)) {
                 $stale[] = \sprintf('%s is excused and is outside the scanned root', $path);
+
+                continue;
             }
+
+            $stale[] = \sprintf(
+                '%s is excused as "%s" and the scan never consults the row: it produces no refusal for this path,'
+                . ' so the excuse answers nothing. The scan reads `.php` files under src/, and prose naming the'
+                . ' constant — or any path it spells differently — never reaches it. Drop the row.',
+                $path,
+                $reason,
+            );
         }
 
         self::assertSame([], $stale, implode("\n", $stale));
@@ -149,12 +182,18 @@ final class ProjectScopedChannelRollCallTest extends TestCase
      * Every file under `src/` that names the constant, split into what the
      * roll-call could read and what it could not.
      *
-     * @return array{declarers: array<class-string, list<string>>, unread: list<string>}
+     * `consulted` names the rows of {@see NON_DECLARING_MENTIONS} this scan
+     * actually leaned on. It is reported rather than recomputed because the
+     * only honest definition of a useful row is the one written here: the row
+     * the scan asked for instead of refusing.
+     *
+     * @return array{declarers: array<class-string, list<string>>, unread: list<string>, consulted: list<string>}
      */
     private static function scan(): array
     {
         $declarers = [];
         $unread = [];
+        $consulted = [];
 
         foreach (self::sourceFiles() as $file) {
             $relative = substr($file->getPathname(), \strlen(\dirname(__DIR__, 2)) + 1);
@@ -165,7 +204,9 @@ final class ProjectScopedChannelRollCallTest extends TestCase
             }
 
             if (!self::declaresTheConstant($source)) {
-                if (!isset(self::NON_DECLARING_MENTIONS[$relative])) {
+                if (isset(self::NON_DECLARING_MENTIONS[$relative])) {
+                    $consulted[] = $relative;
+                } else {
                     $unread[] = \sprintf(
                         '%s names %s and declares no constant the scan can recognise. Either it declares one in a'
                         . ' spelling this control cannot read — which would drop a capability from the roll-call'
@@ -209,7 +250,7 @@ final class ProjectScopedChannelRollCallTest extends TestCase
             $declarers[$type] = $channels;
         }
 
-        return ['declarers' => $declarers, 'unread' => $unread];
+        return ['declarers' => $declarers, 'unread' => $unread, 'consulted' => $consulted];
     }
 
     /**
