@@ -36,10 +36,13 @@ The relationship with `src/` runs in both directions:
 - `src/Reporting/Formatter/Html/HtmlFormatter.php` reads the four assets
   above at runtime, resolving this directory as a fixed hop from its own
   location.
-- This directory's build reads PHP: `scripts/metric-key-catalog.mjs` parses
-  three files under `src/Analysis/` (via `scripts/repo-root.mjs`) to derive
-  the metric-key catalog it renders, and `tests/metric-key-catalog.test.js`
-  exercises that parse under `composer test:js`.
+- This directory's **tests** read PHP: `tests/metric-key-catalog.test.js` calls
+  `scripts/metric-key-catalog.mjs`, which parses three files under
+  `src/Analysis/` (via `scripts/repo-root.mjs`) to check every metric-key
+  literal in `src/*.js` against the real catalog. This runs under
+  `composer test:js`, not under `composer build:js` — `npm run build` is
+  `vite build` plus `node scripts/bundle-d3.js`, and neither imports
+  `metric-key-catalog.mjs`.
 
 Both hops are hardcoded distances to the repository root rather than
 configuration, so a directory move on either side requires updating the hop,

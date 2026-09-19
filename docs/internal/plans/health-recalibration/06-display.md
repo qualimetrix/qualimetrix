@@ -50,5 +50,5 @@ twelve output formats.
 ## Files
 
 `src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php`
-and its facade, their tests, `src/Reporting/Template/**` including `hints.test.js`
+and its facade, their tests, `html-report/**` including `hints.test.js`
 and the rebuilt bundle.

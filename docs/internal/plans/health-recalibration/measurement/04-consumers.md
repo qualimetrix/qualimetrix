@@ -12,6 +12,8 @@
 >
 > Every place below where either wrong claim recurs is marked inline with `[verified wrong — see the warning at the top]`. The wrong statements themselves are left as-is (this is a record of what the tool produced, not a corrected rewrite).
 
+> **Paths under `src/Reporting/Template/` are where the HTML viewer was when this enumeration was taken.** It now lives at `html-report/`, whole, with `collect-metric-keys.mjs` deleted — see [ADR 0064](../../../../adr/0064-the-html-viewer-lives-outside-the-psr-4-root.md). Every such path below is left exactly as measured, for the same reason the two wrong claims are: rewriting them would make this document report a search it never ran and files it never read. Translate as you read — `src/Reporting/Template/X` is `html-report/X` — and do not paste the `Search method:` greps below without repointing them first. A package that acts on this recon states its own file scope; consult that, not this.
+
 Target base file: `src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php`
 (6 dimensions × 3 levels; `HealthDimension` enum; `warningThreshold`/`errorThreshold` on each dimension).
 

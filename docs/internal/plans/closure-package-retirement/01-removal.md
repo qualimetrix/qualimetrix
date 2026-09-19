@@ -213,7 +213,7 @@ Its snapshot call is the flag alone, and it renders seven artifacts, not four.
    readable. Take the exit code without a pipe — `| tail` replaces it.
 3. `composer architecture:check`, then the full `composer check` from a clean
    clone with copied `vendor`, `website/.venv` and
-   `src/Reporting/Template/node_modules`. A green run in the working copy proves
+   `html-report/node_modules`. A green run in the working copy proves
    less: leftovers there have produced false green before.
 
 ### What the oracle proves, and what it does not

@@ -40,12 +40,12 @@ Two further things were true and unrecorded.
 
 **The viewer's placement was held by two hardcoded distances, not by a name.**
 `HtmlFormatter` resolved the asset directory by walking a fixed number of
-parents from its own file, and the viewer's build resolved the repository root
-the same way in the other direction. Neither encoded a destination. Stage 01 of
-this work (#97) collapsed the viewer's two copies of that walk into a single
-module, `scripts/repo-root.mjs`, so that the move would be judged by a check
-that was already passing rather than by one written in the same breath as the
-change it judges.
+parents from its own file, and the viewer's test tooling resolved the
+repository root the same way in the other direction. Neither encoded a
+destination. Stage 01 of this work (#97) collapsed the viewer's two copies of
+that walk into a single module, `scripts/repo-root.mjs`, so that the move would
+be judged by a check that was already passing rather than by one written in the
+same breath as the change it judges.
 
 **A prescription already existed to move the viewer somewhere else.** The test
 inventory's `targetPath()` prescribed `tests/Reporting/HtmlTemplate/Tests/` for
@@ -139,11 +139,13 @@ judgement is that an unexecuted investigative script is worth less than the
 absence of a file that looks like a guard and is not one — but the loss is
 recorded here rather than implied to be zero.
 
-The four-hop chain the script shared is **not** retired. `metric-key-catalog.mjs`
-calls `fromRoot` three times to read `MetricName.php`, `AggregationStrategy.php`
-and `HealthDecompositionCatalog.php`, the live vitest needs it, and
-`repo-root.mjs` moves with the directory. What the deletion does retire is the
-only `fromRoot` **write**: after it, the viewer reads from the repository root
+The chain the script shared is **not** retired. `metric-key-catalog.mjs` calls
+`fromRoot` to read `MetricName.php`, `AggregationStrategy.php` and
+`HealthDecompositionCatalog.php`, the live vitest needs it, and `repo-root.mjs`
+moves with the directory — where the distance it encodes is shorter than it
+was, which is the kind of fact a number in this sentence would have got wrong
+the moment the directory moved. What the deletion does retire is the only
+`fromRoot` **write**: after it, the viewer reads from the repository root
 and never writes back to it.
 
 ### How the prescription is retired, and the refusal that dies with it
@@ -249,10 +251,14 @@ one costs a reader a minute rather than costing a check its verdict.
   files from `html-report/` — `report.html`, `report.css`, `dist/report.min.js`
   and `dist/d3.min.js`. That is the viewer's entire public surface; the
   `export-ignore` rows hold the other 25 files out of the composer package.
-  **At build time** the viewer parses three PHP files under `src/Analysis/` to
-  derive its metric-key catalog, through the single hop in `repo-root.mjs`. The
-  build-time direction never runs at a consumer's site, and the run-time
-  direction never reads a source file.
+  **Under `composer test:js`** the viewer parses three PHP files under
+  `src/Analysis/` to check its metric-key literals against the catalog, through
+  the hop in `repo-root.mjs`. That direction belongs to the test run, not the
+  build: `npm run build` is `vite build` plus `node scripts/bundle-d3.js`, and
+  neither reaches `metric-key-catalog.mjs` — its only importer in the directory
+  is `tests/metric-key-catalog.test.js`. So the PHP-reading direction never runs
+  at a consumer's site, nor even in a release build, and the run-time direction
+  never reads a source file.
 - A consumer who resolves the shipped assets by path sees them move. The paths
   inside the composer package change; the four file names, and the fact that
   these four and no others ship, do not.
