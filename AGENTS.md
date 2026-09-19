@@ -98,10 +98,65 @@ src/
 ├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
-scripts/               # Utility scripts (benchmark data collection, regression checks)
+governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
+scripts/               # Utility scripts; a tool with its own tests keeps them at scripts/<tool>/tests/
+tools/                 # Standalone dev tools (e.g. the PHPStan rule set); tests at tools/<tool>/tests/
 ```
 
+Both `scripts/` and `tools/` test directories are registered under the
+`Tooling` PHPUnit suite in `phpunit.xml.dist`, one `<directory>` per tool.
+
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
+
+`governance/` is a test root and not a test tree: a file there asserts something
+about this repository — that an artifact is fresh, that documentation agrees
+with the tree, that every registered thing has some property — rather than about
+product behaviour. It is grouped by the subject each control guards, never by
+the kind of artifact the control happens to read. Registering a new group means
+two edits that must agree: a `<directory>` under the `Governance` suite in
+`phpunit.xml.dist`, and a row in
+`testSuitePrefixTable()` in
+`scripts/generate-modular-architecture-test-inventory.php`. Nothing else
+registers it — an unregistered group reddens `composer architecture:check` by
+name. A group that carries fixture files needs two more, and both fail silently
+because each names a group directory literally: the `.gitignore` negation that
+unignores the fixtures, and `phpstan.neon`'s `excludePaths`. Declaring the
+root as a single `<directory>` instead of one per group is deliberately not
+done: it hides layout defects.
+
+A group's directory is flat, so every file in it reaches the repository root
+with `\dirname(__DIR__, 2)`. A stale depth does not fail — it resolves to a
+directory above the repository, a walk of it returns nothing, and a control
+asserting a property of every member of an empty set passes.
+
+Registering a new test **root** means every address in the table below, and
+re-deriving that table against the tree before trusting it. Most of these
+addresses fail silently: the root stays unprotected, or ships where it should
+not, under a green `composer check`.
+
+| Address                                                                                                                                                                                                                                                                                                      | Fails        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `composer.json` `autoload-dev`, `phpstan.neon` `paths`, the `.php-cs-fixer.dist.php` finder                                                                                                                                                                                                                  | loudly       |
+| `phpunit.xml.dist` — a `<testsuite>` that reaches it                                                                                                                                                                                                                                                         | loudly       |
+| a `<directory>` naming a path that does not exist on disk — PHPUnit exits 2 and runs nothing (measured). The only silent variant is a directory that exists but is empty, and it cannot survive a commit: git tracks no empty directory, so a fresh clone already sees it as absent and gets the same exit 2 | loudly       |
+| `scripts/phpunit-aggregate.py` — the `SUITES` tuple                                                                                                                                                                                                                                                          | loudly       |
+| `scripts/phpunit-aggregate/tests/test_phpunit_aggregate.py` — its own copy of the suite tuple, run by `test:cross-tool` and not by the aggregate                                                                                                                                                             | loudly       |
+| `scripts/generate-modular-architecture-test-inventory.php` — the scan-scope literal (the `git ls-files` path list feeding discovery)                                                                                                                                                                         | **silently** |
+| `scripts/generate-modular-architecture-test-inventory.php` — `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()`                                                                                                                                               | loudly       |
+| `scripts/generate-modular-architecture-production-inventory.php` — the ban on `src/` importing a development namespace is a literal list of prefixes                                                                                                                                                         | **silently** |
+| `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                                                                                                                                                      | **silently** |
+| `governance/TestSuiteHygiene/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                                                                                                                                                                         | **silently** |
+| the mover's `createIsolatedProject()` helper (e.g. `scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`) — its copy list must contain every root the tracked config declares, or PHPUnit exits 2 inside the scratch project                                                      | loudly       |
+| `.gitattributes` — `export-ignore`, or the root ships in the composer dist package                                                                                                                                                                                                                           | **silently** |
+| `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                                                                                                                                                                 | **silently** |
+| `.dockerignore` and `scripts/init-environment.sh`                                                                                                                                                                                                                                                            | **silently** |
+
+Sweep for these addresses by path and by name, then separately by two other
+spellings a path-and-name sweep is blind to: a hardcoded row/element count
+asserted over a generated artifact (e.g. `assertCount(N, ...)` on a generated
+TSV), and a literal command string that embeds a path (e.g. a fixed
+`composer test:cross-tool` invocation). Both change when a root moves, and
+neither is a path or a name.
 
 ### Decision framework for new capabilities
 

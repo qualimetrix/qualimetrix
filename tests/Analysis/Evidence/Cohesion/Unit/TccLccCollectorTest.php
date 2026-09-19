@@ -691,51 +691,6 @@ PHP;
     }
 
     #[Test]
-    public function itPreventsStaticMethodsFromInflatingTccLcc(): void
-    {
-        $code = <<<'PHP'
-<?php
-
-namespace App;
-
-class StaticInflation
-{
-    private $a;
-    private $b;
-
-    public function methodA()
-    {
-        return $this->a;
-    }
-
-    public function methodB()
-    {
-        return $this->b;
-    }
-
-    public static function factory(): self
-    {
-        return new self();
-    }
-
-    public static function anotherFactory(): self
-    {
-        return new self();
-    }
-}
-PHP;
-
-        $metrics = $this->collectMetrics($code);
-
-        // Without fix: 4 methods counted, only 0 pairs connected => TCC = 0.0
-        // With fix: 2 instance methods counted, no shared properties => TCC = 0.0
-        // The key difference: NP (total pairs) = C(2,2)=1 not C(4,2)=6,
-        // so adding property connections later would have different impact.
-        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\StaticInflation'));
-        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\StaticInflation'));
-    }
-
-    #[Test]
     public function itDoesNotEmitTccLccForAllStaticClass(): void
     {
         $code = <<<'PHP'

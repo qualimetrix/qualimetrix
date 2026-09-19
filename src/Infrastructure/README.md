@@ -334,10 +334,14 @@ remain independent because configuration is keyed by producer rule name.
 - Builds the rule-name-to-threshold-validator map from registered rule classes
 - Injects it into `ThresholdOverrideExtractor` without instantiating rules
 
-The 11 compiler passes are covered by dedicated unit tests under
-`tests/Unit/Infrastructure/DependencyInjection/CompilerPass/` or, for threshold
-validator wiring, by
+Each compiler pass has a dedicated unit test. Most live in
+`tests/Infrastructure/DependencyInjection/Unit/CompilerPass/`, named after the pass; the channel-declaration pass
+is tested with its subject in `tests/Analysis/Finding/Unit/`, and threshold
+validator wiring by
 `tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php`.
+The count is deliberately not repeated here — the previous wording said eleven
+while `src/Infrastructure/DependencyInjection/CompilerPass/` held thirteen, and
+named a directory that had not existed since the tests moved.
 
 ---
 

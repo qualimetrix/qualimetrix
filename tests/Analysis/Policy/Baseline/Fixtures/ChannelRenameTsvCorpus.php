@@ -22,13 +22,18 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
 final class ChannelRenameTsvCorpus
 {
     /**
-     * @return list<array{id: string, contents: string, product: bool, gate: bool, note: string}>
+     * `renames` is the map the product's reader must produce from `contents`;
+     * it is written by hand here rather than read back off the reader, and it
+     * is meaningless — and empty — on a case the product refuses.
+     *
+     * @return list<array{id: string, renames: array<string, string>, contents: string, product: bool, gate: bool, note: string}>
      */
     public static function cases(): array
     {
         return [
             [
                 'id' => 'header-only',
+                'renames' => [],
                 'contents' => "old\tnew\treason\n",
                 'product' => true,
                 'gate' => true,
@@ -36,6 +41,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'one-row',
+                'renames' => ['complexity.cyclomatic' => 'complexity.ccn'],
                 'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn\tfixture reason\n",
                 'product' => true,
                 'gate' => true,
@@ -43,6 +49,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'crlf-line-endings',
+                'renames' => ['complexity.cyclomatic' => 'complexity.ccn'],
                 'contents' => "old\tnew\treason\r\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\r\n",
                 'product' => true,
                 'gate' => true,
@@ -50,6 +57,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'comment-and-blank-lines',
+                'renames' => ['complexity.cyclomatic' => 'complexity.ccn'],
                 'contents' => "old\tnew\treason\n\n# a note\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\n\n",
                 'product' => true,
                 'gate' => true,
@@ -57,6 +65,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'wrong-header',
+                'renames' => [],
                 'contents' => "from\tto\treason\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -64,6 +73,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'header-with-extra-column',
+                'renames' => [],
                 'contents' => "old\tnew\treason\tnote\ncomplexity.cyclomatic\tcomplexity.ccn\ttest reason\tn\n",
                 'product' => false,
                 'gate' => false,
@@ -71,6 +81,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'row-missing-a-field',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn\n",
                 'product' => false,
                 'gate' => false,
@@ -78,6 +89,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'leading-space-in-old',
+                'renames' => [],
                 'contents' => "old\tnew\treason\n complexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -85,6 +97,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'trailing-space-in-new',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn \ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -92,6 +105,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'renames-nothing',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -99,6 +113,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'two-rows-for-one-old',
+                'renames' => [],
                 'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\na.b\te.f\ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -106,6 +121,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'chain',
+                'renames' => [],
                 'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\nc.d\te.f\ttest reason\n",
                 'product' => false,
                 'gate' => false,
@@ -113,6 +129,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'collapse-two-olds-onto-one-new',
+                'renames' => [],
                 'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\ne.f\tc.d\ttest reason\n",
                 'product' => false,
                 'gate' => true,
@@ -122,6 +139,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'the-same-row-twice',
+                'renames' => [],
                 'contents' => "old\tnew\treason\na.b\tc.d\ttest reason\na.b\tc.d\ttest reason\n",
                 'product' => false,
                 'gate' => true,
@@ -131,6 +149,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'retired-pair-spelling',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity#complexity.ccn\tcomplexity.ccn\ttest reason\n",
                 'product' => false,
                 'gate' => true,
@@ -140,6 +159,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'empty-new-field',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity.cyclomatic\t\ttest reason\n",
                 'product' => false,
                 'gate' => true,
@@ -148,6 +168,7 @@ final class ChannelRenameTsvCorpus
             ],
             [
                 'id' => 'name-carrying-a-level-separator',
+                'renames' => [],
                 'contents' => "old\tnew\treason\ncomplexity.cyclomatic\tcomplexity.ccn:method\ttest reason\n",
                 'product' => false,
                 'gate' => true,

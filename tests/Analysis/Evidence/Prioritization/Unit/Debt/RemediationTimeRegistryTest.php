@@ -59,17 +59,19 @@ final class RemediationTimeRegistryTest extends TestCase
     /**
      * No fallback remains: `MINUTES_BY_RULE` and `DEFAULT_MINUTES` are gone,
      * and every registered rule declares its own minutes on its own class
-     * (see {@see RuleRemediationMinutesCoverageTest}). A name absent from the
+     * (see {@see \Qualimetrix\Governance\RuleDeclaration\RuleRemediationMinutesCoverageTest}). A name absent from the
      * injected map is not a legitimately unknown rule to silently default
      * for — it means a finding carries a rule name no rule declared.
      */
     #[Test]
     public function itThrowsForARuleNameNotInTheInjectedMap(): void
     {
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('No remediation minutes declared for rule "unknown.rule"');
-
-        $this->registry->getBaseMinutes('unknown.rule');
+        try {
+            $this->registry->getBaseMinutes('unknown.rule');
+            self::fail('A rule name absent from the injected map must not be given a default cost');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString('unknown.rule', $exception->getMessage());
+        }
     }
 
     #[Test]

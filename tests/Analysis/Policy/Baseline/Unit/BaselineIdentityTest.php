@@ -21,7 +21,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 
 #[CoversClass(BaselineIdentity::class)]
 #[CoversClass(BaselineEdge::class)]

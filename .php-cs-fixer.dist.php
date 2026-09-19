@@ -6,12 +6,15 @@ $finder = PhpCsFixer\Finder::create()
     ->in([
         __DIR__ . '/src',
         __DIR__ . '/tests',
+        __DIR__ . '/governance',
         __DIR__ . '/scripts',
+        __DIR__ . '/tools',
     ])
     ->name('*.php')
     ->ignoreDotFiles(true)
     ->ignoreVCS(true)
-    ->notPath('Fixtures/Ast/invalid_syntax.php')
+    ->notPath('Infrastructure/Ast/Fixtures/invalid_syntax.php')
+    ->notPath('Infrastructure/Console/Fixtures/parser_refuses_it.php')
     ->notPath('Fixtures/OutputFormats/broken/src/Unparsable.php');
 
 return (new PhpCsFixer\Config())

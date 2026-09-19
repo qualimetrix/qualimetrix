@@ -11,15 +11,19 @@ parameters:
     paths:
         - src
         - tests
+        - governance
         - scripts
+        - tools
     excludePaths:
         - tests/Fixtures
+        - tests/Infrastructure/Ast/Fixtures
+        - tests/Infrastructure/Console/Fixtures
         - tests/Analysis/Evidence/Measurement/Fixtures
         - tests/Analysis/Policy/Architecture/Fixtures
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
-        - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
-        - tests/System/DocumentationConsistency/Fixtures
+        - governance/FormatOptionKeys/Fixtures
+        - tools/phpstan/tests/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     ignoreErrors:
@@ -30,7 +34,7 @@ parameters:
         # the day it stops being written into a failure.
         -
             identifier: phpDoc.parseError
-            path: tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php
+            path: scripts/directive-audit/tests/Fixtures/AuthoredThresholdForms.php
     treatPhpDocTypesAsCertain: false
 
 services:

@@ -25,17 +25,13 @@
 
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Unit</directory>
             <directory>tests/Core/Path/Unit</directory>
             <directory>tests/Core/Symbol/Unit</directory>
-            <directory>tests/TestSupport/ArchitectureStaticAnalysis/Unit</directory>
-            <directory>tests/System/TestRunnerConfiguration/Unit</directory>
-            <directory>tests/System/ScratchPathIsolation/Unit</directory>
+            <directory>tests/Core/Unit</directory>
             <directory>tests/Analysis/Policy/Architecture/Unit</directory>
             <directory>tests/Analysis/Policy/Baseline/Unit</directory>
             <directory>tests/Analysis/Policy/Inline/Unit</directory>
             <directory>tests/Analysis/Finding/Unit</directory>
-            <directory>tests/Analysis/Finding/RuleConfiguration/Unit</directory>
             <directory>tests/Analysis/Evidence/CircularDependency/Unit</directory>
             <directory>tests/Analysis/Evidence/CodeSmell/Unit</directory>
             <directory>tests/Analysis/Evidence/Cohesion/Unit</directory>
@@ -55,13 +51,9 @@
             <directory>tests/Analysis/Run/Unit</directory>
             <directory>tests/Reporting/GraphProjection/Unit</directory>
             <directory>tests/Reporting/Unit</directory>
-            <directory>tests/Reporting/FindingProjection/Unit</directory>
-            <directory>tests/Reporting/Formatter/Suppressed/Unit</directory>
-            <directory>tests/Reporting/Formatter/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
-            <directory>tests/Integration</directory>
-            <directory>tests/System/DocumentationConsistency/Integration</directory>
+            <directory>tests/Reporting/Integration</directory>
             <directory>tests/Analysis/Policy/Architecture/Integration</directory>
             <directory>tests/Analysis/Policy/Baseline/Integration</directory>
             <directory>tests/Analysis/Policy/Inline/Integration</directory>
@@ -74,15 +66,58 @@
             <directory>tests/Analysis/Evidence/Design/Integration</directory>
             <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
-            <directory>tests/Reporting/Formatter/Sarif/Integration</directory>
-            <directory>tests/Reporting/Formatter/Suppressed/Integration</directory>
-        </testsuite>
+                    <directory>tests/Analysis/Evidence/Duplication/Integration</directory>
+</testsuite>
         <testsuite name="Functional">
-            <directory>tests/Functional</directory>
             <directory>tests/Analysis/Policy/Baseline/Functional</directory>
-        </testsuite>
+                    <directory>tests/Analysis/Evidence/Duplication/Functional</directory>
+</testsuite>
         <testsuite name="Infrastructure">
             <directory>tests/Infrastructure</directory>
+        </testsuite>
+        <testsuite name="Tooling">
+            <directory>tools/phpstan/tests</directory>
+            <directory>scripts/promise-effect/tests</directory>
+            <directory>scripts/directive-audit/tests</directory>
+            <directory>scripts/directive-audit-controls/tests</directory>
+            <directory>scripts/tautology-controls/tests</directory>
+            <directory>scripts/finding-gate/tests</directory>
+            <directory>scripts/suppression-snapshot/tests</directory>
+            <directory>scripts/rename-enumeration/tests</directory>
+            <directory>scripts/health-calibration/tests</directory>
+            <directory>scripts/benchmark/tests</directory>
+            <directory>scripts/modular-architecture/tests</directory>
+        </testsuite>
+        <testsuite name="Governance">
+            <directory>governance/TestSuiteHygiene</directory>
+            <directory>governance/Occurrence</directory>
+            <directory>governance/RuleOptionKeys</directory>
+            <directory>governance/Channel</directory>
+            <directory>governance/ThresholdKeys</directory>
+            <directory>governance/RuleDeclaration</directory>
+            <directory>governance/RatchetArtifact</directory>
+            <directory>governance/PlanningRecords</directory>
+            <directory>governance/DocumentationCensus</directory>
+            <directory>governance/DistributedPackage</directory>
+            <directory>governance/ModularOwnership</directory>
+            <directory>governance/ConsoleComposition</directory>
+            <directory>governance/FrameworkClassification</directory>
+            <directory>governance/PackageVersion</directory>
+            <directory>governance/ProjectScopeCoverage</directory>
+            <directory>governance/SelectorSyntax</directory>
+            <directory>governance/SuppressionOptionKeys</directory>
+            <directory>governance/RepositoryEntrypoints</directory>
+            <directory>governance/ConfigurationVocabulary</directory>
+            <directory>governance/MeasurementVocabulary</directory>
+            <directory>governance/MeasurementIdentity</directory>
+            <directory>governance/GeneratedArtifactFreshness</directory>
+            <directory>governance/FormatOptionKeys</directory>
+            <directory>governance/DirectiveVocabulary</directory>
+            <directory>governance/ControlRigLedger</directory>
+            <directory>governance/HealthVocabulary</directory>
+            <directory>governance/FindingVocabulary</directory>
+            <directory>governance/LayerPolicyVocabulary</directory>
+            <directory>governance/SymbolVocabulary</directory>
         </testsuite>
     </testsuites>
 

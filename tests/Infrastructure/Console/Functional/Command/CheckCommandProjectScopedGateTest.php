@@ -20,7 +20,7 @@ use Symfony\Component\Process\Process;
  * observed where a user observes it, as the exit code of `check`.
  *
  * The unit sweep in
- * {@see \Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest}
+ * {@see \Qualimetrix\Tests\Reporting\Integration\FindingProjection\ProjectScopedChannelProjectionTest}
  * pins the same promise per stage. This class exists because the defect was
  * only visible end to end: `architecture.unassigned-class` was exempt from
  * `suppress_paths` and `suppress_namespaces` and silently dropped by the git

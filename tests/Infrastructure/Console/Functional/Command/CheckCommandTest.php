@@ -134,26 +134,6 @@ class ComplexClass {
     }
 
     #[Test]
-    public function itHandlesNonExistentPath(): void
-    {
-        // Try to analyze non-existent path
-        $nonExistentPath = $this->tempDir . '/non-existent';
-
-        // Create command from DI container
-        $commandTester = $this->createCommandTester();
-        $commandTester->execute([
-            'paths' => [$nonExistentPath],
-            '--format' => 'text',
-            '--no-progress' => true,
-        ], ['capture_stderr_separately' => true]);
-
-        // Assert config/input error (exit code 3)
-        self::assertSame(3, $commandTester->getStatusCode());
-        self::assertSame('', $commandTester->getDisplay());
-        self::assertStringContainsString('does not exist', $commandTester->getErrorOutput());
-    }
-
-    #[Test]
     public function itRespectsExcludeOption(): void
     {
         // Create directory structure

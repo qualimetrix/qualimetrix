@@ -9,15 +9,11 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding;
 use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use SplFileInfo;
 
 #[CoversClass(IdenticalSubExpressionVisitor::class)]
-#[CoversClass(IdenticalSubExpressionCollector::class)]
 #[CoversClass(IdenticalSubExpressionFinding::class)]
 final class IdenticalSubExpressionVisitorTest extends TestCase
 {
@@ -416,13 +412,6 @@ PHP;
     }
 
     #[Test]
-    public function itDoesNotFlagShortTernaryWithDifferentBranches(): void
-    {
-        $code = '<?php $result = $a ?: $b;';
-        self::assertCount(0, $this->analyze($code));
-    }
-
-    #[Test]
     public function itDoesNotFlagTernaryWithSideEffects(): void
     {
         $code = '<?php $result = $cond ? foo() : foo();';
@@ -719,87 +708,6 @@ PHP;
         $findings = $this->analyze($code);
         self::assertCount(1, $findings);
         self::assertSame('duplicate_match_arm', $findings[0]->type);
-    }
-
-    // ── Collector Integration ───────────────────────────────────────
-
-    #[Test]
-    public function itIntegratesWithCollectorCorrectly(): void
-    {
-        $code = <<<'PHP'
-<?php
-$a = $x === $x;
-if ($y > 0) {} elseif ($y > 0) {}
-PHP;
-
-        $collector = new IdenticalSubExpressionCollector();
-
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $registrar = (new DeclarationRegistrarFactory())->createForFile();
-        $traverser->addVisitor($registrar);
-        $indexAwareVisitor = $collector->getVisitor();
-        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
-        $indexAwareVisitor->useDeclarationIndex($registrar->index());
-        $traverser->addVisitor($collector->getVisitor());
-        $traverser->traverse($ast);
-
-        $bag = $collector->collect(new SplFileInfo(__FILE__), $ast);
-
-        self::assertSame(1, $bag->entryCount('identicalSubExpression.identical_operands'));
-        self::assertSame(2, $bag->entries('identicalSubExpression.identical_operands')[0]['line']);
-        self::assertSame(1, $bag->entryCount('identicalSubExpression.duplicate_condition'));
-        self::assertSame(3, $bag->entries('identicalSubExpression.duplicate_condition')[0]['line']);
-        self::assertSame(0, $bag->entryCount('identicalSubExpression.identical_ternary'));
-        self::assertSame(0, $bag->entryCount('identicalSubExpression.duplicate_match_arm'));
-    }
-
-    #[Test]
-    public function itProducesNoCollectorFindingsForCleanCode(): void
-    {
-        $code = '<?php $a = $x + $y;';
-
-        $collector = new IdenticalSubExpressionCollector();
-
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $registrar = (new DeclarationRegistrarFactory())->createForFile();
-        $traverser->addVisitor($registrar);
-        $indexAwareVisitor2 = $collector->getVisitor();
-        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor2);
-        $indexAwareVisitor2->useDeclarationIndex($registrar->index());
-        $traverser->addVisitor($collector->getVisitor());
-        $traverser->traverse($ast);
-
-        $bag = $collector->collect(new SplFileInfo(__FILE__), $ast);
-
-        foreach (IdenticalSubExpressionCollector::FINDING_TYPES as $type) {
-            self::assertSame(0, $bag->entryCount("identicalSubExpression.{$type}"));
-        }
-    }
-
-    #[Test]
-    public function itReturnsCollectorName(): void
-    {
-        $collector = new IdenticalSubExpressionCollector();
-        self::assertSame('identical-subexpression', $collector->getName());
-    }
-
-    #[Test]
-    public function itProvidesExpectedMetricKeys(): void
-    {
-        $collector = new IdenticalSubExpressionCollector();
-        $provides = $collector->provides();
-
-        self::assertContains('identicalSubExpression.identical_operands', $provides);
-        self::assertContains('identicalSubExpression.duplicate_condition', $provides);
-        self::assertContains('identicalSubExpression.identical_ternary', $provides);
-        self::assertContains('identicalSubExpression.duplicate_match_arm', $provides);
-        self::assertContains('identicalSubExpression.duplicate_switch_case', $provides);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────

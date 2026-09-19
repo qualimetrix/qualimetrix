@@ -68,7 +68,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * Real-emission coverage guard: every channel exercised by this suite is
  * checked against the production {@see ChannelDeclarationRegistryInterface}
  * and must resolve to a declaration, or be recorded in
- * `tests/Analysis/Finding/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
+ * `governance/Channel/Fixtures/excluded.txt` as deliberately not baselineable.
  *
  * Every case runs the REAL rule against a hand-built `AnalysisContext` (or,
  * for the inline-directive cases, a real prepared policy) — never a
@@ -85,11 +85,18 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * and the `annotation.*` family. It is **not** a hand-built emission
  * for all ~50 declared channels — each of those is separately verified by
  * the channel's own docblock file:line citation on its declaring rule, and
- * by {@see \Qualimetrix\Tests\Integration\Infrastructure\Rule\ChannelDeclarationFixtureDriftTest},
+ * by {@see \Qualimetrix\Governance\Channel\ChannelDeclarationFixtureDriftTest},
  * which compares the complete static declared set against the tracked
  * fixture in both directions. This file's job is narrower and complementary:
  * prove that the declaration mechanism actually resolves real emissions, not
  * that every declaration is individually correct.
+ *
+ * `#[CoversNothing]` rather than a covered class, and it is the accurate
+ * declaration: every case runs a different capability's real rule, and the
+ * subject is that the registry resolves what they emit — a property of the
+ * mechanism, which no one of the classes named above owns. The registry
+ * interface the cases read is named in this docblock for the reader, not as a
+ * coverage claim.
  */
 #[CoversNothing]
 final class ChannelCoverageTest extends TestCase

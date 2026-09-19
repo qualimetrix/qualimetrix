@@ -48,8 +48,13 @@ function surfaces(): array
             'excludeDirs' => ['node_modules', 'dist'],
             'excludeFiles' => [...$presetFiles, 'src/.gitkeep', 'src/Reporting/Template/package-lock.json'],
         ],
+        // One surface, two roots: a control that pins a channel spelling counts
+        // the same wherever it is filed, and the repository-controls root is
+        // where those controls are moving. A separate column would have split
+        // the count in the same step that moves the files, so a sweep reading
+        // one column would have read a drop that means nothing.
         'tests' => [
-            'roots' => ['tests'],
+            'roots' => ['tests', 'governance', 'tools', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/tautology-controls/tests', 'scripts/finding-gate/tests', 'scripts/suppression-snapshot/tests', 'scripts/rename-enumeration/tests', 'scripts/health-calibration/tests', 'scripts/benchmark/tests', 'scripts/modular-architecture/tests', 'scripts/cross-tool-comparison/tests', 'scripts/phpunit-aggregate/tests'],
             'files' => [],
             'excludeDirs' => ['__pycache__'],
             'excludeFiles' => [],
@@ -1297,7 +1302,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # ends the freeze and moves `occurrence` for the channel's accepted entries.
 # Every other occurrence the row's surface counts include (selectors,
 # `@qmx-ignore` targets, other tests, docs, config) renames normally.
-# `tests/Analysis/Finding/Integration/OccurrenceKindFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceKindFreezeGuardTest.php`
 # re-derives the same frozen set independently on every `composer test` run
 # and fails if the count drifts, if a
 # frozen constant no longer equals its own pin, or if the constant is no
@@ -1345,7 +1350,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # `SecurityPatternCollector::PATTERN_TYPES`, its `CodeSmellLocation('<leaf>'`
 # / equivalent producer literal in the capability's visitor, and the
 # `'codeSmell.<leaf>'` / `'security.<leaf>'` bag keys throughout tests/.
-# `tests/Analysis/Finding/Integration/OccurrenceLeafFreezeGuardTest.php`
+# `governance/Occurrence/OccurrenceLeafFreezeGuardTest.php`
 # re-derives this set independently on every `composer test` run and fails if
 # the twelve drift, if a leaf stops matching its own pin, or if a family
 # loses its pin — a consistent sweep that renamed a leaf everywhere at once
@@ -1972,7 +1977,7 @@ function writeAtomically(string $path, string $contents): void
 // functions. The retirement predicate is the one piece of this script a test
 // has to reach directly — its branches are all fail-closed, and a fail-closed
 // branch nobody has seen fire is a branch nobody has tested. See
-// tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php.
+// scripts/rename-enumeration/tests/RenameEnumerationRetirementTest.php.
 if (realpath((string) ($_SERVER['argv'][0] ?? '')) === realpath(__FILE__)) {
     exit(main());
 }

@@ -327,7 +327,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
      * {@see FrameworkClassificationSites}, beside it and not inside the rule
      * that consumes it. The two positions below — the target of a measured
      * class's outgoing edge, the source of its incoming one — are the whole of
-     * it, and `UnmatchedFrameworkNamespaceRuleTest` pins that there are no
+     * it, and `FrameworkClassificationSiteCountTest` pins that there are no
      * others, because nothing in the language keeps a mirror a mirror.
      */
     /**

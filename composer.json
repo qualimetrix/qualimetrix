@@ -56,10 +56,22 @@
     "autoload-dev": {
         "psr-4": {
             "Qualimetrix\\Tests\\": "tests/",
-            "Qualimetrix\\PhpStan\\": "tools/phpstan/"
+            "Qualimetrix\\Governance\\": "governance/",
+            "Qualimetrix\\PhpStan\\": "tools/phpstan/",
+            "Qualimetrix\\PhpStan\\Tests\\": "tools/phpstan/tests/",
+            "Qualimetrix\\PromiseEffect\\Tests\\": "scripts/promise-effect/tests/",
+            "QmxDirectiveAudit\\Tests\\": "scripts/directive-audit/tests/",
+            "QmxDirectiveAuditControls\\Tests\\": "scripts/directive-audit-controls/tests/",
+            "QmxFindingGate\\Tests\\": "scripts/finding-gate/tests/",
+            "QmxTautologyControls\\Tests\\": "scripts/tautology-controls/tests/",
+            "Qualimetrix\\SuppressionSnapshot\\Tests\\": "scripts/suppression-snapshot/tests/",
+            "Qualimetrix\\RenameEnumeration\\Tests\\": "scripts/rename-enumeration/tests/",
+            "Qualimetrix\\HealthCalibration\\Tests\\": "scripts/health-calibration/tests/",
+            "Qualimetrix\\Benchmark\\Tests\\": "scripts/benchmark/tests/",
+            "Qualimetrix\\ModularArchitecture\\Tests\\": "scripts/modular-architecture/tests/"
         },
         "classmap": [
-            "tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/"
+            "tools/phpstan/tests/Fixtures/"
         ]
     },
     "bin": [
@@ -82,9 +94,10 @@
         "test:js": "cd src/Reporting/Template && npm test",
         "test:cross-tool": [
             "python3 --version",
-            "python3 -m unittest discover -s tests/Analysis/Evidence/Measurement/Tests -p 'test_*.py'",
-            "python3 -m unittest discover -s tests/System/TestRunnerConfiguration/Tests -p 'test_*.py'"
+            "python3 -m unittest discover -s scripts/cross-tool-comparison/tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'"
         ],
+        "dangling-names": "python3 scripts/dangling-test-names.py",
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
@@ -165,6 +178,12 @@
             "php scripts/directive-audit-controls.php"
         ],
         "directives:controls:coverage": "php scripts/directive-audit-coverage-control.php",
+        "tautology:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "@tautology:controls:coverage",
+            "php scripts/tautology-controls.php"
+        ],
+        "tautology:controls:coverage": "php scripts/tautology-coverage-control.php",
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml --require-heterogeneity --min-measured=3",
@@ -184,6 +203,7 @@
             "@cs-check",
             "@phpstan",
             "@test:aggregate",
+            "@dangling-names",
             "@test:js",
             "@test:cross-tool"
         ],
@@ -214,6 +234,7 @@
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
         "test:cross-tool": "Run deterministic cross-tool methodology tests (Python 3, no external analyzers)",
+        "dangling-names": "Report every Qualimetrix\\Tests name the tree spells and no file declares; 0 exactly the pinned census, 1 a name nobody pinned, 2 an unreadable input, 3 a pin that no longer dangles",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
         "check-leaks": "Fail if tracked files contain developer home paths or private project names",
@@ -233,12 +254,14 @@
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
         "check": "Everything below, in the order a failure is cheapest to read",
-        "check:code": "What a code change invalidates: style, static analysis, tests",
+        "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",
         "directives:controls:coverage": "Prove the negative-controls stand's own coverage arithmetic: removing a case's declaration makes exactly that case read as guarded by nothing, and a declaration naming a case absent from the run is a distinct stale-declaration refusal",
+        "tautology:controls": "Plant, one at a time, the production edit each repaired tautology is supposed to reject, and prove that repair's own case goes red and no undeclared case does; runs tautology:controls:coverage first",
+        "tautology:controls:coverage": "Prove the tautology stand's own arithmetic: removing a repaired case's declaration leaves exactly that case guarded by nothing, and a declaration naming a case the run never carried is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
     },

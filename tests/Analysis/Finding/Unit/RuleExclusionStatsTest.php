@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\RuleExecution;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -73,7 +73,7 @@ final class RuleExclusionStatsTest extends TestCase
      * `suppress_namespaces`/`suppress_namespace_channels` and `suppress_paths`.
      * `Reporting\FindingProjection\SuppressionMechanism::ledgerHalves()` is
      * beholden to that count (its own test,
-     * `Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest`,
+     * `Governance\FindingVocabulary\SuppressionMechanismTest`,
      * checks the enum side); this test reads the count structurally, off the
      * `*ByRule` constructor parameters, so a third half added to this VO
      * fails here rather than silently under-reporting the `suppressed`

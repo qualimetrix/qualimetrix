@@ -1,0 +1,455 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Summary;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Report;
+
+#[CoversClass(TopIssuesRenderer::class)]
+final class TopIssuesRendererTest extends TestCase
+{
+    private TopIssuesRenderer $renderer;
+    private AnsiColor $color;
+
+    protected function setUp(): void
+    {
+        $this->renderer = new TopIssuesRenderer();
+        $this->color = new AnsiColor(false);
+    }
+
+    #[Test]
+    public function itRendersTopIssues(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 1,
+            topIssues: [
+                $this->createRankedIssue(150.0, Severity::Error, 'HighImpactService', '/project/src/HighImpactService.php', 42, 60),
+                $this->createRankedIssue(30.0, Severity::Warning, 'LowImpactService', '/project/src/LowImpactService.php', 10, 15),
+            ],
+        );
+
+        $context = new FormatterContext();
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('Top issues by impact', $output);
+        self::assertStringContainsString('1.', $output);
+        self::assertStringContainsString('2.', $output);
+        self::assertStringContainsString('ERR', $output);
+        self::assertStringContainsString('WRN', $output);
+
+        // File path on the first line (clickable in terminal)
+        self::assertStringContainsString('HighImpactService.php', $output);
+        self::assertStringContainsString('LowImpactService.php', $output);
+
+        // Rule name and message on the second line
+        self::assertStringContainsString('complexity.ccn: Cyclomatic complexity is 45', $output);
+
+        // Method-level symbol in parentheses
+        self::assertStringContainsString('(HighImpactService::process)', $output);
+        self::assertStringContainsString('(LowImpactService::process)', $output);
+    }
+
+    #[Test]
+    public function itSkipsRenderingWhenNoTopIssues(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            topIssues: [],
+        );
+
+        $context = new FormatterContext();
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        self::assertSame([], $lines);
+    }
+
+    #[Test]
+    public function itSkipsRenderingWhenLimitIsZero(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                $this->createRankedIssue(100.0, Severity::Error, 'SomeService', '/project/src/SomeService.php', 5, 30),
+            ],
+        );
+
+        $context = new FormatterContext(topIssuesLimit: 0);
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        self::assertSame([], $lines);
+    }
+
+    #[Test]
+    public function itRespectsLimit(): void
+    {
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 3,
+            warningCount: 0,
+            topIssues: [
+                $this->createRankedIssue(200.0, Severity::Error, 'First', '/project/src/First.php', 1, 60),
+                $this->createRankedIssue(100.0, Severity::Error, 'Second', '/project/src/Second.php', 2, 30),
+                $this->createRankedIssue(50.0, Severity::Error, 'Third', '/project/src/Third.php', 3, 15),
+            ],
+        );
+
+        $context = new FormatterContext(topIssuesLimit: 1);
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('1.', $output);
+        self::assertStringNotContainsString('2.', $output);
+    }
+
+    #[Test]
+    public function itRendersLineNumberWhenPrecise(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/Service.php'), 42, precise: true),
+            symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'process'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Cyclomatic complexity is 45',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                new RankedIssue(
+                    finding: $finding,
+                    impactScore: 10.0,
+                    classRank: 0.05,
+                    debtMinutes: 30,
+                    severityWeight: 3,
+                ),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('src/Service.php:42', $output);
+    }
+
+    #[Test]
+    public function itRendersNamespaceLevelFindings(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/Common/ApiResource/AbstractApiKey.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\Common\ApiResource'),
+            ruleName: 'size.namespace-size',
+            code: 'size.namespace-size',
+            message: 'Namespace contains 25 classes, exceeds threshold of 15',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                new RankedIssue(
+                    finding: $finding,
+                    impactScore: 3.14,
+                    classRank: null,
+                    debtMinutes: 45,
+                    severityWeight: 3,
+                ),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        // File path on first line
+        self::assertStringContainsString('src/Common/ApiResource/AbstractApiKey.php', $output);
+
+        // Rule and message on second line
+        self::assertStringContainsString('size.namespace-size: Namespace contains 25 classes', $output);
+
+        // Namespace context in parentheses
+        self::assertStringContainsString('(namespace: App\Common\ApiResource)', $output);
+    }
+
+    #[Test]
+    public function itRendersClassLevelWithoutSymbolSuffix(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/Service/UserService.php'), 5),
+            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+            ruleName: 'coupling.cbo',
+            code: 'coupling.cbo',
+            message: 'Coupling between objects is 20, exceeds threshold of 13',
+            severity: Severity::Warning,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 1,
+            topIssues: [
+                new RankedIssue(
+                    finding: $finding,
+                    impactScore: 2.5,
+                    classRank: 0.03,
+                    debtMinutes: 30,
+                    severityWeight: 1,
+                ),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        // Rule and message shown
+        self::assertStringContainsString('coupling.cbo: Coupling between objects is 20', $output);
+
+        // Class-level symbol NOT appended (redundant with file path)
+        self::assertStringNotContainsString('(UserService)', $output);
+    }
+
+    #[Test]
+    public function itRendersFunctionLevelSymbol(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/helpers.php'), 10, precise: true),
+            symbolPath: SymbolPath::forGlobalFunction('App\Utils', 'calculateHash'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Cyclomatic complexity is 30',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('(calculateHash)', $output);
+    }
+
+    #[Test]
+    public function itRendersFileLevelWithoutSymbolSuffix(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/config.php'), null),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/config.php')),
+            ruleName: 'security.hardcoded-credentials',
+            code: 'security.hardcoded-credentials',
+            message: 'Hardcoded credentials detected',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('security.hardcoded-credentials: Hardcoded credentials detected', $output);
+        // File-level symbol should NOT append suffix
+        self::assertStringNotContainsString('(src/config.php)', $output);
+    }
+
+    #[Test]
+    public function itHandlesLocationNone(): void
+    {
+        $finding = self::finding(
+            location: Location::none(),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: 'architecture.circular-dependency',
+            code: 'architecture.circular-dependency',
+            message: 'Circular dependency detected: A -> B -> A',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 1,
+            warningCount: 0,
+            topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
+            ],
+        );
+
+        $context = new FormatterContext();
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('[project]', $output);
+        self::assertStringContainsString('architecture.circular-dependency: Circular dependency detected', $output);
+    }
+
+    #[Test]
+    public function itPrefersRecommendationOverMessage(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
+            symbolPath: SymbolPath::forClass('App\Service', 'Service'),
+            ruleName: 'cohesion.lcom',
+            code: 'cohesion.lcom',
+            message: 'LCOM4 value 3 exceeds threshold of 2',
+            severity: Severity::Warning,
+            recommendation: 'Class could be split into 3 cohesive parts',
+        );
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 1,
+            topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
+            ],
+        );
+
+        $context = new FormatterContext(basePath: '/project');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+
+        // Should show recommendation, not technical message
+        self::assertStringContainsString('Class could be split into 3 cohesive parts', $output);
+        self::assertStringNotContainsString('LCOM4 value 3 exceeds threshold', $output);
+    }
+
+    private function createRankedIssue(
+        float $score,
+        Severity $severity,
+        string $symbol,
+        string $file,
+        int $line,
+        int $debt,
+    ): RankedIssue {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString(ltrim($file, '/')), $line),
+            symbolPath: SymbolPath::forMethod('App\Service', $symbol, 'process'),
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Cyclomatic complexity is 45',
+            severity: $severity,
+        );
+
+        return new RankedIssue(
+            finding: $finding,
+            impactScore: $score,
+            classRank: 0.05,
+            debtMinutes: $debt,
+            severityWeight: $severity === Severity::Error ? 3 : 1,
+        );
+    }
+
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
+        };
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
+}

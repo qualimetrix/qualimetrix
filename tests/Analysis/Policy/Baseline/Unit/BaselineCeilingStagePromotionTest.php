@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 
 /**
  * ADR 0017 — a *measured* breach is reported at Error, carries the level it was

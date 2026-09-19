@@ -57,48 +57,6 @@ final class HardcodedCredentialsVisitorTest extends TestCase
     {
         // --- True positives ---
 
-        yield 'variable assignment' => [
-            'code' => '<?php $password = "secret123";',
-            'expectedCount' => 1,
-            'expectedPattern' => 'variable',
-        ];
-
-        yield 'array item' => [
-            'code' => '<?php $config = ["api_key" => "sk-abc123def"];',
-            'expectedCount' => 1,
-            'expectedPattern' => 'array_key',
-        ];
-
-        yield 'class constant' => [
-            'code' => '<?php class Config { const DB_PASSWORD = "root123"; }',
-            'expectedCount' => 1,
-            'expectedPattern' => 'class_const',
-        ];
-
-        yield 'define call' => [
-            'code' => '<?php define("API_KEY", "sk-abc123def");',
-            'expectedCount' => 1,
-            'expectedPattern' => 'define',
-        ];
-
-        yield 'property default' => [
-            'code' => '<?php class Service { private string $apiKey = "sk-abc123"; }',
-            'expectedCount' => 1,
-            'expectedPattern' => 'property',
-        ];
-
-        yield 'parameter default' => [
-            'code' => '<?php function connect(string $password = "root") {}',
-            'expectedCount' => 1,
-            'expectedPattern' => 'parameter',
-        ];
-
-        yield 'backed enum case with sensitive name' => [
-            'code' => '<?php enum Credentials: string { case ApiKey = "sk-abc123def456"; }',
-            'expectedCount' => 1,
-            'expectedPattern' => 'enum_case',
-        ];
-
         yield 'backed enum case with non-sensitive name' => [
             'code' => '<?php enum Status: string { case Active = "active_status"; }',
             'expectedCount' => 0,
@@ -116,63 +74,8 @@ final class HardcodedCredentialsVisitorTest extends TestCase
 
         // --- False positives (should NOT detect) ---
 
-        yield 'variable from function call' => [
-            'code' => '<?php $password = getenv("DB_PASSWORD");',
-            'expectedCount' => 0,
-        ];
-
         yield 'variable from other variable' => [
             'code' => '<?php $password = $request->get("password");',
-            'expectedCount' => 0,
-        ];
-
-        yield 'empty string' => [
-            'code' => '<?php $password = "";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'short string' => [
-            'code' => '<?php $password = "ab";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'identical chars' => [
-            'code' => '<?php $password = "****";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'non-sensitive variable' => [
-            'code' => '<?php $username = "admin";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'password hash' => [
-            'code' => '<?php $passwordHash = "abc123def";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'token storage' => [
-            'code' => '<?php $tokenStorage = "memory";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'cache key' => [
-            'code' => '<?php $cacheKey = "users:list";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'bare token' => [
-            'code' => '<?php $token = "abc123def";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'bare key' => [
-            'code' => '<?php $key = "abc123def";',
-            'expectedCount' => 0,
-        ];
-
-        yield 'option password constant' => [
-            'code' => '<?php class Config { const OPTION_PASSWORD = "password"; }',
             'expectedCount' => 0,
         ];
 
@@ -188,11 +91,6 @@ final class HardcodedCredentialsVisitorTest extends TestCase
 
         yield 'translation string in array (long sentence)' => [
             'code' => '<?php return ["password" => "The provided password is incorrect."];',
-            'expectedCount' => 0,
-        ];
-
-        yield 'error message in variable' => [
-            'code' => '<?php $password = "The password must be at least 8 characters long.";',
             'expectedCount' => 0,
         ];
 

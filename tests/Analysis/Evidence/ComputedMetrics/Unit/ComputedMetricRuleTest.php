@@ -379,21 +379,6 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     /**
-     * @return array<string, array{string, string}>
-     */
-    public static function dimensionRecommendationProvider(): array
-    {
-        return [
-            'complexity dimension' => ['health.complexity', 'Reduce complexity'],
-            'cohesion dimension' => ['health.cohesion', 'Improve class cohesion'],
-            'coupling dimension' => ['health.coupling', 'Reduce coupling'],
-            'design dimension' => ['health.design', 'Improve design'],
-            'maintainability dimension' => ['health.maintainability', 'Improve maintainability'],
-            'unknown dimension' => ['health.custom', 'Review the metric value'],
-        ];
-    }
-
-    /**
      * One instance hosts the whole family, so the activity record it writes
      * must switch one producer without its neighbours. The default answer on
      * `AbstractRule` speaks for `getName()` alone, which for this rule would

@@ -833,6 +833,27 @@ YAML);
         $this->loader->load($path);
     }
 
+    /**
+     * The sibling of the `namespace` case above for the other root the schema
+     * dropped. Named rather than left to the generic unknown-key case, because
+     * only a case that spells the retired key notices it being accepted again.
+     */
+    #[Test]
+    public function itRejectsTheRemovedAggregationRootRegardlessOfItsChildren(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+aggregation:
+  prefixes: [App]
+  auto_depth: 2
+YAML);
+
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown configuration key: "aggregation"');
+
+        $this->loader->load($path);
+    }
+
     #[Test]
     public function itRejectsUnknownParallelSubKeyWithSuggestion(): void
     {

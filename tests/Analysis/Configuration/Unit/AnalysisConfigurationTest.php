@@ -43,6 +43,14 @@ final class AnalysisConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function itReturnsNoContributionForAnAbsentOwnerKey(): void
+    {
+        $document = new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+
+        self::assertSame([], $document->contributions('cache.dir'));
+    }
+
+    #[Test]
     public function itReturnsTheInvocationWorkingDirectory(): void
     {
         self::assertEquals(

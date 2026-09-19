@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -19,107 +20,66 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use ReflectionClass;
-use ReflectionParameter;
 
 #[CoversClass(Finding::class)]
 final class FindingTest extends TestCase
 {
+    /**
+     * The fingerprint is built from the subject, not from the symbol path or
+     * the location the finding also carries, so the five symbol-path shapes a
+     * finding can name must all fingerprint the same. Five cases used to state
+     * that one fact five times; the provider states it once and still exercises
+     * every shape.
+     */
     #[Test]
-    public function itGetFingerprintForMethod(): void
-    {
+    #[DataProvider('provideSymbolPathShapes')]
+    public function itFingerprintsBySubjectWhateverSymbolPathAndLocationItCarries(
+        SymbolPath $symbolPath,
+        Location $location,
+    ): void {
         $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            location: $location,
             subject: self::subject(),
-            symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            symbolPath: $symbolPath,
             ruleName: 'cyclomatic-complexity',
             code: 'cyclomatic-complexity',
-            message: 'Method has complexity of 15',
+            message: 'Reported somewhere else than the subject names',
             severity: Severity::Warning,
             metricValue: 15,
         );
 
-        self::assertSame(
-            'cyclomatic-complexity:file:src/test.php',
-            $finding->getFingerprint(),
-        );
+        self::assertSame('cyclomatic-complexity:file:src/test.php', $finding->getFingerprint());
     }
 
-    #[Test]
-    public function itGetFingerprintForClass(): void
+    /**
+     * @return iterable<string, array{SymbolPath, Location}>
+     */
+    public static function provideSymbolPathShapes(): iterable
     {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-            ruleName: 'class-size',
-            code: 'class-size',
-            message: 'Class is too large',
-            severity: Severity::Error,
-        );
+        yield 'method' => [
+            SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+        ];
 
-        self::assertSame(
-            'class-size:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
+        yield 'class' => [
+            SymbolPath::forClass('App\Service', 'UserService'),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
+        ];
 
-    #[Test]
-    public function itGetFingerprintForNamespace(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php')),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forNamespace('App\Service'),
-            ruleName: 'namespace-size',
-            code: 'namespace-size',
-            message: 'Namespace has too many classes',
-            severity: Severity::Warning,
-            metricValue: 50,
-        );
+        yield 'namespace' => [
+            SymbolPath::forNamespace('App\Service'),
+            new Location(RelativePath::fromString('src/Service/UserService.php')),
+        ];
 
-        self::assertSame(
-            'namespace-size:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
+        yield 'file' => [
+            SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
+            new Location(RelativePath::fromString('src/bootstrap.php')),
+        ];
 
-    #[Test]
-    public function itGetFingerprintForFile(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/bootstrap.php')),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
-            ruleName: 'file-length',
-            code: 'file-length',
-            message: 'File is too long',
-            severity: Severity::Warning,
-        );
-
-        self::assertSame(
-            'file-length:file:src/test.php',
-            $finding->getFingerprint(),
-        );
-    }
-
-    #[Test]
-    public function itGetFingerprintForGlobalFunction(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/functions.php'), 5),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forGlobalFunction('', 'myFunction'),
-            ruleName: 'cyclomatic-complexity',
-            code: 'cyclomatic-complexity',
-            message: 'Function has high complexity',
-            severity: Severity::Warning,
-        );
-
-        self::assertSame(
-            'cyclomatic-complexity:file:src/test.php',
-            $finding->getFingerprint(),
-        );
+        yield 'global function' => [
+            SymbolPath::forGlobalFunction('', 'myFunction'),
+            new Location(RelativePath::fromString('src/functions.php'), 5),
+        ];
     }
 
     #[Test]
@@ -292,78 +252,6 @@ final class FindingTest extends TestCase
             static fn(DependencyType $type): string => $type->value,
             DependencyType::cases(),
         ));
-    }
-
-    /**
-     * Every field {@see Finding::reportedAsBreach()} is supposed to carry
-     * across, asserted one by one — **and the list itself checked against the
-     * constructor by reflection**, because a hand-written list of twelve
-     * assertions is exactly as forgettable as the constructor call it guards.
-     * A field added with a default would otherwise be copied nowhere and
-     * asserted nowhere, and every test in the suite would stay green.
-     *
-     * Each constructor parameter is therefore either named here as copied or
-     * named below as rewritten; an unaccounted one fails the test, and so
-     * does a name here that the constructor no longer has.
-     */
-    #[Test]
-    public function itCopiesEveryOtherFieldWhenItReportsItselfAsABreach(): void
-    {
-        $original = self::warning();
-
-        $promoted = $original->reportedAsBreach(new AcceptedLevel(null, 1));
-
-        /** @var array<string, array{mixed, mixed}> $copied */
-        $copied = [
-            'location' => [$original->location, $promoted->location],
-            'subject' => [$original->subject, $promoted->subject],
-            'symbolPath' => [$original->symbolPath, $promoted->symbolPath],
-            'ruleName' => [$original->ruleName, $promoted->ruleName],
-            'code' => [$original->code, $promoted->code],
-            'message' => [$original->message, $promoted->message],
-            'metricValue' => [$original->metricValue, $promoted->metricValue],
-            'relatedLocations' => [$original->relatedLocations, $promoted->relatedLocations],
-            'recommendation' => [$original->recommendation, $promoted->recommendation],
-            'threshold' => [$original->threshold, $promoted->threshold],
-            'dependencyTarget' => [$original->dependencyTarget, $promoted->dependencyTarget],
-            'dependencyType' => [$original->dependencyType, $promoted->dependencyType],
-            'occurrenceKey' => [$original->occurrenceKey, $promoted->occurrenceKey],
-        ];
-
-        foreach ($copied as $field => [$before, $after]) {
-            self::assertSame($before, $after, \sprintf('reportedAsBreach() did not carry over $%s', $field));
-        }
-
-        // The two the promotion is *about*, asserted by the case above.
-        $rewritten = ['severity', 'acceptedLevel'];
-        $accounted = [...array_keys($copied), ...$rewritten];
-        $parameters = self::constructorParametersOfFinding();
-
-        self::assertSame(
-            [],
-            array_values(array_diff($parameters, $accounted)),
-            'a new Finding field must be copied by reportedAsBreach() and listed here, or listed as rewritten',
-        );
-        self::assertSame(
-            [],
-            array_values(array_diff($accounted, $parameters)),
-            'this test names a constructor parameter Finding no longer has',
-        );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function constructorParametersOfFinding(): array
-    {
-        $constructor = (new ReflectionClass(Finding::class))->getConstructor();
-
-        self::assertNotNull($constructor, 'Finding is constructed by hand, so it has a constructor to read');
-
-        return array_map(
-            static fn(ReflectionParameter $parameter): string => $parameter->getName(),
-            $constructor->getParameters(),
-        );
     }
 
     private static function warning(): Finding

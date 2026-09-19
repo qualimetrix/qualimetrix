@@ -88,7 +88,7 @@ final class Probes
 
     private const string SCAN = 'scripts/directive-audit/ThresholdDirectiveScan.php';
 
-    private const string FIXTURE = 'tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php';
+    private const string FIXTURE = 'scripts/directive-audit/tests/Fixtures/AuthoredThresholdForms.php';
 
     private const string EXTRACTOR = 'src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php';
 
@@ -149,67 +149,67 @@ final class Probes
             'the second measure stops reading a dotted channel whole',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_*#:-',
             [
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "plain"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target cut at a call"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
-                'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "plain"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target cut at a call"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
             ],
         ],
         'drops-the-underscore' => [
             'the second measure cuts a target at an underscore the product admits',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.*#:-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-digits' => [
             'the second measure cuts a target at a digit the product admits',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.*#:-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-capitals' => [
             'the second measure cuts a target at a capital the product admits',
             'abcdefghijklmnopqrstuvwxyz0123456789_.*#:-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-star' => [
             'the second measure cuts a wildcard target short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.#:-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-hash' => [
             'the second measure cuts the retired rule#code spelling short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*:-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-colon' => [
             'the second measure cuts a channel:level pair short, which is the pair the product refuses by name',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#-',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-hyphen' => [
             'the second measure cuts a hyphenated channel short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hyphen"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hyphen"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'admits-a-slash' => [
             'the second measure reads past a slash the product stops at',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-/',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "slash"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "slash"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'admits-a-plus' => [
             'the second measure reads past a plus the product stops at',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-+',
-            ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "plus"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "plus"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
     ];
 
@@ -258,14 +258,14 @@ final class Probes
                 self::HETEROGENEITY,
                 ["'effective', 'overrun', 'inert', 'unmeasured'" => "'effective', 'overrun', 'unmeasured'"],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
                 ],
             )->alsoReddens(
                 'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
                 ],
             ),
             Probe::breaking(
@@ -274,13 +274,13 @@ final class Probes
                 self::HETEROGENEITY,
                 ["        'masked',\n" => ''],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses',
                 ],
             )->alsoReddens(
                 'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
                 ],
             ),
             Probe::breaking(
@@ -291,7 +291,7 @@ final class Probes
                     "                \$shortfalls[] = \sprintf('no @qmx-threshold was judged \"%s\".', \$effect);"
                     => "                return [\sprintf('no @qmx-threshold was judged \"%s\".', \$effect)];",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses'],
             ),
             Probe::breaking(
                 'reason-key-defaulted',
@@ -301,7 +301,7 @@ final class Probes
                     "            throw new AuditReportError(\sprintf('%s: \"%s\" is missing.', \$where, \$key));"
                     => '            return null;',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAnEntryWithoutAReasonKey'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAnEntryWithoutAReasonKey'],
             ),
             Probe::breaking(
                 'heterogeneity-counts-a-verdict-the-sweep-cannot-move',
@@ -311,29 +311,29 @@ final class Probes
                     '        foreach ($report->thresholdVerdicts() as $verdict) {'
                     => '        foreach ($report->verdicts() as $verdict) {',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression'],
             )->alsoReddens(
                 'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
                 ],
             ),
             Probe::planting(
                 'seeded-fixture-copied-into-src',
                 'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
                 [self::SEEDED_LEAK => self::seededFile(self::SEEDED)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
             )->alsoReddens(
                 'both cases forbid a seeded fixture under src/, and the planted copy is one file breaking both',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc',
+                    'Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc',
                 ],
             ),
             Probe::planting(
                 'seeded-suppression-copied-into-src',
                 'a seeded @qmx-ignore appears under src/, where no enumeration would ever notice it',
                 [self::SEEDED_SUPPRESSION_LEAK => self::seededFile(self::SEEDED_SUPPRESSION)],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc'],
+                ['Qualimetrix.Governance.TestSuiteHygiene.SeededFixtureIsolationTest::itKeepsEverySeededFixtureFileOutOfSrc'],
             ),
         ];
     }
@@ -376,10 +376,10 @@ final class Probes
                 self::FLOOR,
                 ["        'unmeasured' => false," => "        'unmeasured' => true,"],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
                 ],
             ),
             Probe::breaking(
@@ -391,11 +391,11 @@ final class Probes
                     => "        return self::TABLE[\$effect] ?? \$effect !== 'unmeasured';",
                 ],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictValueTheFloorDoesNotName',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAnUnknownVerdictOnTheSuppressionHalf',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesToJudgeAVerdictValueTheFloorCannotWeigh',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAnUnknownVerdictOnASuppressionSite',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAnUnknownVerdictWhereTheFloorIsNeverReached',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictValueTheFloorDoesNotName',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAnUnknownVerdictOnTheSuppressionHalf',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesToJudgeAVerdictValueTheFloorCannotWeigh',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAnUnknownVerdictOnASuppressionSite',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAnUnknownVerdictWhereTheFloorIsNeverReached',
                 ],
             ),
             Probe::breaking(
@@ -404,19 +404,19 @@ final class Probes
                 self::FLOOR,
                 ["        'inert' => true,\n" => ''],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itNamesEveryVerdictTheProductCanPublishAndNoOther',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itAcceptsAPopulationCarryingEveryVerdictAndEveryRefusal',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itNamesEveryVerdictTheProductCanPublishAndNoOther',
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itAcceptsAPopulationCarryingEveryVerdictAndEveryRefusal',
                 ],
             )->alsoReddens(
                 'the frozen table is the vocabulary the reader, the floor and the gate all validate a report against',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsEveryEntryOfASiteAuthoredTwice',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itReadsAWellFormedReportAsOneMeasurementAndItsContext',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itKeepsEveryEntryOfASiteAuthoredTwice',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itReadsAWellFormedReportAsOneMeasurementAndItsContext',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
                 ],
             ),
             Probe::breaking(
@@ -424,18 +424,18 @@ final class Probes
                 'a population that matches exactly is accepted even when nothing in it was measured',
                 self::GATE,
                 ['        if ($measured === 0) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured'],
             ),
             Probe::breaking(
                 'population-never-mismatches',
                 'the two measures of the population are compared and the answer discarded',
                 self::GATE,
                 ['        if ($onlyAudited !== [] || $onlyEnumerated !== []) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itReportsAPopulationMismatch'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itReportsAPopulationMismatch'],
             )->alsoReddens(
                 'the mismatch the gate discards is what the case about a directive gone missing reads',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itSeesOneOfTwoDirectivesOnASiteGoMissing',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itSeesOneOfTwoDirectivesOnASiteGoMissing',
                 ],
             ),
             Probe::breaking(
@@ -443,14 +443,14 @@ final class Probes
                 'a tree with no threshold directive is failed for having measured nothing',
                 self::GATE,
                 ['        if ($auditedSites === []) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope'],
             ),
             Probe::breaking(
                 'disqualified-run-judged',
                 'a run the command already disqualified is judged anyway',
                 self::GATE,
                 ['        if ($auditExit !== 0 && $auditExit !== 2) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified'],
             ),
             Probe::breaking(
                 'enumeration-failure-is-not-a-refusal',
@@ -462,14 +462,14 @@ final class Probes
                     => '            throw new RuntimeException(\sprintf(' . "\n"
                     . '                "enumerate-inline-directives.php failed (exit %d):\n%s",',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAnEnumerationThatWouldNotRun'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAnEnumerationThatWouldNotRun'],
             ),
             Probe::breaking(
                 'no-report-read-as-a-report',
                 'a run that wrote no JSON at all is answered as a malformed report',
                 self::GATE,
                 ['        if (!\is_array(json_decode($auditStdout, true))) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itRefusesAnAuditThatProducedNoJson'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itRefusesAnAuditThatProducedNoJson'],
             ),
         ];
     }
@@ -491,12 +491,12 @@ final class Probes
                     => "            return 'unmeasured';",
                 ],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect missing"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "form missing"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "file missing"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "target missing"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect null"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect not a string"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect missing"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "form missing"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "file missing"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "target missing"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect null"',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect not a string"',
                 ],
             ),
             Probe::breaking(
@@ -507,7 +507,7 @@ final class Probes
                     "            throw new AuditReportError(self::wrongType(\$where, \$key, 'an integer', \$value));"
                     => '            return 0;',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "line not a number"'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "line not a number"'],
             ),
             Probe::breaking(
                 'verdict-list-unchecked',
@@ -517,7 +517,7 @@ final class Probes
                     '        $directives = self::directiveListOf($decoded);'
                     => "        \$directives = (array) (\$decoded['directives'] ?? []);",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAReportWhoseDirectivesAreNotAList', 'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAReportWithNoDirectivesAtAll'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAReportWhoseDirectivesAreNotAList', 'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAReportWithNoDirectivesAtAll'],
             ),
             Probe::breaking(
                 'envelope-read-as-a-measurement',
@@ -525,8 +525,8 @@ final class Probes
                 self::READER,
                 ["        \$errorEnvelope = isset(\$decoded['error']);" => '        $errorEnvelope = false;'],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itReadsAnErrorEnvelopeWithoutDemandingVerdicts',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itReadsAnErrorEnvelopeWithoutDemandingVerdicts',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope',
                 ],
             ),
             Probe::breaking(
@@ -538,15 +538,15 @@ final class Probes
                     => '            static fn(AuditedVerdict $verdict): bool => true,',
                 ],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itReadsAWellFormedReportAsOneMeasurementAndItsContext',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itReadsAWellFormedReportAsOneMeasurementAndItsContext',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
                 ],
             )->alsoReddens(
                 'the population the enumeration measures is the one the floor weighs and the gate reports on',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression',
                 ],
             ),
             Probe::breaking(
@@ -557,7 +557,7 @@ final class Probes
                     '            $bySite[$verdict->keyedSite()][] = $this->rawVerdicts[$index];'
                     => '            $bySite[$verdict->keyedSite()] = [$this->rawVerdicts[$index]];',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itKeepsEveryEntryOfASiteAuthoredTwice'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itKeepsEveryEntryOfASiteAuthoredTwice'],
             ),
             Probe::breaking(
                 'population-as-a-set',
@@ -567,7 +567,7 @@ final class Probes
                     '            $delta = ($leftCounts[$site] ?? 0) - ($rightCounts[$site] ?? 0);'
                     => '            $delta = min(1, $leftCounts[$site] ?? 0) - min(1, $rightCounts[$site] ?? 0);',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itCountsEveryOccurrenceOfARepeatedSite', 'Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditGateTest::itSeesOneOfTwoDirectivesOnASiteGoMissing'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itCountsEveryOccurrenceOfARepeatedSite', 'QmxDirectiveAudit.Tests.DirectiveAuditGateTest::itSeesOneOfTwoDirectivesOnASiteGoMissing'],
             ),
         ];
     }
@@ -585,7 +585,7 @@ final class Probes
                 'a tab inside the authored values is read as a column of its own',
                 self::ENUMERATION,
                 ['        $columns = explode("\t", $line, 4);' => '        $columns = explode("\t", $line);'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itReadsEveryEnumeratedSiteAndKeepsATabInsideItsValues'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itReadsEveryEnumeratedSiteAndKeepsATabInsideItsValues'],
             ),
             Probe::breaking(
                 'tsv-columns-unchecked',
@@ -595,21 +595,21 @@ final class Probes
                     '            [$file, $number, $target, $values] = self::columnsOf($line, $offset + 1);'
                     => '            [$file, $number, $target, $values] = array_pad(explode("\t", $line, 4), 4, \'\');',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowShortOfAColumn'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowShortOfAColumn'],
             ),
             Probe::breaking(
                 'tsv-line-number-untyped',
                 'whatever stands in the line-number column is cast to a number',
                 self::ENUMERATION,
                 ["            if (preg_match('/^\d+$/', \$number) !== 1) {" => '            if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowWhoseLineIsNotANumber'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowWhoseLineIsNotANumber'],
             ),
             Probe::breaking(
                 'tsv-empty-target-accepted',
                 'a row addressing nothing is admitted to the population',
                 self::ENUMERATION,
                 ["            if (\$target === '') {" => '            if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowThatAddressesNothing'],
+                ['QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowThatAddressesNothing'],
             ),
         ];
     }
@@ -709,11 +709,11 @@ final class Probes
                 'a tag written against the docblock star is read as no directive at all',
                 self::SCAN,
                 ['!str_ends_with($word, self::DIRECTIVE)' => '$word !== self::DIRECTIVE'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -721,11 +721,11 @@ final class Probes
                 'a word that merely contains the tag is read as a directive',
                 self::SCAN,
                 ['!str_ends_with($word, self::DIRECTIVE)' => '!str_contains($word, self::DIRECTIVE)'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "tag with a suffix"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "tag with a suffix"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -736,11 +736,11 @@ final class Probes
                     'foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {'
                     => 'foreach (explode("\n", $token[1]) as $offset => $line) {',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -751,11 +751,11 @@ final class Probes
                     "            static fn(array \$match): string => preg_replace('/[^\\r\\n]/', ' ', \$match[0]) ?? \$match[0],"
                     => "            static fn(array \$match): string => '',",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -764,7 +764,7 @@ final class Probes
                 self::SCAN,
                 ["    private const string WORD_SEPARATORS = \" \\t\";"
                     => "    private const string WORD_SEPARATORS = \" \\t,\";"],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'scan-keeps-the-docblock-terminator',
@@ -774,9 +774,9 @@ final class Probes
                     "        if (!str_ends_with(\$trimmed, '*/')) {" => '        if (true) {',
                 ],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
                 ],
             ),
             Probe::breaking(
@@ -788,8 +788,8 @@ final class Probes
                     => '            if (true) {',
                 ],
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -797,7 +797,7 @@ final class Probes
                 'the tree scan stops filtering on the extension, so prose in a text file becomes a site',
                 self::SCAN,
                 ["            if (!\$file->isFile() || \$file->getExtension() !== 'php') {" => '            if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp'],
             ),
             Probe::breaking(
                 'scan-skips-what-it-cannot-read',
@@ -807,7 +807,7 @@ final class Probes
                     "                throw new RuntimeException(\sprintf('unreadable: %s', \$file->getPathname()));"
                     => '                continue;',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead'],
             ),
             Probe::breaking(
                 'fixture-grows-an-unnamed-form',
@@ -819,7 +819,7 @@ final class Probes
                     . "     * @qmx-threshold unnamed.form 20\n     */\n"
                     . "    public function unnamedForm(): void {}\n}",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares'],
             ),
             Probe::breaking(
                 'scan-keeps-reading-past-a-directive',
@@ -829,18 +829,18 @@ final class Probes
                     "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
                     => '            if (false) {',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'scan-admits-an-empty-target',
                 'a tag followed by something no channel starts with is admitted as a site addressing nothing',
                 self::SCAN,
                 ["        if (\$target === '') {" => '        if (false) {'],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -851,7 +851,7 @@ final class Probes
                     '            if (!\is_array($token) || $token[0] !== \T_DOC_COMMENT) {'
                     => '            if (!\is_array($token) || !\in_array($token[0], [\T_DOC_COMMENT, \T_COMMENT], true)) {',
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "outside a docblock"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "outside a docblock"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'extractor-class-drops-punctuation',
@@ -861,11 +861,11 @@ final class Probes
                     "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
                     => "'/@qmx-threshold\\s+([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same target class as the per-form cases, so narrowing it moves that too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
             Probe::breaking(
@@ -876,11 +876,11 @@ final class Probes
                     "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
                     => "'/@qmx-threshold\\s+([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
-                ['Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same target class as the per-form cases, so narrowing it moves that too',
                 [
-                    'Qualimetrix.Tests.Unit.RuleVocabulary.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
         ];
@@ -909,7 +909,7 @@ final class Probes
                 self::FINGERPRINT,
                 [$read . "\n" => ''],
                 [
-                    \sprintf('Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "%s"', $field),
+                    \sprintf('Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "%s"', $field),
                     ...self::FIELD_CASCADES[$field] ?? [],
                 ],
             );
@@ -933,7 +933,7 @@ final class Probes
                 self::FINGERPRINT,
                 ["        'severity',
 " => ''],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries'],
             ),
             Probe::breaking(
                 'report-forgets-the-run',
@@ -1028,21 +1028,21 @@ final class Probes
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeEitherDirectiveOfAMaskingPair',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRemovesEveryBindingOfOneAuthoredSite',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "acceptedLevel"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "code"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyTarget"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyType"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "location"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "metricValue"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "occurrenceKey"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "relatedLocations"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "ruleName"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "subject"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "symbolPath"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "acceptedLevel"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "code"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyTarget"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "dependencyType"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "location"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "metricValue"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "occurrenceKey"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "relatedLocations"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "ruleName"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "subject"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "symbolPath"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
                     'Qualimetrix.Tests.Analysis.Run.Integration.DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
@@ -1146,9 +1146,9 @@ final class Probes
             )->alsoReddens(
                 'the fingerprint is read positionally by the field-coverage cases, so dropping one field shifts the ones written after it',
                 [
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
-                    'Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "message"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"',
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "threshold"',
                 ],
             ),
             Probe::breaking(
@@ -1156,7 +1156,7 @@ final class Probes
                 'the advice a finding gives counts as part of what the finding is rather than as prose',
                 self::FINGERPRINT,
                 ["            \$finding->recommendation ?? '',\n        ]);" => '        ]);'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "recommendation"'],
             ),
             Probe::breaking(
                 'field-lists-drift-from-the-code',
@@ -1168,7 +1168,7 @@ final class Probes
                     "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation'];"
                     => "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation', 'severity'];",
                 ],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Unit.Directive.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"'],
+                ['Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames with data set "severity"'],
             ),
         ];
     }
@@ -1775,18 +1775,22 @@ final class Probes
                 'unreadable-config-is-not-a-config-error',
                 'a configuration that failed to load is reported as an internal failure',
                 // Both declared cases reach `DirectivesCommand`'s
-                // `catch (ConfigurationRefusal)` before the retired
-                // configuration-failure taxonomy class this probe used to
-                // target is ever consulted. Mutating that
-                // retired class's exception recognition no longer reaches
-                // either case (measured: `directives:controls
-                // --only=unreadable-config-is-not-a-config-error` missed both,
-                // 0 of 179 red). The throw site itself is the fragment whose
-                // presence or absence the two tests actually depend on.
+                // `catch (ConfigurationRefusal)`, so what they depend on is
+                // that this throw site raises the refusal *carrier* rather
+                // than a plain exception. Mutating anything further down the
+                // configuration-failure taxonomy never reaches them.
+                //
+                // The fragment is an exact source quote, so it dies silently
+                // whenever the product rewrites the call. It has done so twice:
+                // once when the taxonomy class was retired, and again when
+                // `aboutDocument(ConfigurationOrigin::of(...))` became
+                // `aboutConfigFileDocument($path, ...)`. Both times the control
+                // refused rather than mutating nothing, which is the only
+                // reason the drift was visible at all.
                 self::CONFIG_FILE_STAGE,
                 [
-                    '                throw ConfigurationRefusal::aboutDocument(' . "\n"
-                        . '                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $request->configFilePath),' . "\n"
+                    '                throw ConfigurationRefusal::aboutConfigFileDocument(' . "\n"
+                        . '                    $request->configFilePath,' . "\n"
                         . '                    \sprintf(\'Configuration file not found: %s\', $request->configFilePath),' . "\n"
                         . '                );'
                         => '                throw new \RuntimeException(\sprintf(\'Configuration file not found: %s\', $request->configFilePath));',

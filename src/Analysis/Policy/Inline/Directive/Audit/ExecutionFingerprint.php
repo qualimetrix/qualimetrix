@@ -29,7 +29,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
  * the verdict that tells an author to delete an annotation. Since a field added
  * to {@see Finding} with a default compiles fine everywhere, what catches the
  * omission is
- * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest},
+ * {@see \Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest},
  * which reads the constructor reflectively and fails on any parameter neither
  * list names — the same treatment {@see Finding::reportedAsBreach()} already
  * gets.

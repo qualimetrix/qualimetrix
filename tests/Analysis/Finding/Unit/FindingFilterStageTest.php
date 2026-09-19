@@ -37,19 +37,4 @@ final class FindingFilterStageTest extends TestCase
         yield 'baseline' => [FindingFilterStage::Baseline, false];
         yield 'git scope' => [FindingFilterStage::GitScope, false];
     }
-
-    /**
-     * Every case is covered above; a new one must not default into the set
-     * by being forgotten here.
-     */
-    #[Test]
-    public function itCoversEveryStageInTheMembershipTable(): void
-    {
-        $covered = array_map(
-            static fn(array $case): FindingFilterStage => $case[0],
-            iterator_to_array(self::provideStageMembership()),
-        );
-
-        self::assertSame(FindingFilterStage::cases(), array_values($covered));
-    }
 }

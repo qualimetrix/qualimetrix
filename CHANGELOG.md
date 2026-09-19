@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `docker run qmx` with no arguments prints usage instead of failing. The image
+  declared a default command named `analyze`, which has never existed, so the
+  invocation exited 3 with `Command "analyze" is not defined.` There is now no
+  default command: an image handed no command says so, rather than analysing
+  whatever happens to be at `/app`.
+
+## [0.27.0] - 2026-09-18
+
 ### Breaking
 
 **Health scores move on every project.** The six `health.*` dimensions were
@@ -312,6 +322,10 @@ accepted set in the seam's wording and arrives before the rule is built.
 
 ### Changed
 
+- The `tools/` directory (PHPStan extensions and their tests) no longer ships
+  in the `composer create-project`/dist package; it is development-only and is
+  now excluded via `.gitattributes` `export-ignore`, alongside the project's
+  other dev-only trees.
 - Every health dimension now publishes what share of its subject it was
   computed over. `--format=json` gains a `coverage` object per dimension
   (measured count, eligible population, ratio, unit and the `.count` it came
@@ -394,6 +408,19 @@ accepted set in the seam's wording and arrives before the rule is built.
   and neither a path nor a formula is a number.
 
 ### Fixed
+
+- The composer package no longer carries the HTML report's JavaScript sources,
+  its eight vitest files, the lockfile, the vite config or `dev.html`. A consumer
+  receives the four assets the report is rendered from and nothing else — 33
+  entries under that tree became 6.
+
+- The Docker image documented in the quick start now builds and runs. Both
+  `docker build -t qmx .` and the `docker run ... qmx check src/` that follows
+  it had been broken since the first release: `composer.lock` was excluded from
+  the build context while the Dockerfile copies it, and the autoloader's
+  authoritative classmap was built before the source was in place, so an image
+  that did build answered `Class "...ContainerFactory" not found` on every
+  invocation. A CI job now builds the image and analyses a mounted tree with it.
 
 - **A health score's breakdown now lists the inputs that score was computed
   from, with the targets its own formula applies.** The breakdown carried one
@@ -1441,7 +1468,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...v0.24.0

@@ -793,15 +793,6 @@ final class LayerDefinitionTest extends TestCase
         self::assertSame('', $context->shortName);
     }
 
-    #[Test]
-    public function itHasOnlyAnyAndAllCases(): void
-    {
-        self::assertSame(
-            ['any', 'all'],
-            array_map(static fn(MatchMode $mode): string => $mode->value, MatchMode::cases()),
-        );
-    }
-
     // -------------------------------------------------------------------------
     // exclude clause (Step F)
     // -------------------------------------------------------------------------

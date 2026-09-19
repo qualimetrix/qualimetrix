@@ -21,10 +21,10 @@ final class NamespaceInstabilityOptionsTest extends TestCase
     }
 
     #[Test]
-    public function itIsEnabledWhenTheEnabledFlagIsTrue(): void
+    public function itIsDisabledWhenTheEnabledFlagIsFalse(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray(['enabled' => true]);
+        $options = NamespaceInstabilityOptions::fromArray(['enabled' => false]);
 
-        self::assertTrue($options->isEnabled());
+        self::assertFalse($options->isEnabled());
     }
 }

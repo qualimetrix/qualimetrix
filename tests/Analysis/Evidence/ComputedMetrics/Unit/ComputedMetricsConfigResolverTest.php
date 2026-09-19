@@ -319,7 +319,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
      * A level is a coordinate beside the channel name, addressed via
      * `channel:level`, never a word inside the name itself — the same
      * invariant enforced for statically declared channels
-     * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest}).
+     * ({@see \Qualimetrix\Governance\Channel\ChannelLevelAssemblyTopologyTest}).
      * A user-defined metric name is the one place that invariant can still be
      * broken at runtime, since the user picks the name.
      */

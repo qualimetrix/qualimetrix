@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Path\AbsolutePath;
-use ReflectionClass;
 
 #[CoversClass(ComputedMetricAnalysis::class)]
 final class ComputedMetricAnalysisTest extends TestCase
@@ -36,10 +35,6 @@ final class ComputedMetricAnalysisTest extends TestCase
         self::assertCount(6, $analysis->all());
         self::assertNotNull($analysis->find('health.overall'));
         self::assertSame($resolved->all(), $analysis->all());
-        self::assertSame(
-            $resolved,
-            (new ReflectionClass($analysis))->getProperty('definitions')->getValue($analysis),
-        );
     }
 
     #[Test]

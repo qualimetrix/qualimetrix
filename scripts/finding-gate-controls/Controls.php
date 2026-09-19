@@ -216,7 +216,7 @@ final class Controls
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                    'governance/Channel/Fixtures/declared.txt',
                 ),
                 ...self::producerListingToleration(),
             ],
@@ -588,7 +588,7 @@ final class Controls
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                    'governance/Channel/Fixtures/declared.txt',
                 ),
                 new Expectation(FailureClass::SURFACE_MISMATCH, self::PRODUCER_LISTING_SURFACE),
             ],
@@ -779,7 +779,7 @@ final class Controls
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                    'governance/Channel/Fixtures/declared.txt',
                 ),
             ],
         );
@@ -842,7 +842,7 @@ final class Controls
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                    'governance/Channel/Fixtures/declared.txt',
                 ),
                 ...self::producerListingToleration(),
             ],
@@ -1046,7 +1046,7 @@ final class Controls
     private static function sensitiveParameterRenameDeclarations(): Mutation
     {
         return Mutation::edit(
-            'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+            'governance/Channel/Fixtures/declared.txt',
             ['security.sensitive-parameter - callable' => 'security.sensitive-paramete2 - callable'],
             'the tracked declaration fixture names the new channel',
         )->and(Mutation::edit(
@@ -1521,7 +1521,7 @@ final class Controls
     private static function unusedPrivateRenameDeclarations(): Mutation
     {
         return Mutation::edit(
-            'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+            'governance/Channel/Fixtures/declared.txt',
             ['code-smell.unused-private higher class' => 'code-smell.unused-privat2 higher class'],
             'the tracked declaration fixture names the new channel',
         )->and(Mutation::edit(

@@ -128,8 +128,7 @@ Unit/
     ├── TypeCoverageCollectorTest.php
     ├── TypeCoverageOptionsTest.php
     ├── TypeCoveragePercentCollectorTest.php
-    ├── TypeCoverageRuleTest.php
-    └── TypeCoverageScaleTest.php
+    └── TypeCoverageRuleTest.php
 ```
 
 Run the owned suite with:

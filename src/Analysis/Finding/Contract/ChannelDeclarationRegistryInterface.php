@@ -59,7 +59,7 @@ interface ChannelDeclarationRegistryInterface
      * has no fixed set to enumerate.
      *
      * Exists for the drift guard: the tracked fixture under
-     * `tests/Analysis/Finding/Fixtures/Channels/` is compared against exactly
+     * `governance/Channel/Fixtures/` is compared against exactly
      * this map, never against {@see declarationFor()}'s run-time-widened
      * answer.
      *

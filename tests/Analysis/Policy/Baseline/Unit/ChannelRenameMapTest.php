@@ -12,22 +12,30 @@ use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\ChannelRenameTsvCorpus;
 
+/**
+ * The repository-topology half of this subject —
+ * {@see \Qualimetrix\Governance\Channel\ChannelRenameMapTest} — reads the
+ * repository's own declared channel map and stays a repo-control.
+ */
 #[CoversClass(ChannelRenameMap::class)]
 final class ChannelRenameMapTest extends TestCase
 {
     /**
-     * @return iterable<string, array{string, bool, string}>
+     * @return iterable<string, array{string, bool, array<string, string>, string}>
      */
     public static function provideCorpus(): iterable
     {
         foreach (ChannelRenameTsvCorpus::cases() as $case) {
-            yield $case['id'] => [$case['contents'], $case['product'], $case['note']];
+            yield $case['id'] => [$case['contents'], $case['product'], $case['renames'], $case['note']];
         }
     }
 
+    /**
+     * @param array<string, string> $renames what the corpus says this case's lines mean
+     */
     #[Test]
     #[DataProvider('provideCorpus')]
-    public function itAnswersTheSharedCorpusAsDeclared(string $contents, bool $accepted, string $note): void
+    public function itAnswersTheSharedCorpusAsDeclared(string $contents, bool $accepted, array $renames, string $note): void
     {
         if (!$accepted) {
             $this->expectException(ChannelRenameRefusal::class);
@@ -35,10 +43,11 @@ final class ChannelRenameMapTest extends TestCase
 
         $map = ChannelRenameMap::fromString($contents, 'corpus.tsv');
 
-        self::assertSame(array_keys($map->renames), $map->oldNames(), $note);
+        self::assertSame($renames, $map->renames, $note);
+        self::assertSame(array_keys($renames), $map->oldNames(), $note);
 
-        foreach ($map->oldNames() as $old) {
-            self::assertNotNull($map->translate($old), $note);
+        foreach ($renames as $old => $new) {
+            self::assertSame($new, $map->translate($old), $note);
         }
     }
 
@@ -54,24 +63,6 @@ final class ChannelRenameMapTest extends TestCase
         self::assertSame('c.d', $map->translate('a.b'));
         self::assertNull($map->translate('c.d'));
         self::assertSame(['a.b', 'e.f'], $map->oldNames());
-    }
-
-    /**
-     * The tracked map of this repository is a live input of the carry, not
-     * only of the gate: a row that lands in it has to be one the shipped
-     * command can read.
-     */
-    #[Test]
-    public function itReadsTheRepositorysOwnDeclaredChannelMap(): void
-    {
-        $map = ChannelRenameMap::fromFile(\dirname(__DIR__, 5) . '/finding-gate/maps/channels.tsv');
-
-        self::assertCount(\count($map->oldNames()), $map->renames);
-
-        foreach ($map->renames as $old => $new) {
-            self::assertNotSame('', $old);
-            self::assertNotSame('', $new);
-        }
     }
 
     #[Test]
