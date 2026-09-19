@@ -177,12 +177,23 @@ existence with `is_dir()` or `is_file()`. A typo, a rename or a deletion under
 the viewer is therefore caught exactly as one under `scripts/` is.
 
 **One direction of that check is missing for these keys, and accepting it is a
-decision rather than an oversight.** `actualToolingTestRootsOnDisk()` can only
-produce paths of the two glob shapes, so nothing answers "on disk but not
-registered" for anything outside them. A new root-level tooling project added by
-someone who does not know the map is inventoried under whatever owner
-`classifyOwner()` falls through to, and `composer architecture:check` stays
-green.
+decision rather than an oversight.** Nothing answers "on disk but not
+registered" for a key outside the glob's two shapes. The listing the check
+compares against is itself produced by that glob, so a root the glob cannot name
+is a root the check cannot miss.
+
+The consequence is worth stating exactly, because it is the cost being accepted.
+A root-level tooling project added by someone who does not know the map does not
+appear in the inventory **at all** — not under some wrong owner, where a stray
+row in `test-ownership.tsv` would sooner or later catch a reader's eye, but
+nowhere, with `composer architecture:check` green. The scan reaches the roots the
+map names and no others, so an unregistered root leaves nothing behind to notice
+later. That is the shape of this gap: not a wrong answer, an unasked question.
+
+This record stops there on purpose. It does not name the functions involved or
+trace the path an unregistered file would take, because those details moved twice
+during this change alone, and a record that narrates them gains a way to be wrong
+without gaining anything the decision rests on.
 
 The gap is pre-existing rather than introduced here: `governance/` has had it
 since the day it was registered, and this work's contribution is that the
