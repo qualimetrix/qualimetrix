@@ -1,20 +1,24 @@
 // Shared reader for the HTML report's hand-written metric-key literals.
 //
-// Used by scripts/collect-metric-keys.mjs (population, run by hand) and by
-// tests/metric-key-catalog.test.js (regression guard, run by `vitest`).
+// Used by tests/metric-key-catalog.test.js (regression guard, run by
+// `vitest`), the only remaining consumer: it imports loadCatalog(),
+// isCatalogMember() and isFamilyShaped() and does its own AST walk over
+// src/*.js. The literal-collection functions that used to live here
+// (collectCodeLiterals, collectCommentLiterals, scanFile, collectAll, and the
+// listJsFiles/TEMPLATE_ROOT/SRC_DIR/TESTS_DIR plumbing that fed them) had
+// exactly one caller, scripts/collect-metric-keys.mjs, and were deleted with
+// it rather than kept as unreachable exported API — the ADR for that
+// deletion argues an unexecuted script is worth less than the absence of a
+// file that looks like a guard and is not one; dead exports are the same
+// shape, so they went the same way. git history holds them if the
+// investigative view is ever revived.
 //
 // Catalog source: MetricName.php constants + AggregationStrategy.php suffixes
 // + HealthDecompositionCatalog.php dimension keys, read as text with a targeted
 // regex — not a PHP parse. This mirrors only the *shape* of those three
 // files (a constant/case list); it does not execute or type-check PHP.
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { fromRoot } from './repo-root.mjs';
-import { parseAst } from 'rollup/dist/parseAst.js';
-import { walk } from 'estree-walker';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const METRIC_NAME_PHP = fromRoot(
   'src/Analysis/Evidence/Measurement/Contract/MetricName.php',
@@ -25,10 +29,6 @@ const AGGREGATION_STRATEGY_PHP = fromRoot(
 const HEALTH_DECOMPOSITION_CATALOG_PHP = fromRoot(
   'src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php',
 );
-
-const TEMPLATE_ROOT = resolve(__dirname, '..');
-const SRC_DIR = join(TEMPLATE_ROOT, 'src');
-const TESTS_DIR = join(TEMPLATE_ROOT, 'tests');
 
 /**
  * Loads the metric-key catalog from the PHP artifacts above.
@@ -99,127 +99,4 @@ export function isFamilyShaped(literal, catalog) {
     return false;
   }
   return catalog.familyPrefixes.has(literal.split('.')[0]);
-}
-
-/**
- * Parses `source` and returns every string Literal node whose value is
- * family-shaped, as `{ value, line }`.
- *
- * Blind spots (does not see): computed/concatenated keys
- * (`'size.' + metric`), template-literal interpolation
- * (`` `size.${x}` ``), and any value produced at runtime rather than
- * written as a source literal.
- */
-function collectCodeLiterals(source, catalog) {
-  const ast = parseAst(source, { ecmaVersion: 2023, sourceType: 'module' });
-  const found = [];
-  walk(ast, {
-    enter(node) {
-      if (node.type === 'Literal' && typeof node.value === 'string' && isFamilyShaped(node.value, catalog)) {
-        const line = source.slice(0, node.start).split('\n').length;
-        found.push({ value: node.value, line });
-      }
-    },
-  });
-  return found;
-}
-
-/**
- * Masks every string/template-literal source range identified by the AST
- * with spaces (newlines kept, for line-number accuracy), then regex-scans
- * what remains for `//` and `/* *‍/` comment bodies.
- *
- * Blind spot: does not handle regex literals specially — a `/.../ ` regex
- * containing a `//`-shaped sequence could misfire, though none exist in this
- * template's source at time of writing (verified by grep).
- */
-function collectCommentLiterals(source, catalog) {
-  const ast = parseAst(source, { ecmaVersion: 2023, sourceType: 'module' });
-  const chars = [...source];
-  walk(ast, {
-    enter(node) {
-      if (
-        (node.type === 'Literal' && typeof node.value === 'string') ||
-        node.type === 'TemplateElement'
-      ) {
-        for (let i = node.start; i < node.end; i += 1) {
-          if (chars[i] !== '\n') {
-            chars[i] = ' ';
-          }
-        }
-      }
-    },
-  });
-  const masked = chars.join('');
-
-  const found = [];
-  const commentPattern = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
-  let match;
-  while ((match = commentPattern.exec(masked)) !== null) {
-    const commentText = match[0];
-    const literalPattern = /[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+/g;
-    let literalMatch;
-    while ((literalMatch = literalPattern.exec(commentText)) !== null) {
-      if (isFamilyShaped(literalMatch[0], catalog)) {
-        const line = masked.slice(0, match.index + literalMatch.index).split('\n').length;
-        found.push({ value: literalMatch[0], line });
-      }
-    }
-  }
-  return found;
-}
-
-/**
- * Scans one `.js` file for family-shaped string literals, split into a
- * `code` bucket (string/template Literal nodes) and a `comment` bucket.
- */
-export function scanFile(filePath) {
-  const catalog = loadCatalog();
-  const source = readFileSync(filePath, 'utf8');
-  return {
-    code: collectCodeLiterals(source, catalog),
-    comments: collectCommentLiterals(source, catalog),
-  };
-}
-
-function listJsFiles(dir) {
-  return readdirSync(dir)
-    .filter((name) => name.endsWith('.js'))
-    .map((name) => join(dir, name));
-}
-
-/**
- * Scans the whole template: `src/*.js` as the `code`/`comment` buckets,
- * `tests/*.js` as the `test` bucket (code and comments merged — test
- * fixtures are not shipped, so the code/comment split does not matter for
- * them the way it does for `src/`).
- */
-export function collectAll() {
-  const catalog = loadCatalog();
-  const rows = [];
-
-  for (const file of listJsFiles(SRC_DIR)) {
-    const source = readFileSync(file, 'utf8');
-    const relative = 'src/' + file.slice(SRC_DIR.length + 1);
-    for (const hit of collectCodeLiterals(source, catalog)) {
-      rows.push({ bucket: 'code', file: relative, line: hit.line, key: hit.value, inCatalog: isCatalogMember(hit.value, catalog) });
-    }
-    for (const hit of collectCommentLiterals(source, catalog)) {
-      rows.push({ bucket: 'comment', file: relative, line: hit.line, key: hit.value, inCatalog: isCatalogMember(hit.value, catalog) });
-    }
-  }
-
-  for (const file of listJsFiles(TESTS_DIR)) {
-    const source = readFileSync(file, 'utf8');
-    const relative = 'tests/' + file.slice(TESTS_DIR.length + 1);
-    for (const hit of collectCodeLiterals(source, catalog)) {
-      rows.push({ bucket: 'test', file: relative, line: hit.line, key: hit.value, inCatalog: isCatalogMember(hit.value, catalog) });
-    }
-    for (const hit of collectCommentLiterals(source, catalog)) {
-      rows.push({ bucket: 'test-comment', file: relative, line: hit.line, key: hit.value, inCatalog: isCatalogMember(hit.value, catalog) });
-    }
-  }
-
-  rows.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
-  return { catalog, rows };
 }

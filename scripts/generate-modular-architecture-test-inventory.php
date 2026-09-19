@@ -100,12 +100,12 @@ const P7_MEASUREMENT_PATHS = [
  * (via `isRegisteredToolingRoot()`) and the `git ls-files` scan-scope pathspec
  * all read this map instead of repeating its keys — a key named here once
  * reaches all three. `assertToolingTestRootRegistrationIsComplete()`
- * cross-checks the map against the tree itself (independent of this file),
- * so an added or removed `scripts/*\/tests` or `tools/*\/tests` directory that
- * is not mirrored here fails loudly instead of silently mis-registering; a
- * key outside that shape (`governance/`, `html-report/*`) is exempted from
- * that cross-check by name rather than by pattern — see the function's own
- * filter.
+ * cross-checks the map against the tree itself (independent of this file): a
+ * `scripts/*\/tests` or `tools/*\/tests` directory landing or vanishing
+ * without a matching edit here fails loudly, and so does any registered key
+ * — of any shape, including `governance/` and `html-report/*` — naming a
+ * path that is no longer there. See that function's own docblock for why the
+ * two directions need different oracles.
  *
  * @var array<string, string>
  */
@@ -126,11 +126,12 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
     // it is outside actualToolingTestRootsOnDisk()'s glob the same way
-    // governance/ is — see that function's filter. Two file keys beside the
-    // directory key because the retained slice is not one directory: the
-    // viewer's own package.json and vite.config.js sit beside tests/, not
-    // under it, and nothing else under html-report/ (report.html, dist/,
-    // src/*.js, dev.html, package-lock.json, README.md) is a test artifact.
+    // governance/ is — assertToolingTestRootRegistrationIsComplete() checks
+    // it by direct existence instead. Two file keys beside the directory key
+    // because the retained slice is not one directory: the viewer's own
+    // package.json and vite.config.js sit beside tests/, not under it, and
+    // nothing else under html-report/ (report.html, dist/, src/*.js,
+    // dev.html, package-lock.json, README.md) is a test artifact.
     'html-report/tests/' => 'HtmlReport',
     'html-report/package.json' => 'HtmlReport',
     'html-report/vite.config.js' => 'HtmlReport',
@@ -898,7 +899,7 @@ function classifyOwner(string $path): string
     // tooling test root is a subject the tool itself owns. Both come from the
     // single TOOLING_TEST_ROOT_OWNERS map — see its docblock.
     foreach (TOOLING_TEST_ROOT_OWNERS as $prefix => $owner) {
-        if (str_starts_with($path, $prefix)) {
+        if (toolingRootKeyMatches($path, $prefix)) {
             return $owner;
         }
     }
@@ -1325,36 +1326,73 @@ function actualToolingTestRootsOnDisk(string $projectRoot): array
 /**
  * The four sites that used to spell out the tooling-root set now all read
  * TOOLING_TEST_ROOT_OWNERS, so they cannot drift from each other — but the map
- * itself can still drift from the tree: a new `scripts/<tool>/tests/` or
- * `tools/<tool>/tests/` directory landing without a registration, or a
- * registered root whose directory is gone. This is that check, against a
- * listing this file does not otherwise use for anything.
+ * itself can still drift from the tree in two different ways, checked by two
+ * different oracles because only one population can be found by a glob:
+ *
+ * - A new `scripts/<tool>/tests/` or `tools/<tool>/tests/` directory landing
+ *   without a registration — found by comparing the glob's own listing
+ *   against the registered keys shaped like it. A key outside that shape
+ *   (`governance/`, `html-report/*`) could never be produced by this glob no
+ *   matter how faithfully it is registered, so it does not participate here.
+ * - Any registered key — whichever shape — naming a path that is no longer
+ *   there. This is answered directly, by `is_dir()`/`is_file()` on the key
+ *   itself, which needs no glob and therefore has no shape requirement: a
+ *   typo, a rename or a deletion under `governance/` or `html-report/` is
+ *   caught exactly as one under `scripts/` or `tools/` is. Earlier this
+ *   direction was answered only by comparing against the glob's listing too,
+ *   which is why `governance/` and `html-report/*` had to be exempted from it
+ *   outright — the exemption was a gap in the oracle, not a property of
+ *   those roots.
  */
 function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 {
     $onDisk = actualToolingTestRootsOnDisk($projectRoot);
-    // Same exemption as governance/, for the same reason: actualToolingTestRootsOnDisk()
-    // globs only scripts/*/tests and tools/*/tests, so a root-level project
-    // outside both — and, for html-report/, two file keys beside its
-    // directory key — can never appear in $onDisk no matter how faithfully it
-    // is registered.
-    $registered = array_values(array_filter(
+    $globShapedRegistered = array_values(array_filter(
         array_keys(TOOLING_TEST_ROOT_OWNERS),
-        static fn(string $prefix): bool => $prefix !== 'governance/' && !str_starts_with($prefix, 'html-report/'),
+        static fn(string $prefix): bool => preg_match('#^(?:scripts|tools)/[^/]+/tests/$#', $prefix) === 1,
     ));
-    sort($registered, SORT_STRING);
+    sort($globShapedRegistered, SORT_STRING);
 
     $problems = [];
-    foreach (array_diff($onDisk, $registered) as $root) {
+    foreach (array_diff($onDisk, $globShapedRegistered) as $root) {
         $problems[] = $root . ' exists on disk but is not registered in TOOLING_TEST_ROOT_OWNERS';
     }
-    foreach (array_diff($registered, $onDisk) as $root) {
+    foreach (array_diff($globShapedRegistered, $onDisk) as $root) {
         $problems[] = $root . ' is registered in TOOLING_TEST_ROOT_OWNERS but no longer exists on disk';
+    }
+
+    foreach (array_keys(TOOLING_TEST_ROOT_OWNERS) as $prefix) {
+        if (in_array($prefix, $globShapedRegistered, true)) {
+            continue; // already checked against the glob's own listing above
+        }
+        $exists = str_ends_with($prefix, '/')
+            ? is_dir($projectRoot . '/' . $prefix)
+            : is_file($projectRoot . '/' . $prefix);
+        if (!$exists) {
+            $problems[] = $prefix . ' is registered in TOOLING_TEST_ROOT_OWNERS but no longer exists on disk';
+        }
     }
 
     if ($problems !== []) {
         fail("Tooling test root registration disagrees with the tree:\n  " . implode("\n  ", $problems));
     }
+}
+
+/**
+ * Whether `$key` (a `TOOLING_TEST_ROOT_OWNERS` key) names `$path`. A key
+ * ending in `/` is a directory: everything under it matches, by prefix. A
+ * key not ending in `/` (`html-report/package.json`,
+ * `html-report/vite.config.js`) is a single file: only that exact path
+ * matches. A prefix match on a file key would also accept
+ * `html-report/package.json.bak` or, more dangerously, would silently start
+ * matching a sibling if one were ever added whose name happens to extend the
+ * key's — `str_starts_with` cannot tell "this is the file" from "this is a
+ * file that starts with the same characters", and a single-file key means
+ * exactly the former.
+ */
+function toolingRootKeyMatches(string $path, string $key): bool
+{
+    return str_ends_with($key, '/') ? str_starts_with($path, $key) : $path === $key;
 }
 
 /**
@@ -1365,7 +1403,7 @@ function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 function isRegisteredToolingRoot(string $path): bool
 {
     foreach (array_keys(TOOLING_TEST_ROOT_OWNERS) as $prefix) {
-        if (str_starts_with($path, $prefix)) {
+        if (toolingRootKeyMatches($path, $prefix)) {
             return true;
         }
     }

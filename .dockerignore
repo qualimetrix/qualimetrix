@@ -48,8 +48,13 @@ coverage/
 # Nested test directories under tooling roots (e.g. tools/phpstan/tests/):
 # the root-anchored tests/ entry above does not reach them. Matched both ways
 # so the exclusion does not depend on settling Docker's glob semantics — every
-# nested tooling test root is listed explicitly, mirroring
-# TOOLING_TEST_ROOT_OWNERS in scripts/generate-modular-architecture-test-inventory.php.
+# nested tooling test root is listed explicitly, mirroring the directory-shaped
+# keys of TOOLING_TEST_ROOT_OWNERS in
+# scripts/generate-modular-architecture-test-inventory.php (every key ending
+# in `/`). That map also carries two file keys, html-report/package.json and
+# html-report/vite.config.js — not test directories, so they have no row here;
+# `**/tests/` already covers html-report/tests/, and the explicit row below is
+# the same belt-and-braces the other tooling roots get.
 **/tests/
 tools/phpstan/tests/
 scripts/promise-effect/tests/
@@ -64,6 +69,7 @@ scripts/benchmark/tests/
 scripts/modular-architecture/tests/
 scripts/cross-tool-comparison/tests/
 scripts/phpunit-aggregate/tests/
+html-report/tests/
 
 # Examples and documentation (reference only)
 examples/
