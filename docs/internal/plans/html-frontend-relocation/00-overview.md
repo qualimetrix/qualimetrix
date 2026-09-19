@@ -9,9 +9,9 @@ repository are hardcoded hop counts that no check reads.
 
 ## What is actually there
 
-28 tracked files, one `package.json`, one lifecycle. Four of them ship in the
+29 tracked files, one `package.json`, one lifecycle. Four of them ship in the
 composer package (`report.html`, `report.css`, `dist/report.min.js`,
-`dist/d3.min.js`); the other 24 are held out of it by seven `export-ignore`
+`dist/d3.min.js`); the other 25 are held out of it by seven `export-ignore`
 lines. That split is already correct and was landed by #87 — **this work is not
 a packaging fix**, and a plan that re-argues packaging is solving a problem that
 no longer exists.
@@ -56,10 +56,13 @@ Then the question nobody had asked. **Both live hops are already guarded,
 measured by planting:** a wrong PHP depth gives `HtmlFormatterTest` 8 errors, and
 a wrong JS root gives `ENOENT` under vitest inside `check:code`. Neither
 assertion names a path. What is unguarded is a *third* copy of the JS hop in
-`collect-metric-keys.mjs`, which nothing executes and which would have written
-its output outside the repository after the move. Stage 01 is therefore one JS
-module that collapses the two copies into one, so the unexecuted consumer
-inherits the executed one's guarantee — no control, no PHP, no manifest row.
+`collect-metric-keys.mjs`, which nothing executes. Executing stage 01 refined
+what that costs: a wrong hop there makes `writeFileSync` target a directory that
+does not exist, so it refuses with `ENOENT` rather than writing outside the
+repository as this plan first claimed. The copy is simply wrong in silence until
+someone runs it, and nothing does. Stage 01 is therefore one JS module that
+collapses the two copies into one, so the unexecuted consumer inherits the
+executed one's guarantee — no control, no PHP, no manifest row.
 
 **Destination: `html-report/` at the repository root**, the whole directory, one
 place. The owner's decision is that the viewer leaves the PSR-4 root; keeping
@@ -67,7 +70,7 @@ the shipped assets behind in `src/Reporting/` would satisfy the letter and split
 one subject across two roots.
 
 **Rejected: `tests/Reporting/HtmlTemplate/Tests/`.** Not hypothetical —
-`targetPath()` already prescribes it for 10 of the 28 files and
+`targetPath()` already prescribes it for 10 of the 29 files and
 `test-ownership.tsv:162-171` publishes it. The decisive argument is not
 tidiness: `.gitattributes:14` carries `/tests/ export-ignore`, so landing there
 would drop the four shipped assets out of the composer package and
@@ -83,7 +86,7 @@ answer different questions and their totals are not comparable:
 
 | Population                                    | Total | Shape                                                  |
 | --------------------------------------------- | ----- | ------------------------------------------------------ |
-| addresses swept, `enumeration/references.tsv` | 69    | 16 loud, 23 silent, 30 unaffected — read off the code  |
+| addresses swept, `enumeration/references.tsv` | 70    | 17 loud, 23 silent, 30 unaffected — read off the code  |
 | breakages measured, by carrying the move out  | 17    | 13 reproduced with a verbatim refusal, 10 of them loud |
 
 The swept column is a property of the sweep; the measured column is a property
@@ -105,7 +108,7 @@ Four silent addresses decide the packaging of this work:
   assertion, so an `assertCount` sweep misses it; found only by carrying the
   move out.
 - **`PlanningRecordIsolationTest` scans a root list of its own** — `bin`,
-  `governance`, `scripts`, `src`, `tests` — and today reaches 23 of the viewer's
+  `governance`, `scripts`, `src`, `tests` — and today reaches 24 of the viewer's
   files by extension. After the move it reaches none, **with no refusal**: a
   control that stays green on a shrunken population. The first draft's
   enumeration closed CLAUDE.md's "and every other control that carries its own
@@ -120,7 +123,7 @@ Four silent addresses decide the packaging of this work:
 
 Two independent passes, deliberately not sharing results:
 
-- `enumeration/references.tsv` — 69 rows, swept by reference channel (import,
+- `enumeration/references.tsv` — 70 rows, swept by reference channel (import,
   string literal, config, autoconfiguration, frontend, generator, artifact,
   governance, package, prose), with `breaks` and `form` per row.
 - `enumeration/measured-breakage.md` — derived the other way: the move was
@@ -129,7 +132,7 @@ Two independent passes, deliberately not sharing results:
 
 **They disagreed once, and the disagreement was substantive.** The sweep
 reported the manifest as knowing the directory; the experiment found it does not
-(0 occurrences), and that only 10 of the 28 files appear in any inventory. The
+(0 occurrences), and that only 10 of the 29 files appear in any inventory. The
 experiment is right, verified directly. The sweep also missed the
 `'rows' => 10` counter entirely. Recorded because one pass filling both the
 table and its own check agrees with itself.
