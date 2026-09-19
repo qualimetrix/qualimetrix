@@ -92,16 +92,20 @@ const P7_MEASUREMENT_PATHS = [
 ];
 
 /**
- * The single source for every tooling test root: which directory and which
- * subject owner, in the order registration happened.
+ * The single source for every tooling test root: which directory (or, for
+ * html-report/, single file) and which subject owner, in the order
+ * registration happened.
  * Every one of these files, once retained in place, is written straight into
  * its final home, so `classifyOwner()`, `dispositionFor()`/`targetPath()`
  * (via `isRegisteredToolingRoot()`) and the `git ls-files` scan-scope pathspec
- * all read this map instead of repeating its keys — a directory named here
- * once reaches all three. `assertToolingTestRootRegistrationIsComplete()`
+ * all read this map instead of repeating its keys — a key named here once
+ * reaches all three. `assertToolingTestRootRegistrationIsComplete()`
  * cross-checks the map against the tree itself (independent of this file),
  * so an added or removed `scripts/*\/tests` or `tools/*\/tests` directory that
- * is not mirrored here fails loudly instead of silently mis-registering.
+ * is not mirrored here fails loudly instead of silently mis-registering; a
+ * key outside that shape (`governance/`, `html-report/*`) is exempted from
+ * that cross-check by name rather than by pattern — see the function's own
+ * filter.
  *
  * @var array<string, string>
  */
@@ -120,6 +124,16 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/modular-architecture/tests/' => 'Tooling/ModularArchitecture',
     'scripts/cross-tool-comparison/tests/' => 'Tooling/CrossToolComparison',
     'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
+    // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
+    // it is outside actualToolingTestRootsOnDisk()'s glob the same way
+    // governance/ is — see that function's filter. Two file keys beside the
+    // directory key because the retained slice is not one directory: the
+    // viewer's own package.json and vite.config.js sit beside tests/, not
+    // under it, and nothing else under html-report/ (report.html, dist/,
+    // src/*.js, dev.html, package-lock.json, README.md) is a test artifact.
+    'html-report/tests/' => 'HtmlReport',
+    'html-report/package.json' => 'HtmlReport',
+    'html-report/vite.config.js' => 'HtmlReport',
 ];
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
@@ -352,19 +366,29 @@ const RETIRED_PATH_ASSERTIONS = [
  * `classifyOwner()` answered from a vocabulary of its own.
  *
  * The count is part of the entry, so the allowance is closed in both
- * directions: a third owner name, an eleventh HtmlReport row, or the
- * disappearance of one, each refuses here and is settled by editing this
- * constant, which is the admission rather than the side effect.
+ * directions: a third owner name, or the disappearance of the one that
+ * remains, each refuses here and is settled by editing this constant, which
+ * is the admission rather than the side effect.
+ *
+ * HtmlReport is not here. It used to be, prescribing an unresolved move into
+ * `tests/HtmlReport/Tests/` — a target `assertTestOwnersAreManifestOwners()`
+ * would happily count rows against, but which the accepted ADR for the
+ * viewer's relocation rejects outright: `tests/` carries `export-ignore`, so
+ * landing shipped assets there breaks `--format=html` for every consumer.
+ * Registering html-report/tests/, html-report/package.json and
+ * html-report/vite.config.js in TOOLING_TEST_ROOT_OWNERS instead retains them
+ * at their current path, and a retained tooling root's rows never reach
+ * `assertTestOwnersAreManifestOwners()` in the first place — neither their
+ * current nor their target path starts with `tests/`, which is the same
+ * reason that function's own docblock gives for exempting every other
+ * tooling root. Keeping a `NON_MANIFEST_TEST_OWNERS` entry alongside that
+ * registration would not coexist with it: `$allowed['HtmlReport']` would stay
+ * 0 forever (nothing increments a key the loop never reaches), so the row
+ * count in the entry would refuse no matter what number was written there.
  *
  * @var array<string, array{rows: int, reason: string}>
  */
 const NON_MANIFEST_TEST_OWNERS = [
-    'HtmlReport' => [
-        'rows' => 10,
-        'reason' => 'the JS bundle tests and configs under html-report/, a root-level npm project outside the'
-            . ' PSR-4 tree. Their target root is not a manifest owner either, and the relocation they assert is'
-            . ' named to no package — one of the rows 04-packages.md hands to the owner.',
-    ],
     'TestSupport/Logging' => [
         'rows' => 1,
         'reason' => 'the shared PSR-3 recording helper, published as its own support owner in'
@@ -417,16 +441,16 @@ if ($classificationProbeArguments !== []) {
 }
 
 // The tooling-root portion of this pathspec is every TOOLING_TEST_ROOT_OWNERS
-// key, trimmed of its trailing slash; 'scripts/tests' is dead scan-scope left
-// over from before the roots below existed (its directory is gone, see the
-// coverage note in the stage-03 review), and the `html-report/*` entries are
-// the unrelated HtmlReport closure, not a tooling root.
+// key, trimmed of its trailing slash — the html-report/ entries reach this
+// pathspec through that map now, the same way every other tooling root does,
+// rather than as literals of their own. 'scripts/tests' is dead scan-scope
+// left over from before the roots below existed (its directory is gone, see
+// the coverage note in the stage-03 review).
 $worktreePaths = commandLines(
     [
         'git', 'ls-files', '--cached', '--others', '--exclude-standard', '--',
         'tests', 'scripts/tests',
         ...array_map(static fn(string $prefix): string => rtrim($prefix, '/'), array_keys(TOOLING_TEST_ROOT_OWNERS)),
-        'html-report/tests', 'html-report/package.json', 'html-report/vite.config.js',
     ],
     $projectRoot,
 );
@@ -938,9 +962,8 @@ function classifyOwner(string $path): string
     if (str_starts_with($path, 'scripts/tests/')) {
         return 'Analysis/Evidence/Measurement';
     }
-    if (str_starts_with($path, 'html-report/tests/') || in_array($path, ['html-report/package.json', 'html-report/vite.config.js'], true)) {
-        return 'HtmlReport';
-    }
+    // html-report/tests/, package.json and vite.config.js are answered by the
+    // TOOLING_TEST_ROOT_OWNERS loop above; no branch needed here.
     if (str_starts_with($path, 'tests/Architecture/')) {
         if (str_contains($path, 'CircularDependency')) {
             return 'Analysis/Evidence/CircularDependency';
@@ -1310,9 +1333,14 @@ function actualToolingTestRootsOnDisk(string $projectRoot): array
 function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 {
     $onDisk = actualToolingTestRootsOnDisk($projectRoot);
+    // Same exemption as governance/, for the same reason: actualToolingTestRootsOnDisk()
+    // globs only scripts/*/tests and tools/*/tests, so a root-level project
+    // outside both — and, for html-report/, two file keys beside its
+    // directory key — can never appear in $onDisk no matter how faithfully it
+    // is registered.
     $registered = array_values(array_filter(
         array_keys(TOOLING_TEST_ROOT_OWNERS),
-        static fn(string $prefix): bool => $prefix !== 'governance/',
+        static fn(string $prefix): bool => $prefix !== 'governance/' && !str_starts_with($prefix, 'html-report/'),
     ));
     sort($registered, SORT_STRING);
 
