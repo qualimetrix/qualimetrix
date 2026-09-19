@@ -98,6 +98,7 @@ src/
 ├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
+html-report/           # The `--format=html` viewer: an npm project, not a PSR-4 root (ADR 0064)
 governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
 scripts/               # Utility scripts; a tool with its own tests keeps them at scripts/<tool>/tests/
 tools/                 # Standalone dev tools (e.g. the PHPStan rule set); tests at tools/<tool>/tests/
@@ -608,7 +609,7 @@ composer directives:controls:coverage            # the cheap half on its own: re
                                                   # exactly its own case, and a declared case the run never carried
                                                   # is a distinct stale-declaration refusal
 
-# HTML report (run when modifying src/Reporting/Template/)
+# HTML report (run when modifying html-report/)
 composer test:js        # JS tests for HTML report (vitest)
 composer build:js       # Rebuild HTML report JS bundle
 
@@ -650,7 +651,7 @@ bin/qmx check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
+- **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Efficient validation order
