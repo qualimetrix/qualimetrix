@@ -1,116 +1,123 @@
-# Stage 01 — one owner per language for the distance to the root
+# Stage 01 — make the distance to the root checkable
 
-Lands and is proved **before** anything moves. Nothing in this stage changes
-where a file lives; after it, the repository knows where the viewer is in
-exactly two places instead of three, and a check refuses when either is wrong.
+Lands and is proved **before** anything moves. After it, every hop count that
+crosses the viewer's boundary is guarded by a control that refuses when it is
+wrong, and the two JS copies of that hop have become one.
 
-## Why this is not "edit two literals when we move"
+## What review changed about this stage
 
-A hop count is a claim about the tree that the tree does not check. The measured
-failure modes differ by language and both are quiet in their own way:
+The first draft introduced a PHP value object that owned the asset paths. Two
+measurements killed it, and they are worth keeping because both are invisible
+from the file being refactored:
 
-- **PHP.** `\dirname(__DIR__, N)` with a stale `N` resolves to a directory
-  *above* the repository. A walk of it returns nothing, and a check asserting a
-  property of every member of an empty set passes. CLAUDE.md names this shape
-  for governance controls; here it surfaces as a runtime refusal instead, but
-  only on the one command that renders HTML.
-- **JS.** Measured at the root destination: the four-hop resolved two levels
-  above the repository root and produced `ENOENT`. Loud — but only because one
-  test happens to call the module. Its sibling `collect-metric-keys.mjs` carries
-  the same four-hop, nothing executes it, and it would have written its output
-  outside the repository.
+- **The shipping guard derives its expectation by regex over the formatter's
+  source.** `HtmlReportShipsOnlyWhatItReadsTest.php:78` runs
+  `preg_match_all('#\$templateDir \. \'(/[^\']+)\'#')` over
+  `HtmlFormatter.php`, and line 41 refuses on an empty result. A value object
+  that joins the asset name removes both the variable and the concatenation, so
+  the guard reads zero assets and goes red — which would have made stage 01's
+  own "green `composer check`" unreachable, and deadlocked stage 02, whose P2
+  owns that guard's file and cannot start until stage 01 is green.
+- **Every production declaration is pinned in the manifest by name.**
+  `generate-modular-architecture-production-inventory.php:805` compares the AST's
+  class list against the manifest's and refuses on any difference. A new class
+  under `src/Reporting/` is therefore a manifest change plus an artifact
+  regeneration — work stage 01 claimed not to contain.
 
-Both are the same defect: the code names a *distance* where it means a
-*destination*. One owner per language turns the distance into a single fact that
-one check can judge.
+Both point the same way: **PHP does not have a multiplicity problem.** Measured,
+`src/Reporting/` contains exactly one `dirname(__DIR__` — the formatter's. There
+is already one owner; what is missing is a check on its depth. JS is the side
+with two copies, and only JS gets a new module.
 
-## Contracts
+## What changes
 
-Two owners, one per language. Neither is a general-purpose utility — each
-answers one question for one subject, and the check below is what keeps them
-honest.
-
-**PHP.** A single value object inside the Reporting capability that answers
-"where does the viewer's shipped asset live?". It computes the package root once
-and joins the asset name; no other PHP file computes a hop count toward it.
-
-```
-final readonly class <name>
-{
-    public function __construct(?string $packageRoot = null);   // null: derive
-    public function asset(string $name): string;                // absolute path
-    public function directory(): string;
-    // ... implementation details: the single dirname() hop, the existence
-    // refusal, and the message that names the build command
-}
-```
-
-Its refusal message currently repeats the path as prose
-(`HtmlFormatter.php:83` advises `cd src/Reporting/Template && npm run build`).
-The message becomes the owner's business too, so a move cannot leave advice
-pointing at a directory that is gone — measured as breakage A2.
-
-**JS.** One module exporting the repository root, imported by both
-`metric-key-catalog.mjs` and `collect-metric-keys.mjs`. Neither computes hops
-any more.
+**JS — two copies become one.** `metric-key-catalog.mjs:17` and
+`collect-metric-keys.mjs` each carry `resolve(__dirname, '..' × 4)`. One module
+beside them owns it; neither computes hops afterwards.
 
 ```
-// repo-root.mjs
+// src/Reporting/Template/scripts/repo-root.mjs
 export const REPO_ROOT;            // resolved once, from this module's own place
 export function fromRoot(...parts);
 ```
 
-## The check that bites
+Its location is fixed here and not left to the executor: it sits beside its two
+consumers, so stage 02 moves it with them and the hop count stays one.
 
-One control, and it must fail on a wrong depth rather than on a missing file —
-those are different failures and only the first is the subject here.
+**PHP — nothing is refactored.** The formatter keeps `$templateDir` and its
+concatenations, because the shipping guard reads them. The refusal message at
+`HtmlFormatter.php:83` still advises `cd src/Reporting/Template && npm run
+build`; that string is stage 02's to repoint, listed in its P1.
 
-**What it asserts.** The path each owner computes is the repository root,
-established independently of the owner's own arithmetic: by locating a tracked
-marker that exists exactly once at the root (`composer.json` beside
-`.gitattributes`), not by counting directories. Then: every asset the PHP owner
-names exists, and every PHP file the JS owner reads exists.
+**Node becomes a declared dependency of the default check.** The control below
+executes node. `scripts/init-environment.sh` installs neither node nor npm —
+measured, 0 mentions — so in the web environment `composer test:js` already does
+not run, and this stage would newly redden `composer test` there too. The
+install goes into that script **in this stage**, because this is the stage that
+introduces the dependency. Stage 02 explicitly does not touch it.
 
-**Why independence matters.** A check that re-derives the root by the same hop
-count it is checking agrees with itself on a wrong tree. This is the tautology
-that has already cost this repository a round — the control must reach the root
-by a different means than the code under test.
+## The control
 
-**Both languages, one verdict.** The PHP side runs in the `Governance` suite.
-The JS side has no governance reach today, so the assertion about the JS owner's
-root is made from PHP over the JS module's resolved value, obtained by executing
-node — or, if node is absent, the control **refuses** rather than skips.
-`scripts/init-environment.sh` installs no node (measured), so a skip here would
-be permanently invisible in the web environment.
+One control, in the `Governance` suite, asserting that each side's arithmetic
+still lands on the repository root.
+
+**What it asserts.** It establishes the root **without counting directories** —
+by walking up until it finds the one directory holding both `composer.json` and
+`.gitattributes`, a pair that occurs exactly once in the tree (measured: 27
+`composer.json`, 1 `.gitattributes`). Then:
+
+- the directory the formatter computes is that root's `src/Reporting/Template`,
+  and every asset it reads exists there;
+- the root the JS module resolves is that same directory, obtained by executing
+  node against the module and comparing the string.
+
+**Two tautologies it must not commit,** both of which the first draft left open:
+
+- It must not reach the root by the same `\dirname(__DIR__, N)` idiom it is
+  checking. That idiom is how every governance control in this repository finds
+  the root, so an executor will copy it by reflex; the marker walk above is what
+  replaces it, and the DoD proves the difference by planting.
+- It must not accept an injected root. Nothing in the control may hand either
+  side a root it did not derive, or the check confirms its own input.
+
+**Node absent is a refusal, not a skip.** A skip here would be permanently
+invisible in the web environment, which is exactly where the dependency is new.
 
 ## Definition of Done
 
-Negative checks are written as refusals, not as printed counts: `grep -c`
-exits 0 when it finds the forbidden string and 1 when the file is clean, so a
-gate phrased "returns 0" is green on a dirty tree. Measured on this tree.
+Negative checks are written as refusals. `grep -c` exits 0 when it finds the
+forbidden string and 1 when the file is clean, so a gate phrased "returns 0" is
+green on a dirty tree — measured on this tree. And `git grep -E` does not honour
+`\b` here, returning nothing where `grep` returns matches; use `-P` or `-wE`.
 
-1. `! git grep -qP 'dirname\(__DIR__' -- src/Reporting/` except inside the PHP
-   owner — one hop count in the capability, named explicitly.
-2. `! git grep -qP "\.\.', '\.\." -- '*.mjs' '*.js'` outside the JS owner, with
-   `-P` or `-wE`: `git grep -E` does not honour `\b` here and returns nothing
-   where `grep` returns matches. Measured today.
-3. The control **fails on a planted wrong depth** — plant it, quote the refusal
-   verbatim, restore from a copy taken *before* the plant. A control that has
-   never been red is not a control.
-4. The control **refuses, not skips, when node is unavailable** — proved by
-   running it with node off `PATH`, and the refusal quoted.
-5. `composer check` green from a clean clone with copied `vendor`,
-   `website/.venv` and `node_modules`.
-6. Nothing moved: `git diff --stat` names no rename.
+1. Exactly one JS hop chain remains, and it is the new module's:
+   `git grep -lP "\.\.'\s*,\s*'\.\." -- '*.mjs' '*.js' ':!src/Reporting/Template/scripts/repo-root.mjs'`
+   prints nothing. The pattern tolerates absent whitespace — the current call
+   spells it `'..', '..'`, but nothing enforces that spelling.
+2. PHP is unchanged: `git diff --stat` names no file under `src/Reporting/`
+   other than none at all. The formatter is deliberately untouched.
+3. The control **fails on a planted wrong depth** — change the JS module's hop,
+   quote the refusal verbatim, restore from a copy taken *before* the plant.
+4. The control **fails on a planted tautology** — reimplement its root discovery
+   as `\dirname(__DIR__, N)` with the correct `N`, confirm it then passes on a
+   tree where the JS hop is wrong, and restore. This is the one that proves the
+   marker walk is doing work, and it is the check the first draft could not make.
+5. The control **refuses, not skips, when node is unavailable** — run it with
+   node off `PATH` and quote the refusal.
+6. `composer check` green from a clean clone with copied `vendor`,
+   `website/.venv` and `node_modules`, **on a machine with node** — and the same
+   clone with `scripts/init-environment.sh` run from scratch reaches a node that
+   satisfies item 5.
+7. No new production class: `git diff --name-only` names no added file under
+   `src/`, so the manifest and the generated artifacts are untouched. If that
+   turns out to be false, stage 01 has grown a manifest declaration and an
+   artifact regeneration, and it stops and says so rather than absorbing them.
 
 ## Test plan
 
-One new governance control, described above. No new unit tests for the owners
-themselves: their whole behaviour is the path, and the control is the assertion
-about it — a unit test that recomputes the same join would be the tautology this
-stage exists to remove.
-
-The existing `composer test:js` covers the JS owner indirectly, because
-`metric-key-catalog.test.js` fails loudly when the root is wrong. That is
-evidence the owner works, not evidence the depth is guarded; item 3 is what
-guards it.
+One new governance control, described above, plus the four plants that prove it
+bites. No unit test for the JS module: its whole behaviour is the path, and a
+unit test recomputing the same join is the tautology this stage exists to
+remove. `metric-key-catalog.test.js` already fails loudly when the root is
+wrong — that is evidence the module works, not evidence the depth is guarded,
+and item 3 is what guards it.

@@ -33,60 +33,81 @@ A third hop of the same shape sits in `scripts/collect-metric-keys.mjs`. Nothing
 runs it, so it would stay wrong quietly until the day someone regenerates by
 hand.
 
-## The decision: one owner for the path, then the move
+## The decision: make the distance checkable, then move
 
-Moving the directory changes both distances. Editing both literals moves the
-hazard instead of removing it — it has already bitten twice in this tree, and
-CLAUDE.md names stale `\dirname(__DIR__, N)` depth as a failure that resolves to
-a directory above the repository and returns nothing rather than refusing.
+Moving the directory changes both distances. Editing the literals when the move
+happens moves the hazard instead of removing it — CLAUDE.md names a stale
+`\dirname(__DIR__, N)` as a failure that resolves to a directory above the
+repository and returns nothing rather than refusing.
 
-So **stage 01 gives the path one owner per language, with a check that bites,
-and lands before anything moves.** Then the move is judged by a guard that was
-already green — rather than by a guard written in the same breath as the change
-it judges.
+So **stage 01 makes both distances checkable and lands before anything moves.**
+Then the move is judged by a control that was already green, rather than by one
+written in the same breath as the change it judges.
+
+**Stage 01 is not a refactor**, and review is what established that. The first
+draft gave PHP a value object owning the asset paths; two measurements killed
+it. The shipping guard derives its expectation by regex over the formatter's
+source, so removing the concatenation reddens it — and the guard's file belongs
+to stage 02, which then could not start. And every production declaration is
+pinned in the manifest by name, so a new class is a manifest change plus an
+artifact regeneration. Measured, `src/Reporting/` holds exactly one
+`dirname(__DIR__`: PHP already has one owner and only lacks a check on it. JS
+has two copies and gets the one new module. Stage 01 details both.
 
 **Destination: `html-report/` at the repository root**, the whole directory, one
 place. The owner's decision is that the viewer leaves the PSR-4 root; keeping
 the shipped assets behind in `src/Reporting/` would satisfy the letter and split
-one subject across two roots. The name answers "what is this about?" with the
-program, not with its technology — `frontend/` would name a role.
+one subject across two roots.
 
-**Rejected: `tests/Reporting/HtmlTemplate/Tests/`.** This is not a hypothetical
-— `targetPath()` in the test inventory already prescribes it for 10 of the 28
-files, and `test-ownership.tsv:162-171` publishes that prescription in 10 rows.
-It is wrong twice: it routes a shipped runtime asset's siblings under `tests/`,
-and it says nothing about the other 18 files, so the subject would land in two
-roots. The prescription is a leftover of the retired test-structure campaign —
-its stated reason still cites `04-packages.md`, a file deleted in `4438c105`.
-Stage 02 retires it explicitly; disagreeing with it silently would leave the
-artifact publishing a destination nothing intends to use.
+**Rejected: `tests/Reporting/HtmlTemplate/Tests/`.** Not hypothetical —
+`targetPath()` already prescribes it for 10 of the 28 files and
+`test-ownership.tsv:162-171` publishes it. The decisive argument is not
+tidiness: `.gitattributes:14` carries `/tests/ export-ignore`, so landing there
+would drop the four shipped assets out of the composer package and
+`--format=html` would die for every consumer. It is also silent about the other
+18 files. The prescription is a leftover of the retired test-structure campaign,
+and its stated reason still cites `04-packages.md`, deleted in `4438c105`.
+Stage 02 retires it, and names the coverage that retirement costs.
 
 ## What the move costs, measured rather than estimated
 
-17 breakages, 13 of them reproduced by carrying the move out on a real copy of
-the tree and running each command. `enumeration/measured-breakage.md` holds the
-verbatim first line of every refusal. The shape that matters is the split:
+**Two populations, and conflating them was a defect in the first draft.** They
+answer different questions and their totals are not comparable:
 
-|            | Count  | Why it matters                                              |
-| ---------- | ------ | ----------------------------------------------------------- |
-| loud       | 16     | a command refuses; these cannot be forgotten                |
-| **silent** | **23** | the tree stays green and coverage leaves with the directory |
+| Population                                    | Total | Shape                                                  |
+| --------------------------------------------- | ----- | ------------------------------------------------------ |
+| addresses swept, `enumeration/references.tsv` | 69    | 16 loud, 23 silent, 30 unaffected — read off the code  |
+| breakages measured, by carrying the move out  | 17    | 13 reproduced with a verbatim refusal, 10 of them loud |
 
-Three silent ones decide the packaging of this work:
+The swept column is a property of the sweep; the measured column is a property
+of the tree. Where they disagree about what stops working, the measurement wins
+— the enumeration's own README says so, and the first draft then argued package
+boundaries from the swept number anyway.
 
-- **`surfaces()['src']` in the rename enumeration.** Measured: 115 occurrences
-  of `health.overall` in the `src` column, **93 of them from Template files**.
-  Moving without declaring a new surface drops the column by four fifths, and
-  CLAUDE.md names exactly this — "a later move reads as a drop in a column
-  nobody re-derives".
+Four silent addresses decide the packaging of this work:
+
+- **`surfaces()['src']` in the rename enumeration.** Measured with the
+  generator's own predicate: 115 whole-identifier occurrences of
+  `health.overall` in the `src` surface, **92 of them from the viewer's files**.
+  The surface excludes `dist/` and `package-lock.json` by name, which is why a
+  casual line count gives 93 — the first draft carried that 93 into its
+  acceptance oracle, where it would have refused correct work.
 - **`NON_MANIFEST_TEST_OWNERS['Reporting/HtmlTemplate']` carries `'rows' => 10`**,
-  a hardcoded count over a generated artifact. A sweep for `assertCount(` does
-  not find it, because it is not an assertion. It was found only by carrying the
+  compared against the actual count at `:1502`. It is the live control that
+  turns a silent scan-scope pathspec into a loud refusal for this owner. Not an
+  assertion, so an `assertCount` sweep misses it; found only by carrying the
   move out.
-- **Two `.gitignore` negations and seven `export-ignore` lines become inert**
-  without refusing. Measured at the root destination: `frontend/*.json` is then
-  caught by a blanket `*.json` rule, and the shipping guard fails *before* it
-  measures anything, so a reader sees a red test that checked nothing.
+- **`PlanningRecordIsolationTest` scans a root list of its own** — `bin`,
+  `governance`, `scripts`, `src`, `tests` — and today reaches 23 of the viewer's
+  files by extension. After the move it reaches none, **with no refusal**: a
+  control that stays green on a shrunken population. The first draft's
+  enumeration closed CLAUDE.md's "and every other control that carries its own
+  root list" row by answering only about the control CLAUDE.md names, which is
+  the row reading itself as satisfied.
+- **Two `.gitignore` negations and seven `export-ignore` lines go inert** without
+  refusing. The shipping guard then fails *before* it measures anything and
+  reports that nothing was checked — a red test that proves nothing, which reads
+  like a caught defect.
 
 ## What the enumeration is, and what it cannot see
 
@@ -117,7 +138,7 @@ stage 02 re-derives them at the chosen name rather than carrying these forward.
 
 | Stage                      | Subject                                                                 |
 | -------------------------- | ----------------------------------------------------------------------- |
-| [01](01-path-ownership.md) | One owner per language for the distance to the repository root          |
+| [01](01-path-ownership.md) | Make both distances checkable; collapse the two JS copies into one      |
 | [02](02-relocation.md)     | The move, its registration addresses, and the records that authorize it |
 
 Stage 01 lands and is proved on its own; stage 02 does not begin until it has.

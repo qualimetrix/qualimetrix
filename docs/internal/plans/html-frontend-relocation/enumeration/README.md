@@ -26,11 +26,33 @@ for `assertCount(` and for "N rows" prose, the hardcoded-count form; a sweep for
 fileURLToPath|resolve\(` over `*.js` and `*.mjs`; `git archive | tar -tf` for
 what actually ships.
 
-**Cannot see.** Untracked and ignored trees (`node_modules/`, local settings);
-the contents of the generated `dist/report.min.js`; identifiers assembled from
-fragments — `'Template'` and `'/dist/'` were not swept separately; paths
-resolved from CI environment or secrets. Every `breaks` verdict here is read
-off the code rather than executed, except rows marked MEASURED.
+**Cannot see, as found by review rather than declared up front.** The sweep
+answered CLAUDE.md's row "`ScratchPathsCarryRealEntropyTest` — `ROOTS`, **and
+every other control that carries its own root list**" by checking only the
+control CLAUDE.md names. It therefore missed `PlanningRecordIsolationTest`,
+whose own root list includes `src` and which reaches 23 of the viewer's files by
+extension today and none after the move, without refusing. A row that names an
+open-ended class cannot be closed by answering its example; the sweep read its
+own answer as satisfying the row.
+
+Review re-swept that class and found no further member: `BaselineCountPublication`
+filters `.md` (the viewer has none), the rule-option and channel controls filter
+`.php`, and `promise-effect` analyses `src` for PHP only.
+
+**Also cannot see.** Untracked and ignored trees (`node_modules/`, local
+settings); the contents of the generated `dist/report.min.js`, which matters
+because the build writes those tracked files and nothing here proves the bundle
+rebuilds byte-for-byte; identifiers assembled from fragments; paths resolved
+from CI environment or secrets. Every `breaks` verdict here is read off the code
+rather than executed, except rows marked MEASURED.
+
+**A contradiction this file used to carry.** The tools paragraph above credits a
+bare-word sweep with finding the fragment form `str_contains($relativePath,
+'/Template/')`, while this section used to claim the fragment forms `'Template'`
+and `'/dist/'` were never swept separately. Both could not be true, and the gap
+between them is exactly where `PlanningRecordIsolationTest` — which matches on
+`'/dist/'` — went missing. The bare-word sweep ran; it was not run against the
+governance controls' own root lists.
 
 **A defect in the method, found and closed during the sweep:** the first pass
 over the JS metric-key enumeration ran with an include list that excluded
