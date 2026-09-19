@@ -18,6 +18,79 @@ function fail(string $message): void
 }
 
 /**
+ * The PSR-4 roots `autoload-dev` declares, which production may not import.
+ *
+ * Read from `autoload-dev` instead of being listed here. The list kept by hand
+ * drifted from the predicate that feeds it: four of its thirteen entries named
+ * a root the name collection never produced, so they refused nothing while
+ * still reading as covered.
+ *
+ * **This is narrower than "every development namespace".** A namespace declared
+ * outside `src/` but absent from `autoload-dev.psr-4` -- `QmxFindingGate`,
+ * `Qualimetrix\PromiseEffect` and the `tools/phpstan` fixtures among them -- is
+ * not returned here and production importing it is not refused. Closing that
+ * needs a different source of truth than this section, because the tree also
+ * declares generic fixture roots (`App`, `Foo`, `Vendor`) that a rule derived
+ * from "declared outside src/" would start refusing.
+ *
+ * @return list<string>
+ */
+function developmentNamespacePrefixes(string $root): array
+{
+    static $cache = [];
+    if (isset($cache[$root])) {
+        return $cache[$root];
+    }
+
+    $path = $root . '/composer.json';
+    if (!is_file($path)) {
+        fail('cannot read composer.json to derive the development namespaces');
+    }
+
+    $raw = file_get_contents($path);
+    if ($raw === false) {
+        fail('cannot read composer.json to derive the development namespaces');
+    }
+
+    $manifest = json_decode($raw, true);
+    if (!is_array($manifest)) {
+        fail('composer.json is not a JSON object');
+    }
+
+    $declared = $manifest['autoload-dev']['psr-4'] ?? [];
+    if (!is_array($declared) || $declared === []) {
+        fail('composer.json declares no autoload-dev PSR-4 root; the import ban would pass vacuously');
+    }
+
+    $prefixes = [];
+    foreach (array_keys($declared) as $prefix) {
+        if (!is_string($prefix)) {
+            fail('autoload-dev declares a PSR-4 prefix that is not a string');
+        }
+
+        $prefixes[] = $prefix;
+    }
+
+    sort($prefixes, SORT_STRING);
+
+    return $cache[$root] = $prefixes;
+}
+
+/**
+ * @param list<string> $prefixes
+ */
+function isDevelopmentNamespace(string $dependency, array $prefixes): bool
+{
+    foreach ($prefixes as $prefix) {
+        if (str_starts_with($dependency, $prefix)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @param array<string, string> $sourceOverrides repository-relative source path to replacement source path
  *
  * @return list<array{
@@ -43,6 +116,7 @@ function declarations(string $root, array $sourceOverrides = []): array
 {
     $parser = (new ParserFactory())->createForNewestSupportedVersion();
     $finder = new NodeFinder();
+    $developmentPrefixes = developmentNamespacePrefixes($root);
     $rows = [];
     $seen = [];
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src'));
@@ -168,7 +242,18 @@ function declarations(string $root, array $sourceOverrides = []): array
             foreach ($finder->findInstanceOf($declaration, Node\Name::class) as $name) {
                 $resolved = $name->getAttribute('resolvedName');
                 $dependency = $resolved instanceof Node\Name ? $resolved->toString() : $name->toString();
-                if ($dependency !== $fqcn && str_starts_with($dependency, 'Qualimetrix\\')) {
+                // Development names are collected although they can never be a
+                // legitimate production dependency, because only the refusal
+                // below needs them. Widening the set still moves no artifact,
+                // for two separate reasons -- both are load-bearing, for
+                // different files. `$observedPairs` and `$crossOwnerImports`
+                // keep only names present in `$byName`, which holds what was
+                // found in `src/`, so a development name never reaches them.
+                // The rows the refusal collects are themselves published, as
+                // `production-to-test-imports.tsv`; that file stays empty
+                // because a non-empty set exits before anything is written.
+                if ($dependency !== $fqcn && (str_starts_with($dependency, 'Qualimetrix\\')
+                    || isDevelopmentNamespace($dependency, $developmentPrefixes))) {
                     $dependencies[$dependency] = true;
                 }
             }
@@ -984,33 +1069,12 @@ foreach ($fanIn as $target => $data) {
 }
 usort($fanInRows, static fn(array $left, array $right): int => $left <=> $right);
 
-// Every PSR-4 root that only exists for autoloading in development: the test
-// tree and the repository-controls root. Production may reach neither, and the
-// refusal names which one it reached, because the two are fixed by different
-// people for different reasons.
-const DEVELOPMENT_NAMESPACE_PREFIXES = [
-    'Qualimetrix\\Tests\\',
-    'Qualimetrix\\Governance\\',
-    'Qualimetrix\\PhpStan\\',
-    'Qualimetrix\\PromiseEffect\\Tests\\',
-    'QmxDirectiveAudit\\Tests\\',
-    'QmxDirectiveAuditControls\\Tests\\',
-    'QmxFindingGate\\Tests\\',
-    'QmxTautologyControls\\Tests\\',
-    'Qualimetrix\\SuppressionSnapshot\\Tests\\',
-    'Qualimetrix\\RenameEnumeration\\Tests\\',
-    'Qualimetrix\\HealthCalibration\\Tests\\',
-    'Qualimetrix\\Benchmark\\Tests\\',
-    'Qualimetrix\\ModularArchitecture\\Tests\\',
-];
-
 $productionToTestRows = [];
+$developmentPrefixes = developmentNamespacePrefixes($root);
 foreach ($rows as $row) {
     foreach ($row['dependencies'] as $dependency) {
-        foreach (DEVELOPMENT_NAMESPACE_PREFIXES as $prefix) {
-            if (str_starts_with($dependency, $prefix)) {
-                $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
-            }
+        if (isDevelopmentNamespace($dependency, $developmentPrefixes)) {
+            $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
         }
     }
 }
