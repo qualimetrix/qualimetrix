@@ -289,6 +289,46 @@ else
 fi
 
 # ============================================================================
+# 5c. Install the JS toolchain for the HTML report viewer
+# ============================================================================
+#
+# `composer check` runs the viewer's vitest suite inside check:code. That suite
+# is also what proves the viewer's path to the repository root is correct, so
+# without node this workspace loses a guarantee it looks like it has. Node 22
+# matches the version CI pins.
+
+log_info "Checking JS toolchain..."
+
+if ! command -v node >/dev/null 2>&1; then
+    log_info "Installing Node.js 22..."
+
+    # Own temp dir: the earlier sections' APT_TMP_DIR is created inside their
+    # conditionals and removed again, so under `set -u` it may be unset here.
+    NODE_APT_TMP_DIR=$(mktemp -d)
+    chmod 1777 "$NODE_APT_TMP_DIR"
+
+    if curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1 \
+        && TMPDIR="$NODE_APT_TMP_DIR" DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y -qq nodejs >/dev/null 2>&1; then
+        log_success "Node.js installed: $(node --version)"
+    else
+        log_warning "Failed to install Node.js — 'composer test:js' will fail here"
+    fi
+
+    rm -rf "$NODE_APT_TMP_DIR"
+else
+    log_success "Node.js already installed: $(node --version)"
+fi
+
+if command -v node >/dev/null 2>&1; then
+    if composer install:js --quiet; then
+        log_success "HTML report viewer dependencies installed"
+    else
+        log_warning "Failed to install viewer dependencies — 'composer test:js' will fail here"
+    fi
+fi
+
+# ============================================================================
 # 6. Check critical files and directories
 # ============================================================================
 
@@ -365,6 +405,7 @@ log_info "  Git: $(git --version | cut -d' ' -f3)"
 log_info "  tree: $(tree --version | head -n1)"
 log_info "  shellcheck: $(shellcheck --version | grep version | cut -d' ' -f2)"
 log_info "  gh: $(gh --version | head -n1 | cut -d' ' -f3)"
+log_info "  Node.js: $(node --version 2>/dev/null || echo 'N/A')"
 log_info "  bat: $(batcat --version 2>/dev/null | cut -d' ' -f2 || bat --version 2>/dev/null | cut -d' ' -f2 || echo 'N/A')"
 log_info "  fd: $(fdfind --version | cut -d' ' -f2)"
 log_info "  delta: $(delta --version | cut -d' ' -f2)"

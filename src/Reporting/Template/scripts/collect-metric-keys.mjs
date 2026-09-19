@@ -4,16 +4,10 @@
 // catalog. Run by hand (`node scripts/collect-metric-keys.mjs`) — this is a
 // one-off population script, not part of `npm test` or `npm run build`.
 import { writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { collectAll } from './metric-key-catalog.mjs';
+import { fromRoot } from './repo-root.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT_FILE = resolve(
-  __dirname,
-  '..', '..', '..', '..',
-  'finding-gate/enumeration-js-metric-keys.tsv',
-);
+const OUT_FILE = fromRoot('finding-gate/enumeration-js-metric-keys.tsv');
 
 const HEADER = `# method: rollup's bundled AST parser (rollup/dist/parseAst.js, the same
 # parser vite's build pipeline runs on this template) walks each src/Reporting/Template
