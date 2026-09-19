@@ -40,12 +40,15 @@ Two further things were true and unrecorded.
 
 **The viewer's placement was held by two hardcoded distances, not by a name.**
 `HtmlFormatter` resolved the asset directory by walking a fixed number of
-parents from its own file, and the viewer's test tooling resolved the
-repository root the same way in the other direction. Neither encoded a
-destination. Stage 01 of this work (#97) collapsed the viewer's two copies of
-that walk into a single module, `scripts/repo-root.mjs`, so that the move would
-be judged by a check that was already passing rather than by one written in the
-same breath as the change it judges.
+parents from its own file, and the viewer's Node tooling walked back the same
+way in the other direction — in **two** copies, one exercised by
+`metric-key-catalog.test.js` under vitest and one by nothing at all. That second
+copy is the script this decision deletes, and its being unexecuted is the whole
+reason it could be wrong in silence. Neither copy encoded a destination. Stage
+01 of this work (#97) collapsed them into a single module,
+`html-report/scripts/repo-root.mjs`, so that the move would be judged by a check
+that was already passing rather than by one written in the same breath as the
+change it judges.
 
 **A prescription already existed to move the viewer somewhere else.** The test
 inventory's `targetPath()` prescribed `tests/Reporting/HtmlTemplate/Tests/` for
@@ -160,11 +163,46 @@ prescription toward a `tests/` destination is gone rather than renamed.
 **Registration is possible, and the claim that it was not is refuted.** An
 earlier draft held that the new root could not be registered, because the
 tooling-root completeness check globs only `scripts/*/tests` and `tools/*/tests`.
-`TOOLING_TEST_ROOT_OWNERS` already carries `'governance/'`, a key that glob never
-matches, and `assertToolingTestRootRegistrationIsComplete()` filters exactly that
-key out of the comparison by name. The precedent for a registered root outside
-the glob's shape exists and is in use — and it is what makes the retirement
-reachable at all. Everything below follows from taking it.
+But `TOOLING_TEST_ROOT_OWNERS` already carried `'governance/'`, a key that glob
+can never produce, and the map had been serving it for as long as it had existed.
+The precedent for a registered root outside the glob's shape was in use before
+this work, and it is what makes the retirement reachable at all. Everything below
+follows from taking it.
+
+`assertToolingTestRootRegistrationIsComplete()` now splits its keys **by shape**
+rather than exempting any by name: keys matching the glob's own form are compared
+against the glob's listing in both directions, and every key outside that form —
+`governance/` and the three `html-report/*` keys alike — is checked directly for
+existence with `is_dir()` or `is_file()`. A typo, a rename or a deletion under
+the viewer is therefore caught exactly as one under `scripts/` is.
+
+**One direction of that check is missing for these keys, and accepting it is a
+decision rather than an oversight.** `actualToolingTestRootsOnDisk()` can only
+produce paths of the two glob shapes, so nothing answers "on disk but not
+registered" for anything outside them. A new root-level tooling project added by
+someone who does not know the map is inventoried under whatever owner
+`classifyOwner()` falls through to, and `composer architecture:check` stays
+green.
+
+The gap is pre-existing rather than introduced here: `governance/` has had it
+since the day it was registered, and this work's contribution is that the
+function now states the limitation in its own docblock instead of carrying a
+claim that the exemption was deliberate. Closing it needs a *closed population*
+of root-level tooling artifacts — some rule that decides which of the
+repository's top-level directories ought to be in this map — and that is a
+design question about what the map is for, not a line of code. Deriving such a
+population wrongly would be worse than not deriving it: it would refuse for
+directories that were never meant to be registered, and the pressure would be to
+widen it until it refused for nothing.
+
+**The condition for revisiting:** a **third** subject outside the glob's shape.
+At one, `governance/`, a reminder was enough; at two it is still cheaper to keep
+a literal map than to define the population that would generate it. A third says
+the shape is a recurring pattern rather than two exceptions, and at that point
+deriving the population pays for the design work. Independently of the count: if
+a root-level tooling artifact is ever found unregistered *after the fact*, that
+is evidence the map is not being remembered, and the count stops being the
+argument.
 
 **`NON_MANIFEST_TEST_OWNERS['HtmlReport']` is dropped, and it could not have been
 kept.** Not a preference: the two constants are mutually exclusive here.
