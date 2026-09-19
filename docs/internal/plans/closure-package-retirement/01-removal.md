@@ -48,20 +48,24 @@ Three further traps, all measured:
 
 ## The concept is published as prose, in columns that survive
 
-Three groups, 128 rows, all of them values of `disposition` — a column this work
+Three groups, 129 rows, all of them values of `disposition` — a column this work
 keeps:
 
 | Artifact                      | Rows | What the row says                |
 | ----------------------------- | ---- | -------------------------------- |
-| `documentation-ownership.tsv` | 93   | names a migration package        |
+| `documentation-ownership.tsv` | 94   | names a migration package        |
 | `documentation-ownership.tsv` | 5    | `P0 governance documentation; …` |
 | `test-ownership.tsv`          | 30   | names a closure package          |
 
 The 5-row group is the one two drafts missed, and it is the dangerous shape: it
-carries a **P-token inside the prose of a surviving column**. Arithmetic confirms
-it — the file holds 99 P-tokens, of which 94 are column values and exactly 5 are
-these. An acceptance that watches only the column would report success with the
-concept still published.
+carries a **P-token inside the prose of a surviving column**. An acceptance that
+watches only the column would report success with the concept still published.
+
+The first group is 94 and not the 93 measured at planning time: the tree moved
+under this work, and a merge added one ADR that the generator dispositions with
+the same sentence. That is the ordinary shape of this group, not a surprise —
+the number is a property of the tree the work lands on, so **re-derive it at the
+base the branch actually sits on** rather than carrying it forward.
 
 Because these rows move in a surviving column, the oracle flags them by design.
 The package that changes them states the expected count **before** P3 runs: a
@@ -115,30 +119,59 @@ null given`. The governance test joins because it pins `version` at `2`.
   // variable, and the tsv() header/row pairs
   ```
 
-**Definition of Done.** One check per home, because one grep cannot cover them:
+**Definition of Done.** One check per home, because one grep cannot cover them.
+
+**Write every negative check as a refusal, not as a printed count.** `grep -c`
+inverts: it exits `0` when it found the forbidden string and `1` when the file
+is clean, so "`grep -c …` returns `0`" run as a shell gate is **green on a dirty
+tree and red on a clean one** — measured on this artifact, 94 hits exit 0 and a
+clean file exits 1. The form below (`! grep -q`) exits non-zero exactly when the
+check fails. And do not transpose these patterns into `git grep -E`: its POSIX
+matcher does not honour `\b` here and returns nothing where `grep` returns 94,
+which is the same defect wearing a different hat. Use `git grep -P` or `-wE` if
+a check must run against a revision.
 
 1. The generator, carrying **both** snapshot flags
    (`--output-directory=<scratch> --qmx-output=<scratch>/qmx.yaml`), exits 0.
-2. **The column's home:** no value of the slot's domain survives as a literal —
-   the list is the `value:` rows of `enumeration.tsv`, including `shared`,
-   `Run documentation` and `Finding documentation`. Matched as a quoted literal,
-   not as a substring: `shared` and `permanent` are ordinary English words and a
-   substring grep would redden on unrelated code.
-3. **The name's home:** `grep -c 'closure_package'` returns `0` for the
-   generator, the manifest **and the schema** — three files named explicitly.
+2. **The column's home:** no value of the slot's domain survives as a quoted
+   literal. **Derive the domain by command, do not read it off a list.**
+   `enumeration.tsv` was hand-snapped and its `value:` rows are missing `P6-E`,
+   which lived in two manifest declarations and reached two artifacts — a
+   surviving `'P6-E'` would have passed a check built from that list. Derive it
+   instead from the base commit:
+
+   ```
+   git show <base>:docs/internal/generated/modular-architecture/documentation-ownership.tsv \
+     | cut -f3 | tail -n +2 | sort -u          # and the same for test-ownership.tsv, column 10
+   ```
+
+   Match as a quoted literal, not as a substring: `shared` and `permanent` are
+   ordinary English words and a substring grep would redden on unrelated code.
+3. **The name's home:** `! grep -q 'closure_package' <file>` for the generator,
+   the manifest **and the schema** — three files named explicitly. A list of
+   three files is not a sweep: close with `git grep -l closure_package` over the
+   tree as well, so a fourth home cannot hide behind the named three.
 4. **The prose's home, and it needs two checks, not one.** The rendered
-   `documentation-ownership.tsv` must contain no `P`-token
-   (`grep -cE '\bP[0-8](-[A-E])?\b'` → `0`), which covers the column and the 5
-   rows inside `disposition`. That is not enough on its own: the 93 rows end in
-   `…migration package."` and carry **no P-token at all**, so a token check
+   `documentation-ownership.tsv` must carry no `P`-token
+   (`! grep -qE '\bP[0-8](-[A-E])?\b' <file>`), which covers the column and the
+   5 rows inside `disposition`. That is not enough on its own: the 93 rows end
+   in `…migration package."` and carry **no P-token at all**, so a token check
    passes over every one of them. The second check is for the wording —
    `migration package` and `closure package` must both be absent. Measured to
    make the point: of `test-ownership.tsv`'s 310 P-tokens, all 310 are column
    values and its 30 prose rows contain none.
-5. **The config's home:** `qmx.yaml` has no `P`-token.
-6. `vendor/bin/phpstan analyse` clean; `validateP4Target` and the three dead
-   `$defs` have no occurrence left; the governance test passes at version 3.
+5. **The config's home:** `qmx.yaml` carries no `P`-token.
+6. `vendor/bin/phpstan analyse` clean (it needs `--memory-limit=512M`, as
+   `composer phpstan` passes); `validateP4Target` and the three dead `$defs`
+   have no occurrence left; the governance test passes at version 3.
 7. The number of `disposition` rows whose text changes is stated in the report.
+
+**Expected red until P3 publishes.** `ModularArchitectureGovernanceIntegrationTest`
+runs `generate-modular-architecture.php --check` first, which compares the
+published artifacts against a fresh render. That test and `composer
+architecture:check` are red by construction in P1's and P2's trees. Publishing
+from a package to make them green is wrong — it ships artifacts missing the
+other package's changes.
 
 ## P2 — test generator
 
@@ -147,7 +180,8 @@ null given`. The governance test joins because it pins `version` at `2`.
 **What changes.**
 
 - `classifyOwner()` stops deriving a value and returns the owner alone. This is
-  where `permanent` lives — 622 of 933 rows.
+  where `permanent` lives — 622 of the artifact's 932 data rows, the majority
+  value and not a P-label at all.
 - `TOOLING_TEST_ROOT_OWNERS` maps each root to an owner rather than a pair.
 - `fixtureDirectoryRows()` loses the `packages` accumulator and the
   `closure_packages` column; the plural is that aggregate and nothing else.
@@ -157,11 +191,16 @@ null given`. The governance test joins because it pins `version` at `2`.
 - `--classification-probe=` stops printing the value.
 - The 30 prose rows of `test-ownership.tsv` are rewritten.
 
-**Definition of Done.** Items 1–3, 6 and 7 of P1 against this file, plus both
+**Definition of Done.** Items 2, 3, 6 and 7 of P1 against this file, plus both
 prose checks of item 4 against the rendered `test-ownership.tsv`: no `P`-token,
 and no occurrence of `closure package`. The second is the one that matters here
 — its 30 prose rows carry no token, so the token check alone passes over all of
-them.
+them. Check the rendered `test-fixture-directories.tsv` too: it is the other
+carrier, and it loses the plural column.
+
+Item 1 is **not** inherited as written: this generator takes
+`--output-directory=` only and refuses `--qmx-output=` as an unknown argument.
+Its snapshot call is the flag alone, and it renders seven artifacts, not four.
 
 ## P3 — re-derivation and acceptance
 

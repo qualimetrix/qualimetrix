@@ -9,8 +9,10 @@ landed, and what still reads the label is the schema that validates its shape.
 ## The concept has four homes, and only one of them is the column
 
 Two review rounds found this one surface at a time, each time by a different
-blindness. The enumeration is `enumeration.tsv` — 216 places. What matters is
-not the count but the kinds, because each kind needs a different check:
+blindness. The enumeration is `enumeration.tsv` — 217 rows, the last of them
+added while executing stage 01 to record a domain value the other 216 missed.
+What matters is not the count but the kinds, because each kind needs a
+different check:
 
 | Home                                | Where it is                                              |
 | ----------------------------------- | -------------------------------------------------------- |
@@ -119,15 +121,19 @@ rows of prose and two config comments.
 **Not covered, and stage 01 measured that the exclusion is not empty.** The
 enumeration cannot see a label spelled into an identifier or into prose that is
 not a slot value, and this plan said nothing of that shape was known to exist.
-Executing stage 01 found otherwise: ten constants in the test generator carry a
-P-label in their name (`P3_TEST_PATHS`, `P4_IGNORED_FIXTURE_PATHS`,
-`P6_A_FINDING_TEST_PATHS` and seven more), and both generators keep P-labels in
-refusal messages and in retired-path records. **None of it reaches a published
-artifact** — every rendered file holds zero P-tokens after stage 01 — so it is
-naming inside two development scripts, not a concept the product still
-publishes. It is a separate subject from the slot and is deliberately left to
-its own work; it is recorded here so the next reader does not mistake the
-enumeration's silence for absence.
+Executing stage 01 found otherwise: **eleven** constants in the test generator
+carry a P-label in their name, and both generators keep P-labels in refusal
+messages and in retired-path records. The count is a derivation, not a list to
+copy — `git grep -cE '^const P[0-9]' -- scripts/generate-modular-architecture-test-inventory.php`.
+The first pass at this paragraph said ten, because the pattern used to count
+them could not match `P6_C_BASELINE_PATHS_SHA256` — an enumeration understating
+its own subject, written into the very paragraph warning about that.
+
+**None of it reaches a published artifact** — every rendered file holds zero
+P-tokens after stage 01 — so it is naming inside two development scripts, not a
+concept the product still publishes. It is a separate subject from the slot and
+is deliberately left to its own work; it is recorded here so the next reader
+does not mistake the enumeration's silence for absence.
 
 The honest statement about this enumeration is not that it is complete, but that
 each of its three revisions was found incomplete by a different check than the

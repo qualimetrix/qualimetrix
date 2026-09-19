@@ -200,6 +200,7 @@ docs/internal/modular-architecture-manifest.schema.json	311	schema:seam	"closes_
 docs/internal/modular-architecture-manifest.schema.json	313	schema:pattern	"pattern": "^P[1-8](?:-[A-E])?$"
 governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php	69	consumer:version	self::assertSame(2, $manifest['version']);
 docs/internal/modular-architecture-manifest.json	955 declarations	manifest:field	closure_package per declaration
+docs/internal/modular-architecture-manifest.json	13516,19779	manifest:value-only	P6-E lives only in the manifest; it is in no value: row, so the domain is wider than this file
 docs/internal/modular-architecture-manifest.json	2501 consumers	manifest:seam	closes_in, null on every one
 docs/internal/modular-architecture-manifest.json	1	manifest:version	version = 2
 docs/internal/generated/modular-architecture/documentation-ownership.tsv	col 3	artifact:column	closure_package; 160 data rows
@@ -207,7 +208,7 @@ docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	
 docs/internal/generated/modular-architecture/production-ownership.tsv	col 6	artifact:column	closure_package; 955 data rows
 docs/internal/generated/modular-architecture/production-reporting-classification.tsv	col 5	artifact:column	closure_package; 78 data rows
 docs/internal/generated/modular-architecture/production-state-services.tsv	col 4	artifact:column	closure_package; 102 data rows
-docs/internal/generated/modular-architecture/test-ownership.tsv	col 10	artifact:column	closure_package; 933 data rows
+docs/internal/generated/modular-architecture/test-ownership.tsv	col 10	artifact:column	closure_package; 932 data rows
 docs/internal/generated/modular-architecture/test-fixture-directories.tsv	col 3	artifact:column	closure_packages; 121 data rows
 docs/internal/generated/modular-architecture/documentation-ownership.tsv	93 rows	artifact:prose	disposition prose
 docs/internal/generated/modular-architecture/documentation-ownership.tsv	5 rows	artifact:prose	disposition prose, P-token inside
