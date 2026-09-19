@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
+use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+
 /**
  * The suppression a producer's own `rules:` section configures, read off the
  * raw options array — every option, under every spelling.
@@ -43,13 +47,62 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
 final readonly class ConfiguredSuppression
 {
     /**
-     * The options, spelled as an author writes them. These three names are the
-     * enumeration every consumer shares: a fourth option is added here, and
-     * the applying, judging and reporting sides gain it in the same edit.
+     * The options, spelled as an author writes them.
+     *
+     * The enumeration itself moved to {@see FrameworkOptionKeys}: the sides
+     * that answer *about* these keys — the refusal listing what a rule allows,
+     * and the `rules` command advertising it — cannot reach into this
+     * namespace, and a copy kept for them was one of six.
+     *
+     * What stays here is spelling, and it stays as literals rather than being
+     * derived, for a reason worth stating because the opposite reads as tidier:
+     * the guard in `ConfiguredSuppressionTest` recognises a reader by a
+     * suppression key written *at* a subscript, and a file that folded its
+     * spellings out of a canonical name would subscript with a variable and
+     * become invisible to the guard that keeps it the only reader. The snake
+     * constants are also read by name elsewhere — `UnboundSuppressionAudit`
+     * reports the option a dead pattern was written under — so they are a
+     * published spelling, not an internal convenience.
+     *
+     * Adding a fourth option is therefore two edits, not one: the name in
+     * `FrameworkOptionKeys`, and its pair of spellings here.
+     * {@see self::assertSpellingsMatchTheOwner()} is what keeps the second from
+     * being forgotten, and it judges the snake side — the camel twin written
+     * inside each accessor is the guard's own anchor and is covered by the
+     * round-trip test above, which reads each option under both spellings.
      */
     public const string PATHS = 'suppress_paths';
     public const string NAMESPACES = 'suppress_namespaces';
     public const string NAMESPACE_CHANNELS = 'suppress_namespace_channels';
+
+    /**
+     * Guards the sentence above: a constant here is the snake spelling of a key
+     * {@see FrameworkOptionKeys} declares, and nothing else. A name that drifts
+     * apart from the owner — or an option added to one side only — fails here
+     * rather than in whichever consumer happens to read the stale half.
+     */
+    public static function assertSpellingsMatchTheOwner(): void
+    {
+        $authored = [self::PATHS, self::NAMESPACES, self::NAMESPACE_CHANNELS];
+        sort($authored);
+
+        $derived = array_map(
+            static fn(string $key): string => ConfigKeySpelling::rewriteLike(
+                ConfigKeySpelling::normalize($key),
+                'a_b',
+            ),
+            FrameworkOptionKeys::all(),
+        );
+        sort($derived);
+
+        if ($authored !== $derived) {
+            throw new LogicException(\sprintf(
+                'The suppression options spelled here (%s) are not the keys FrameworkOptionKeys declares (%s).',
+                implode(', ', $authored),
+                implode(', ', $derived),
+            ));
+        }
+    }
 
     /**
      * `suppress_paths` patterns.

@@ -1072,22 +1072,30 @@ bin/qmx rules --group=complexity
 4 rules available
 
 Complexity
-  complexity.cognitive                     Checks cognitive complexity at method and class levels
-    --cognitive-warning (--rule-opt=complexity.cognitive:callable.warning=...)
-    --cognitive-error (--rule-opt=complexity.cognitive:callable.error=...)
-    --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
-    --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
-  complexity.ccn                    Checks cyclomatic complexity at method and class levels
+  complexity.ccn                           Checks cyclomatic complexity at method and class levels
+    complexity.ccn judges complexity.ccn, complexity.ccn.max
+    options: enabled, threshold
+    options at callable: enabled, error, threshold, warning
+    options at class: enabled, max-error, max-warning, threshold
     --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
     --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
-    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
-    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
+    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max-warning=...)
+    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max-error=...)
   ...
+
+Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppress-paths
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
 ```
 
-Rules are grouped by category, and each CLI alias is listed with the long
-`--rule-opt` form it expands to. Default threshold values are not part of this
-output — see [Default thresholds](../reference/default-thresholds.md).
+Rules are grouped by category. `options:` names what the rule accepts in its
+own block, and an `options at <level>:` line names what a level slot accepts —
+these are the complete set, whether or not an option also has a CLI alias. The
+three keys in the footer are legal under every rule. `enabled` is listed per
+rule rather than in the footer because one rule, `architecture.unassigned-class`,
+does not take it — its switch is `mode`.
+
+Each CLI alias is listed with the long `--rule-opt` form it expands to. Default
+threshold values are not part of this output — see
+[Default thresholds](../reference/default-thresholds.md).

@@ -1077,23 +1077,30 @@ bin/qmx rules --group=complexity
 4 rules available
 
 Complexity
-  complexity.cognitive                     Checks cognitive complexity at method and class levels
-    --cognitive-warning (--rule-opt=complexity.cognitive:callable.warning=...)
-    --cognitive-error (--rule-opt=complexity.cognitive:callable.error=...)
-    --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
-    --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
-  complexity.ccn                    Checks cyclomatic complexity at method and class levels
+  complexity.ccn                           Checks cyclomatic complexity at method and class levels
+    complexity.ccn judges complexity.ccn, complexity.ccn.max
+    options: enabled, threshold
+    options at callable: enabled, error, threshold, warning
+    options at class: enabled, max-error, max-warning, threshold
     --cyclomatic-warning (--rule-opt=complexity.ccn:callable.warning=...)
     --cyclomatic-error (--rule-opt=complexity.ccn:callable.error=...)
-    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max_warning=...)
-    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max_error=...)
+    --cyclomatic-class-warning (--rule-opt=complexity.ccn:class.max-warning=...)
+    --cyclomatic-class-error (--rule-opt=complexity.ccn:class.max-error=...)
   ...
+
+Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppress-paths
 
 Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
         bin/qmx check --rule-opt=<name>:<option>=<value>
 ```
 
-Правила сгруппированы по категориям, рядом с каждым CLI-алиасом показана
-длинная форма `--rule-opt`, в которую он разворачивается. Значений порогов по
-умолчанию в этом выводе нет — они описаны в
-[Пороговых значениях по умолчанию](../reference/default-thresholds.ru.md).
+Правила сгруппированы по категориям. Строка `options:` называет то, что
+правило принимает в своём блоке, а строка `options at <уровень>:` — то, что
+принимает слот уровня; это полный набор, независимо от того, есть ли у опции
+CLI-алиас. Три ключа в подвале допустимы под любым правилом. `enabled`
+печатается у каждого правила, а не в подвале, потому что одно правило —
+`architecture.unassigned-class` — его не принимает: его выключатель `mode`.
+
+Каждый CLI-алиас показан вместе с длинной формой `--rule-opt`, в которую он
+разворачивается. Значения порогов по умолчанию в этот вывод не входят — см.
+[Пороги по умолчанию](../reference/default-thresholds.ru.md).

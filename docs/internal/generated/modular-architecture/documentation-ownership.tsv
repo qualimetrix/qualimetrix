@@ -55,6 +55,7 @@ docs/adr/0059-declared-layer-policy-and-architecture-governance.md	Architecture.
 docs/adr/0060-published-vocabulary-and-name-ownership.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0061-configuration-miss-and-refusal-semantics.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0062-health-scores-measure-what-they-cover.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/adr/0063-one-declaration-answers-about-a-rules-options.md	Analysis.Finding	P6-A	"Move or update atomically with the named migration package."
 docs/adr/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

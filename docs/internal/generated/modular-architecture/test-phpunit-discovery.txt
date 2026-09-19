@@ -307,6 +307,8 @@ Available tests:
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itListsEveryRegisteredRule
+ - Qualimetrix\Governance\ConsoleComposition\RulesListingAgreesWithRefusalTest::itAdvertisesExactlyWhatTheRefusalAdmitsAtEveryDepth
+ - Qualimetrix\Governance\ConsoleComposition\RulesListingAgreesWithRefusalTest::itResolvesEveryCliAliasToAnAcceptedOption
  - Qualimetrix\Governance\ControlRigLedger\TrackedLedgerNonEmptinessTest::itLoadsTheRepositorysOwnLedger
  - Qualimetrix\Governance\DirectiveVocabulary\DirectiveEffectVocabularyAgreementTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther
  - Qualimetrix\Governance\DirectiveVocabulary\DirectiveEffectVocabularyAgreementTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther
@@ -4979,6 +4981,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"no branch of a union matches"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAValueOfAnyOtherForm"null where null is not named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itRefusesAnEmptyClosedSet
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAddsTheFrameworkKeysAtTheRulesOwnDepthAndNeverInsideASlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAnswersToASlotNameUnderAnySpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLeavesAKeyTheClassAnswersAboutItselfOutOfBothAnswers
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesABareTargetAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesADottedTargetInsideItsSlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesEverySpellingOfOneTargetAtOneAddress
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesNothingForATargetNobodyAccepts
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itNamesTheLevelSlotsInDeclarationOrder
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itReadsADotThatNamesNoSlotAsPartOfTheKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itSortsWhatIsWritableAtEachDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"empty string"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"false"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionValueWrittennessTest::itAgreesWithThresholdParserOnWhetherAKeyIsWritten"null (the `~` case)"
@@ -7668,7 +7683,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itFailsOnAGroupNoProducerHas
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itFailsOnAGroupThatDiffersOnlyInCase
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itFiltersRulesByGroup
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itLeavesAnAliasTargetNothingAcceptsInTheSpellingItsAuthorGave
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itListsRulesUnderGroupHeaders
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itPrintsNoOptionsLineForARuleWhoseDeclarationAcceptsNothing
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itPrintsTheMetricsAChannelDeclaresItJudges
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itSaysNothingAboutAChannelThatJudgesNoMetric
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itSetsTheCommandNameAndDescription

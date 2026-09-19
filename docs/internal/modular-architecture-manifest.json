@@ -59,6 +59,16 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\ConfiguredSuppression",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionKeyRecognition",
           "closes_in": null
         },
@@ -9737,6 +9747,25 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\FrameworkOptionKeys": {
+      "path": "src/Analysis/Finding/Contract/Rule/FrameworkOptionKeys.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionKeySet": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php",
       "kind": "class",
@@ -9993,6 +10022,28 @@
       "visibility": "internal",
       "closure_package": "P6-A",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionAddress": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionAddress.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShape": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionShape.php",
@@ -11518,6 +11569,11 @@
       "visibility": "contract",
       "closure_package": "P6-A",
       "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+          "closes_in": null
+        },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
@@ -18708,6 +18764,25 @@
       "owner": "Infrastructure.Console",
       "visibility": "internal",
       "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter": {
+      "path": "src/Infrastructure/Console/RuleListingPresenter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P6-A",
       "consumers": [
         {
           "owner": "Infrastructure.DependencyInjection",

@@ -260,6 +260,45 @@ final class SelfTest
         );
         $this->same([], $levels->staleRows(), 'a row that did translate something is not');
 
+        // A case runs in a worker with a RenameMaps of its own, and a row whose
+        // only work is on that case's input fires there and nowhere else. The
+        // parent judges staleness, so the credit has to travel; without it
+        // `root-key-renamed` — a control whose whole subject is an input-only
+        // translation — reported its own row stale and failed for years.
+        $inWorker = RenameMaps::fromPairs([
+            ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => 'inputs.tsv'],
+        ]);
+        $inWorker->reverse("suppress_ns:\n  - Corpus\\X\n");
+        $this->same(
+            ['inputs.tsv: "suppress_namespaces:" -> "suppress_ns:"' => 1],
+            $inWorker->firedRows(),
+            'a map reports what it translated, keyed by the row that did it',
+        );
+
+        $inParent = RenameMaps::fromPairs([
+            ['old' => 'suppress_namespaces:', 'new' => 'suppress_ns:', 'source' => 'inputs.tsv'],
+        ]);
+        $this->same(
+            ['inputs.tsv: "suppress_namespaces:" -> "suppress_ns:"'],
+            $inParent->staleRows(),
+            'a row that fired only in another process is stale until it is credited',
+        );
+        $inParent->creditRowsFiredElsewhere($inWorker->firedRows());
+        $this->same([], $inParent->staleRows(), 'and is not stale once the worker\'s credit arrives');
+
+        // Silently dropping a credit for a row this process does not declare
+        // would report a live row as stale — the failure the credit exists to
+        // remove, arriving by a different door.
+        $refused = false;
+
+        try {
+            $inParent->creditRowsFiredElsewhere(['inputs.tsv: "never" -> "declared"' => 1]);
+        } catch (GateError) {
+            $refused = true;
+        }
+
+        $this->same(true, $refused, 'crediting a row this process does not declare is refused');
+
         $symbols = RenameMaps::fromPairs([
             ['old' => 'Qualimetrix\\Analysis\\Finding\\Contract\\Violation', 'new' => 'Qualimetrix\\Analysis\\Finding\\Contract\\Finding', 'source' => 'symbols.tsv'],
         ]);

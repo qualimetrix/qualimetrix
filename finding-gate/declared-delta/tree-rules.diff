@@ -1,0 +1,206 @@
+--- candidate
++++ reference (mapped)
+@@ -5,40 +5,25 @@
+-    options: enabled, unused-directive-severity
+-Architecture
+-  architecture.circular-dependency         Detects circular dependencies between classes
+-    options: direct-as-error, enabled, max-cycle-size
+-    --circular-deps (--rule-opt=architecture.circular-dependency:enabled=...)
+-    --max-cycle-size (--rule-opt=architecture.circular-dependency:max-cycle-size=...)
+-  architecture.layer-violation             Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+-    options: enabled, severity
+-    --layer-violation (--rule-opt=architecture.layer-violation:enabled=...)
+-    --layer-violation-severity (--rule-opt=architecture.layer-violation:severity=...)
+-  architecture.unassigned-class            Counts analysed class-like declarations that no declared layer claims.
+-    options: mode
+-    --unassigned-class-mode (--rule-opt=architecture.unassigned-class:mode=...)
+-Code-smell
+-  code-smell.boolean-argument              Detects boolean arguments in method/function signatures
+-    options: allowed-prefixes, enabled, flag-promoted-properties
+-  code-smell.constructor-overinjection     Checks number of constructor parameters (dependencies)
+-    code-smell.constructor-overinjection judges code-smell.parameter-count
+-    options: enabled, error, threshold, warning
+-    --constructor-overinjection-warning (--rule-opt=code-smell.constructor-overinjection:warning=...)
+-    --constructor-overinjection-error (--rule-opt=code-smell.constructor-overinjection:error=...)
+-  code-smell.count-in-loop                 Detects count() calls in loop conditions
+-    options: enabled
+-  code-smell.debug-code                    Detects debug code (var_dump, print_r, dd, etc)
+-    options: enabled
+-  code-smell.empty-catch                   Detects empty catch blocks
+-    options: enabled
+-  code-smell.error-suppression             Detects usage of error suppression operator (@)
+-    options: allowed-functions, enabled
+-  code-smell.eval                          Detects usage of eval() function
+-    options: enabled
+-  code-smell.exit                          Detects usage of exit() and die()
+-    options: enabled
+-  code-smell.goto                          Detects usage of goto statement
+-    options: enabled
+-  code-smell.identical-subexpression       Detects identical sub-expressions indicating copy-paste errors or logic bugs
+-    options: enabled
+-  code-smell.long-parameter-list           Checks number of parameters per method
+-    code-smell.long-parameter-list judges code-smell.parameter-count
+-    options: enabled, error, threshold, vo-error, vo-threshold, vo-warning, warning
++Architecture
++  architecture.circular-dependency         Detects circular dependencies between classes
++    --circular-deps (--rule-opt=architecture.circular-dependency:enabled=...)
++    --max-cycle-size (--rule-opt=architecture.circular-dependency:max-cycle-size=...)
++  architecture.layer-violation             Detects dependencies between layers that are not explicitly allowed by the architecture policy.
++    --layer-violation (--rule-opt=architecture.layer-violation:enabled=...)
++    --layer-violation-severity (--rule-opt=architecture.layer-violation:severity=...)
++  architecture.unassigned-class            Counts analysed class-like declarations that no declared layer claims.
++    --unassigned-class-mode (--rule-opt=architecture.unassigned-class:mode=...)
++Code-smell
++  code-smell.boolean-argument              Detects boolean arguments in method/function signatures
++  code-smell.constructor-overinjection     Checks number of constructor parameters (dependencies)
++    code-smell.constructor-overinjection judges code-smell.parameter-count
++    --constructor-overinjection-warning (--rule-opt=code-smell.constructor-overinjection:warning=...)
++    --constructor-overinjection-error (--rule-opt=code-smell.constructor-overinjection:error=...)
++  code-smell.count-in-loop                 Detects count() calls in loop conditions
++  code-smell.debug-code                    Detects debug code (var_dump, print_r, dd, etc)
++  code-smell.empty-catch                   Detects empty catch blocks
++  code-smell.error-suppression             Detects usage of error suppression operator (@)
++  code-smell.eval                          Detects usage of eval() function
++  code-smell.exit                          Detects usage of exit() and die()
++  code-smell.goto                          Detects usage of goto statement
++  code-smell.identical-subexpression       Detects identical sub-expressions indicating copy-paste errors or logic bugs
++  code-smell.long-parameter-list           Checks number of parameters per method
++    code-smell.long-parameter-list judges code-smell.parameter-count
+@@ -50,4 +35,2 @@
+-    options: enabled
+-  code-smell.unreachable-code              Detects unreachable code after terminal statements
+-    code-smell.unreachable-code judges code-smell.unreachable-code
+-    options: enabled, error, threshold, warning
++  code-smell.unreachable-code              Detects unreachable code after terminal statements
++    code-smell.unreachable-code judges code-smell.unreachable-code
+@@ -58,5 +41,3 @@
+-    options: enabled
+-Cohesion
+-  cohesion.lcom                            Checks Lack of Cohesion of Methods (high values indicate class should be split)
+-    cohesion.lcom judges cohesion.lcom
+-    options: enabled, error, exclude-methods, exclude-readonly, min-methods, threshold, warning
++Cohesion
++  cohesion.lcom                            Checks Lack of Cohesion of Methods (high values indicate class should be split)
++    cohesion.lcom judges cohesion.lcom
+@@ -71,3 +52,0 @@
+-    options: enabled, threshold
+-    options at callable: enabled, error, threshold, warning
+-    options at class: enabled, max-error, max-warning, threshold
+@@ -80,3 +58,0 @@
+-    options: enabled, threshold
+-    options at callable: enabled, error, threshold, warning
+-    options at class: enabled, max-error, max-warning, threshold
+@@ -89,3 +64,0 @@
+-    options: enabled, threshold
+-    options at callable: enabled, error, threshold, warning
+-    options at class: enabled, max-error, max-warning, threshold
+@@ -98,1 +70,0 @@
+-    options: enabled, error, exclude-data-classes, threshold, warning
+@@ -104,7 +75,3 @@
+-    options: enabled
+-Coupling
+-  coupling.cbo                             Checks CBO (Coupling Between Objects) at class and namespace levels
+-    coupling.cbo judges coupling.cbo, coupling.cbo-app
+-    options: enabled, error, scope, threshold, warning
+-    options at class: enabled, error, scope, threshold, warning
+-    options at namespace: enabled, error, min-class-count, threshold, warning
++Coupling
++  coupling.cbo                             Checks CBO (Coupling Between Objects) at class and namespace levels
++    coupling.cbo judges coupling.cbo, coupling.cbo-app
+@@ -116,1 +83,0 @@
+-    options: enabled, error, threshold, warning
+@@ -121,1 +87,0 @@
+-    options: enabled, include-namespaces, max-distance-error, max-distance-warning, min-class-count, threshold
+@@ -126,3 +91,0 @@
+-    options: enabled, max-error, max-warning, threshold
+-    options at class: enabled, max-error, max-warning, min-afferent, threshold
+-    options at namespace: enabled, max-error, max-warning, min-afferent, min-class-count, threshold
+@@ -134,5 +96,3 @@
+-    options: enabled
+-Design
+-  design.data-class                        Detects classes whose public interface is mostly data access rather than behavior (Data Classes)
+-    design.data-class judges design.woc
+-    options: enabled, exclude-exceptions, exclude-promoted-only, exclude-readonly, min-members, wmc-threshold, woc-threshold
++Design
++  design.data-class                        Detects classes whose public interface is mostly data access rather than behavior (Data Classes)
++    design.data-class judges design.woc
+@@ -147,5 +107,3 @@
+-    options: enabled, error, threshold, warning
+-    --dit-warning (--rule-opt=design.dit:warning=...)
+-    --dit-error (--rule-opt=design.dit:error=...)
+-  design.god-class                         Detects God Classes (overly complex, large, low cohesion)
+-    options: class-loc-threshold, enabled, exclude-readonly, lcom-threshold, min-criteria, min-methods, tcc-threshold, wmc-threshold
++    --dit-warning (--rule-opt=design.dit:warning=...)
++    --dit-error (--rule-opt=design.dit:error=...)
++  design.god-class                         Detects God Classes (overly complex, large, low cohesion)
+@@ -161,1 +119,0 @@
+-    options: enabled, error, threshold, warning
+@@ -166,1 +123,0 @@
+-    options: enabled, error, threshold, warning
+@@ -171,1 +127,0 @@
+-    options: enabled, error, threshold, warning
+@@ -176,1 +131,0 @@
+-    options: enabled, error, threshold, warning
+@@ -181,21 +135,12 @@
+-    options: enabled
+-Duplication
+-  duplication.clone                        Detects duplicated code blocks
+-    options: enabled, error, min-lines, min-tokens, threshold, warning
+-Health
+-  health.cohesion                          Checks the cohesion health score against its thresholds
+-    options: enabled
+-  health.complexity                        Checks the complexity health score against its thresholds
+-    options: enabled
+-  health.coupling                          Checks the coupling health score against its thresholds
+-    options: enabled
+-  health.maintainability                   Checks the maintainability health score against its thresholds
+-    options: enabled
+-  health.overall                           Checks the overall health score against its thresholds
+-    options: enabled
+-  health.typing                            Checks the typing health score against its thresholds
+-    options: enabled
+-Maintainability
+-  maintainability.mi                       Checks Maintainability Index (lower values indicate harder to maintain code)
+-    maintainability.mi judges maintainability.mi
+-    options: enabled, error, exclude-tests, min-statements, threshold, warning
++Duplication
++  duplication.clone                        Detects duplicated code blocks
++Health
++  health.cohesion                          Checks the cohesion health score against its thresholds
++  health.complexity                        Checks the complexity health score against its thresholds
++  health.coupling                          Checks the coupling health score against its thresholds
++  health.maintainability                   Checks the maintainability health score against its thresholds
++  health.overall                           Checks the overall health score against its thresholds
++  health.typing                            Checks the typing health score against its thresholds
++Maintainability
++  maintainability.mi                       Checks Maintainability Index (lower values indicate harder to maintain code)
++    maintainability.mi judges maintainability.mi
+@@ -208,13 +153,7 @@
+-    options: enabled
+-  security.hardcoded-credentials           Detects hardcoded credentials in code
+-    options: enabled
+-  security.sensitive-parameter             Detects sensitive parameters missing #[\SensitiveParameter] attribute
+-    options: enabled
+-  security.sql-injection                   Detects potential SQL injection vulnerabilities
+-    options: enabled
+-  security.xss                             Detects potential XSS vulnerabilities
+-    options: enabled
+-Size
+-  size.class-count                         Checks number of classes per namespace
+-    size.class-count judges size.class-count.sum
+-    options: enabled, error, threshold, warning
++  security.hardcoded-credentials           Detects hardcoded credentials in code
++  security.sensitive-parameter             Detects sensitive parameters missing #[\SensitiveParameter] attribute
++  security.sql-injection                   Detects potential SQL injection vulnerabilities
++  security.xss                             Detects potential XSS vulnerabilities
++Size
++  size.class-count                         Checks number of classes per namespace
++    size.class-count judges size.class-count.sum
+@@ -225,1 +164,0 @@
+-    options: enabled, error, threshold, warning
+@@ -230,1 +168,0 @@
+-    options: enabled, error, exclude-promoted-only, exclude-readonly, threshold, warning
+@@ -237,3 +174,0 @@
+-    options: enabled
+-
+-Every rule also takes: suppress-namespace-channels, suppress-namespaces, suppress-paths

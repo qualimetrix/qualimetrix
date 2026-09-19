@@ -1053,6 +1053,9 @@ final class Controls
             'finding-gate/cases/security/case.json',
             ['"security.sensitive-parameter@callable"' => '"security.sensitive-paramete2@callable"'],
             'the case claims the new channel',
+        ))->and(Mutation::renameInDerivedDeclarations(
+            ['security.sensitive-parameter' => 'security.sensitive-paramete2'],
+            'any derived declaration that names the channel names the new one',
         ));
     }
 
@@ -1265,10 +1268,11 @@ final class Controls
                 "'suppressNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE," => "'suppressNs' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,",
             ],
             "the root key's document spelling is renamed: the ENTRIES source path and its normalization policy, both keyed by that spelling rather than by the SUPPRESS_NAMESPACES result-key constant",
-        )->and(Mutation::edit(
-            'finding-gate/cases/rule-exclusion-ledger/qmx.yaml',
-            ["suppress_namespaces:\n  - Corpus\\RuleExclusionLedger\\GloballyExcluded" => "suppress_ns:\n  - Corpus\\RuleExclusionLedger\\GloballyExcluded"],
-            'the one case addressing the root key writes the new name at root indent; the per-rule key of the same spelling, nested under rules:, is untouched',
+        )->and(Mutation::renameRootKeyInCorpus(
+            'suppress_namespaces',
+            'suppress_ns',
+            'every case addressing the root key writes the new name at root indent; the per-rule key of the same'
+                . ' spelling, nested under rules:, is untouched',
         ));
     }
 
@@ -1504,6 +1508,15 @@ final class Controls
      * and say nothing about the mechanism it is for. Shared by every control
      * built on that rename so the three cannot drift apart over which
      * declaration they carry.
+     *
+     * The step's derived declarations are the third, and they were missing until
+     * a step declared a delta for `tree|rules`: the measured diff names whatever
+     * rules fell inside its hunks, so leaving it stale failed one control on the
+     * declaration rather than on the mechanism — and left its twin green, decided
+     * by nothing but which rule the hunks happened to cover.
+     * {@see Mutation::renameInDerivedDeclarations()} carries it, and carries it
+     * unconditionally: a rename that finds nothing there is correct, because what
+     * a derived declaration contains is not a control's business.
      */
     private static function unusedPrivateRenameDeclarations(): Mutation
     {
@@ -1515,6 +1528,9 @@ final class Controls
             'finding-gate/cases/smells/case.json',
             ['"code-smell.unused-private@class"' => '"code-smell.unused-privat2@class"'],
             'the case claims the new channel',
+        ))->and(Mutation::renameInDerivedDeclarations(
+            ['code-smell.unused-private' => 'code-smell.unused-privat2'],
+            'any derived declaration that names the channel names the new one',
         ));
     }
 

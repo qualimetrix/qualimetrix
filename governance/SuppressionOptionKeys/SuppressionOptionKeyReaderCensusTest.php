@@ -35,6 +35,23 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
      */
     private const string RAW_READ = '/\\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z0-9_]+)*\\[\\s*(?:[\'"]suppress|ConfigSchema::SUPPRESS_)/';
 
+    /**
+     * A file holding two or more suppression spellings side by side in a list.
+     *
+     * The shape above only sees a key written *at* the subscript, and a reader
+     * that puts its spellings in a constant and subscripts with the loop
+     * variable is invisible to it. `RuleInputValidator` was exactly that for
+     * `suppress_namespace_channels`, and it was found by a reviewer rather than
+     * by this guard. What the pair of shapes recognises together is the real
+     * subject: holding the enumeration, however it is later used.
+     *
+     * Two, not one: a single mention is how the config schema declares an
+     * option and how a refusal names it, which are different acts this guard
+     * leaves alone.
+     */
+    private const string HELD_ENUMERATION =
+        '/[\'"]suppress[A-Za-z_]*[\'"]\\s*,\\s*[\'"]suppress[A-Za-z_]*[\'"]/';
+
     #[Test]
     public function itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey(): void
     {
@@ -49,7 +66,7 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
             $source = file_get_contents($file->getPathname());
             self::assertIsString($source, $file->getPathname());
 
-            if (preg_match(self::RAW_READ, $source) === 1) {
+            if (preg_match(self::RAW_READ, $source) === 1 || preg_match(self::HELD_ENUMERATION, $source) === 1) {
                 $readers[] = str_replace($root . '/', '', $file->getPathname());
             }
         }
@@ -57,7 +74,9 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
         sort($readers);
 
         self::assertSame([self::READER], $readers, \sprintf(
-            'A suppression option key is read outside %s; read it through ConfiguredSuppression instead.',
+            'A suppression option key is read, or its spellings are held as a list, outside %s;'
+            . ' read the value through ConfiguredSuppression and take the names from FrameworkOptionKeys,'
+            . ' which declares each on its own line and so holds no list of its own.',
             self::READER,
         ));
     }

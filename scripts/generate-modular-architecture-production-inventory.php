@@ -2480,6 +2480,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0047-suppression-is-not-exclusion.md' => ['Reporting', 'P6-D'],
         'docs/adr/0049-rule-option-key-recognition.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md' => ['Analysis.Finding', 'P6-A'],
+        'docs/adr/0063-one-declaration-answers-about-a-rules-options.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0050-configuration-refusal-carrier.md' => ['Analysis.Configuration', 'P3'],
         'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => ['Architecture.Governance', 'P2'],
         'src/Analysis/README.md' => ['Analysis.Run', 'P2'],

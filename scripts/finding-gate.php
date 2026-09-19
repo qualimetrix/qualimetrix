@@ -85,9 +85,17 @@ function runCaseWorker(Options $options): int
             $maps,
             $options->workerReverseInput,
         );
+        $artifacts = $run->forCase($case);
+
+        // Beside the artifacts, what this worker's own maps translated. A row
+        // whose only work is on a case's input fires here and in no other
+        // process, so without this the parent judges it stale.
         Fs::write(
             $options->workerOutput,
-            json_encode($run->forCase($case), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES),
+            json_encode(
+                ['artifacts' => $artifacts, 'mapHits' => $maps->firedRows()],
+                \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
+            ),
         );
     } finally {
         Fs::removeRecursively($temporaryDirectory);

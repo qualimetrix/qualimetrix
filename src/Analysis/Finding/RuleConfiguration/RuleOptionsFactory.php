@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -132,31 +133,29 @@ final class RuleOptionsFactory
     /**
      * Extracts suppress_namespaces from merged options and stores them in the provider.
      *
-     * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
     private function extractSuppressNamespaces(string $ruleName, array &$merged): void
     {
-        $namespaces = $this->takeAliasedOption($merged, 'suppressNamespaces', 'suppress_namespaces');
+        $namespaces = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACES);
         $this->registry->configureNamespaceExclusions($ruleName, $namespaces);
 
-        $channels = $this->takeAliasedOption($merged, 'suppressNamespaceChannels', 'suppress_namespace_channels');
+        $channels = $this->takeFrameworkOption($merged, FrameworkOptionKeys::NAMESPACE_CHANNELS);
         $this->registry->configureNamespaceChannelExclusions($ruleName, $channels);
     }
 
     /**
      * Extracts suppress_paths from merged options and stores them in the provider.
      *
-     * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
     private function extractSuppressPaths(string $ruleName, array &$merged): void
     {
-        $raw = $this->takeAliasedOption($merged, 'suppressPaths', 'suppress_paths');
+        $raw = $this->takeFrameworkOption($merged, FrameworkOptionKeys::PATHS);
 
         if (\is_string($raw)) {
             $patterns = [$raw];
@@ -176,8 +175,15 @@ final class RuleOptionsFactory
      *
      * @param array<string, mixed> $options
      */
-    private function takeAliasedOption(array &$options, string $camelKey, string $snakeKey): mixed
+    private function takeFrameworkOption(array &$options, string $canonicalKey): mixed
     {
+        // The two spellings a door can hand this key over under, rewritten from
+        // the one canonical name rather than written out again beside it: the
+        // camelCase the configuration pipeline's normalization produces, and the
+        // snake_case an author writes in `qmx.yaml`.
+        $camelKey = ConfigKeySpelling::normalize($canonicalKey);
+        $snakeKey = ConfigKeySpelling::rewriteLike($camelKey, 'a_b');
+
         $value = $options[$camelKey] ?? $options[$snakeKey] ?? null;
 
         unset($options[$camelKey], $options[$snakeKey]);

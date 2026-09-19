@@ -48,7 +48,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\Yaml\Yaml;
 
@@ -513,23 +512,21 @@ final class CrossCheck
     /**
      * The framework keys, read off the product's own list rather than copied
      * into a table here: a copy would go out of step in silence, and the list
-     * is a statement of the product, not of this stand. It is private, so the
-     * read is explicit — and it fails loudly if the constant is renamed.
+     * is a statement of the product, not of this stand.
+     *
+     * The list used to be a private constant of `RuleOptionKeyRecognition` and
+     * was read by reflection, which failed loudly if it were renamed. It has
+     * since moved to a named owner both the refusal and the `rules` listing
+     * read, so the read is now an ordinary call — and a rename fails at compile
+     * time instead, which is the same guarantee earlier and cheaper.
      *
      * @return list<string> normalized spellings
      */
     public static function frameworkKeys(): array
     {
-        $reflection = new ReflectionClass(\Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition::class);
-        $constants = $reflection->getConstants();
-
-        if (!isset($constants['FRAMEWORK_KEYS']) || !\is_array($constants['FRAMEWORK_KEYS'])) {
-            throw new LedgerError('RuleOptionKeyRecognition no longer declares FRAMEWORK_KEYS: the fifth set has lost its declaration side');
-        }
-
         return array_values(array_map(
-            static fn(mixed $key): string => ConfigKeySpelling::normalize((string) $key),
-            $constants['FRAMEWORK_KEYS'],
+            static fn(string $key): string => ConfigKeySpelling::normalize($key),
+            \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::all(),
         ));
     }
 }

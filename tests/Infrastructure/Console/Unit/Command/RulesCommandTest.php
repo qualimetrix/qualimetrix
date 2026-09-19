@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -29,9 +30,11 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptio
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(RulesCommand::class)]
+#[CoversClass(RuleListingPresenter::class)]
 final class RulesCommandTest extends TestCase
 {
     #[Test]
@@ -267,6 +270,65 @@ final class RulesCommandTest extends TestCase
     }
 
     /**
+     * `StubRuleOptions` accepts nothing, which is the one shape the live
+     * population has no example of: every registered rule accepts at least
+     * `enabled` or a threshold. The branch still has to be right, because a
+     * blank `options:` line reads as "this rule takes no options" while
+     * meaning "nobody asked".
+     */
+    #[Test]
+    public function itPrintsNoOptionsLineForARuleWhoseDeclarationAcceptsNothing(): void
+    {
+        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        $tester->execute([]);
+
+        self::assertStringNotContainsString('options: ', $tester->getDisplay());
+    }
+
+    /**
+     * The three framework keys are legal under every rule and declared by none,
+     * so naming them per rule would add four lines to fifty-four bodies. They
+     * are not in the footer because they are universal, though: `enabled` is
+     * nearly universal and stays inline, because `architecture.unassigned-class`
+     * does not accept it and a footer would lie about that one rule.
+     */
+    #[Test]
+    public function itNamesTheFrameworkKeysOnceInTheFooterRatherThanInEveryRuleBody(): void
+    {
+        // Two rules, because on one the two implementations this test tells
+        // apart — a footer, and a footer repeated in every body — both print
+        // the sentence exactly once.
+        $tester = new CommandTester($this->createCommand([
+            new FixtureRuleWithCyclomaticAlias(),
+            $this->createRuleMock('size.class-count', 'Class count'),
+        ]));
+        $tester->execute([]);
+
+        $display = $tester->getDisplay();
+
+        self::assertStringContainsString(
+            'Every rule also takes: ' . implode(', ', FrameworkOptionKeys::all()),
+            $display,
+        );
+        self::assertSame(1, substr_count($display, 'Every rule also takes:'));
+    }
+
+    /**
+     * The alias fixture targets `warning_threshold`, which the stub declaration
+     * does not accept. Restating it in canonical kebab would invent a spelling
+     * for a key nothing has, so the authored one is printed unchanged — the
+     * listing is not where a dangling alias is discovered.
+     */
+    #[Test]
+    public function itLeavesAnAliasTargetNothingAcceptsInTheSpellingItsAuthorGave(): void
+    {
+        $tester = new CommandTester($this->createCommand([new FixtureRuleWithCyclomaticAlias()]));
+        $tester->execute([]);
+
+        self::assertStringContainsString('warning_threshold=...', $tester->getDisplay());
+    }
+
+    /**
      * A rule absent from `$judged` produces no channel at all; a channel
      * mapped to an empty list is declared, produced, and judges no metric.
      *
@@ -313,7 +375,7 @@ final class RulesCommandTest extends TestCase
             static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
         );
 
-        return new RulesCommand($execution, $channels, $registry);
+        return new RulesCommand($execution, $channels, $registry, new RuleListingPresenter());
     }
 
     private function createCyclomaticRuleWithAlias(): RuleInterface

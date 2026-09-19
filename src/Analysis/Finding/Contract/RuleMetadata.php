@@ -19,7 +19,11 @@ final readonly class RuleMetadata
 
     /**
      * @param class-string<RuleOptionsInterface> $optionsClass
-     * @param array<string, string> $aliases CLI alias => canonical option name
+     * @param array<string, string> $aliases CLI alias => option target **as its attribute authored it**,
+     *                                       which is kebab, snake or camel depending on who wrote it and
+     *                                       dotted when it addresses a level slot. Not canonical: 34 of the
+     *                                       80 are spelled in something else. A consumer that must print or
+     *                                       compare one folds it through `RuleOptionSurface::locate()`
      */
     public function __construct(
         public string $name,
