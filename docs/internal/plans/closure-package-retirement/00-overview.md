@@ -9,8 +9,10 @@ landed, and what still reads the label is the schema that validates its shape.
 ## The concept has four homes, and only one of them is the column
 
 Two review rounds found this one surface at a time, each time by a different
-blindness. The enumeration is `enumeration.tsv` — 216 places. What matters is
-not the count but the kinds, because each kind needs a different check:
+blindness. The enumeration is `enumeration.tsv` — 217 rows, the last of them
+added while executing stage 01 to record a domain value the other 216 missed.
+What matters is not the count but the kinds, because each kind needs a
+different check:
 
 | Home                                | Where it is                                              |
 | ----------------------------------- | -------------------------------------------------------- |
@@ -31,7 +33,7 @@ values, and four are not P-labels:
 | ----------------------------- | -------------------------------------------- |
 | four production artifacts     | P-labels only                                |
 | `documentation-ownership.tsv` | P-labels, plus `shared` (62 of 160 rows)     |
-| `test-ownership.tsv`          | **`permanent` (622 of 933)**, P-labels (311) |
+| `test-ownership.tsv`          | **`permanent` (622 of 932)**, P-labels (310) |
 
 `permanent` is the majority value in the test artifact. A closing check phrased
 "no P-label remains" passes over all 622 of them — the first draft's check was
@@ -114,8 +116,24 @@ the consumers cell, and the `qmx.yaml` comments.
 Each axis exists because an earlier one was blind. The name axis misses the
 label travelling in `$closure`. The P-shape axis missed `permanent`, `shared`
 and two documentation values — a quarter of the slot. The column axis missed 128
-rows of prose and two config comments. **Not covered:** a value built by
-concatenation or held in a constant. Nothing of that shape is known to exist.
+rows of prose and two config comments.
+
+**Not covered, and stage 01 measured that the exclusion is not empty.** The
+enumeration cannot see a label spelled into an identifier or into prose that is
+not a slot value, and this plan said nothing of that shape was known to exist.
+Executing stage 01 found otherwise: **eleven** constants in the test generator
+carry a P-label in their name, and both generators keep P-labels in refusal
+messages and in retired-path records. The count is a derivation, not a list to
+copy — `git grep -cE '^const P[0-9]' -- scripts/generate-modular-architecture-test-inventory.php`.
+The first pass at this paragraph said ten, because the pattern used to count
+them could not match `P6_C_BASELINE_PATHS_SHA256` — an enumeration understating
+its own subject, written into the very paragraph warning about that.
+
+**None of it reaches a published artifact** — every rendered file holds zero
+P-tokens after stage 01 — so it is naming inside two development scripts, not a
+concept the product still publishes. It is a separate subject from the slot and
+is deliberately left to its own work; it is recorded here so the next reader
+does not mistake the enumeration's silence for absence.
 
 The honest statement about this enumeration is not that it is complete, but that
 each of its three revisions was found incomplete by a different check than the
@@ -125,9 +143,13 @@ one grep.
 ## Acceptance
 
 Stage 01 is correct when the regenerated artifacts are the current ones **minus
-that column**, where "current" is captured without touching the working tree —
-both generators accept `--output-directory`. `oracle.py` is that comparison; it
-works on bytes and covers every file it is pointed at, including `qmx.yaml`,
-which the generator also renders and revision 2 left out of the snapshot. Its
-stated limit: it compares columns, so the prose rows and the seam key need their
-own checks, named in stage 01.
+that column**, where "current" is captured without touching the working tree.
+`oracle.py` is that comparison; it works on bytes and covers every file it is
+pointed at, including `qmx.yaml`, which the generator also renders and revision
+2 left out of the snapshot. Its stated limit: it compares columns, so the prose
+rows and the seam key need their own checks, named in stage 01.
+
+Capturing "current" takes **two flags, not one**: `--output-directory=` for the
+artifacts and `--qmx-output=` for the config, which otherwise defaults to the
+live `qmx.yaml` and is written into the repository root. Stage 01 states the
+full recipe and why a one-flag snapshot is both short a file and destructive.

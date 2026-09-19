@@ -12,7 +12,7 @@
     ],
     "properties": {
         "version": {
-            "const": 2
+            "const": 3
         },
         "owners": {
             "type": "array",
@@ -45,7 +45,6 @@
                 "kind",
                 "owner",
                 "visibility",
-                "closure_package",
                 "consumers"
             ],
             "properties": {
@@ -70,9 +69,6 @@
                         "internal",
                         "contract"
                     ]
-                },
-                "closure_package": {
-                    "pattern": "^P[1-8](?:-[A-E])?$"
                 },
                 "consumers": {
                     "type": "array",
@@ -258,39 +254,6 @@
                 }
             ]
         },
-        "internalGrant": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "source_fqcn",
-                "target_fqcn",
-                "owner",
-                "rationale",
-                "closes_in"
-            ],
-            "properties": {
-                "source_fqcn": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "target_fqcn": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "owner": {
-                    "type": "string",
-                    "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$"
-                },
-                "rationale": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "closes_in": {
-                    "type": "string",
-                    "pattern": "^P[1-8](?:-[A-E])?$"
-                }
-            }
-        },
         "seam": {
             "type": "object",
             "additionalProperties": false,
@@ -313,188 +276,6 @@
                     "pattern": "^P[1-8](?:-[A-E])?$"
                 }
             }
-        },
-        "p4Target": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "current_declaration_targets",
-                "additions",
-                "architecture_zone_dag",
-                "circular_dependency_contract_consumers",
-                "test_topology",
-                "closures"
-            ],
-            "properties": {
-                "current_declaration_targets": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/$defs/p4TargetDeclaration"
-                    }
-                },
-                "additions": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/$defs/p4TargetDeclaration"
-                    }
-                },
-                "architecture_zone_dag": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "circular_dependency_contract_consumers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "test_topology": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                        "phpunit_classes",
-                        "test_ids",
-                        "p4_a_governance_test_ids",
-                        "fixtures",
-                        "supports",
-                        "architecture_root",
-                        "circular_root",
-                        "console_root",
-                        "p6_exclusions"
-                    ],
-                    "properties": {
-                        "phpunit_classes": {
-                            "const": 40
-                        },
-                        "test_ids": {
-                            "const": 778
-                        },
-                        "p4_a_governance_test_ids": {
-                            "const": 1
-                        },
-                        "fixtures": {
-                            "const": 52
-                        },
-                        "supports": {
-                            "const": 4
-                        },
-                        "architecture_root": {
-                            "const": "tests/Analysis/Policy/Architecture"
-                        },
-                        "circular_root": {
-                            "const": "tests/Analysis/Evidence/CircularDependency"
-                        },
-                        "console_root": {
-                            "const": "tests/Infrastructure/Console"
-                        },
-                        "p6_exclusions": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "closures": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                        "seams",
-                        "temporary_internal_grants"
-                    ],
-                    "properties": {
-                        "seams": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "temporary_internal_grants": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": [
-                                    "source_fqcn",
-                                    "target_fqcn"
-                                ],
-                                "properties": {
-                                    "source_fqcn": {
-                                        "type": "string"
-                                    },
-                                    "target_fqcn": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "p4TargetDeclaration": {
-            "oneOf": [
-                {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                        "disposition"
-                    ],
-                    "properties": {
-                        "disposition": {
-                            "const": "delete"
-                        }
-                    }
-                },
-                {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                        "fqcn",
-                        "path",
-                        "owner",
-                        "visibility",
-                        "zone",
-                        "disposition"
-                    ],
-                    "properties": {
-                        "fqcn": {
-                            "type": "string",
-                            "minLength": 1
-                        },
-                        "path": {
-                            "type": "string",
-                            "pattern": "^src/.+\\.php$"
-                        },
-                        "owner": {
-                            "type": "string",
-                            "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$"
-                        },
-                        "visibility": {
-                            "enum": [
-                                "internal",
-                                "contract"
-                            ]
-                        },
-                        "zone": {
-                            "type": "string",
-                            "minLength": 1
-                        },
-                        "disposition": {
-                            "enum": [
-                                "move",
-                                "rename",
-                                "add"
-                            ]
-                        }
-                    }
-                }
-            ]
         }
     }
 }
