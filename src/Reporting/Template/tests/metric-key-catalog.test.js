@@ -10,12 +10,11 @@ import { walk } from 'estree-walker';
 // (`'size.loc.sum'`, `'health.overall'`, ...): a hardcoded key that drifts
 // from MetricName.php — a typo, a rename the JS side missed — is a silent
 // dashboard breakage (metric shows as 0/blank), not a build or type error.
-// This test re-derives every family-shaped literal the same way
-// src/Reporting/Template/scripts/collect-metric-keys.mjs does and asserts each
-// one is a real catalog member from
-// finding-gate/enumeration-js-metric-keys.tsv. Keeping this as a test guard
-// preserves the hand-written runtime bundle while still detecting vocabulary
-// drift.
+// loadCatalog() re-reads the PHP sources on every run, so the set asserted
+// against is derived rather than stored: there is no generated file to keep
+// fresh, and no way for this guard to pass against a stale copy of the
+// vocabulary. Keeping it as a test preserves the hand-written runtime bundle
+// while still detecting drift.
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = resolve(__dirname, '..', 'src');

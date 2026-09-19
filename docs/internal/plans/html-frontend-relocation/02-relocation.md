@@ -92,9 +92,12 @@ probe that planted an untracked file and stayed green.
 7. No operational reference to the old path survives **in this package's own
    files**: `.gitattributes`, `.github/workflows/qmx.yml`, `.gitignore`,
    `composer.json` and the moved directory. The tree-wide grep is P4's —
-   measured, 15 files outside the directory name the old path today (excluding
+   measured, 13 files outside the directory name the old path today (excluding
    `docs/` and `CHANGELOG.md`) and only five are P1's, so a tree-wide gate inside P1 is unpassable while P2 and P3
-   are in flight. The first draft checked only `src/` and `composer.json`, which
+   are in flight. The figure was 15 until the retirement of
+   `enumeration-js-metric-keys.tsv` took that file and the last old-path mention
+   in `finding-gate/README.md` out of the set; neither was P1's, so the five
+   stands. The first draft checked only `src/` and `composer.json`, which
    left the two CI occurrences unchecked by any package at all.
 8. State, as a number, how many rows of each generated artifact this package
    expects to change. P4 compares the prediction.
@@ -109,12 +112,36 @@ probe that planted an untracked file and stayed green.
 `scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`,
 `governance/DistributedPackage/HtmlReportShipsOnlyWhatItReadsTest.php`,
 `governance/PlanningRecords/PlanningRecordIsolationTest.php`,
-`governance/.../RuleIdentifierLiteralGuardTest.php`,
-`finding-gate/enumeration-js-metric-keys.tsv`.
+`governance/.../RuleIdentifierLiteralGuardTest.php`.
 
-Its generator, `collect-metric-keys.mjs`, is **P1's**: it lives inside the
-directory P1 moves and carries the old path in prose on three lines. Naming it
-in both packages would put one file in two sets.
+`finding-gate/enumeration-js-metric-keys.tsv` was in this set and has since been
+retired, so this package no longer carries it. It was a plan-local enumeration
+that reached `finding-gate/` by relocation rather than by earning a consumer:
+nothing read it back, and the drift it was written to expose is caught
+continuously by `metric-key-catalog.test.js`, which derives the catalog from the
+PHP sources and never opened the TSV.
+
+Nothing read its *content*, but it was not inert: `surfaces()` in
+`generate-rename-enumeration.php` scans `finding-gate/` whole, with no
+`excludeFiles`, so its 317 rows were counted as metric-key occurrences and its
+272 test-fixture rows inflated that column. Removing it moved counts on 58 rows
+of `enumeration-renames.tsv` and reddened `enumeration:renames:check` until the
+file was regenerated. Row identity and the 350-row total did not move. Any
+package here that adds or removes a file under `finding-gate/` owes the same
+regeneration.
+
+That makes its generator, `collect-metric-keys.mjs`, **P1's to delete** rather
+than to move: its only output was that artifact. This does not retire the
+four-hop chain — `metric-key-catalog.mjs` calls `fromRoot` three times to read
+the PHP sources, the live test needs it, so `repo-root.mjs` stays and moves with
+the directory. What it does retire is the only `fromRoot` **write**: after the
+deletion the viewer reads from the repository root and never writes back to it.
+Deleting it gives up an ad-hoc view the test does not reproduce — the `comment`,
+`test` and `test-comment` buckets, and the not-in-catalog listing over test
+files. That view was investigative, never a guard, and git history holds both
+the script and its last output. The directory's file count follows: the "29
+files" at `:5`, and "10 of the 29" in the overview and in
+`enumeration/README.md`, become 28 and "10 of the 28" when this deletion lands.
 
 `generate-modular-architecture-production-inventory.php` is **not** here: its
 `git ls-files` scope is markdown only and names no viewer path. The first draft
@@ -160,9 +187,6 @@ reason to accept one.
 - `RuleIdentifierLiteralGuardTest`'s existence-checked file list (it names
   `dev.html`), and the copy list in `createIsolatedProject()`, which fails
   loudly with PHPUnit exiting 2 inside the scratch project.
-- `finding-gate/enumeration-js-metric-keys.tsv` carries the old path in its
-  header, written by `collect-metric-keys.mjs`. Nothing regenerates or checks
-  it; it is here because it is an unowned file, not because a check will catch it.
 
 **Definition of Done.**
 

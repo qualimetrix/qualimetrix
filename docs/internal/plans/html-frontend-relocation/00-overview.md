@@ -84,10 +84,10 @@ Stage 02 retires it, and names the coverage that retirement costs.
 **Two populations, and conflating them was a defect in the first draft.** They
 answer different questions and their totals are not comparable:
 
-| Population                                    | Total | Shape                                                  |
-| --------------------------------------------- | ----- | ------------------------------------------------------ |
-| addresses swept, `enumeration/references.tsv` | 70    | 17 loud, 23 silent, 30 unaffected — read off the code  |
-| breakages measured, by carrying the move out  | 17    | 13 reproduced with a verbatim refusal, 10 of them loud |
+| Population                                    | Total | Shape                                                            |
+| --------------------------------------------- | ----- | ---------------------------------------------------------------- |
+| addresses swept, `enumeration/references.tsv` | 70    | 16 loud, 20 silent, 30 unaffected, 4 retired — read off the code |
+| breakages measured, by carrying the move out  | 17    | 13 reproduced with a verbatim refusal, 10 of them loud           |
 
 The swept column is a property of the sweep; the measured column is a property
 of the tree. Where they disagree about what stops working, the measurement wins
