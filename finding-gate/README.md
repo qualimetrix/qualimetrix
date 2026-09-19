@@ -40,23 +40,22 @@ finding-gate/
 │                          # declared diff. Typed, not derived
 ├── normalization.tsv      # fields excluded from comparison, each with its reason
 ├── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
-├── enumeration-js-metric-keys.tsv # generated Reporting Template metric-key catalog
 ├── enumeration-renames.tsv        # current measured vocabulary and pending decisions
 ├── enumeration-renames-executed.tsv # retired rename decisions retained as control input
 ├── enumeration-runtime-channels.tsv # generated dynamic channel families
 └── enumeration-static-channels.tsv  # static channel inventory used by universe checks
 ```
 
-| artifact                                                         | producer                                                      | consumer                                                  |
-| ---------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
-| `enumeration-js-metric-keys.tsv`                                 | `node src/Reporting/Template/scripts/collect-metric-keys.mjs` | `src/Reporting/Template/tests/metric-key-catalog.test.js` |
-| `enumeration-renames.tsv` and `enumeration-renames-executed.tsv` | `composer enumeration:renames`                                | `composer enumeration:renames:check`                      |
-| `enumeration-runtime-channels.tsv`                               | `composer enumeration:runtime-channels`                       | `composer enumeration:runtime-channels:check`             |
-| `enumeration-static-channels.tsv`                                | repository inventory                                          | `composer enumeration:channel-universe`                   |
+| artifact                                                         | producer                                | consumer                                      |
+| ---------------------------------------------------------------- | --------------------------------------- | --------------------------------------------- |
+| `enumeration-renames.tsv` and `enumeration-renames-executed.tsv` | `composer enumeration:renames`          | `composer enumeration:renames:check`          |
+| `enumeration-runtime-channels.tsv`                               | `composer enumeration:runtime-channels` | `composer enumeration:runtime-channels:check` |
+| `enumeration-static-channels.tsv`                                | repository inventory                    | `composer enumeration:channel-universe`       |
 
-The catalog inventories family-shaped literals in the Reporting Template's
-JavaScript source and tests; the corresponding test independently requires
-every source literal to be a member of the PHP metric-key catalog.
+Every artifact in this table has a consumer that turns it into a decision, and
+that is the condition for keeping one here. An enumeration nothing reads back
+cannot go stale loudly: it records a measurement that stops being true in
+silence, and a regeneration then refreshes a number rather than checking one.
 
 ## Declared compared-field moves
 

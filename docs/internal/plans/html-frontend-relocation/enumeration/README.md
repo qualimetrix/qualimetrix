@@ -51,6 +51,13 @@ rebuilds byte-for-byte; identifiers assembled from fragments; paths resolved
 from CI environment or secrets. Every `breaks` verdict here is read off the code
 rather than executed, except rows marked MEASURED.
 
+**`breaks = n/a`.** A fourth verdict beside `loud`, `silent` and `no`: the
+address itself has since been removed from the tree, so the move can no longer
+break it. The row stays, because deleting it would shrink a total this document
+publishes in three places and would erase the finding that caused the removal.
+Its `where` column is then historical — it records where the address used to
+sit, not a line to go and read.
+
 **A contradiction this file used to carry.** The tools paragraph above credits a
 bare-word sweep with finding the fragment form `str_contains($relativePath,
 '/Template/')`, while this section used to claim the fragment forms `'Template'`
