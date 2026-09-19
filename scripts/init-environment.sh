@@ -304,9 +304,14 @@ readonly NODE_MAJOR_REQUIRED=22
 
 log_info "Checking JS toolchain..."
 
+# `node --version` is run into a variable, not a pipeline: under `pipefail` a
+# node that exists but exits non-zero (a broken shim, a half-installed package)
+# would fail the assignment, and `set -e` would end the script here — before it
+# writes the private-name denylist and installs the git hooks.
 node_major=0
 if command -v node >/dev/null 2>&1; then
-    node_major=$(node --version 2>/dev/null | sed -n 's/^v\([0-9][0-9]*\)\..*/\1/p')
+    node_version=$(node --version 2>/dev/null) || node_version=""
+    node_major=$(printf '%s' "$node_version" | sed -n 's/^v\([0-9][0-9]*\)\..*/\1/p')
     node_major=${node_major:-0}
 fi
 

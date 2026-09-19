@@ -11,10 +11,13 @@ use PHPUnit\Framework\TestCase;
  * What a consumer receives under the HTML report's tree, against what the
  * formatter reads from it.
  *
- * The report is an npm project living inside the PSR-4 root, so before the
- * `export-ignore` rows beside it the dist package carried all 33 of its
+ * The report is an npm project living inside the PSR-4 root, so without the
+ * `export-ignore` rows beside it the dist package would carry every one of its
  * entries: the eight vitest files, the sources they test, the lockfile, the
  * vite config. A consumer needs none of them and cannot tell they arrived.
+ * Measured at 34 on the tree that closed stage 01 of the viewer relocation,
+ * 33 when this docblock was written; the count moves whenever the viewer gains
+ * a file, so re-derive it rather than quoting this line.
  *
  * The expectation is not a list. It is read out of
  * {@see \Qualimetrix\Reporting\Formatter\Html\HtmlFormatter}, which names the

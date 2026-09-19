@@ -98,26 +98,58 @@ an item phrased that way passes by being run late.
    hop, confirm `composer test:js` refuses, quote it, restore from a copy taken
    before the plant. Items 1 and 2 together are the guarantee this stage
    delivers — one hop, and a running test exercises it.
-3. No PHP changes: `git diff --name-only main...HEAD -- '*.php'` is empty.
+3. No PHP declaration is added or changed. Read the hunks, not the file list:
+   `git diff main...HEAD -- '*.php'` may touch comments only. The oracle is
+   `composer architecture:check` staying green — that is what actually proves no
+   manifest row and no artifact regeneration, and "no PHP files changed" was
+   only ever a proxy for it. `composer cs-check` too, once a PHP file is in the
+   diff at all.
 4. No new file outside the viewer:
    `git diff --name-only --diff-filter=A main...HEAD` names only
    `src/Reporting/Template/scripts/repo-root.mjs`. In particular nothing under
    `governance/` or `src/`, so no manifest declaration and no generated artifact
    row — the trap both earlier drafts fell into. This item cannot catch a new
    *line* in an existing file, so it does not stand in for item 5.
-5. Stage 02's records still describe the tree. This stage changes the viewer's
-   file count and adds an address in `composer.json`, and the stage-02 documents
-   state both as measured facts. Re-derive rather than increment: the file
-   count, `PlanningRecordIsolationTest`'s reach, the `references.tsv` row total
-   and its loud/silent/unaffected split, and the `health.overall` count the
-   rename enumeration pins. A stage whose purpose is to leave stage 02 a correct
-   map does not get to leave it a stale one.
+5. Stage 02's records still describe the tree. A stage whose purpose is to
+   leave stage 02 a correct map does not get to leave it a stale one. **Derive
+   the list of records to check; do not work from the list below.** Adding one
+   file to the viewer moved a count in five documents and shifted six line
+   anchors in `references.tsv` itself, and the first pass over this item found
+   only the first four — a closed list is how the rest were missed.
+
+   Derive it: for every file this branch touches, re-read every `references.tsv`
+   row anchored at it, because a row's `where` field is a line number that the
+   branch may have moved; and sweep the plan directory and the code-side records
+   for count-form prose, which no assertion reads —
+
+   ```
+   git diff --name-only main...HEAD            # rows anchored here may have shifted
+   grep -rnE '\b(2[0-9]|3[0-9]|6[0-9]|7[0-9]|9[0-9])\b' docs/internal/plans/html-frontend-relocation/ .gitattributes
+   ```
+
+   Judge each hit by subject rather than by the number matching — most hits are
+   line numbers and unrelated totals. Re-derive every survivor with a command,
+   and stamp it with the tree it was taken on, the way `measured-breakage.md`
+   does: a stamped number goes stale visibly, an unstamped one does not.
 6. `composer check` green from a clean clone with copied `vendor`,
    `website/.venv` and `node_modules`, on a machine with node; and the same
    clone with `scripts/init-environment.sh` run from scratch reaches a node that
-   satisfies item 2. Run the script **twice**: the second run must report node
-   and the viewer's dependencies as already present, and must not remove a
-   sentinel file planted under `node_modules/` — `npm ci` deletes the tree
+   satisfies item 2.
+
+   **Run the script with `CLAUDE_CODE_REMOTE=true`.** Without it the script
+   returns at line 43 with "Script running locally", and every run below is a
+   no-op that passes this item having tested nothing.
+
+   **Start from a container that already carries an *older* node**, not from one
+   with none: the install is gated on the major version, and a run starting from
+   an empty PATH exercises the absent case only. Run 1 must replace it and
+   report the required major.
+
+   **Then run the script a second time.** It must report node as already present
+   and `install:js` must say it skipped, in those words — the script only sees an
+   exit code, so the distinction has to come from `install:js` itself or this
+   half of the item cannot fail. Plant a sentinel file under `node_modules/`
+   before the second run and confirm it survives: `npm ci` deletes the tree
    before fetching, so an unguarded install turns a flaky registry into a broken
    workspace that still logs success.
 

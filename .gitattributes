@@ -21,10 +21,12 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /promise-effect/**      export-ignore
 
 # The HTML report is an npm project living inside the PSR-4 root. A consumer
-# needs only the four assets HtmlFormatter reads at runtime; before these lines
-# the dist package carried 33 entries under it, including the eight vitest files,
-# the sources they test, the lockfile and the vite config. Measured with
-# `git archive --worktree-attributes`: 33 -> 6. The four that stay are load-bearing,
+# needs only the four assets HtmlFormatter reads at runtime; without these lines
+# the dist package would carry every entry under it, including the eight vitest
+# files, the sources they test, the lockfile and the vite config. Measured with
+# `git archive --worktree-attributes` on the tree that closed stage 01 of the
+# viewer relocation: 34 -> 6, up from 33 when these rows were written, because
+# that stage added one file. Re-derive it before repointing these rows. The four that stay are load-bearing,
 # so this is a list of what leaves, never an export-ignore on the tree.
 /src/Reporting/Template/src/              export-ignore
 /src/Reporting/Template/tests/            export-ignore
