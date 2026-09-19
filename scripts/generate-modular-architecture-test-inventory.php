@@ -352,18 +352,18 @@ const RETIRED_PATH_ASSERTIONS = [
  * `classifyOwner()` answered from a vocabulary of its own.
  *
  * The count is part of the entry, so the allowance is closed in both
- * directions: a third owner name, an eleventh HtmlTemplate row, or the
+ * directions: a third owner name, an eleventh HtmlReport row, or the
  * disappearance of one, each refuses here and is settled by editing this
  * constant, which is the admission rather than the side effect.
  *
  * @var array<string, array{rows: int, reason: string}>
  */
 const NON_MANIFEST_TEST_OWNERS = [
-    'Reporting/HtmlTemplate' => [
+    'HtmlReport' => [
         'rows' => 10,
-        'reason' => 'the JS bundle tests and configs under src/Reporting/Template/. Their target root is not a'
-            . ' manifest owner either, and the relocation they assert is named to no package — one of the rows'
-            . ' 04-packages.md hands to the owner.',
+        'reason' => 'the JS bundle tests and configs under html-report/, a root-level npm project outside the'
+            . ' PSR-4 tree. Their target root is not a manifest owner either, and the relocation they assert is'
+            . ' named to no package — one of the rows 04-packages.md hands to the owner.',
     ],
     'TestSupport/Logging' => [
         'rows' => 1,
@@ -419,14 +419,14 @@ if ($classificationProbeArguments !== []) {
 // The tooling-root portion of this pathspec is every TOOLING_TEST_ROOT_OWNERS
 // key, trimmed of its trailing slash; 'scripts/tests' is dead scan-scope left
 // over from before the roots below existed (its directory is gone, see the
-// coverage note in the stage-03 review), and the `src/Reporting/Template/*`
-// entries are the unrelated HtmlTemplate closure, not a tooling root.
+// coverage note in the stage-03 review), and the `html-report/*` entries are
+// the unrelated HtmlReport closure, not a tooling root.
 $worktreePaths = commandLines(
     [
         'git', 'ls-files', '--cached', '--others', '--exclude-standard', '--',
         'tests', 'scripts/tests',
         ...array_map(static fn(string $prefix): string => rtrim($prefix, '/'), array_keys(TOOLING_TEST_ROOT_OWNERS)),
-        'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js',
+        'html-report/tests', 'html-report/package.json', 'html-report/vite.config.js',
     ],
     $projectRoot,
 );
@@ -938,8 +938,8 @@ function classifyOwner(string $path): string
     if (str_starts_with($path, 'scripts/tests/')) {
         return 'Analysis/Evidence/Measurement';
     }
-    if (str_starts_with($path, 'src/Reporting/Template/tests/') || in_array($path, ['src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'], true)) {
-        return 'Reporting/HtmlTemplate';
+    if (str_starts_with($path, 'html-report/tests/') || in_array($path, ['html-report/package.json', 'html-report/vite.config.js'], true)) {
+        return 'HtmlReport';
     }
     if (str_starts_with($path, 'tests/Architecture/')) {
         if (str_contains($path, 'CircularDependency')) {

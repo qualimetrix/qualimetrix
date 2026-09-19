@@ -35,7 +35,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
         );
 
-        $templateDir = \dirname(__DIR__, 2) . '/Template';
+        $templateDir = \dirname(__DIR__, 4) . '/html-report';
 
         $html = $this->readFile($templateDir . '/report.html');
         $css = $this->readFile($templateDir . '/report.css');
@@ -80,7 +80,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
     {
         if (!file_exists($path)) {
             throw new RuntimeException(\sprintf(
-                'Template file not found: %s. Run "cd src/Reporting/Template && npm run build" to generate dist/ files.',
+                'Template file not found: %s. Run "cd html-report && npm run build" to generate dist/ files.',
                 $path,
             ));
         }

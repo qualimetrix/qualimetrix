@@ -225,7 +225,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * @var list<string>
      */
     private const array EXISTENCE_CHECKED_FILES = [
-        'src/Reporting/Template/dev.html',
+        'html-report/dev.html',
         'website/docs/usage/output-formats.md',
         'website/docs/usage/output-formats.ru.md',
     ];

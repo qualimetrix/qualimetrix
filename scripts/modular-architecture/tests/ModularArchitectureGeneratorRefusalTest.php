@@ -398,6 +398,20 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
             $this->copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
             $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
+            // A root-level, non-PSR-4 npm project: the test-inventory generator's
+            // scan scope names it directly (not through TOOLING_TEST_ROOT_OWNERS),
+            // and its 10-row NON_MANIFEST_TEST_OWNERS count would otherwise read 0
+            // inside this isolated project rather than reflecting the real tree.
+            // Only the scanned slice is copied, not node_modules/dist/src.
+            $this->copyDirectory($sourceRoot . '/html-report/tests', $projectRoot . '/html-report/tests');
+            self::assertTrue(copy(
+                $sourceRoot . '/html-report/package.json',
+                $projectRoot . '/html-report/package.json',
+            ));
+            self::assertTrue(copy(
+                $sourceRoot . '/html-report/vite.config.js',
+                $projectRoot . '/html-report/vite.config.js',
+            ));
             $this->copyDirectory(
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
                 $projectRoot . '/docs/internal/generated/modular-architecture',
@@ -477,7 +491,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'governance',
                 'tools',
                 'scripts',
-                'src/Reporting/Template',
+                'html-report',
             ], $projectRoot);
             self::assertSame(0, $exitCode, $output);
 
