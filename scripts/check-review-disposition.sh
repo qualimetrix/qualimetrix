@@ -12,8 +12,8 @@
 # reads fine and defeats any cross-check.
 #
 # The id pattern is deliberately permissive about how many name segments precede
-# the number. It used to accept only one plus an optional round marker, and the
-# implementation review of Ш1 walked straight into that: 12 findings named
+# the number. It used to accept only one plus an optional round marker, and an
+# implementation review walked straight into that: 12 findings named
 # `native-claude-NN` matched nothing, so the script reported every finding
 # disposed of while ignoring two thirds of them. A checker that silently sees
 # fewer findings than exist is worse than no checker — it is the same failure
