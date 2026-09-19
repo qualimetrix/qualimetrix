@@ -5,12 +5,33 @@ orchestrator's and starts when both are accepted.
 
 ## Capture the "before" side without touching the tree
 
-Both generators accept `--output-directory=`, and the repository's own driver
-already stages into a temporary directory before publishing. So the snapshot is
-taken by **rendering the current tree into a scratch directory**, not by copying
-the published one and hoping nothing overwrites it in the meantime.
+The snapshot is taken by **rendering the base tree into a scratch directory**,
+not by copying the published one and hoping nothing overwrites it in the
+meantime. Both generators accept `--output-directory=`, and the repository's own
+driver already stages into a temporary directory before publishing.
 
-Two traps this avoids, both measured:
+**`--output-directory=` alone does not capture `qmx.yaml`, and a snapshot taken
+without the second flag writes into the tree it is supposed to leave alone.**
+The production generator carries the config on a separate flag, `--qmx-output=`,
+which defaults to the live `qmx.yaml`. So a bare `--output-directory=<scratch>`
+renders twenty artifacts into the scratch directory and the config into the
+repository root — overwriting one of the very files stage 01 edits. It also
+leaves the "before" side one file short of the "after" side, and the oracle then
+reports `FILE SET CHANGED` and never reaches the comparison that matters. Every
+snapshot call carries both:
+
+```
+php scripts/generate-modular-architecture-production-inventory.php \
+  --output-directory=<scratch> --qmx-output=<scratch>/qmx.yaml
+php scripts/generate-modular-architecture-test-inventory.php \
+  --output-directory=<scratch>
+```
+
+Twenty-one files is the correct count: twenty artifacts plus `qmx.yaml`. The
+driver renders the config alongside the artifacts and asserts it matches, so a
+snapshot without it would miss a change there entirely.
+
+Three further traps, all measured:
 
 - A bare generator call publishes into
   `docs/internal/generated/modular-architecture/` — the very directory the
@@ -20,10 +41,10 @@ Two traps this avoids, both measured:
   `/docs/ export-ignore`, so `git archive HEAD docs/…` yields an empty archive,
   and `--worktree-attributes` does not change it. An empty "before" against an
   empty "after" also passes.
-
-The snapshot includes `qmx.yaml`. The driver renders it alongside the artifacts
-and asserts it matches; revision 2 of this plan left it out of both the snapshot
-and the oracle, so a change there would have gone unseen.
+- A snapshot rendered from a tree a package has already edited is not a
+  "before". Render it from a clean worktree at the base commit
+  (`git worktree add --detach <scratch>/base <base-sha>`), or re-derive it there
+  and compare, if anything may have touched the scratch directory since.
 
 ## The concept is published as prose, in columns that survive
 
@@ -96,7 +117,8 @@ null given`. The governance test joins because it pins `version` at `2`.
 
 **Definition of Done.** One check per home, because one grep cannot cover them:
 
-1. `php scripts/generate-modular-architecture-production-inventory.php --output-directory=<scratch>` exits 0.
+1. The generator, carrying **both** snapshot flags
+   (`--output-directory=<scratch> --qmx-output=<scratch>/qmx.yaml`), exits 0.
 2. **The column's home:** no value of the slot's domain survives as a literal —
    the list is the `value:` rows of `enumeration.tsv`, including `shared`,
    `Run documentation` and `Finding documentation`. Matched as a quoted literal,
@@ -111,7 +133,7 @@ null given`. The governance test joins because it pins `version` at `2`.
    `…migration package."` and carry **no P-token at all**, so a token check
    passes over every one of them. The second check is for the wording —
    `migration package` and `closure package` must both be absent. Measured to
-   make the point: of `test-ownership.tsv`'s 311 P-tokens, all 311 are column
+   make the point: of `test-ownership.tsv`'s 310 P-tokens, all 310 are column
    values and its 30 prose rows contain none.
 5. **The config's home:** `qmx.yaml` has no `P`-token.
 6. `vendor/bin/phpstan analyse` clean; `validateP4Target` and the three dead
