@@ -92,8 +92,8 @@ const P7_MEASUREMENT_PATHS = [
 ];
 
 /**
- * The single source for every tooling test root: which directory, which
- * subject owner and closure package, in the order registration happened.
+ * The single source for every tooling test root: which directory and which
+ * subject owner, in the order registration happened.
  * Every one of these files, once retained in place, is written straight into
  * its final home, so `classifyOwner()`, `dispositionFor()`/`targetPath()`
  * (via `isRegisteredToolingRoot()`) and the `git ls-files` scan-scope pathspec
@@ -103,23 +103,23 @@ const P7_MEASUREMENT_PATHS = [
  * so an added or removed `scripts/*\/tests` or `tools/*\/tests` directory that
  * is not mirrored here fails loudly instead of silently mis-registering.
  *
- * @var array<string, array{string, string}>
+ * @var array<string, string>
  */
 const TOOLING_TEST_ROOT_OWNERS = [
-    'governance/' => ['Architecture.Governance', 'P8'],
-    'tools/phpstan/tests/' => ['Tooling/PhpStan', 'P8'],
-    'scripts/promise-effect/tests/' => ['Tooling/PromiseEffect', 'P8'],
-    'scripts/directive-audit/tests/' => ['Tooling/DirectiveAudit', 'P8'],
-    'scripts/directive-audit-controls/tests/' => ['Tooling/DirectiveAuditControls', 'P8'],
-    'scripts/tautology-controls/tests/' => ['Tooling/TautologyControls', 'P8'],
-    'scripts/finding-gate/tests/' => ['Tooling/FindingGate', 'P8'],
-    'scripts/suppression-snapshot/tests/' => ['Tooling/SuppressionSnapshot', 'P8'],
-    'scripts/rename-enumeration/tests/' => ['Tooling/RenameEnumeration', 'P8'],
-    'scripts/health-calibration/tests/' => ['Tooling/HealthCalibration', 'P8'],
-    'scripts/benchmark/tests/' => ['Tooling/Benchmark', 'P8'],
-    'scripts/modular-architecture/tests/' => ['Tooling/ModularArchitecture', 'P8'],
-    'scripts/cross-tool-comparison/tests/' => ['Tooling/CrossToolComparison', 'P8'],
-    'scripts/phpunit-aggregate/tests/' => ['Tooling/PhpunitAggregate', 'P8'],
+    'governance/' => 'Architecture.Governance',
+    'tools/phpstan/tests/' => 'Tooling/PhpStan',
+    'scripts/promise-effect/tests/' => 'Tooling/PromiseEffect',
+    'scripts/directive-audit/tests/' => 'Tooling/DirectiveAudit',
+    'scripts/directive-audit-controls/tests/' => 'Tooling/DirectiveAuditControls',
+    'scripts/tautology-controls/tests/' => 'Tooling/TautologyControls',
+    'scripts/finding-gate/tests/' => 'Tooling/FindingGate',
+    'scripts/suppression-snapshot/tests/' => 'Tooling/SuppressionSnapshot',
+    'scripts/rename-enumeration/tests/' => 'Tooling/RenameEnumeration',
+    'scripts/health-calibration/tests/' => 'Tooling/HealthCalibration',
+    'scripts/benchmark/tests/' => 'Tooling/Benchmark',
+    'scripts/modular-architecture/tests/' => 'Tooling/ModularArchitecture',
+    'scripts/cross-tool-comparison/tests/' => 'Tooling/CrossToolComparison',
+    'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
 ];
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
@@ -387,7 +387,7 @@ if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PA
 
 if ($classificationProbeArguments !== []) {
     $path = substr($classificationProbeArguments[0], strlen('--classification-probe='));
-    [$owner, $closurePackage] = classifyOwner($path);
+    $owner = classifyOwner($path);
     $currentSuite = currentSuite($path);
     // The kind is derived, not assumed. Hardcoding 'phpunit-test-class' here
     // answered for a path the probe was not given: a support file came back
@@ -410,7 +410,6 @@ if ($classificationProbeArguments !== []) {
         : 'none';
     fwrite(STDOUT, implode("\t", [
         $owner,
-        $closurePackage,
         $currentSuite,
         targetPath($path, $kind, $owner, $targetSuite),
     ]) . "\n");
@@ -484,7 +483,7 @@ foreach ($worktreePaths as $path) {
         $discoveredCases += $discoveredCaseCounts[$class];
     }
 
-    [$owner, $closurePackage] = classifyOwner($path);
+    $owner = classifyOwner($path);
     $kind = classifyKind($path, $discoveredClasses);
     $currentSuite = currentSuite($path);
     $targetSuite = $kind === 'phpunit-test-class'
@@ -494,10 +493,6 @@ foreach ($worktreePaths as $path) {
         : 'none';
     $target = targetPath($path, $kind, $owner, $targetSuite);
     $disposition = dispositionFor($path, $kind, $target);
-
-    if (orphanCandidateReason($path) !== null || $kind === 'placeholder') {
-        $closurePackage = 'P8';
-    }
 
     $rows[] = [
         'current_path' => $path,
@@ -509,7 +504,6 @@ foreach ($worktreePaths as $path) {
         'target_suite' => $targetSuite,
         'subject_owner' => $owner,
         'target_path' => $target,
-        'closure_package' => $closurePackage,
         'disposition' => $disposition,
     ];
 }
@@ -872,10 +866,7 @@ function failUnownedTestClass(string $path): never
     ));
 }
 
-/**
- * @return array{string, string}
- */
-function classifyOwner(string $path): array
+function classifyOwner(string $path): string
 {
     // The repository-controls root is not a test tree: every file under it
     // asserts something about this repository, so the governance that owns the
@@ -896,10 +887,10 @@ function classifyOwner(string $path): array
             failUnownedTestClass($path);
         }
 
-        return [$declaredOwner, 'permanent'];
+        return $declaredOwner;
     }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
-        return ['TestSupport/Logging', 'P8'];
+        return 'TestSupport/Logging';
     }
     // Empty today for the same reason the retaining disjuncts removed from
     // targetPath() were — every file under these eight roots is a test class,
@@ -909,10 +900,10 @@ function classifyOwner(string $path): array
     // owner it names is right. Deleting it would turn that file into an
     // unclassified refusal for a question the manifest already answers.
     if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
-        return ['Analysis/Evidence/' . $matches[1], 'P7'];
+        return 'Analysis/Evidence/' . $matches[1];
     }
     if (in_array($path, P7_MEASUREMENT_PATHS, true)) {
-        return ['Analysis/Evidence/Measurement', 'P7'];
+        return 'Analysis/Evidence/Measurement';
     }
     global $p6CBaselinePaths;
 
@@ -921,124 +912,124 @@ function classifyOwner(string $path): array
             fail('Unclassified P6-C Baseline test artifact: ' . $path);
         }
 
-        return ['Analysis/Policy/Baseline', 'P6-C'];
+        return 'Analysis/Policy/Baseline';
     }
     if (str_starts_with($path, 'tests/Analysis/Finding/')) {
-        return ['Analysis/Finding', 'P8'];
+        return 'Analysis/Finding';
     }
     if (str_starts_with($path, 'tests/Analysis/Policy/Inline/')) {
-        return ['Analysis/Policy/Inline', 'P8'];
+        return 'Analysis/Policy/Inline';
     }
     if (in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)) {
-        return ['Analysis/Evidence/Prioritization', 'P6-D'];
+        return 'Analysis/Evidence/Prioritization';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Health/')) {
-        return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
+        return 'Analysis/Evidence/ComputedMetrics/Health';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')) {
-        return ['Analysis/Evidence/ComputedMetrics', 'P5'];
+        return 'Analysis/Evidence/ComputedMetrics';
     }
     if (str_starts_with($path, 'tests/Analysis/Policy/Architecture/')) {
-        return ['Analysis/Policy/Architecture', 'P4'];
+        return 'Analysis/Policy/Architecture';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/CircularDependency/')) {
-        return ['Analysis/Evidence/CircularDependency', 'P4'];
+        return 'Analysis/Evidence/CircularDependency';
     }
     if (str_starts_with($path, 'scripts/tests/')) {
-        return ['Analysis/Evidence/Measurement', 'P7'];
+        return 'Analysis/Evidence/Measurement';
     }
     if (str_starts_with($path, 'src/Reporting/Template/tests/') || in_array($path, ['src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'], true)) {
-        return ['Reporting/HtmlTemplate', 'permanent'];
+        return 'Reporting/HtmlTemplate';
     }
     if (str_starts_with($path, 'tests/Architecture/')) {
         if (str_contains($path, 'CircularDependency')) {
-            return ['Analysis/Evidence/CircularDependency', 'P4'];
+            return 'Analysis/Evidence/CircularDependency';
         }
         if (str_contains($path, 'InlineSuppression') || str_contains($path, '/Fixtures/IgnoreSample/')) {
-            return ['Analysis/Policy/Inline', 'P6'];
+            return 'Analysis/Policy/Inline';
         }
 
-        return ['Analysis/Policy/Architecture', 'P4'];
+        return 'Analysis/Policy/Architecture';
     }
     if ($path === 'tests/Support/Console/StubBaselineRun.php' || $path === 'tests/Support/Console/TempDirectory.php' || str_starts_with($path, 'tests/Support/Time/')) {
-        return ['Analysis/Policy/Baseline', 'P6'];
+        return 'Analysis/Policy/Baseline';
     }
     if (str_starts_with($path, 'tests/Support/Dependency/')) {
-        return ['Analysis/Evidence/CircularDependency', 'P4'];
+        return 'Analysis/Evidence/CircularDependency';
     }
     if (str_starts_with($path, 'tests/Support/Logger/')) {
-        return ['TestSupport/Logging', 'P8'];
+        return 'TestSupport/Logging';
     }
     if (str_starts_with($path, 'tests/Support/Pipeline/')) {
-        return ['Analysis/Run', 'P3'];
+        return 'Analysis/Run';
     }
     if (str_starts_with($path, 'tests/Support/Violation/')) {
-        return ['Analysis/Finding', 'P6'];
+        return 'Analysis/Finding';
     }
     if (str_starts_with($path, 'tests/Analysis/Configuration/')) {
-        return ['Analysis/Configuration', 'P3'];
+        return 'Analysis/Configuration';
     }
     if (str_starts_with($path, 'tests/Fixture/')) {
         if (preg_match('/(DataClass|ReadonlyDto|SmallClass)/', $path) === 1) {
-            return ['Analysis/Evidence/Design', 'P7'];
+            return 'Analysis/Evidence/Design';
         }
 
-        return ['Analysis/Configuration', 'P3'];
+        return 'Analysis/Configuration';
     }
     if (str_starts_with($path, 'tests/Fixtures/BaselineV10/')) {
-        return ['Analysis/Policy/Baseline', 'P6'];
+        return 'Analysis/Policy/Baseline';
     }
     if (str_starts_with($path, 'tests/Fixtures/Channels/')) {
-        return ['Analysis/Finding', 'P6'];
+        return 'Analysis/Finding';
     }
     if (str_starts_with($path, 'tests/Fixtures/CircularDeps/')) {
-        return ['Analysis/Evidence/CircularDependency', 'P4'];
+        return 'Analysis/Evidence/CircularDependency';
     }
     if (str_starts_with($path, 'tests/Fixtures/CouplingProject/')) {
-        return ['Analysis/Evidence/Coupling', 'P7'];
+        return 'Analysis/Evidence/Coupling';
     }
     if (str_starts_with($path, 'tests/Fixtures/GoldenMetrics/') || str_starts_with($path, 'tests/Fixtures/Aggregation/')) {
-        return ['Analysis/Run', 'P3'];
+        return 'Analysis/Run';
     }
     if (str_starts_with($path, 'tests/Fixtures/Inheritance/')) {
-        return ['Analysis/Evidence/Design', 'P7'];
+        return 'Analysis/Evidence/Design';
     }
     if (str_starts_with($path, 'tests/Fixtures/Schema/')) {
-        return ['Reporting', 'permanent'];
+        return 'Reporting';
     }
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
-        return ['Analysis/Evidence/Measurement', 'P7'];
+        return 'Analysis/Evidence/Measurement';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/Duplication/')) {
-        return ['Analysis/Evidence/Duplication', 'P1'];
+        return 'Analysis/Evidence/Duplication';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/')) {
-        return ['Analysis/Evidence/DependencyModel', 'P3'];
+        return 'Analysis/Evidence/DependencyModel';
     }
     if (preg_match('#^tests/Core/(Path|Symbol|Profiler)/#', $path, $matches) === 1) {
-        return ['Core/' . $matches[1], 'P8'];
+        return 'Core/' . $matches[1];
     }
     if (str_starts_with($path, 'tests/Core/')) {
-        return ['Core/Neutral', 'P8'];
+        return 'Core/Neutral';
     }
     if (str_starts_with($path, 'tests/Analysis/Evidence/Measurement/')) {
-        return ['Analysis/Evidence/Measurement', 'P3'];
+        return 'Analysis/Evidence/Measurement';
     }
     if (str_starts_with($path, 'tests/Analysis/Run/')) {
-        return ['Analysis/Run', 'P3'];
+        return 'Analysis/Run';
     }
 
     if (str_contains($path, 'ThresholdAnnotationParser') || str_contains($path, 'ThresholdValidatorWiring')) {
-        return ['Analysis/Policy/Inline', 'P6'];
+        return 'Analysis/Policy/Inline';
     }
     if (str_contains($path, 'ComputedMetric') || str_contains($path, 'ComputedMetrics') || str_contains($path, 'HealthFormula')) {
-        return ['Analysis/Evidence/ComputedMetrics', 'P5'];
+        return 'Analysis/Evidence/ComputedMetrics';
     }
     if (str_contains($path, 'AnalysisContextThreshold') || str_contains($path, 'ThresholdOverride')) {
-        return ['Analysis/Policy/Inline', 'P6'];
+        return 'Analysis/Policy/Inline';
     }
     if (str_contains($path, 'ChannelDeclaration')) {
-        return ['Analysis/Finding', 'P6'];
+        return 'Analysis/Finding';
     }
     if (str_contains($path, 'Wmc')) {
         $subject = match (true) {
@@ -1051,13 +1042,13 @@ function classifyOwner(string $path): array
             default => fail('Unclassified Structure test: ' . $path),
         };
 
-        return ['Analysis/Evidence/' . $subject, 'P7'];
+        return 'Analysis/Evidence/' . $subject;
     }
     if (str_contains($path, 'ThresholdValidatorAssignment')) {
-        return ['Analysis/Finding', 'P6'];
+        return 'Analysis/Finding';
     }
     if (str_contains($path, 'CoverageProjection') || str_contains($path, 'JsonShapePreservation')) {
-        return ['Reporting/FindingProjection', 'P6'];
+        return 'Reporting/FindingProjection';
     }
     // No broad `tests/Infrastructure/` fallback sits above this: one did, and it
     // answered first with the bare string `Infrastructure`, which is a taxonomy
@@ -1068,16 +1059,16 @@ function classifyOwner(string $path): array
     // now reaches the unclassified refusal at the end of the ladder, which is an
     // ownership decision asked for rather than answered wrongly.
     if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#', $path, $matches) === 1) {
-        return ['Infrastructure/' . $matches[1], 'P8'];
+        return 'Infrastructure/' . $matches[1];
     }
     if (str_starts_with($path, 'tests/Reporting/')) {
-        return ['Reporting', 'P8'];
+        return 'Reporting';
     }
     if (str_contains($path, 'LayerAssignment')) {
-        return ['Infrastructure/Console', 'P4'];
+        return 'Infrastructure/Console';
     }
     if (str_ends_with($path, '.gitkeep')) {
-        return ['legacy-placeholder', 'P8'];
+        return 'legacy-placeholder';
     }
 
     return fail('Unclassified test artifact: ' . $path);
@@ -1370,15 +1361,15 @@ function dispositionFor(string $path, string $kind, string $target): string
 {
     $orphanReason = orphanCandidateReason($path);
     if ($orphanReason !== null) {
-        return 'P8: retain in place until consumer proof; delete only if the orphan candidate is confirmed. ' . $orphanReason;
+        return 'Retain in place until consumer proof; delete only if the orphan candidate is confirmed. ' . $orphanReason;
     }
     if ($kind === 'placeholder') {
-        return 'P8: remove the empty legacy placeholder after its target topology exists.';
+        return 'Remove the empty legacy placeholder after its target topology exists.';
     }
 
     return $target === $path
         ? 'Retain at the materialized subject-owned path.'
-        : 'Move atomically with the named owner and closure package.';
+        : 'Move atomically with the named subject owner.';
 }
 
 function orphanCandidateReason(string $path): ?string
@@ -1609,7 +1600,6 @@ function fixtureDirectoryRows(array $rows): array
         $directory = dirname($row['current_path']);
         while ($directory !== '.' && (str_contains($directory, '/Fixtures') || str_contains($directory, '/Fixture') || str_contains($directory, '/data'))) {
             $directories[$directory]['owners'][$row['subject_owner']] = true;
-            $directories[$directory]['packages'][$row['closure_package']] = true;
             $directories[$directory]['orphan'] = ($directories[$directory]['orphan'] ?? true)
                 && orphanCandidateReason($row['current_path']) !== null;
             // A directory whose every member file is already retained in
@@ -1628,18 +1618,15 @@ function fixtureDirectoryRows(array $rows): array
     $result = [];
     foreach ($directories as $directory => $data) {
         $owners = array_keys($data['owners']);
-        $packages = array_keys($data['packages']);
         sort($owners, SORT_STRING);
-        sort($packages, SORT_STRING);
         $result[] = [
             'current_directory' => $directory,
             'subject_owners' => implode(',', $owners),
-            'closure_packages' => implode(',', $packages),
             'disposition' => $data['orphan']
-                ? 'P8: retain until consumer proof; delete only if confirmed orphan.'
+                ? 'Retain until consumer proof; delete only if confirmed orphan.'
                 : ($data['retained']
                     ? 'Retain at the materialized subject-owned path.'
-                    : (count($owners) > 1 ? 'Split by file owner and closure package.' : 'Move atomically with the owning subject.')),
+                    : (count($owners) > 1 ? 'Split by file owner.' : 'Move atomically with the owning subject.')),
         ];
     }
 
@@ -1869,10 +1856,8 @@ function inventorySummary(array $rows, array $fixtureDirectories, array $discove
         array_filter($rows, static fn(array $row): bool => $row['kind'] === 'phpunit-test-class'),
         'current_suite',
     ));
-    $packageCounts = array_count_values(array_column($rows, 'closure_package'));
     ksort($kindCounts, SORT_STRING);
     ksort($suiteFileCounts, SORT_STRING);
-    ksort($packageCounts, SORT_STRING);
 
     $targetPaths = [];
     foreach ($rows as $row) {
@@ -1900,7 +1885,6 @@ function inventorySummary(array $rows, array $fixtureDirectories, array $discove
         'explicit_orphan_candidates' => count($orphanCandidates),
         'kind_counts' => $kindCounts,
         'suite_file_counts' => $suiteFileCounts,
-        'closure_package_counts' => $packageCounts,
     ];
 }
 

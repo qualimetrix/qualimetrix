@@ -1539,14 +1539,16 @@ rules:
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
-  # domain-VO sub-namespace. The P4 Layer root contains the Architecture leaf's
-  # immutable layer values and its expansion implementation (ADR 0022).
+  # domain-VO sub-namespace. The Analysis.Policy.Architecture Layer root holds
+  # that leaf's immutable layer values and its expansion implementation
+  # (ADR 0022).
   #
   # Note on scope: plain `suppress_namespaces` entries match by prefix, so the two
   # entries below are blankets — `Qualimetrix\Core` covers the whole
-  # Core tree (including the umbrella namespace itself, D=0.71) and the P4
-  # Layer root deliberately covers its Expansion child. Configuration/Allow is
-  # a separate concrete selector/value/parser leaf, so it has its own prefix.
+  # Core tree (including the umbrella namespace itself, D=0.71) and the
+  # Analysis.Policy.Architecture Layer root deliberately covers its Expansion
+  # child. Configuration/Allow is a separate concrete selector/value/parser
+  # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
       - Qualimetrix\Core

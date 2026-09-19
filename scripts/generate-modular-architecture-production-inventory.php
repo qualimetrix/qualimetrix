@@ -821,7 +821,6 @@ foreach ($rows as &$row) {
     validateDeclarationEntry($row['fqcn'], $entry, $declarations, $manifest['owners']);
     $row['proposed_owner'] = $entry['owner'];
     $row['proposed_status'] = $entry['visibility'];
-    $row['closure_package'] = $entry['closure_package'];
     $usedOwners[$entry['owner']] = true;
 }
 unset($row);
@@ -857,7 +856,6 @@ foreach ($rows as $row) {
             $dependency,
             $byName[$dependency]['proposed_owner'],
             $byName[$dependency]['proposed_status'],
-            $byName[$dependency]['closure_package'],
         ];
     }
 }
@@ -931,7 +929,6 @@ foreach ($rows as $row) {
         $row['kind'],
         $row['proposed_owner'],
         $row['proposed_status'],
-        $row['closure_package'],
         json_encode($declarations[$row['fqcn']]['consumers'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
     ];
     foreach ($row['class_string_targets'] as $target) {
@@ -1075,7 +1072,7 @@ foreach ($rows as $row) {
     }
     $disposition = reportingDisposition($row['fqcn']);
     $reportingCounts[$disposition['classification']] = ($reportingCounts[$disposition['classification']] ?? 0) + 1;
-    $reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target_owner'], $row['closure_package']];
+    $reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target_owner']];
 }
 ksort($reportingCounts, SORT_STRING);
 
@@ -1089,7 +1086,7 @@ foreach ($rows as $row) {
     $instance = array_column(array_values(array_filter($mutable, static fn(array $property): bool => !$property['static'])), 'name');
     sort($static, SORT_STRING);
     sort($instance, SORT_STRING);
-    $stateRows[] = [$row['path'], $row['fqcn'], $row['proposed_owner'], $row['closure_package'], stateScope($row), implode(',', $static), implode(',', $instance), lifecycleMethods($row['methods'])];
+    $stateRows[] = [$row['path'], $row['fqcn'], $row['proposed_owner'], stateScope($row), implode(',', $static), implode(',', $instance), lifecycleMethods($row['methods'])];
 }
 
 $phaseRows = phaseParticipants();
@@ -1100,17 +1097,17 @@ foreach ($phaseRows as $phase) {
 }
 
 $outputs = [
-    'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'closure_package', 'consumers'], $ownershipRows),
+    'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'consumers'], $ownershipRows),
     'production-class-string-targets.tsv' => tsv(['source_fqcn', 'member_kind', 'member_name', 'target_fqcn'], $classStringTargetRows),
     'production-composition-bindings.tsv' => tsv(['source_path', 'source_fqcn', 'source_owner', 'target_path', 'target_fqcn', 'target_owner', 'declared_operations', 'observed_operations', 'behavioral_verdict', 'qmx_projection'], $compositionBindingRows),
-    'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency_owner', 'dependency_visibility', 'closure_package'], $crossOwnerImports),
+    'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency_owner', 'dependency_visibility'], $crossOwnerImports),
     'production-public-imports.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'consumer_fqcn', 'consumer_owner', 'source_path', 'import_kind'], $publicImportRows),
     'production-module-fan-in.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'distinct_consumer_fqcns', 'distinct_consumer_owners'], $fanInRows),
     'production-to-test-imports.tsv' => tsv(['source_path', 'source_fqcn', 'imported_test_fqcn', 'import_kind'], $productionToTestRows),
     'production-extension-families.tsv' => tsv(['family', 'implementation', 'path', 'di_tag', 'registration_path'], $extensionRows),
-    'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_scope', 'mutable_static_properties', 'mutable_instance_properties', 'lifecycle_methods'], $stateRows),
+    'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'state_scope', 'mutable_static_properties', 'mutable_instance_properties', 'lifecycle_methods'], $stateRows),
     'production-phase-participants.tsv' => tsv(['phase', 'participant', 'typed_inputs', 'typed_outputs_or_state', 'state_owner', 'actual_dependency', 'source'], array_values(array_map(static fn(array $phase): array => array_values($phase), $phaseRows))),
-    'production-reporting-classification.tsv' => tsv(['path', 'fqcn', 'classification', 'target_owner', 'closure_package'], $reportingRows),
+    'production-reporting-classification.tsv' => tsv(['path', 'fqcn', 'classification', 'target_owner'], $reportingRows),
     'documentation-ownership.tsv' => documentationInventory($root),
     'manifest-enforcement-summary.tsv' => tsv(
         ['metric', 'count'],
@@ -1305,153 +1302,6 @@ function validateMaterializedP5Boundary(array $manifest): void
         if (isset($declarations[$obsoleteFqcn])) {
             fail("Obsolete P5 declaration remains materialized: {$obsoleteFqcn}");
         }
-    }
-}
-/**
- * The architecture-policy target is a finite projection. Keeping it explicit
- * makes ownership reviewable without allowing unlisted declarations to enter
- * the boundary implicitly.
- *
- * @param array<string, mixed> $manifest
- */
-function validateP4Target(array $manifest): void
-{
-    $target = $manifest['p4_target'];
-    /** @var array<string, array<string, mixed>> $current */
-    $current = $target['current_declaration_targets'];
-    $additions = $target['additions'];
-    $declarations = $manifest['declarations'];
-
-    $currentP4 = array_filter(
-        $declarations,
-        static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
-    );
-    if (array_keys($current) !== array_keys($currentP4)) {
-        failSetDifference('P4 current declaration target map does not match the authoritative P4 declaration set', array_keys($currentP4), array_keys($current));
-    }
-
-    $currentOwners = array_count_values(array_column($currentP4, 'owner'));
-    if (($currentOwners['Analysis.Policy.Architecture'] ?? 0) !== 52
-        || ($currentOwners['Analysis.Evidence.CircularDependency'] ?? 0) !== 6
-        || count($currentOwners) !== 2
-    ) {
-        fail('P4 current declaration map must contain exactly 52 Architecture and six CircularDependency declarations');
-    }
-
-    $deletions = array_filter($current, static fn(array $entry): bool => $entry['disposition'] === 'delete');
-    if (array_keys($deletions) !== [
-        'Qualimetrix\\Architecture\\Processing\\ArchitectureLifecycleHook',
-        'Qualimetrix\\Architecture\\Processing\\ArchitectureProcessorInterface',
-        'Qualimetrix\\Core\\Dependency\\CycleInterface',
-    ]) {
-        fail('P4 target must delete exactly the two Architecture lifecycle declarations and CycleInterface from its current P4 declaration set');
-    }
-
-    /** @var array<string, list<string>> $architectureZones */
-    $architectureZones = $target['architecture_zone_dag'];
-    $expectedZones = [
-        'Contract',
-        'Configuration/Allow',
-        'Layer',
-        'Configuration',
-        'Layer/Expansion',
-        'ArchitecturePolicy',
-        'LayerViolation',
-    ];
-    if (array_keys($architectureZones) !== $expectedZones) {
-        failSetDifference('P4 Architecture internal zone DAG does not declare the reviewed exact zones', $expectedZones, array_keys($architectureZones));
-    }
-    $expectedZoneEdges = [
-        'Contract' => ['Core.Neutral', 'Core.Path', 'Core.Symbol', 'Analysis.Evidence.DependencyModel'],
-        'Configuration/Allow' => ['Contract'],
-        'Layer' => ['Contract', 'Configuration/Allow'],
-        'Configuration' => ['Contract', 'Configuration/Allow', 'Layer'],
-        'Layer/Expansion' => ['Contract', 'Configuration', 'Configuration/Allow', 'Layer'],
-        'ArchitecturePolicy' => ['Contract', 'Configuration', 'Layer', 'Layer/Expansion'],
-        'LayerViolation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
-    ];
-    if ($architectureZones !== $expectedZoneEdges) {
-        fail('P4 Architecture internal zone DAG differs from the reviewed fail-closed allow set');
-    }
-
-    $allTargets = array_merge($current, $additions);
-    $targetFqcns = [];
-    $targetPaths = [];
-    $architectureTargetCount = 0;
-    $circularTargetCount = 0;
-    foreach ($allTargets as $source => $entry) {
-        if ($entry['disposition'] === 'delete') {
-            continue;
-        }
-        if (isset($targetFqcns[$entry['fqcn']]) || isset($targetPaths[$entry['path']])) {
-            fail('P4 target declarations must have unique FQCNs and paths');
-        }
-        $targetFqcns[$entry['fqcn']] = $source;
-        $targetPaths[$entry['path']] = $source;
-        if ($entry['owner'] === 'Analysis.Policy.Architecture') {
-            ++$architectureTargetCount;
-            if (!array_key_exists($entry['zone'], $architectureZones)) {
-                fail('P4 Architecture target declaration ' . $entry['fqcn'] . ' names an unknown internal zone ' . $entry['zone']);
-            }
-        }
-        if ($entry['owner'] === 'Analysis.Evidence.CircularDependency') {
-            ++$circularTargetCount;
-            if (!in_array($entry['zone'], ['Contract', 'Internal'], true)) {
-                fail('P4 CircularDependency target declaration ' . $entry['fqcn'] . ' names an unknown zone ' . $entry['zone']);
-            }
-        }
-    }
-    if ($architectureTargetCount !== 57 || $circularTargetCount !== 7) {
-        fail('P4 target must materialize 57 Architecture and seven CircularDependency declarations after the reviewed additions and deletions');
-    }
-    if (count($additions) !== 12) {
-        fail('P4 target must declare exactly twelve explicit additions');
-    }
-
-    $circularContract = 'Qualimetrix\\Analysis\\Evidence\\CircularDependency\\Contract\\CircularDependencyPreparationInterface';
-    if (($additions[$circularContract]['visibility'] ?? null) !== 'contract'
-        || $target['circular_dependency_contract_consumers'] !== ['Analysis.Run']
-    ) {
-        fail('P4 CircularDependency publishes only its preparation contract to the named Run consumer');
-    }
-
-    $topology = $target['test_topology'];
-    if ($topology['p6_exclusions'] !== [
-        'tests/Architecture/Integration/InlineSuppressionLayerViolationIntegrationTest.php',
-        'tests/Architecture/Fixtures/IgnoreSample/',
-    ]) {
-        fail('P4 test topology must keep the exact P6 InlineSuppression and IgnoreSample exclusions');
-    }
-    $closures = $target['closures'];
-    if ($closures['seams'] !== [
-        'seam-config-load-exception',
-        'seam-deferred-warning',
-        'seam-architecture-lifecycle-hook',
-    ]) {
-        fail('P4 target must close exactly the reviewed three seams');
-    }
-    $actualSeams = [];
-    foreach ($manifest['enforcement_seams'] as $entry) {
-        if ($entry['closes_in'] === 'P4') {
-            $actualSeams[] = $entry['layer'];
-        }
-    }
-    sort($actualSeams, SORT_STRING);
-    $expectedSeams = $closures['seams'];
-    sort($expectedSeams, SORT_STRING);
-    if ($actualSeams !== $expectedSeams) {
-        fail('P4 target seam closure does not match current manifest seams');
-    }
-    $expectedGrant = $closures['temporary_internal_grants'];
-    $actualGrants = array_values(array_filter(
-        $manifest['temporary_internal_grants'],
-        static fn(array $grant): bool => $grant['closes_in'] === 'P4',
-    ));
-    if (count($actualGrants) !== 1
-        || ($expectedGrant[0]['source_fqcn'] ?? null) !== $actualGrants[0]['source_fqcn']
-        || ($expectedGrant[0]['target_fqcn'] ?? null) !== $actualGrants[0]['target_fqcn']
-    ) {
-        fail('P4 target must close exactly the ArchitectureConfigurator -> ArchitectureProcessor temporary grant');
     }
 }
 
@@ -2413,11 +2263,11 @@ function documentationInventory(string $root): string
     sort($paths, SORT_STRING);
     $rows = [];
     foreach ($paths as $path) {
-        [$owner, $closure, $disposition] = documentationDisposition($path);
-        $rows[] = [$path, $owner, $closure, $disposition];
+        [$owner, $disposition] = documentationDisposition($path);
+        $rows[] = [$path, $owner, $disposition];
     }
 
-    return tsv(['current_path', 'subject_owner', 'closure_package', 'disposition'], $rows);
+    return tsv(['current_path', 'subject_owner', 'disposition'], $rows);
 }
 
 /** @param list<string> $command
@@ -2443,116 +2293,114 @@ function commandOutputLines(array $command, string $workingDirectory): array
     return array_values(array_filter(explode("\n", trim($stdout)), static fn(string $line): bool => $line !== ''));
 }
 
-/** @return array{string, string, string} */
+/** @return array{string, string} */
 function documentationDisposition(string $path): array
 {
-    $p0 = [
+    $governance = [
         'CLAUDE.md',
         'docs/adr/README.md',
         'docs/internal/MODULE_README_TEMPLATE.md',
         'website/docs/reference/default-thresholds.md',
         'website/docs/reference/default-thresholds.ru.md',
     ];
-    if (in_array($path, $p0, true)) {
-        return ['Architecture.Governance', 'P0-D', 'P0 governance documentation; review with the manifest and generated topology.'];
+    if (in_array($path, $governance, true)) {
+        return ['Architecture.Governance', 'Repository-wide governance documentation; review with the manifest and generated topology.'];
     }
 
     $exact = [
-        'AGENTS.md' => ['Architecture.Governance', 'P2'],
-        'CHANGELOG.md' => ['Architecture.Governance', 'P2'],
-        'docs/ARCHITECTURE.md' => ['Architecture.Governance', 'P2'],
-        'docs/adr/0001-computed-metrics.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
-        'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
-        'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
-        'docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md' => ['Analysis.Evidence.Design', 'P7'],
-        'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8'],
-        'docs/adr/0029-channel-presentation-join.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => ['Analysis.Evidence.Design', 'P7'],
-        'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0046-a-channel-declares-the-metric-it-judges.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],
-        'docs/adr/0035-a-metric-key-names-its-family-in-kebab.md' => ['Analysis.Evidence.Measurement', 'P3'],
-        'docs/adr/0036-a-formula-addresses-a-metric-by-its-key.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'docs/adr/0037-suppressed-format-and-produced-findings.md' => ['Reporting', 'P6-D'],
-        'docs/adr/0047-suppression-is-not-exclusion.md' => ['Reporting', 'P6-D'],
-        'docs/adr/0049-rule-option-key-recognition.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0063-one-declaration-answers-about-a-rules-options.md' => ['Analysis.Finding', 'P6-A'],
-        'docs/adr/0050-configuration-refusal-carrier.md' => ['Analysis.Configuration', 'P3'],
-        'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => ['Architecture.Governance', 'P2'],
-        'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
-        'src/Analysis/Configuration/README.md' => ['Analysis.Configuration', 'P3'],
-        'src/Analysis/Evidence/CircularDependency/README.md' => ['Analysis.Evidence.CircularDependency', 'P4'],
-        'src/Analysis/Evidence/ComputedMetrics/README.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
-        'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
-        'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
-        'src/Analysis/Evidence/Prioritization/README.md' => ['Analysis.Evidence.Prioritization', 'P6-D'],
-        'src/Analysis/Evidence/CodeSmell/README.md' => ['Analysis.Evidence.CodeSmell', 'P7'],
-        'src/Analysis/Evidence/Cohesion/README.md' => ['Analysis.Evidence.Cohesion', 'P7'],
-        'src/Analysis/Evidence/Complexity/README.md' => ['Analysis.Evidence.Complexity', 'P7'],
-        'src/Analysis/Evidence/Coupling/README.md' => ['Analysis.Evidence.Coupling', 'P7'],
-        'src/Analysis/Evidence/Design/README.md' => ['Analysis.Evidence.Design', 'P7'],
-        'src/Analysis/Evidence/Maintainability/README.md' => ['Analysis.Evidence.Maintainability', 'P7'],
-        'src/Analysis/Evidence/Security/README.md' => ['Analysis.Evidence.Security', 'P7'],
-        'src/Analysis/Evidence/Size/README.md' => ['Analysis.Evidence.Size', 'P7'],
-        'src/Analysis/Finding/README.md' => ['Analysis.Finding', 'P6-A'],
-        'src/Analysis/Policy/Inline/README.md' => ['Analysis.Policy.Inline', 'P6-B'],
-        'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
-        'src/Analysis/Policy/Architecture/README.md' => ['Analysis.Policy.Architecture', 'P4'],
-        'src/Analysis/Policy/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6-C'],
-        'src/Core/README.md' => ['Architecture.Governance', 'P2'],
-        'src/Core/Profiler/README.md' => ['Core.Profiler', 'P8'],
-        'src/Core/Symbol/README.md' => ['Core.Symbol', 'P8'],
-        'src/Infrastructure/Ast/README.md' => ['Infrastructure.Ast', 'P8'],
-        'src/Infrastructure/DependencyInjection/README.md' => ['Infrastructure.DependencyInjection', 'P8'],
-        'src/Infrastructure/Parallel/README.md' => ['Infrastructure.Parallel', 'P8'],
-        'src/Infrastructure/Rule/README.md' => ['Infrastructure.Rule', 'P8'],
-        'src/Infrastructure/Serializer/README.md' => ['Infrastructure.Serializer', 'P8'],
-        'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
-        'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
-        'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],
-        'src/Reporting/README.md' => ['Architecture.Governance', 'P2'],
-        'website/docs/getting-started/configuration.md' => ['Analysis.Run', 'P3'],
-        'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],
-        'website/docs/reference/health-scores.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'website/docs/reference/health-scores.ru.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
-        'website/docs/reference/remediation-time.md' => ['Analysis.Evidence.Prioritization', 'P5'],
-        'website/docs/reference/remediation-time.ru.md' => ['Analysis.Evidence.Prioritization', 'P5'],
-        'website/docs/rules/duplication.md' => ['Analysis.Evidence.Duplication', 'P1'],
-        'website/docs/rules/duplication.ru.md' => ['Analysis.Evidence.Duplication', 'P1'],
-        'website/docs/rules/architecture.md' => ['Architecture.Governance', 'P2'],
-        'website/docs/rules/architecture.ru.md' => ['Architecture.Governance', 'P2'],
-        'website/docs/usage/baseline.md' => ['Analysis.Policy.Baseline', 'P6'],
-        'website/docs/usage/baseline.ru.md' => ['Analysis.Policy.Baseline', 'P6'],
-        'website/docs/usage/output-formats.md' => ['Analysis.Finding', 'P6'],
-        'website/docs/usage/output-formats.ru.md' => ['Analysis.Finding', 'P6'],
+        'AGENTS.md' => 'Architecture.Governance',
+        'CHANGELOG.md' => 'Architecture.Governance',
+        'docs/ARCHITECTURE.md' => 'Architecture.Governance',
+        'docs/adr/0001-computed-metrics.md' => 'Analysis.Evidence.ComputedMetrics',
+        'docs/adr/0017-baseline-ceiling.md' => 'Analysis.Policy.Baseline',
+        'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => 'Analysis.Evidence.DependencyModel',
+        'docs/adr/0022-capability-oriented-modular-monolith.md' => 'Architecture.Governance',
+        'docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md' => 'Analysis.Evidence.Design',
+        'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => 'Architecture.Governance',
+        'docs/adr/0029-channel-presentation-join.md' => 'Analysis.Finding',
+        'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => 'Analysis.Evidence.Design',
+        'docs/adr/0031-channel-shape-is-a-producer-property.md' => 'Analysis.Finding',
+        'docs/adr/0046-a-channel-declares-the-metric-it-judges.md' => 'Analysis.Finding',
+        'docs/adr/0032-computed-metric-producer-split.md' => 'Analysis.Evidence.ComputedMetrics',
+        'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => 'Analysis.Finding',
+        'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => 'Core.Symbol',
+        'docs/adr/0035-a-metric-key-names-its-family-in-kebab.md' => 'Analysis.Evidence.Measurement',
+        'docs/adr/0036-a-formula-addresses-a-metric-by-its-key.md' => 'Analysis.Evidence.ComputedMetrics',
+        'docs/adr/0037-suppressed-format-and-produced-findings.md' => 'Reporting',
+        'docs/adr/0047-suppression-is-not-exclusion.md' => 'Reporting',
+        'docs/adr/0049-rule-option-key-recognition.md' => 'Analysis.Finding',
+        'docs/adr/0055-a-rule-option-declares-the-shape-of-its-value.md' => 'Analysis.Finding',
+        'docs/adr/0063-one-declaration-answers-about-a-rules-options.md' => 'Analysis.Finding',
+        'docs/adr/0050-configuration-refusal-carrier.md' => 'Analysis.Configuration',
+        'docs/adr/0059-declared-layer-policy-and-architecture-governance.md' => 'Architecture.Governance',
+        'src/Analysis/README.md' => 'Analysis.Run',
+        'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
+        'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',
+        'src/Analysis/Evidence/ComputedMetrics/README.md' => 'Analysis.Evidence.ComputedMetrics',
+        'src/Analysis/Evidence/DependencyModel/README.md' => 'Analysis.Evidence.DependencyModel',
+        'src/Analysis/Evidence/Duplication/README.md' => 'Analysis.Evidence.Duplication',
+        'src/Analysis/Evidence/Measurement/README.md' => 'Analysis.Evidence.Measurement',
+        'src/Analysis/Evidence/Prioritization/README.md' => 'Analysis.Evidence.Prioritization',
+        'src/Analysis/Evidence/CodeSmell/README.md' => 'Analysis.Evidence.CodeSmell',
+        'src/Analysis/Evidence/Cohesion/README.md' => 'Analysis.Evidence.Cohesion',
+        'src/Analysis/Evidence/Complexity/README.md' => 'Analysis.Evidence.Complexity',
+        'src/Analysis/Evidence/Coupling/README.md' => 'Analysis.Evidence.Coupling',
+        'src/Analysis/Evidence/Design/README.md' => 'Analysis.Evidence.Design',
+        'src/Analysis/Evidence/Maintainability/README.md' => 'Analysis.Evidence.Maintainability',
+        'src/Analysis/Evidence/Security/README.md' => 'Analysis.Evidence.Security',
+        'src/Analysis/Evidence/Size/README.md' => 'Analysis.Evidence.Size',
+        'src/Analysis/Finding/README.md' => 'Analysis.Finding',
+        'src/Analysis/Policy/Inline/README.md' => 'Analysis.Policy.Inline',
+        'src/Analysis/Run/README.md' => 'Analysis.Run',
+        'src/Analysis/Policy/Architecture/README.md' => 'Analysis.Policy.Architecture',
+        'src/Analysis/Policy/Baseline/README.md' => 'Analysis.Policy.Baseline',
+        'src/Core/README.md' => 'Architecture.Governance',
+        'src/Core/Profiler/README.md' => 'Core.Profiler',
+        'src/Core/Symbol/README.md' => 'Core.Symbol',
+        'src/Infrastructure/Ast/README.md' => 'Infrastructure.Ast',
+        'src/Infrastructure/DependencyInjection/README.md' => 'Infrastructure.DependencyInjection',
+        'src/Infrastructure/Parallel/README.md' => 'Infrastructure.Parallel',
+        'src/Infrastructure/Rule/README.md' => 'Infrastructure.Rule',
+        'src/Infrastructure/Serializer/README.md' => 'Infrastructure.Serializer',
+        'src/Infrastructure/Console/README.md' => 'Architecture.Governance',
+        'src/Infrastructure/README.md' => 'Architecture.Governance',
+        'src/Reporting/GraphProjection/README.md' => 'Reporting.GraphProjection',
+        'src/Reporting/README.md' => 'Architecture.Governance',
+        'website/docs/getting-started/configuration.md' => 'Analysis.Run',
+        'website/docs/getting-started/configuration.ru.md' => 'Analysis.Run',
+        'website/docs/reference/health-scores.md' => 'Analysis.Evidence.ComputedMetrics',
+        'website/docs/reference/health-scores.ru.md' => 'Analysis.Evidence.ComputedMetrics',
+        'website/docs/reference/remediation-time.md' => 'Analysis.Evidence.Prioritization',
+        'website/docs/reference/remediation-time.ru.md' => 'Analysis.Evidence.Prioritization',
+        'website/docs/rules/duplication.md' => 'Analysis.Evidence.Duplication',
+        'website/docs/rules/duplication.ru.md' => 'Analysis.Evidence.Duplication',
+        'website/docs/rules/architecture.md' => 'Architecture.Governance',
+        'website/docs/rules/architecture.ru.md' => 'Architecture.Governance',
+        'website/docs/usage/baseline.md' => 'Analysis.Policy.Baseline',
+        'website/docs/usage/baseline.ru.md' => 'Analysis.Policy.Baseline',
+        'website/docs/usage/output-formats.md' => 'Analysis.Finding',
+        'website/docs/usage/output-formats.ru.md' => 'Analysis.Finding',
     ];
     if (isset($exact[$path])) {
-        $mapped = $exact[$path];
-
-        return [$mapped[0], $mapped[1], 'Move or update atomically with the named migration package.'];
+        return [$exact[$path], 'Move or update atomically with the named subject owner.'];
     }
 
     $prefixes = [
-        'website/docs/rules/annotation' => ['Analysis.Policy.Inline', 'P6-B'],
-        'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
-        'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
-        'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
-        'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
-        'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
-        'website/docs/rules/discovery' => ['Analysis.Run', 'Run documentation'],
-        'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
-        'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
-        'website/docs/rules/suppression' => ['Analysis.Finding', 'Finding documentation'],
-        'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
+        'website/docs/rules/annotation' => 'Analysis.Policy.Inline',
+        'website/docs/rules/code-smell' => 'Analysis.Evidence.CodeSmell',
+        'website/docs/rules/cohesion' => 'Analysis.Evidence.Cohesion',
+        'website/docs/rules/complexity' => 'Analysis.Evidence.Complexity',
+        'website/docs/rules/coupling' => 'Analysis.Evidence.Coupling',
+        'website/docs/rules/design' => 'Analysis.Evidence.Design',
+        'website/docs/rules/discovery' => 'Analysis.Run',
+        'website/docs/rules/maintainability' => 'Analysis.Evidence.Maintainability',
+        'website/docs/rules/security' => 'Analysis.Evidence.Security',
+        'website/docs/rules/suppression' => 'Analysis.Finding',
+        'website/docs/rules/size' => 'Analysis.Evidence.Size',
     ];
-    foreach ($prefixes as $prefix => [$owner, $closure]) {
+    foreach ($prefixes as $prefix => $owner) {
         if (str_starts_with($path, $prefix)) {
-            return [$owner, $closure, 'Move or update atomically with the named migration package.'];
+            return [$owner, 'Move or update atomically with the named subject owner.'];
         }
     }
 
@@ -2621,7 +2469,7 @@ function documentationDisposition(string $path): array
         'website/docs/usage/usage-scenarios.ru.md',
     ];
     if (in_array($path, $shared, true)) {
-        return ['Architecture.Governance', 'shared', 'Shared repository documentation; retain in place and update only when its governed surface changes.'];
+        return ['Architecture.Governance', 'Shared repository documentation; retain in place and update only when its governed surface changes.'];
     }
 
     return fail('unclassified committable documentation path: ' . $path);

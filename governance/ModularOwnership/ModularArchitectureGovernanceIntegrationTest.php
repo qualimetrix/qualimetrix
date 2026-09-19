@@ -66,7 +66,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     public function itPublishesOnlyPermanentExactCompositionBindingsForDiInternals(): void
     {
         $manifest = $this->manifest();
-        self::assertSame(2, $manifest['version']);
+        self::assertSame(3, $manifest['version']);
         self::assertArrayNotHasKey('temporary_internal_grants', $manifest);
 
         $bindings = [];
