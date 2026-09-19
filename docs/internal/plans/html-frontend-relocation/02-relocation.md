@@ -2,7 +2,8 @@
 
 Does not begin until stage 01 has landed and `composer test:js` is green with
 its single JS hop. Destination is `html-report/` at the repository root, the
-whole directory, 29 files.
+whole directory: 29 tracked files today, 28 once P1's deletion of
+`collect-metric-keys.mjs` lands.
 
 ## Packages
 
@@ -18,6 +19,14 @@ artifact freshness stays red, which regeneration closes anyway. The split below
 is taken for parallelism; its price is that neither half is green and neither
 can be reviewed against a green tree. Say it out loud so no executor "fixes" a
 red that belongs to the other half.
+
+**Execution takes that self-contained variant.** One executor carries P1 and P2
+as a single package, so the tree is green but for artifact freshness at the end
+of it, and the reviewer sees one coherent change instead of two halves neither
+of which runs. P3 runs beside it — its files are disjoint and it touches no
+git state. The two plants (P2 items 2 and 3) move to P4: a plant is acceptance,
+it needs the whole move in `HEAD` to mean anything, and a `git reset --hard`
+inside a package would discard the parallel package's uncommitted work.
 
 ### P1 — the move, and everything that refuses to run without it
 
@@ -48,11 +57,21 @@ probe that planted an untracked file and stayed green.
 - The seven `export-ignore` lines repoint. They are inert at the wrong path and
   say nothing about it: measured on the 28-file tree of the time, the package
   went from 4 files to 28 with **no
-  refusal**. The prose counter in the same file's comment (`:23-28`, "33 -> 6")
-  is repointed with them.
+  refusal**. The prose counter in the same file's comment (`:23-30`, "34 -> 6,
+  up from 33") is repointed with them, and it moves again on its own: deleting
+  `collect-metric-keys.mjs` takes the tree to 28 files, so the counter reads
+  "33 -> 6" once more — for a different reason than the 33 it already names.
+  Spell out which tree each number is measured on.
 - The two `.gitignore` negations repoint. Measured at this destination:
   `html-report/package.json` and `package-lock.json` are then swallowed by the
   blanket `*.json` rule at `:61`.
+- `scripts/collect-metric-keys.mjs` is **deleted, not moved**. Its only output,
+  `finding-gate/enumeration-js-metric-keys.tsv`, was retired; the reasoning is
+  under P2 below, and the `references.tsv` row that carries it is 36. The rest
+  of the four-hop chain stays: `metric-key-catalog.mjs` calls `fromRoot` three
+  times for the live vitest, so `repo-root.mjs` moves with the directory. The
+  deletion takes the directory to 28 files, which moves every count form that
+  publishes 29.
 - CI carries the path twice, in `cache-dependency-path` and an `npm ci` prefix.
 - `composer.json` carries it as a literal `cd` three times, in `test:js`,
   `build:js` and `install:js`; `test:js` is inside `check:code`, and
@@ -111,8 +130,13 @@ probe that planted an untracked file and stayed green.
 `scripts/generate-rename-enumeration.php`,
 `scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`,
 `governance/DistributedPackage/HtmlReportShipsOnlyWhatItReadsTest.php`,
-`governance/PlanningRecords/PlanningRecordIsolationTest.php`,
 `governance/.../RuleIdentifierLiteralGuardTest.php`.
+
+`governance/PlanningRecords/PlanningRecordIsolationTest.php` was in this list
+and is **not** a file of this package: since #100 it derives its population from
+`git ls-files` rather than from a root list, so it follows the move with no
+edit. Its plant at the new root stays, as DoD item 3 — that is a measurement,
+not a repoint.
 
 `finding-gate/enumeration-js-metric-keys.tsv` was in this set and has since been
 retired, so this package no longer carries it. It was a plan-local enumeration
@@ -178,8 +202,6 @@ reason to accept one.
   surface** rather than opening a column: the total then stays 115 in the same
   place and there is no "moved column" to explain. `excludeFiles` also names
   `src/Reporting/Template/package-lock.json` by hand and follows.
-- `PlanningRecordIsolationTest`'s own root list. Today it reaches 24 of the
-  viewer's files; after the move, none, **without refusing**.
 - The shipping guard's `TREE`, and the prose counter in its docblock (`:14-17`,
   "all 33 of its entries") and at `:95` (`check-attr` on `Template/src/tree.js`)
   — the last of which no path sweep finds, because it spells the path the other

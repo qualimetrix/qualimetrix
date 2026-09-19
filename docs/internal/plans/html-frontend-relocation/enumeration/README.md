@@ -30,10 +30,15 @@ what actually ships.
 answered CLAUDE.md's row "`ScratchPathsCarryRealEntropyTest` — `ROOTS`, **and
 every other control that carries its own root list**" by checking only the
 control CLAUDE.md names. It therefore missed `PlanningRecordIsolationTest`,
-whose own root list includes `src` and which reaches 24 of the viewer's files by
-extension today and none after the move, without refusing. A row that names an
-open-ended class cannot be closed by answering its example; the sweep read its
-own answer as satisfying the row.
+whose root list then included `src`. A row that names an open-ended class cannot
+be closed by answering its example; the sweep read its own answer as satisfying
+the row.
+
+**That instance has since been closed, and not by this plan.** #100 replaced the
+root list with `git ls-files` minus literal exclusions, so on `f6f7482b` the
+control judges 27 of the viewer's files and follows them to the new root with no
+edit. The method defect the row exposed stands; the address it named does
+not.
 
 Two rows of that table were also walked but not recorded, and both are N/A:
 `testSuitePrefixTable()` and `currentSuite()` in the test inventory name the
@@ -62,9 +67,10 @@ sit, not a line to go and read.
 bare-word sweep with finding the fragment form `str_contains($relativePath,
 '/Template/')`, while this section used to claim the fragment forms `'Template'`
 and `'/dist/'` were never swept separately. Both could not be true, and the gap
-between them is exactly where `PlanningRecordIsolationTest` — which matches on
+between them is exactly where `PlanningRecordIsolationTest` — which matched on
 `'/dist/'` — went missing. The bare-word sweep ran; it was not run against the
-governance controls' own root lists.
+governance controls' own root lists. (That control no longer carries a root
+list; see above. The lesson about the sweep is what survives.)
 
 **A defect in the method, found and closed during the sweep:** the first pass
 over the JS metric-key enumeration ran with an include list that excluded

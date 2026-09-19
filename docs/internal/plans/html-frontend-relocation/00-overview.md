@@ -107,13 +107,19 @@ Four silent addresses decide the packaging of this work:
   turns a silent scan-scope pathspec into a loud refusal for this owner. Not an
   assertion, so an `assertCount` sweep misses it; found only by carrying the
   move out.
-- **`PlanningRecordIsolationTest` scans a root list of its own** — `bin`,
-  `governance`, `scripts`, `src`, `tests` — and today reaches 24 of the viewer's
-  files by extension. After the move it reaches none, **with no refusal**: a
-  control that stays green on a shrunken population. The first draft's
-  enumeration closed CLAUDE.md's "and every other control that carries its own
-  root list" row by answering only about the control CLAUDE.md names, which is
-  the row reading itself as satisfied.
+- **`PlanningRecordIsolationTest` carried a root list of its own** — `bin`,
+  `governance`, `scripts`, `src`, `tests` — and the move would have shrunk its
+  population without refusing. **That address is closed, by other work rather
+  than by this plan:** #100 derives the population from `git ls-files` less
+  `docs/`, `website/` and the vendored directories, and asserts that equality
+  against exclusions spelled out literally in the test. Measured on `f6f7482b`:
+  the control judges 27 of the viewer's files (the 29 tracked, less the two
+  under `dist/`), and it judges them at the new root automatically. So this
+  plan neither edits it nor owns it — what it owes is the plant that proves the
+  control still bites at the new root. The finding the row made is still real
+  in general: the first draft's enumeration closed CLAUDE.md's "and every other
+  control that carries its own root list" row by answering only about the
+  control CLAUDE.md names, which is the row reading itself as satisfied.
 - **Two `.gitignore` negations and seven `export-ignore` lines go inert** without
   refusing. The shipping guard then fails *before* it measures anything and
   reports that nothing was checked — a red test that proves nothing, which reads
