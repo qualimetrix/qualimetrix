@@ -47,6 +47,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 [$exitCode, $output] = $this->runProcess([
                     \PHP_BINARY,
                     $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+                    '--check',
                     '--source-overrides=' . $mappingPath,
                 ]);
 
@@ -264,6 +265,96 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $output,
             );
         });
+    }
+
+    /**
+     * The ban on production importing a development namespace is a list of
+     * prefixes, and a prefix the name collection never produces refuses
+     * nothing while still reading as covered. Four of the thirteen entries
+     * were in that state: the collection kept only names under the production
+     * root, so every `Qmx*` development root was unreachable, and a probe
+     * under one passed with exit 0.
+     *
+     * **What this proves is that the name collection produces a name under every
+     * declared prefix.** Narrowing that filter back to the production root
+     * reddens this test, naming the prefixes it stopped reaching -- that is the
+     * regression guarded, and it is the defect that happened.
+     *
+     * What it does not prove is coverage of the tree. The prefixes are read from
+     * the same `autoload-dev` section the ban reads, so a namespace declared
+     * outside that section is outside the ban and outside this test alike --
+     * see `developmentNamespacePrefixes()`.
+     *
+     * All prefixes are planted into one override and proven by one run: the
+     * refusal reports every offence it found, so a prefix missing from the
+     * output is one the ban produced no refusal for.
+     *
+     * The generator runs under `--check` so that a control whose subject has
+     * regressed cannot reach `emitGenerated()` and rewrite tracked artifacts
+     * from the planted tree. The refusal is reached before any comparison, so
+     * the flag costs no discriminating power.
+     *
+     * The probe names are built by concatenation on purpose. Spelled out, they
+     * would be names the tree contains and no file declares, which is what
+     * `scripts/dangling-test-names.py` reports.
+     */
+    #[Test]
+    public function itRefusesAProductionImportOfEveryDeclaredDevelopmentNamespace(): void
+    {
+        $manifest = json_decode((string) file_get_contents($this->root() . '/composer.json'), true);
+        self::assertIsArray($manifest);
+        $prefixes = array_keys($manifest['autoload-dev']['psr-4'] ?? []);
+        self::assertNotSame([], $prefixes, 'no development root to prove anything about');
+
+        $sourcePath = $this->root() . '/src/Core/Version.php';
+        $source = file_get_contents($sourcePath);
+        self::assertIsString($source);
+
+        $anchor = "final class Version\n{";
+        self::assertStringContainsString($anchor, $source);
+
+        $probes = [];
+        $expected = [];
+        foreach ($prefixes as $index => $prefix) {
+            $fqcn = $prefix . 'ReachabilityProbe';
+            $expected[] = $fqcn;
+            $probes[] = '    private const REACHABILITY_PROBE_' . $index . ' = \\' . $fqcn . '::class;';
+        }
+        $override = str_replace($anchor, $anchor . "\n" . implode("\n", $probes), $source, $replacements);
+        self::assertSame(1, $replacements);
+
+        $overridePath = tempnam(sys_get_temp_dir(), 'qmx-devns-');
+        $mappingPath = tempnam(sys_get_temp_dir(), 'qmx-devns-map-');
+        self::assertIsString($overridePath);
+        self::assertIsString($mappingPath);
+
+        try {
+            file_put_contents($overridePath, $override);
+            file_put_contents($mappingPath, json_encode([
+                $this->relativePath($sourcePath) => $overridePath,
+            ], \JSON_THROW_ON_ERROR));
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+                '--check',
+                '--source-overrides=' . $mappingPath,
+            ]);
+
+            self::assertNotSame(0, $exitCode, "production importing a development namespace was accepted\n" . $output);
+            self::assertStringContainsString('development-only namespace', $output);
+
+            foreach ($expected as $fqcn) {
+                self::assertStringContainsString(
+                    $fqcn,
+                    $output,
+                    $fqcn . ' is declared in autoload-dev but no refusal names it',
+                );
+            }
+        } finally {
+            @unlink($overridePath);
+            @unlink($mappingPath);
+        }
     }
 
     private function sourcePath(string $filename): string
