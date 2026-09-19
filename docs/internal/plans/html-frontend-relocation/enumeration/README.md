@@ -35,6 +35,11 @@ extension today and none after the move, without refusing. A row that names an
 open-ended class cannot be closed by answering its example; the sweep read its
 own answer as satisfying the row.
 
+Two rows of that table were also walked but not recorded, and both are N/A:
+`testSuitePrefixTable()` and `currentSuite()` in the test inventory name the
+viewer nowhere. Recorded now, because a row-by-row claim with two rows missing
+is a claim about a set that was not fully enumerated.
+
 Review re-swept that class and found no further member: `BaselineCountPublication`
 filters `.md` (the viewer has none), the rule-option and channel controls filter
 `.php`, and `promise-effect` analyses `src` for PHP only.
