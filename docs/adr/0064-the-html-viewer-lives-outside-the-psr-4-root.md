@@ -146,28 +146,71 @@ and `HealthDecompositionCatalog.php`, the live vitest needs it, and
 only `fromRoot` **write**: after it, the viewer reads from the repository root
 and never writes back to it.
 
-### What this decision deliberately keeps
+### How the prescription is retired, and the refusal that dies with it
 
-`NON_MANIFEST_TEST_OWNERS['Reporting/HtmlTemplate']` declares `'rows' => 10`,
-compared against the actual count of the viewer's test files. It is a live
-refusal: an eleventh test file under the viewer makes
-`composer architecture:check` refuse by name. **The declared-row contract is
-carried to the new root rather than dropped.**
+The viewer's 10 test files are **registered in `TOOLING_TEST_ROOT_OWNERS`** —
+`html-report/tests/`, plus `html-report/package.json` and
+`html-report/vite.config.js` as file keys, because those two sit beside `tests/`
+rather than under it. `targetPath()` then returns each file's own path, the
+inventory publishes `Retain at the materialized subject-owned path.`, and the
+prescription toward a `tests/` destination is gone rather than renamed.
 
-An earlier draft proposed dropping it, on the ground that registering the new
-root was impossible because the tooling-root check globs only `scripts/*/tests`
-and `tools/*/tests`. **That ground is refuted.** `TOOLING_TEST_ROOT_OWNERS`
-already carries `'governance/'`, a key that glob never matches, and
-`assertToolingTestRootRegistrationIsComplete()` filters exactly that key out of
-the comparison by name. The precedent for a registered root outside the glob's
-shape exists and is in use.
+**Registration is possible, and the claim that it was not is refuted.** An
+earlier draft held that the new root could not be registered, because the
+tooling-root completeness check globs only `scripts/*/tests` and `tools/*/tests`.
+`TOOLING_TEST_ROOT_OWNERS` already carries `'governance/'`, a key that glob never
+matches, and `assertToolingTestRootRegistrationIsComplete()` filters exactly that
+key out of the comparison by name. The precedent for a registered root outside
+the glob's shape exists and is in use — and it is what makes the retirement
+reachable at all. Everything below follows from taking it.
 
-The refutation is recorded because of what it nearly caused. A live refusal lost
-as a side effect of a mechanism nobody chose is the one outcome this work may
-not produce: it is not visible in any diff, it makes no test red, and the first
-evidence of it would be an eleventh file landing years later with nothing to
-say so. Dropping the contract remains permissible — but only as a decision taken
-on its own merits and recorded, never as fallout.
+**`NON_MANIFEST_TEST_OWNERS['HtmlReport']` is dropped, and it could not have been
+kept.** Not a preference: the two constants are mutually exclusive here.
+`assertTestOwnersAreManifestOwners()` skips every row whose `current_path` and
+`target_path` both fail to start with `tests/`, and that is precisely what
+registration produces — the rows are retained in place, so all 10 `continue`
+before reaching the counter. The declared count would sit at 10 against an
+`$allowed` that nothing can increment, and the entry would refuse
+unconditionally, whatever number was written in it. That same skip is why every
+other registered tooling root is absent from the constant; the viewer is not an
+exception to the rule, it has joined it.
+
+The entry's own stated reason had also expired. It cited `04-packages.md`, the
+planning document deleted in `4438c105`: the guard was holding a seat for an
+unresolved relocation, and this decision resolves it.
+
+**A live refusal is given up, and naming it is the point.** Until now an
+eleventh test file under the viewer made `composer architecture:check` refuse by
+name, the actual count disagreeing with the declared 10. It no longer does: an
+eleventh test file lands, is inventoried, and nothing says anything. Nothing
+else in the tree replaces that signal — it was the one control that noticed the
+viewer's test population changing size.
+
+This ADR holds that a live refusal lost as a *side effect of a mechanism nobody
+chose* is the one outcome this work may not produce, and that standard is met by
+recording the loss, not by the loss being small. What was nearly produced here
+is the failure that standard exists for: carrying the contract over mechanically
+repointed its destination to `tests/HtmlReport/Tests/` — a target this record
+rejects on three grounds a few paragraphs above — and the generated artifact was
+*fresh and wrong at the same time*, with `architecture:check` green over it. A
+guard renamed is not a guard retired.
+
+**The condition for revisiting:** if the viewer's test files ever become mapped
+to a manifest owner, or otherwise re-enter the population
+`assertTestOwnersAreManifestOwners()` counts — anything that puts `tests/` at
+the head of their `current_path` or `target_path` again. Then a declared row
+count is enforceable once more and the reason for dropping it has lapsed. A
+count re-declared while the rows stay outside that population would refuse
+unconditionally, so it must not be re-added on the strength of wanting the
+signal back.
+
+One shape worth flagging for the next such root: registering the viewer needed
+two **file**-shaped keys beside the directory key, in a map named for test
+roots. `package.json` and `vite.config.js` are test configuration that lives at
+the project's root rather than inside its test directory. Any further
+root-level, non-PSR-4 project will meet the same thing, and the map will stretch
+the same way — until enough of them accumulate that it is worth asking whether
+the map is about roots or about paths.
 
 ### `html-report/README.md` is an unowned document, accepted
 
@@ -218,8 +261,10 @@ one costs a reader a minute rather than costing a check its verdict.
   not its only address: the packaging and ignore rules and the CI workflow each
   carry it too, and a rename of this root is an edit in every one of them.
 - The prescription in `test-ownership.tsv` toward
-  `tests/Reporting/HtmlTemplate/Tests/` is retired. Its declared-row refusal
-  survives at the new root.
+  `tests/Reporting/HtmlTemplate/Tests/` is retired: the viewer's 10 test files
+  are retained at their own paths. The declared-row refusal that counted them
+  does not survive — an eleventh test file under the viewer is now inventoried
+  in silence.
 - ADR 0012's placement sentence is superseded, not edited. Its reasoning about
   vertical-slice formalization still stands and is untouched: this decision says
   nothing about whether HTML Report should grow a slice skeleton, and the answer
