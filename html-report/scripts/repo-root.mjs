@@ -10,7 +10,11 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+// Not exported: fromRoot() is the module's public surface, and nothing
+// outside this file has ever imported REPO_ROOT directly — the same dead-
+// export shape round 1 removed from metric-key-catalog.mjs, caught here by
+// round 2 sweeping this file too rather than trusting the first sweep.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export function fromRoot(...parts) {
   return resolve(REPO_ROOT, ...parts);

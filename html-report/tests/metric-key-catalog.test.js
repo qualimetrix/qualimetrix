@@ -3,7 +3,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadCatalog, isCatalogMember, isFamilyShaped } from '../scripts/metric-key-catalog.mjs';
-import { parseAst } from 'rollup/dist/parseAst.js';
+// './parseAst' is rollup's documented subpath export (see its package.json
+// "exports" map); 'rollup/dist/parseAst.js' reached the same file through
+// the catch-all "./dist/*" entry, which is an escape hatch rollup makes no
+// promise about, not a published surface.
+import { parseAst } from 'rollup/parseAst';
 import { walk } from 'estree-walker';
 
 // Regression guard for the hand-written metric-key literals in src/*.js
