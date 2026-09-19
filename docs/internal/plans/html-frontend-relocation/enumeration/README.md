@@ -6,7 +6,7 @@ failure this split exists to avoid.
 
 | File                   | Pass             | Rows |
 | ---------------------- | ---------------- | ---- |
-| `references.tsv`       | swept by channel | 69   |
+| `references.tsv`       | swept by channel | 70   |
 | `measured-breakage.md` | move carried out | 17   |
 
 ## `references.tsv` — swept by reference channel
@@ -30,7 +30,7 @@ what actually ships.
 answered CLAUDE.md's row "`ScratchPathsCarryRealEntropyTest` — `ROOTS`, **and
 every other control that carries its own root list**" by checking only the
 control CLAUDE.md names. It therefore missed `PlanningRecordIsolationTest`,
-whose own root list includes `src` and which reaches 23 of the viewer's files by
+whose own root list includes `src` and which reaches 24 of the viewer's files by
 extension today and none after the move, without refusing. A row that names an
 open-ended class cannot be closed by answering its example; the sweep read its
 own answer as satisfying the row.
@@ -85,12 +85,14 @@ ignore-rule findings depend on the name, so stage 02 re-derives them.
 Once, and substantively.
 
 - **The manifest.** The sweep reported it as knowing the directory. It does not:
-  0 occurrences of either spelling. Only 10 of the 28 files appear in any
+  0 occurrences of either spelling. Only 10 of the 29 files appear in any
   inventory, via `test-ownership.tsv:162-171`. The experiment is right, verified
   directly against the manifest.
 - **The hardcoded count.** The sweep's `assertCount(` pass found five counters
-  and none of them about this subject — including `assertCount(28, …)`, whose
-  28 coincides with the file count and is about a different artifact entirely.
+  and none of them about this subject — including `assertCount(28, …)`, which
+  coincided with the then 28-file count and is about a different artifact
+  entirely; stage 01 added a file and the coincidence is gone, which is exactly
+  why the count was never the thing to check.
   The real counter is `'rows' => 10` in `NON_MANIFEST_TEST_OWNERS`, which is not
   an assertion and which only the experiment surfaced.
 

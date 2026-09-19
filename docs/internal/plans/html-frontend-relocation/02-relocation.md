@@ -2,7 +2,7 @@
 
 Does not begin until stage 01 has landed and `composer test:js` is green with
 its single JS hop. Destination is `html-report/` at the repository root, the
-whole directory, 28 files.
+whole directory, 29 files.
 
 ## Packages
 
@@ -46,15 +46,18 @@ probe that planted an untracked file and stayed green.
   shipping guard reads them by regex, and stage 01 exists partly because
   changing that shape reddens the guard.
 - The seven `export-ignore` lines repoint. They are inert at the wrong path and
-  say nothing about it: measured, the package went from 4 files to 28 with **no
+  say nothing about it: measured on the 28-file tree of the time, the package
+  went from 4 files to 28 with **no
   refusal**. The prose counter in the same file's comment (`:23-28`, "33 -> 6")
   is repointed with them.
 - The two `.gitignore` negations repoint. Measured at this destination:
   `html-report/package.json` and `package-lock.json` are then swallowed by the
   blanket `*.json` rule at `:61`.
 - CI carries the path twice, in `cache-dependency-path` and an `npm ci` prefix.
-- `composer.json`'s `test:js` and `build:js` carry it as a literal `cd`;
-  `test:js` is inside `check:code`.
+- `composer.json` carries it as a literal `cd` three times, in `test:js`,
+  `build:js` and `install:js`; `test:js` is inside `check:code`, and
+  `install:js` is called by `scripts/init-environment.sh` — which is why the
+  path lives here and not in that script.
 
 **Definition of Done.**
 
@@ -148,7 +151,7 @@ reason to accept one.
   surface** rather than opening a column: the total then stays 115 in the same
   place and there is no "moved column" to explain. `excludeFiles` also names
   `src/Reporting/Template/package-lock.json` by hand and follows.
-- `PlanningRecordIsolationTest`'s own root list. Today it reaches 23 of the
+- `PlanningRecordIsolationTest`'s own root list. Today it reaches 24 of the
   viewer's files; after the move, none, **without refusing**.
 - The shipping guard's `TREE`, and the prose counter in its docblock (`:14-17`,
   "all 33 of its entries") and at `:95` (`check-attr` on `Template/src/tree.js`)
@@ -170,9 +173,12 @@ reason to accept one.
 2. The shipping guard **measures**: plant one extra file at the new path, quote
    the refusal naming that file, restore from a copy taken before the plant.
    **This item can only be taken once P1 is in the tree** — until the
-   `export-ignore` lines repoint, the guard reports 28 extra files and a
-   refusal naming the planted one is indistinguishable from the noise. Dependency
-   between the packages' *acceptance*, not their files.
+   `export-ignore` lines repoint, the guard reports every held-out viewer file
+   as extra and a refusal naming the planted one is indistinguishable from that
+   noise. Re-derive the floor on the tree P1 lands on rather than trusting a
+   literal here: the viewer carries 29 tracked files now, against the 28 this
+   sentence was first written for. Dependency between the packages'
+   *acceptance*, not their files.
 3. `PlanningRecordIsolationTest` **measures at the new root**: plant a file under
    `html-report/src/` carrying a planning-record reference, confirm the control
    refuses, restore. Without this the fix is a line edit nothing tests.

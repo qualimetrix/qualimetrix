@@ -289,6 +289,67 @@ else
 fi
 
 # ============================================================================
+# 5c. Install the JS toolchain for the HTML report viewer
+# ============================================================================
+#
+# `composer check` runs the viewer's vitest suite inside check:code. That suite
+# is also what proves the viewer's path to the repository root is correct, so
+# without node this workspace loses a guarantee it looks like it has.
+#
+# The version is compared, not just the presence: an image that already ships
+# an older node would otherwise skip the install and leave a toolchain vite and
+# vitest refuse to run on.
+
+readonly NODE_MAJOR_REQUIRED=22
+
+log_info "Checking JS toolchain..."
+
+# `node --version` is run into a variable, not a pipeline: under `pipefail` a
+# node that exists but exits non-zero (a broken shim, a half-installed package)
+# would fail the assignment, and `set -e` would end the script here — before it
+# writes the private-name denylist and installs the git hooks.
+node_major=0
+if command -v node >/dev/null 2>&1; then
+    node_version=$(node --version 2>/dev/null) || node_version=""
+    node_major=$(printf '%s' "$node_version" | sed -n 's/^v\([0-9][0-9]*\)\..*/\1/p')
+    node_major=${node_major:-0}
+fi
+
+if [ "$node_major" -lt "$NODE_MAJOR_REQUIRED" ]; then
+    log_info "Installing Node.js ${NODE_MAJOR_REQUIRED}..."
+
+    # Own temp dir: the earlier sections' APT_TMP_DIR is created inside their
+    # conditionals and removed again, so under `set -u` it may be unset here.
+    NODE_APT_TMP_DIR=$(mktemp -d)
+    chmod 1777 "$NODE_APT_TMP_DIR"
+
+    # The setup script lands in a file rather than a pipe so that a failure
+    # leaves something to read; the warning branch prints its tail.
+    if curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR_REQUIRED}.x" \
+            -o "$NODE_APT_TMP_DIR/setup.sh" 2>"$NODE_APT_TMP_DIR/install.log" \
+        && bash "$NODE_APT_TMP_DIR/setup.sh" >>"$NODE_APT_TMP_DIR/install.log" 2>&1 \
+        && TMPDIR="$NODE_APT_TMP_DIR" DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y -qq nodejs >>"$NODE_APT_TMP_DIR/install.log" 2>&1; then
+        log_success "Node.js installed: $(node --version)"
+    else
+        log_warning "Failed to install Node.js — 'composer test:js' will fail here"
+        tail -n 20 "$NODE_APT_TMP_DIR/install.log" >&2 || true
+    fi
+
+    rm -rf "$NODE_APT_TMP_DIR"
+else
+    log_success "Node.js already installed: $(node --version)"
+fi
+
+if command -v node >/dev/null 2>&1; then
+    if composer install:js; then
+        log_success "HTML report viewer dependencies ready"
+    else
+        log_warning "Failed to install viewer dependencies — 'composer test:js' will fail here"
+    fi
+fi
+
+# ============================================================================
 # 6. Check critical files and directories
 # ============================================================================
 
@@ -365,6 +426,7 @@ log_info "  Git: $(git --version | cut -d' ' -f3)"
 log_info "  tree: $(tree --version | head -n1)"
 log_info "  shellcheck: $(shellcheck --version | grep version | cut -d' ' -f2)"
 log_info "  gh: $(gh --version | head -n1 | cut -d' ' -f3)"
+log_info "  Node.js: $(node --version 2>/dev/null || echo 'N/A')"
 log_info "  bat: $(batcat --version 2>/dev/null | cut -d' ' -f2 || bat --version 2>/dev/null | cut -d' ' -f2 || echo 'N/A')"
 log_info "  fd: $(fdfind --version | cut -d' ' -f2)"
 log_info "  delta: $(delta --version | cut -d' ' -f2)"

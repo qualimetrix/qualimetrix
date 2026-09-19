@@ -10,22 +10,19 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fromRoot } from './repo-root.mjs';
 import { parseAst } from 'rollup/dist/parseAst.js';
 import { walk } from 'estree-walker';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 
-const METRIC_NAME_PHP = join(
-  REPO_ROOT,
+const METRIC_NAME_PHP = fromRoot(
   'src/Analysis/Evidence/Measurement/Contract/MetricName.php',
 );
-const AGGREGATION_STRATEGY_PHP = join(
-  REPO_ROOT,
+const AGGREGATION_STRATEGY_PHP = fromRoot(
   'src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php',
 );
-const HEALTH_DECOMPOSITION_CATALOG_PHP = join(
-  REPO_ROOT,
+const HEALTH_DECOMPOSITION_CATALOG_PHP = fromRoot(
   'src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php',
 );
 
