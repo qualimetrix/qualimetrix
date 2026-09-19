@@ -2500,6 +2500,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0060-published-vocabulary-and-name-ownership.md',
         'docs/adr/0061-configuration-miss-and-refusal-semantics.md',
         'docs/adr/0062-health-scores-measure-what-they-cover.md',
+        'docs/adr/0064-the-html-viewer-lives-outside-the-psr-4-root.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

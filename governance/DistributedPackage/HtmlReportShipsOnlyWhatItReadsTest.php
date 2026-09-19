@@ -11,13 +11,15 @@ use PHPUnit\Framework\TestCase;
  * What a consumer receives under the HTML report's tree, against what the
  * formatter reads from it.
  *
- * The report is an npm project living inside the PSR-4 root, so without the
- * `export-ignore` rows beside it the dist package would carry every one of its
- * entries: the eight vitest files, the sources they test, the lockfile, the
- * vite config. A consumer needs none of them and cannot tell they arrived.
- * Measured at 34 on the tree that closed stage 01 of the viewer relocation,
- * 33 when this docblock was written; the count moves whenever the viewer gains
- * a file, so re-derive it rather than quoting this line.
+ * The report is an npm project living at the repository root, outside the
+ * PSR-4 tree, so without the `export-ignore` rows beside it the dist package
+ * would carry every one of its entries: the eight vitest files, the sources
+ * they test, the lockfile, the vite config and the directory's own README. A
+ * consumer needs none of them and cannot tell they arrived. Measured at 34 on
+ * the tree that closed the relocation, also 34 on the tree that closed stage
+ * 01 (the relocation both deleted a file and added a README, so the total
+ * held); the count moves whenever the viewer gains or loses a file, so
+ * re-derive it rather than quoting this line.
  *
  * The expectation is not a list. It is read out of
  * {@see \Qualimetrix\Reporting\Formatter\Html\HtmlFormatter}, which names the
@@ -34,7 +36,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
 {
-    private const string TREE = 'src/Reporting/Template';
+    private const string TREE = 'html-report';
 
     #[Test]
     public function itShipsEveryAssetTheFormatterReadsAndNothingElse(): void
@@ -95,8 +97,9 @@ final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
      * The oracle is `git archive` rather than `git check-attr`, because the two
      * answer different questions and only one of them is the deliverable. An
      * `export-ignore` row naming a directory marks the directory, not the files
-     * beneath it: `check-attr` on `Template/src/tree.js` reports the attribute
-     * unset while `git archive` omits the file with the directory it lives in.
+     * beneath it: `check-attr` on `html-report/src/tree.js` reports the
+     * attribute unset while `git archive` omits the file with the directory it
+     * lives in.
      * Reading attributes per file therefore listed every excluded file as
      * shipped. `--worktree-attributes` makes the answer true of the working
      * copy, so a row added and not yet committed is judged rather than ignored.

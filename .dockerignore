@@ -46,10 +46,15 @@ coverage/
 .phpunit.cache/
 
 # Nested test directories under tooling roots (e.g. tools/phpstan/tests/):
-# the root-anchored tests/ entry above does not reach them. Matched both ways
-# so the exclusion does not depend on settling Docker's glob semantics — every
-# nested tooling test root is listed explicitly, mirroring
-# TOOLING_TEST_ROOT_OWNERS in scripts/generate-modular-architecture-test-inventory.php.
+# the root-anchored tests/ entry above does not reach them, which is why this
+# block exists beside **/tests/ rather than instead of it. This block lists
+# one row per directory-shaped TOOLING_TEST_ROOT_OWNERS key in
+# scripts/generate-modular-architecture-test-inventory.php — governance/,
+# above, is a directory-shaped key too, with its own row there rather than
+# here. Whether this file actually excludes what the map now holds is
+# governance/DistributedPackage/DockerBuildContextExcludesToolingTestRootsTest.php's
+# claim to make, not this comment's: edit the map or this block, then run
+# that test rather than re-reading this paragraph.
 **/tests/
 tools/phpstan/tests/
 scripts/promise-effect/tests/
@@ -64,6 +69,7 @@ scripts/benchmark/tests/
 scripts/modular-architecture/tests/
 scripts/cross-tool-comparison/tests/
 scripts/phpunit-aggregate/tests/
+html-report/tests/
 
 # Examples and documentation (reference only)
 examples/

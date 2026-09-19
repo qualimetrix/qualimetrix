@@ -722,7 +722,7 @@ Per-format decision — whether the accepted level is carried, and how:
 | `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per finding; `now` is the existing sibling `metricValue` field, not duplicated                  |
 | `metrics`               | No          | Carries no findings at all — only raw collected metric values                                                                                                      |
 | `health`                | No          | Renders health-dimension scores, never individual findings                                                                                                         |
-| `html`                  | No          | Would need `Template/` (JS) changes to render; left for a dedicated follow-up rather than shipping an inert data field                                             |
+| `html`                  | No          | Would need viewer (JS) changes in `html-report/` to render; left for a dedicated follow-up rather than shipping an inert data field                                |
 
 ## Formatter Comparison
 
@@ -796,17 +796,22 @@ bin/qmx check src/ --format=html > report.html
 - `HtmlFormatter` — implements `FormatterInterface`, orchestrates assembly
 - `Html/HtmlTreeBuilder` — builds namespace hierarchy from `MetricRepositoryInterface`
 - `Html/HtmlTreeNode` — mutable VO for tree construction
-- `Template/` — HTML skeleton, CSS, JS source and build pipeline
-- `Template/dist/` — built JS artifacts (committed to git, no Node.js at runtime)
+
+The browser program that renders the report is **not** under `src/Reporting/`.
+It lives at `html-report/` in the repository root — an npm project with its own
+build and test toolchain, outside the PSR-4 autoload root by
+[ADR 0064](../../docs/adr/0064-the-html-viewer-lives-outside-the-psr-4-root.md).
+`HtmlFormatter` reads four files from there at run time: `report.html`,
+`report.css`, `dist/report.min.js` and `dist/d3.min.js`. See
+[html-report/README.md](../../html-report/README.md) for its structure.
 
 ### JS Build Pipeline
 
 ```bash
-cd src/Reporting/Template
-npm install        # first time only
-npm test           # vitest unit tests
-npm run build      # produces dist/report.min.js + dist/d3.min.js
-npm run dev        # vite dev server with HMR (uses dev.html)
+composer install:js   # npm ci, first time only
+composer test:js       # vitest unit tests
+composer build:js      # produces dist/report.min.js + dist/d3.min.js
+cd html-report && npm run dev   # vite dev server with HMR (uses dev.html)
 ```
 
 ---

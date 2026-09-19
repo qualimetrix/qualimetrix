@@ -20,21 +20,27 @@ promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 /input-doors/**         export-ignore
 /promise-effect/**      export-ignore
 
-# The HTML report is an npm project living inside the PSR-4 root. A consumer
-# needs only the four assets HtmlFormatter reads at runtime; without these lines
-# the dist package would carry every entry under it, including the eight vitest
-# files, the sources they test, the lockfile and the vite config. Measured with
-# `git archive --worktree-attributes` on the tree that closed stage 01 of the
-# viewer relocation: 34 -> 6, up from 33 when these rows were written, because
-# that stage added one file. Re-derive it before repointing these rows. The four that stay are load-bearing,
-# so this is a list of what leaves, never an export-ignore on the tree.
-/src/Reporting/Template/src/              export-ignore
-/src/Reporting/Template/tests/            export-ignore
-/src/Reporting/Template/scripts/          export-ignore
-/src/Reporting/Template/package.json      export-ignore
-/src/Reporting/Template/package-lock.json export-ignore
-/src/Reporting/Template/vite.config.js    export-ignore
-/src/Reporting/Template/dev.html          export-ignore
+# The HTML report is an npm project living at the repository root, outside the
+# PSR-4 tree (stage 02 of the viewer relocation moved it out of
+# src/Reporting/). A consumer needs only the four assets HtmlFormatter reads at
+# runtime; without these lines the dist package would carry every entry under
+# it, including the eight vitest files, the sources they test, the lockfile,
+# the vite config and the directory's own README. Measured with
+# `git archive --worktree-attributes` on the tree that closed the relocation:
+# 34 -> 6. The count moved from 34 on the tree that closed stage 01 for two
+# offsetting reasons: the relocation deleted scripts/collect-metric-keys.mjs
+# and added this directory's own README.md, so the total stayed at 34 by
+# coincidence rather than by construction — re-derive it rather than trusting
+# this line. The four that stay are load-bearing, so this is a list of what
+# leaves, never an export-ignore on the tree.
+/html-report/src/              export-ignore
+/html-report/tests/            export-ignore
+/html-report/scripts/          export-ignore
+/html-report/package.json      export-ignore
+/html-report/package-lock.json export-ignore
+/html-report/vite.config.js    export-ignore
+/html-report/dev.html          export-ignore
+/html-report/README.md         export-ignore
 /benchmark-results/     export-ignore
 /coverage/              export-ignore
 /.gitattributes         export-ignore

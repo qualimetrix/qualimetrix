@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The HTML report's four shipped assets move inside the composer package, from
+  `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
+  `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;
+  update any path that resolves these files directly.
+
 ### Fixed
 
 - `docker run qmx` with no arguments prints usage instead of failing. The image

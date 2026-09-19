@@ -43,10 +43,10 @@ function surfaces(): array
 
     return [
         'src' => [
-            'roots' => ['src'],
+            'roots' => ['src', 'html-report'],
             'files' => [],
             'excludeDirs' => ['node_modules', 'dist'],
-            'excludeFiles' => [...$presetFiles, 'src/.gitkeep', 'src/Reporting/Template/package-lock.json'],
+            'excludeFiles' => [...$presetFiles, 'src/.gitkeep', 'html-report/package-lock.json'],
         ],
         // One surface, two roots: a control that pins a channel spelling counts
         // the same wherever it is filed, and the repository-controls root is
@@ -1259,7 +1259,7 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # occurrence of "design.type-coverage.property".
 #
 # BOUNDARY OF THE SET: every file under the eight surfaces above, minus
-# generated/vendored noise (src/Reporting/Template/{node_modules,dist},
+# generated/vendored noise (html-report/{node_modules,dist},
 # benchmarks/vendor, __pycache__) and the three preset YAML files, which are
 # counted once, under `presets`, not again under `src`.
 #

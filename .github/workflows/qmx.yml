@@ -136,10 +136,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: 'src/Reporting/Template/package-lock.json'
+          cache-dependency-path: 'html-report/package-lock.json'
 
       - name: Install report template dependencies
-        run: npm ci --prefix src/Reporting/Template
+        run: npm ci --prefix html-report
 
       - name: Run full validation
         env:

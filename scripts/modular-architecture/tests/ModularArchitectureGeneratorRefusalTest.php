@@ -398,6 +398,26 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
             $this->copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
             $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
+            // A root-level, non-PSR-4 npm project, registered as three keys in
+            // TOOLING_TEST_ROOT_OWNERS (html-report/tests/, package.json,
+            // vite.config.js). assertToolingTestRootRegistrationIsComplete()
+            // checks every registered key's existence directly — is_dir()/
+            // is_file(), not only the scripts/*/tests | tools/*/tests glob —
+            // so a missing one of these three refuses by itself, before the
+            // generator ever reaches the refusal an individual test below
+            // plants. Measured: removing this copy step (and 'html-report'
+            // from the git add list further down) turns 3 of this class's 6
+            // cases from their planted refusal into this generic one instead.
+            // Only the scanned slice is copied, not node_modules/dist/src.
+            $this->copyDirectory($sourceRoot . '/html-report/tests', $projectRoot . '/html-report/tests');
+            self::assertTrue(copy(
+                $sourceRoot . '/html-report/package.json',
+                $projectRoot . '/html-report/package.json',
+            ));
+            self::assertTrue(copy(
+                $sourceRoot . '/html-report/vite.config.js',
+                $projectRoot . '/html-report/vite.config.js',
+            ));
             $this->copyDirectory(
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
                 $projectRoot . '/docs/internal/generated/modular-architecture',
@@ -477,7 +497,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'governance',
                 'tools',
                 'scripts',
-                'src/Reporting/Template',
+                'html-report',
             ], $projectRoot);
             self::assertSame(0, $exitCode, $output);
 

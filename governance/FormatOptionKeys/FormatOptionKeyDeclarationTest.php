@@ -218,7 +218,7 @@ final class FormatOptionKeyDeclarationTest extends TestCase
     }
 
     /**
-     * PHP sources under `src/Reporting/`, excluding the HTML report's asset tree.
+     * PHP sources under `src/Reporting/`.
      *
      * @return array<string, string> relative path => absolute path
      */
@@ -236,10 +236,6 @@ final class FormatOptionKeyDeclarationTest extends TestCase
             }
 
             $relativePath = substr($file->getPathname(), \strlen($root) + 1);
-            if (str_contains($relativePath, '/Template/')) {
-                continue;
-            }
-
             $files[$relativePath] = $file->getPathname();
         }
 

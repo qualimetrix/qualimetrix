@@ -93,10 +93,11 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0061 — Configuration Miss and Refusal Semantics](0061-configuration-miss-and-refusal-semantics.md) — final miss classification and refusal contract.
 - [0062 — Health Scores Measure What They Cover](0062-health-scores-measure-what-they-cover.md) — aggregation, corpus floor, and recalibrated thresholds for the six health dimensions.
 - [0063 — One Declaration Answers About a Rule's Options](0063-one-declaration-answers-about-a-rules-options.md) — the rules listing and the option refusal read one declaration.
+- [0064 — The HTML Viewer Lives Outside the PSR-4 Root](0064-the-html-viewer-lives-outside-the-psr-4-root.md) — the HTML report's browser program is a root-level subject, not a PSR-4 path.
 
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.
 - [0010 — Architecture Vertical-Slice Pilot](0010-architecture-vertical-slice.md) — replaced by subject cohesion and ADR 0022.
-- [0012 — Hybrid Architectural Direction](0012-hybrid-architectural-direction.md) — replaced by ADR 0022.
+- [0012 — Hybrid Architectural Direction](0012-hybrid-architectural-direction.md) — replaced by ADR 0022; its HTML-viewer placement prescription by ADR 0064.
 - [0056 — Source Composition Loses the Middle Layer's Value](0056-source-composition-is-measured-and-left-alone.md) — corrected by ADR 0058.
