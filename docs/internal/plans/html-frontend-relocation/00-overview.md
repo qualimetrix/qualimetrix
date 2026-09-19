@@ -44,15 +44,22 @@ So **stage 01 makes both distances checkable and lands before anything moves.**
 Then the move is judged by a control that was already green, rather than by one
 written in the same breath as the change it judges.
 
-**Stage 01 is not a refactor**, and review is what established that. The first
-draft gave PHP a value object owning the asset paths; two measurements killed
-it. The shipping guard derives its expectation by regex over the formatter's
-source, so removing the concatenation reddens it — and the guard's file belongs
-to stage 02, which then could not start. And every production declaration is
-pinned in the manifest by name, so a new class is a manifest change plus an
-artifact regeneration. Measured, `src/Reporting/` holds exactly one
-`dirname(__DIR__`: PHP already has one owner and only lacks a check on it. JS
-has two copies and gets the one new module. Stage 01 details both.
+**Stage 01 turned out to be almost nothing, and that is the finding.** Two
+review rounds cut it down. It first proposed a PHP value object owning the asset
+paths; the shipping guard reads those paths by regex out of the formatter's
+source, so the refactor reddened it. It then proposed a governance control; a
+new file under `governance/` is itself a row in a generated artifact, and the
+control's anti-tautology plant was impossible — measured, the marker walk and
+`\dirname(__DIR__, 2)` from a governance file return the same string.
+
+Then the question nobody had asked. **Both live hops are already guarded,
+measured by planting:** a wrong PHP depth gives `HtmlFormatterTest` 8 errors, and
+a wrong JS root gives `ENOENT` under vitest inside `check:code`. Neither
+assertion names a path. What is unguarded is a *third* copy of the JS hop in
+`collect-metric-keys.mjs`, which nothing executes and which would have written
+its output outside the repository after the move. Stage 01 is therefore one JS
+module that collapses the two copies into one, so the unexecuted consumer
+inherits the executed one's guarantee — no control, no PHP, no manifest row.
 
 **Destination: `html-report/` at the repository root**, the whole directory, one
 place. The owner's decision is that the viewer leaves the PSR-4 root; keeping

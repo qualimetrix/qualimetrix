@@ -1,39 +1,50 @@
-# Stage 01 — make the distance to the root checkable
+# Stage 01 — the third copy of the hop gets the guarantee the other two have
 
-Lands and is proved **before** anything moves. After it, every hop count that
-crosses the viewer's boundary is guarded by a control that refuses when it is
-wrong, and the two JS copies of that hop have become one.
+Lands before anything moves. It adds no control, no PHP, and no file outside the
+viewer's own `scripts/` directory. Two review rounds cut it down to this, and
+the cutting is the finding.
 
-## What review changed about this stage
+## What the two rounds established
 
-The first draft introduced a PHP value object that owned the asset paths. Two
-measurements killed it, and they are worth keeping because both are invisible
-from the file being refactored:
+**Round 1 killed a PHP value object.** The shipping guard derives its
+expectation by regex over the formatter's source
+(`HtmlReportShipsOnlyWhatItReadsTest.php:78`) and refuses on an empty result, so
+removing the concatenation reddens it — and that guard's file belongs to stage
+02, which could then never start. Separately, every production declaration is
+pinned in the manifest by name, so a new class is also a manifest change and an
+artifact regeneration.
 
-- **The shipping guard derives its expectation by regex over the formatter's
-  source.** `HtmlReportShipsOnlyWhatItReadsTest.php:78` runs
-  `preg_match_all('#\$templateDir \. \'(/[^\']+)\'#')` over
-  `HtmlFormatter.php`, and line 41 refuses on an empty result. A value object
-  that joins the asset name removes both the variable and the concatenation, so
-  the guard reads zero assets and goes red — which would have made stage 01's
-  own "green `composer check`" unreachable, and deadlocked stage 02, whose P2
-  owns that guard's file and cannot start until stage 01 is green.
-- **Every production declaration is pinned in the manifest by name.**
-  `generate-modular-architecture-production-inventory.php:805` compares the AST's
-  class list against the manifest's and refuses on any difference. A new class
-  under `src/Reporting/` is therefore a manifest change plus an artifact
-  regeneration — work stage 01 claimed not to contain.
+**Round 2 killed the control that replaced it.** Three findings, each measured:
 
-Both point the same way: **PHP does not have a multiplicity problem.** Measured,
-`src/Reporting/` contains exactly one `dirname(__DIR__` — the formatter's. There
-is already one owner; what is missing is a check on its depth. JS is the side
-with two copies, and only JS gets a new module.
+- A new file under `governance/` is itself a row in `test-ownership.tsv` — the
+  scan scope includes `governance/`, which carries 142 rows today. So the
+  control could not have left the artifacts untouched either. Same defect as
+  round 1's, one inventory over.
+- Its anti-tautology plant was impossible. Walking up to the directory holding
+  `composer.json` beside `.gitattributes`, and `\dirname(__DIR__, 2)` from a
+  governance file, return **the same string** — measured. The plant could never
+  produce the outcome it claimed, so two of four plants tested one thing.
+- Pinning the control's PHP assertion to `src/Reporting/Template` made it a
+  control the move must edit — destroying the very property the stage exists
+  for.
+
+**Then the question nobody had asked: is either distance actually unguarded?**
+Measured, by planting rather than by reading:
+
+| Distance                    | Plant                      | Result                                |
+| --------------------------- | -------------------------- | ------------------------------------- |
+| `HtmlFormatter.php:38`      | depth 2 → 3                | `HtmlFormatterTest`: **8 errors**     |
+| `metric-key-catalog.mjs:17` | move to a root destination | `ENOENT` under vitest in `check:code` |
+| `collect-metric-keys.mjs`   | —                          | **nothing executes it**               |
+
+Both live hops are already guarded, by tests that already run, without a literal
+path anywhere in the assertion. The repository does not need a new control. It
+has one copy of the hop that nothing exercises, and that copy would have written
+its output outside the repository after the move.
 
 ## What changes
 
-**JS — two copies become one.** `metric-key-catalog.mjs:17` and
-`collect-metric-keys.mjs` each carry `resolve(__dirname, '..' × 4)`. One module
-beside them owns it; neither computes hops afterwards.
+The two JS modules stop computing hops; one module beside them owns it.
 
 ```
 // src/Reporting/Template/scripts/repo-root.mjs
@@ -41,83 +52,54 @@ export const REPO_ROOT;            // resolved once, from this module's own plac
 export function fromRoot(...parts);
 ```
 
-Its location is fixed here and not left to the executor: it sits beside its two
+Its location is fixed here rather than left to the executor: beside its two
 consumers, so stage 02 moves it with them and the hop count stays one.
 
-**PHP — nothing is refactored.** The formatter keeps `$templateDir` and its
-concatenations, because the shipping guard reads them. The refusal message at
-`HtmlFormatter.php:83` still advises `cd src/Reporting/Template && npm run
-build`; that string is stage 02's to repoint, listed in its P1.
+That is the whole change. `collect-metric-keys.mjs` then inherits the guarantee
+`metric-key-catalog.mjs` already has — the module it imports is the one a
+running test exercises, so a wrong root reddens `composer test:js` whichever
+consumer is executed.
 
-**Node becomes a declared dependency of the default check.** The control below
-executes node. `scripts/init-environment.sh` installs neither node nor npm —
-measured, 0 mentions — so in the web environment `composer test:js` already does
-not run, and this stage would newly redden `composer test` there too. The
-install goes into that script **in this stage**, because this is the stage that
-introduces the dependency. Stage 02 explicitly does not touch it.
-
-## The control
-
-One control, in the `Governance` suite, asserting that each side's arithmetic
-still lands on the repository root.
-
-**What it asserts.** It establishes the root **without counting directories** —
-by walking up until it finds the one directory holding both `composer.json` and
-`.gitattributes`, a pair that occurs exactly once in the tree (measured: 27
-`composer.json`, 1 `.gitattributes`). Then:
-
-- the directory the formatter computes is that root's `src/Reporting/Template`,
-  and every asset it reads exists there;
-- the root the JS module resolves is that same directory, obtained by executing
-  node against the module and comparing the string.
-
-**Two tautologies it must not commit,** both of which the first draft left open:
-
-- It must not reach the root by the same `\dirname(__DIR__, N)` idiom it is
-  checking. That idiom is how every governance control in this repository finds
-  the root, so an executor will copy it by reflex; the marker walk above is what
-  replaces it, and the DoD proves the difference by planting.
-- It must not accept an injected root. Nothing in the control may hand either
-  side a root it did not derive, or the check confirms its own input.
-
-**Node absent is a refusal, not a skip.** A skip here would be permanently
-invisible in the web environment, which is exactly where the dependency is new.
+**Node is still this stage's business.** `scripts/init-environment.sh` installs
+neither node nor npm — measured, 0 mentions — so `composer test:js` does not run
+in the web environment, and the guarantee above is exactly what does not hold
+there. CI is fine (`qmx.yml:135-142` sets up node 22). The install goes into
+that script here, because this stage is where the guarantee starts being relied
+on. Stage 02 explicitly does not touch it.
 
 ## Definition of Done
 
-Negative checks are written as refusals. `grep -c` exits 0 when it finds the
+Negative checks are written as refusals: `grep -c` exits 0 when it finds the
 forbidden string and 1 when the file is clean, so a gate phrased "returns 0" is
-green on a dirty tree — measured on this tree. And `git grep -E` does not honour
-`\b` here, returning nothing where `grep` returns matches; use `-P` or `-wE`.
+green on a dirty tree — measured. And `git grep -E` does not honour `\b` here,
+returning nothing where `grep` returns matches; use `-P` or `-wE`.
 
 1. Exactly one JS hop chain remains, and it is the new module's:
    `git grep -lP "\.\.'\s*,\s*'\.\." -- '*.mjs' '*.js' ':!src/Reporting/Template/scripts/repo-root.mjs'`
-   prints nothing. The pattern tolerates absent whitespace — the current call
-   spells it `'..', '..'`, but nothing enforces that spelling.
-2. PHP is unchanged: `git diff --stat` names no file under `src/Reporting/`
-   other than none at all. The formatter is deliberately untouched.
-3. The control **fails on a planted wrong depth** — change the JS module's hop,
-   quote the refusal verbatim, restore from a copy taken *before* the plant.
-4. The control **fails on a planted tautology** — reimplement its root discovery
-   as `\dirname(__DIR__, N)` with the correct `N`, confirm it then passes on a
-   tree where the JS hop is wrong, and restore. This is the one that proves the
-   marker walk is doing work, and it is the check the first draft could not make.
-5. The control **refuses, not skips, when node is unavailable** — run it with
-   node off `PATH` and quote the refusal.
+   prints nothing. Measured: today it prints exactly the two files this stage
+   collapses. The pattern tolerates absent whitespace — the current call spells
+   it `'..', '..'` and nothing enforces that spelling.
+2. **The surviving hop is guarded, proved by planting:** change the new module's
+   hop, confirm `composer test:js` refuses, quote it, restore from a copy taken
+   before the plant.
+3. **The formerly unguarded consumer is now covered, proved the same way:**
+   with the module's hop wrong, `collect-metric-keys.mjs` must also fail rather
+   than write outside the repository. This is the item that states what the
+   stage bought.
+4. No PHP changes: `git diff --name-only -- '*.php'` is empty.
+5. No new file outside the viewer: `git diff --name-only --diff-filter=A` names
+   only `src/Reporting/Template/scripts/repo-root.mjs`. In particular nothing
+   under `governance/` or `src/`, so no manifest declaration and no generated
+   artifact row — the trap both earlier drafts fell into.
 6. `composer check` green from a clean clone with copied `vendor`,
-   `website/.venv` and `node_modules`, **on a machine with node** — and the same
+   `website/.venv` and `node_modules`, on a machine with node; and the same
    clone with `scripts/init-environment.sh` run from scratch reaches a node that
-   satisfies item 5.
-7. No new production class: `git diff --name-only` names no added file under
-   `src/`, so the manifest and the generated artifacts are untouched. If that
-   turns out to be false, stage 01 has grown a manifest declaration and an
-   artifact regeneration, and it stops and says so rather than absorbing them.
+   satisfies items 2 and 3.
 
 ## Test plan
 
-One new governance control, described above, plus the four plants that prove it
-bites. No unit test for the JS module: its whole behaviour is the path, and a
-unit test recomputing the same join is the tautology this stage exists to
-remove. `metric-key-catalog.test.js` already fails loudly when the root is
-wrong — that is evidence the module works, not evidence the depth is guarded,
-and item 3 is what guards it.
+No new tests and no new control. The two plants in items 2 and 3 are the
+evidence, and they exercise tests that already exist. Adding a governance
+control here would cost a manifest row, an artifact regeneration and a
+`testSuitePrefixTable()` entry to assert something two running tests already
+assert — which is how both earlier drafts of this stage grew.

@@ -1,7 +1,8 @@
 # Stage 02 — the move, its registration addresses, and the records
 
-Does not begin until stage 01 has landed and its control is green. Destination
-is `html-report/` at the repository root, the whole directory, 28 files.
+Does not begin until stage 01 has landed and `composer test:js` is green with
+its single JS hop. Destination is `html-report/` at the repository root, the
+whole directory, 28 files.
 
 ## Packages
 
@@ -85,15 +86,18 @@ probe that planted an untracked file and stayed green.
    root-anchored `dist/` rule starts matching `html-report/dist/`; if it ever
    does, the shipped bundle leaves the image silently.
 6. `composer test:js` and `composer build:js` exit 0.
-7. No operational reference to the old path survives:
-   `! git grep -q 'src/Reporting/Template' -- ':!docs/' ':!CHANGELOG.md'`. The
-   first draft checked only `src/` and `composer.json`, which left the two CI
-   occurrences unchecked by any package — they would have surfaced in the pull
-   request rather than in the package.
+7. No operational reference to the old path survives **in this package's own
+   files**: `.gitattributes`, `.github/workflows/qmx.yml`, `.gitignore`,
+   `composer.json` and the moved directory. The tree-wide grep is P4's —
+   measured, 15 files outside the directory name the old path today (excluding
+   `docs/` and `CHANGELOG.md`) and only five are P1's, so a tree-wide gate inside P1 is unpassable while P2 and P3
+   are in flight. The first draft checked only `src/` and `composer.json`, which
+   left the two CI occurrences unchecked by any package at all.
 8. State, as a number, how many rows of each generated artifact this package
    expects to change. P4 compares the prediction.
 9. Expected red, named so nobody repairs it from here: `architecture:check`,
-   artifact freshness, and the governance controls owned by P2.
+   artifact freshness, and the governance controls owned by P2. Stage 01 leaves
+   no control of its own behind: it adds none, so nothing here is orphaned.
 
 ### P2 — every place that enumerates the tree
 
@@ -103,30 +107,40 @@ probe that planted an untracked file and stayed green.
 `governance/DistributedPackage/HtmlReportShipsOnlyWhatItReadsTest.php`,
 `governance/PlanningRecords/PlanningRecordIsolationTest.php`,
 `governance/.../RuleIdentifierLiteralGuardTest.php`,
-`finding-gate/enumeration-js-metric-keys.tsv` and the generator that writes it.
+`finding-gate/enumeration-js-metric-keys.tsv`.
+
+Its generator, `collect-metric-keys.mjs`, is **P1's**: it lives inside the
+directory P1 moves and carries the old path in prose on three lines. Naming it
+in both packages would put one file in two sets.
 
 `generate-modular-architecture-production-inventory.php` is **not** here: its
 `git ls-files` scope is markdown only and names no viewer path. The first draft
 claimed both generators carry scan-scope literals; only one does.
 
-**Retiring the prescription — the branch is chosen, and its price is named.**
-`targetPath()` reaches `tests/Reporting/HtmlTemplate/Tests/` for these 10 files
-through its last branch, so "retire" has three possible mechanisms and the first
-draft named none. The choice is **to drop the three scan-scope literals** and
-with them `NON_MANIFEST_TEST_OWNERS['Reporting/HtmlTemplate']`.
+**Retiring the prescription — the branch is chosen, and the earlier basis for
+choosing it was wrong.** `targetPath()` reaches
+`tests/Reporting/HtmlTemplate/Tests/` for these 10 files through its last
+branch, so "retire" has three possible mechanisms and the first draft named
+none. The second draft chose to drop the three scan-scope literals and with them
+`NON_MANIFEST_TEST_OWNERS['Reporting/HtmlTemplate']`, on the grounds that
+registering the new root was impossible.
 
-Its cost, which is the real fork and not "retire versus repoint": **today an
-eleventh test file under the viewer makes `architecture:check` refuse by name**
-(`:1502`, actual rows versus declared). After this, no artifact mentions any of
-the 28 files and that refusal is gone. Registering `html-report/` as a tooling
-root instead is blocked — `actualToolingTestRootsOnDisk()` globs only
-`scripts/*/tests` and `tools/*/tests`, so registration refuses immediately.
+**That ground is refuted.** The draft claimed `actualToolingTestRootsOnDisk()`
+globs only `scripts/*/tests` and `tools/*/tests`, so registration refuses
+immediately. Measured: `TOOLING_TEST_ROOT_OWNERS` already carries `'governance/'`
+— a key that glob never matches — and
+`assertToolingTestRootRegistrationIsComplete()` filters exactly that key out of
+the comparison at `:1313-1316`. The precedent for a root outside the glob's
+shape exists and is in use.
 
-So the package **replaces the contract rather than deleting it**: the new root
-is declared wherever it can be, and if no existing mechanism accepts it, the
-package says so explicitly and the loss is recorded in the ADR as accepted debt
-with the condition for revisiting. A silent loss of a live refusal is the one
-outcome this package may not produce.
+The cost at stake is a live refusal: **today an eleventh test file under the
+viewer makes `architecture:check` refuse by name** (`:1502`, actual rows against
+declared). So the package **carries the declared-row contract over to the new
+root** rather than deleting the only one. Dropping it is permitted only as a
+named decision recorded in the ADR with the condition for revisiting — never as
+a side effect of a mechanism nobody chose. A silent loss of a live refusal is
+the one outcome this package may not produce, and a refuted blocker is not a
+reason to accept one.
 
 **What else changes.**
 
@@ -172,8 +186,10 @@ outcome this package may not produce.
 ### P3 — the records
 
 **Files.** A new ADR under `docs/adr/`, `docs/adr/README.md`,
-`src/Reporting/README.md`, `finding-gate/README.md`, `CHANGELOG.md`, and any
-operational document naming the old path.
+`src/Reporting/README.md`, `finding-gate/README.md`, `CHANGELOG.md`, **`AGENTS.md`
+(which `CLAUDE.md` symlinks)** — it names the old path twice and both are
+operational, a section heading and a "when modifying X, also run" instruction —
+and any other operational document naming the old path.
 
 - The ADR **supersedes** `docs/adr/0012`'s line 109, the only written authority
   on where the viewer lives. It records why the viewer leaves the PSR-4 root,
@@ -217,6 +233,10 @@ The ADR is indexed; `composer docs:check` is green.
    with node. A green run in the working copy proves less.
 5. The report's normalized identity from P1's item 1, re-taken after everything
    has landed.
+6. The tree-wide sweep, which no single package can take:
+   `! git grep -q 'src/Reporting/Template' -- ':!docs/adr/0002*' ':!docs/adr/0012*' ':!CHANGELOG.md' ':!docs/internal/plans/'`.
+   The exclusions are the historical records P3 names; every other occurrence is
+   operational and belongs to some package.
 
 ## Test plan
 
