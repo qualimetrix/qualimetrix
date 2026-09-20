@@ -28,8 +28,35 @@ architecture:
       pending: true
     - name: 'mod-{m}'
       patterns: ['Corpus\Layers\NoSuch\{m}\**']
+    # Graph-based membership criterion, not patterns/suffix: this layer
+    # catches a class only through the extends chain that
+    # Corpus\Layers\AnonMember\ExtendsHost's anonymous class builds, not
+    # through ExtendsHost itself. This is the anonymous-class inheritance
+    # fixture: the corpus otherwise declares no graph-based criterion at
+    # all. Declared before anon-member below so a misattributed extends
+    # edge (first match wins) is what decides which of the two layers
+    # ExtendsHost lands in -- never both, never neither. AnchoredChild is a
+    # real, non-anonymous member so the layer is reachable on both sides
+    # regardless of the anonymous-class defect.
+    - name: graph-extends
+      extends: ['Corpus\Layers\GraphBase\Marker']
+    # ExtendsHost's fallback layer: matched by namespace, minus whatever
+    # really (not anonymously) extends Marker. Correctly attributed,
+    # ExtendsHost has no real extends edge, so it lands here instead of
+    # graph-extends -- same forbidden dependency on UserRepository, same
+    # finding identity (LayerViolationFinding's occurrence key hashes
+    # source/target/type, not the layer name), only the blamed layer's name
+    # in the message moves. AnchoredChild really extends Marker, so it is
+    # excluded from this layer on both sides -- the exclude clause is never
+    # reported as unmatched regardless of which side wins ExtendsHost.
+    - name: anon-member
+      patterns: ['Corpus\Layers\AnonMember\**']
+      exclude:
+        extends: ['Corpus\Layers\GraphBase\Marker']
   allow:
     controller: []
     repository: []
     extra-broad: []
+    graph-extends: []
+    anon-member: []
   coverage-gap: error

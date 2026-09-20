@@ -230,6 +230,19 @@ PHP;
         self::assertSame(1, $metrics->get('design.dit:GlobalChild'));
     }
 
+    /**
+     * Not a regression witness for an anonymous class lending its declaration
+     * to the class enclosing it, and it cannot become one: this collector's
+     * visitor registers only named `Class_` nodes, so an anonymous class's
+     * `extends` never reaches it, and this collector does not write the
+     * published `design.dit` either. The parent chain here is two levels deep
+     * on purpose — a one-level or builtin parent would make the assertion pass
+     * whatever the attribution is, which is how this test read as green while
+     * the defect was live. The dependency-graph path that carries the defect is
+     * covered by
+     * {@see \Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest}
+     * and by the anonymous-class declaration-edge integration run.
+     */
     #[Test]
     public function itIgnoresAnonymousClass(): void
     {
@@ -238,19 +251,34 @@ PHP;
 
 namespace App;
 
+class Base
+{
+}
+
+class Mid extends Base
+{
+}
+
 class Factory
 {
     public function create(): object
     {
-        return new class extends \stdClass {};
+        // If this collector attributed the anonymous class's own `extends`
+        // to Factory, Factory would score dit(Mid) + 1 = 2, not 0.
+        return new class extends Mid {};
     }
 }
 PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Only Factory should have metrics
+        self::assertSame(0, $metrics->get('design.dit:App\Base'));
+        self::assertSame(1, $metrics->get('design.dit:App\Mid'));
         self::assertSame(0, $metrics->get('design.dit:App\Factory'));
+
+        // No metric key exists for the anonymous class itself: the visitor
+        // never registers it as a class at all, named or otherwise.
+        self::assertCount(3, $metrics->all(), 'Expected metrics for exactly the three named classes, nothing for the anonymous one');
     }
 
     #[Test]

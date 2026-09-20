@@ -1,0 +1,10 @@
+--- candidate
++++ reference (mapped)
+@@ -145,1 +145,1 @@
+-            "message": "Layer \"anon-member\" is not allowed to depend on any other declared layer.\nDep data: {\"fromLayer\":\"anon-member\",\"toLayer\":\"repository\",\"source\":\"Corpus\\\\Layers\\\\AnonMember\\\\ExtendsHost\",\"target\":\"Corpus\\\\Layers\\\\Repository\\\\UserRepository\",\"type\":\"type_hint\"}",
++            "message": "Layer \"graph-extends\" is not allowed to depend on any other declared layer.\nDep data: {\"fromLayer\":\"graph-extends\",\"toLayer\":\"repository\",\"source\":\"Corpus\\\\Layers\\\\AnonMember\\\\ExtendsHost\",\"target\":\"Corpus\\\\Layers\\\\Repository\\\\UserRepository\",\"type\":\"type_hint\"}",
+@@ -205,2 +205,2 @@
+-            "message": "Layer \"anon-member\" must not depend on layer \"repository\" (Corpus\\Layers\\AnonMember\\ExtendsHost → Corpus\\Layers\\Repository\\UserRepository, uses as type hint)",
+-            "recommendation": "Layer \"anon-member\" is not allowed to depend on any other declared layer.\nDep data: {\"fromLayer\":\"anon-member\",\"toLayer\":\"repository\",\"source\":\"Corpus\\\\Layers\\\\AnonMember\\\\ExtendsHost\",\"target\":\"Corpus\\\\Layers\\\\Repository\\\\UserRepository\",\"type\":\"type_hint\"}",
++            "message": "Layer \"graph-extends\" must not depend on layer \"repository\" (Corpus\\Layers\\AnonMember\\ExtendsHost → Corpus\\Layers\\Repository\\UserRepository, uses as type hint) [source matched by extends \"Corpus\\Layers\\GraphBase\\Marker\"; target matched by pattern \"Corpus\\Layers\\Repository\\**\"]",
++            "recommendation": "Layer \"graph-extends\" is not allowed to depend on any other declared layer.\nDep data: {\"fromLayer\":\"graph-extends\",\"toLayer\":\"repository\",\"source\":\"Corpus\\\\Layers\\\\AnonMember\\\\ExtendsHost\",\"target\":\"Corpus\\\\Layers\\\\Repository\\\\UserRepository\",\"type\":\"type_hint\"}",

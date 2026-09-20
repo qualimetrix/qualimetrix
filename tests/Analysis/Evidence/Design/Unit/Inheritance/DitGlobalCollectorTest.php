@@ -41,13 +41,14 @@ final class DitGlobalCollectorTest extends TestCase
         $this->collector = new DitGlobalCollector();
     }
 
-    private function createExtends(string $childFqn, string $parentFqn): Dependency
+    private function createExtends(string $childFqn, string $parentFqn, bool $describesNestedAnonymousClass = false): Dependency
     {
         return new Dependency(
             source: DeclarationPath::of(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString('test.php'), 1),
+            describesNestedAnonymousClass: $describesNestedAnonymousClass,
         );
     }
 
@@ -262,6 +263,38 @@ final class DitGlobalCollectorTest extends TestCase
         self::assertSame(0, $repository->get($componentPath)->get('design.dit'));
         self::assertSame(1, $repository->get($abstractPath)->get('design.dit'));
         self::assertSame(2, $repository->get($handlerPath)->get('design.dit'));
+    }
+
+    /**
+     * An anonymous class's `extends` header has no declaration identity of
+     * its own, so the edge is recorded with the enclosing class as source and
+     * flagged `describesNestedAnonymousClass`. Reading it as the enclosing
+     * class's own ancestry (the pre-cure defect) would score Host at
+     * dit(L1) + 1 = 2 instead of 0.
+     */
+    #[Test]
+    public function itIgnoresAnExtendsEdgeFlaggedAsANestedAnonymousClassDeclaration(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('An\\L1', 'An\\L0'),
+            $this->createExtends('An\\Host', 'An\\L1', describesNestedAnonymousClass: true),
+        ]);
+
+        $l0Path = SymbolPath::forClass('An', 'L0');
+        $repository->add($l0Path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('l0.php'), 1);
+
+        $l1Path = SymbolPath::forClass('An', 'L1');
+        $repository->add($l1Path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('l1.php'), 1);
+
+        $hostPath = SymbolPath::forClass('An', 'Host');
+        $repository->add($hostPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('host.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($l0Path)->get('design.dit'));
+        self::assertSame(1, $repository->get($l1Path)->get('design.dit'));
+        self::assertSame(0, $repository->get($hostPath)->get('design.dit'), 'A flagged edge must not be read as the enclosing class\'s own ancestry');
     }
 
     #[Test]

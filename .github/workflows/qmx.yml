@@ -243,6 +243,44 @@ jobs:
       - name: It runs and names itself
         run: php build/qmx.phar --version
 
+      # The suite cannot judge this. It runs on the dev dependency graph, where
+      # a production import of a dev-only package still resolves, and under
+      # exactly that blind spot every git scope was fatal on the phar for an
+      # entire release. The control in governance/DistributedPackage/ judges a
+      # dist-shaped tree; the phar is a different artifact whose autoloader box
+      # rebuilds, so this is a separate witness rather than a repeat.
+      #
+      # The report's shape is what is checked, because neither obvious signal
+      # separates the cases: the fatal prints valid JSON and exits 1, while a
+      # healthy run over a fixture repository exits 2 for want of a
+      # composer.json.
+      - name: It resolves a git scope
+        run: |
+          consumer="$RUNNER_TEMP/git-scope-consumer"
+          git init --quiet "$consumer"
+          printf '<?php\n\ndeclare(strict_types=1);\n\nfinal class Subject\n{\n    public function value(): int\n    {\n        return 1;\n    }\n}\n' > "$consumer/Subject.php"
+          git -C "$consumer" add Subject.php
+
+          cd "$consumer"
+          set +e
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check . \
+            --report=git:staged --format=json --workers=0 > scope.json 2> scope.log
+          set -e
+
+          python3 - <<'PY'
+          import json, sys
+
+          with open('scope.json') as handle:
+              report = json.load(handle)
+
+          if 'error' in report:
+              sys.exit('the phar could not run a git scope: ' + report['error'])
+
+          analysed = report.get('coverage', {}).get('analyzed')
+          if analysed != 1:
+              sys.exit(f'the git scope analysed {analysed} files, expected the one staged file')
+          PY
+
       # Run from a scratch directory with absolute paths. From the repository
       # root the analysis discovers this repository's own qmx.yaml and applies
       # its declared layers to a target that is not this repository, which

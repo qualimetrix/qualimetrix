@@ -35,13 +35,14 @@ final class NocCollectorTest extends TestCase
     /**
      * Helper method to create an extends dependency.
      */
-    private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1): Dependency
+    private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1, bool $describesNestedAnonymousClass = false): Dependency
     {
         return new Dependency(
             source: DeclarationPath::of(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentClass)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString($file), $line),
+            describesNestedAnonymousClass: $describesNestedAnonymousClass,
         );
     }
 
@@ -278,6 +279,40 @@ final class NocCollectorTest extends TestCase
             $metrics = $repository->get($classInfo->symbolPath);
             self::assertTrue($metrics->has('design.noc'));
         }
+    }
+
+    /**
+     * An anonymous class's `extends` header has no declaration identity of
+     * its own, so the edge is recorded with the enclosing class as source and
+     * flagged `describesNestedAnonymousClass`. Counting it as the enclosing
+     * class's own `extends` (the pre-cure defect) would give the parent an
+     * extra child it never declared.
+     */
+    #[Test]
+    public function itDoesNotCountAFlaggedExtendsEdgeAsAChild(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // An\L1 extends An\L0 for real; An\Host's anonymous class extends
+        // An\L1, flagged -- Host must not be counted as An\L1's child.
+        $graph = $this->graph([
+            $this->createExtends('An\\L1', 'An\\L0', 'l1.php', 1),
+            $this->createExtends('An\\Host', 'An\\L1', 'host.php', 1, describesNestedAnonymousClass: true),
+        ]);
+
+        $l0Path = SymbolPath::forClass('An', 'L0');
+        $repository->add($l0Path, new MetricBag(), RelativePath::fromString('l0.php'), 1);
+
+        $l1Path = SymbolPath::forClass('An', 'L1');
+        $repository->add($l1Path, new MetricBag(), RelativePath::fromString('l1.php'), 1);
+
+        $hostPath = SymbolPath::forClass('An', 'Host');
+        $repository->add($hostPath, new MetricBag(), RelativePath::fromString('host.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->get($l0Path)->get('design.noc'), 'L0 has one real child, L1');
+        self::assertSame(0, $repository->get($l1Path)->get('design.noc'), 'The flagged edge must not count Host as a child of L1');
     }
 
     #[Test]

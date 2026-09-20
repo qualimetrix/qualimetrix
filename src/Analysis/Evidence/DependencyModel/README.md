@@ -48,6 +48,17 @@ the logical class universe. The universe retains degree-zero declarations, while
 the builder derives all ancestor namespaces locally and preserves dependency
 encounter order and coupling semantics.
 
+`Dependency::$describesNestedAnonymousClass` marks an edge whose type is a
+declaration fact (`extends`, `implements`, an attribute, or `trait_use`) of an
+anonymous class nested in `$source`, rather than of `$source` itself — an
+anonymous class has no declaration identity of its own, so
+`DependencyVisitor` has nowhere else to attach the edge. The field changes
+nothing about the edge's `DependencyType`, coupling, ClassRank, or `graph:export`
+representation: dependency readers keep reading it as-is. Declaration readers
+outside this module (`Design\Inheritance\DitGlobalCollector`, `NocCollector`,
+`Policy\Architecture\Layer\ClassContextFactory`) skip a flagged edge instead.
+See ADR 0071.
+
 `DependencyGraphInterface` has raw CBO 27 and the inclusive point threshold 28,
 so one additional edge fails rather than being absorbed. Its five net consumers
 are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`,

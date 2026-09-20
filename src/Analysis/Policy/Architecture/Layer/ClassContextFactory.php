@@ -167,6 +167,15 @@ final class ClassContextFactory
         $attributes = [];
 
         foreach ($this->graph->getAllDependencies() as $dependency) {
+            // An anonymous class's own extends/implements/attribute is
+            // recorded with the enclosing class as source (it has no
+            // declaration identity of its own) — membership must not move
+            // the enclosing class under rules written for the nested
+            // anonymous class instead.
+            if ($dependency->describesNestedAnonymousClass) {
+                continue;
+            }
+
             $sourceFqn = $this->fqnFor($dependency->sourceLogical());
             $targetFqn = $this->fqnFor($dependency->targetLogical());
             if ($sourceFqn === null || $targetFqn === null) {

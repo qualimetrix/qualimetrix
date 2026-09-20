@@ -39,6 +39,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- `composer.json` now declares the PHP extensions the tool uses (`ctype`,
+  `filter`, `hash`, `json`, `mbstring`, `tokenizer`, `xmlwriter`). Installing
+  on a PHP built without one now fails at install time naming the missing
+  extension, instead of at run time inside whichever feature needed it --
+  duplication detection and LOC counting need `tokenizer`,
+  `--format=checkstyle` needs `xmlwriter`, and `mbstring` is not built by
+  default.
+
 - The `hook:*` commands can no longer deadlock on git's error stream. Locating
   the hooks directory handed that stream a pipe nothing ever read, so a `git`
   writing more to it than the pipe buffer holds blocks on the write, never
@@ -120,6 +128,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
   invocation exited 3 with `Command "analyze" is not defined.` There is now no
   default command: an image handed no command says so, rather than analysing
   whatever happens to be at `/app`.
+- An anonymous class's own `extends`, `implements`, header attribute, or
+  `use` no longer counts against the named class that encloses it.
+  `design.dit`, `design.noc` and their namespace/project aggregates stop
+  including a nested anonymous class's declaration, and layer membership
+  under `extends:`, `implements:` and `attributes:` (including transitive
+  ancestry) stops matching the enclosing class on that basis. Coupling,
+  ClassRank, cycle detection and `relations:` filtering are unaffected — the
+  dependency itself is still recorded and read exactly as before.
 
 ## [0.27.0] - 2026-09-18
 

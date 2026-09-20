@@ -1,0 +1,22 @@
+# Pre-cure baseline, measured on ad878c13 (unfixed). Serial and parallel AGREE today;
+# after the cure they must agree again AND show the corrected values. A divergence
+# between w=0 and w=4 means the flag did not survive the amphp worker boundary.
+# fixture_and_workers	class	metrics
+anon w=0	An	{"coupling.ca": 0, "coupling.cbo": 0, "coupling.ce": 0}
+anon w=0	An\Host	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 2, "design.noc": 0}
+anon w=0	An\L0	{"coupling.ca": 1, "coupling.cbo": 1, "coupling.ce": 0, "design.dit": 0, "design.noc": 1}
+anon w=0	An\L1	{"coupling.ca": 1, "coupling.cbo": 2, "coupling.ce": 1, "design.dit": 1, "design.noc": 1}
+anon w=4	An	{"coupling.ca": 0, "coupling.cbo": 0, "coupling.ce": 0}
+anon w=4	An\Host	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 2, "design.noc": 0}
+anon w=4	An\L0	{"coupling.ca": 1, "coupling.cbo": 1, "coupling.ce": 0, "design.dit": 0, "design.noc": 1}
+anon w=4	An\L1	{"coupling.ca": 1, "coupling.cbo": 2, "coupling.ce": 1, "design.dit": 1, "design.noc": 1}
+anon-builtin w=0	Bi	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1}
+anon-builtin w=0	Bi\Factory	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 1, "design.noc": 0}
+anon-builtin w=4	Bi	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1}
+anon-builtin w=4	Bi\Factory	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 1, "design.noc": 0}
+anon-trait w=0	Tr	{"coupling.ca": 0, "coupling.cbo": 0, "coupling.ce": 0}
+anon-trait w=0	Tr\Host	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 0, "design.noc": 0}
+anon-trait w=0	Tr\T	{"coupling.ca": 1, "coupling.cbo": 1, "coupling.ce": 0, "design.noc": 0}
+anon-trait w=4	Tr	{"coupling.ca": 0, "coupling.cbo": 0, "coupling.ce": 0}
+anon-trait w=4	Tr\Host	{"coupling.ca": 0, "coupling.cbo": 1, "coupling.ce": 1, "design.dit": 0, "design.noc": 0}
+anon-trait w=4	Tr\T	{"coupling.ca": 1, "coupling.cbo": 1, "coupling.ce": 0, "design.noc": 0}

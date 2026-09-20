@@ -79,6 +79,11 @@ belong to no family is the signal that a fifth family is being named.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
   semantics.
+- Both global collectors skip a `Dependency` flagged
+  `describesNestedAnonymousClass`: an anonymous class's own `extends` edge is
+  recorded with the enclosing named class as source (it has no declaration
+  identity of its own to attach to), so counting it would give the enclosing
+  class a parent, and the parent a child, neither has (ADR 0071).
 - `ParamTypeCoverageRule`, `ReturnTypeCoverageRule` and
   `PropertyTypeCoverageRule` judge one dimension each, one channel each, and
   share `AbstractTypeCoverageRule` for the walk and the emission plus one

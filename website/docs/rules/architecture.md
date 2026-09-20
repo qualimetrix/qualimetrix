@@ -365,6 +365,25 @@ Within one criterion, lists are always OR'd (`attributes: [A, B]` means "has A o
 
 A criterion that is omitted is **trivially satisfied** under `match: all` — there is no need to write empty `patterns: []` to opt out. Attribute names must be **fully-qualified** (the parser refuses bare `Entity`); `implements` and `extends` traverse the supertype chain, so declaring a base interface or class catches every descendant without listing them.
 
+!!! note
+    `extends` and `implements` never match a class on account of an anonymous
+    class nested inside it. `new class extends Base {}` declares a parent for
+    the anonymous class, not for the class it is instantiated in — so a layer
+    declared `extends: ['Base']` does not pick up the enclosing class, even
+    transitively through `Base`'s own ancestry. The dependency is still
+    recorded and still counted by coupling, ClassRank, cycle detection, and
+    the layer-violation check; only membership reads it as belonging to the
+    anonymous class, which has no name a criterion could name.
+
+    `attributes` is narrower: this only holds for an attribute written on the
+    anonymous class's own header, as in `new #[Mark] class {}`. An attribute
+    on a method, property, or parameter — of an anonymous class or of a named
+    one — still matches the enclosing class, because the criterion does not
+    track where on the class an attribute was written; it is collected from
+    every attribute edge regardless of source. This is a separate,
+    pre-existing gap, wider than anonymous classes, and it is not fixed by
+    the header exclusion above.
+
 ### Layer templates
 
 Listing `domain-Order`, `domain-Inventory`, `domain-Billing`, … in YAML stops scaling once a project has more than a handful of bounded contexts. Phase 2 lets a single layer entry carry a **capture variable** in its name and patterns; after collection, the engine walks the discovered class set, observes which binding tuples actually appear, and produces one concrete layer per tuple — never the cartesian product.
@@ -593,6 +612,15 @@ attribute
 | `runtime_check`  | `catch`, `instanceof`                                           |
 
 `attribute` stands alone — there is no group it belongs to. Aliases and direct values can be mixed in the same `relations:` list and are deduplicated after expansion. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML without a release.
+
+An anonymous class nested inside a named class contributes its `extends`,
+`implements`, `trait_use`, and `attribute` edges to `relations:` filtering
+exactly as a named class's own would, with the enclosing class as the edge's
+source — `relations:` restricts *how* a dependency may be expressed, and that
+question is unaffected by whether the target belongs to the enclosing class
+or to an anonymous class nested inside it. This is the one place the two
+cases stay symmetric: membership (above) treats them differently, `relations:`
+does not.
 
 When multiple allow targets within one source resolve to the same target layer (for instance via overlapping glob selectors), their permissions **union**. If any matching entry uses the bare/short form (no `relations:`), the union is "all relations allowed" — short-form dominates.
 

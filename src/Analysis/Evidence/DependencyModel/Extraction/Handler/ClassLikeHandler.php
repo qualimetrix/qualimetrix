@@ -48,6 +48,12 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
 
     private function handleClass(Class_ $node, DependencyContext $context): void
     {
+        // An anonymous class has no declaration identity of its own, so its
+        // header edges (extends/implements/attributes) are recorded with the
+        // enclosing class as their source. DependencyVisitor::consumeAnonymousClass()
+        // marks $context accordingly for the duration of this call, and
+        // DependencyContext::addDependency() reads that ambient state — see
+        // Dependency::$describesNestedAnonymousClass.
         if ($node->extends !== null) {
             $context->addDependency(
                 $context->getResolver()->resolve($node->extends),

@@ -32,7 +32,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Interface implementations represent a different type of relationship
  * (contractual, not structural) and should be tracked separately if needed.
  *
- * Anonymous classes are ignored (not in dependency graph).
+ * Anonymous classes never contribute to NOC: they have no declaration
+ * identity a named class could `extends`, and their own `extends` edge is
+ * flagged as a nested anonymous-class declaration fact of the enclosing
+ * class (see {@see DependencyType::Extends} and
+ * {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::$describesNestedAnonymousClass}),
+ * so it is excluded below rather than counted against the enclosing class.
  */
 final class NocCollector implements GlobalContextCollectorInterface
 {
@@ -124,6 +129,13 @@ final class NocCollector implements GlobalContextCollectorInterface
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only count extends (inheritance), not implements or trait use
             if ($dependency->type !== DependencyType::Extends) {
+                continue;
+            }
+
+            // An anonymous class's own `extends` is recorded with the
+            // enclosing class as source (it has no declaration identity of
+            // its own) — the enclosing class does not gain a child from it.
+            if ($dependency->describesNestedAnonymousClass) {
                 continue;
             }
 
