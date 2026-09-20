@@ -237,17 +237,29 @@ not refresh it, measured. So the release job must export it for the `install` st
 build; verified end to end by building with a stand-in tag and reading `0.28.0` back out of the
 archive. P3 wires it.
 
-**P2 — the records and the promise.** `website/docs/getting-started/installation.md` in EN **and**
-RU, `CHANGELOG.md`, and an ADR if the box decision or the include-list decision is worth outliving
-this plan. The site already promises this, so the records package is not optional.
+**P2 — done.** Both locales of `website/docs/getting-started/installation.md` now describe the
+archive instead of promising it, and name the two ways it differs from a Composer install: no
+`hook:install`, and a suffix that is not cosmetic. `CHANGELOG.md` carries both under `Changed`.
+[ADR 0066](../../adr/0066-the-phar-is-built-by-a-tool-outside-the-graph-it-builds.md) holds the box
+decision, the include list and its control, the filename, and the version mechanism — this plan gets
+deleted and those outlive it.
 
-**P3 — release and CI.** The phar built and attached by `release.yml`, and built on every CI run so a
-broken build is caught before a tag. `release.yml` today checks out and calls `gh release create`
-with no PHP setup and no `composer install`, so "attaches the phar" is a build job, not an upload
-line. **A new required check is an address outside the tree:** branch protection on `main` carries
-the required-context list, and a job absent from it does not block a merge.
+**P3 — done inside the tree; one address outside it is not.** `release.yml` gained a PHP setup, a
+`--no-dev` install carrying `COMPOSER_ROOT_VERSION`, the build, an assertion that the archive names
+the version being released, and an upload kept separate from the release creation because that
+creation is deliberately skippable on a re-run. `qmx.yml` gained a `phar` job that builds on every
+run and holds the archive against the tree it came from.
+
+**The required-context list is a repository setting, and it is the one item stage 01 cannot land in
+a pull request.** `main` requires six contexts today and `enforce_admins` is on, so a context added
+before the job has run under its final name blocks every merge, the owner's included. The order is:
+merge, let `Phar (built, and equal to the tree it came from)` report once, copy the name from that
+run, then add it.
 
 ## Definition of Done
+
+Status at the end of P3: every item is met except 7, which is outside a pull request, and 1a, which
+is met more narrowly than its wording allows — see the note under it.
 
 1. **(a) The phar publishes what the source tree publishes**, where "the source tree" means a
    `composer install --no-dev` one — P0 measured the development tree disagreeing with the phar for
@@ -261,6 +273,12 @@ the required-context list, and a job absent from it does not block a merge.
    These are two properties and no instrument in the repository delivers both: the gate has the
    breadth and a 12-file corpus, a large target has the threshold and no comparator. Splitting them
    is the point; satisfying both with one run is not required.
+   **As landed, 1a is narrower than its wording.** The CI job compares the whole JSON report, the
+   `qmx rules` listing and the rendered HTML — not the twelve formats, `baseline:explain` or the
+   exit-code matrix the finding gate covers. Pointing the gate at an archive needs a shim root
+   supplying `bin/qmx`, a delegating `vendor/autoload.php` and the corpus, and that was not built.
+   The gap is stated rather than closed: a format the comparison never renders could diverge and
+   nothing here would say so.
 2. **`--format=html` from the phar inlines its four assets**, checked by content. The build failing
    to include them is loud, not silent — the formatter refuses — so this item's real target is an
    asset that is present but wrong, not one that is missing.
