@@ -20,8 +20,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * bindings means the value pointed at nothing, not that nothing was wrong.
  *
  * The comparison must stay the one
- * {@see \Qualimetrix\Reporting\Filter\FindingFilter} makes, or a value could be
- * accepted here and filter nothing there: namespaces go through
+ * {@see \Qualimetrix\Reporting\DrillDown\FindingFilter} makes, or a value
+ * could be accepted here and filter nothing there: namespaces go through
  * {@see NamespaceMatcher::matchesSingle()}, classes are compared as the exact
  * `Namespace\Class` string the filter builds from a finding's symbol path.
  *

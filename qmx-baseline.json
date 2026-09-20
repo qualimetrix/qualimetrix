@@ -509,7 +509,7 @@
     "ns:Qualimetrix\\Infrastructure\\Serializer": [
       {"channel":"health.cohesion","magnitudes":[43.7]}
     ],
-    "ns:Qualimetrix\\Reporting\\Filter": [
+    "ns:Qualimetrix\\Reporting\\DrillDown": [
       {"channel":"health.maintainability","magnitudes":[49.3]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Health": [

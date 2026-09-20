@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\FormatterContext;

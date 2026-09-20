@@ -91,7 +91,7 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -166,9 +166,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Health/*',
             $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
-
-        // FindingFilter (shared filtering logic for formatters)
-        $container->register(FindingFilter::class);
 
         // DetailedFindingRenderer (in Formatter/Support/, excluded from formatter glob)
         $container->register($detailedFindingRenderer)
@@ -341,7 +338,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ExitCodeResolver::class)
             ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
 
-        // FindingFilter for --namespace/--class drill-down
+        // What --namespace/--class selects; ResultPresenter and the autowired
+        // formatter sections both resolve it from here.
         $container->register(FindingFilter::class);
 
         // ResultPresenter for formatting/output of analysis results

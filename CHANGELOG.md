@@ -26,6 +26,15 @@ remove a link it cannot identify rather than deleting someone else's hook.
   or baseline entry is affected. Only PHP code importing the five class names
   has to change, and the change is the namespace alone.
 
+- `Qualimetrix\Reporting\Filter` is gone; `FindingFilter` moved to
+  `Qualimetrix\Reporting\DrillDown`, the name the rest of the code already
+  uses for what `--namespace` and `--class` select. The class name, its two
+  methods and their behaviour are unchanged. **Nothing you write or read
+  changes**: no channel name, rule name, metric key, configuration key, CLI
+  flag, output field or exit code is affected. A `qmx.yaml` `suppress_namespaces`
+  entry or a baseline key naming the old namespace has to be respelled — this
+  repository's own ratchet carried one, and renaming it was the whole edit.
+
 ### Changed
 
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and

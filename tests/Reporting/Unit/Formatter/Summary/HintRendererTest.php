@@ -21,7 +21,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;

@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 

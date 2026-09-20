@@ -3,7 +3,7 @@ src/Reporting/Configuration/OutputFormatResolver.php	Qualimetrix\Reporting\Confi
 src/Reporting/Contract/OutputFormat.php	Qualimetrix\Reporting\Contract\OutputFormat	"output projection"	Reporting
 src/Reporting/Contract/OutputFormatResolverInterface.php	Qualimetrix\Reporting\Contract\OutputFormatResolverInterface	"output projection"	Reporting
 src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output projection"	Reporting
-src/Reporting/Filter/FindingFilter.php	Qualimetrix\Reporting\Filter\FindingFilter	"output projection"	Reporting
+src/Reporting/DrillDown/FindingFilter.php	Qualimetrix\Reporting\DrillDown\FindingFilter	"output projection"	Reporting
 src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php	Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusions.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusionsResolverInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	"output projection"	Reporting

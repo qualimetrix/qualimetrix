@@ -8482,23 +8482,23 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itExcludesFindingByClassWhenNoType
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByClassExactMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByClassWithGlobalNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByNamespaceExactMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByNamespaceMatchingChildren
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByClass
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itNeverSelectsProjectWideFindingsByNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itExcludesFindingByClassWhenNoType
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassExactMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassWithGlobalNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByNamespaceExactMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByNamespaceMatchingChildren
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByClass
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itNeverSelectsProjectWideFindingsByNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"

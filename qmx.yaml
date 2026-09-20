@@ -1005,7 +1005,7 @@ architecture:
         - 'Qualimetrix\Reporting\Contract\OutputFormat'
         - 'Qualimetrix\Reporting\Contract\OutputFormatResolverInterface'
         - 'Qualimetrix\Reporting\CoverageFailure'
-        - 'Qualimetrix\Reporting\Filter\FindingFilter'
+        - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'

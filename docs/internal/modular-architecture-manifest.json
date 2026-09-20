@@ -1905,7 +1905,7 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -6266,7 +6266,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -14379,7 +14379,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -14496,7 +14496,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -16822,8 +16822,8 @@
         }
       ]
     },
-    "Qualimetrix\\Reporting\\Filter\\FindingFilter": {
-      "path": "src/Reporting/Filter/FindingFilter.php",
+    "Qualimetrix\\Reporting\\DrillDown\\FindingFilter": {
+      "path": "src/Reporting/DrillDown/FindingFilter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "contract",

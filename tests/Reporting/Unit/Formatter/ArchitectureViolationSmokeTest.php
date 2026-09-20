@@ -26,7 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
 use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
 use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
