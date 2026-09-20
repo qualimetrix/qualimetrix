@@ -68,7 +68,8 @@
             "Qualimetrix\\RenameEnumeration\\Tests\\": "scripts/rename-enumeration/tests/",
             "Qualimetrix\\HealthCalibration\\Tests\\": "scripts/health-calibration/tests/",
             "Qualimetrix\\Benchmark\\Tests\\": "scripts/benchmark/tests/",
-            "Qualimetrix\\ModularArchitecture\\Tests\\": "scripts/modular-architecture/tests/"
+            "Qualimetrix\\ModularArchitecture\\Tests\\": "scripts/modular-architecture/tests/",
+            "Qualimetrix\\ModularArchitecture\\": "scripts/modular-architecture/"
         },
         "classmap": [
             "tools/phpstan/tests/Fixtures/"
