@@ -257,7 +257,9 @@ deleted and those outlive it.
 `--no-dev` install carrying `COMPOSER_ROOT_VERSION`, the build, an assertion that the archive names
 the version being released, and an upload kept separate from the release creation because that
 creation is deliberately skippable on a re-run. `qmx.yml` gained a `phar` job that builds on every
-run and holds the archive against the tree it came from.
+run and holds the archive against the tree it came from. Its steps were extracted from the workflow
+and executed locally against a `composer install --no-dev` workspace before being committed — the
+first version of this job had never been run and was red on every one of its assertions.
 
 **The required-context list is a repository setting, and it is the one item stage 01 cannot land in
 a pull request.** `main` requires six contexts today and `enforce_admins` is on, so a context added
@@ -283,11 +285,14 @@ is met more narrowly than its wording allows — see the note under it.
    breadth and a 12-file corpus, a large target has the threshold and no comparator. Splitting them
    is the point; satisfying both with one run is not required.
    **As landed, 1a is narrower than its wording.** The CI job compares the whole JSON report, the
-   `qmx rules` listing and the rendered HTML — not the twelve formats, `baseline:explain` or the
-   exit-code matrix the finding gate covers. Pointing the gate at an archive needs a shim root
-   supplying `bin/qmx`, a delegating `vendor/autoload.php` and the corpus, and that was not built.
-   The gap is stated rather than closed: a format the comparison never renders could diverge and
-   nothing here would say so.
+   `qmx rules` listing, the rendered HTML document, the exit code, and the archive's `src/` against
+   the committed listing — but not the twelve output formats or `baseline:explain`. Pointing the
+   finding gate at an archive needs a shim root supplying `bin/qmx`, a delegating
+   `vendor/autoload.php` and the corpus, and that was not built. The gap is stated rather than
+   closed: a format the comparison never renders could diverge and nothing here would say so.
+   A second limit, and the sharper one: the job compares two installs of the same production graph,
+   so problem 5 sits on both sides and reads as agreement. This job is evidence that the archive
+   equals its tree, not that either is sound.
 2. **`--format=html` from the phar inlines its four assets**, checked by content. The build failing
    to include them is loud, not silent — the formatter refuses — so this item's real target is an
    asset that is present but wrong, not one that is missing.
