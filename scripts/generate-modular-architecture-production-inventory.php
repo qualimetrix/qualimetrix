@@ -2397,6 +2397,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0067-every-test-shaped-directory-is-scanned.md' => 'Architecture.Governance',
         'docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md' => 'Infrastructure.Console',
         'docs/adr/0069-a-metric-is-declared-by-the-collector-that-writes-it.md' => 'Analysis.Evidence.Measurement',
+        'docs/adr/0070-an-anonymous-classs-declaration-edge-is-flagged-not-retyped.md' => 'Analysis.Evidence.DependencyModel',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

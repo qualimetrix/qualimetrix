@@ -2,13 +2,14 @@
 
 This index lists only work that is executable on the current tree.
 
-| Campaign                                                         | Status                                                                                                  |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [Phar distribution](phar-distribution/00-overview.md)            | Stage 01 P0-P3 landed, pending review and one branch-protection setting; stage 02 written when 01 ships |
-| [Control tooling](control-tooling/00-overview.md)                | Planned; three review rounds; stage 01 not started                                                      |
-| [Health recalibration](health-recalibration/00-overview.md)      | In progress; three review rounds; instruments, corpus, model and calibration landed                     |
-| [Rules listing](rules-listing/01-one-declaration-two-readers.md) | Three review rounds; landed, pending review                                                             |
-| [Shorthand scope](shorthand-scope/00-overview.md)                | Planned and reviewed; implementation has not started                                                    |
+| Campaign                                                                  | Status                                                                                                  |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [Phar distribution](phar-distribution/00-overview.md)                     | Stage 01 P0-P3 landed, pending review and one branch-protection setting; stage 02 written when 01 ships |
+| [Control tooling](control-tooling/00-overview.md)                         | Planned; three review rounds; stage 01 not started                                                      |
+| [Health recalibration](health-recalibration/00-overview.md)               | In progress; three review rounds; instruments, corpus, model and calibration landed                     |
+| [Rules listing](rules-listing/01-one-declaration-two-readers.md)          | Three review rounds; landed, pending review                                                             |
+| [Shorthand scope](shorthand-scope/00-overview.md)                         | Planned and reviewed; implementation has not started                                                    |
+| [Anonymous class inheritance](anonymous-class-inheritance/00-overview.md) | Two review rounds; P1-P2 landed, P3-P6 in progress                                                      |
 
 Completed plans are removed after their durable decisions, obligations, and
 verification assets move to their permanent owners. Current architectural
