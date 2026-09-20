@@ -130,16 +130,41 @@ require_once __DIR__ . '/PhpFilePopulation.php';
  * `file:line`, and reviewed — and that a new call on a new line in an
  * already-entered file is refused by default.
  *
- * The price of the line anchor is paid by edits that have nothing to do with
- * subprocesses. Inserting anything *above* an entered occurrence moves it, and
- * the entry then refuses as stale until someone re-anchors it — this has already
- * happened once, when two test cases were added above an entered call and the
- * whole group went red for a change that touched no read discipline. That red is
- * the mechanism working, not a defect in it: the same anchor is what makes a
- * *second* call added to an already-entered file refuse by default, which a
- * file-level entry could never do. Re-take the number from this control's own
- * refusal message, which reports where the occurrence sits now, rather than
- * counting lines by hand.
+ * ## The price of the line anchor, measured
+ *
+ * Inserting anything *above* an entered occurrence moves it, and the entry then
+ * refuses as stale until someone re-anchors it — for a change that touched no
+ * read discipline. That is not rare, and the size of it is a measurement rather
+ * than an impression. Replaying every commit since 2026-06-01 that touched a file
+ * holding an entry gives 40 commit-to-commit transitions, of which nine moved an
+ * occurrence without changing the text of its line, and none changed that text.
+ * So this anchor would have been re-taken nine times over that window, where one
+ * keyed on the line's *content* would have been re-taken none.
+ *
+ * One of the nine was paid twice, though not by breaking twice: `10978986` put a
+ * seven-line comment above the second call in `PseudoTerminalRun.php`, and two
+ * concurrent sessions each re-took the same 78 → 85 within half an hour. What
+ * doubled the bill there was the visibility of the red, not the anchor.
+ *
+ * The form is kept anyway, and not out of inertia. Four cheaper anchors were
+ * weighed by the question this control is judged on — what does each stop
+ * refusing — and every one of them is wider, because **an anchor's churn and its
+ * specificity are the same property**: a form survives an unrelated edit exactly
+ * when it names an occurrence by something a *different* occurrence can also
+ * carry, which is also what lets one reviewed entry come to permit two. ADR 0070
+ * lists the four and what each loses. Two of those losses are present in today's
+ * tree rather than hypothetical: keyed on the enclosing symbol, eight of the
+ * twenty-three occurrences outside the module sit four-to-a-function in two data
+ * providers, so the six entries covering them would collapse into two; and two
+ * more sit in a class constant array with no enclosing function to name at all.
+ *
+ * So the red is the mechanism working, not a defect in it: the same anchor is
+ * what makes a *second* call added to an already-entered file refuse by default,
+ * which a file-level entry could never do. Re-take the number from this
+ * control's own refusal message, which reports where the occurrence sits now,
+ * rather than counting lines by hand. Re-opening the question costs a fresh
+ * measurement — the numbers above are the case for changing the form, and it has
+ * already been made and lost.
  *
  * One gap is named rather than covered: a dynamically assembled name
  * (`$f = 'proc_' . 'open'; $f(…)`) is invisible to any textual gate, and the
