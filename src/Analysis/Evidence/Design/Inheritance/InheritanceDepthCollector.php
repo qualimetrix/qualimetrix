@@ -20,6 +20,7 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
+use ReflectionException;
 use SplFileInfo;
 use Throwable;
 
@@ -173,16 +174,25 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
         // Normalize FQN
         $normalized = ltrim($classFqn, '\\');
 
+        // Only the load step runs someone else's code, and it fails with a
+        // plain Error carrying nothing to match on, so it takes the widest
+        // catch there is. The walk below keeps a narrow one: it cannot
+        // autoload -- a class is not declared until its ancestors are -- so
+        // anything thrown there is this tool's own defect and must stay loud.
         try {
             // Try to load the class
             if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
                 // Cannot resolve - assume it's a root class
                 return 0;
             }
-
-            return $this->calculateReflectionDit(new ReflectionClass($normalized));
         } catch (Throwable) {
-            // Cannot load or reflect - assume root
+            return 0;
+        }
+
+        try {
+            return $this->calculateReflectionDit(new ReflectionClass($normalized));
+        } catch (ReflectionException) {
+            // Cannot reflect - assume root
             return 0;
         }
     }
