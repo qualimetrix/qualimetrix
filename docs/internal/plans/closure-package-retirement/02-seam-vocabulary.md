@@ -14,7 +14,7 @@ the manifest to version 3.
 | consumers with a non-null `closes_in`                       | **0**                                                              |
 | `enforcement_seams`                                         | empty                                                              |
 | rows of `production-ownership.tsv` carrying the key         | one per declaration that has consumers                             |
-| read sites in the production generator                      | 6, of which 5 are edits and 1 publishes the value                  |
+| `closes_in` literals in the production generator            | 6, all of them edits                                               |
 | schema lines naming it                                      | 14, across 6 consumer `oneOf` variants and the `seam` definition   |
 | files under `docs/internal/generated/modular-architecture/` | 20                                                                 |
 
@@ -48,16 +48,18 @@ differed by one field.
 ## The vocabulary outlives the key, and that is why this stage is not a delete
 
 `closes_in` is the field. **Permanent versus temporary is the idea**, and it survives every sweep
-for the field's name:
+for the field's name. The carriers are not listed here — a partial list read as complete is how the
+previous revision of this section went wrong. P1 enumerates them with a sweep that can see them,
+and the enumeration is part of what P1 hands back:
 
-- the generator refuses with `consumer … must be permanent owner-wide, permanent exact-source, or
-  temporary exact-source` — after this stage the third option cannot exist, so the message offers a
-  remedy that is no longer reachable;
-- `composition_binding` and `contract_surface` refuse with `must permanently authorize …` and
-  `must name a permanent exact source`, where "permanent" distinguishes from a temporary that is
-  about to stop existing;
-- `manifest-enforcement-summary.tsv` publishes `permanent_composition_bindings`, a name whose
-  qualifier stops distinguishing anything.
+    git grep -nP '\b(permanent|temporary)\b' -- scripts governance docs/internal
+
+filtered to the sites that speak about consumers rather than about temporary files, which that
+pattern also matches. At least these four kinds exist and each needs a decision: a generator refusal
+that offers a third option the stage removes; refusal messages whose "permanent" stops
+distinguishing anything; a published summary-row name carrying the same qualifier; and prose in
+`docs/internal/MODULE_README_TEMPLATE.md`, which is P2's file rather than P1's — so the two packages
+share this subject and must agree on it before either edits.
 
 A stage that removes the field and leaves these is not finished: it leaves the tree describing a
 distinction it no longer makes. Whether to rename or to simplify each is P1's call, taken per site
@@ -69,8 +71,8 @@ Nothing to the logic. Every consumer is null; a PHP read of a missing key yields
 `permanentOwnerWide` / `permanentExact` / `temporary` classify identically either way.
 
 `temporary_contract_consumer_entries` goes with it — its source is gone. The measurement behind that
-is narrower than it sounds and is stated at its true width: flipping the counter's **value** 0 -> 1
-and running Governance and Tooling left 972/972 green, which shows nothing reads the value. It does
+is narrower than it sounds: flipping the counter's **value** left Governance and Tooling green,
+which shows nothing reads the value. It does
 not show nothing reads the **row's existence**, and the stage removes the row. P3 closes that gap by
 measurement, not by inference.
 
@@ -97,11 +99,13 @@ both. Nothing in P1 is green until all of it lands: the schema and the manifest 
     governance/ModularOwnership/ModularArchitectureGovernanceIntegrationTest.php
 
 The schema: the branch collapse, the `seam` variant, the version `const`. The manifest: the key on
-every consumer, and the version. The generator: five read sites, the summary counter, and the
-refusal messages named above — **not** the sixth site, which publishes the value and disappears with
-the key rather than being edited. The governance test carries two separate things and both are P1's:
-the version assertion, and a direct `assertNull($consumer['closes_in'])` that no sweep for the
-generator's read sites would have found.
+every consumer, and the version. The generator: every `closes_in` literal it contains — all of them
+are edits — plus the summary counter and the vocabulary decided above. The value also reaches the
+published artifact without being named, by a whole-consumer copy; that site needs no edit and stops
+carrying the key when the key is gone, which is a thing to verify rather than a thing to change.
+The governance test carries two separate things and both are P1's: the version assertion, and a
+direct `assertNull($consumer['closes_in'])` that a sweep of the generator's reads would never have
+found.
 
 **Definition of Done.** Stated in P3; P1 owes the prediction each item is compared against.
 
@@ -137,51 +141,59 @@ of DoD 3.
 
 ## Definition of Done
 
-Each item names the state in which it would be green for the wrong reason, because the previous
-revision's items did not.
+Two artifacts change: `production-ownership.tsv` and `manifest-enforcement-summary.tsv`. Every other
+generated file, and `qmx.yaml`, must come out byte-identical. Each item below states a property and
+derives its own numbers in the run that checks it; none is written here, because the revision that
+wrote them down is the revision that got them wrong.
 
 1. **The key-level comparison, and its own proof.** `closes_in` lives inside the JSON cell of a
    surviving column, so a column diff cannot see it leave and stage 01's `oracle.py` is unusable.
-   Parse the `consumers` cell of every row of `production-ownership.tsv` before and after and assert:
-   the changed rows are exactly the declarations that have consumers, derived from the manifest in
-   the same run; every changed cell loses exactly the member `closes_in` and nothing else; no row
-   gains or loses a consumer; row count and column identity unchanged.
-   **The comparator is a deliverable with an owner (P3) and it is proved before it is trusted:**
-   plant a cell that also loses a second member, and one that gains a consumer, and quote both
-   refusals. *Green for the wrong reason if:* it reports "0 rows differ" because it failed to parse
-   and treated the empty set as agreement.
-2. **The nineteen artifacts that must not move.** `docs/internal/generated/modular-architecture/`
-   holds 20 files; this stage changes two. Assert the other eighteen and `qmx.yaml` are byte-identical
-   across the regeneration. *Green for the wrong reason if:* the comparison enumerates only the files
-   it expected to see.
-3. **`temporary_contract_consumer_entries` leaves, and nothing notices its absence.** Not the value
-   flip that was already run — remove the **row** on the current tree, run Governance and Tooling,
-   and record what fails. *Green for the wrong reason if:* the run is taken before the removal.
-4. **The two unplantable populations, in that order and with both states recorded.** On the tree
-   **before** P1: a non-null plant on a `composition_binding` consumer and on a `contract_surface`
-   consumer, each refused at schema load, message quoted. On the tree **after** P1: the same two
-   plants, and state what they do then — the branches they hit no longer exist, so a plant that is
-   still refused is refused by something else and that something must be named. *Green for the wrong
-   reason if:* only one tree state is measured, since the refusal is identical in both for reasons
-   that are not.
+   Parse the `consumers` cell of every row of `production-ownership.tsv` before and after and
+   establish: the changed rows are exactly the declarations that have consumers, derived from the
+   manifest in the same run rather than from a number in this document; every changed cell loses
+   exactly the member `closes_in` and nothing else; no row gains or loses a consumer; row count and
+   column identity unchanged. **The comparator lives with its campaign, not in the product tree, and
+   is proved before it is trusted:** plant a cell that loses a second member, one that gains a
+   consumer, and one that changes a consumer's *order* without changing its members — the last
+   because the cure that added the "nothing else" clause did not add a plant for it. Quote each
+   refusal. *Green for the wrong reason if:* it reports no differing rows because parsing failed and
+   the empty set read as agreement.
+2. **Everything else is byte-identical.** Enumerate the generated directory from the filesystem in
+   the same run, subtract the two files named above, and compare the remainder plus `qmx.yaml` across
+   the regeneration. *Green for the wrong reason if:* the comparison walks a list of files it
+   expected rather than the directory, so a file that stopped being generated reads as unchanged.
+3. **The summary row leaves, and the only thing that notices is the gate that must.** Removing
+   `temporary_contract_consumer_entries` moves a published artifact, so the freshness gate fires by
+   design; a bare "Governance goes red" proves nothing. Separate the two: run the suites against the
+   removal **with the artifact regenerated**, so freshness is satisfied and anything still failing is
+   something that reads the row's existence. Report both runs. *Green for the wrong reason if:* the
+   freshness failure is read as the answer, or the run is taken before the removal.
+4. **The two unplantable populations, on both trees.** Before P1: a non-null plant on a
+   `composition_binding` consumer and on a `contract_surface` consumer, each refused at schema load,
+   each message quoted. After P1: the same two plants, with what they do then — the branch that
+   refused them is gone, so anything still refusing must be named, and the messages are not the same
+   ones. *Green for the wrong reason if:* only one tree state is measured.
 5. **The plain-import plant, prediction first.** Write the predicted diff before running, on the tree
-   before P1; then state what the same plant does after P1. *Green for the wrong reason if:* the
+   before P1; then state what the same plant does after. *Green for the wrong reason if:* the
    prediction is written after the run.
-6. **The vocabulary sweep, which a name sweep is not.** No refusal message, summary-row name or
-   docblock still distinguishes permanent from temporary among consumers, or each survivor is listed
-   with the reason it still distinguishes something. *Green for the wrong reason if:* it greps for
-   `closes_in`, which by then matches nothing anywhere.
-7. **The branches nothing exercises are removed, not carried.** `enforcement_seams` is empty, so
-   the `seam` definition's `closes_in` — required and non-nullable there, unlike every consumer
-   variant — is declared strictness that no tracked data has ever tested. It goes with the rest, and
-   the ADR says so rather than leaving a reader to wonder whether the seam vocabulary survived on
-   purpose. *Green for the wrong reason if:* the check confirms the branch is unexercised, which it
-   was before the change too, instead of confirming it is gone.
-8. `! git grep -q closes_in` outside the ADR. P3's.
-9. `composer check` green from a clean clone with copied `vendor`, `website/.venv` and
-   `html-report/node_modules`. P3's.
-10. This plan directory is deleted, `enumeration.tsv` with it, and its row leaves
-   `docs/internal/plans/README.md`. P3's.
+6. **The vocabulary, enumerated and decided site by site.** Run P1's sweep, list every site it finds
+   that speaks about consumers, and for each say what was done or why nothing was. One of them is the
+   published summary-row name, and renaming it moves `manifest-enforcement-summary.tsv` — which is
+   one of the two files item 2 already excludes, so the two items agree; say so rather than leaving a
+   reader to discover it. *Green for the wrong reason if:* the sweep is for `closes_in`, which by
+   then matches nothing.
+7. **The seam branch goes rather than stays unexercised.** `enforcement_seams` is empty, so the
+   `seam` definition's `closes_in` is declared strictness no tracked data has tested. Establish that
+   it is gone from the schema, not merely that nothing exercises it — which was true before the
+   change too.
+8. **P2's `CHANGELOG.md` decision is recorded, either way.** An entry, or a sentence in the ADR
+   saying why an internal manifest format needs none. *Green for the wrong reason if:* the absence of
+   an entry is read as the decision.
+9. `! git grep -q closes_in` outside the ADR. P3's.
+10. `composer check` green from a clean clone with copied `vendor`, `website/.venv` and
+    `html-report/node_modules`. P3's.
+11. This plan directory is deleted, `enumeration.tsv` with it, and its row leaves
+    `docs/internal/plans/README.md`. P3's.
 
 ## A hazard for the executor, not for the plan
 
