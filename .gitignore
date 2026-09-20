@@ -106,6 +106,13 @@ examples/
 # Node modules (HTML report build pipeline)
 node_modules/
 
+# Agent worktrees live inside the repository, so a tree-walking control sees a
+# full second copy of it unless this line holds them out. Held out only by
+# .git/info/exclude until now, which is per-machine: the control that reads
+# `git ls-files --others` would have been correct here and wrong on a clone
+# whose local exclude file says something else.
+.claude/worktrees/
+
 # Playwright CLI artifacts
 .playwright-cli/
 

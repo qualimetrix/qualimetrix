@@ -103,13 +103,18 @@ const P7_MEASUREMENT_PATHS = [
  * its final home, so `classifyOwner()`, `dispositionFor()`/`targetPath()`
  * (via `isRegisteredToolingRoot()`) and the `git ls-files` scan-scope pathspec
  * all read this map instead of repeating its keys — a key named here once
- * reaches all three. `assertToolingTestRootRegistrationIsComplete()`
- * cross-checks the map against the tree itself (independent of this file): a
- * `scripts/*\/tests` or `tools/*\/tests` directory landing or vanishing
- * without a matching edit here fails loudly, and so does any registered key
- * — of any shape, including `governance/` and `html-report/*` — naming a
- * path that is no longer there. See that function's own docblock for why the
- * two directions need different oracles.
+ * reaches all three. Two checks cross-check the map against the tree itself,
+ * independently of this file, one per direction:
+ * `assertToolingTestRootRegistrationIsComplete()` answers "a registered key
+ * that is no longer there", for a key of any shape; and
+ * `assertEveryTestDirectoryIsScanned()` answers "a test directory the tree
+ * carries that this generator never scans", for a directory anywhere in the
+ * tree rather than only under `scripts/` and `tools/`. That second one is
+ * deliberately not phrased as "that nothing registered": a registration which
+ * does not put the directory in {@see inventoryScanScope()} leaves it exactly
+ * as invisible as no registration at all, and an earlier draft that accepted
+ * one is why the distinction is spelled out here. See each function's own
+ * docblock for the source it judges against.
  *
  * @var array<string, string>
  */
@@ -132,7 +137,9 @@ const TOOLING_TEST_ROOT_OWNERS = [
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
     // it is outside actualToolingTestRootsOnDisk()'s glob the same way
     // governance/ is — assertToolingTestRootRegistrationIsComplete() checks
-    // it by direct existence instead. Two file keys beside the directory key
+    // it by direct existence instead, and assertEveryTestDirectoryIsScanned()
+    // is what would have refused for html-report/tests/ had this entry never
+    // been written. Two file keys beside the directory key
     // because the retained slice is not one directory: the viewer's own
     // package.json and vite.config.js sit beside tests/, not under it, and
     // nothing else under html-report/ (report.html, dist/, src/*.js,
@@ -140,6 +147,76 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'html-report/tests/' => 'HtmlReport',
     'html-report/package.json' => 'HtmlReport',
     'html-report/vite.config.js' => 'HtmlReport',
+];
+
+/**
+ * The basenames that make a directory test-shaped, for the sweep in
+ * {@see assertEveryTestDirectoryIsScanned()}.
+ *
+ * `tests` is the only one the tree uses today; the other four are the spellings
+ * the ecosystems that would land the next root-level project reach for first —
+ * a vitest or jest project writes `__tests__` or `test` as readily as `tests`.
+ * Widening the *source* this way costs nothing measurable (all five together
+ * name exactly the sixteen directories `tests` alone names) and it is the
+ * source, not the exclusion list, that may be generous: a directory this set
+ * names and nothing claims is refused, so a spelling missing here is a root the
+ * sweep cannot see, while a spelling too many is at worst one more literal in
+ * {@see NON_SCANNED_TEST_DIRECTORIES} the day some directory innocently uses it.
+ *
+ * @var list<string>
+ */
+const TEST_DIRECTORY_BASENAMES = ['tests', 'test', 'Tests', '__tests__', 'spec'];
+
+/**
+ * Path segments that disqualify a directory from the sweep's source outright.
+ *
+ * The two halves are not in the same position, and calling both "defensive"
+ * was wrong:
+ *
+ * - `vendor` is **load-bearing**. `.gitignore`'s `/vendor/` is anchored to the
+ *   repository root — which is exactly why `/benchmarks/vendor/` needed a line
+ *   of its own. Any other nested `vendor/` is not ignored, would be listed by
+ *   `--others`, and is held out only by this constant. The tree carries
+ *   `composer.json` files outside the repository root, so the directory that
+ *   would trip this is one `composer install` away. Do not remove it as dead
+ *   weight; it is not dead.
+ * - `node_modules` is unanchored in `.gitignore` and does hold everywhere, so
+ *   this half is the defensive one. It is written anyway because the rule has
+ *   to read as itself: a control whose correctness rests on a second file's
+ *   contents changes meaning when that file does, in silence and at a
+ *   distance, and `node_modules/` is one `!` away from being un-ignored by
+ *   someone solving an unrelated problem — at which point an npm dependency's
+ *   own `test/` directory would be refused as an unregistered root of this
+ *   repository.
+ *
+ * @var list<string>
+ */
+const NON_PROJECT_PATH_SEGMENTS = ['vendor', 'node_modules'];
+
+/**
+ * Test-shaped directories this generator deliberately does not scan — the set
+ * subtracted from {@see assertEveryTestDirectoryIsScanned()}'s source, spelled
+ * out as literals so that it grows with the filter it excuses rather than
+ * hiding inside a pattern.
+ *
+ * A pattern would have done the job in fewer characters and is the reason this
+ * is a list: a glob for "anything under a `fixtures` directory" excuses the
+ * entry below, and it goes on excusing every future directory that happens to
+ * sit under one — including a real test root someone files there by mistake. A
+ * literal excuses one path and says so by name.
+ *
+ * Every direction is checked, so an entry cannot outlive its reason: an entry
+ * naming a path the sweep no longer finds is refused as stale, an entry naming
+ * a path this generator does scan is refused as redundant, and an entry whose
+ * reason is blank is refused outright — an excuse that does not explain itself
+ * is the thing this list exists to prevent.
+ *
+ * @var array<string, string> path (trailing slash) => why it is not this repository's to scan
+ */
+const NON_SCANNED_TEST_DIRECTORIES = [
+    'input-doors/fixtures/main/tests/' => 'the test directory of the fixture project the input-door stand'
+        . ' analyses, not a test directory of this repository: its one file is input to a measurement, and'
+        . ' running it as a test of this tree is exactly what it must not do.',
 ];
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
@@ -410,6 +487,7 @@ if ($projectRoot === false) {
 assertPathLiteralsResolve($projectRoot);
 assertSuiteClassifierAgreesWithPhpunit($projectRoot);
 assertToolingTestRootRegistrationIsComplete($projectRoot);
+assertEveryTestDirectoryIsScanned($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -446,18 +524,11 @@ if ($classificationProbeArguments !== []) {
     exit(0);
 }
 
-// The tooling-root portion of this pathspec is every TOOLING_TEST_ROOT_OWNERS
-// key, trimmed of its trailing slash — the html-report/ entries reach this
-// pathspec through that map now, the same way every other tooling root does,
-// rather than as literals of their own. 'scripts/tests' is dead scan-scope
-// left over from before the roots below existed (its directory is gone, see
-// the coverage note in the stage-03 review).
+// inventoryScanScope() holds the pathspec, because assertEveryTestDirectoryIsScanned()
+// judges a directory by whether this scan reaches it and must read the scan's own
+// scope rather than a second copy that can drift from it.
 $worktreePaths = commandLines(
-    [
-        'git', 'ls-files', '--cached', '--others', '--exclude-standard', '--',
-        'tests', 'scripts/tests',
-        ...array_map(static fn(string $prefix): string => rtrim($prefix, '/'), array_keys(TOOLING_TEST_ROOT_OWNERS)),
-    ],
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', ...inventoryScanScope()],
     $projectRoot,
 );
 $worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
@@ -1293,16 +1364,15 @@ function actualToolingTestRootsOnDisk(string $projectRoot): array
 }
 
 /**
+ * Every registered key still names something, and every glob-shaped directory
+ * on disk is still registered.
+ *
  * The four sites that used to spell out the tooling-root set now all read
  * TOOLING_TEST_ROOT_OWNERS, so they cannot drift from each other — but the map
- * itself can still drift from the tree in two different ways, checked by two
- * different oracles because only one population can be found by a glob:
+ * itself can still drift from the tree, and the two directions of that drift
+ * are answered by different oracles because only one population can be found by
+ * a glob:
  *
- * - A new `scripts/<tool>/tests/` or `tools/<tool>/tests/` directory landing
- *   without a registration — found by comparing the glob's own listing
- *   against the registered keys shaped like it. A key outside that shape
- *   (`governance/`, `html-report/*`) could never be produced by this glob no
- *   matter how faithfully it is registered, so it does not participate here.
  * - Any registered key — whichever shape — naming a path that is no longer
  *   there. This is answered directly, by `is_dir()`/`is_file()` on the key
  *   itself, which needs no glob and therefore has no shape requirement: a
@@ -1312,6 +1382,20 @@ function actualToolingTestRootsOnDisk(string $projectRoot): array
  *   which is why `governance/` and `html-report/*` had to be exempted from it
  *   outright — the exemption was a gap in the oracle, not a property of
  *   those roots.
+ * - A new `scripts/<tool>/tests/` or `tools/<tool>/tests/` directory landing
+ *   without a registration — found by comparing the glob's own listing
+ *   against the registered keys shaped like it. A key outside that shape
+ *   (`governance/`, `html-report/*`) could never be produced by this glob no
+ *   matter how faithfully it is registered, so it does not participate here.
+ *
+ * That second direction used to be the whole of what was asked about roots
+ * landing unregistered, and a glob over two directories is not a population.
+ * It is no longer the whole: {@see assertEveryTestDirectoryIsScanned()} asks it
+ * of the tree rather than of two parent directories, and what remains here is
+ * the narrower question of whether the map and the glob agree where both can
+ * see. The two overlap on `scripts/` and `tools/` deliberately — this one names
+ * the missing *map entry* for a shape whose owner is known, the other names an
+ * unclaimed *directory* wherever it is.
  */
 function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
 {
@@ -1345,6 +1429,222 @@ function assertToolingTestRootRegistrationIsComplete(string $projectRoot): void
     if ($problems !== []) {
         fail("Tooling test root registration disagrees with the tree:\n  " . implode("\n  ", $problems));
     }
+}
+
+/**
+ * The pathspec the inventory's own scan is given — the single definition of
+ * which paths this generator can see at all.
+ *
+ * `'scripts/tests'` is dead scope left over from before the roots below
+ * existed; its directory is gone. It stays because this is a description of
+ * what the scan is handed, not a wish about it, and a path that would be
+ * scanned if it reappeared is a path this file governs.
+ *
+ * @return list<string> git pathspecs, no trailing slash
+ */
+function inventoryScanScope(): array
+{
+    return [
+        'tests',
+        'scripts/tests',
+        ...array_map(static fn(string $prefix): string => rtrim($prefix, '/'), array_keys(TOOLING_TEST_ROOT_OWNERS)),
+    ];
+}
+
+/**
+ * Every test-shaped directory the tree carries — the source
+ * {@see assertEveryTestDirectoryIsScanned()} judges, derived from git rather
+ * than from any registration so that it cannot agree with one by construction.
+ * Returned sorted; "shallowest" below describes which match is taken per path,
+ * not the order of the result.
+ *
+ * **Git is asked, not the filesystem.** What decides whether anyone but this
+ * worktree sees a directory is whether git carries a file under it; `glob()`
+ * answers about this machine, which is how the direction this function serves
+ * came to be missing in the first place. `--others` is included so that a root
+ * is judged the moment it is created rather than one commit later.
+ *
+ * **What `--exclude-standard` delegates to, exactly.** Not `.gitignore` alone:
+ * it is `.gitignore` plus `$GIT_DIR/info/exclude` plus `core.excludesFile`, and
+ * the last two are per-clone and per-machine — untracked, invisible to review,
+ * and not the same on any two checkouts. That matters here and was measured: a
+ * developer checkout that followed this repository's own setup instructions
+ * carries `website/.venv/`, whose site-packages hold a real `tests` directory,
+ * and `benchmarks/vendor/`. Both are held out by tracked `.gitignore` lines, so
+ * the sweep names neither — but the guarantee is tracked only for what
+ * `.gitignore` covers. Anything a machine excludes locally is excluded here
+ * too, silently and differently per machine.
+ *
+ * **Shallowest match per path.** A `tests` directory nested inside another is
+ * the same root, and a claim over the outer one covers it by prefix; emitting
+ * both would refuse the inner one separately the day the outer one's claim
+ * names a deeper path.
+ *
+ * @return list<string> each with a trailing slash
+ */
+function trackedTestDirectories(string $projectRoot): array
+{
+    $paths = commandLines(
+        ['git', 'ls-files', '--cached', '--others', '--exclude-standard'],
+        $projectRoot,
+    );
+
+    $directories = [];
+    foreach ($paths as $path) {
+        $segments = explode('/', $path);
+        array_pop($segments); // the file name; only its parents can be directories
+        if (array_intersect($segments, NON_PROJECT_PATH_SEGMENTS) !== []) {
+            continue;
+        }
+
+        $prefix = '';
+        foreach ($segments as $segment) {
+            $prefix .= $segment . '/';
+            if (in_array($segment, TEST_DIRECTORY_BASENAMES, true)) {
+                $directories[$prefix] = true;
+
+                break; // shallowest match — see the docblock
+            }
+        }
+    }
+
+    $directories = array_keys($directories);
+    sort($directories, SORT_STRING);
+
+    return $directories;
+}
+
+/**
+ * Every test-shaped directory in the tree is one this generator actually scans.
+ *
+ * This is the direction {@see assertToolingTestRootRegistrationIsComplete()}
+ * cannot answer. That function compares the map against a `glob()` of
+ * `scripts/*\/tests` and `tools/*\/tests`, so a root outside those two shapes
+ * is a root it cannot name, let alone miss: `governance/` had that gap from the
+ * day it was registered, and `html-report/` joined it. The consequence was not
+ * a wrong answer but an unasked question — a root-level project landing without
+ * a registration is absent from the inventory entirely, under a green
+ * `composer architecture:check`, leaving nothing behind for a reader to notice.
+ *
+ * **"Claimed" means scanned, and nothing weaker.** The claim is
+ * {@see inventoryScanScope()} — the same pathspec the row pass is handed, read
+ * rather than restated. An earlier draft accepted a second door, a
+ * `<directory>` under a `<testsuite>` in `phpunit.xml.dist`, on the reasoning
+ * that the root `tests/` tree is registered as its leaf directories rather than
+ * as itself. That door granted a claim that does not entail what the claim is
+ * for: a new PHP test root declared in `phpunit.xml.dist` and classified by
+ * `testSuitePrefixTable()` would satisfy it, run under PHPUnit, and still be
+ * absent from every generated artifact, because neither registration touches
+ * the scan scope. The harm this function exists to refuse would have been
+ * reachable through a directory it called claimed. Scan scope covers `tests/`
+ * by its own literal, so nothing is lost by refusing the weaker door.
+ *
+ * **The population is closed by being stated, not by being narrow.** The judged
+ * set is exactly {@see trackedTestDirectories()} minus
+ * {@see NON_SCANNED_TEST_DIRECTORIES}, and the subtracted set is literals. A
+ * witness — "some root is registered", "the ones we remembered are still there"
+ * — would move the blind spot rather than remove it, because what it never
+ * enumerates it can never miss. Subtraction by literal has the opposite
+ * property: the excuse list is as visible as the thing it excuses, and it grows
+ * only by someone writing a path and a reason.
+ *
+ * **What this does not reach.** Two shapes, and neither is covered by anything
+ * said above.
+ *
+ * - A test root whose directory is not test-shaped. `governance/` is the tree's
+ *   one example. Declared as a `<testsuite>` `<directory>`, it is caught by
+ *   {@see assertSuiteClassifierAgreesWithPhpunit()}, which refuses a declared
+ *   directory `currentSuite()` does not classify. Undeclared and outside
+ *   `autoload-dev`, nothing sees it — and nothing runs it either, so it is
+ *   silence about a directory PHPUnit never reaches. That silence is
+ *   pre-existing and unchanged here.
+ * - Tests with no enclosing test-shaped directory at all: `viewer.test.js`
+ *   beside the source it covers, or a layout spelling the directory `e2e` or
+ *   `cypress`. The source derives a candidate from a path segment, so a project
+ *   that wraps its tests in no such segment produces none.
+ *
+ * **Which refusal a reader actually sees.** `fail()` exits, and
+ * {@see assertToolingTestRootRegistrationIsComplete()} runs one line earlier, so
+ * for the `scripts/<tool>/tests/` and `tools/<tool>/tests/` shapes it is always
+ * that function's one-line message that prints and never this one. The two
+ * overlap there on purpose, but only the earlier one speaks.
+ */
+function assertEveryTestDirectoryIsScanned(string $projectRoot): void
+{
+    $candidates = trackedTestDirectories($projectRoot);
+    if ($candidates === []) {
+        fail(
+            'Found no test-shaped directory anywhere in the tree, so every judgement below would be vacuous. '
+            . 'Either the sweep stopped reaching git or ' . implode('/', TEST_DIRECTORY_BASENAMES)
+            . ' no longer names how this repository spells a test directory.',
+        );
+    }
+
+    $scannedThrough = [];
+    foreach ($candidates as $candidate) {
+        $scannedThrough[$candidate] = scanScopeEntryFor($candidate);
+    }
+
+    $problems = [];
+    foreach ($candidates as $candidate) {
+        if (isset(NON_SCANNED_TEST_DIRECTORIES[$candidate]) || $scannedThrough[$candidate] !== null) {
+            continue;
+        }
+        $problems[] = $candidate
+            . ' holds files git reports and nothing scans it: register it in TOOLING_TEST_ROOT_OWNERS (and in every'
+            . ' other address AGENTS.md lists for a new test root), or name it in NON_SCANNED_TEST_DIRECTORIES with'
+            . ' the reason it is not this repository\'s to scan';
+    }
+
+    foreach (NON_SCANNED_TEST_DIRECTORIES as $excused => $reason) {
+        if (trim($reason) === '') {
+            $problems[] = $excused
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES with an empty reason, which excuses it from this'
+                . ' check and from explaining itself at the same time';
+        }
+        if (!in_array($excused, $candidates, true)) {
+            $problems[] = $excused
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES but git carries no file under it, so the'
+                . ' exclusion excuses nothing and is holding a seat for a path that is gone';
+
+            continue;
+        }
+        if ($scannedThrough[$excused] !== null) {
+            $problems[] = $excused
+                . ' is excused in NON_SCANNED_TEST_DIRECTORIES as "' . $reason . '" and is at the same time'
+                . ' scanned through ' . $scannedThrough[$excused]
+                . ' — the exclusion has outlived its reason and one of the two is wrong';
+        }
+    }
+
+    if ($problems !== []) {
+        fail(
+            "Test directories in the tree that nothing scans:\n  "
+            . implode("\n  ", $problems),
+        );
+    }
+}
+
+/**
+ * The scan-scope entry under which `$candidate` is scanned, named the way a
+ * refusal has to name it, or null when nothing scans it.
+ *
+ * Each entry is compared with a trailing slash appended. Without it
+ * `html-report/tests` would also claim a future `html-report/testsuite/`, and
+ * the map's two file keys — `html-report/package.json`,
+ * `html-report/vite.config.js` — would need excluding by hand instead of
+ * failing to match anything, which is what they should do: they register a
+ * file, not a directory of tests.
+ */
+function scanScopeEntryFor(string $candidate): ?string
+{
+    foreach (inventoryScanScope() as $entry) {
+        if (str_starts_with($candidate, $entry . '/')) {
+            return 'the inventory scan scope entry ' . $entry;
+        }
+    }
+
+    return null;
 }
 
 /**
