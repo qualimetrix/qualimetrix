@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Git\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -304,6 +305,63 @@ final class GitClientTest extends TestCase
         self::assertSame('file2.php', $files[0]->path->value());
     }
 
+    /**
+     * Git accepts refnames containing shell metacharacters, and such a name
+     * reaches `git diff` as part of a range. That is the one place where
+     * handing the command to a shell would change what the command means.
+     *
+     * The cases differ in how a shell would break them, and only the first
+     * comes back as a wrong answer rather than as an error. `v1` exists as a
+     * ref of its own, so a shell splitting at `;` runs `v1..HEAD`, which git
+     * resolves and returns rows for; the uncommitted edit to base.php is what
+     * makes those rows differ from the literal range's. The other three exit
+     * non-zero instead — the substitution appends to the ref name, and the
+     * pipe and the chain each leave a second word the shell cannot run.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function provideShellSignificantBranchNames(): iterable
+    {
+        yield 'command separator and redirection' => ['v1;>pwned'];
+        yield 'command substitution' => ['v1$(id)'];
+        yield 'pipe' => ['v1|tee'];
+        yield 'chained command' => ['v1&&later'];
+    }
+
+    #[Test]
+    #[DataProvider('provideShellSignificantBranchNames')]
+    public function itPassesAShellSignificantRangeToGitLiterally(string $branch): void
+    {
+        $this->initGitRepo();
+
+        file_put_contents($this->repoRoot . '/base.php', '<?php');
+        $this->exec('git add base.php');
+        $this->exec('git commit -m "Base"');
+        $this->exec('git branch v1');
+        $this->exec(\sprintf('git branch %s', escapeshellarg($branch)));
+
+        file_put_contents($this->repoRoot . '/after.php', '<?php');
+        $this->exec('git add after.php');
+        $this->exec('git commit -m "After"');
+
+        // Separates the two readings for the `;` case: `<branch>..HEAD` never
+        // reports base.php, the truncated `v1..HEAD` does.
+        file_put_contents($this->repoRoot . '/base.php', '<?php echo "dirty";');
+
+        $before = $this->repoEntries();
+
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
+        $files = $client->getChangedFiles($branch . '..HEAD');
+
+        self::assertCount(1, $files);
+        self::assertSame('after.php', $files[0]->path->value());
+        self::assertSame(ChangeStatus::Added, $files[0]->status);
+        // A shell would also leave its own artefacts behind — a redirection
+        // target, say. Comparing the whole listing catches any of them, not
+        // just the one this case happens to name.
+        self::assertSame($before, $this->repoEntries());
+    }
+
     #[Test]
     public function itDeduplicatesFiles(): void
     {
@@ -416,6 +474,27 @@ final class GitClientTest extends TestCase
                 \sprintf('Command failed: %s', $process->getErrorOutput()),
             );
         }
+    }
+
+    /**
+     * Top-level entries of the repository, `.git` excluded.
+     *
+     * @return list<string>
+     */
+    private function repoEntries(): array
+    {
+        $entries = scandir($this->repoRoot);
+        if ($entries === false) {
+            throw new RuntimeException('Failed to list: ' . $this->repoRoot);
+        }
+
+        $entries = array_values(array_filter(
+            $entries,
+            static fn(string $entry): bool => !\in_array($entry, ['.', '..', '.git'], true),
+        ));
+        sort($entries);
+
+        return $entries;
     }
 
     private function removeDirectory(string $dir): void
