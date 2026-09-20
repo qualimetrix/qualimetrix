@@ -1,2 +1,1 @@
 surface	file	reason
-tree|rules	declared-delta/tree-rules.diff	the rules listing stopped advertising only CLI-aliased options and now names every option each rule accepts, at its own depth and inside each level slot, plus a footer naming the three framework keys; structural growth of one surface, with the alias spelling change declared as inputs.tsv rows rather than carried here
