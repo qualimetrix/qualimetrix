@@ -39,6 +39,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- `composer.json` now declares the PHP extensions the tool uses (`ctype`,
+  `filter`, `hash`, `json`, `mbstring`, `tokenizer`, `xmlwriter`). Installing
+  on a PHP built without one now fails at install time naming the missing
+  extension, instead of at run time inside whichever feature needed it --
+  duplication detection and LOC counting need `tokenizer`,
+  `--format=checkstyle` needs `xmlwriter`, and `mbstring` is not built by
+  default.
+
 - The `hook:*` commands can no longer deadlock on git's error stream. Locating
   the hooks directory handed that stream a pipe nothing ever read, so a `git`
   writing more to it than the pipe buffer holds blocks on the write, never
