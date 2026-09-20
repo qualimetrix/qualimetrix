@@ -3,6 +3,10 @@
 
 declare(strict_types=1);
 
+use Qualimetrix\ModularArchitecture\ProcessOutput;
+
+require __DIR__ . '/modular-architecture/ProcessOutput.php';
+
 const GENERATED_ARTIFACTS = [
     'documentation-ownership.tsv',
     'manifest-enforcement-summary.tsv',
@@ -135,7 +139,7 @@ function runGenerator(array $command, string $workingDirectory): string
         fail('Cannot start generator: ' . implode(' ', $command));
     }
     fclose($pipes[0]);
-    [$stdout, $stderr] = drainProcessPipes($pipes[1], $pipes[2]);
+    [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], fail(...));
     $exitCode = proc_close($process);
     if ($stdout === false || $stderr === false || $exitCode !== 0) {
         fail(sprintf(
@@ -147,41 +151,6 @@ function runGenerator(array $command, string $workingDirectory): string
     }
 
     return $stdout;
-}
-
-/** @param resource $stdoutPipe
- * @param resource $stderrPipe
- *
- * @return array{string, string}
- */
-function drainProcessPipes($stdoutPipe, $stderrPipe): array
-{
-    stream_set_blocking($stdoutPipe, false);
-    stream_set_blocking($stderrPipe, false);
-    $streams = [(int) $stdoutPipe => ['stream' => $stdoutPipe, 'index' => 0], (int) $stderrPipe => ['stream' => $stderrPipe, 'index' => 1]];
-    $output = ['', ''];
-    while ($streams !== []) {
-        $read = array_column($streams, 'stream');
-        $write = null;
-        $except = null;
-        if (stream_select($read, $write, $except, null) === false) {
-            fail('Cannot read generator output streams.');
-        }
-        foreach ($read as $stream) {
-            $key = (int) $stream;
-            $chunk = stream_get_contents($stream);
-            if ($chunk === false) {
-                fail('Cannot read generator output stream.');
-            }
-            $output[$streams[$key]['index']] .= $chunk;
-            if (feof($stream)) {
-                fclose($stream);
-                unset($streams[$key]);
-            }
-        }
-    }
-
-    return [$output[0], $output[1]];
 }
 
 /** @param list<string> $expected */

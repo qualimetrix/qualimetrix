@@ -7,10 +7,13 @@ namespace Qualimetrix\ModularArchitecture\Tests;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\ModularArchitecture\ProcessOutput;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Throwable;
+
+require_once \dirname(__DIR__) . '/ProcessOutput.php';
 
 final class ModularArchitectureGeneratorRefusalTest extends TestCase
 {
@@ -357,6 +360,118 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         }
     }
 
+    /**
+     * `runProcess()` used to read stdout to EOF and only then read stderr. A
+     * child that blocks writing more than the OS pipe buffer (64 KB) to
+     * whichever stream is read second deadlocks that shape: the child is
+     * stuck mid-write, so it never exits or closes stdout, and the parent's
+     * stdout read never reaches EOF. Both sides wait forever — this is what
+     * hung `itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains`
+     * against a schema-invalid manifest that made the generator write ~2.6 MB
+     * to stderr in one `fwrite`.
+     *
+     * `runProcess()` runs in-process, so a deadlocked call would hang this
+     * very PHPUnit run rather than fail it — the exact failure mode this
+     * guards against (a CI job burning its timeout instead of going red).
+     * This test therefore drives the real `runProcess()` from an external
+     * harness process and bounds only the outer supervision: it polls
+     * `proc_get_status()` (never a blocking pipe read — see
+     * `runWithDeadline()`) and kills the harness once the deadline passes, so
+     * a regression here fails this test instead of hanging the suite.
+     */
+    #[Test]
+    public function itDrainsAChildThatFloodsTheStreamReadSecondWithoutDeadlocking(): void
+    {
+        $floodBytes = 1_048_576; // 16x the 64 KB default OS pipe buffer on both macOS and Linux.
+        $outputFile = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-output-');
+        $harnessPath = tempnam(sys_get_temp_dir(), 'qmx-pipe-harness-');
+        self::assertIsString($outputFile);
+        self::assertIsString($harnessPath);
+
+        try {
+            $floodCommand = [\PHP_BINARY, '-r', \sprintf('fwrite(STDERR, str_repeat("E", %d));', $floodBytes)];
+
+            $template = <<<'PHP'
+                <?php
+                require __AUTOLOAD__;
+                require __TEST_CLASS_FILE__;
+
+                $reflection = new ReflectionClass(\Qualimetrix\ModularArchitecture\Tests\ModularArchitectureGeneratorRefusalTest::class);
+                $instance = $reflection->newInstanceWithoutConstructor();
+                $method = $reflection->getMethod('runProcess');
+
+                [$exitCode, $output] = $method->invoke($instance, __FLOOD_COMMAND__);
+
+                fwrite(STDOUT, $exitCode . ':' . strlen($output));
+                PHP;
+
+            $harnessSource = str_replace(
+                ['__AUTOLOAD__', '__TEST_CLASS_FILE__', '__FLOOD_COMMAND__'],
+                [
+                    var_export($this->root() . '/vendor/autoload.php', true),
+                    var_export(__FILE__, true),
+                    var_export($floodCommand, true),
+                ],
+                $template,
+            );
+            self::assertNotFalse(file_put_contents($harnessPath, $harnessSource));
+
+            [$exitCode, $timedOut] = $this->runWithDeadline([\PHP_BINARY, $harnessPath], 5.0, $outputFile);
+
+            self::assertFalse(
+                $timedOut,
+                'runProcess() deadlocked: it must have read stdout to EOF before ever reading stderr, '
+                . 'and the child was still blocked writing ' . $floodBytes . ' bytes of stderr past the OS pipe buffer.',
+            );
+            self::assertSame(0, $exitCode, 'harness process exit code');
+
+            $harnessOutput = file_get_contents($outputFile);
+            self::assertIsString($harnessOutput);
+            self::assertSame('0:' . $floodBytes, trim($harnessOutput), 'child exit code and drained byte count');
+        } finally {
+            @unlink($harnessPath);
+            @unlink($outputFile);
+        }
+    }
+
+    /**
+     * Bounds `$command` by wall clock without ever performing a blocking pipe
+     * read on it: only `proc_get_status()` polling and, past the deadline,
+     * `proc_terminate()`. A supervisor that itself read a pipe from `$command`
+     * could deadlock exactly the way the code under test here might, which is
+     * why `$command`'s own stdout/stderr are redirected straight to files
+     * (`file` descriptors, not `pipe` ones) instead of being read by this
+     * process at all.
+     *
+     * @param list<string> $command
+     *
+     * @return array{int, bool} the process exit code (meaningless when the
+     *                          deadline was hit) and whether the deadline was hit
+     */
+    private function runWithDeadline(array $command, float $seconds, string $stdoutFile): array
+    {
+        $process = proc_open($command, [1 => ['file', $stdoutFile, 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+        self::assertIsResource($process);
+
+        $deadline = microtime(true) + $seconds;
+        $timedOut = false;
+        while (true) {
+            $status = proc_get_status($process);
+            self::assertIsArray($status);
+            if (!$status['running']) {
+                break;
+            }
+            if (microtime(true) >= $deadline) {
+                $timedOut = true;
+                proc_terminate($process, \defined('SIGKILL') ? \SIGKILL : 9);
+                break;
+            }
+            usleep(20_000);
+        }
+
+        return [proc_close($process), $timedOut];
+    }
+
     private function sourcePath(string $filename): string
     {
         $paths = glob($this->root() . '/src/Infrastructure/DependencyInjection/{Configurator,CompilerPass}/' . $filename, \GLOB_BRACE);
@@ -433,6 +548,11 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             self::assertTrue(copy(
                 $sourceRoot . '/scripts/generate-modular-architecture-test-inventory.php',
                 $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+            ));
+            self::assertTrue(mkdir($projectRoot . '/scripts/modular-architecture'));
+            self::assertTrue(copy(
+                $sourceRoot . '/scripts/modular-architecture/ProcessOutput.php',
+                $projectRoot . '/scripts/modular-architecture/ProcessOutput.php',
             ));
             $this->copyDirectory(
                 $sourceRoot . '/scripts/promise-effect/tests',
@@ -559,11 +679,9 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     {
         $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $workingDirectory ?? $this->root());
         self::assertIsResource($process);
-        $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
+        [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], self::fail(...));
 
-        return [proc_close($process), $output];
+        return [proc_close($process), $stdout . $stderr];
     }
 
     private function root(): string
