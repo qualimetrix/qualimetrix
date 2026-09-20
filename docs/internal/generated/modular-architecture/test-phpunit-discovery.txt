@@ -7419,6 +7419,28 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itStoresComplexDataTypes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
+<<<<<<< HEAD
+=======
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itDeclinesAClassmapTooLargeToParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassDeclaredOnlyByTheGeneratedClassmap
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassFromAnInstalledPackage
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassFromTheRootPackagesOwnPsr4
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itReadsTheInstallTheAnalysedPathSitsInside
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itReadsTheVendorDirectoryTheProjectDeclares
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itRefusesAPathThatEscapesTheProject
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itRefusesAPsr4TargetThatClimbsOutOfTheProject
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itSaysSoWhenTheRunHasNoInstallToRead
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itCallsAClassWithNoParentARoot
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itExecutesNothingWhileReading
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itForgetsTheTreeItWasPointedAtBefore
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itReadsAnInterfacesFirstParent
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itReadsTheParentAClassDeclares
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesAFileThatDeclaresAnotherName
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesAFileThisPhpCannotParse
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesToPlaceANameNoFileDeclares
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentImportedUnderAnAlias
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentWrittenWithoutItsNamespace
+>>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors

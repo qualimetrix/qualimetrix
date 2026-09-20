@@ -209,7 +209,7 @@ Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	7	2
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	8	2
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	4	2
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface	Analysis.Run	7	3
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	6	3

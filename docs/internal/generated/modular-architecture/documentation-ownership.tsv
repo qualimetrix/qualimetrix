@@ -65,7 +65,11 @@ docs/adr/0069-a-metric-is-declared-by-the-collector-that-writes-it.md	Analysis.E
 docs/adr/0070-subprocess-read-discipline.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/0071-an-anonymous-classs-declaration-edge-is-flagged-not-retyped.md	Analysis.Evidence.DependencyModel	"Move or update atomically with the named subject owner."
 docs/adr/0072-commit-subject-authority.md	Architecture.Governance	"Move or update atomically with the named subject owner."
+<<<<<<< HEAD
 docs/adr/0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md	Analysis.Evidence.Design	"Move or update atomically with the named subject owner."
+=======
+docs/adr/0073-dit-reads-the-ancestors-it-measures.md	Analysis.Evidence.Design	"Move or update atomically with the named subject owner."
+>>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-09-20T19:51:46+00:00",
+  "generated": "2026-09-20T20:54:49+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -203,6 +203,10 @@
     ],
     "declaration:callable:Qualimetrix\\Core\\Symbol\\SymbolPath::toString@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.ccn","magnitudes":[11]}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Composer\\GeneratedClassmap::read@src/Infrastructure/Composer/GeneratedClassmap.php": [
+      {"channel":"complexity.ccn","magnitudes":[11]},
+      {"channel":"complexity.npath","magnitudes":[252]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand::assertScopeCovers@src/Infrastructure/Console/Command/BaselineCommand.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
@@ -505,9 +509,6 @@
     ],
     "ns:Qualimetrix\\Reporting\\DrillDown": [
       {"channel":"health.maintainability","magnitudes":[49.3]}
-    ],
-    "ns:Qualimetrix\\Reporting\\Formatter\\Health": [
-      {"channel":"health.cohesion","magnitudes":[25]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
       {"channel":"health.cohesion","magnitudes":[37.5]}

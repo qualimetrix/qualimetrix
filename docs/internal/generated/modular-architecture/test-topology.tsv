@@ -1,6 +1,12 @@
 metric	count
+<<<<<<< HEAD
 mapped_artifacts	983
 fixture_directories	138
 phpunit_classes	756
+=======
+mapped_artifacts	984
+fixture_directories	138
+phpunit_classes	758
+>>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
 phpunit_ids	9355
 orphan_dispositions	28

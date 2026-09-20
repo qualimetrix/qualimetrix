@@ -28,7 +28,10 @@ src/Analysis/Evidence/DependencyModel/Extraction/DependencyResolver.php	Qualimet
 src/Analysis/Evidence/DependencyModel/Extraction/DependencyVisitor.php	Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor	Analysis.Evidence.DependencyModel	"per-file or derivation state"	-	anonymousClassDepth,currentClass,currentContext,declarationIndex,dependencies,file	reset
 src/Analysis/Evidence/DependencyModel/Extraction/Handler/DependencyContext.php	Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext	Analysis.Evidence.DependencyModel	"request scratch or mutable internal value"	-	dependencies,describesNestedAnonymousClass	addDependency
 src/Analysis/Evidence/DependencyModel/StringSet.php	Qualimetrix\Analysis\Evidence\DependencyModel\StringSet	Analysis.Evidence.DependencyModel	"request scratch or mutable internal value"	-	items	add,addAll
+<<<<<<< HEAD
 src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver	Analysis.Evidence.Design	"request scratch or mutable internal value"	-	depths	-
+=======
+>>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
 src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor	Analysis.Evidence.Design	"per-file or derivation state"	-	classInfo,currentNamespace,useImports	buildFqn,reset
 src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor	Analysis.Evidence.Design	"per-file or derivation state"	-	classInfos,classTypeInfo,currentNamespace	buildClassFqn,reset
 src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder	Analysis.Evidence.Duplication	"request scratch or mutable internal value"	-	hintExtractor,request,seen	-
