@@ -838,6 +838,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\CheckResolvedConfiguration'
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
+        - 'Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCommand'
@@ -869,6 +870,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
+        - 'Qualimetrix\Infrastructure\Console\Hook\PreCommitHook'
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
@@ -886,6 +888,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
+        - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
+        - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\RuntimeLimits'
         - 'Qualimetrix\Infrastructure\Console\RuntimeLimitsController'
@@ -1885,7 +1889,6 @@ rules:
       - src/Infrastructure/Console/Command/BaselineGenerateCommand.php
       - src/Infrastructure/Console/Command/BaselineUpdateCommand.php
       - src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
-      - src/Infrastructure/Console/Command/HookUninstallCommand.php
       # X15 adds two more of the same shape. `GraphExportCommand` measured
       # 40.0 before the round touched it and measures the same after, so it
       # is the existing debt of this root becoming visible, not new debt.

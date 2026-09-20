@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 /**
@@ -24,7 +25,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itIsAddressedAsHookStatus(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         self::assertSame('hook:status', $command->getName());
     }
@@ -32,7 +33,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoCustomOptions(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
         $definition = $command->getDefinition();
 
         // HookStatusCommand defines no custom options (only inherited --help, etc.)
@@ -42,7 +43,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoArguments(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
         $definition = $command->getDefinition();
 
         self::assertSame([], $definition->getArguments());

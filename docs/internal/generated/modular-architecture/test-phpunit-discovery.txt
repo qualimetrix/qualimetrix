@@ -331,6 +331,7 @@ Available tests:
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"symbolPath"
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"threshold"
  - Qualimetrix\Governance\DistributedPackage\DockerBuildContextExcludesToolingTestRootsTest::itExcludesEveryDirectoryShapedToolingTestRootFromTheDockerBuildContext
+ - Qualimetrix\Governance\DistributedPackage\HookInstallWorksFromTheDistPackageTest::itInstallsAWorkingHookFromWhatTheDistPackageCarries
  - Qualimetrix\Governance\DistributedPackage\HtmlReportShipsOnlyWhatItReadsTest::itShipsEveryAssetTheFormatterReadsAndNothingElse
  - Qualimetrix\Governance\DistributedPackage\PharCarriesWhatTheDistCarriesTest::itCarriesNothingTheDistributionKeepsBack
  - Qualimetrix\Governance\DistributedPackage\PharCarriesWhatTheDistCarriesTest::itOmitsOnlyWhatIsDeclaredOmitted
@@ -454,6 +455,7 @@ Available tests:
  - Qualimetrix\Governance\RatchetArtifact\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"plain method"
  - Qualimetrix\Governance\RatchetArtifact\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"second declaration of one identity"
  - Qualimetrix\Governance\RepositoryEntrypoints\BaselineLifecycleEntrypointSurfaceTest::itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface
+ - Qualimetrix\Governance\RepositoryEntrypoints\BaselineLifecycleEntrypointSurfaceTest::itKeepsTheGeneratedPreCommitHookOnTheBaselineLifecycleSurface
  - Qualimetrix\Governance\RepositoryEntrypoints\BenchmarkScriptEntrypointCoverageTest::itKeepsTrackedBenchmarkConsumersOnTheCheckCommand
  - Qualimetrix\Governance\RepositoryEntrypoints\MemoryCeilingManifestTest::itPinsThePortableTwoGiBBenchmarkCommand
  - Qualimetrix\Governance\RuleDeclaration\CodeSmellRuleContractTest::itMakesTheDirectoryScanAgreeWithTheRuleRegistry
@@ -7370,20 +7372,28 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itReturnsNullAssignedAndEmptyShadowedWhenNothingMatches
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itValidatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itDoesNotSpendTheBackupSlotOnItsOwnHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenHookExistsWithoutForceFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenNotInGitRepository
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsPreCommitHook
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itMakesHookExecutable
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsPreCommitHookAsAnExecutableFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsWhereCoreHooksPathPoints
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itOverwritesExistingHookWithForceFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReadsNoScriptAndLeavesNoneBehind
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesADanglingSymlinkWithoutForce
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesWhenTheRunningBinaryCannotBeNamed
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReplacesADanglingSymlinkInsteadOfWritingThroughIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itWritesAHookThatNamesTheBinaryThatInstalledIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itFailsWhenNotInGitRepository
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsADanglingSymlinkRatherThanCallingItAbsent
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsBackupExists
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsHookNotInstalled
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsCopy
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsAFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsSymlink
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutNonExecutableHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutThirdPartyHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itFailsWhenNotInGitRepository
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itInformsAboutBackupWithoutRestoringIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itLeavesADanglingSymlinkAloneAndSaysWhy
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itRefusesToRemoveThirdPartyHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itRemovesInstalledHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookUninstallCommandTest::itReportsNoBackupToRestore
@@ -7771,6 +7781,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheDetailLimitToUnlimitedWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheViolationsOptionToAllWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itThrowsWhenAllFlagConflictsWithANumericViolationsFormatOpt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itCarriesTheMarkerThatMakesAHookOurs
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"backslash"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"backtick"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"command substitution"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"dollar"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"double quote"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"plain"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"single quote"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"space"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDoesNotClaimAThirdPartyHook
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itGeneratesAScriptTheShellAccepts
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesNoPlaceholderBehind
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesTheShellsOwnVariablesForTheShell
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itBuildsDefaultDiscoveryFromTheRunPathExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itDefinesTheSetFromConfigurationAloneAndNotFromCheckFlags
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itLeavesOutWhatTheConfiguredExclusionsRemoved

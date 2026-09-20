@@ -85,9 +85,13 @@ deliberately not in it;
 `governance/PackageVersion/EntryPointRefusesTheVersionsComposerRefusesTest.php`
 holds the literal and the constraint together.
 
-**`hook:install` refuses from a phar.** The command installs a symlink to a
-shell script, and nothing can symlink into an archive; shipping the script
-would not have changed that. It previously failed with
+**`hook:install` refuses from a phar.** *Superseded by
+[ADR 0068](0068-the-pre-commit-hook-is-generated-not-shipped.md): the command
+now generates the hook, which removes both reasons below, and the refusal is
+gone. Measured from a built archive — `hook:install` exits 0 and the hook it
+writes names the `.phar`.* The command installed a symlink to a shell script,
+and nothing can symlink into an archive; shipping the script would not have
+changed that. It previously failed with
 `AbsolutePath must start with "/"`, naming a `phar://` path the reader never
 wrote — the value object rejects the scheme before anything canonicalises it,
 so `realpath()` returning `false` inside an archive is a neighbouring fact
@@ -139,4 +143,5 @@ product rather than of this decision. The installation page names it among the
 differences a reader should expect.
 
 A phar consumer has no `hook:install`. That is a real reduction against the
-composer install, stated in the documentation rather than discovered.
+composer install, stated in the documentation rather than discovered. *ADR 0068
+removed that reduction; the installation page no longer lists it.*

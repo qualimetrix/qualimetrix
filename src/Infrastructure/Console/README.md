@@ -31,6 +31,10 @@ Console/
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
+├── RunningBinaryLocatorInterface.php
+├── Hook/
+│   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
 ├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
 │   ├── ConsoleProgressBar.php
@@ -38,6 +42,7 @@ Console/
 │   └── SwitchableProgressReporter.php
 └── Command/
     ├── CheckCommand.php             # Main analysis command
+    ├── AbstractHookCommand.php      # Shared by the three below: locate the repository, spell hooks/pre-commit, refuse once
     ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
     ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
     ├── HookInstallCommand.php       # Install pre-commit hook
@@ -160,9 +165,16 @@ does not create a missing destination, and preserves an existing destination.
 
 ### Hook Commands
 
-**HookInstallCommand** — install pre-commit hook
+**HookInstallCommand** — write `.git/hooks/pre-commit`
 **HookStatusCommand** — check hook status
-**HookUninstallCommand** — remove pre-commit hook
+**HookUninstallCommand** — remove the hook, if it is ours
+
+The hook's contents are generated rather than shipped: `/scripts/` is excluded
+from the composer distribution, so a script living there reaches no consumer
+([ADR 0068](../../../docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md)).
+All three commands test `is_link` before `file_exists`, because a hook
+installed by an earlier release is now a symlink leading nowhere, and
+`file_exists` follows the link and calls it absent.
 
 ## CLI Options (main)
 

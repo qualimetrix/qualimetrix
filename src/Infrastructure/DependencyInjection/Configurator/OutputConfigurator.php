@@ -74,6 +74,8 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
@@ -417,10 +419,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(GitRepositoryLocator::class);
         $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
 
+        // RunningBinaryLocator (the path hook:install bakes into the hook)
+        $container->register(RunningBinaryLocator::class);
+        $container->setAlias(RunningBinaryLocatorInterface::class, RunningBinaryLocator::class);
+
         // HookInstallCommand
         $container->register(HookInstallCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+                new Reference(RunningBinaryLocator::class),
             ])
             ->setPublic(true);
 
@@ -428,6 +435,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(HookUninstallCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+                new Reference(RunningBinaryLocator::class),
             ])
             ->setPublic(true);
 
@@ -435,6 +443,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(HookStatusCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+                new Reference(RunningBinaryLocator::class),
             ])
             ->setPublic(true);
 

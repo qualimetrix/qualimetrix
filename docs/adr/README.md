@@ -97,6 +97,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0065 — The Manifest Records Ownership, Not a Migration Schedule](0065-the-manifest-records-ownership-not-a-migration-schedule.md) — the migration's package labels leave the manifest; a consumer is owner-wide or exact, and never dated.
 - [0066 — The Phar Is Built by a Tool Outside the Graph It Builds](0066-the-phar-is-built-by-a-tool-outside-the-graph-it-builds.md) — box is fetched and pinned rather than required; the include list is a third enumeration with a control holding it to the dist's.
 - [0067 — Every Test-Shaped Directory Is One the Inventory Scans](0067-every-test-shaped-directory-is-scanned.md) — the test-shaped half of the unregistered-root gap is closed by a population of test-shaped directories minus a literal exclusion list; the non-test-shaped half stays open and is named.
+- [0068 — The Pre-commit Hook Is Generated, Not Shipped](0068-the-pre-commit-hook-is-generated-not-shipped.md) — `hook:install` writes the hook's contents; the script it used to symlink reached no consumer.
 
 ## Superseded history
 

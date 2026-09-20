@@ -42,11 +42,8 @@ chmod +x qmx.phar
     file it runs from is not named `*.phar`. Renaming it to `qmx` costs several megabytes of copying
     per run.
 
-Three differences from a Composer install:
+Two differences from a Composer install:
 
-- `hook:install` is not available. The hook is a symlink to a shell script, and nothing can point a
-  symlink inside an archive. Write `.git/hooks/pre-commit` by hand, calling the archive on the
-  staged files.
 - HTML reports label the analysed project `qualimetrix/qualimetrix` unless you say otherwise. The
   label falls back to the root package name, which inside the archive is Qualimetrix's own. Pass
   `--format-opt=project-name=your/project` to set it.

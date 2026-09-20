@@ -6,6 +6,7 @@ namespace Qualimetrix\Governance\RepositoryEntrypoints;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 
 /**
  * Repository entrypoints are executable consumers of the CLI surface, not
@@ -28,10 +29,6 @@ final class BaselineLifecycleEntrypointSurfaceTest extends TestCase
                 'command: check src/ --baseline=baseline.json',
                 'command: check src/ --config=qmx.yaml',
             ],
-            'scripts/pre-commit-hook.sh' => [
-                'BASELINE_ADVICE="Replace accepted levels intentionally: $QMX_BIN baseline:generate baseline.json src/ --force"',
-                'BASELINE_ADVICE="Create a baseline: $QMX_BIN baseline:generate baseline.json src/"',
-            ],
         ];
 
         foreach ($entrypoints as $path => $expectedSnippets) {
@@ -50,5 +47,34 @@ final class BaselineLifecycleEntrypointSurfaceTest extends TestCase
                 self::assertStringContainsString($expectedSnippet, $contents, $path);
             }
         }
+    }
+
+    /**
+     * The pre-commit hook is an entrypoint like the two above, but it has no
+     * file to read: `hook:install` generates it.
+     *
+     * The subject here is the hook a user ends up with, so the assertion is
+     * made against what the generator produces and not against the source
+     * that produces it. Reading the source would pass for a literal that
+     * happens to spell these lines and fail for a generator that assembles
+     * the same lines from parts — which is a fact about how the template is
+     * written, not about the surface this control guards.
+     */
+    #[Test]
+    public function itKeepsTheGeneratedPreCommitHookOnTheBaselineLifecycleSurface(): void
+    {
+        $script = PreCommitHook::script('/probe/bin/qmx');
+
+        self::assertStringNotContainsString('--generate-baseline', $script);
+        self::assertStringNotContainsString('--baseline-ignore-stale', $script);
+
+        self::assertStringContainsString(
+            'BASELINE_ADVICE="Replace accepted levels intentionally: $QMX_BIN baseline:generate baseline.json src/ --force"',
+            $script,
+        );
+        self::assertStringContainsString(
+            'BASELINE_ADVICE="Create a baseline: $QMX_BIN baseline:generate baseline.json src/"',
+            $script,
+        );
     }
 }
