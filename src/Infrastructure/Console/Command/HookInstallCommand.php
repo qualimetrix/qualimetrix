@@ -78,24 +78,10 @@ final class HookInstallCommand extends Command
             return self::FAILURE;
         }
 
-        // Check if hook already exists
-        if (file_exists($hookPath)) {
-            if ($input->getOption('force') !== true) {
-                $output->writeln('<comment>Pre-commit hook already exists.</comment>');
-                $output->writeln('Use --force to overwrite.');
+        $refusal = $this->clearExistingHook($input, $output, $hookPath);
 
-                return self::FAILURE;
-            }
-
-            // Backup existing hook
-            $backupPath = $hookPath . '.backup';
-            if (copy($hookPath, $backupPath)) {
-                $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
-            } else {
-                $output->writeln('<error>Failed to backup existing hook</error>');
-
-                return self::FAILURE;
-            }
+        if ($refusal !== null) {
+            return $refusal;
         }
 
         // Install hook using symlink (default behavior)
@@ -127,6 +113,37 @@ final class HookInstallCommand extends Command
         $output->writeln('To bypass the hook, use: git commit --no-verify');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Makes room for a new hook, or refuses.
+     *
+     * @return int|null a command exit code to return, or null to carry on
+     */
+    private function clearExistingHook(InputInterface $input, OutputInterface $output, string $hookPath): ?int
+    {
+        if (!file_exists($hookPath)) {
+            return null;
+        }
+
+        if ($input->getOption('force') !== true) {
+            $output->writeln('<comment>Pre-commit hook already exists.</comment>');
+            $output->writeln('Use --force to overwrite.');
+
+            return self::FAILURE;
+        }
+
+        $backupPath = $hookPath . '.backup';
+
+        if (!copy($hookPath, $backupPath)) {
+            $output->writeln('<error>Failed to backup existing hook</error>');
+
+            return self::FAILURE;
+        }
+
+        $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
+
+        return null;
     }
 
     /**

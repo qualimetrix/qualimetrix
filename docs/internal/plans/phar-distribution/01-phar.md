@@ -104,14 +104,17 @@ without having run the thing it claims to check.**
 phar and printed both — `file_exists()` on a `phar://` path is `true` while `realpath()` on the same
 path is `false`.
 
-One place in the product depends on that and fails quietly: `HookInstallCommand` locates
-`scripts/pre-commit-hook.sh` by `__DIR__`, then canonicalizes, and canonicalization throws on
-`false` and is caught by a `continue`. So `hook:install` from a phar returns "not found" **even if
-the script is in the archive**. It is already broken for composer consumers for a different reason —
-`/scripts/` is `export-ignore`d, so the dist package does not carry the file at all — which makes
-this a pre-existing defect the phar inherits rather than one it introduces. P1 decides whether
-stage 01 ships the script and repairs the lookup, or refuses `hook:install` from a phar loudly; DoD 3
-carries the decision either way.
+One place in the product depended on that: `HookInstallCommand` builds
+`scripts/pre-commit-hook.sh`'s path from `__DIR__`, and under a phar that reaches
+`AbsolutePath::fromString()` with a `phar://` prefix it rejects. Measured from a built archive: exit
+3, and on stderr the invariant's own message naming a path the reader never wrote. Loud, then, but
+useless — the earlier reading of this plan predicted a quiet "not found" and was wrong about which.
+
+Shipping the script would not have helped, which is what settled P1's choice: the hook is installed
+as a **symlink**, and nothing can symlink into an archive. So P1 refuses the command from a phar with
+a message that says what to do instead. `/scripts/` is `export-ignore`d as well, so the composer dist
+does not carry the file either; that half stays as it was, because outside a phar the lookup already
+degrades to a readable "Hook script not found".
 
 Other `realpath()` callers in `src/` were swept and are not exposed: they canonicalize the **analysed**
 tree or the working directory, both on a real filesystem. Swept with grep over `src/` and `bin/qmx`
@@ -203,9 +206,36 @@ A shim root would therefore have to supply three things, not one: a `bin/qmx` th
 `vendor/autoload.php` that delegates into it, and the corpus. P1 chooses that or a narrower
 comparison that says which surfaces it dropped.
 
-**P1 — tooling, the dependency decision, and the include list.** The box decision and the include
-list decision, both recorded. The artifact's name and the reason for its suffix. The `hook:install`
-decision from problem 4.
+**P1 — done; the decisions and where they are written.**
+
+- **Box is fetched, not required.** `scripts/build-phar.sh` downloads `box.phar` and verifies it
+  against a pinned version and SHA256 before running it. The production graph is untouched, which
+  DoD 5 can check as an empty `composer.lock` diff. The alternative — a second `composer.json` under
+  a tool directory — buys a lockfile and costs a second install on every CI run plus another root in
+  `AGENTS.md`'s address table.
+- **`build/qmx.phar`**, because `build/` is already ignored and because the suffix is problem 2's
+  decision rather than a label. The reason lives in the build script, where a renamer will read it;
+  `box.json` cannot carry a comment.
+- **The include list is `box.json` at the repository root**, and `governance/DistributedPackage/PharCarriesWhatTheDistCarriesTest.php`
+  holds it against the dist's list in both directions. Shown refusing three plants: a file added to
+  `box.json` that `export-ignore` excludes, a declared omission whose reason no longer describes
+  anything, and a load-bearing asset dropped from the list.
+- **`check-requirements` on** — box then ships a checker that refuses under a PHP older than
+  `composer.json` demands, instead of a parse error somewhere in `src/`. **`compression` none**,
+  because GZ would require `ext-zlib` on the consumer's machine at run time.
+- **Compactors on**, `Php` and `Json`: measured safe in P0 and worth a third of the size.
+- **`hook:install` refuses from a phar**, per problem 4.
+
+Two addresses closed here because both fail silently and neither is a path a sweep for "phar" would
+find: `.gitignore`'s blanket `*.json` swallowed `box.json`, and without an `export-ignore` row the
+dist would have carried a build configuration no consumer runs — which the new control would then
+have reported as an undeclared omission, blaming the wrong file.
+
+**The version fix belongs to the build, not to `Version.php`** (DoD 3a). `COMPOSER_ROOT_VERSION`
+sets what `installed.php` records, but **only on `composer install`** — `composer dump-autoload` does
+not refresh it, measured. So the release job must export it for the `install` step that precedes the
+build; verified end to end by building with a stand-in tag and reading `0.28.0` back out of the
+archive. P3 wires it.
 
 **P2 — the records and the promise.** `website/docs/getting-started/installation.md` in EN **and**
 RU, `CHANGELOG.md`, and an ADR if the box decision or the include-list decision is worth outliving
