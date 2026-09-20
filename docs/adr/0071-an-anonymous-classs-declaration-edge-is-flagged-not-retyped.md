@@ -199,7 +199,7 @@ asymmetry is not a gap this ADR introduces — it is the wider `attributes:`
 defect above, observed at the point where it happens to overlap the shape
 this ADR does fix.
 
-## Operational commitment: retire the gate's declared rows after merge
+## Operational commitment: retire the gate's declared rows after merge (discharged)
 
 P4 of the implementation plan declared, rather than retired, the finding-gate
 rows this change moves — a declared row is only valid against **one**
@@ -221,3 +221,11 @@ itself (declaring and retiring against the same reference in the same PR
 would be self-contradictory — the very next run against that reference would
 see an undeclared diff). The plan document that stated this commitment is
 deleted once the campaign closes; this paragraph is its durable home.
+
+**Discharged.** Measured rather than assumed: with the merge landed and the
+rows still in place, `composer gate -- --reference=origin/main` returned
+`RED — 21 failure(s): delta-stale, field-move-stale` — the 13 plus 8 rows,
+each reported by name. Emptying both files to their headers and deleting the
+paired diffs returns the gate to GREEN against the same reference. The
+obligation is closed; this record is kept because the shape recurs whenever a
+change declares rows to prove itself.

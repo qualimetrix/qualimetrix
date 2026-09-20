@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -133,1 +133,1 @@
--                        "text": "Layer \"anon-member\" must not depend on layer \"repository\" (Corpus\\Layers\\AnonMember\\ExtendsHost → Corpus\\Layers\\Repository\\UserRepository, uses as type hint)"
-+                        "text": "Layer \"graph-extends\" must not depend on layer \"repository\" (Corpus\\Layers\\AnonMember\\ExtendsHost → Corpus\\Layers\\Repository\\UserRepository, uses as type hint) [source matched by extends \"Corpus\\Layers\\GraphBase\\Marker\"; target matched by pattern \"Corpus\\Layers\\Repository\\**\"]"
