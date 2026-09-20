@@ -121,8 +121,8 @@ for `realpath(`, `__DIR__` and `__FILE__`; blind to a path assembled through a v
 **5. The shipped dependency graph is incomplete, and the tool trips over it.** Found by P0 and not
 caused by the phar. `symfony/console` is a production dependency; its `Event/` classes extend
 `Symfony\Contracts\EventDispatcher\Event`, which `symfony/event-dispatcher-contracts` provides — and
-that package is **not** in the production graph. A normal install never notices, because the tool
-never dispatches a console event.
+`composer.lock` carries that package in `packages-dev`, not `packages`. A normal install never
+notices, because the tool never dispatches a console event.
 
 `InheritanceDepthCollector` does notice. It resolves an external class's DIT with
 `class_exists($fqcn, true)`, so the tool's **own** autoloader answers for any analysed class whose
@@ -131,7 +131,8 @@ name it happens to map. Measured on a `composer install --no-dev` tree over 132 
 tree with no phar involved. The development tree analyses all 132, which is why the defect has never
 been seen here.
 
-The reach is every standalone install shape: the Docker image, which runs exactly this
+The reach follows from the lock, not from a chain of inferences: every standalone install shape
+resolves the same `packages` section — the Docker image, which runs exactly this
 `composer install --no-dev`, a global composer install, and the phar. A consumer installing the tool
 as a project dependency is unaffected, because their own graph supplies the missing package. **This
 is a product defect, not a stage-01 obligation** — recorded here because P0 found it and because a

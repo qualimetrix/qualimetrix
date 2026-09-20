@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Phar;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -39,6 +40,19 @@ final class HookInstallCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // The hook is installed as a symlink to a shell script shipped beside
+        // the sources, and neither half survives a phar: nothing can symlink
+        // into an archive, and building the script's path reaches
+        // AbsolutePath with a "phar://" prefix it rejects — which surfaced as
+        // an invariant message naming a path the reader never wrote.
+        if (Phar::running(false) !== '') {
+            $output->writeln('<error>hook:install is not available from the phar.</error>');
+            $output->writeln('The hook is a symlink to a shell script, which cannot point inside an archive.');
+            $output->writeln('Install Qualimetrix with Composer to use it, or write .git/hooks/pre-commit by hand.');
+
+            return self::FAILURE;
+        }
+
         // Find .git directory
         $gitDir = $this->gitRepositoryLocator->findGitDir();
         if ($gitDir === null) {
