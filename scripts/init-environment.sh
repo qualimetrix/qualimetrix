@@ -239,6 +239,64 @@ else
     log_success "PCOV already installed"
 fi
 
+# Install igbinary.
+# Unlike PCOV this is not a convenience: the shipped tree calls
+# igbinary_serialize(), and a governance control can only attribute a name to
+# an extension this runtime loads. Without it,
+# ShippedCodeRunsOnlyOnDeclaredExtensionsTest refuses that call by name and
+# `composer check` is red on an unmodified tree. The CI workflow installs it
+# through setup-php's `extensions:` key; this is the same address for the web
+# workspace, and CLAUDE.md lists this file as one that fails silently when a
+# provisioning step is missed.
+if ! php -m 2>/dev/null | grep -q "^igbinary$"; then
+    log_info "Installing igbinary..."
+
+    IGBINARY_APT_TMP_DIR=$(mktemp -d)
+    chmod 1777 "$IGBINARY_APT_TMP_DIR"
+    IGBINARY_INSTALLED=false
+
+    TMPDIR="$IGBINARY_APT_TMP_DIR" apt-get update -qq 2>/dev/null || true
+
+    for pkg in "php${PHP_VERSION}-igbinary" "php-igbinary"; do
+        if apt-cache show "$pkg" &>/dev/null; then
+            log_info "Installing $pkg via apt..."
+            if TMPDIR="$IGBINARY_APT_TMP_DIR" DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$pkg" 2>/dev/null; then
+                IGBINARY_INSTALLED=true
+                log_success "igbinary installed via apt ($pkg)"
+                break
+            fi
+        fi
+    done
+
+    if [ "$IGBINARY_INSTALLED" = false ]; then
+        log_info "apt package unavailable, trying PECL..."
+
+        TMPDIR="$IGBINARY_APT_TMP_DIR" DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            "php${PHP_VERSION}-dev" \
+            php-pear \
+            build-essential \
+            2>/dev/null || true
+
+        if command -v pecl &> /dev/null; then
+            echo "" | pecl install igbinary 2>/dev/null && IGBINARY_INSTALLED=true || true
+        fi
+
+        if [ "$IGBINARY_INSTALLED" = true ] && [ -d "$PHP_INI_DIR" ]; then
+            echo "extension=igbinary.so" > "${PHP_INI_DIR}/99-igbinary.ini" 2>/dev/null || true
+        fi
+    fi
+
+    rm -rf "$IGBINARY_APT_TMP_DIR"
+
+    if php -m 2>/dev/null | grep -q "^igbinary$"; then
+        log_success "igbinary installed and activated"
+    else
+        log_warning "Failed to install igbinary. 'composer check' WILL be red: the extensions control cannot attribute igbinary_serialize() without it."
+    fi
+else
+    log_success "igbinary already installed"
+fi
+
 # Check Composer
 if ! command -v composer &> /dev/null; then
     log_error "Composer not found in the system!"
@@ -420,7 +478,7 @@ log_success "Environment ready!"
 log_info ""
 log_info "Installed tools:"
 log_info "  PHP: $(php --version | head -n1)"
-log_info "  PHP extensions: $(php -m | grep -E '^(pcov|xdebug)$' | tr '\n' ' ' || echo 'none')"
+log_info "  PHP extensions: $(php -m | grep -E '^(pcov|xdebug|igbinary)$' | tr '\n' ' ' || echo 'none')"
 log_info "  Composer: $(composer --version | cut -d' ' -f3)"
 log_info "  Git: $(git --version | cut -d' ' -f3)"
 log_info "  tree: $(tree --version | head -n1)"
