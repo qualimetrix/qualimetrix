@@ -215,6 +215,24 @@ a root-level tooling artifact is ever found unregistered *after the fact*, that
 is evidence the map is not being remembered, and the count stops being the
 argument.
 
+> **Partly superseded by [ADR 0067](0067-every-test-shaped-directory-is-scanned.md).**
+> The test-shaped half of this gap is closed, without waiting for a third
+> subject: every directory git carries whose basename spells "tests", minus a
+> literal exclusion list, must be one the inventory scans.
+>
+> **The other half is still open, and it is the half this section names.** A
+> test root whose directory is *not* test-shaped — `governance/`, the instance
+> this section cites — is outside that population. Declared as a `<testsuite>`
+> `<directory>` it is caught by the suite classifier; undeclared and outside
+> `autoload-dev`, nothing sees it, exactly as recorded here. A reader who stops
+> at this record has the accepted debt right.
+>
+> What ADR 0067 retires is therefore this section's revisit condition, not its
+> statement of the debt. The population it derived is not the one this section
+> anticipated — not "root-level tooling artifacts", which it agrees would have
+> been the wrong thing to derive — so the warning above about deriving a
+> population wrongly is unretracted.
+
 **`NON_MANIFEST_TEST_OWNERS['HtmlReport']` is dropped, and it could not have been
 kept.** Not a preference: the two constants are mutually exclusive here.
 `assertTestOwnersAreManifestOwners()` skips every row whose `current_path` and
