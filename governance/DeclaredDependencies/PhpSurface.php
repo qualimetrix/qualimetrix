@@ -4,37 +4,46 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\DeclaredDependencies;
 
+use ReflectionClass;
 use ReflectionExtension;
+use ReflectionFunction;
 use RuntimeException;
 
 /**
- * PHP's own surface, as the process running this test carries it.
+ * What PHP's own surface carries in the process running this test, and which
+ * extension each name came from.
  *
- * This exists so that "the runtime could not resolve that name" is a fact this
- * group can state and test, rather than a branch that silently drops the name.
- * `function_exists()` answers two different questions with one `false` — "no
- * such thing anywhere" and "this build lacks the extension that provides it" —
- * and the second answer is exactly the defect
- * {@see ShippedCodeRunsOnlyOnDeclaredExtensionsTest} exists to catch. Asking a
- * surface object instead keeps both answers distinguishable.
+ * This exists so that "no extension owns that name" is a fact a caller can act
+ * on, instead of a `false` that means two things. `function_exists()` answers
+ * `false` both for a name that is not a function and for a real call into an
+ * extension this build lacks, and telling those apart is the whole job of
+ * {@see ShippedCodeRunsOnlyOnDeclaredExtensionsTest}.
+ *
+ * This class does not do that telling apart. It reports what it can see --
+ * which extension owns a name, and whether anything in the process answers to
+ * it at all -- and {@see ShippedCodeRunsOnlyOnDeclaredExtensionsTest::judge()}
+ * turns those into a verdict. Keeping the judgement out of here is deliberate:
+ * the verdict depends on what `composer.json` declares, which is not a
+ * property of the runtime.
  *
  * The map is built by walking the loaded extensions and taking what each one
- * declares, rather than by listing names here. Measured on this tree: every
- * internal function `get_defined_functions()` reports is covered, so the walk
- * is the same population from the other side.
+ * declares, rather than by listing names here. Every internal function
+ * `get_defined_functions()` reports is covered by that walk, so it is the same
+ * population approached from the other side.
  *
- * {@see self::without()} is what makes a lean runtime testable on a full one.
- * It hides exactly the names one real extension declares — read out of that
- * extension, never typed out — so a test can ask what this control would say
- * on a PHP built without mbstring, on a PHP that has mbstring.
+ * Extension names are normalized to the spelling Composer uses for a platform
+ * package: lowercase, spaces as hyphens. PHP calls one extension
+ * `Zend OPcache` and Composer calls it `ext-zend-opcache`, so a raw
+ * `strtolower()` would produce `ext-zend opcache` and never match a correct
+ * declaration.
  */
 final class PhpSurface
 {
     /**
-     * @param array<string, string> $functions lowercase function name => extension
-     * @param array<string, string> $classes lowercase class-like name => extension
-     * @param array<string, string> $constants constant name => extension
-     * @param array<string, true> $loaded lowercase extension name => true
+     * @param array<string, string> $functions lowercase function name => normalized extension
+     * @param array<string, string> $classes lowercase class-like name => normalized extension
+     * @param array<string, string> $constants constant name => normalized extension
+     * @param array<string, true> $loaded normalized extension name => true
      * @param array<string, true> $hidden lowercase name this surface pretends not to carry
      */
     private function __construct(
@@ -52,10 +61,14 @@ final class PhpSurface
         $constants = [];
         $loaded = [];
 
-        foreach (self::loadedExtensionNames() as $name) {
+        // Module extensions only. A Zend extension that registers no module
+        // has no `ReflectionExtension` to read, and asking for one throws and
+        // takes the whole group with it. OPcache, the one that matters here,
+        // registers a module and is already in this list.
+        foreach (get_loaded_extensions() as $name) {
             $extension = new ReflectionExtension($name);
-            $owner = $extension->getName();
-            $loaded[strtolower($owner)] = true;
+            $owner = self::normalize($extension->getName());
+            $loaded[$owner] = true;
 
             foreach (array_keys($extension->getFunctions()) as $function) {
                 $functions[strtolower((string) $function)] ??= $owner;
@@ -74,7 +87,16 @@ final class PhpSurface
     }
 
     /**
-     * The same surface, minus everything one loaded extension provides.
+     * The same surface as a build that was compiled without one extension and
+     * carries no polyfill standing in for it.
+     *
+     * Both halves of that sentence matter. Hiding the names makes every
+     * question about them answer the way a build without the extension would,
+     * including `knowsAsFunction()` -- which is right when nothing else
+     * defines the name, and is why this simulates the no-polyfill case
+     * specifically. A build whose vendor tree polyfills the extension answers
+     * differently, and {@see ShippedCodeRunsOnlyOnDeclaredExtensionsTest}
+     * refuses that case on its own evidence rather than through this.
      *
      * The extension has to be loaded here, because what it provides is read
      * out of it. A simulation of an extension nobody can enumerate would be a
@@ -105,25 +127,14 @@ final class PhpSurface
         }
 
         $loaded = $this->loaded;
-        unset($loaded[strtolower($reflection->getName())]);
+        unset($loaded[self::normalize($reflection->getName())]);
 
         return new self($this->functions, $this->classes, $this->constants, $loaded, $hidden);
     }
 
     public function loads(string $extension): bool
     {
-        return isset($this->loaded[strtolower($extension)]);
-    }
-
-    /**
-     * @return list<string> lowercase, sorted
-     */
-    public function loadedExtensions(): array
-    {
-        $names = array_keys($this->loaded);
-        sort($names);
-
-        return $names;
+        return isset($this->loaded[self::normalize($extension)]);
     }
 
     public function functionExtension(string $name): ?string
@@ -142,10 +153,12 @@ final class PhpSurface
     }
 
     /**
-     * Whether anything at all in this process answers to the name — including
-     * a function or class that arrived from a Composer package or from the
-     * tree itself, which belongs to no extension and is nobody's `ext-`
-     * declaration.
+     * Whether anything at all in this process answers to the name, including a
+     * function or class that arrived from a Composer package or from the tree
+     * itself. Such a name belongs to no extension and is nobody's `ext-`
+     * declaration, which is a fact the caller has to act on rather than ignore:
+     * a polyfill answering here is what a missing extension looks like from
+     * inside a process that has one.
      */
     public function knowsAsFunction(string $name): bool
     {
@@ -163,16 +176,35 @@ final class PhpSurface
         return !$this->hides($name) && \defined($name);
     }
 
+    /**
+     * The file that defines a name, when the name is userland. An internal
+     * name has no file, and neither has a constant, so this answers null for
+     * both and the caller says so rather than guessing.
+     */
+    public function definingFile(string $name): ?string
+    {
+        if (\function_exists($name)) {
+            $file = (new ReflectionFunction($name))->getFileName();
+
+            return $file === false ? null : $file;
+        }
+
+        if (class_exists($name) || interface_exists($name) || trait_exists($name) || enum_exists($name)) {
+            $file = (new ReflectionClass($name))->getFileName();
+
+            return $file === false ? null : $file;
+        }
+
+        return null;
+    }
+
     private function hides(string $name): bool
     {
         return isset($this->hidden[strtolower($name)]);
     }
 
-    /**
-     * @return list<string>
-     */
-    private static function loadedExtensionNames(): array
+    private static function normalize(string $extension): string
     {
-        return [...get_loaded_extensions(), ...get_loaded_extensions(true)];
+        return str_replace(' ', '-', strtolower($extension));
     }
 }

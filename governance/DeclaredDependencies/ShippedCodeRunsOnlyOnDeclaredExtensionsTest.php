@@ -25,7 +25,11 @@ use PHPUnit\Framework\TestCase;
  * Three channels, because an extension enters code three ways: a class, a call
  * into an internal function that no import records, and a constant. All three
  * are read from the parse by {@see ReachedNames}, which is also where the
- * reasoning about roles lives.
+ * reasoning about roles, and the two shapes it cannot see, live: a name
+ * spelled in a string, and a class constant one extension adds to another's
+ * class. Neither is an oversight and neither is reachable from this tree
+ * today, but both mean a green verdict is a statement about the names that
+ * are written as names.
  *
  * PHP itself is asked which extension owns a name, rather than a list being
  * kept here. A list would be one more thing that falls quietly behind the code
@@ -51,10 +55,19 @@ use PHPUnit\Framework\TestCase;
  * - a name nothing in this PHP answers to is refused by name. Either an
  *   extension nobody declared provides it, or the shipped code names something
  *   that does not exist. Both are defects; neither is a skip.
- * - a name this PHP knows in another role is refused as an extractor defect,
- *   and is expected to be empty. It is kept because "cannot happen by
- *   construction" is a claim, and an unchecked claim is how the previous
- *   version of this control stayed green on the defect it existed to catch.
+ * - a name this PHP answers from a file rather than from an extension is
+ *   refused too. That is what a polyfill looks like from inside a process:
+ *   `symfony/polyfill-mbstring` is in this project's production closure and
+ *   defines a global `mb_strlen()`, so on a build without mbstring the
+ *   polyfill would answer, the extension would go unattributed, and accepting
+ *   that silently would be the original defect with one more step in it.
+ * - a name this PHP knows only in another role is refused. The shipped code
+ *   may be calling something that is not callable, or this reader may have
+ *   mis-roled it; the refusal says both rather than blaming one.
+ * - a function or constant the tree declares under a name PHP already uses is
+ *   refused at the declaration. Such a name makes every unqualified call in
+ *   its namespace ambiguous to any static reader, so it would otherwise
+ *   silence a real reach rather than be reported.
  *
  * On a floor for the number of attributed extensions, which was considered and
  * rejected: {@see self::itRefusesADeclarationForAnExtensionNothingReaches()}
@@ -76,11 +89,19 @@ use PHPUnit\Framework\TestCase;
 final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 {
     /**
-     * Extensions that cannot be compiled out, so `require` need not name them.
+     * Extensions no build omits *and* that Composer's platform conventions
+     * leave undeclared, so `require` naming them would be noise.
      *
-     * Everything else is an extension a conforming PHP may lack.
+     * This is not the same set as "cannot be compiled out". `json` and `hash`
+     * cannot be either, on any PHP this project supports, but both are named
+     * in `require` and both stay judged here — which is the safer direction,
+     * and moving them into this list would make
+     * {@see self::itRefusesADeclarationForAnExtensionNothingReaches()} call
+     * two correct declarations stale.
+     *
+     * Everything outside this list is an extension a conforming PHP may lack.
      */
-    private const array ALWAYS_COMPILED_IN = ['core', 'standard', 'spl', 'pcre', 'date', 'reflection'];
+    private const array ALWAYS_COMPILED_IN = ['core', 'standard', 'spl', 'pcre', 'date', 'reflection', 'random'];
 
     #[Test]
     public function itCallsIntoNoExtensionTheInstallDoesNotGuarantee(): void
@@ -92,6 +113,7 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         $verdict = self::judge(
             ReachedNames::globalsIn(ShippedTree::files($root)),
+            ReachedNames::declarationsIn(ShippedTree::files($root)),
             $surface,
             self::declaredExtensions($root),
             $root,
@@ -115,9 +137,21 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         $verdict = self::judge(
             ReachedNames::globalsIn(ShippedTree::files($root)),
+            ReachedNames::declarationsIn(ShippedTree::files($root)),
             $surface,
             self::declaredExtensions($root),
             $root,
+        );
+
+        // A refusal means some name was not attributed, and an unattributed
+        // name is indistinguishable from an extension nothing reaches. Reading
+        // staleness past one would advise deleting a declaration on the
+        // strength of a name this control admits it could not place.
+        self::assertSame(
+            [],
+            $verdict['refusals'],
+            'The judgement is incomplete, so staleness cannot be read from it yet:' . \PHP_EOL
+                . implode(\PHP_EOL, $verdict['refusals']),
         );
 
         $stale = [];
@@ -150,9 +184,17 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
     public function itReadsTheShippedTreeItJudges(): void
     {
         $root = self::repositoryRoot();
+        $surface = PhpSurface::ofThisProcess();
+
+        // Without this, a runner missing a required extension fails here with
+        // "attributed nothing to ext-tokenizer", which reads as a broken scan
+        // rather than as the lean runtime it is.
+        self::assertSame([], self::unloadedRequirements($root, $surface), self::describeLeanRuntime($root, $surface));
+
         $verdict = self::judge(
             ReachedNames::globalsIn(ShippedTree::files($root)),
-            PhpSurface::ofThisProcess(),
+            ReachedNames::declarationsIn(ShippedTree::files($root)),
+            $surface,
             self::declaredExtensions($root),
             $root,
         );
@@ -182,6 +224,7 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         $refusals = self::judge(
             [['file' => $root . '/src/Planted.php', 'name' => 'mb_strlen', 'role' => ReachedNames::FUNCTION]],
+            [],
             $lean,
             self::declaredExtensions($root),
             $root,
@@ -209,6 +252,7 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         $refusals = self::judge(
             [['file' => $root . '/src/Planted.php', 'name' => 'enchant_broker_init', 'role' => ReachedNames::FUNCTION]],
+            [],
             $surface,
             self::declaredExtensions($root),
             $root,
@@ -230,15 +274,20 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
     {
         $root = self::repositoryRoot();
 
+        // `json` rather than a more exotic extension on purpose: this case is
+        // about the declaration being absent, and an extension the runner
+        // might not load would turn it into the unattributable case instead,
+        // passing for the wrong reason.
         $refusals = self::judge(
-            [['file' => $root . '/src/Planted.php', 'name' => 'iconv_strlen', 'role' => ReachedNames::FUNCTION]],
+            [['file' => $root . '/src/Planted.php', 'name' => 'json_encode', 'role' => ReachedNames::FUNCTION]],
+            [],
             PhpSurface::ofThisProcess(),
-            ['ext-json' => true],
+            ['ext-mbstring' => true],
             $root,
         )['refusals'];
 
         self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
-        self::assertStringContainsString('ext-iconv', $refusals[0]);
+        self::assertStringContainsString('ext-json', $refusals[0]);
         self::assertStringContainsString('neither requires nor suggests', $refusals[0]);
     }
 
@@ -254,6 +303,7 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         $refusals = self::judge(
             [['file' => $root . '/src/Planted.php', 'name' => 'XMLWriter', 'role' => ReachedNames::FUNCTION]],
+            [],
             PhpSurface::ofThisProcess(),
             self::declaredExtensions($root),
             $root,
@@ -261,7 +311,123 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
 
         self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
         self::assertStringContainsString('as a function', $refusals[0]);
-        self::assertStringContainsString('narrow the extractor', $refusals[0]);
+        self::assertStringContainsString('only as a class', $refusals[0]);
+    }
+
+    /**
+     * The defect a first pass of this rebuild still had: a global name that
+     * resolves, but to a file rather than to an extension.
+     *
+     * `symfony/polyfill-intl-grapheme` is in this project's production closure
+     * and defines a global `grapheme_strrev()`, so no simulation is needed —
+     * this is what every polyfill looks like from inside a process. Accepting
+     * it because "something answers to the name" is the original
+     * `function_exists()` ambiguity with one more step in it: on a build
+     * without the extension, the polyfill answers and the extension goes
+     * unattributed under a green control.
+     */
+    #[Test]
+    public function itRefusesAGlobalNameOnlyAPackageAnswers(): void
+    {
+        $root = self::repositoryRoot();
+        $surface = PhpSurface::ofThisProcess();
+
+        self::assertTrue($surface->knowsAsFunction('grapheme_strrev'), 'The witness has to be a name this process answers.');
+        self::assertNull($surface->functionExtension('grapheme_strrev'), 'The witness has to belong to no extension.');
+
+        $refusals = self::judge(
+            [['file' => $root . '/src/Planted.php', 'name' => 'grapheme_strrev', 'role' => ReachedNames::FUNCTION]],
+            [],
+            $surface,
+            self::declaredExtensions($root),
+            $root,
+        )['refusals'];
+
+        self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
+        self::assertStringContainsString('grapheme_strrev', $refusals[0]);
+        self::assertStringContainsString('polyfill-intl-grapheme', $refusals[0], 'The refusal has to name the file that answered.');
+        self::assertStringContainsString('declare the extension', $refusals[0]);
+    }
+
+    /**
+     * A declaration of the tree's own that collides with a name PHP provides.
+     *
+     * The shadow filter has to be tree-wide, because nothing static can say
+     * which files a call has loaded — so such a declaration would otherwise
+     * silence every unqualified use of PHP's name, across files, including
+     * one guarded by `if (false)`. Refusing the collision is what keeps the
+     * approximation from becoming a silent drop.
+     */
+    #[Test]
+    public function itRefusesADeclarationThatShadowsANamePhpProvides(): void
+    {
+        $root = self::repositoryRoot();
+
+        $refusals = self::judge(
+            [],
+            [['file' => $root . '/src/Planted.php', 'name' => 'token_get_all', 'role' => ReachedNames::FUNCTION]],
+            PhpSurface::ofThisProcess(),
+            self::declaredExtensions($root),
+            $root,
+        )['refusals'];
+
+        self::assertCount(1, $refusals, implode(\PHP_EOL, $refusals));
+        self::assertStringContainsString('token_get_all', $refusals[0]);
+        self::assertStringContainsString('ext-tokenizer', $refusals[0]);
+        self::assertStringContainsString('rename it', $refusals[0]);
+    }
+
+    /**
+     * And the legitimate half of the same mechanism, read end to end rather
+     * than handed to `judge()` pre-shaped: a tree that declares its own
+     * function and calls it unqualified reaches no global name, while a
+     * constant of the same name is untouched by that declaration. Checking a
+     * function against a declared constant, or the reverse, loses the reach
+     * entirely — which is the silent drop this whole control exists against.
+     */
+    #[Test]
+    public function itSeparatesDeclaredFunctionsFromDeclaredConstants(): void
+    {
+        $tree = self::plantedTree(<<<'PLANTED'
+            <?php
+
+            namespace Planted;
+
+            function helper(): void {}
+
+            const T_COMMENT = 1;
+
+            final class Uses
+            {
+                public function go(string $source): array
+                {
+                    helper();
+
+                    return token_get_all($source);
+                }
+            }
+            PLANTED);
+
+        $globals = ReachedNames::globalsIn([$tree . '/Planted.php']);
+        $names = array_map(static fn(array $record): string => $record['role'] . ':' . $record['name'], $globals);
+
+        self::assertNotContains('function:helper', $names, "The tree's own function is not a global reach.");
+        self::assertNotContains('constant:T_COMMENT', $names, "The tree's own constant is not a global reach.");
+        self::assertContains('function:token_get_all', $names, 'A real call must survive a same-named constant declaration.');
+    }
+
+    private static function plantedTree(string $source): string
+    {
+        $directory = sys_get_temp_dir() . '/qmx-declared-extensions-' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory, 0o777, true), $directory);
+        self::assertIsInt(file_put_contents($directory . '/Planted.php', $source));
+
+        register_shutdown_function(static function () use ($directory): void {
+            @unlink($directory . '/Planted.php');
+            @rmdir($directory);
+        });
+
+        return $directory;
     }
 
     /**
@@ -281,6 +447,7 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
                 ['file' => $root . '/src/Planted.php', 'name' => 'T_COMMENT', 'role' => ReachedNames::CONSTANT],
                 ['file' => $root . '/src/Planted.php', 'name' => 'strlen', 'role' => ReachedNames::FUNCTION],
             ],
+            [],
             PhpSurface::ofThisProcess(),
             ['ext-mbstring' => true, 'ext-xmlwriter' => true, 'ext-tokenizer' => true],
             $root,
@@ -311,12 +478,18 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
      * of declarations.
      *
      * @param list<array{file: string, name: string, role: string}> $reached
+     * @param list<array{file: string, name: string, role: string}> $declarations global names the tree declares itself
      * @param array<string, true> $declared `ext-` entry => true, from require and suggest
      *
      * @return array{refusals: list<string>, extensions: list<string>}
      */
-    private static function judge(array $reached, PhpSurface $surface, array $declared, string $treeRoot): array
-    {
+    private static function judge(
+        array $reached,
+        array $declarations,
+        PhpSurface $surface,
+        array $declared,
+        string $treeRoot,
+    ): array {
         $missing = [];
 
         foreach (array_keys($declared) as $entry) {
@@ -330,11 +503,25 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
         $refusals = [];
         $extensions = [];
 
+        foreach ($declarations as $declaration) {
+            $owner = self::attribute($surface, $declaration['name'], $declaration['role']);
+
+            if ($owner === null) {
+                continue;
+            }
+
+            $refusals[] = \sprintf(
+                '%s declares a %s named %s, which PHP already provides from %s. In its own namespace that declaration wins every unqualified use, and no static reader can tell which files a given call has loaded — so rename it, or qualify the uses.',
+                self::relative($declaration['file'], $treeRoot),
+                $declaration['role'],
+                $declaration['name'],
+                'ext-' . $owner,
+            );
+        }
+
         foreach ($reached as $record) {
             $name = $record['name'];
-            $where = str_starts_with($record['file'], $treeRoot . '/')
-                ? substr($record['file'], \strlen($treeRoot) + 1)
-                : $record['file'];
+            $where = self::relative($record['file'], $treeRoot);
 
             $owner = self::attribute($surface, $name, $record['role']);
 
@@ -358,17 +545,15 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
                 continue;
             }
 
-            if (self::knownInSomeRole($surface, $name)) {
-                if (self::knownInRole($surface, $name, $record['role'])) {
-                    // Resolves in the role the parse gave it, but belongs to no
-                    // extension: a Composer package's function or one of this
-                    // tree's own. Nobody's `ext-` declaration covers it and
-                    // none should.
-                    continue;
-                }
+            if (self::knownInRole($surface, $name, $record['role'])) {
+                $refusals[] = self::describeUserlandAnswer($where, $name, $record['role'], $surface);
 
+                continue;
+            }
+
+            if (self::knownInSomeRole($surface, $name)) {
                 $refusals[] = \sprintf(
-                    '%s reaches %s as a %s, but this PHP knows that name as a %s — the extractor placed it in the wrong role; narrow the extractor rather than the declarations.',
+                    '%s reaches %s as a %s, but this PHP knows that name only as a %s — either the shipped code uses it in a way it does not support, or this reader gave it the wrong role.',
                     $where,
                     $name,
                     $record['role'],
@@ -386,6 +571,30 @@ final class ShippedCodeRunsOnlyOnDeclaredExtensionsTest extends TestCase
         sort($attributed);
 
         return ['refusals' => $refusals, 'extensions' => $attributed];
+    }
+
+    /**
+     * A name this process answers, but from a file rather than from an
+     * extension. A polyfill is exactly this, and it is the shape that would
+     * otherwise let a missing extension pass unnoticed.
+     */
+    private static function describeUserlandAnswer(string $where, string $name, string $role, PhpSurface $surface): string
+    {
+        $file = $surface->definingFile($name);
+
+        return \sprintf(
+            '%s reaches %s, which this PHP answers from %s rather than from any extension.'
+                . ' If that file polyfills an extension, this build lacks the extension it stands in for and the polyfill is hiding it — declare the extension.'
+                . ' Otherwise a Composer package provides a global name, which is a dependency neither control in this group can attribute.',
+            $where,
+            self::spell($name, $role),
+            $file ?? 'somewhere this control cannot locate',
+        );
+    }
+
+    private static function relative(string $file, string $treeRoot): string
+    {
+        return str_starts_with($file, $treeRoot . '/') ? substr($file, \strlen($treeRoot) + 1) : $file;
     }
 
     /**
