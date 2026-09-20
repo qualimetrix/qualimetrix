@@ -212,3 +212,116 @@ jobs:
           assert files > 0, f'the image analysed nothing: {files} files'
           print(f'analysed {files} files inside the image')
           PY
+
+  phar:
+    name: Phar (built, and equal to the tree it came from)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # --no-dev deliberately: the phar carries the production graph, so the
+      # reference it is compared against has to be the same graph. A dev tree
+      # disagrees with the phar for reasons that are not the phar's.
+      - name: Install production dependencies
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Build the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer phar
+
+      - name: It runs and names itself
+        run: php build/qmx.phar --version
+
+      # The parallel path is invisible below 100 files, which is where
+      # AmphpParallelStrategy falls back to sequential. vendor/symfony/console
+      # is a production dependency of 132 files, so it is above the threshold
+      # and pinned by composer.lock rather than by whatever the tree happens to
+      # hold. Analysing src/ instead would be both slower and blind: the phar
+      # and the tree would then share this repository's own package name and
+      # the report's project label could not disagree.
+      - name: It publishes what the tree publishes, with workers
+        run: |
+          set -o pipefail
+          target="vendor/symfony/console"
+          test "$(find "$target" -name '*.php' | wc -l)" -gt 100
+
+          php bin/qmx check "$target" --workers=4 --no-cache --no-progress \
+            --format=json --fail-on=none -vv > /tmp/tree.json 2> /tmp/tree.log
+          php build/qmx.phar check "$target" --workers=4 --no-cache --no-progress \
+            --format=json --fail-on=none -vv > /tmp/phar.json 2> /tmp/phar.log
+
+          for log in /tmp/tree.log /tmp/phar.log; do
+            grep -q 'using parallel strategy' "$log" \
+              || { echo "no worker ran in $log, so this step proved nothing"; exit 1; }
+          done
+
+          python3 - <<'PY'
+          import json
+
+          def load(path):
+              with open(path) as handle:
+                  report = json.load(handle)
+              # The timestamp and the duration differ between any two runs.
+              # A failure's message carries the stack trace, and inside the
+              # archive every frame is spelled phar://, so the text differs
+              # while the set of failing files must not.
+              report['meta'].pop('timestamp', None)
+              report['summary'].pop('duration', None)
+              coverage = report.get('coverage')
+              if coverage:
+                  for failure in coverage.get('failures', []):
+                      failure.pop('error', None)
+              return report
+
+          tree, phar = load('/tmp/tree.json'), load('/tmp/phar.json')
+          assert tree['summary']['filesAnalyzed'] > 0, 'both runs analysed nothing'
+          assert tree == phar, 'the phar and the tree disagree'
+          print(f"identical over {tree['summary']['filesAnalyzed']} files, "
+                f"{tree['summary']['violationCount']} findings")
+          PY
+
+      # The build omitting an asset is loud -- the formatter refuses -- so what
+      # this checks is an asset that arrived and is wrong.
+      - name: It inlines the viewer's assets
+        run: |
+          set -o pipefail
+          php build/qmx.phar check src/Core --workers=0 --no-cache --no-progress \
+            --format=html --fail-on=none > /tmp/report.html
+          python3 - <<'PY'
+          page = open('/tmp/report.html', encoding='utf-8').read()
+          for asset in ('html-report/report.css', 'html-report/dist/d3.min.js',
+                        'html-report/dist/report.min.js'):
+              body = open(asset, encoding='utf-8').read().strip()
+              assert body in page, f'{asset} is not inlined verbatim'
+          for placeholder in ('__CSS__', '__DATA__', '__D3_JS__', '__APP_JS__'):
+              assert placeholder not in page, f'{placeholder} was never substituted'
+          print('four assets inlined')
+          PY
+
+      # Not "it errors": it has to say what to do instead. The command used to
+      # fail on a path invariant naming a phar:// path the reader never wrote.
+      - name: It refuses hook:install rather than failing on an invariant
+        run: |
+          cd "$(mktemp -d)" && git init -q .
+          if "$GITHUB_WORKSPACE/build/qmx.phar" hook:install > out.txt 2>&1; then
+            echo 'hook:install reported success from a phar'; cat out.txt; exit 1
+          fi
+          grep -q 'not available from the phar' out.txt
+          ! grep -q 'AbsolutePath' out.txt
+
+      - name: Upload the phar
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmx-phar
+          path: build/qmx.phar
+          if-no-files-found: error

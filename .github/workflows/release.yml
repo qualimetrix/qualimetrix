@@ -46,6 +46,35 @@ jobs:
           # Write to file for gh release
           echo "$notes" > /tmp/release-notes.md
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # The version the tool reports about itself is read from
+      # vendor/composer/installed.php, which `composer install` writes and
+      # `composer dump-autoload` does not refresh. The checkout is shallow, so
+      # composer cannot guess the version from the tag's history and would
+      # record 1.0.0+no-version-set -- a release archive answering --version
+      # with a non-version, and nothing would say so.
+      - name: Install production dependencies
+        env:
+          COMPOSER_ROOT_VERSION: ${{ steps.version.outputs.version }}
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Build the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer phar
+
+      - name: The phar names the version being released
+        run: |
+          set -o pipefail
+          php build/qmx.phar --version | tee /tmp/phar-version.txt
+          grep -qF "${{ steps.version.outputs.version }}" /tmp/phar-version.txt
+
       - name: Detect pre-release
         id: prerelease
         run: |
@@ -67,3 +96,11 @@ jobs:
               --notes-file /tmp/release-notes.md \
               ${{ steps.prerelease.outputs.flag }}
           fi
+
+      # Separate from the create above, because that step is deliberately
+      # skippable: a re-run against an existing release must still attach the
+      # archive rather than leave the release without one.
+      - name: Attach the phar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" build/qmx.phar --clobber
