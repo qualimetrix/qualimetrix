@@ -731,6 +731,120 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         }
     }
 
+    /**
+     * A root-level project with its own test directory and no registration is
+     * refused by name. This is the direction
+     * `assertToolingTestRootRegistrationIsComplete()` cannot answer: its
+     * listing comes from a `glob()` of `scripts/*` and `tools/*`, so a root
+     * outside those two parents is one it cannot produce and therefore cannot
+     * miss. Before `assertEveryTestDirectoryIsClaimed()` this plant passed:
+     * the root was absent from the inventory entirely, with the check green.
+     *
+     * The probe is a `.test.js` file under a directory at the repository root,
+     * because that is the shape the gap was accepted for -- a project with its
+     * own runner, which no `<testsuite>` declares and whose only possible
+     * registration is the map.
+     *
+     * **Both halves of the source are planted, because both are designed for.**
+     * The sweep asks `git ls-files --cached --others --exclude-standard`, and
+     * `--others` is the half that makes a root refused when it is created
+     * rather than one commit later. A single staged plant does not exercise it:
+     * a staged file is reported through `--cached` alone, so narrowing the
+     * command to `--cached` would delete the refuse-at-creation property and
+     * still leave a one-case test green. The unstaged case is what fails if
+     * `--others` goes; the staged case is what fails if the sweep goes.
+     */
+    #[Test]
+    public function itFailsWhenARootLevelProjectsTestDirectoryIsUnregistered(): void
+    {
+        foreach ([true, false] as $stage) {
+            $this->withIsolatedProject(function (string $projectRoot) use ($stage): void {
+                $directory = $projectRoot . '/probe-tool/tests';
+
+                self::assertDirectoryDoesNotExist($directory);
+                self::assertTrue(mkdir($directory, 0700, true));
+                self::assertNotFalse(file_put_contents(
+                    $directory . '/probe.test.js',
+                    "// a probe for an unregistered root-level project\n",
+                ));
+                if ($stage) {
+                    [$exitCode, $output] = $this->runProcess(
+                        ['git', 'add', '--', 'probe-tool'],
+                        $projectRoot,
+                    );
+                    self::assertSame(0, $exitCode, $output);
+                }
+
+                [$exitCode, $output] = $this->runProcess([
+                    \PHP_BINARY,
+                    $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php',
+                    '--check',
+                ], $projectRoot);
+
+                self::assertNotSame(0, $exitCode, $output);
+                self::assertStringContainsString(
+                    'probe-tool/tests/ holds files git reports and nothing scans it',
+                    $output,
+                    $stage ? 'staged plant' : 'unstaged plant — the --others half of the sweep',
+                );
+            });
+        }
+    }
+
+    /**
+     * The exclusion list cannot outlive what it excuses, in either direction.
+     *
+     * A literal list is what keeps the judged population closed, and a list
+     * nothing prunes stops being one: an entry whose path is gone excuses
+     * nothing and reads as coverage, and an entry a registration now claims
+     * says two contradictory things about the same directory. Both are planted
+     * here by perturbing the constant itself, because both are properties of
+     * the list rather than of any tree it is run against.
+     */
+    #[Test]
+    public function itFailsWhenANonRootExclusionNoLongerExcusesAnything(): void
+    {
+        $cases = [
+            [
+                "'input-doors/fixtures/main/tests/' =>",
+                "'input-doors/fixtures/gone/tests/' =>",
+                'input-doors/fixtures/gone/tests/ is excused in NON_ROOT_TEST_DIRECTORIES but git carries'
+                    . ' no file under it',
+            ],
+            [
+                'const NON_ROOT_TEST_DIRECTORIES = [',
+                "const NON_ROOT_TEST_DIRECTORIES = [\n    'tests/' => '   ',",
+                'tests/ is excused in NON_ROOT_TEST_DIRECTORIES with an empty reason',
+            ],
+            [
+                'const NON_ROOT_TEST_DIRECTORIES = [',
+                "const NON_ROOT_TEST_DIRECTORIES = [\n    'html-report/tests/' => 'a planted probe',",
+                // Not the shared opening of both exclusion refusals: that
+                // prefix passes whichever of the two fired, and the stale one
+                // is only unreachable here by the order of two branches.
+                'html-report/tests/ is excused in NON_ROOT_TEST_DIRECTORIES as "a planted probe" and is at'
+                    . ' the same time scanned through the inventory scan scope entry html-report/tests',
+            ],
+        ];
+
+        foreach ($cases as [$needle, $replacement, $expected]) {
+            $this->withIsolatedProject(function (string $projectRoot) use ($needle, $replacement, $expected): void {
+                $scriptPath = $projectRoot . '/scripts/generate-modular-architecture-test-inventory.php';
+                $source = file_get_contents($scriptPath);
+                self::assertIsString($source);
+                self::assertStringContainsString($needle, $source);
+                $perturbed = str_replace($needle, $replacement, $source, $replacements);
+                self::assertSame(1, $replacements, $needle);
+                self::assertNotFalse(file_put_contents($scriptPath, $perturbed));
+
+                [$exitCode, $output] = $this->runProcess([\PHP_BINARY, $scriptPath, '--check'], $projectRoot);
+
+                self::assertNotSame(0, $exitCode, $output);
+                self::assertStringContainsString($expected, $output);
+            });
+        }
+    }
+
     private function createIsolatedProject(): string
     {
         $projectRoot = sys_get_temp_dir() . '/qmx-modular-architecture-' . bin2hex(random_bytes(16));
@@ -752,9 +866,12 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // is_file(), not only the scripts/*/tests | tools/*/tests glob —
             // so a missing one of these three refuses by itself, before the
             // generator ever reaches the refusal an individual test below
-            // plants. Measured: removing this copy step (and 'html-report'
-            // from the git add list further down) turns 3 of this class's 6
-            // cases from their planted refusal into this generic one instead.
+            // plants. Removing this copy step (and 'html-report' from the git
+            // add list further down) makes that refusal preempt every planting
+            // case whose own refusal is raised later than it. Stated as the
+            // mechanism and not as a count: the count moves every time a case
+            // is added below, and a stale number beside a growing list reads
+            // as a measurement.
             // Only the scanned slice is copied, not node_modules/dist/src.
             $this->copyDirectory($sourceRoot . '/html-report/tests', $projectRoot . '/html-report/tests');
             self::assertTrue(copy(
@@ -834,6 +951,20 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/phpunit-aggregate/tests',
                 $projectRoot . '/scripts/phpunit-aggregate/tests',
             );
+            // Not a test root and not scanned: this is the one path
+            // NON_ROOT_TEST_DIRECTORIES excuses, and
+            // assertEveryTestDirectoryIsClaimed() refuses an excuse whose path
+            // git no longer carries. So the copy list now has to hold every
+            // path the generator's literals name, not only every root the
+            // tracked configuration declares. Without this copy step (and
+            // 'input-doors' in the git add list below) the stale-exclusion
+            // refusal preempts every planting case whose own refusal is raised
+            // after assertEveryTestDirectoryIsClaimed() runs — stated as a
+            // mechanism for the reason given beside the html-report copy.
+            $this->copyDirectory(
+                $sourceRoot . '/input-doors/fixtures/main/tests',
+                $projectRoot . '/input-doors/fixtures/main/tests',
+            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));
@@ -850,6 +981,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'tools',
                 'scripts',
                 'html-report',
+                'input-doors',
             ], $projectRoot);
             self::assertSame(0, $exitCode, $output);
 
