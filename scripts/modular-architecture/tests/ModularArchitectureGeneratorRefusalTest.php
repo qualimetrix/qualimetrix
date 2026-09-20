@@ -411,18 +411,29 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      *
      * Each stream carries its own 256-byte cyclic payload — ascending
      * (`chr(0)..chr(255)`) on stdout, descending on stderr — not one
-     * repeated byte, and not the *same* cyclic pattern on both. A
-     * homogeneous single-byte payload makes reordering the chunks *within*
-     * one stream unobservable by construction, since every byte in it is
-     * identical; measured separately, using the *same* cyclic pattern on
-     * both streams made a slot **swap** pass by coincidence wherever the
-     * two floods' lengths overlap, since a prefix of one repeating pattern
-     * is byte-identical to a fresh run of the same pattern. Two distinct
-     * sequences close both gaps at once. Cycling the byte value is still
-     * only a partial defence against intra-stream reordering, not a proof —
-     * a reorder whose chunk boundaries happen to land on multiples of 256 at
-     * a matching phase would still be invisible — but it costs nothing extra
-     * and closes the degenerate all-bytes-equal case.
+     * repeated byte, and not the *same* cyclic pattern on both. Measured,
+     * both fixes: a homogeneous single-byte payload makes reordering the
+     * chunks *within* one stream unobservable by construction (every byte
+     * in it is identical), and using the *same* cyclic pattern on both
+     * streams made a slot **swap** pass by coincidence wherever the two
+     * floods' lengths overlap, since a prefix of one repeating pattern is
+     * byte-identical to a fresh run of the same pattern. Two distinct
+     * sequences close both of those.
+     *
+     * What this payload does **not** buy, also measured rather than
+     * reasoned about: intra-stream chunk reordering stays a blind spot, at
+     * 0 detections in 10 runs. `stream_get_contents()` chunk boundaries on
+     * this system are always multiples of 256 — a probe of ~45 chunks
+     * across both tests found none that were not — so a swapped-chunk
+     * mutant never lands out of phase with the cyclic block; this isn't a
+     * rare coincidence the payload mostly guards against, it is the
+     * invariable case here. Closing it would need a payload that encodes
+     * absolute position (so any reorder becomes visible regardless of chunk
+     * alignment), which this test does not attempt. It sits alongside the
+     * other known, accepted blind spot: a `stream_select` busy-spin
+     * (`timeout = 0` instead of `null`) is invisible to a byte-content
+     * assertion and would need a CPU-time or syscall-count check, which
+     * would be flaky.
      *
      * This test's remit is the deadlock property specifically — "neither
      * stream is left unread while the other blocks" — not `drain()`
@@ -563,12 +574,24 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * at child exit, after everything has already been read from both —
      * this test's child closes one stream while the other still has more
      * than a pipe buffer left to deliver, so a truncating `drain()` loses
-     * real, measurable bytes rather than nothing.
+     * real, measurable bytes rather than nothing — measured by the
+     * `strlen($stderr)` assertion below, which must run, and be read,
+     * before the child's own exit code: the defect abandons an unread pipe,
+     * and `proc_close()` closing it out from under the still-writing child
+     * is what turns that into a non-zero exit, a real but incidental
+     * symptom rather than the loss itself.
      */
     #[Test]
     public function itDrainsAChildThatClosesOneDescriptorWhileTheOtherKeepsWriting(): void
     {
-        $tailBytes = 524_288; // 8x the 64 KB default OS pipe buffer, well past a single read.
+        // 8x the 64 KB default OS pipe buffer: guarantees the child cannot have
+        // finished writing its tail before stdout closes and stderr's buffer
+        // fills at least once. Not a guarantee about read-call counts --
+        // stream_get_contents() sometimes returns all of it in a single call
+        // (measured: 8/8 runs on this machine on one occasion, 4-5 calls on
+        // another) -- only about how much is still in flight when the drain
+        // this test targets would wrongly stop.
+        $tailBytes = 524_288;
         $command = [
             \PHP_BINARY,
             '-r',
@@ -580,7 +603,16 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], self::fail(...));
         $exitCode = proc_close($process);
 
-        self::assertSame(0, $exitCode, 'flood child exit code');
+        // The two length checks come before the exit-code check on purpose:
+        // the defect this test targets (a drain() that returns at the first
+        // feof()) leaves $pipes[2] open and unread while the child is still
+        // blocked writing to it. proc_close() then closes that abandoned
+        // pipe out from under the child, whose fwrite() fails and which
+        // exits 255 -- a real but incidental symptom, not the defect. With
+        // the exit-code check first (measured against this exact mutant),
+        // PHPUnit stops there and the message below explaining the actual
+        // data loss is never printed.
+        //
         // A length check rather than assertSame('', $stdout, ...): a swapped
         // or merged drain() would otherwise put the whole stderr flood into
         // $stdout and dump it in full on failure -- the same 2 MB-report
@@ -596,6 +628,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             \strlen($stderr),
             'stderr tail must not be lost after stdout closes early — a drain that returns on the '
             . 'first EOF loses whatever the other stream still had in flight',
+        );
+        self::assertSame(
+            0,
+            $exitCode,
+            'flood child exit code -- reached only once the lengths above already matched, so a '
+            . 'non-zero code here is a real, independent problem rather than the abandoned-pipe '
+            . 'symptom the length checks above would otherwise have masked',
         );
     }
 

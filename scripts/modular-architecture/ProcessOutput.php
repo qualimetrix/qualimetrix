@@ -30,11 +30,14 @@ namespace Qualimetrix\ModularArchitecture;
  *    `src/` import of this class produced no refusal. Nor does PHPStan
  *    catch it as a substitute: `scripts/` is in `phpstan.neon` `paths`, so a
  *    real static call analyses clean, `class.notFound` never fires. Only a
- *    literal `SomeClass::class` reference is silent at runtime too
- *    (`class_exists()` returns `false` without ever invoking the
- *    autoloader); an actual call throws — but by the time that throw is
- *    reached the ban has already had its one chance to catch the import and
- *    did not.
+ *    literal `SomeClass::class` reference is silent at runtime too — it
+ *    resolves to the class name string at compile time and never attempts
+ *    to autoload (confirmed: `spl_autoload_register()` never fires for it,
+ *    where a plain `class_exists($n)` *does* call every registered
+ *    autoloader by default and only skips it when passed `false` as its
+ *    second argument). An actual call throws — but by the time that throw
+ *    is reached the ban has already had its one chance to catch the import
+ *    and did not.
  * 2. Declared namespace, `require` **dropped** (autoload only). This is
  *    what closes the ban's gap, but it reopens a different one: every
  *    isolated-project negative control in this file
