@@ -26,6 +26,13 @@
     "require": {
         "php": "^8.4",
         "composer-runtime-api": "^2.0",
+        "ext-ctype": "*",
+        "ext-filter": "*",
+        "ext-hash": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-tokenizer": "*",
+        "ext-xmlwriter": "*",
         "amphp/amp": "^3.0",
         "amphp/parallel": "^2.0",
         "amphp/sync": "^2.0",
