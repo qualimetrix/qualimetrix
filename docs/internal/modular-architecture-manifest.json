@@ -12777,10 +12777,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         },
         {
@@ -12794,6 +12790,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FormatterContext"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitRepositoryLocator"
         }
       ]
     },

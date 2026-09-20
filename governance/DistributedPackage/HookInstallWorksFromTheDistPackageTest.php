@@ -84,9 +84,45 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
 
             self::assertStringContainsString('Qualimetrix pre-commit hook', $contents);
             self::assertStringContainsString($package . '/bin/qmx', $contents, 'The hook does not name the binary that installed it.');
+
+            self::assertHookRunsTheAnalysis($consumer);
         } finally {
             self::removeDirectory($scratch);
         }
+    }
+
+    /**
+     * Runs the installed hook the way git would.
+     *
+     * Asserting the file's properties is not enough and the gap is not
+     * theoretical: a distributed `bin/qmx` that loses its execute bit leaves
+     * every one of those assertions true while the hook fails on every commit
+     * with `Permission denied`. Only running it distinguishes the two.
+     */
+    private static function assertHookRunsTheAnalysis(string $consumer): void
+    {
+        file_put_contents(
+            $consumer . '/Subject.php',
+            "<?php\n\ndeclare(strict_types=1);\n\nfinal class Subject\n{\n    public function value(): int\n    {\n        return 1;\n    }\n}\n",
+        );
+
+        self::capture(['git', '-C', $consumer, 'add', 'Subject.php']);
+
+        [$status, $output] = self::execute([$consumer . '/.git/hooks/pre-commit'], $consumer);
+
+        self::assertNotSame(126, $status, 'git could not execute the hook:' . \PHP_EOL . $output);
+        self::assertNotSame(127, $status, 'The hook could not find the binary it names:' . \PHP_EOL . $output);
+
+        self::assertStringContainsString(
+            'Running Qualimetrix on staged files',
+            $output,
+            'The hook did not reach its own analysis step.',
+        );
+        self::assertStringContainsString(
+            'Analysis complete',
+            $output,
+            'The hook ran but the packaged binary produced no analysis:' . \PHP_EOL . $output,
+        );
     }
 
     private static function extractDistPackage(string $into): void

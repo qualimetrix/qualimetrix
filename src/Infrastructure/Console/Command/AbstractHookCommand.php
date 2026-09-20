@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Command\Command;
@@ -36,9 +35,9 @@ abstract class AbstractHookCommand extends Command
      */
     final protected function hookPath(OutputInterface $output): ?string
     {
-        $gitDir = $this->gitRepositoryLocator->findGitDir();
+        $hooksDir = $this->gitRepositoryLocator->findHooksDir();
 
-        if ($gitDir === null) {
+        if ($hooksDir === null) {
             $output->writeln('<error>Not a git repository</error>');
             $output->writeln('');
             $output->writeln('Initialize git first: git init');
@@ -46,15 +45,15 @@ abstract class AbstractHookCommand extends Command
             return null;
         }
 
-        $hooksDir = $gitDir->joinRelative(RelativePath::fromString('hooks'))->value();
-
-        if (!is_dir($hooksDir)) {
-            $output->writeln('<error>Git hooks directory not found: ' . $hooksDir . '</error>');
+        if (!is_dir($hooksDir->value())) {
+            $output->writeln('<error>Git hooks directory not found: ' . $hooksDir->value() . '</error>');
+            $output->writeln('');
+            $output->writeln('This is where git looks, so create it or change core.hooksPath.');
 
             return null;
         }
 
-        return $hooksDir . '/pre-commit';
+        return $hooksDir->value() . '/pre-commit';
     }
 
     /**

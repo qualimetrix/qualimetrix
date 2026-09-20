@@ -1806,7 +1806,6 @@ Qualimetrix\Infrastructure\Console\CheckScopeResolver	Infrastructure.Console	Qua
 Qualimetrix\Infrastructure\Console\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Infrastructure\Git\GitScopeResolver	Infrastructure.Git	contract
 Qualimetrix\Infrastructure\Console\CliOptionsParser	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\CliOptionsParser	Infrastructure.Console	Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	contract
-Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineCapture	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
@@ -2290,6 +2289,7 @@ Qualimetrix\Infrastructure\Git\ChangedFile	Infrastructure.Git	Qualimetrix\Core\P
 Qualimetrix\Infrastructure\Git\ChangedFile	Infrastructure.Git	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Git\GitRepositoryLocator	Infrastructure.Git	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Infrastructure\Git\GitRepositoryLocator	Infrastructure.Git	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Git\GitScopeResolution	Infrastructure.Git	Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	contract
 Qualimetrix\Infrastructure\Git\GitScopeResolution	Infrastructure.Git	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract

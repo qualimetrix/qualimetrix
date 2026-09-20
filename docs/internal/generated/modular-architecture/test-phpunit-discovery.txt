@@ -7372,9 +7372,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itReturnsNullAssignedAndEmptyShadowedWhenNothingMatches
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug\LayerAssignmentCommandTest::itValidatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itDoesNotSpendTheBackupSlotOnItsOwnHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenHookExistsWithoutForceFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itFailsWhenNotInGitRepository
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsPreCommitHookAsAnExecutableFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itInstallsWhereCoreHooksPathPoints
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itOverwritesExistingHookWithForceFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itReadsNoScriptAndLeavesNoneBehind
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookInstallCommandTest::itRefusesADanglingSymlinkWithoutForce
@@ -7780,11 +7782,18 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itSetsTheViolationsOptionToAllWhenAllFlagIsPassed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itThrowsWhenAllFlagConflictsWithANumericViolationsFormatOpt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itCarriesTheMarkerThatMakesAHookOurs
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"backslash"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"backtick"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"command substitution"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"dollar"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"double quote"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"plain"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"single quote"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"space"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDoesNotClaimAThirdPartyHook
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itGeneratesAScriptTheShellAccepts
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesNoPlaceholderBehind
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itLeavesTheShellsOwnVariablesForTheShell
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itQuotesABinaryPathThatCarriesSpaces
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itSubstitutesTheBinaryAndLeavesNoPlaceholderBehind
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itBuildsDefaultDiscoveryFromTheRunPathExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itDefinesTheSetFromConfigurationAloneAndNotFromCheckFlags
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itLeavesOutWhatTheConfiguredExclusionsRemoved

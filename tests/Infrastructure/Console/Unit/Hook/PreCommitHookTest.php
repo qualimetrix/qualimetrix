@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Hook;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
@@ -25,48 +26,83 @@ final class PreCommitHookTest extends TestCase
     }
 
     #[Test]
-    public function itSubstitutesTheBinaryAndLeavesNoPlaceholderBehind(): void
+    public function itLeavesNoPlaceholderBehind(): void
     {
-        $script = PreCommitHook::script('/usr/bin/qmx');
-
-        self::assertStringContainsString('QMX_BIN="/usr/bin/qmx"', $script);
-        self::assertStringNotContainsString('@QMX_BINARY@', $script);
+        self::assertStringNotContainsString('@QMX_BINARY@', PreCommitHook::script('/usr/bin/qmx'));
     }
 
     /**
      * A shell variable inside the template must reach the hook file spelled
      * as itself. A heredoc instead of a nowdoc would have PHP expand
-     * `$QMX_BIN` and `$STAGED_FILES` to nothing, and the result is still a
-     * valid shell script — it just checks no files.
+     * `$BASELINE_ADVICE` and `$EXIT_CODE` to nothing, and the result is still
+     * a valid shell script — it just checks no files and reports nothing.
      */
     #[Test]
     public function itLeavesTheShellsOwnVariablesForTheShell(): void
     {
         $script = PreCommitHook::script('/usr/bin/qmx');
 
-        self::assertStringContainsString('$STAGED_FILES', $script);
-        self::assertStringContainsString('$BASELINE_ARG', $script);
+        self::assertStringContainsString('${STAGED_FILES[@]}', $script);
+        self::assertStringContainsString('$BASELINE_ADVICE', $script);
         self::assertStringContainsString('$EXIT_CODE', $script);
-    }
-
-    /**
-     * The binary path is quoted in the generated shell, so a path with a
-     * space in it stays one word. A home directory whose name carries a
-     * space is ordinary on macOS, so this is not a corner case.
-     */
-    #[Test]
-    public function itQuotesABinaryPathThatCarriesSpaces(): void
-    {
-        $script = PreCommitHook::script('/opt/a b/qmx');
-
-        self::assertStringContainsString('QMX_BIN="/opt/a b/qmx"', $script);
-        self::assertSame('', self::shellSyntaxError($script));
     }
 
     #[Test]
     public function itGeneratesAScriptTheShellAccepts(): void
     {
         self::assertSame('', self::shellSyntaxError(PreCommitHook::script('/usr/bin/qmx')));
+    }
+
+    /**
+     * The binary path must arrive in the hook as itself, whatever it carries.
+     *
+     * The oracle runs the assignment and reads the variable back, rather than
+     * asking whether the file parses. Parsing is blind to exactly the two
+     * cases that matter: `$HOME` and `$(id -u)` in a directory name both
+     * parse, and both change the value — the second by executing a command,
+     * on every commit.
+     */
+    #[Test]
+    #[DataProvider('provideHostileBinaryPaths')]
+    public function itDeliversTheBinaryPathVerbatim(string $path): void
+    {
+        $script = PreCommitHook::script($path);
+
+        self::assertSame('', self::shellSyntaxError($script), 'The generated hook is not valid shell.');
+        self::assertSame($path, self::binaryTheShellReads($script));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideHostileBinaryPaths(): iterable
+    {
+        yield 'plain' => ['/usr/local/bin/qmx'];
+        yield 'space' => ['/opt/a b/qmx'];
+        yield 'double quote' => ['/opt/we"ird/qmx'];
+        yield 'single quote' => ['/opt/it\'s/qmx'];
+        yield 'dollar' => ['/opt/$HOME/qmx'];
+        yield 'command substitution' => ['/opt/$(id -u)/qmx'];
+        yield 'backtick' => ['/opt/`id -u`/qmx'];
+        yield 'backslash' => ['/opt/back\\slash/qmx'];
+    }
+
+    /**
+     * What `$QMX_BIN` holds after the shell has read the hook's assignment.
+     */
+    private static function binaryTheShellReads(string $script): string
+    {
+        $assignment = '';
+
+        foreach (explode("\n", $script) as $line) {
+            if (str_starts_with($line, 'QMX_BIN=')) {
+                $assignment = $line;
+
+                break;
+            }
+        }
+
+        self::assertNotSame('', $assignment, 'The hook assigns no QMX_BIN at all.');
+
+        return trim(self::runBash($assignment . "\nprintf '%s' \"\$QMX_BIN\"")[0]);
     }
 
     /**
@@ -78,21 +114,37 @@ final class PreCommitHookTest extends TestCase
         self::assertIsString($path);
         file_put_contents($path, $script);
 
-        $process = proc_open(
-            ['bash', '-n', $path],
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
-
-        self::assertIsResource($process, 'Could not start bash, so the template went unchecked.');
-
-        $error = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
+        $error = self::runBash(null, ['bash', '-n', $path])[1];
 
         unlink($path);
 
         return trim($error);
+    }
+
+    /**
+     * @param list<string>|null $command defaults to running $script through bash
+     *
+     * @return array{string, string} stdout and stderr
+     */
+    private static function runBash(?string $script, ?array $command = null): array
+    {
+        $process = proc_open(
+            $command ?? ['bash', '-s'],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+        );
+
+        self::assertIsResource($process, 'Could not start bash, so nothing here was checked.');
+
+        fwrite($pipes[0], (string) $script);
+        fclose($pipes[0]);
+
+        $out = (string) stream_get_contents($pipes[1]);
+        $err = (string) stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($process);
+
+        return [$out, $err];
     }
 }

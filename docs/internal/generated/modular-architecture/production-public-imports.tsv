@@ -1898,9 +1898,9 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Core\Symbol\MetricSubje
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	src/Core/Symbol/SymbolInfo.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	src/Core/Symbol/SymbolPath.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Core\Util\PathMatcher	Core.Neutral	src/Core/Util/PathMatcher.php	ast-name
-Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	src/Infrastructure/Console/Command/AbstractHookCommand.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	Infrastructure.Console	src/Infrastructure/Console/FindingFilterOrchestrator.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Infrastructure\Git\ChangedFile	Infrastructure.Git	src/Infrastructure/Git/ChangedFile.php	ast-name
+Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Infrastructure\Git\GitRepositoryLocator	Infrastructure.Git	src/Infrastructure/Git/GitRepositoryLocator.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Reporting\FormatterContext	Reporting	src/Reporting/FormatterContext.php	ast-name
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule	Analysis.Evidence.ComputedMetrics	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ast-name

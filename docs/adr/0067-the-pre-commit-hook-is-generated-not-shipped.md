@@ -85,6 +85,17 @@ to remove; `hook:status` would call a hook git still executes "NOT INSTALLED".
 there is no marker to read, and the alternative is a rule about where a past
 release pointed it — a compatibility shim for a path that no longer exists.
 
+**The hook's inputs are quoted, and its own path comes from git.** Both are
+consequences of generating rather than shipping, because both are questions a
+static file never had to answer. The binary path is a value this code
+substitutes, so it is single-quoted — measured, not assumed: a `"` in the path
+ended the string and the file stopped being valid shell while the command
+reported success, and `$(…)` in a directory name executed on every commit.
+And since all three commands now ask one method where the hook lives, that
+method asks git (`rev-parse --git-path hooks`) instead of composing
+`<git-dir>/hooks`, which is wrong under `core.hooksPath` and inside a linked
+worktree — the two setups this repository itself uses.
+
 ## Consequences
 
 A consumer runs `hook:install` and gets a working hook. Someone who installed

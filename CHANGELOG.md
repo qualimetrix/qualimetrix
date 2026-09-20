@@ -45,6 +45,24 @@ remove a link it cannot identify rather than deleting someone else's hook.
   It now generates the hook, which also makes it work outside a composer
   layout. The two manual methods `quick-start` documented named the same
   missing directory and are gone.
+- The hook commands install into, and read from, the directory git actually
+  runs hooks out of. They built `<git-dir>/hooks`, which is the wrong place
+  under `core.hooksPath` — every hook manager sets it — and inside a linked
+  worktree, which has no `hooks/` of its own. The first reported success and
+  installed a hook git never read; the second refused outright.
+- The hook quotes the binary path so that a path carrying `"`, `$` or a
+  backtick reaches the shell as itself. A double quote made the whole hook
+  invalid shell while `hook:install` reported success, and `$HOME` or
+  `$(…)` in a directory name was expanded — the second executing on every
+  commit.
+- The hook reads staged paths NUL-delimited, so a filename with a space is one
+  path and not two, and it tells "the binary could not be run" (126, 127) from
+  "the analysis found something", which it used to report as findings with
+  advice to write a baseline.
+- `hook:install --force` no longer spends the single `.backup` slot on a hook
+  it generated itself, which used to overwrite the third-party hook the first
+  `--force` had preserved. `hook:status` tells a symlink whose target is
+  missing from one that cannot be read; they have different remedies.
 - `hook:install` works from the phar too, and its refusal there is gone. It
   refused because the hook was a symlink and because building the script's path
   reached a value object that rejects `phar://`; neither happens now. The

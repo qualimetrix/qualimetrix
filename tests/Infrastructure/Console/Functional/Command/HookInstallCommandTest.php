@@ -175,6 +175,54 @@ final class HookInstallCommandTest extends TestCase
         self::assertTrue(is_link($this->hookPath()));
     }
 
+    /**
+     * Where git actually runs hooks from, which is not always `.git/hooks`.
+     *
+     * Every hook manager sets `core.hooksPath`, and so does this repository.
+     * Writing to `.git/hooks` there reports success and installs a hook git
+     * never reads — measured before this case existed.
+     *
+     * A real repository, not this class's hand-made `.git`: the answer comes
+     * from git itself, and git declines to answer about a directory it did
+     * not create.
+     */
+    #[Test]
+    public function itInstallsWhereCoreHooksPathPoints(): void
+    {
+        $repository = $this->tempDir . '/real-repository';
+        self::assertTrue(mkdir($repository, 0777, true));
+        self::assertSame(0, self::git(['init', '--quiet', $repository]));
+        self::assertSame(0, self::git(['-C', $repository, 'config', 'core.hooksPath', 'managed-hooks']));
+        self::assertTrue(mkdir($repository . '/managed-hooks', 0777, true));
+
+        chdir($repository);
+
+        $tester = $this->install([]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertFileExists($repository . '/managed-hooks/pre-commit');
+        self::assertFileDoesNotExist($repository . '/.git/hooks/pre-commit');
+    }
+
+    /**
+     * `.backup` is one slot, so a second `--force` must not spend it on a hook
+     * the user can regenerate. The first one preserved their original; keeping
+     * that is the whole point of the file.
+     */
+    #[Test]
+    public function itDoesNotSpendTheBackupSlotOnItsOwnHook(): void
+    {
+        file_put_contents($this->hookPath(), "#!/bin/bash\n# precious third-party hook\n");
+
+        self::assertSame(0, $this->install(['--force' => true])->getStatusCode());
+        self::assertSame(0, $this->install(['--force' => true])->getStatusCode());
+
+        self::assertStringContainsString(
+            'precious third-party hook',
+            (string) file_get_contents($this->hookPath() . '.backup'),
+        );
+    }
+
     #[Test]
     public function itFailsWhenNotInGitRepository(): void
     {
@@ -229,6 +277,20 @@ final class HookInstallCommandTest extends TestCase
     private function hookPath(): string
     {
         return $this->gitDir . '/hooks/pre-commit';
+    }
+
+    /** @param list<string> $arguments */
+    private static function git(array $arguments): int
+    {
+        $process = proc_open(
+            ['git', ...$arguments],
+            [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
+            $pipes,
+        );
+
+        self::assertIsResource($process);
+
+        return proc_close($process);
     }
 
     private function removeDirectory(string $dir): void

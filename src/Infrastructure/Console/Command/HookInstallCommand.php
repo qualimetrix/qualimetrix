@@ -85,25 +85,59 @@ final class HookInstallCommand extends AbstractHookCommand
             return self::FAILURE;
         }
 
-        if (file_exists($hookPath)) {
-            $backupPath = $hookPath . '.backup';
+        $refusal = $this->backUp($output, $hookPath);
 
-            if (!copy($hookPath, $backupPath)) {
-                $output->writeln('<error>Failed to backup existing hook</error>');
-
-                return self::FAILURE;
-            }
-
-            $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
-        } else {
-            $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
+        if ($refusal !== null) {
+            return $refusal;
         }
 
-        if (!unlink($hookPath)) {
+        // The link itself, not what it points at: `rename()` would replace the
+        // target through it and leave the repository pointing at a file that
+        // no longer belongs there.
+        if (is_link($hookPath) && !unlink($hookPath)) {
             $output->writeln('<error>Failed to remove existing hook</error>');
 
             return self::FAILURE;
         }
+
+        return null;
+    }
+
+    /**
+     * Preserves a hook that is not ours to lose.
+     *
+     * Only one that is not ours: `.backup` is a single slot, so backing up our
+     * own generated hook on a second `--force` would overwrite the user's
+     * original with a copy of something they can regenerate at will. A broken
+     * symlink has no contents to preserve either.
+     *
+     * @return int|null a command exit code to return, or null to carry on
+     */
+    private function backUp(OutputInterface $output, string $hookPath): ?int
+    {
+        if (!file_exists($hookPath)) {
+            $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
+
+            return null;
+        }
+
+        $contents = @file_get_contents($hookPath);
+
+        if ($contents !== false && PreCommitHook::isOurs($contents)) {
+            $output->writeln('<comment>Replacing a Qualimetrix hook; the existing backup is left alone.</comment>');
+
+            return null;
+        }
+
+        $backupPath = $hookPath . '.backup';
+
+        if (!copy($hookPath, $backupPath)) {
+            $output->writeln('<error>Failed to backup existing hook</error>');
+
+            return self::FAILURE;
+        }
+
+        $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
 
         return null;
     }
@@ -118,7 +152,11 @@ final class HookInstallCommand extends AbstractHookCommand
     {
         $temporaryPath = $hookPath . '.tmp.' . getmypid();
 
-        if (file_put_contents($temporaryPath, $contents) === false) {
+        // The length, not just `false`: a full disk writes part of the file
+        // and reports how much, and a truncated hook is one git still runs.
+        if (file_put_contents($temporaryPath, $contents) !== \strlen($contents)) {
+            @unlink($temporaryPath);
+
             return false;
         }
 

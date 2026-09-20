@@ -58,55 +58,70 @@ final class PreCommitHook
 
         # The binary that installed this hook. The fallbacks below cover it moving
         # afterwards, which `composer update` does to vendor/ routinely.
-        QMX_BIN="@QMX_BINARY@"
+        QMX_BIN=@QMX_BINARY@
 
-        if [ ! -f "$QMX_BIN" ]; then
-            if [ -f "vendor/bin/qmx" ]; then
+        # -x, not -f: a file that cannot be executed cannot run the analysis, and
+        # treating it as present would report its failure as a finding.
+        if [ ! -x "$QMX_BIN" ]; then
+            if [ -x "vendor/bin/qmx" ]; then
                 QMX_BIN="vendor/bin/qmx"
-            elif [ -f "bin/qmx" ]; then
+            elif [ -x "bin/qmx" ]; then
                 QMX_BIN="bin/qmx"
             else
-                echo "❌ Error: qmx binary not found."
+                echo "❌ Error: qmx binary not found or not executable."
                 echo "Reinstall the hook: qmx hook:install --force"
                 exit 1
             fi
         fi
 
-        # Staged PHP files, deletions excluded
-        STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.php')
+        # NUL-delimited, because a path may contain a space and splitting on one
+        # would hand the analyser two paths that do not exist.
+        STAGED_FILES=()
+        while IFS= read -r -d '' staged_file; do
+            STAGED_FILES+=("$staged_file")
+        done < <(git diff --cached --name-only -z --diff-filter=ACM -- '*.php')
 
-        if [ -z "$STAGED_FILES" ]; then
+        if [ ${#STAGED_FILES[@]} -eq 0 ]; then
             exit 0
         fi
 
         echo "🔍 Running Qualimetrix on staged files..."
         echo ""
 
-        FILES_ARGS=$(echo "$STAGED_FILES" | tr '\n' ' ')
-
-        BASELINE_ARG=""
+        BASELINE_ARGS=()
         if [ -f "baseline.json" ]; then
-            BASELINE_ARG="--baseline=baseline.json"
+            BASELINE_ARGS=(--baseline=baseline.json)
             BASELINE_ADVICE="Replace accepted levels intentionally: $QMX_BIN baseline:generate baseline.json src/ --force"
         else
             BASELINE_ADVICE="Create a baseline: $QMX_BIN baseline:generate baseline.json src/"
         fi
 
-        if "$QMX_BIN" check $FILES_ARGS $BASELINE_ARG; then
+        if "$QMX_BIN" check "${STAGED_FILES[@]}" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}; then
             echo ""
             echo "✅ Qualimetrix passed."
             exit 0
-        else
-            EXIT_CODE=$?
+        fi
+
+        EXIT_CODE=$?
+
+        # 126 and 127 come from the shell, not from the analysis: the binary could
+        # not be executed or was not found at all. Reporting them as findings would
+        # send the reader off to write a baseline for violations nobody measured.
+        if [ $EXIT_CODE -eq 126 ] || [ $EXIT_CODE -eq 127 ]; then
             echo ""
-            echo "❌ Qualimetrix found issues."
-            echo ""
-            echo "Options:"
-            echo "  - Fix the issues and try again"
-            echo "  - $BASELINE_ADVICE"
-            echo "  - Skip this check: git commit --no-verify"
+            echo "❌ Could not run $QMX_BIN (exit $EXIT_CODE). Nothing was analysed."
+            echo "Reinstall the hook: qmx hook:install --force"
             exit $EXIT_CODE
         fi
+
+        echo ""
+        echo "❌ Qualimetrix found issues."
+        echo ""
+        echo "Options:"
+        echo "  - Fix the issues and try again"
+        echo "  - $BASELINE_ADVICE"
+        echo "  - Skip this check: git commit --no-verify"
+        exit $EXIT_CODE
 
         SH;
 
@@ -117,7 +132,7 @@ final class PreCommitHook
      */
     public static function script(string $qmxBinary): string
     {
-        return str_replace(self::BINARY_PLACEHOLDER, $qmxBinary, self::TEMPLATE);
+        return str_replace(self::BINARY_PLACEHOLDER, self::quoted($qmxBinary), self::TEMPLATE);
     }
 
     /**
@@ -126,5 +141,20 @@ final class PreCommitHook
     public static function isOurs(string $contents): bool
     {
         return str_contains($contents, self::MARKER);
+    }
+
+    /**
+     * One shell word, whatever the path contains.
+     *
+     * Double quotes were not enough and the difference is not theoretical: a
+     * path carrying `"` ended the string early and the whole file stopped
+     * being valid shell, while `$HOME` or `$(id -u)` in a directory name was
+     * expanded — the second one executing on every commit. Single quotes
+     * suspend all of that, and the only character they cannot carry is `'`,
+     * which is closed, escaped and reopened.
+     */
+    private static function quoted(string $value): string
+    {
+        return "'" . str_replace("'", "'\\''", $value) . "'";
     }
 }

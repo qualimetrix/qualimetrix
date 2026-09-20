@@ -64,9 +64,7 @@ final class HookStatusCommand extends AbstractHookCommand
         $target = readlink($hookPath);
         $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
 
-        $contents = file_exists($hookPath) ? file_get_contents($hookPath) : false;
-
-        if ($contents === false) {
+        if (!file_exists($hookPath)) {
             $output->writeln('');
             $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
             $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
@@ -75,7 +73,10 @@ final class HookStatusCommand extends AbstractHookCommand
             return null;
         }
 
-        return $contents;
+        // A target that exists but cannot be read is a different state with a
+        // different remedy, and calling it "leads nowhere" sent the reader to
+        // reinstall over a hook that was fine.
+        return $this->contentsOf($hookPath, $output);
     }
 
     /** @return string|null null when the file cannot be read */
@@ -83,11 +84,23 @@ final class HookStatusCommand extends AbstractHookCommand
     {
         $output->writeln('Type: <info>File</info>');
 
-        $contents = file_get_contents($hookPath);
+        return $this->contentsOf($hookPath, $output);
+    }
+
+    /**
+     * @return string|null null when the file is there and unreadable
+     */
+    private function contentsOf(string $hookPath, OutputInterface $output): ?string
+    {
+        // Silenced, and reported instead: an unreadable path makes
+        // `file_get_contents` raise a warning, and PHPUnit's error handler
+        // turns that into a stack trace longer than the command's own output.
+        $contents = @file_get_contents($hookPath);
 
         if ($contents === false) {
             $output->writeln('');
-            $output->writeln('<error>Warning: the hook file cannot be read.</error>');
+            $output->writeln('<error>Warning: the hook exists but cannot be read, so it cannot be identified.</error>');
+            $output->writeln(\sprintf('Check its permissions: ls -l %s', $hookPath));
 
             return null;
         }
