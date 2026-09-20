@@ -388,16 +388,52 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
      * stderr-first, `stream_select` kept but blocking left on): the
      * both-flooded child deadlocks all three mutants and only them.
      *
-     * The two streams also carry different, asymmetric, recognizable
-     * payloads (`O`s on stdout, a different length of `E`s on stderr) so the
-     * assertions below can recover which byte went through which descriptor
-     * from `runProcess()`'s single concatenated return value —
-     * `$stdout . $stderr`, always in that order — without changing that
-     * method's return shape, which the other cases in this class already
-     * depend on. A `drain()` that swapped the two slots would flip the
-     * observed order (`E`s before `O`s); one that merged both onto a single
-     * slot would fail the length split. A same-size, same-byte flood could
-     * satisfy either defect by coincidence; this one cannot.
+     * The child writes its **stderr** flood first and its **stdout** flood
+     * second — reversed from the concatenation order on purpose.
+     * `runProcess()` always returns `$stdout . $stderr`, regardless of which
+     * descriptor's bytes arrived first, because a correct `drain()` tracks
+     * which chunk came from which descriptor rather than accumulating
+     * arrival order into one slot. That distinction only shows up in the
+     * assertions below when arrival order and concatenation order disagree.
+     * Under the child's *original* order in an earlier version of this test
+     * (stdout first, then stderr), a mutant `drain()` that appended both
+     * streams onto slot 0 and left slot 1 empty produced a byte-identical
+     * result by coincidence — arrival order already matched the wanted
+     * concatenation order — and passed every assertion here, including the
+     * whole test class and `composer architecture:check`. Reversing the
+     * child's write order breaks that coincidence: the same merge-onto-one-
+     * slot mutant now produces "stderr-bytes-then-stdout-bytes", which
+     * disagrees with the expected "stdout-bytes-then-stderr-bytes" below and
+     * is caught. Measured, not reasoned, both ways: the merge mutant passes
+     * under the old child order and fails under this one; the three deadlock
+     * mutants above (sequential either-first, `stream_select` with blocking
+     * left on) still deadlock under either child order.
+     *
+     * Each stream carries its own 256-byte cyclic payload — ascending
+     * (`chr(0)..chr(255)`) on stdout, descending on stderr — not one
+     * repeated byte, and not the *same* cyclic pattern on both. A
+     * homogeneous single-byte payload makes reordering the chunks *within*
+     * one stream unobservable by construction, since every byte in it is
+     * identical; measured separately, using the *same* cyclic pattern on
+     * both streams made a slot **swap** pass by coincidence wherever the
+     * two floods' lengths overlap, since a prefix of one repeating pattern
+     * is byte-identical to a fresh run of the same pattern. Two distinct
+     * sequences close both gaps at once. Cycling the byte value is still
+     * only a partial defence against intra-stream reordering, not a proof —
+     * a reorder whose chunk boundaries happen to land on multiples of 256 at
+     * a matching phase would still be invisible — but it costs nothing extra
+     * and closes the degenerate all-bytes-equal case.
+     *
+     * This test's remit is the deadlock property specifically — "neither
+     * stream is left unread while the other blocks" — not `drain()`
+     * correctness in general. It cannot observe a `drain()` that returns as
+     * soon as either stream reaches EOF: in this child's shape both
+     * descriptors close simultaneously at exit, by which point even a
+     * truncating drain has already read everything from both. That shape —
+     * one descriptor closing while the other still has more than a buffer's
+     * worth left to deliver — is covered separately, without a deadline
+     * harness because it cannot hang, by
+     * `itDrainsAChildThatClosesOneDescriptorWhileTheOtherKeepsWriting()`.
      *
      * `runProcess()` runs in-process, so a deadlocked call would hang this
      * very PHPUnit run rather than fail it — the exact failure mode this
@@ -424,13 +460,26 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         self::assertIsString($harnessPath);
 
         try {
+            // 256 distinct bytes repeated per stream, not one byte repeated
+            // -- see the docblock above for why -- and a *different*
+            // sequence per stream (ascending on stdout, descending on
+            // stderr), not the same one at two lengths: two streams of the
+            // same repeating pattern are indistinguishable from each other
+            // wherever their lengths overlap, which would make a slot swap
+            // pass by coincidence (measured -- an earlier version of this
+            // test used one shared pattern and missed exactly that mutant).
+            // Both flood sizes are multiples of 256.
+            $ascendingBlockExpr = 'implode("", array_map("chr", range(0, 255)))';
+            $descendingBlockExpr = 'implode("", array_map("chr", range(255, 0, -1)))';
             $floodCommand = [
                 \PHP_BINARY,
                 '-r',
                 \sprintf(
-                    'fwrite(STDOUT, str_repeat("O", %d)); fwrite(STDERR, str_repeat("E", %d));',
-                    $stdoutFloodBytes,
-                    $stderrFloodBytes,
+                    'fwrite(STDERR, str_repeat(%s, %d)); fwrite(STDOUT, str_repeat(%s, %d));',
+                    $descendingBlockExpr,
+                    intdiv($stderrFloodBytes, 256),
+                    $ascendingBlockExpr,
+                    intdiv($stdoutFloodBytes, 256),
                 ),
             ];
 
@@ -483,21 +532,99 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 \strlen($childOutput),
                 'combined drained byte count',
             );
-            self::assertSame(
-                str_repeat('O', $stdoutFloodBytes),
+            $ascendingBlock = implode('', array_map('chr', range(0, 255)));
+            $descendingBlock = implode('', array_map('chr', range(255, 0, -1)));
+            $this->assertStreamBytes(
+                str_repeat($ascendingBlock, intdiv($stdoutFloodBytes, 256)),
                 substr($childOutput, 0, $stdoutFloodBytes),
-                'stdout slot: bytes and count',
+                'stdout slot',
             );
-            self::assertSame(
-                str_repeat('E', $stderrFloodBytes),
+            $this->assertStreamBytes(
+                str_repeat($descendingBlock, intdiv($stderrFloodBytes, 256)),
                 substr($childOutput, $stdoutFloodBytes),
-                'stderr slot: bytes and count',
+                'stderr slot',
             );
         } finally {
             @unlink($harnessPath);
             @unlink($outputFile);
             @unlink($errorFile);
         }
+    }
+
+    /**
+     * Distinct from the deadlock case above: this shape cannot hang. Once
+     * one descriptor closes, only one stream remains, and a well-behaved
+     * `drain()` (or, for that matter, the historical buggy one) finishes
+     * reading it and returns — it needs no deadline supervision. What it
+     * targets is a different mutant: a `drain()` that returns as soon as
+     * *either* stream reaches EOF, discarding whatever the other stream
+     * still had in flight. `itDrainsAChildThatFloodsBothStreamsWithoutDeadlocking()`
+     * cannot see that mutant, because both its streams close simultaneously
+     * at child exit, after everything has already been read from both —
+     * this test's child closes one stream while the other still has more
+     * than a pipe buffer left to deliver, so a truncating `drain()` loses
+     * real, measurable bytes rather than nothing.
+     */
+    #[Test]
+    public function itDrainsAChildThatClosesOneDescriptorWhileTheOtherKeepsWriting(): void
+    {
+        $tailBytes = 524_288; // 8x the 64 KB default OS pipe buffer, well past a single read.
+        $command = [
+            \PHP_BINARY,
+            '-r',
+            \sprintf('fclose(STDOUT); fwrite(STDERR, str_repeat("E", %d));', $tailBytes),
+        ];
+
+        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        self::assertIsResource($process);
+        [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], self::fail(...));
+        $exitCode = proc_close($process);
+
+        self::assertSame(0, $exitCode, 'flood child exit code');
+        // A length check rather than assertSame('', $stdout, ...): a swapped
+        // or merged drain() would otherwise put the whole stderr flood into
+        // $stdout and dump it in full on failure -- the same 2 MB-report
+        // problem the byte-content assertions above were rewritten to avoid.
+        self::assertSame(
+            0,
+            \strlen($stdout),
+            'stdout must stay empty -- closed before anything could be written to it (got '
+            . \strlen($stdout) . ' bytes instead)',
+        );
+        self::assertSame(
+            $tailBytes,
+            \strlen($stderr),
+            'stderr tail must not be lost after stdout closes early — a drain that returns on the '
+            . 'first EOF loses whatever the other stream still had in flight',
+        );
+    }
+
+    /**
+     * A cheap-first, short-on-failure comparison for the multi-megabyte
+     * stream payloads above. `self::assertSame()` on two ~1-2 MB strings
+     * would, on a mismatch, print both operands in full — measured at
+     * roughly 2 MB across the two assertions this replaces, for a defect
+     * whose useful description is a length and a byte offset.
+     */
+    private function assertStreamBytes(string $expected, string $actual, string $label): void
+    {
+        self::assertSame(\strlen($expected), \strlen($actual), $label . ': byte count');
+        if ($expected === $actual) {
+            return;
+        }
+
+        $offset = 0;
+        $length = \strlen($expected);
+        while ($offset < $length && $expected[$offset] === $actual[$offset]) {
+            ++$offset;
+        }
+        self::fail(\sprintf(
+            '%s: content differs at byte offset %d (expected 0x%02X, got 0x%02X)',
+            $label,
+            $offset,
+            \ord($expected[$offset]),
+            \ord($actual[$offset]),
+        ));
     }
 
     /**

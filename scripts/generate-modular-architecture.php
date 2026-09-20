@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 use Qualimetrix\ModularArchitecture\ProcessOutput;
 
-require __DIR__ . '/modular-architecture/ProcessOutput.php';
+require_once __DIR__ . '/modular-architecture/ProcessOutput.php';
 
 const GENERATED_ARTIFACTS = [
     'documentation-ownership.tsv',
