@@ -19,7 +19,9 @@ declarations disagree, the deepest is used, and that is also the single value
 the class keeps in `--format=metrics`, in the HTML tree and in the namespace and
 project aggregates. `design.noc` counts distinct child names instead of
 `extends` edges, so a subclass declared twice now counts once. Trees that
-declare each name once are unaffected. See
+declare each name once are unaffected, and so are the ones that declare a name
+twice in a **single** file: only the last body is measured there, which
+predates this change and is unchanged by it. See
 [ADR 0073](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md).
 
 **`hook:install` writes a file where it used to write a symlink.** Every hook

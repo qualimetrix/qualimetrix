@@ -464,6 +464,9 @@ final class DitGlobalCollectorTest extends TestCase
 
         $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
         $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+        // The walk reasons about measured declarations, and in a run every
+        // class on the path is one.
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -491,6 +494,9 @@ final class DitGlobalCollectorTest extends TestCase
 
         $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
         $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+        // The walk reasons about measured declarations, and in a run every
+        // class on the path is one.
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -515,6 +521,11 @@ final class DitGlobalCollectorTest extends TestCase
             $this->createExtends('App\\GrandChild', 'App\\Dup'),
         ]);
 
+        // Every declaration on the path is seeded: the walk reasons about the
+        // declarations a run measured, and in a run they all are.
+        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
+        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
         $grandChild = $this->seedDeclaration($repository, 'App\\GrandChild', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
@@ -530,6 +541,31 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itGivesTheSameDitRegardlessOfDeclarationInsertionOrder(): void
     {
+        // Both orders in one test, compared against each other rather than
+        // against a constant: with a single order the assertion holds whether
+        // the depth was resolved or merely written last.
+        $chain = ['App\\Order\\A', 'App\\Order\\B', 'App\\Order\\C', 'App\\Order\\D'];
+
+        $forwards = $this->depthsAfterSeeding($chain);
+        $backwards = $this->depthsAfterSeeding(array_reverse($chain));
+
+        self::assertSame($forwards, $backwards);
+        self::assertSame(
+            ['App\\Order\\A' => 0, 'App\\Order\\B' => 1, 'App\\Order\\C' => 2, 'App\\Order\\D' => 3],
+            $forwards,
+        );
+    }
+
+    /**
+     * Resolve the chain A <- B <- C <- D with the declarations seeded in the
+     * given order, and report the depth published for each name.
+     *
+     * @param list<string> $seedOrder
+     *
+     * @return array<string, int|float|null>
+     */
+    private function depthsAfterSeeding(array $seedOrder): array
+    {
         $repository = new InMemoryMetricRepository();
         $graph = $this->graph([
             $this->createExtends('App\\Order\\D', 'App\\Order\\C'),
@@ -537,36 +573,34 @@ final class DitGlobalCollectorTest extends TestCase
             $this->createExtends('App\\Order\\B', 'App\\Order\\A'),
         ]);
 
-        $aPath = SymbolPath::forClass('App\\Order', 'A');
-        $bPath = SymbolPath::forClass('App\\Order', 'B');
-        $cPath = SymbolPath::forClass('App\\Order', 'C');
-        $dPath = SymbolPath::forClass('App\\Order', 'D');
-
-        // Reverse of the chain on purpose: D first, A last.
-        $this->seedDeclaration($repository, 'App\\Order\\D', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $this->seedDeclaration($repository, 'App\\Order\\C', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $this->seedDeclaration($repository, 'App\\Order\\B', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $this->seedDeclaration($repository, 'App\\Order\\A', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        foreach ($seedOrder as $fqn) {
+            $this->seedDeclaration($repository, $fqn, (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        }
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($aPath)->get('design.dit'));
-        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
-        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
-        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
+        $depths = [];
+        foreach ($seedOrder as $fqn) {
+            $depths[$fqn] = $repository->get(SymbolPath::fromClassFqn($fqn))->get('design.dit');
+        }
+        ksort($depths);
+
+        return $depths;
     }
 
     /**
-     * A cycle through a duplicated name cannot escape through `max`: every
-     * branch the recursion reaches is itself cycle-marked, so the walk falls
-     * back to the "no depth could be established" default of 1. Which of the
-     * two declarations is marked first -- and therefore which one still gets
-     * a real answer from the other -- is a named, accepted limitation of
-     * ordinary cycles (see the plan's "cycles remain order-dependent"), so
-     * this test pins the repository order instead of leaving it to chance.
+     * A cycle through a duplicated name terminates, and the two declarations
+     * do not both get the fallback.
+     *
+     * Whichever is entered first is cycle-marked while the other resolves, so
+     * one reports 1 -- the "no depth could be established" default -- and the
+     * other reports 1 + that. Which is which follows the order the walk
+     * enters them in, an accepted limitation of cycles that ADR 0073 states
+     * rather than repairs; the test pins the order so the numbers are a fact
+     * about the walk and not about chance.
      */
     #[Test]
-    public function itTerminatesACycleThroughADuplicatedNameAndYieldsTheDefaultDepth(): void
+    public function itTerminatesACycleThroughADuplicatedNameWithoutGivingBothTheFallback(): void
     {
         $repository = new InMemoryMetricRepository();
         $fileX = RelativePath::fromString('x.php');

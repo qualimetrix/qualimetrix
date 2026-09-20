@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -75,20 +76,29 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository));
-
-        /** @var array<string, non-empty-list<int>> $depthsByName */
-        $depthsByName = [];
+        /** @var list<array{fqn: string, subject: MetricSubject, declaration: DeclarationPath}> $population */
+        $population = [];
+        $measured = [];
 
         foreach ($this->measuredClassDeclarations($repository) as $classFqn => $subject) {
             $declaration = $subject->declarationPath();
             \assert($declaration !== null);
 
-            $dit = $resolver->depthOf($declaration);
+            $population[] = ['fqn' => $classFqn, 'subject' => $subject, 'declaration' => $declaration];
+            $measured[$declaration->toCanonical()] = true;
+        }
 
-            $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT, $dit);
+        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured);
 
-            $depthsByName[$classFqn][] = $dit;
+        /** @var array<string, non-empty-list<int>> $depthsByName */
+        $depthsByName = [];
+
+        foreach ($population as $entry) {
+            $dit = $resolver->depthOf($entry['declaration']);
+
+            $repository->addSubjectScalar($entry['subject'], MetricName::DESIGN_DIT, $dit);
+
+            $depthsByName[$entry['fqn']][] = $dit;
         }
 
         // One value per name for the readers that only know names --

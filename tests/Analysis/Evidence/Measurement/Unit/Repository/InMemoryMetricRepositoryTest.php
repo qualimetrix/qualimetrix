@@ -833,6 +833,24 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
+    public function itAddsOneScalarToACallableDeclarationWithoutTouchingAClassProjection(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $method = SymbolPath::forMethod('App', 'Service', 'handle');
+        $declaration = DeclarationPath::of($method, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($declaration);
+        $repository->addSubject($subject, (new MetricBag())->with('complexity.ccn', 3), $declaration->file, 10);
+
+        $repository->addSubjectScalar($subject, 'complexity.cognitive', 5);
+
+        // A callable has no logical-class projection to refresh, so the write
+        // must stop at its own subject.
+        self::assertSame(5, $repository->getSubject($subject)->get('complexity.cognitive'));
+        self::assertSame(3, $repository->getSubject($subject)->get('complexity.ccn'));
+        self::assertNull($repository->get(SymbolPath::forClass('App', 'Service'))->get('complexity.cognitive'));
+    }
+
+    #[Test]
     public function itRoutesAnAggregateSubjectScalarToItsAggregatePath(): void
     {
         $repository = new InMemoryMetricRepository();

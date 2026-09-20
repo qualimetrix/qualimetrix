@@ -290,18 +290,26 @@ GREEN.
 
 ## Out of scope, named
 
-- **Two declarations of one name inside one file.** They do not survive to the
-  repository at all: every class producer keys by FQN within a file, so the
-  second body overwrites the first and only one subject is published — measured,
-  and already recorded by
-  `tests/…/Measurement/Integration/Identity/ClassProducerOrdinalTest.php`. Two
-  consequences this plan accepts rather than fixes: the DoD's renaming claim
-  holds for cross-file duplicates only, and the max of step 3 is taken over an
-  incomplete set when the duplicate is in one file.
-- **Cycles remain order-dependent.** For `A extends B` and `B extends A` the
-  walk scores whichever node it enters first as 2 and the other as 1. `max` does
-  not repair this, because the cycle marker makes a branch's value depend on the
-  entry point. The determinism claim above covers acyclic hierarchies.
+- **Two declarations of one name inside one file are measured as one.** Every
+  *metric* producer keys by FQN within a file, so the second body overwrites
+  the first and one subject is published — measured, and already recorded by
+  `tests/…/Measurement/Integration/Identity/ClassProducerOrdinalTest.php`. The
+  dependency graph does **not** agree: it numbers both by ordinal and records
+  both `extends` edges. Review measured what the disagreement costs, twice.
+  Taking the name's depth over the declarations *written* published a child
+  deeper than its own parent; taking it over the graph published a name deeper
+  than the one declaration of it the report shows. Both are unreconcilable for
+  a reader, so the walk reasons about the declarations the run **measured**
+  and this shape keeps the answer it had before. Fixing the metric producer to
+  number declarations the way the graph does is the real repair, and it is not
+  attempted here.
+- **Cycles remain order-dependent, and `max` widens the blast radius.** For
+  `A extends B` and `B extends A` the walk scores whichever node it enters
+  first as 2 and the other as 1 — true before this change too. What `max` adds
+  is that an **acyclic** class extending a name with one declaration in a cycle
+  now inherits that entry order: measured 6 against 4 on two spellings of the
+  same tree. The determinism this change buys covers hierarchies in which no
+  name reaches a cycle.
 - `InheritanceDepthCollector::calculateDit()` — the per-file pass publishes no
   depth.
 - **What `resolveExternalClassDit()` does.** Its body is untouched, but it has

@@ -52,7 +52,11 @@ exact or leaving both collapsed.
   disagree about depth, the **deepest** is taken.
 - **A child count is a fact about a name.** `NocCollector` counts distinct
   child names, not edges. NOC is not given a per-declaration value, because
-  there is no fact to attach one to.
+  there is no fact to attach one to. Its *findings* are still emitted per
+  declaration, so a duplicated name reports the same count twice, with two
+  subjects and twice the remediation time. Emission is left alone deliberately:
+  moving a NOC finding onto a logical subject would change the identity of
+  every NOC finding in every tree, and that is a separate contract change.
 - **The logical class keeps one depth**, the maximum over that name's
   declarations, written after the per-declaration pass. Aggregation, the
   `metrics` export, the HTML tree and a user's computed-metric formula all
@@ -92,15 +96,30 @@ unambiguous, and the rule would then skip them in silence.
   often the one a live autoloader never reaches, so the name-level value can
   describe a branch that does not execute. The per-declaration values, which
   are what a finding now carries, remain exact for both branches.
-- **Cycles remain order-dependent.** For `A extends B` and `B extends A` the
-  walk still scores whichever node it enters first as 2 and the other as 1. Max
-  does not repair this: the cycle marker makes a branch's value depend on the
-  entry point, so the determinism above covers acyclic hierarchies.
-- **Two declarations of one name inside one file never reach this decision.**
-  Every class producer keys by name within a file, so the second body
-  overwrites the first and one subject is published — recorded by
-  `ClassProducerOrdinalTest` and unchanged here. The maximum is therefore taken
-  over an incomplete set when the duplicate is in one file.
+- **Cycles remain order-dependent, and `max` carries that out of the cycle.**
+  For `A extends B` and `B extends A` the walk still scores whichever node it
+  enters first as 2 and the other as 1 — the cycle marker makes a branch's
+  value depend on the entry point, and it did so before this change too. What
+  `max` adds is reach: a name with one declaration inside a cycle and another
+  outside it now contributes the deeper of the two, so an **acyclic** class
+  extending that name inherits the cycle's entry order. Measured on a tree
+  where one name is declared twice, once in a cycle and once above a
+  three-deep chain: a single-declaration descendant reports 6 or 4 depending
+  on which file name sorts first. So the determinism this decision buys covers
+  hierarchies in which no name reaches a cycle, not every acyclic class.
+- **Two declarations of one name inside one file are still measured as one**,
+  and the walk deliberately follows the metric rather than the graph. The two
+  producers disagree about how many declarations exist: the dependency graph
+  numbers both by ordinal and records both `extends` edges, while every metric
+  producer keys by name within a file, so the second body overwrites the first
+  and one subject is published — recorded by `ClassProducerOrdinalTest` and
+  unchanged here. The resolver therefore reasons only about declarations the
+  run measured. An earlier version of this change let the unmeasured body
+  contribute its depth, and the result was a report nobody could reconcile: a
+  child published deeper than the only declaration of its parent the report
+  shows. Propagating half of a fact is worse than not propagating it; making
+  the metric producer number declarations the way the graph does is the repair
+  this leaves open.
 - `design.dit` is now the one key in a logical class bag with a stated
   collapsing policy; its neighbours still merge last-writer-wins. Making that
   uniform is a question about `InMemoryMetricRepository`, and it is open.

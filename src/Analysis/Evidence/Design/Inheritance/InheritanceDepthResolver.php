@@ -39,11 +39,13 @@ final class InheritanceDepthResolver
      * @param array<string, string> $parentOfDeclaration child declaration canonical => parent FQN
      * @param array<string, list<string>> $declarationsByName parent FQN => its declaration canonicals
      * @param array<string, true> $projectClasses the analysed project's own class names
+     * @param array<string, true> $measured the declarations this run measured
      */
     private function __construct(
         private readonly array $parentOfDeclaration,
         private readonly array $declarationsByName,
         private readonly array $projectClasses,
+        private readonly array $measured,
     ) {}
 
     /**
@@ -54,9 +56,20 @@ final class InheritanceDepthResolver
      * walk's shape for a tree without duplicates by construction rather than
      * by argument: a name declared once resolves exactly as it did before.
      *
+     * The walk reasons only about declarations this run **measured**. The
+     * graph knows more than the metric does: two bodies of one name in one
+     * file get an ordinal each and two `extends` edges, while every metric
+     * producer keys by name within a file and publishes only the last. Letting
+     * the unmeasured body contribute its depth published a child deeper than
+     * the parent the report shows — half of a fact, and unreconcilable for a
+     * reader. Filtering here keeps the walk inside what the report can
+     * explain; numbering declarations the way the graph does is upstream's
+     * repair to make.
+     *
      * @param array<string, true> $projectClasses
+     * @param array<string, true> $measured declaration canonicals carrying this metric
      */
-    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses): self
+    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses, array $measured): self
     {
         $parentOfDeclaration = [];
         $declarationsByName = [];
@@ -86,7 +99,7 @@ final class InheritanceDepthResolver
             }
         }
 
-        return new self($parentOfDeclaration, $declarationsByName, $projectClasses);
+        return new self($parentOfDeclaration, $declarationsByName, $projectClasses, $measured);
     }
 
     /**
@@ -169,6 +182,10 @@ final class InheritanceDepthResolver
         $depths = [];
 
         foreach ($declarations as $declaration) {
+            if (!isset($this->measured[$declaration])) {
+                continue;
+            }
+
             $depth = $this->depthOfCanonical($declaration);
 
             if ($depth !== self::COMPUTING) {

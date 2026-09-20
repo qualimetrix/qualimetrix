@@ -101,13 +101,18 @@ use RuntimeException;
  * a class name that the case declares in more than one file is compared
  * against a metric export that has one row per name, carrying the deepest of
  * that name's declarations (ADR 0073). The oracle cannot say which
- * declaration the row describes, so it stops short of calling the difference a
- * disagreement — and only then. The declared key must still exist on the name,
- * so a channel publishing a number its declaration never named fails here
- * whether the name is duplicated or not, and every subject of a
- * singly-declared name is compared exactly as before. Closing it needs a
- * declaration-addressable metric export, which is a change to what
+ * declaration that row describes, so for those subjects equality widens to an
+ * inequality: the published number must not *exceed* the exported one. That
+ * is a weaker check, not an absent one — a channel publishing above the
+ * name's maximum still fails, the declared key must still exist, and every
+ * subject of a singly-declared name is compared exactly as before. Closing it
+ * needs a declaration-addressable metric export, which is a change to what
  * `--format=metrics` publishes rather than to this guard.
+ *
+ * The set of duplicated names is read off the case's own findings, so it
+ * depends on the thresholds those findings fired at. That is a weakness of
+ * this oracle rather than of the rule it judges, and it errs safely: a case
+ * whose duplicate never fires is compared strictly.
  */
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelJudgedMetricDriftTest extends TestCase
@@ -194,13 +199,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
 
             // A class name declared in two files has one row in the metric
             // export, carrying the deepest of its declarations (ADR 0073), so
-            // this oracle cannot say which declaration that row describes and
-            // must not read a disagreement into it. The excuse is deliberately
-            // narrow: the declared key has to exist on the name, so a channel
-            // publishing a number its declaration never named still fails
-            // here, duplicated name or not.
-            if ($candidates !== [] && self::nameCarriesSeveralDeclarations($finding)) {
-                continue;
+            // this oracle cannot say which declaration that row describes. It
+            // still knows one thing about it: a declaration's own value cannot
+            // exceed a maximum taken over all of them. The comparison widens
+            // to that bound instead of being dropped, so a number above the
+            // exported one stays a disagreement even here.
+            if (self::nameCarriesSeveralDeclarations($finding)) {
+                foreach ($candidates as $measuredValue) {
+                    if ($finding['value'] <= $measuredValue + self::MAGNITUDE_TOLERANCE) {
+                        continue 2;
+                    }
+                }
             }
 
             self::fail(\sprintf(
