@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -4,1 +4,1 @@
+-    <error line="16" severity="warning" message="Layer &quot;anon-member&quot; must not depend on layer &quot;repository&quot; (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as type hint)" source="qmx.architecture.layer-violation"/>
++    <error line="16" severity="warning" message="Layer &quot;graph-extends&quot; must not depend on layer &quot;repository&quot; (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as type hint) [source matched by extends &quot;Corpus\Layers\GraphBase\Marker&quot;; target matched by pattern &quot;Corpus\Layers\Repository\**&quot;]" source="qmx.architecture.layer-violation"/>

@@ -1,0 +1,53 @@
+--- candidate
++++ reference (mapped)
+@@ -176,1 +176,1 @@
+-            "design.dit.avg": 0.7647058823529411,
++            "design.dit.avg": 1,
+@@ -205,2 +205,2 @@
+-            "design.noc.sum": 7,
+-            "design.noc.avg": 0.3888888888888889,
++            "design.noc.sum": 9,
++            "design.noc.avg": 0.5,
+@@ -390,1 +390,1 @@
+-                    "design.dit.avg": 0.7647058823529411,
++                    "design.dit.avg": 1,
+@@ -428,2 +428,2 @@
+-                    "design.noc.sum": 7,
+-                    "design.noc.avg": 0.3888888888888889,
++                    "design.noc.sum": 9,
++                    "design.noc.avg": 0.5,
+@@ -611,1 +611,1 @@
+-                            "design.dit.avg": 0.7647058823529411,
++                            "design.dit.avg": 1,
+@@ -649,2 +649,2 @@
+-                            "design.noc.sum": 7,
+-                            "design.noc.avg": 0.3888888888888889,
++                            "design.noc.sum": 9,
++                            "design.noc.avg": 0.5,
+@@ -843,3 +843,3 @@
+-                                    "design.dit.avg": 0.14285714285714285,
+-                                    "design.dit.max": 1,
+-                                    "design.dit.p95": 0.6999999999999993,
++                                    "design.dit.avg": 0.7142857142857143,
++                                    "design.dit.max": 2,
++                                    "design.dit.p95": 1.6999999999999993,
+@@ -881,2 +881,2 @@
+-                                    "design.noc.sum": 1,
+-                                    "design.noc.avg": 0.125,
++                                    "design.noc.sum": 3,
++                                    "design.noc.avg": 0.375,
+@@ -1005,1 +1005,1 @@
+-                                            "design.dit": 0,
++                                            "design.dit": 1,
+@@ -1148,1 +1148,1 @@
+-                                            "design.dit": 0,
++                                            "design.dit": 2,
+@@ -1274,1 +1274,1 @@
+-                                            "design.noc": 0,
++                                            "design.noc": 1,
+@@ -1291,1 +1291,1 @@
+-                                            "design.dit": 0,
++                                            "design.dit": 1,
+@@ -1417,1 +1417,1 @@
+-                                            "design.noc": 0,
++                                            "design.noc": 1,

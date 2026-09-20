@@ -1,6 +1,6 @@
 {
     "id": "layers",
-    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template, a class outside every layer and an exclude clause that removes nothing.",
+    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template, a class outside every layer, an exclude clause that removes nothing, and a graph-based extends criterion (plus its exclude form) that must key off an anonymous class's own header, not off the class enclosing it. The corpus also carries an implements- and an attribute-bearing anonymous class, but no declared layer reads implements: or attributes:, so those two fixtures cover only that the shape parses without moving any finding -- not membership behavior for those criteria.",
     "paths": [
         "src"
     ],
