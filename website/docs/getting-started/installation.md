@@ -28,8 +28,26 @@ vendor/bin/qmx
 
 ## PHAR
 
-!!! note "Coming soon"
-    A standalone PHAR archive is planned for future releases. This will allow you to run Qualimetrix without adding it to your project's dependencies.
+A standalone archive that runs without adding Qualimetrix to your project's dependencies. Download
+`qmx.phar` from the [latest release](https://github.com/qualimetrix/qualimetrix/releases/latest),
+make it executable, and run it:
+
+```bash
+chmod +x qmx.phar
+./qmx.phar check src/
+```
+
+!!! warning "Keep the `.phar` suffix"
+    Parallel analysis copies the whole archive into your temporary directory on every run when the
+    file it runs from is not named `*.phar`. Renaming it to `qmx` costs several megabytes of copying
+    per run.
+
+Two differences from a Composer install:
+
+- `hook:install` is not available. The hook is a symlink to a shell script, and nothing can point a
+  symlink inside an archive; write `.git/hooks/pre-commit` by hand, or install with Composer.
+- A release older than this feature carries no `qmx.phar` asset. Build one with
+  `composer phar`, which writes `build/qmx.phar`.
 
 ---
 
@@ -67,6 +85,12 @@ docker run --rm -v $(pwd):/app qmx check src/ --baseline=baseline.json
 
     ```bash
     bin/qmx --version
+    ```
+
+=== "PHAR"
+
+    ```bash
+    ./qmx.phar --version
     ```
 
 === "Docker"

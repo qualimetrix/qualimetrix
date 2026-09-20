@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
+  buildable with `composer phar`. Keep the `.phar` suffix: run from a file
+  named otherwise, parallel analysis copies the whole archive into the
+  temporary directory on every run.
+- `hook:install` refuses when run from the phar, naming what to do instead. The
+  hook is a symlink to a shell script and cannot point inside an archive;
+  previously the command failed on an internal path invariant.
 - The HTML report's four shipped assets move inside the composer package, from
   `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
   `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;
