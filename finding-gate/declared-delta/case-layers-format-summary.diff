@@ -1,7 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -28,2 +28,2 @@
--          architecture.layer-violation: Layer "anon-member" is not allowed to depend on any other declared layer.
--Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"}
-+          architecture.layer-violation: Layer "graph-extends" is not allowed to depend on any other declared layer.
-+Dep data: {"fromLayer":"graph-extends","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"}

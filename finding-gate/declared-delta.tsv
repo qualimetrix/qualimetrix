@@ -1,14 +1,1 @@
 surface	file	reason
-case:design|format:html	declared-delta/case-design-format-html.diff	P1 stops attributing an anonymous class's own extends edge to the class enclosing it, so design.dit/design.noc move on DitHost, NocHost, NocParent, DitParent and BuiltinHost and on their aggregates -- the fixtures this step adds specifically to exercise that path
-case:design|format:metrics	declared-delta/case-design-format-metrics.diff	same as case:design|format:html -- design.dit/design.noc and their aggregates move on the anonymous-class-inheritance fixtures
-case:layers|format:checkstyle	declared-delta/case-layers-format-checkstyle.diff	P1 stops the extends layer-membership criterion from matching off an anonymous class's header attributed to its enclosing class, so ExtendsHost's architecture.layer-violation is blamed on layer "anon-member" (its real, correctly-attributed layer) instead of "graph-extends" (the misattributed one); same finding identity (source/target/type), only the layer name and match-trailer in the message move
-case:layers|format:github	declared-delta/case-layers-format-github.diff	same cure as case:layers|format:checkstyle -- the blamed layer name moves in the one architecture.layer-violation finding on ExtendsHost
-case:layers|format:gitlab	declared-delta/case-layers-format-gitlab.diff	same cure as case:layers|format:checkstyle
-case:layers|format:html	declared-delta/case-layers-format-html.diff	same cure as case:layers|format:checkstyle, plus design.dit/design.noc moving on ExtendsHost and Marker: the same misattributed extends edge that decides layer membership also feeds DitGlobalCollector/NocCollector, so P1's fix moves those metrics on this case's own fixtures too
-case:layers|format:json	declared-delta/case-layers-format-json.diff	same cure as case:layers|format:checkstyle -- message and recommendation move together, same finding identity
-case:layers|format:metrics	declared-delta/case-layers-format-metrics.diff	same cure as case:layers|format:html -- design.dit/design.noc move on ExtendsHost and Marker because the misattributed extends edge feeds both layer membership and these metrics
-case:layers|format:sarif	declared-delta/case-layers-format-sarif.diff	same cure as case:layers|format:checkstyle
-case:layers|format:summary	declared-delta/case-layers-format-summary.diff	same cure as case:layers|format:checkstyle
-case:layers|format:text	declared-delta/case-layers-format-text.diff	same cure as case:layers|format:checkstyle
-case:layers|format:text-verbose	declared-delta/case-layers-format-text-verbose.diff	same cure as case:layers|format:checkstyle
-case:layers|show-suppressed	declared-delta/case-layers-show-suppressed.diff	same cure as case:layers|format:checkstyle
