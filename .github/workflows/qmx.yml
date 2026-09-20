@@ -290,6 +290,17 @@ jobs:
                 f"{tree['summary']['violationCount']} findings")
           PY
 
+      # The rule listing is where a compactor defect would show: box strips
+      # comments, and rule metadata is read by reflection. Compared as bytes
+      # rather than counted, because a listing that lost a description is the
+      # same length in rules and a different length in text.
+      - name: It lists the same rules as the tree
+        run: |
+          php bin/qmx rules > /tmp/tree-rules.txt
+          php build/qmx.phar rules > /tmp/phar-rules.txt
+          diff -u /tmp/tree-rules.txt /tmp/phar-rules.txt
+          test -s /tmp/tree-rules.txt
+
       # The build omitting an asset is loud -- the formatter refuses -- so what
       # this checks is an asset that arrived and is wrong.
       - name: It inlines the viewer's assets
