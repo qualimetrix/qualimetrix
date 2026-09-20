@@ -18,10 +18,14 @@ declare(strict_types=1);
 namespace Qualimetrix\InputDoors;
 
 use FilesystemIterator;
+use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Yaml\Yaml;
+
+require_once \dirname(__DIR__) . '/subprocess/ChildProcess.php';
 
 final class Runner
 {
@@ -302,19 +306,22 @@ final class Runner
      */
     private function execute(array $argv, string $cwd, string $observable, array $extraEnv = []): Observation
     {
-        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $environment = array_merge(getenv(), $extraEnv, ['NO_COLOR' => '1', 'COLUMNS' => '120']);
-        $process = proc_open($argv, $descriptors, $pipes, $cwd, $environment);
 
-        if (!\is_resource($process)) {
-            throw new DeclarationError('cannot start ' . implode(' ', $argv));
+        try {
+            $result = ChildProcess::run($argv, $cwd, environment: $environment);
+        } catch (RuntimeException $error) {
+            // DeclarationError, not the bare RuntimeException run() throws:
+            // Stand::run() catches DeclarationError by name around a call
+            // that reaches here ($this->runner->observe(...)), to turn one
+            // row's failed launch into a reported verdict instead of an
+            // uncaught crash of the whole grid.
+            throw new DeclarationError('cannot start ' . implode(' ', $argv) . ': ' . $error->getMessage());
         }
 
-        $stdout = (string) stream_get_contents($pipes[1]);
-        $stderr = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $exit = proc_close($process);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
+        $exit = $result['exitCode'];
 
         $fileTarget = str_starts_with($observable, 'file:') ? $cwd . '/' . substr($observable, 5) : null;
         $dirTarget = str_starts_with($observable, 'dir:') ? $cwd . '/' . substr($observable, 4) : null;

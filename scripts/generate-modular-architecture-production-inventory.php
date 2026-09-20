@@ -7,8 +7,10 @@ use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\ParserFactory;
+use Qualimetrix\Subprocess\ChildProcess;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 /** @return never */
 function fail(string $message): void
@@ -2336,21 +2338,17 @@ function documentationInventory(string $root): string
  */
 function commandOutputLines(array $command, string $workingDirectory): array
 {
-    $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $workingDirectory);
-    if (!is_resource($process)) {
-        fail('cannot start documentation discovery');
-    }
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
-    if ($stdout === false || $stderr === false || $exitCode !== 0) {
-        fail('documentation discovery failed: ' . trim($stderr === false ? '' : $stderr));
+    try {
+        $result = ChildProcess::run($command, $workingDirectory);
+    } catch (\RuntimeException $error) {
+        fail('documentation discovery failed: ' . $error->getMessage());
     }
 
-    return array_values(array_filter(explode("\n", trim($stdout)), static fn(string $line): bool => $line !== ''));
+    if ($result['exitCode'] !== 0) {
+        fail('documentation discovery failed: ' . trim($result['stderr']));
+    }
+
+    return array_values(array_filter(explode("\n", trim($result['stdout'])), static fn(string $line): bool => $line !== ''));
 }
 
 /** @return array{string, string} */
@@ -2397,6 +2395,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0067-every-test-shaped-directory-is-scanned.md' => 'Architecture.Governance',
         'docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md' => 'Infrastructure.Console',
         'docs/adr/0069-a-metric-is-declared-by-the-collector-that-writes-it.md' => 'Analysis.Evidence.Measurement',
+        'docs/adr/0070-subprocess-read-discipline.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

@@ -104,6 +104,17 @@ remove a link it cannot identify rather than deleting someone else's hook.
   for any external class it could not find — so depth that reaches outside the
   analysed path still depends on what the installation can load, as
   `website/docs/rules/design.md` now records.
+- Installing without development dependencies no longer breaks git-scoped runs.
+  `--report=git:...` reached `symfony/process`, which arrived only through a
+  development tool, so `composer install --no-dev` left it out and the first
+  such run answered `Internal error: Class "Symfony\Component\Process\Process"
+  not found`. That package is now declared, along with `composer-runtime-api`,
+  `amphp/amp` and `amphp/sync`, which the product also used without asking for.
+- A `--report=git:...` run no longer risks hanging instead of failing. Locating
+  the repository opened descriptors nothing ever read, so a talkative enough
+  `git rev-parse` could block mid-write and leave the analysis waiting forever
+  with no output and no exit code. The same defect reached the `hook:*`
+  commands through the same locator, which the entry above records.
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no

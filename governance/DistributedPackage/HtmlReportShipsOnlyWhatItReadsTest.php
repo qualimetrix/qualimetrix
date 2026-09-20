@@ -6,6 +6,10 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * What a consumer receives under the HTML report's tree, against what the
@@ -28,11 +32,39 @@ use PHPUnit\Framework\TestCase;
  * pinned list would have to be edited in the same breath as the formatter and
  * would therefore never catch that.
  *
- * Why this group is not `PackageVersion`: that one guards what the installed
- * package reports about itself, which changes for different reasons. Both are
- * about the installed artifact, and if a third control of either kind appears
- * the two groups are worth merging under this name — that is the condition to
- * revisit, not a standing plan.
+ * Why this group is neither `PackageVersion` nor `DeclaredDependencies`. The
+ * three ask different questions and move on different edits. This one asks
+ * which files reach a consumer. `PackageVersion` asks which version this
+ * package states about itself, and whether every place stating one agrees.
+ * `DeclaredDependencies` asks whether `require` covers what the shipped code
+ * names — which no control here can reach, because `git archive` carries no
+ * `vendor/`, so the packages it judges are not in the payload at all.
+ *
+ * An earlier note here said the first two were worth merging once a third
+ * control "of either kind" appeared. A third arrived and the merge is
+ * rejected. The condition counted controls, and a count is evidence about
+ * size, not about subjects: several groups under `governance/` hold a single
+ * control each, so this tree does not draw boundaries by how full a directory
+ * is. Worse, whether that condition fired is itself arguable — `require` is
+ * something the package declares about itself, so the new control reads into
+ * `PackageVersion`'s kind or into neither depending on who is asked, and a
+ * trigger that ambiguous decides nothing. What the three do share is "the
+ * artifact", a predicate that admits anything that ships and would leave this
+ * name a container rather than a subject.
+ *
+ * Also rejected: folding `PackageVersion` into `DeclaredDependencies` because
+ * both read `composer.json`'s `require`. Reading one file is not a shared
+ * subject — raising `require.php` touches no import, and a new import touches
+ * no version — and the two ask different things: that two spellings of a
+ * declared floor agree, versus that a declaration covers what the code names.
+ * Also rejected: splitting `PackageVersion`, whose halves guard the floor and
+ * the reported version; both are a version this package states about itself,
+ * and separating them buys a registration pair for no new distinction.
+ *
+ * The condition to revisit is therefore a property and not a count: when one
+ * edit has to change controls in two of these groups for the same reason, or
+ * when a new control cannot be placed because it belongs to two of them, the
+ * boundary is in the wrong place and the pair it spans should merge.
  */
 final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
 {
@@ -148,23 +180,20 @@ final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
     /** @param list<string> $command */
     private static function capture(array $command, string $input = ''): string
     {
-        $process = proc_open(
-            $command,
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
+        try {
+            $result = ChildProcess::run($command, null, $input);
+        } catch (RuntimeException $exception) {
+            self::fail('Could not start ' . $command[0] . ', so nothing here was checked: ' . $exception->getMessage());
+        }
+
+        self::assertSame(
+            0,
+            $result['exitCode'],
+            implode(' ', $command) . ' failed, so nothing here was checked.'
+                . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''),
         );
 
-        self::assertIsResource($process, 'Could not start ' . $command[0] . ', so nothing here was checked.');
-
-        fwrite($pipes[0], $input);
-        fclose($pipes[0]);
-        $out = (string) stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        self::assertSame(0, proc_close($process), implode(' ', $command) . ' failed, so nothing here was checked.');
-
-        return $out;
+        return $result['stdout'];
     }
 
     private static function projectRoot(): string

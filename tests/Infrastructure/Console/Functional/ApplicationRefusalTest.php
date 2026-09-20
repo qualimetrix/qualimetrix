@@ -9,7 +9,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
-use RuntimeException;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * `Application::doRun()`'s ladder, on the real binary, over a real process.
@@ -268,29 +270,7 @@ final class ApplicationRefusalTest extends TestCase
      */
     private function execute(array $command, string $stdin): array
     {
-        $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-
-        $process = proc_open($command, $descriptors, $pipes, $this->fixture);
-
-        if (!\is_resource($process)) {
-            throw new RuntimeException('Could not start process: ' . implode(' ', $command));
-        }
-
-        fwrite($pipes[0], $stdin);
-        fclose($pipes[0]);
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        $exitCode = proc_close($process);
-
-        return [
-            'stdout' => $stdout === false ? '' : $stdout,
-            'stderr' => $stderr === false ? '' : $stderr,
-            'exitCode' => $exitCode,
-        ];
+        return ChildProcess::run($command, $this->fixture, $stdin);
     }
 
     private static function binPath(): string

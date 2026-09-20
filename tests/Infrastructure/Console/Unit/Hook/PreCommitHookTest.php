@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(PreCommitHook::class)]
 final class PreCommitHookTest extends TestCase
@@ -128,23 +131,8 @@ final class PreCommitHookTest extends TestCase
      */
     private static function runBash(?string $script, ?array $command = null): array
     {
-        $process = proc_open(
-            $command ?? ['bash', '-s'],
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
+        $result = ChildProcess::run($command ?? ['bash', '-s'], null, (string) $script);
 
-        self::assertIsResource($process, 'Could not start bash, so nothing here was checked.');
-
-        fwrite($pipes[0], (string) $script);
-        fclose($pipes[0]);
-
-        $out = (string) stream_get_contents($pipes[1]);
-        $err = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
-
-        return [$out, $err];
+        return [$result['stdout'], $result['stderr']];
     }
 }

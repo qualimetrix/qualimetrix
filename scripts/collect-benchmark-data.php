@@ -24,6 +24,10 @@ declare(strict_types=1);
  * does not carry; it is never committed.
  */
 
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once __DIR__ . '/subprocess/ChildProcess.php';
+
 $qmxBin = __DIR__ . '/../bin/qmx';
 $benchmarkVendor = __DIR__ . '/../benchmarks/vendor';
 $localProjectsFile = __DIR__ . '/../benchmarks/local-projects.json';
@@ -147,32 +151,43 @@ foreach ($projects as $project) {
     fprintf(STDERR, "Analyzing: %s ... ", $id);
     $start = microtime(true);
 
-    $cmd = sprintf(
-        'php -d memory_limit=2G %s check %s --format=metrics --workers=0',
-        escapeshellarg($qmxBin),
-        escapeshellarg($path),
-    );
+    // An argument-vector command needs no shell and therefore no
+    // escapeshellarg(): each element reaches the child exactly as written.
+    $cmd = [
+        'php',
+        '-d',
+        'memory_limit=2G',
+        $qmxBin,
+        'check',
+        $path,
+        '--format=metrics',
+        '--workers=0',
+    ];
 
     // Run from the neutral working directory (see $neutralDir above) so qmx
     // does not auto-discover this repository's qmx.yaml/composer.json.
-    // proc_open + stream_get_contents also avoids exec()'s double memory
-    // ownership of large output (a line array plus its imploded string) —
-    // the qmx self-analysis alone produces ~12.5 MB of JSON.
-    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $neutralDir);
-    if (!is_resource($process)) {
-        fprintf(STDERR, "FAILED (could not start analysis)\n");
-        $failures[] = sprintf('%s: could not start analysis', $id);
+    // ChildProcess::run() also avoids exec()'s double memory ownership of
+    // large output (a line array plus its imploded string) — the qmx
+    // self-analysis alone produces ~12.5 MB of JSON.
+    try {
+        $result = ChildProcess::run($cmd, $neutralDir);
+    } catch (RuntimeException $exception) {
+        fprintf(STDERR, "FAILED (could not run analysis): %s\n", $exception->getMessage());
+        $failures[] = sprintf('%s: could not run analysis (%s)', $id, $exception->getMessage());
         continue;
     }
-    $output = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $exitCode = proc_close($process);
-    $json = $output === false ? '' : $output;
+    $json = $result['stdout'];
+    $exitCode = $result['exitCode'];
     $elapsed = round(microtime(true) - $start, 1);
 
     if ($exitCode > 2) {
         fprintf(STDERR, "FAILED (analysis exit code %d)\n", $exitCode);
-        $failures[] = sprintf('%s: analysis exited with code %d', $id, $exitCode);
+        $message = sprintf('%s: analysis exited with code %d', $id, $exitCode);
+        $stderr = trim($result['stderr']);
+        if ($stderr !== '') {
+            fprintf(STDERR, "  stderr: %s\n", $stderr);
+        }
+        $failures[] = $message;
         continue;
     }
 

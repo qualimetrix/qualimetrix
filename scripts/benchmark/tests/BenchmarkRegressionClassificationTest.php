@@ -437,6 +437,23 @@ PHP);
         if (!copy($source, $fixtureRoot . '/scripts/benchmark-regression.php')) {
             throw new RuntimeException('Failed to copy benchmark-regression.php');
         }
+        $this->copySubprocessModule($fixtureRoot);
+    }
+
+    /**
+     * The copied script require_once's the subprocess module by path, so the fixture
+     * root needs its own copy: without it the script dies before it can reach the
+     * classification behaviour each case below exercises.
+     */
+    private function copySubprocessModule(string $fixtureRoot): void
+    {
+        if (!mkdir($fixtureRoot . '/scripts/subprocess', recursive: true)) {
+            throw new RuntimeException('Failed to create scripts/subprocess directory');
+        }
+        $source = \dirname(__DIR__, 3) . '/scripts/subprocess/ChildProcess.php';
+        if (!copy($source, $fixtureRoot . '/scripts/subprocess/ChildProcess.php')) {
+            throw new RuntimeException('Failed to copy ChildProcess.php');
+        }
     }
 
     /** @param array<string, array{path?: string, expectations?: array<string, array{0: int, 1: int}>}> $projects */

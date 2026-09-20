@@ -8,7 +8,11 @@ use FilesystemIterator;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
 use SplFileInfo;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * The plan index (`docs/internal/plans/README.md`) must list every active
@@ -392,35 +396,21 @@ final class PlanningRecordIsolationTest extends TestCase
      */
     private static function trackedPaths(): array
     {
-        $process = proc_open(
-            ['git', 'ls-files', '-z'],
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-            self::$projectRoot,
-        );
-        if ($process === false) {
-            throw new LogicException('Cannot start git ls-files');
-        }
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $status = proc_close($process);
-
-        if ($stdout === false || $stderr === false) {
-            throw new LogicException('git ls-files produced no readable output');
+        try {
+            $result = ChildProcess::run(['git', 'ls-files', '-z'], self::$projectRoot);
+        } catch (RuntimeException $exception) {
+            throw new LogicException('Cannot start git ls-files: ' . $exception->getMessage(), 0, $exception);
         }
 
         // Failure is the exit code. git writes environment advice to stderr at
         // status 0, and treating that as fatal would redden this control for a
         // reason indistinguishable from a real violation.
-        if ($status !== 0) {
-            throw new LogicException(\sprintf('git ls-files exited %d: %s', $status, $stderr));
+        if ($result['exitCode'] !== 0) {
+            throw new LogicException(\sprintf('git ls-files exited %d: %s', $result['exitCode'], $result['stderr']));
         }
 
         $paths = array_values(array_filter(
-            explode("\0", $stdout),
+            explode("\0", $result['stdout']),
             static fn(string $path): bool => $path !== '',
         ));
         if ($paths === []) {

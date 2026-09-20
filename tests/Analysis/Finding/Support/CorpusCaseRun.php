@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use PHPUnit\Framework\Assert;
+use Qualimetrix\Subprocess\ChildProcess;
 use RuntimeException;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * Runs the external corpus in `finding-gate/cases/` and hands back one
@@ -153,23 +156,12 @@ final class CorpusCaseRun
             $extra,
         );
 
-        $process = proc_open(
-            $command,
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-            $directory,
-        );
+        $result = ChildProcess::run($command, $directory);
+        $exit = $result['exitCode'];
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
 
-        if ($process === false) {
-            throw new RuntimeException(\sprintf('Could not run the corpus case in %s.', $directory));
-        }
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        array_map(fclose(...), $pipes);
-        $exit = proc_close($process);
-
-        $decoded = json_decode((string) $stdout, true);
+        $decoded = json_decode($stdout, true);
 
         if (!\is_array($decoded)) {
             throw new RuntimeException(\sprintf(
@@ -177,7 +169,7 @@ final class CorpusCaseRun
                 $directory,
                 $format,
                 $exit,
-                (string) $stderr,
+                $stderr,
             ));
         }
 
