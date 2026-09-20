@@ -2,7 +2,7 @@
     "main": "bin/qmx",
     "output": "build/qmx.phar",
     "compression": "NONE",
-    "check-requirements": true,
+    "check-requirements": false,
     "compactors": [
         "KevinGH\\Box\\Compactor\\Php",
         "KevinGH\\Box\\Compactor\\Json"

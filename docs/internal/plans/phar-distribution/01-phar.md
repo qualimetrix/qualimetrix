@@ -229,9 +229,14 @@ comparison that says which surfaces it dropped.
   holds it against the dist's list in both directions. Shown refusing three plants: a file added to
   `box.json` that `export-ignore` excludes, a declared omission whose reason no longer describes
   anything, and a load-bearing asset dropped from the list.
-- **`check-requirements` on** — box then ships a checker that refuses under a PHP older than
-  `composer.json` demands, instead of a parse error somewhere in `src/`. **`compression` none**,
-  because GZ would require `ext-zlib` on the consumer's machine at run time.
+- **`check-requirements` off, and the guard moved into `bin/qmx`.** Box's checker was on until the
+  job's first real run refused to start: `symfony/cache` — transitive, through
+  `expression-language`, and never constructed by this tool — declares a conflict with `ext-redis`
+  below 6.1, and box's check is `!extension_loaded('redis')` with no version comparison. The
+  archive would have refused to run wherever Redis is installed. The interpreter floor is now a
+  `PHP_VERSION_ID` guard in the entry point, which covers the Composer install and the image as
+  well, with a control holding it against `composer.json`. **`compression` none**, because GZ would
+  require `ext-zlib` on the consumer's machine at run time.
 - **Compactors on**, `Php` and `Json`: measured safe in P0 and worth a third of the size.
 - **`hook:install` refuses from a phar**, per problem 4.
 

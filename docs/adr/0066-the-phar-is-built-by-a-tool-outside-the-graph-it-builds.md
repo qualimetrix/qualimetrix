@@ -67,6 +67,24 @@ are a release answering `--version` with a non-version, and nothing would say
 so. The release job compares the whole line rather than searching it, because
 `1.0.0+no-version-set` contains `1.0.0`.
 
+**The interpreter floor is guarded by the product, not by the build tool.**
+Box can inject a requirements checker, and the first version of this decision
+used it. Measured on the first real CI run: it refuses to start on any machine
+with `ext-redis` loaded. `symfony/expression-language` pulls in `symfony/cache`,
+which declares a *version-ranged* conflict with `ext-redis` below 6.1 — and box's
+checker is `!extension_loaded('redis')`, with no version comparison at all. The
+archive would have refused to run for a large share of PHP developers over a
+Redis cache adapter this tool never constructs.
+
+So the checker is off and `bin/qmx` guards `PHP_VERSION_ID` before it loads
+anything. That is the better home regardless of box: the guard now covers a
+Composer install and the Docker image too, where no checker was ever injected,
+and it fires before `src/` is parsed rather than after. The floor is a literal,
+because the guard has to hold inside the archive and `composer.json` is
+deliberately not in it;
+`governance/PackageVersion/EntryPointRefusesTheVersionsComposerRefusesTest.php`
+holds the literal and the constraint together.
+
 **`hook:install` refuses from a phar.** The command installs a symlink to a
 shell script, and nothing can symlink into an archive; shipping the script
 would not have changed that. It previously failed with

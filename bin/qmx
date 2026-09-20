@@ -24,6 +24,19 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
+// Before the autoloader, because src/ uses syntax older interpreters cannot
+// parse: without this the first failure is a parse error naming a file the
+// reader did not open. The floor is composer.json's `php` constraint, and a
+// governance control holds the two together — this literal cannot read
+// composer.json, which the dist ships but the phar deliberately does not.
+if (\PHP_VERSION_ID < 80400) {
+    fwrite(
+        \STDERR,
+        \sprintf("Qualimetrix needs PHP 8.4 or newer; this is PHP %s.\n", \PHP_VERSION),
+    );
+    exit(1);
+}
+
 // Find autoloader
 $autoloadPaths = [
     __DIR__ . '/../vendor/autoload.php',           // Local development
