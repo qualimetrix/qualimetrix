@@ -176,6 +176,52 @@ Available tests:
  - Qualimetrix\Governance\Channel\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a classmap-only project checked by one of its two entries"
  - Qualimetrix\Governance\Channel\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a files entry outside the analysed directory"
  - Qualimetrix\Governance\Channel\ScopeConditionedChannelGuardTest::itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice"a psr-4 root outside the analysed directory"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itAcceptsAConformingCommitInTheRange
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itDoesNotReportAnEmptyRangeAsConforming
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itJudgesEveryCommitInTheRangeRatherThanAnEndOfIt
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itRefusesABareRefThatWouldJudgeTheWholeHistory
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itRefusesANonConformingCommitInTheRange
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itRefusesARangeItCannotResolveRatherThanPassing
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itRefusesARangeWithAnEmptyEndpoint
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itReportsHowManySubjectsItJudged
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitRangeVerdictTest::itSkipsMergeCommitsByParentCountRatherThanBySubject
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectAuthorityTest::itKeepsBothLayersModesDeclared
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectAuthorityTest::itKeepsCiApplyingTheSameRule
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectAuthorityTest::itKeepsEverySequencerStateNamedInTheExemption
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectAuthorityTest::itKeepsTheCiStepGatingRatherThanMerelyRunning
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectAuthorityTest::itKeepsTheHookDelegatingRatherThanCarryingItsOwnRule
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"build"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"chore"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"ci"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"docs"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"feat"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"fix"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"perf"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"refactor"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"style"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itAcceptsEveryTypeItAdvertises"test"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a breaking-change marker is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a breaking-change marker with a scope is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a fixup is accepted when its target conforms"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a fixup of a non-conforming subject is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a reapply of a conforming commit is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a reapply of a non-conforming commit is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a revert of a conforming commit is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a revert of a non-conforming commit is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a revert of a reapply is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a revert of a reapply of a bad subject is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a squash is accepted when its target conforms"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a type that is not in the list is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"a type without the colon is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"cherry-pick in progress is exempt"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"conventional subject is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"conventional subject with a scope is accepted"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"merge subject typed by hand is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"merge subject while git is merging is exempt"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"non-conventional subject is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"revert subject while git is reverting is exempt"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"revert-shaped prose is refused"
+ - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itFindsTheMarkerFromInsideALinkedWorktree
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itAcceptsAConfigCoveringEverySchemaEntry
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itGivesEveryConstantAnEntryOrMarksItInternal
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itGivesEveryEntryAMatchingConstant
