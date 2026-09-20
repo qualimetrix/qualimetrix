@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
 
 /**
  * Applies a producer's `suppress_namespaces`, `suppress_namespace_channels` and

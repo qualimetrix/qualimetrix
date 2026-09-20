@@ -6,8 +6,8 @@ namespace Qualimetrix\Reporting\Filter;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**

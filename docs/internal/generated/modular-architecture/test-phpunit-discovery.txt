@@ -3165,6 +3165,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::itDoesNotProduceADependencyForTheSelfTypeHint
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::itDoesNotProduceADependencyForTheStaticTypeHint
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::itDoesNotProduceAParentTypeHintDependencyBeyondTheExtendsEdge
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itAddsEveryStringFromAddAll
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itAddsUniqueStrings
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itCombinesBothSetsInUnion
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itDedupesARepeatedAdd
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itDedupesAnArrayIntoASetInFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itIsEmptyForAnEmptySet
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itIsNotEmptyForANonEmptySet
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itKeepsOnlyElementsMatchingThePredicateInFilter
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsANewInstanceFromAdd
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsAnIndexedArrayFromToArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsElementsAbsentFromTheOtherSetInDiff
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsFalseFromContainsForAMissingString
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsOnlyElementsCommonToBothSetsInIntersect
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsTheSameInstanceWhenAddingADuplicate
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itYieldsEveryStringWhenIterated
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessor trait"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessors only"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
@@ -5385,6 +5400,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"implements"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itExpandsBothModulesWithoutANonPatternCriterion
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"implements"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"implements"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itDoesNotReportALayerWhosePositiveCriteriaMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itJudgesATemplateExcludeClauseOnceAcrossEveryInstance
@@ -5711,6 +5736,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDeduplicatesRepeatedAttributeAndRelationEdges
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIgnoresDependencyTypesOtherThanExtendsImplementsAndAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIncludesInterfacesInheritedFromAParentClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsAClassAndTheNamespaceOfItsOwnNameApart
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itMemoizesTheBuiltContextAcrossRepeatedCalls
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itResetsCachedContextsWhenTheGraphIsRebound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itSwitchesBackToAMinimalContextWhenTheGraphIsUnbound
@@ -5861,6 +5887,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itNamesTheLayersAnExcludeClauseRemovedAClassFrom
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPopulatesTheSharedMatchCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPreservesDeclarationOrderInLayerNames
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itRefusesAGraphBackedCriterionAfterTheGraphIsUnbound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsEmptyForAnEmptyLayerList
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsNotEmptyWhenLayersArePresent
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itResolvesANamespaceOnlyPath
@@ -5875,10 +5902,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheConfiguredDefinitionsListInOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheInjectedContextFactoryInstance
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheLayerNameForASingleMatchingLayer
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheRegistryToNoGraphModeWhenBoundToNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheSameNegativeResultFromTheCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itRoutesANamespaceAndItsClassToTheSameLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itSharesTheSameCacheBetweenResolveAllAndResolveLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillAnswersAPatternLayerWithNoGraphBound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillResolvesAnExcludedClassToNoLayerAtAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itThrowsOnConstructionWithDuplicateLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsANameVariableBoundByOneOfMultiplePatterns
@@ -5976,7 +6003,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itIgnoresATrailingBackslashInANonCaptureFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itKeepsATupleWhenAtLeastOneClassSurvivesExclusion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itNarrowsTheTupleSetBySuffixUnderMatchAll
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesAPatternOnlyTemplateWithAnUnboundFactory
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesOnlyTheActualCombinationsForAMultiVariableTemplate
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRefusesAGraphBackedCriterionWhenTheFactoryIsUnbound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRequiresEveryDeclaredExcludeKindToMatchUnderModeAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListForAnEmptyClassSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListWhenNoClassMatches
@@ -7158,102 +7187,87 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: onset below captured"
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: tie between float and int promotes to float"
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itPicksTheBoundaryBaselineUpdateMayWidenTowards"lower: tie between int and float promotes to float"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itAgreesWithTheMatcherThatAppliesTheValue
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"brace"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"bracket"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"empty"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"plain literal"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"question mark"
- - Qualimetrix\Tests\Core\Unit\Util\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"star"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsEmptyReturnsFalseWhenPrefixesExist
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsEmptyReturnsTrueForEmptyPrefixes
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"empty string"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"plain namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"single segment"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"trailing backslash"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"char class"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"double star"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"multiple wildcards"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"question mark"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"single star"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"star in middle"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsFalse"different namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsFalse"empty prefix is skipped"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsFalse"glob: no match"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsFalse"partial prefix boundary"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsFalse"sibling namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsNullForEmptyNamespace
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsNullForEmptyPrefixes
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsNullForZeroMatches
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPrefixesMatch
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPrefix
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTheNormalizedPatternWhenItHasATrailingBackslash
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"exact match"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard matches namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"multiple prefixes second matches"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches child namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches deeply nested namespace"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesReturnsTrue"trailing backslash normalization"
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleGlobCharClass
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleGlobNoMatch
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleGlobQuestionMark
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleGlobStarMiddle
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleGlobStarWildcard
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSinglePrefixChild
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSinglePrefixDeeplyNested
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSinglePrefixDoesNotMatchSibling
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSinglePrefixExact
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSinglePrefixRespectsNamespaceBoundary
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyNamespace
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyPattern
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseWhenBothEmpty
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashForInstancePatternsToo
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashInGlobMode
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashInPrefixMode
- - Qualimetrix\Tests\Core\Unit\Util\NamespaceMatcherTest::itTreatsAnAllBackslashPatternAsEmpty
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itIsEmptyReturnsFalseWhenPatternsExist
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itIsEmptyReturnsTrueForEmptyPatterns
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"glob: filename pattern mismatch"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"glob: no match"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: boundary check"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: different directory"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: empty pattern is skipped"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: sibling file"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsNullForEmptyPatterns
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsNullForZeroMatches
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPattern
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: filename pattern"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: question mark wildcard"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: recursive pattern"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: star matches file in directory"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: star matches nested file"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"mixed: glob pattern matches"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"mixed: prefix pattern matches"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches file inside"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches itself"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches nested file"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: exact file match"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: multiple patterns second matches"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on file path"
- - Qualimetrix\Tests\Core\Unit\Util\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on pattern"
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itAddsEveryStringFromAddAll
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itAddsUniqueStrings
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itCombinesBothSetsInUnion
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itDedupesARepeatedAdd
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itDedupesAnArrayIntoASetInFromArray
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itIsEmptyForAnEmptySet
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itIsNotEmptyForANonEmptySet
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itKeepsOnlyElementsMatchingThePredicateInFilter
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsANewInstanceFromAdd
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsAnIndexedArrayFromToArray
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsElementsAbsentFromTheOtherSetInDiff
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsFalseFromContainsForAMissingString
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsOnlyElementsCommonToBothSetsInIntersect
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itReturnsTheSameInstanceWhenAddingADuplicate
- - Qualimetrix\Tests\Core\Unit\Util\StringSetTest::itYieldsEveryStringWhenIterated
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itAgreesWithTheMatcherThatAppliesTheValue
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"brace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"bracket"
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"empty"
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"plain literal"
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"question mark"
+ - Qualimetrix\Tests\Core\Unit\Pattern\GlobSyntaxTest::itRecognisesAGlobByItsCharacters"star"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsEmptyReturnsFalseWhenPrefixesExist
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsEmptyReturnsTrueForEmptyPrefixes
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"empty string"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"plain namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"single segment"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsFalseForLiteralPatterns"trailing backslash"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"char class"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"double star"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"multiple wildcards"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"question mark"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"single star"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"star in middle"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"different namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"empty prefix is skipped"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"glob: no match"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"partial prefix boundary"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsFalse"sibling namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForEmptyNamespace
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForEmptyPrefixes
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsNullForZeroMatches
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPrefixesMatch
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPrefix
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTheNormalizedPatternWhenItHasATrailingBackslash
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"exact match"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard matches namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"multiple prefixes second matches"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches child namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches deeply nested namespace"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesReturnsTrue"trailing backslash normalization"
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobCharClass
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobNoMatch
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobQuestionMark
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobStarMiddle
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleGlobStarWildcard
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixChild
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixDeeplyNested
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixDoesNotMatchSibling
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixExact
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSinglePrefixRespectsNamespaceBoundary
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyNamespace
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyPattern
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itMatchesSingleReturnsFalseWhenBothEmpty
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashForInstancePatternsToo
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashInGlobMode
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itNormalizesTrailingBackslashInPrefixMode
+ - Qualimetrix\Tests\Core\Unit\Pattern\NamespaceMatcherTest::itTreatsAnAllBackslashPatternAsEmpty
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itIsEmptyReturnsFalseWhenPatternsExist
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itIsEmptyReturnsTrueForEmptyPatterns
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"glob: filename pattern mismatch"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"glob: no match"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: boundary check"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: different directory"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: empty pattern is skipped"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsFalse"prefix: sibling file"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsNullForEmptyPatterns
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsNullForZeroMatches
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPattern
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: filename pattern"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: question mark wildcard"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: recursive pattern"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: star matches file in directory"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: star matches nested file"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"mixed: glob pattern matches"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"mixed: prefix pattern matches"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches file inside"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches itself"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: directory matches nested file"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: exact file match"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: multiple patterns second matches"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on file path"
+ - Qualimetrix\Tests\Core\Unit\Pattern\PathMatcherTest::itMatchesReturnsTrue"prefix: trailing slash normalization on pattern"
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReportsTheVersionOfTheQualimetrixPackage
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReturnsANonEmptyVersionString
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itCachesAstFromTheSameSnapshotUsedForKeyGeneration

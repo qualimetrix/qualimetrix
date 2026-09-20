@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
  * Pins the behavior of {@see TupleExtractor} extracted from
@@ -33,6 +35,51 @@ final class TupleExtractorTest extends TestCase
     protected function setUp(): void
     {
         $this->extractor = new TupleExtractor();
+    }
+
+    #[Test]
+    public function itRefusesAGraphBackedCriterionWhenTheFactoryIsUnbound(): void
+    {
+        // The defect this guard exists for lived here: observation under
+        // `match: all` asking an unbound factory what a class extends, being
+        // told "nothing", and expanding the template to zero layers. The
+        // helper below binds a graph, so this case builds its own set.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                extends: ['App\\Domain\\AggregateRoot'],
+                mode: MatchMode::All,
+            ),
+        );
+
+        $unbound = new ClassSet(
+            [SymbolPath::forClass('App\\Module\\Order\\Domain', 'Order')],
+            new ClassContextFactory(),
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Layer criteria extends');
+
+        $this->extractor->collect($template, $unbound);
+    }
+
+    #[Test]
+    public function itObservesAPatternOnlyTemplateWithAnUnboundFactory(): void
+    {
+        // The other half: a template that asks nothing of the graph must keep
+        // working unbound, or the guard would have outlawed the whole mode.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(patterns: ['App\\Module\\{module}\\Domain\\**']),
+        );
+
+        $unbound = new ClassSet(
+            [SymbolPath::forClass('App\\Module\\Order\\Domain', 'Order')],
+            new ClassContextFactory(),
+        );
+
+        self::assertSame([['module' => 'Order']], $this->extractor->collect($template, $unbound));
     }
 
     #[Test]
@@ -431,6 +478,13 @@ final class TupleExtractorTest extends TestCase
             $classes[] = SymbolPath::forClass($namespace, $shortName);
         }
 
-        return new ClassSet($classes, new ClassContextFactory());
+        // Bound to an empty graph, not left unbound: an unbound factory reports
+        // every class as having no parents, interfaces or attributes, and a
+        // case written here that declares one of those criteria would be green
+        // for that reason alone.
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(AdjacencyGraphBuilder::empty());
+
+        return new ClassSet($classes, $factory);
     }
 }

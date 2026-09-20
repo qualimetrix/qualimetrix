@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Walks a {@see ClassSet} once and collects the distinct observed binding
@@ -208,6 +208,13 @@ final class TupleExtractor
      */
     private static function matchAllNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
     {
+        LayerCriteriaMatcher::refuseUnbackedCriteria(
+            $context,
+            $membership->attributes,
+            $membership->implements,
+            $membership->extends,
+        );
+
         if ($membership->suffix !== [] && !self::matchesAnySuffix($membership->suffix, $context->shortName)) {
             return false;
         }

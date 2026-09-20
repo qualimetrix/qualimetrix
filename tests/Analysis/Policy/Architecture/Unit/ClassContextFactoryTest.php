@@ -35,6 +35,10 @@ final class ClassContextFactoryTest extends TestCase
         self::assertSame([], $context->attributeFqns);
         self::assertSame([], $context->interfaces);
         self::assertSame([], $context->parentClasses);
+        self::assertFalse(
+            $context->graphBacked,
+            'Three empty lists with no graph behind them are the absence of an answer, not one.',
+        );
     }
 
     #[Test]
@@ -50,6 +54,30 @@ final class ClassContextFactoryTest extends TestCase
         self::assertSame([], $context->attributeFqns);
         self::assertSame([], $context->interfaces);
         self::assertSame([], $context->parentClasses);
+        self::assertTrue(
+            $context->graphBacked,
+            'A namespace has no attributes, interfaces or parents — with a graph bound that is an answer, '
+            . 'and a graph-backed criterion asked about it must get a non-match rather than a refusal.',
+        );
+    }
+
+    #[Test]
+    public function itKeepsAClassAndTheNamespaceOfItsOwnNameApart(): void
+    {
+        // Both resolve to the same FQN. Whichever was asked for first used to
+        // answer for the other, and observation now warms the cache before any
+        // runtime lookup, so it would always be the class that lost.
+        $command = SymbolPath::forClass('App\\Console', 'Command');
+        $base = SymbolPath::forClass('App\\Console', 'Base');
+
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(self::graphWith([[$command, $base, DependencyType::Extends]]));
+
+        $namespaceContext = $factory->build(SymbolPath::forNamespace('App\\Console\\Command'));
+        self::assertSame([], $namespaceContext->parentClasses);
+
+        $classContext = $factory->build($command);
+        self::assertSame(['App\\Console\\Base'], $classContext->parentClasses);
     }
 
     #[Test]

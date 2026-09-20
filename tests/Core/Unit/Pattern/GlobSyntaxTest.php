@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Core\Unit\Util;
+namespace Qualimetrix\Tests\Core\Unit\Pattern;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Util\GlobSyntax;
-use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\GlobSyntax;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * The alphabet, and the property that makes one copy of it worth having.

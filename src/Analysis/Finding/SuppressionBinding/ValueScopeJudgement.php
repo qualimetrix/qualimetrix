@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
-use Qualimetrix\Core\Util\GlobSyntax;
+use Qualimetrix\Core\Pattern\GlobSyntax;
 
 /**
  * Whether this run is wide enough to judge one configured value.

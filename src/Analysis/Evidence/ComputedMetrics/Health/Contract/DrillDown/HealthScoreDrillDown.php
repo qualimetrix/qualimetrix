@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Shared logic for namespace-level drill-down: health scores and worst classes.

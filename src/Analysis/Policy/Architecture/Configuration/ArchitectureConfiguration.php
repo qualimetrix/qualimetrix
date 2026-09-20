@@ -162,8 +162,8 @@ final readonly class ArchitectureConfiguration
 
     /**
      * Returns true if at least one entry is a {@see TemplateLayerDefinition}.
-     * Used by {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} to decide
-     * whether to invoke the {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}.
+     * The answer decides whether a run pays for expansion at all — a
+     * template-free configuration never walks the class universe.
      */
     public function hasTemplates(): bool
     {
@@ -197,9 +197,9 @@ final readonly class ArchitectureConfiguration
      * sub-namespace — an inversion the {@code architecture-domain} layer in
      * qmx.yaml now rejects outright (ADR 0016).
      *
-     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory}
-     * so the rule's {@code bindGraph()} invocation reaches the same factory
-     * instance that backs every expanded layer's membership matching.
+     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory},
+     * which by this point is already bound to the run's graph: the expanded
+     * layers match against the very contexts observation derived them from.
      *
      * @param list<LayerDefinition> $expandedLayers
      * @param list<string> $emptyTemplateNames

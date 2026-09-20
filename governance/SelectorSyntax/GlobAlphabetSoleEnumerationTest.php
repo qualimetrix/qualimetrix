@@ -19,7 +19,7 @@ use SplFileInfo;
 final class GlobAlphabetSoleEnumerationTest extends TestCase
 {
     /** The only file allowed to enumerate the glob characters. */
-    private const string SOURCE_OF_TRUTH = 'src/Core/Util/GlobSyntax.php';
+    private const string SOURCE_OF_TRUTH = 'src/Core/Pattern/GlobSyntax.php';
 
     /** A `str_contains()` test for `?` — the middle character of any restated alphabet. */
     private const string RESTATED_ALPHABET = '/str_contains\([^)]*,\s*\'\?\'\s*\)/';

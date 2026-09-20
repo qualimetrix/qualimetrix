@@ -230,6 +230,9 @@ Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	16	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	85	23
+Qualimetrix\Core\Pattern\GlobSyntax	Core.Neutral	1	1
+Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	13	6
+Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	6	2
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
@@ -246,10 +249,6 @@ Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	70	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
-Qualimetrix\Core\Util\GlobSyntax	Core.Neutral	1	1
-Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	13	6
-Qualimetrix\Core\Util\PathMatcher	Core.Neutral	6	2
-Qualimetrix\Core\Util\StringSet	Core.Neutral	2	1
 Qualimetrix\Core\Version	Core.Neutral	9	2
 Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	2	2
 Qualimetrix\Infrastructure\Ast\PhpFileParser	Infrastructure.Ast	2	2
