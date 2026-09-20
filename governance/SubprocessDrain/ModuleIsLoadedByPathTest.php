@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
 
+require_once __DIR__ . '/NameOccurrence.php';
+require_once __DIR__ . '/PhpFilePopulation.php';
+
 /**
  * Every file that calls the subprocess module must also `require_once` it by
  * path.
@@ -59,10 +62,13 @@ use Qualimetrix\Subprocess\ChildProcess;
  * to a textual needle, and so is a call reached through a variable class name.
  * Neither spelling exists in the tree today; the enumeration swept for them.
  *
- * A differently-cased spelling is *not* a gap: the scan folds case, because PHP
- * resolves class and method names without regard to it. The tree spells every
- * call in the class's own casing today, so the fold changes no answer here and
- * is measured on text this control writes instead.
+ * A differently-cased spelling is *not* a gap: the match belongs to
+ * {@see NameOccurrence} and folds case, because PHP resolves class and method
+ * names without regard to it. The tree spells every call in the class's own
+ * casing today, so the fold changes no answer here and is measured on text this
+ * control writes instead. That measures behaviour, not delegation: a copy of
+ * the scan written back into this file would answer the same. Keeping the
+ * group to one scan is {@see ScanIsNotReimplementedTest}'s subject.
  *
  * The comment exemption is unchanged, and it now reaches a docblock whatever
  * casing it uses. That widens the set of texts it could excuse rather than
@@ -179,6 +185,79 @@ final class ModuleIsLoadedByPathTest extends TestCase
         );
     }
 
+    /**
+     * The same rule, for this group's own support classes.
+     *
+     * They were autoloaded until the scan moved into one of them, and that put
+     * the mechanism back within reach of the hazard this control exists for: a
+     * scratch project symlinks `vendor/`, whose PSR-4 map holds absolute paths
+     * into the source tree, so an autoloaded class resolves there and the copy
+     * under test is never read. Measured on such a stand, a mutation of the
+     * copy was ignored and the stand was green on a broken scan.
+     *
+     * The `require_once` calls that fixed it were a convention nothing
+     * enforced, which is exactly the state this control was written to end for
+     * the module — four callers had already dropped it while three documents
+     * still said every caller carried it. A convention nothing enforces is a
+     * claim about a set that drifts, and the set is small enough here that
+     * there is no excuse for leaving it unchecked.
+     *
+     * A file is asked for the classes it actually names, so a control using
+     * only one of them owes only that one.
+     */
+    #[Test]
+    public function itRefusesAGroupFileThatDoesNotRequireItsSupportClassesByPath(): void
+    {
+        $group = 'governance/SubprocessDrain/';
+        $supportClasses = ['NameOccurrence', 'PhpFilePopulation'];
+        $refused = [];
+
+        foreach (PhpFilePopulation::paths() as $path) {
+            if (!str_starts_with($path, $group)) {
+                continue;
+            }
+
+            $absolute = PhpFilePopulation::root() . '/' . $path;
+            $contents = (string) file_get_contents($absolute);
+            $directory = \dirname($absolute);
+
+            $resolved = [];
+
+            foreach (self::requireOnceExpressions($contents) as $expression) {
+                $reached = self::resolve($expression, $directory);
+
+                if ($reached !== null) {
+                    $resolved[$reached] = true;
+                }
+            }
+
+            foreach ($supportClasses as $class) {
+                $file = $group . $class . '.php';
+
+                if ($path === $file || !str_contains($contents, $class . '::')) {
+                    continue;
+                }
+
+                $target = realpath(PhpFilePopulation::root() . '/' . $file);
+
+                if ($target === false || isset($resolved[$target])) {
+                    continue;
+                }
+
+                $refused[] = $path . ' names ' . $class . ' but requires no path that reaches ' . $file;
+            }
+        }
+
+        self::assertSame(
+            [],
+            $refused,
+            'A file in this group reaches one of the group\'s own support classes through the autoloader alone. '
+            . 'In an isolated scratch project that resolves back to this tree through a symlinked `vendor/`, so '
+            . 'the copy under test is never executed and a broken copy measures green. Add '
+            . '`require_once __DIR__ . \'/<Class>.php\';` beside the others.',
+        );
+    }
+
     #[Test]
     public function itRefusesACallerThatDoesNotRequireTheModuleByPath(): void
     {
@@ -261,38 +340,20 @@ final class ModuleIsLoadedByPathTest extends TestCase
     }
 
     /**
-     * Each call outside a comment, as the bytes the file actually carries.
-     *
-     * The spelling is read out of the original at the offset found in the
-     * folded copy, which is what makes a fold that does not preserve byte
-     * length observable: any shift at all reports the wrong bytes. The boolean
-     * above cannot show that on its own — a shifted offset still lands on some
-     * token, and whether the answer flips depends on how far the next token
-     * boundary happens to be.
+     * This control's own reading of {@see NameOccurrence}: it needs only the
+     * bytes each call is written with, because that is what makes a fold that
+     * does not preserve byte length observable — a spelling comes back shifted
+     * the moment an offset is off, while the boolean above would only flip once
+     * a shift crossed a token boundary.
      *
      * @return list<string>
      */
     private static function callOccurrencesIn(string $contents): array
     {
-        $folded = strtolower($contents);
-
-        if (!str_contains($folded, self::CALL_NEEDLE)) {
-            return [];
-        }
-
-        $tokens = PhpToken::tokenize($contents);
-        $offset = 0;
         $found = [];
 
-        while (($at = strpos($folded, self::CALL_NEEDLE, $offset)) !== false) {
-            $offset = $at + \strlen(self::CALL_NEEDLE);
-            $token = self::tokenAt($tokens, $at);
-
-            if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
-                continue;
-            }
-
-            $found[] = substr($contents, $at, \strlen(self::CALL_NEEDLE));
+        foreach (NameOccurrence::findIn($contents, [self::CALL_NEEDLE]) as $occurrence) {
+            $found[] = $occurrence->spelled;
         }
 
         return $found;
@@ -370,28 +431,5 @@ final class ModuleIsLoadedByPathTest extends TestCase
         $path = realpath($base . $matches['suffix']);
 
         return $path === false ? null : $path;
-    }
-
-    /**
-     * The token the byte at `$offset` belongs to. A token's own `line` is where
-     * it starts, which for a nowdoc is several lines above the text inside it,
-     * so the token is consulted only for what kind of thing the occurrence sits
-     * in.
-     *
-     * @param array<PhpToken> $tokens
-     */
-    private static function tokenAt(array $tokens, int $offset): ?PhpToken
-    {
-        foreach ($tokens as $token) {
-            if ($token->pos > $offset) {
-                return null;
-            }
-
-            if ($offset < $token->pos + \strlen($token->text)) {
-                return $token;
-            }
-        }
-
-        return null;
     }
 }

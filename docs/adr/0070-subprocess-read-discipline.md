@@ -221,6 +221,28 @@ for whatever moves into that path later.
   file and line, the caller scan by file — and the standing cases are what keep
   that true afterwards.
 
+  The match itself is one class both controls read the tree through, beside the
+  population they already shared, and for the same reason that one is shared:
+  two copies agree today and drift apart on the next change to either. That was
+  not hypothetical — the copies were byte-identical when this fold landed, and
+  the follow-up fix had to be found twice, once per copy, because repairing one
+  said nothing about the other.
+
+  The group's own support classes are required by path too, not only the
+  module. The reason is the module's reason unchanged — a scratch project
+  symlinks `vendor/`, so an autoloaded class resolves back into the source tree
+  and a mutated copy is never read — and it started to apply the moment this
+  mechanism left the control files, which PHPUnit loads by path regardless.
+  Measured on such a stand in both directions.
+
+  Each control keeps its own case anyway, and those cases measure behaviour
+  rather than delegation: a copy of the scan pasted back into a control
+  satisfies them, measured. Staying at one scan is therefore its own control,
+  which refuses any file in the group that folds a file's case or finds the
+  token at an offset for itself. It fences the two forms that were actually
+  duplicated rather than proving no third is possible, and it names its
+  exemption — the scan — by file rather than by shape.
+
   Those cases pin the fold to `strtolower` rather than to lowercasing in
   general. Offsets are found in the folded copy and read back out of the
   original, so a fold that does not preserve byte length reads the wrong bytes.
