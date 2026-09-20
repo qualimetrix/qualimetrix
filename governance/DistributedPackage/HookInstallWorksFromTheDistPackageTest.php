@@ -106,7 +106,16 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     private static function copyVendor(string $package): void
     {
         self::capture(['cp', '-R', self::projectRoot() . '/vendor', $package . '/vendor']);
-        self::capture(['composer', 'dump-autoload', '--no-dev', '--no-scripts', '--no-interaction', '--quiet', '-d', $package]);
+
+        // Composer exports its own path when it runs a script, which is how
+        // this control reaches it under `composer test`; a bare name is for
+        // running phpunit directly.
+        $composer = getenv('COMPOSER_BINARY');
+
+        self::capture([
+            \is_string($composer) && $composer !== '' ? $composer : 'composer',
+            'dump-autoload', '--no-dev', '--no-scripts', '--no-interaction', '--quiet', '-d', $package,
+        ]);
     }
 
     /**
@@ -127,6 +136,13 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     {
         self::assertTrue(mkdir($path, 0777, true));
         self::capture(['git', 'init', '--quiet', $path]);
+
+        // `init.templateDir` can leave a repository without one, and the
+        // command refuses when the directory is missing — which would read
+        // here as a defect in the command rather than in this fixture.
+        if (!is_dir($path . '/.git/hooks')) {
+            self::assertTrue(mkdir($path . '/.git/hooks', 0777, true));
+        }
     }
 
     /**
