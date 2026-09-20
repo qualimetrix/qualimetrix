@@ -203,8 +203,11 @@ this ADR does fix.
 
 P4 of the implementation plan declared, rather than retired, the finding-gate
 rows this change moves — a declared row is only valid against **one**
-reference, and while this change is unmerged that reference is still the
-commit it starts from (`ad878c13`). Measured against the tracked files at the
+reference, and while this change is unmerged that reference is whichever
+commit on `main` it currently sits on top of. Measured GREEN against two of
+them in turn — `ad878c13`, where the rows were derived, and the later `main`
+this branch was updated onto — so the rows survive the branch being refreshed;
+what retires them is the merge, not a rebase. Measured against the tracked files at the
 time of this decision: 13 data rows in `finding-gate/declared-delta.tsv`,
 each paired with one file under `finding-gate/declared-delta/*.diff` (13
 files), and 8 data rows in `finding-gate/declared-field-moves.tsv`.
