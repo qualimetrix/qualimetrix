@@ -47,10 +47,13 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      */
     private function findViaGitCommand(AbsolutePath $workingDir): ?AbsolutePath
     {
+        // stdin is never opened (git needs none) and stderr goes to a file
+        // instead of a pipe (it is never read): with a single stdout pipe,
+        // the child cannot block on an unread descriptor while this process
+        // waits for stdout, so no read/write ordering can deadlock.
         $descriptors = [
-            0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
+            2 => ['file', '/dev/null', 'w'],
         ];
 
         $process = @proc_open(
@@ -64,10 +67,8 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             return null;
         }
 
-        fclose($pipes[0]);
         $output = trim((string) stream_get_contents($pipes[1]));
         fclose($pipes[1]);
-        fclose($pipes[2]);
 
         $exitCode = proc_close($process);
 
