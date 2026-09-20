@@ -3221,7 +3221,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -3937,7 +3937,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -12309,10 +12309,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
         },
         {
@@ -12430,10 +12426,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
         },
         {
           "owner": "Infrastructure.Console",
@@ -12785,18 +12777,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         },
         {
@@ -12810,6 +12790,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FormatterContext"
+        },
+        {
+          "owner": "Infrastructure.Git",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitRepositoryLocator"
         }
       ]
     },
@@ -13701,10 +13685,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -15007,6 +14987,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand": {
+      "path": "src/Infrastructure/Console/Command/AbstractHookCommand.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCaptureReporter": {
       "path": "src/Infrastructure/Console/Command/BaselineCaptureReporter.php",
       "kind": "class",
@@ -15275,6 +15262,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Hook\\PreCommitHook": {
+      "path": "src/Infrastructure/Console/Hook/PreCommitHook.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand": {
       "path": "src/Infrastructure/Console/Command/RulesCommand.php",
@@ -15633,6 +15627,40 @@
           "operations": [
             "service_reference",
             "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunningBinaryLocator": {
+      "path": "src/Infrastructure/Console/RunningBinaryLocator.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_alias",
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunningBinaryLocatorInterface": {
+      "path": "src/Infrastructure/Console/RunningBinaryLocatorInterface.php",
+      "kind": "interface",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_alias"
           ]
         }
       ]
@@ -16012,15 +16040,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
         },
         {
           "owner": "Infrastructure.DependencyInjection",

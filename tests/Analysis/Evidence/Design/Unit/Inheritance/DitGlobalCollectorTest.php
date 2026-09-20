@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -18,6 +19,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
@@ -25,6 +27,13 @@ use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 #[CoversClass(DitGlobalCollector::class)]
 final class DitGlobalCollectorTest extends TestCase
 {
+    /**
+     * Seeded in place of the per-file depth so that an assertion of 0 proves
+     * the global pass wrote it, rather than reading back its own fixture.
+     * The guard only tests presence, so the magnitude is free.
+     */
+    private const int UNWRITTEN = 99;
+
     private DitGlobalCollector $collector;
 
     protected function setUp(): void
@@ -67,7 +76,7 @@ final class DitGlobalCollectorTest extends TestCase
         $graph = $this->graph([]);
 
         $path = SymbolPath::forClass('App', 'Root');
-        $repository->add($path, new MetricBag(), RelativePath::fromString('root.php'), 1);
+        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('root.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -91,7 +100,7 @@ final class DitGlobalCollectorTest extends TestCase
             ]);
 
             $path = SymbolPath::forClass('App', 'Local');
-            $repository->add($path, new MetricBag(), RelativePath::fromString('local.php'), 1);
+            $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('local.php'), 1);
 
             $this->collector->calculate($graph, $repository);
 
@@ -116,7 +125,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $repository->add($path, new MetricBag(), RelativePath::fromString('ex.php'), 1);
+        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('ex.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -134,7 +143,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, (new MetricBag())->with('design.dit', 0), RelativePath::fromString('gp.php'), 1);
+        $repository->add($grandparentPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('gp.php'), 1);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
         $repository->add($parentPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('p.php'), 1);
@@ -161,7 +170,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $repository->add($aPath, (new MetricBag())->with('design.dit', 0), RelativePath::fromString('a.php'), 1);
+        $repository->add($aPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('a.php'), 1);
 
         $bPath = SymbolPath::forClass('App', 'B');
         $repository->add($bPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('b.php'), 1);
@@ -192,13 +201,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, new MetricBag(), RelativePath::fromString('b.php'), 1);
+        $repository->add($bPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('b.php'), 1);
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, new MetricBag(), RelativePath::fromString('c.php'), 1);
+        $repository->add($cPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('c.php'), 1);
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, new MetricBag(), RelativePath::fromString('d.php'), 1);
+        $repository->add($dPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('d.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -216,7 +225,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', 0), RelativePath::fromString('p.php'), 1);
+        $repository->add($parentPath, (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', self::UNWRITTEN), RelativePath::fromString('p.php'), 1);
 
         $childPath = SymbolPath::forClass('App', 'Child');
         $repository->add($childPath, (new MetricBag())->with('complexity.wmc', 5)->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
@@ -240,19 +249,62 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $componentPath = SymbolPath::forClass('Vendor\\Core', 'Component');
-        $repository->add($componentPath, new MetricBag(), RelativePath::fromString('comp.php'), 1);
+        $repository->add($componentPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('comp.php'), 1);
 
         $abstractPath = SymbolPath::forClass('Vendor\\Base', 'AbstractHandler');
-        $repository->add($abstractPath, new MetricBag(), RelativePath::fromString('abs.php'), 1);
+        $repository->add($abstractPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('abs.php'), 1);
 
         $handlerPath = SymbolPath::forClass('App\\Service', 'Handler');
-        $repository->add($handlerPath, new MetricBag(), RelativePath::fromString('handler.php'), 1);
+        $repository->add($handlerPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('handler.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
         self::assertSame(0, $repository->get($componentPath)->get('design.dit'));
         self::assertSame(1, $repository->get($abstractPath)->get('design.dit'));
         self::assertSame(2, $repository->get($handlerPath)->get('design.dit'));
+    }
+
+    #[Test]
+    public function itOwnsTheDitMetricDefinition(): void
+    {
+        $definitions = $this->collector->getMetricDefinitions();
+
+        self::assertCount(1, $definitions);
+
+        $def = $definitions[0];
+        self::assertSame('design.dit', $def->name);
+        self::assertSame(SymbolLevel::Class_, $def->collectedAt);
+
+        foreach ([SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+            $strategies = $def->getStrategiesForLevel($level);
+            self::assertContains(AggregationStrategy::Average, $strategies);
+            self::assertContains(AggregationStrategy::Max, $strategies);
+            self::assertContains(AggregationStrategy::Percentile95, $strategies);
+        }
+    }
+
+    #[Test]
+    public function itLeavesSymbolsTheFilePassNeverMeasuredAlone(): void
+    {
+        // The file pass measures named class declarations only, so its keys are
+        // DIT's population. An interface reaches the repository as a class-level
+        // symbol without one, and must not be given a depth here -- doing so
+        // moves the denominator of every aggregate.
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\Impl', 'App\\Contract'),
+        ]);
+
+        $measured = SymbolPath::forClass('App', 'Impl');
+        $repository->add($measured, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('impl.php'), 1);
+
+        $unmeasured = SymbolPath::forClass('App', 'Contract');
+        $repository->add($unmeasured, new MetricBag(), RelativePath::fromString('contract.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->get($measured)->get('design.dit'));
+        self::assertNull($repository->get($unmeasured)->get('design.dit'));
     }
 
     /** @param list<Dependency> $dependencies */

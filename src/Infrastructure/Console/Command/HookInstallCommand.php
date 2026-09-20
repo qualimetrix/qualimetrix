@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Phar;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
-use RuntimeException;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -20,14 +14,8 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'hook:install',
     description: 'Install git pre-commit hook for Qualimetrix',
 )]
-final class HookInstallCommand extends Command
+final class HookInstallCommand extends AbstractHookCommand
 {
-    public function __construct(
-        private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
-    ) {
-        parent::__construct();
-    }
-
     protected function configure(): void
     {
         $this->addOption(
@@ -40,77 +28,33 @@ final class HookInstallCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Two independent reasons, so this is a refusal rather than a repair:
-        // nothing can symlink into an archive, and building the script's path
-        // reaches AbsolutePath with a "phar://" prefix it rejects, which
-        // surfaced as an invariant message naming a path nobody wrote.
-        //
-        // The message does not send the reader to Composer. `/scripts/` is
-        // export-ignored, so an installed package carries no hook script
-        // either and answers "Hook script not found" — measured, not assumed.
-        if (Phar::running(false) !== '') {
-            $output->writeln('<error>hook:install is not available from the phar.</error>');
-            $output->writeln('The hook is a symlink to a shell script, which cannot point inside an archive.');
-            $output->writeln('Write .git/hooks/pre-commit by hand, calling this archive on the staged files.');
-
+        $hookPath = $this->hookPath($output);
+        if ($hookPath === null) {
             return self::FAILURE;
         }
 
-        // Find .git directory
-        $gitDir = $this->gitRepositoryLocator->findGitDir();
-        if ($gitDir === null) {
-            $output->writeln('<error>Not a git repository. Initialize git first with: git init</error>');
-
-            return self::FAILURE;
-        }
-
-        // Check if .git/hooks directory exists
-        $hooksDir = $gitDir->joinRelative(RelativePath::fromString('hooks'))->value();
-        if (!is_dir($hooksDir)) {
-            $output->writeln('<error>Git hooks directory not found: ' . $hooksDir . '</error>');
-
-            return self::FAILURE;
-        }
-
-        $hookPath = $hooksDir . '/pre-commit';
-        $scriptPath = $this->getScriptPath();
-
-        if ($scriptPath === null) {
-            $output->writeln('<error>Hook script not found: scripts/pre-commit-hook.sh</error>');
+        $binary = $this->runningBinaryLocator->path();
+        if ($binary === null) {
+            $output->writeln('<error>Could not determine the path of the running qmx binary.</error>');
+            $output->writeln('The hook has to name it, so nothing was written.');
 
             return self::FAILURE;
         }
 
         $refusal = $this->clearExistingHook($input, $output, $hookPath);
-
         if ($refusal !== null) {
             return $refusal;
         }
 
-        // Install hook using symlink (default behavior)
-        // Remove existing file/symlink first
-        if (file_exists($hookPath)) {
-            unlink($hookPath);
-        }
-
-        // Create symlink
-        $relativeScriptPath = $this->getRelativePath($hooksDir, $scriptPath);
-        if (!symlink($relativeScriptPath, $hookPath)) {
-            $output->writeln('<error>Failed to create symlink</error>');
+        if (!$this->write($hookPath, PreCommitHook::script($binary))) {
+            $output->writeln('<error>Failed to write hook: ' . $hookPath . '</error>');
 
             return self::FAILURE;
         }
 
-        $output->writeln('<info>✓ Pre-commit hook installed (symlink)</info>');
-
-        // Make hook executable
-        if (!chmod($hookPath, 0755)) {
-            $output->writeln('<error>Failed to make hook executable</error>');
-
-            return self::FAILURE;
-        }
-
+        $output->writeln('<info>✓ Pre-commit hook installed</info>');
         $output->writeln(\sprintf('Hook path: %s', $hookPath));
+        $output->writeln(\sprintf('Runs: %s', $binary));
         $output->writeln('');
         $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
         $output->writeln('To bypass the hook, use: git commit --no-verify');
@@ -125,7 +69,12 @@ final class HookInstallCommand extends Command
      */
     private function clearExistingHook(InputInterface $input, OutputInterface $output, string $hookPath): ?int
     {
-        if (!file_exists($hookPath)) {
+        // A dangling symlink is a hook: `file_exists` follows the link and
+        // says false for one, and earlier releases installed the hook as a
+        // symlink into a script this package no longer carries. Treating that
+        // as "no hook" would write through the link and recreate the script
+        // outside the hooks directory.
+        if (!self::hookExists($hookPath)) {
             return null;
         }
 
@@ -134,6 +83,50 @@ final class HookInstallCommand extends Command
             $output->writeln('Use --force to overwrite.');
 
             return self::FAILURE;
+        }
+
+        $refusal = $this->backUp($output, $hookPath);
+
+        if ($refusal !== null) {
+            return $refusal;
+        }
+
+        // The link itself, not what it points at: `rename()` would replace the
+        // target through it and leave the repository pointing at a file that
+        // no longer belongs there.
+        if (is_link($hookPath) && !unlink($hookPath)) {
+            $output->writeln('<error>Failed to remove existing hook</error>');
+
+            return self::FAILURE;
+        }
+
+        return null;
+    }
+
+    /**
+     * Preserves a hook that is not ours to lose.
+     *
+     * Only one that is not ours: `.backup` is a single slot, so backing up our
+     * own generated hook on a second `--force` would overwrite the user's
+     * original with a copy of something they can regenerate at will. A broken
+     * symlink has no contents to preserve either.
+     *
+     * @return int|null a command exit code to return, or null to carry on
+     */
+    private function backUp(OutputInterface $output, string $hookPath): ?int
+    {
+        if (!file_exists($hookPath)) {
+            $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
+
+            return null;
+        }
+
+        $contents = @file_get_contents($hookPath);
+
+        if ($contents !== false && PreCommitHook::isOurs($contents)) {
+            $output->writeln('<comment>Replacing a Qualimetrix hook; the existing backup is left alone.</comment>');
+
+            return null;
         }
 
         $backupPath = $hookPath . '.backup';
@@ -150,67 +143,29 @@ final class HookInstallCommand extends Command
     }
 
     /**
-     * Get absolute path to hook script.
+     * Writes the hook executable, or leaves whatever was there untouched.
      *
-     * @return string|null Absolute path or null if not found
+     * Temporary file first, then rename: a hook half-written by an
+     * interrupted run is a file git will still try to execute.
      */
-    private function getScriptPath(): ?string
+    private function write(string $hookPath, string $contents): bool
     {
-        $currentDir = getcwd();
-        if ($currentDir === false) {
-            return null;
-        }
-        $cwd = AbsolutePath::fromString($currentDir);
+        $temporaryPath = $hookPath . '.tmp.' . getmypid();
 
-        $possiblePaths = [
-            PathFactory::fromCliArgument('scripts/pre-commit-hook.sh', $cwd),
-            AbsolutePath::fromString(__DIR__ . '/../../../../scripts/pre-commit-hook.sh'),
-        ];
+        // The length, not just `false`: a full disk writes part of the file
+        // and reports how much, and a truncated hook is one git still runs.
+        if (file_put_contents($temporaryPath, $contents) !== \strlen($contents)) {
+            @unlink($temporaryPath);
 
-        foreach ($possiblePaths as $path) {
-            if (!$path->exists()) {
-                continue;
-            }
-            try {
-                return $path->canonicalize()->value();
-            } catch (RuntimeException) {
-                continue;
-            }
+            return false;
         }
 
-        return null;
-    }
+        if (!chmod($temporaryPath, 0755) || !rename($temporaryPath, $hookPath)) {
+            unlink($temporaryPath);
 
-    /**
-     * Calculate relative path from one directory to another.
-     *
-     * @param string $from Source directory
-     * @param string $to Target file/directory
-     *
-     * @return string Relative path
-     */
-    private function getRelativePath(string $from, string $to): string
-    {
-        $from = str_replace('\\', '/', $from);
-        $to = str_replace('\\', '/', $to);
-
-        $fromParts = explode('/', $from);
-        $toParts = explode('/', $to);
-
-        // Find common base
-        $common = 0;
-        $max = min(\count($fromParts), \count($toParts));
-        for ($i = 0; $i < $max; ++$i) {
-            if ($fromParts[$i] !== $toParts[$i]) {
-                break;
-            }
-            ++$common;
+            return false;
         }
 
-        // Build relative path
-        $relativePath = str_repeat('../', \count($fromParts) - $common);
-        $relativePath .= implode('/', \array_slice($toParts, $common));
-
-        return $relativePath;
+        return true;
     }
 }

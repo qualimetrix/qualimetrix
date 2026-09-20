@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -17,9 +18,12 @@ final class HookStatusCommandTest extends TestCase
 {
     private string $tempDir;
     private string $gitDir;
+    private string $originalCwd;
 
     protected function setUp(): void
     {
+        $this->originalCwd = (string) getcwd();
+
         // Create temporary directory with fake git structure
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
@@ -34,6 +38,11 @@ final class HookStatusCommandTest extends TestCase
 
     protected function tearDown(): void
     {
+        // Restored, not left behind: the command reads the working directory,
+        // so a test that changes it and does not put it back decides what the
+        // next test in the run measures.
+        chdir($this->originalCwd);
+
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
@@ -43,7 +52,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itReportsHookNotInstalled(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -73,7 +82,7 @@ final class HookStatusCommandTest extends TestCase
         symlink($tempScript, $hookPath);
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -90,14 +99,14 @@ final class HookStatusCommandTest extends TestCase
     }
 
     #[Test]
-    public function itReportsInstalledHookAsCopy(): void
+    public function itReportsInstalledHookAsAFile(): void
     {
         // Create hook as regular file
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -109,7 +118,7 @@ final class HookStatusCommandTest extends TestCase
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         self::assertStringContainsString('INSTALLED', $output);
-        self::assertStringContainsString('Copy', $output);
+        self::assertStringContainsString('Type: File', $output);
         self::assertStringContainsString('Qualimetrix', $output);
     }
 
@@ -121,7 +130,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -145,7 +154,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0644); // Not executable
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -173,7 +182,7 @@ final class HookStatusCommandTest extends TestCase
 
         file_put_contents($backupPath, "#!/bin/bash\necho 'backup'\n");
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -194,7 +203,7 @@ final class HookStatusCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -209,6 +218,33 @@ final class HookStatusCommandTest extends TestCase
     }
 
     /**
+     * What every hook installed by an earlier release became: a symlink whose
+     * target this package no longer ships. `file_exists` follows the link
+     * and answers false for it, so reporting on that alone would call a hook
+     * git still executes "NOT INSTALLED".
+     */
+    #[Test]
+    public function itReportsADanglingSymlinkRatherThanCallingItAbsent(): void
+    {
+        symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $this->gitDir . '/hooks/pre-commit');
+
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+
+        $application = new Application();
+        $application->addCommand($command);
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        self::assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        self::assertStringContainsString('INSTALLED', $output);
+        self::assertStringContainsString('Symlink', $output);
+        self::assertStringContainsString('leads nowhere', $output);
+        self::assertStringNotContainsString('NOT INSTALLED', $output);
+    }
+
+    /**
      * Recursively remove a directory.
      */
     private function removeDirectory(string $dir): void
@@ -220,7 +256,7 @@ final class HookStatusCommandTest extends TestCase
         $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+            is_dir($path) && !is_link($path) ? $this->removeDirectory($path) : unlink($path);
         }
         rmdir($dir);
     }

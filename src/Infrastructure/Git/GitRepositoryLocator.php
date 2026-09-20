@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Git;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use RuntimeException;
 
 /**
@@ -28,16 +29,38 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      */
     public function findGitDir(?AbsolutePath $workingDir = null): ?AbsolutePath
     {
+        $workingDir ??= self::currentDirectory();
+
         if ($workingDir === null) {
-            $cwd = getcwd();
-            if ($cwd === false) {
-                return null;
-            }
-            $workingDir = AbsolutePath::fromString($cwd);
+            return null;
         }
 
         return $this->findViaGitCommand($workingDir)
             ?? $this->findViaDirectoryTraversal($workingDir);
+    }
+
+    public function findHooksDir(?AbsolutePath $workingDir = null): ?AbsolutePath
+    {
+        $workingDir ??= self::currentDirectory();
+
+        if ($workingDir === null) {
+            return null;
+        }
+
+        // `--git-path hooks` is the only spelling that answers for all three
+        // of a plain repository, a `core.hooksPath` override and a linked
+        // worktree. It answers for a directory that does not exist yet, which
+        // is the right answer too: the caller decides what to do about that.
+        $answer = $this->askGit(['rev-parse', '--git-path', 'hooks'], $workingDir);
+
+        if ($answer !== null) {
+            return $answer;
+        }
+
+        // git is not on PATH. The traversal fallback cannot see
+        // `core.hooksPath`, so this is the older, narrower answer, kept
+        // because no answer at all would be worse.
+        return $this->findGitDir($workingDir)?->joinRelative(RelativePath::fromString('hooks'));
     }
 
     /**
@@ -47,17 +70,29 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      */
     private function findViaGitCommand(AbsolutePath $workingDir): ?AbsolutePath
     {
-        // stdin is never opened (git needs none) and stderr goes to a file
-        // instead of a pipe (it is never read): with a single stdout pipe,
-        // the child cannot block on an unread descriptor while this process
-        // waits for stdout, so no read/write ordering can deadlock.
+        return $this->askGit(['rev-parse', '--git-dir'], $workingDir);
+    }
+
+    /**
+     * Runs git and turns its one-line answer into an absolute path.
+     *
+     * @param list<string> $arguments
+     */
+    private function askGit(array $arguments, AbsolutePath $workingDir): ?AbsolutePath
+    {
+        // Exactly one pipe, and it is read. Nothing here consumes git's
+        // diagnostics, so handing them a pipe would be a deadlock waiting for
+        // a verbose git: once the unread pipe filled, the child would block on
+        // the write, never close its output stream, and this method would wait
+        // for an EOF that cannot arrive. `/dev/null` never fills.
         $descriptors = [
+            0 => ['file', '/dev/null', 'r'],
             1 => ['pipe', 'w'],
             2 => ['file', '/dev/null', 'w'],
         ];
 
         $process = @proc_open(
-            ['git', 'rev-parse', '--git-dir'],
+            ['git', ...$arguments],
             $descriptors,
             $pipes,
             $workingDir->value(),
@@ -76,16 +111,27 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             return null;
         }
 
-        // git rev-parse --git-dir may return a relative path; convert to absolute
+        // git rev-parse may return a relative path; convert to absolute
         try {
             $candidate = str_starts_with($output, '/')
                 ? AbsolutePath::fromString($output)
                 : AbsolutePath::fromString($workingDir->value() . '/' . $output);
 
-            return $candidate->canonicalize();
+            // Canonicalised only when it exists: `--git-path` legitimately
+            // names a directory nobody has created yet, and refusing that
+            // answer would hide a configured hooks path behind "not a git
+            // repository".
+            return $candidate->exists() ? $candidate->canonicalize() : $candidate;
         } catch (RuntimeException | InvalidArgumentException) {
             return null;
         }
+    }
+
+    private static function currentDirectory(): ?AbsolutePath
+    {
+        $cwd = getcwd();
+
+        return $cwd === false ? null : AbsolutePath::fromString($cwd);
     }
 
     /**

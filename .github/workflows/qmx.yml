@@ -442,19 +442,23 @@ jobs:
           test -s build/evidence/phar-src.txt
           diff -u build/evidence/head-src.txt build/evidence/phar-src.txt
 
-      # Not "it errors": it has to say what to do instead. The command used to
-      # fail on a path invariant naming a phar:// path the reader never wrote.
-      - name: It refuses hook:install rather than failing on an invariant
+      # This step used to assert a refusal. The command refused for two reasons
+      # — a symlink cannot point into an archive, and building the script's
+      # path reached a value object that rejects phar:// — and generating the
+      # hook removed both. What is checked now is the archive doing the work:
+      # the hook is written, it names the archive, and git runs it.
+      - name: It installs a hook that calls the archive
         run: |
           cd "$(mktemp -d)" && git init -q .
-          if php "$GITHUB_WORKSPACE/build/qmx.phar" hook:install > out.txt 2>&1; then
-            echo 'hook:install reported success from a phar'; cat out.txt; exit 1
-          fi
-          cat out.txt
-          grep -q 'not available from the phar' out.txt
-          if grep -q 'AbsolutePath' out.txt; then
-            echo 'the refusal leaked the path invariant it was meant to replace'; exit 1
-          fi
+          php "$GITHUB_WORKSPACE/build/qmx.phar" hook:install
+          grep -q 'Qualimetrix pre-commit hook' .git/hooks/pre-commit
+          grep -q "$GITHUB_WORKSPACE/build/qmx.phar" .git/hooks/pre-commit
+          test ! -L .git/hooks/pre-commit
+          printf '<?php\n\ndeclare(strict_types=1);\n\nfinal class S\n{\n    public function v(): int\n    {\n        return 1;\n    }\n}\n' > S.php
+          git add S.php
+          .git/hooks/pre-commit > hook.txt 2>&1 || true
+          cat hook.txt
+          grep -q 'Analysis complete' hook.txt
 
       - name: Keep the comparison's evidence when it fails
         if: failure()

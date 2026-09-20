@@ -6,7 +6,9 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
@@ -26,6 +28,8 @@ use Throwable;
  *
  * For classes whose parents are outside the project (not in the dependency graph),
  * PHP reflection is used as a fallback to traverse the external chain.
+ *
+ * @qmx-ignore health.cohesion -- Global-collector protocol operations are independent by contract, and the class holds no state for them to share.
  */
 final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
@@ -51,8 +55,24 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
     public function getMetricDefinitions(): array
     {
-        // DIT definitions are already declared by InheritanceDepthCollector
-        return [];
+        return [
+            new MetricDefinition(
+                name: MetricName::DESIGN_DIT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                ],
+            ),
+        ];
     }
 
     public function calculate(
@@ -69,6 +89,14 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $classFqn = $this->symbolPathToFqn($classSymbol->symbolPath);
             if ($classFqn === null) {
+                continue;
+            }
+
+            // The per-file pass measures named class declarations only, so its
+            // keys are DIT's population. Correcting every class-level symbol
+            // instead would silently enrol interfaces, traits and enums and
+            // move the denominator of every aggregate.
+            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::DESIGN_DIT)) {
                 continue;
             }
 

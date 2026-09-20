@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+**`hook:install` writes a file where it used to write a symlink.** Every hook
+installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
+is deleted; the link is now dangling and git runs nothing. Run
+`qmx hook:install --force` to replace it. `hook:status` reports the dangling
+state instead of calling the hook absent, and `hook:uninstall` refuses to
+remove a link it cannot identify rather than deleting someone else's hook.
+
 ### Changed
 
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
@@ -30,6 +39,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `hook:*` commands can no longer deadlock on git's error stream. Locating
+  the hooks directory handed that stream a pipe nothing ever read, so a `git`
+  writing more to it than the pipe buffer holds blocks on the write, never
+  closes its output, and the command waits for an end-of-output that cannot
+  arrive — producing neither output nor an exit code. Stock `git rev-parse`
+  stays far under that threshold, so this was reachable through a wrapper or
+  replacement `git` on PATH rather than through ordinary use.
+- `hook:install` works for an installed package. `/scripts/` is excluded from
+  the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
+  in two places a consumer never has and exited 1 with `Hook script not found`.
+  It now generates the hook, which also makes it work outside a composer
+  layout. The two manual methods `quick-start` documented named the same
+  missing directory and are gone.
+- The hook commands install into, and read from, the directory git actually
+  runs hooks out of. They built `<git-dir>/hooks`, which is the wrong place
+  under `core.hooksPath` — every hook manager sets it — and inside a linked
+  worktree, which has no `hooks/` of its own. The first reported success and
+  installed a hook git never read; the second refused outright.
+- The hook quotes the binary path so that a path carrying `"`, `$` or a
+  backtick reaches the shell as itself. A double quote made the whole hook
+  invalid shell while `hook:install` reported success, and `$HOME` or
+  `$(…)` in a directory name was expanded — the second executing on every
+  commit.
+- The hook reads staged paths NUL-delimited, so a filename with a space is one
+  path and not two, and it tells "the binary could not be run" (126, 127) from
+  "the analysis found something", which it used to report as findings with
+  advice to write a baseline.
+- `hook:install --force` no longer spends the single `.backup` slot on a hook
+  it generated itself, which used to overwrite the third-party hook the first
+  `--force` had preserved. `hook:status` tells a symlink whose target is
+  missing from one that cannot be read; they have different remedies.
+- `hook:install` works from the phar too, and its refusal there is gone. It
+  refused because the hook was a symlink and because building the script's path
+  reached a value object that rejects `phar://`; neither happens now. The
+  installed hook calls the archive.
+- The hook names the binary that installed it, falling back to `vendor/bin/qmx`
+  and `bin/qmx` if that binary moves. Hook commands print that path in their
+  hints too, instead of `bin/qmx`, which is wrong for everyone who installed
+  the package.
+- Namespace and project `design.dit` aggregates (`.avg`, `.max`, `.p95`) now
+  reflect inheritance chains that cross files. They were computed before the
+  pass that resolves such chains and kept summarising the uncorrected per-file
+  depths, so a project whose classes extend each other across files reported a
+  maximum depth of 1 while publishing the correct per-class values. Aggregate
+  DIT rises on any codebase with cross-file inheritance; per-class values are
+  unchanged.
+- `design.dit` is no longer reported for interfaces, traits and enums. They were
+  given a class-level depth of 0 while being excluded from the aggregate's
+  population, so the metric and its own denominator disagreed about what counts
+  as a class. DIT is now denominated in the named classes the per-file pass
+  measures, which is what `size.class-count` counts wherever each class name is
+  declared once.
 - Analysing a project that shares a class name with one of the tool's own
   packages no longer breaks the run. A standalone install (the Docker image, a
   global `composer global require`) ships packages without the dependencies only
@@ -52,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `--report=git:...` run no longer risks hanging instead of failing. Locating
   the repository opened descriptors nothing ever read, so a talkative enough
   `git rev-parse` could block mid-write and leave the analysis waiting forever
-  with no output and no exit code.
+  with no output and no exit code. The same defect reached the `hook:*`
+  commands through the same locator, which the entry above records.
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no

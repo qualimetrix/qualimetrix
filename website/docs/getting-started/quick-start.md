@@ -85,28 +85,23 @@ Automatic checking of staged files before every commit.
 
 ### Installation
 
-=== "Symbolic Link (recommended)"
+```bash
+vendor/bin/qmx hook:install
+```
 
-    ```bash
-    ln -s ../../scripts/pre-commit-hook.sh .git/hooks/pre-commit
-    ```
+This writes `.git/hooks/pre-commit`, naming the binary that installed it. The
+file is yours: edit it and the hook keeps running, reinstall with `--force`
+and your edits are backed up beside it.
 
-    Automatic updates when the script changes, no need to copy on updates.
+If a hook is already there, `hook:install` refuses until you pass `--force`,
+and backs up what it replaces.
 
-=== "Copy"
+!!! warning "Upgrading from 0.27.0 or earlier"
 
-    ```bash
-    cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
-    chmod +x .git/hooks/pre-commit
-    ```
-
-    Works if `.git/hooks` does not support symlinks, can be modified per project.
-
-=== "Built-in command"
-
-    ```bash
-    vendor/bin/qmx hook:install
-    ```
+    Earlier releases installed the hook as a symlink into a script that is no
+    longer shipped, so that link now leads nowhere and git runs nothing. Run
+    `vendor/bin/qmx hook:install --force` to replace it. `hook:status` says so
+    too.
 
 ### Usage
 

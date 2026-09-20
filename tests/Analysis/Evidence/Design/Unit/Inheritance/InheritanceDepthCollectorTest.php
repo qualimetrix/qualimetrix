@@ -11,9 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 use RuntimeException;
 use SplFileInfo;
@@ -289,25 +287,12 @@ PHP;
     }
 
     #[Test]
-    public function itGetsMetricDefinitions(): void
+    public function itDeclaresNoMetricDefinition(): void
     {
-        $definitions = $this->collector->getMetricDefinitions();
-
-        self::assertCount(1, $definitions);
-
-        $def = $definitions[0];
-        self::assertSame('design.dit', $def->name);
-        self::assertSame(SymbolLevel::Class_, $def->collectedAt);
-
-        $namespaceStrategies = $def->getStrategiesForLevel(SymbolLevel::Namespace_);
-        self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
-        self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
-        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
-
-        $projectStrategies = $def->getStrategiesForLevel(SymbolLevel::Project);
-        self::assertContains(AggregationStrategy::Average, $projectStrategies);
-        self::assertContains(AggregationStrategy::Max, $projectStrategies);
-        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
+        // DIT's definition belongs to the collector that writes the published
+        // value. Declaring it here too would put DIT into the first
+        // aggregation pass, which runs before the global pass corrects it.
+        self::assertSame([], $this->collector->getMetricDefinitions());
     }
 
     #[Test]

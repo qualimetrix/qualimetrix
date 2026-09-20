@@ -20,13 +20,22 @@ final class GitRepositoryLocatorTest extends TestCase
     /** @var list<string> */
     private array $tempDirs = [];
 
+    private string $originalPath = '';
+
     protected function setUp(): void
     {
         $this->locator = new GitRepositoryLocator();
+
+        $path = getenv('PATH');
+        $this->originalPath = $path === false ? '' : $path;
     }
 
     protected function tearDown(): void
     {
+        // PATH is process-global: a shadowed `git` left behind would answer
+        // for every test that runs after this one.
+        putenv('PATH=' . $this->originalPath);
+
         foreach ($this->tempDirs as $dir) {
             if (is_dir($dir)) {
                 $this->removeRecursive($dir);
@@ -140,6 +149,91 @@ final class GitRepositoryLocatorTest extends TestCase
             $result->value(),
             'relative gitdir: must be resolved against the .git file location',
         );
+    }
+
+    #[Test]
+    public function itAnswersWhenGitFloodsItsErrorStream(): void
+    {
+        // Regression: git's error stream must not be a pipe nobody reads. A
+        // child writing more than the pipe buffer holds blocks on that write,
+        // so it never closes its output stream, and the parent waits forever
+        // for an end-of-output that cannot arrive. The `hook:*` commands reach
+        // this through findHooksDir and would hang with neither output nor an
+        // exit code rather than failing.
+        $sandbox = $this->makeTempDir('locator-flood-');
+        $answer = $this->shadowGitAnsweringPastAFloodedErrorStream($sandbox);
+
+        $result = $this->locator->findGitDir(AbsolutePath::fromString($sandbox));
+
+        self::assertNotNull($result, 'findGitDir must outlive a git that floods its error stream');
+        self::assertSame($answer, $result->value());
+    }
+
+    #[Test]
+    public function itAnswersForTheHooksDirWhenGitFloodsItsErrorStream(): void
+    {
+        // findHooksDir reaches the same descriptor set through its own call.
+        // Asserted separately so splitting that helper cannot leave one of the
+        // two callers with an undrained stream.
+        $sandbox = $this->makeTempDir('locator-flood-hooks-');
+        $answer = $this->shadowGitAnsweringPastAFloodedErrorStream($sandbox);
+
+        $result = $this->locator->findHooksDir(AbsolutePath::fromString($sandbox));
+
+        self::assertNotNull($result, 'findHooksDir must outlive a git that floods its error stream');
+        self::assertSame($answer, $result->value());
+    }
+
+    /**
+     * Puts a `git` on PATH that writes half a megabyte to its error stream
+     * before answering on stdout. It kills itself after a few seconds, so a
+     * parent that never drains that stream reddens this test instead of
+     * hanging the suite forever.
+     *
+     * What refuses a traversal answer is asserting the returned path, not
+     * where the sandbox sits: a locator that gave up on the command still
+     * finds a real .git from inside a repository, and only the exact path
+     * tells the two apart. The sandbox sits outside one as a second line.
+     *
+     * @return string the path this git answers with
+     */
+    private function shadowGitAnsweringPastAFloodedErrorStream(string $sandbox): string
+    {
+        $answer = $sandbox . '/flooded-git-dir';
+        $bin = $sandbox . '/bin';
+
+        foreach ([$answer, $bin] as $dir) {
+            if (!mkdir($dir, 0777, true)) {
+                throw new RuntimeException('Failed to create directory: ' . $dir);
+            }
+        }
+
+        $script = <<<'SH'
+            #!/bin/sh
+            self=$$
+            # The redirect is load-bearing: without it this watchdog keeps a
+            # copy of the output stream, and the reader waits out the sleep
+            # for an end-of-output no living writer is going to send.
+            (sleep 3; kill -9 $self) >/dev/null 2>&1 &
+            i=0
+            while [ $i -lt 512 ]; do
+                printf '%01023d\n' "$i" >&2
+                i=$((i + 1))
+            done
+            printf '%s\n' 'QMX_ANSWER'
+            SH;
+
+        $written = file_put_contents($bin . '/git', str_replace('QMX_ANSWER', $answer, $script) . "\n");
+        if ($written === false) {
+            throw new RuntimeException('Failed to write the shadowed git');
+        }
+        if (!chmod($bin . '/git', 0755)) {
+            throw new RuntimeException('Failed to make the shadowed git executable');
+        }
+
+        putenv('PATH=' . $bin . ':' . $this->originalPath);
+
+        return $answer;
     }
 
     private function makeTempDir(string $prefix): string

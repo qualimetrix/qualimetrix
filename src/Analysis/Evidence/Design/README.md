@@ -67,9 +67,18 @@ belong to no family is the signal that a fifth family is being named.
   resolves local and imported parents; `DitGlobalCollector` recalculates DIT
   through `DependencyGraphInterface` so cross-file inheritance and external
   PHP parent fallback remain correct.
+- DIT's `MetricDefinition` belongs to `DitGlobalCollector`, not to the per-file
+  collector, because re-aggregation runs over the definitions the global
+  collectors declare (ADR 0069). The per-file pass still decides DIT's
+  population: `DitGlobalCollector` corrects the depth of symbols that already
+  carry a per-file `design.dit` and leaves the rest alone, which is what keeps
+  interfaces, traits and enums out of the metric and its aggregates. That makes
+  the global pass depend on the file pass's keys, which `requires()` cannot
+  express — it orders global collectors against each other. Removing the
+  per-file write would empty DIT rather than fail.
 - `NocCollector` derives direct-child counts from the same DependencyModel
-  graph. Both global collectors retain their existing collector names,
-  definitions, ordering, and aggregation semantics.
+  graph and retains its collector name, definitions, ordering, and aggregation
+  semantics.
 - `ParamTypeCoverageRule`, `ReturnTypeCoverageRule` and
   `PropertyTypeCoverageRule` judge one dimension each, one channel each, and
   share `AbstractTypeCoverageRule` for the walk and the emission plus one

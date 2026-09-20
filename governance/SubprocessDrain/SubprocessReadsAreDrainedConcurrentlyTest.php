@@ -197,10 +197,19 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'a pipe from it: both of the child\'s streams go to files and only `proc_get_status()` is polled, '
             . 'because a supervisor that read a pipe here could deadlock the same way the code under test might.',
 
-        'src/Infrastructure/Git/GitRepositoryLocator.php:59' => 'Production code, which may not import a '
+        'src/Infrastructure/Git/GitRepositoryLocator.php:94' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
+
+        'governance/DistributedPackage/HookInstallWorksFromTheDistPackageTest.php:231' => 'The dist-package '
+            . 'control\'s own runner: both of the child\'s streams go to files and it opens no pipe at all, so it '
+            . 'holds nothing to leave unserviced. It cannot use the module either — it measures what the composer '
+            . 'distribution carries, and the module is excluded from it.',
+
+        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:285' => 'Arranging a git '
+            . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
+            . 'the exit status is read.',
 
         'src/Analysis/Evidence/Security/CommandInjectionDetector.php:27' => 'Rule data: the name of one of the '
             . 'functions the command-injection rule detects.',
