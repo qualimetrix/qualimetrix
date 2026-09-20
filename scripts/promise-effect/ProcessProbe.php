@@ -178,19 +178,21 @@ final class ProcessProbe
 
         // ProbeFailure, not the bare RuntimeException run() throws: Stand.php
         // catches ProbeFailure by name in takeWitnesses() and rootProbe() to
-        // turn a failed launch into a reported failure or a CRASHED
+        // turn a failed probe into a reported failure or a CRASHED
         // observation instead of an uncaught crash of the whole stand.
         //
         // The module's message is carried through verbatim because it is the
         // only thing that says which failure this was: a launch that never
         // happened and a stream that died mid-run arrive here as the same
         // exception class, told apart solely by the prefix run() puts on the
-        // message. Restating it as "cannot start" would report a half-finished
-        // run as one that never began, with no evidence either way.
+        // message. The header therefore claims none of the three, in the
+        // wording run()'s other callers use. "could not be run" was rejected
+        // for the same reason "cannot start" was: a read failure means the
+        // product did run, and its output is what could not be read.
         try {
             $result = ChildProcess::run($argv, $runDirectory);
         } catch (RuntimeException $failure) {
-            throw new ProbeFailure('the product could not be run: ' . $failure->getMessage(), 0, $failure);
+            throw new ProbeFailure('the product did not complete: ' . $failure->getMessage(), 0, $failure);
         }
 
         $stdout = $result['stdout'];
