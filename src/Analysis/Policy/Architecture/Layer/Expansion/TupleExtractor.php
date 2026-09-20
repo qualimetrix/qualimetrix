@@ -208,6 +208,13 @@ final class TupleExtractor
      */
     private static function matchAllNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
     {
+        LayerCriteriaMatcher::refuseUnbackedCriteria(
+            $context,
+            $membership->attributes,
+            $membership->implements,
+            $membership->extends,
+        );
+
         if ($membership->suffix !== [] && !self::matchesAnySuffix($membership->suffix, $context->shortName)) {
             return false;
         }

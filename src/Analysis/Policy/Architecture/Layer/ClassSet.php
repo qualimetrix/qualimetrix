@@ -13,16 +13,15 @@ use Traversable;
  * {@see ClassContextFactory} that resolves per-class context (attributes,
  * interfaces, parent classes).
  *
- * Built by {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} once
- * collection and dependency-graph construction have completed; consumed by
+ * Built by {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()}
+ * from the class universe the run hands it, paired with the registry's own
+ * already-bound factory; consumed by
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} to walk the
  * class set for each {@see TemplateLayerDefinition} and collect observed
  * binding tuples.
  *
  * Lives in {@code Qualimetrix\Analysis\Policy\Architecture\Layer} (next to the other
- * layer primitives, per ADR 0010's vertical-slice layout). The pipeline
- * constructs it during Phase 2.6 (architecture-prepare) and hands it to
- * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()}.
+ * layer primitives, per ADR 0010's vertical-slice layout).
  *
  * **No internal caching.** Repeated {@see contextFor()} calls delegate
  * straight to the factory, which already memoises per-FQN contexts. The

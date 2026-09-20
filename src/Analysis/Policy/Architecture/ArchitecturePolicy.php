@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorIn
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -65,29 +64,32 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
             throw new LogicException('ArchitecturePolicy::prepare() requires bind() to have been called.');
         }
 
-        $classes = $classUniverse instanceof ClassSet
-            ? $classUniverse
-            : new ClassSet(
-                \is_array($classUniverse) ? array_values($classUniverse) : iterator_to_array($classUniverse, false),
-                new ClassContextFactory(),
-            );
         $configuration = $this->configured;
+
+        // The run's single binding point: every reader of a class context,
+        // template observation included, runs after this line.
+        $configuration->registry()->bindGraph($graph);
+
         if ($configuration->hasTemplates()) {
+            // One factory for the whole run. Observation and membership
+            // matching must read the same contexts, or a layer is derived
+            // from facts it is then matched against different ones.
+            $classes = new ClassSet(
+                \is_array($classUniverse) ? array_values($classUniverse) : iterator_to_array($classUniverse, false),
+                $configuration->registry()->contextFactory(),
+            );
             $expansion = $this->expansionStage->expand($configuration->entries(), $classes, $configuration->maxExpandedLayers());
             $configuration = $configuration->withExpansion($expansion->expandedLayers, $expansion->emptyTemplateNames);
         }
 
-        $configuration->registry()->bindGraph($graph);
         $this->prepared = $configuration;
     }
 
     public function inspect(DependencyGraphInterface $graph, iterable $classUniverse, SymbolPath $subject): LayerAssignment
     {
         $this->prepare($graph, $classUniverse);
-        $configuration = $this->prepared;
-        if ($configuration === null) {
-            return new LayerAssignment([], false);
-        }
+        $configuration = $this->prepared
+            ?? throw new LogicException('ArchitecturePolicy::inspect() reached an unprepared policy after prepare() returned.');
 
         $matches = $configuration->registry()->resolveAll($subject);
         return new LayerAssignment(

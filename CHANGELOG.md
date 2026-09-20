@@ -49,6 +49,15 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- A template layer's `attributes:`, `implements:` and `extends:` criteria now
+  filter candidates while the template is expanded. The dependency graph was
+  bound to the class-context factory only after expansion had run, so during
+  expansion every class looked as if it had no attributes, no interfaces and
+  no parents: under `match: all` the template produced zero concrete layers
+  and reported `architecture.empty-template`, and a graph-backed `exclude:`
+  on a template removed nothing under either mode. `patterns:` and `suffix:`
+  were unaffected, as were non-template layers.
+
 - `composer.json` now declares the PHP extensions the tool uses (`ctype`,
   `filter`, `hash`, `json`, `mbstring`, `tokenizer`, `xmlwriter`). Installing
   on a PHP built without one now fails at install time naming the missing

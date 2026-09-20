@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -513,7 +514,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsTheRegistryToNoGraphModeWhenBoundToNull(): void
+    public function itRefusesAGraphBackedCriterionAfterTheGraphIsUnbound(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition(
@@ -528,9 +529,33 @@ final class LayerRegistryTest extends TestCase
         $registry->bindGraph(self::graphWith([[$klass, $base, DependencyType::Extends]]));
         self::assertSame('aggregates', $registry->resolveLayer($klass));
 
-        // Unbind the graph; the extends criterion can no longer fire.
+        // Unbinding used to turn the same question into the answer "this class
+        // extends nothing", which is indistinguishable from a real non-match
+        // and is how the criterion stayed broken through template expansion.
         $registry->bindGraph(null);
-        self::assertNull($registry->resolveLayer($klass));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('without a dependency graph');
+
+        $registry->resolveLayer($klass);
+    }
+
+    #[Test]
+    public function itStillAnswersAPatternLayerWithNoGraphBound(): void
+    {
+        // The other half of the refusal: patterns and suffix are derived from
+        // the FQN, so unbinding must not turn them into errors too.
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'svc',
+                new MembershipSpec(patterns: ['App\\Service\\**'], suffix: ['Service']),
+            ),
+        ]);
+
+        $registry->bindGraph(null);
+
+        self::assertSame('svc', $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')));
+        self::assertNull($registry->resolveLayer(SymbolPath::forClass('App\\Domain', 'User')));
     }
 
     #[Test]

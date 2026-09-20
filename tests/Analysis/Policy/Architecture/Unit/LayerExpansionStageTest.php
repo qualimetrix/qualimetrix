@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(LayerExpansionStage::class)]
 #[CoversClass(LayerExpansionResult::class)]
@@ -590,6 +591,13 @@ final class LayerExpansionStageTest extends TestCase
             $classes[] = SymbolPath::forClass($namespace, $shortName);
         }
 
-        return new ClassSet($classes, new ClassContextFactory());
+        // Bound to an empty graph, not left unbound: an unbound factory reports
+        // every class as having no parents, interfaces or attributes, and a
+        // case written here that declares one of those criteria would be green
+        // for that reason alone.
+        $factory = new ClassContextFactory();
+        $factory->bindGraph(AdjacencyGraphBuilder::empty());
+
+        return new ClassSet($classes, $factory);
     }
 }

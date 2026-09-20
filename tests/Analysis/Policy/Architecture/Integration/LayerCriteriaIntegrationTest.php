@@ -46,9 +46,9 @@ final class LayerCriteriaIntegrationTest extends TestCase
     public function itClassifiesEachFixtureClassUnderTheRightLayer(): void
     {
         // Layers ordered so that the unique criterion-driving class for each
-        // kind falls into its dedicated layer. The dependency graph is what
-        // makes attribute / implements / extends data available — without
-        // the rule's bindGraph() handshake, these layers would silently fail.
+        // kind falls into its dedicated layer. Attribute, implements and
+        // extends data comes from the dependency graph, so these layers are
+        // answerable only once the registry has been bound to one.
         $registry = new LayerRegistry([
             new LayerDefinition(
                 'contracts-impls',
