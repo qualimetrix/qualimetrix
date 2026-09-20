@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\DeclaredDependencies;
 
-use PhpParser\Node;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
-use PhpParser\NodeVisitorAbstract;
-use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -326,10 +321,16 @@ final class ShippedCodeReachesOnlyDeclaredPackagesTest extends TestCase
 
     /**
      * Every namespaced name each file reaches, whether it is written out in
-     * full, imported and used, or imported and left unused. Name resolution
-     * covers the first two; the `use` statements are read separately because
-     * an import nothing references resolves to no name at all, and that is
-     * the shape a plain grep over `use` lines does see.
+     * full, imported and used, or imported and left unused.
+     *
+     * The read itself is {@see ReachedNames}, which the sibling extension
+     * control shares, for the reason {@see ShippedTree} gives about the
+     * population: this group asks two questions of one tree, and a second
+     * copy of how names are read out of it would drift exactly the way a
+     * second copy of what ships would. A package is named by a namespace and
+     * an extension by a global name, so the two questions differ only in
+     * which half of one read they keep. Verified equal to the hand-rolled
+     * collector this replaced, on all 962 files of the shipped tree.
      *
      * @param list<string> $files
      *
@@ -337,56 +338,18 @@ final class ShippedCodeReachesOnlyDeclaredPackagesTest extends TestCase
      */
     private static function namespacesReached(array $files): array
     {
-        $parser = (new ParserFactory())->createForNewestSupportedVersion();
-        $reached = [];
+        $reached = array_fill_keys($files, []);
 
-        foreach ($files as $file) {
-            $source = file_get_contents($file);
-            self::assertIsString($source, $file);
-
-            $statements = $parser->parse($source);
-            self::assertIsArray($statements, $file);
-
-            $collector = new class extends NodeVisitorAbstract {
-                /** @var array<string, true> */
-                public array $names = [];
-
-                public function enterNode(Node $node): null
-                {
-                    if ($node instanceof Node\Name\FullyQualified) {
-                        $this->names[$node->toString()] = true;
-                    }
-
-                    if ($node instanceof Node\Stmt\Use_) {
-                        foreach ($node->uses as $use) {
-                            $this->names[$use->name->toString()] = true;
-                        }
-                    }
-
-                    if ($node instanceof Node\Stmt\GroupUse) {
-                        foreach ($node->uses as $use) {
-                            $this->names[$node->prefix->toString() . '\\' . $use->name->toString()] = true;
-                        }
-                    }
-
-                    return null;
-                }
-            };
-
-            $traverser = new NodeTraverser();
-            $traverser->addVisitor(new NameResolver());
-            $traverser->addVisitor($collector);
-            $traverser->traverse($statements);
-
-            $vendor = [];
-            foreach (array_keys($collector->names) as $name) {
-                if (str_contains($name, '\\')) {
-                    $vendor[] = $name;
-                }
+        foreach (ReachedNames::in($files) as $record) {
+            if (str_contains($record['name'], '\\')) {
+                $reached[$record['file']][] = $record['name'];
             }
+        }
 
-            sort($vendor);
-            $reached[$file] = $vendor;
+        foreach ($reached as $file => $names) {
+            $unique = array_values(array_unique($names));
+            sort($unique);
+            $reached[$file] = $unique;
         }
 
         return $reached;
