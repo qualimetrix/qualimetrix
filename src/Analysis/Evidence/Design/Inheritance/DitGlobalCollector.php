@@ -82,6 +82,21 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         // Step 1: Build class FQN → parent FQN map from dependency graph
         $parentMap = $this->buildParentMapFromGraph($graph);
 
+        // The analysed project's own classes, collected once. A parent absent
+        // from $parentMap is only "external" when it is absent from here too:
+        // a class that has no parent of its own has no entry in a map keyed by
+        // child, so without this set every in-project root was sent out to be
+        // resolved as though it belonged to somebody else. Measured before the
+        // fix: 25 of 40 such lookups on symfony/http-kernel, and 3 of 3 across
+        // the whole finding-gate corpus.
+        $projectClasses = [];
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
+            $fqn = $this->symbolPathToFqn($classSymbol->symbolPath);
+            if ($fqn !== null) {
+                $projectClasses[$fqn] = true;
+            }
+        }
+
         // Step 2: Recalculate DIT for all project classes
         /** @var array<string, int> $ditCache */
         $ditCache = [];
@@ -100,7 +115,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $dit = $this->calculateDit($classFqn, $parentMap, $ditCache);
+            $dit = $this->calculateDit($classFqn, $parentMap, $projectClasses, $ditCache);
 
             $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_DIT, $dit);
         }
@@ -142,9 +157,10 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
      * Calculate DIT for a class using the global parent map.
      *
      * @param array<string, string> $parentMap child FQN → parent FQN
+     * @param array<string, true> $projectClasses the analysed project's classes
      * @param array<string, int> $ditCache FQN → computed DIT (memoization)
      */
-    private function calculateDit(string $classFqn, array $parentMap, array &$ditCache): int
+    private function calculateDit(string $classFqn, array $parentMap, array $projectClasses, array &$ditCache): int
     {
         if (isset($ditCache[$classFqn])) {
             return $ditCache[$classFqn];
@@ -171,7 +187,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
         // Parent is in project graph → recurse
         if (isset($parentMap[$parentFqn])) {
-            $parentDit = $this->calculateDit($parentFqn, $parentMap, $ditCache);
+            $parentDit = $this->calculateDit($parentFqn, $parentMap, $projectClasses, $ditCache);
 
             if ($parentDit === -1) {
                 // Cycle detected
@@ -186,8 +202,15 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
             return $dit;
         }
 
-        // Parent is external (not in project graph)
-        // It's a root class in the project scope, or an external library class
+        // In the project and carrying no parent of its own: a root, and none of
+        // this tool's business to go looking for it elsewhere.
+        if (isset($projectClasses[$parentFqn])) {
+            $ditCache[$classFqn] = 1;
+
+            return 1;
+        }
+
+        // Genuinely outside the analysed path.
         $parentDit = $this->resolveExternalClassDit($parentFqn);
         $dit = 1 + $parentDit;
         $ditCache[$classFqn] = $dit;

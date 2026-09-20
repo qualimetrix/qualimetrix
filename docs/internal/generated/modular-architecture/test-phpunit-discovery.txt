@@ -3239,6 +3239,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitForAChainRootedInAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsABuiltinInsideAnExternalChain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itDoesNotLookOutsideForAParentTheProjectDeclares
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIgnoresAnExtendsEdgeFlaggedAsANestedAnonymousClassDeclaration
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIsNamedDitGlobal
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itLeavesSymbolsTheFilePassNeverMeasuredAlone
@@ -3249,6 +3251,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itAsksNoAutoloaderAboutAParentItCannotSee
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingSplStack
@@ -3258,7 +3261,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForMultipleBranches
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForSplClasses
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsSingleLevelInheritanceInSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsStandardPhpClassInReflectionDitChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsThreeLevelInheritance
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsTwoLevelInheritanceInSameFile
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeclaresNoMetricDefinition
@@ -3273,7 +3275,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itReturnsZeroForClassWithNoParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfFailingTheFile
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsUnqualifiedExceptionAsStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itAccumulatesDitAcrossAUseImportedChainInTheSameFile
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itLinksAnAliasedParentDeclaredInTheSameFile

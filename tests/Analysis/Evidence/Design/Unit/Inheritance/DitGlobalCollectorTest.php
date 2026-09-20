@@ -23,6 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
+use RuntimeException;
 
 #[CoversClass(DitGlobalCollector::class)]
 final class DitGlobalCollectorTest extends TestCase
@@ -340,6 +341,65 @@ final class DitGlobalCollectorTest extends TestCase
         self::assertNull($repository->get($unmeasured)->get('design.dit'));
     }
 
+    /**
+     * A builtin reached through a real external class, rather than named
+     * directly as the parent. The per-file collector used to cover this by
+     * reflecting on the chain itself; that pass no longer resolves anything
+     * outside its own file, so the case belongs to the collector that does.
+     */
+    #[Test]
+    public function itCountsABuiltinInsideAnExternalChain(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\MyException', DitChainCustomException::class),
+        ]);
+
+        $path = SymbolPath::forClass('App', 'MyException');
+        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('e.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        // 1 for extending it, plus 1 for its own RuntimeException parent, which
+        // is builtin and ends the walk.
+        self::assertSame(2, $repository->get($path)->get('design.dit'));
+    }
+
+    /**
+     * A parent that is in the project and has no parent of its own has no entry
+     * in a map keyed by child, so it used to be treated as somebody else's class
+     * and looked up through an autoloader. The depth was right either way --
+     * 1 + 0 -- which is why nothing caught it; the probe's counter is what can.
+     */
+    #[Test]
+    public function itDoesNotLookOutsideForAParentTheProjectDeclares(): void
+    {
+        $probe = UnloadableClassProbe::start();
+
+        try {
+            $repository = new InMemoryMetricRepository();
+            $graph = $this->graph([
+                $this->createExtends('App\\Child', $probe->childFqcn()),
+            ]);
+
+            $childPath = SymbolPath::forClass('App', 'Child');
+            $repository->add($childPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('child.php'), 1);
+
+            // The parent is measured by this run, so it belongs to the project
+            // even though nothing records a parent for it.
+            $rootPath = SymbolPath::fromClassFqn($probe->childFqcn());
+            $repository->add($rootPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('root.php'), 1);
+
+            $this->collector->calculate($graph, $repository);
+
+            self::assertSame(0, $probe->queryCount(), 'An in-project parent was looked up through an autoloader');
+            self::assertSame(1, $repository->get($childPath)->get('design.dit'));
+            self::assertSame(0, $repository->get($rootPath)->get('design.dit'));
+        } finally {
+            $probe->stop();
+        }
+    }
+
     /** @param list<Dependency> $dependencies */
     private function graph(array $dependencies): DependencyGraphInterface
     {
@@ -351,3 +411,9 @@ final class DitGlobalCollectorTest extends TestCase
         return AdjacencyGraphBuilder::builder()->build($dependencies, $universe);
     }
 }
+
+/**
+ * A non-standard class whose own parent is a builtin: the shape that makes the
+ * walk continue one step before it stops.
+ */
+class DitChainCustomException extends RuntimeException {}

@@ -1,0 +1,23 @@
+{
+    "id": "external-parent",
+    "description": "Auxiliary: the only case whose parent lives outside the analysed path, so the gate carries external ancestor resolution on its input rather than never seeing it.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=design.dit:warning=1",
+        "--rule-opt=design.dit:error=5"
+    ],
+    "channels": [
+        "design.dit@class"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\ExternalParent\\LocalWidget@src/LocalWidget.php"
+    ]
+}
