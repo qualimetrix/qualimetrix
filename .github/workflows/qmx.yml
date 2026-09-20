@@ -120,10 +120,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      # igbinary is added to the default set because a governance control can
+      # only attribute a name to an extension this runtime loads. The shipped
+      # tree calls `igbinary_serialize()`, so without the extension here that
+      # call is unattributable and `ShippedCodeRunsOnlyOnDeclaredExtensionsTest`
+      # refuses it by name. Before that control refused, a runner without
+      # igbinary dropped the call silently and a green run said nothing about
+      # whether `ext-igbinary` was declared at all.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: igbinary
           coverage: none
           tools: composer:v2
 
