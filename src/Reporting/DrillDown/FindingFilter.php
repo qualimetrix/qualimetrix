@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Reporting\Filter;
+namespace Qualimetrix\Reporting\DrillDown;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -11,9 +11,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
- * Filters findings and worst offenders by namespace/class context.
+ * What a `--namespace` or `--class` value selects from a report's findings and
+ * worst offenders.
  *
- * Shared between SummaryFormatter and JsonFormatter to avoid duplication.
+ * `DrillDownBinding` counts what such a value binds to before a report is
+ * rendered, and has to compare the same way this filters: a value accepted
+ * there and matching nothing here produces the empty report that refusal
+ * exists to explain.
  *
  * Project-wide findings are excluded from every namespace selection. Their
  * symbol path carries the internal project sentinel where a namespace would

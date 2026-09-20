@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Support;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Detail;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Formatter\Support\DebtBreakdownRenderer;
-use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
-use Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer;
+use Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer;
+use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
+use Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;

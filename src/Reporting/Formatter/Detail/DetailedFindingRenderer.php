@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Reporting\Formatter\Support;
+namespace Qualimetrix\Reporting\Formatter\Detail;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 
 /** Composes detailed finding output and its technical-debt breakdown. */

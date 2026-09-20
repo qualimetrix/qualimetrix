@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
+use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
-use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;

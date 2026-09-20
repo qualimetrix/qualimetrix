@@ -442,7 +442,7 @@
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class","magnitudes":[11]}
     ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter@src/Reporting/Formatter/Support/FindingSorter.php": [
+    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter@src/Reporting/Formatter/Ordering/FindingSorter.php": [
       {"channel":"complexity.wmc","magnitudes":[54]}
     ],
     "declaration:class:Qualimetrix\\Reporting\\Health\\SummaryEnricher@src/Reporting/Health/SummaryEnricher.php": [
@@ -509,7 +509,7 @@
     "ns:Qualimetrix\\Infrastructure\\Serializer": [
       {"channel":"health.cohesion","magnitudes":[43.7]}
     ],
-    "ns:Qualimetrix\\Reporting\\Filter": [
+    "ns:Qualimetrix\\Reporting\\DrillDown": [
       {"channel":"health.maintainability","magnitudes":[49.3]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Health": [

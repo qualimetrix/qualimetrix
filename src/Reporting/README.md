@@ -57,10 +57,8 @@ Reporting/
 │   ├── SuppressionComposition.php         # `$all` (multiset) + `$neverMatched`, published by `--format=suppressed`
 │   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
 │   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including suppress_namespace_channels
-├── Filter/
-│   └── FindingFilter.php                # Shared finding/offender filtering by namespace/class context
-├── Profile/
-│   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
+├── DrillDown/
+│   └── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
@@ -71,15 +69,16 @@ Reporting/
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
-    ├── Support/                            # Shared formatter utilities
-    │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
-    │   ├── FindingSorter.php            # Sorting/grouping utility for findings
-    │   ├── DetailedFindingRenderer.php  # Detailed-output compositor
-    │   ├── FindingDetailRenderer.php    # Sorted/grouped finding details
-    │   ├── DebtBreakdownRenderer.php      # Per-rule technical-debt details
-    │   ├── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
-    │   ├── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
-    │   └── HealthCoverageNarrator.php     # What share of its subject a health score was computed over
+    ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a measured breach
+    ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
+    ├── Ansi/                                # ANSI escape sequences
+    │   └── AnsiColor.php                   # Lightweight ANSI color wrapper
+    ├── Ordering/                            # The order and grouping findings appear in
+    │   └── FindingSorter.php               # Sorts and groups findings per GroupBy
+    ├── Detail/                              # The `--detail` block
+    │   ├── DetailedFindingRenderer.php     # Detailed-output compositor
+    │   ├── FindingDetailRenderer.php       # Sorted/grouped finding details
+    │   └── DebtBreakdownRenderer.php       # Per-rule technical-debt details
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
@@ -97,7 +96,8 @@ Reporting/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
     ├── Health/
-    │   └── HealthTextFormatter.php         # Text-based health report with scores and decomposition
+    │   ├── HealthTextFormatter.php         # Text-based health report with scores and decomposition
+    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
@@ -703,7 +703,7 @@ was checked against an applicable entry and exceeded it, and severity was
 already promoted to `Error` via `Finding::reportedAsBreach()`. It is `null`
 on every other finding, including one no baseline ever judged.
 
-`Formatter\Support\AcceptedLevelNarrator::describe(Finding $v): ?string`
+`Formatter\AcceptedLevelNarrator::describe(Finding $v): ?string`
 renders the human fragment — `"accepted at 25, now 31"` for a `magnitude`
 channel, `"accepted at 3 occurrences"` for an `occurrence` channel (no
 fabricated "now": the mechanism compares a group size no single `Finding`

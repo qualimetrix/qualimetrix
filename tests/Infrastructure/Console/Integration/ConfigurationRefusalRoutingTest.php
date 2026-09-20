@@ -390,7 +390,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->inert('Qualimetrix\\Reporting\\Health\\SummaryEnricher'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\ProfilePresenter'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver'),
-            $this->inert('Qualimetrix\\Reporting\\Filter\\FindingFilter'),
+            $this->inert('Qualimetrix\\Reporting\\DrillDown\\FindingFilter'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\RuleConfigurationInterface'),
             new ErrorStream(),

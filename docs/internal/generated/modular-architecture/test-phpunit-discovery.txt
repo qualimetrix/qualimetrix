@@ -351,6 +351,8 @@ Available tests:
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itAccountsForEveryVisibleFormatExactlyOnce
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itClassifiesEveryVisiblyRegisteredFormat
  - Qualimetrix\Governance\ConsoleComposition\MachineReadableFormatsRegistryTest::itKnowsOnlyFormatsTheRegistryActuallyHas
+ - Qualimetrix\Governance\ConsoleComposition\RegisterClassesExcludesNameSomethingTest::itRefusesAnExcludeMemberThatNamesNoFile
+ - Qualimetrix\Governance\ConsoleComposition\RegisterClassesExcludesNameSomethingTest::itReportsThePopulationItExamined
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Governance\ConsoleComposition\RulesCommandFamilyCensusTest::itListsEveryRegisteredRule
  - Qualimetrix\Governance\ConsoleComposition\RulesListingAgreesWithRefusalTest::itAdvertisesExactlyWhatTheRefusalAdmitsAtEveryDepth
@@ -8551,23 +8553,23 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itExcludesFindingByClassWhenNoType
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByClassExactMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByClassWithGlobalNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByNamespaceExactMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersFindingsByNamespaceMatchingChildren
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByClass
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itNeverSelectsProjectWideFindingsByNamespace
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
- - Qualimetrix\Tests\Reporting\Unit\Filter\FindingFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itDoesNotMatchFindingsBySimilarNamespacePrefix
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itExcludesFindingByClassWhenNoType
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByAGlobNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassExactMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByClassWithGlobalNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByNamespaceExactMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersFindingsByNamespaceMatchingChildren
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByClass
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itNeverSelectsProjectWideFindingsByNamespace
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"
@@ -8604,6 +8606,18 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\FormatterContextTest::itSetsLimitToZeroWhenDetailIsTrue
  - Qualimetrix\Tests\Reporting\Unit\FormatterContextTest::itStoresClassFilter
  - Qualimetrix\Tests\Reporting\Unit\FormatterContextTest::itStoresNamespaceFilter
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itDescribesAMagnitudeBreachWithTheCurrentValue
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itDescribesAnOccurrenceBreachAsACountWithoutInventingANowValue
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itIgnoresAMetricValuePresentOnAnOccurrenceChannel
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itListsMultipleAcceptedMagnitudesForAGroupOfMoreThanOne
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itOmitsNowWhenTheCurrentMetricValueIsNonFinite
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itOmitsNowWhenTheMagnitudeChannelHasNoCurrentMetricValue
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itReturnsNullWhenNoAcceptedLevelIsPresent
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itSingularizesASingleOccurrence
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itTrimsTrailingZerosOnBothSides
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi\AnsiColorTest::itReturnsAnsiWrappedTextWhenEnabled
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi\AnsiColorTest::itReturnsCombinedAnsiCodes
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi\AnsiColorTest::itReturnsPlainTextWhenDisabled
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaCheckstyleFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaGitLabCodeQualityFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaGithubActionsFormatter
@@ -8628,6 +8642,22 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itReturnsNoneAsDefaultGroupBy
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itReturnsValidXml
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itUsesCodeAsSource
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itFallsBackToMessageWhenHumanMessageNull
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itGroupsByFileByDefaultInDetailMode
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itGroupsByRuleWhenGroupByRuleIsExplicit
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itOmitsTheAcceptedLevelFragmentWhenAbsent
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itRendersFlatWhenGroupByNoneIsExplicit
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsDebtBreakdownByRule
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsNoFindingsFoundForEmptyFindings
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsProjectLevelFindingGroupHeader
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsRuleCodeOnFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsScopedMessageForEmptyFindingsWithClassFilter
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsScopedMessageForEmptyFindingsWithNamespaceFilter
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsSeverityTagOnFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsSymbolNameOnFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itShowsTheAcceptedLevelOnABreach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itUsesAllFindingsForDebtBreakdownWhenProvided
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Detail\DetailedFindingRendererTest::itUsesHumanMessageWhenAvailable
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAcceptsIterableOfFormattersInConstructor
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAddsFormatterOnRegister
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itDeclaresKeysOfFormattersHiddenFromListings
@@ -8860,6 +8890,19 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itReturnsMetricsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\MetricsJsonFormatterTest::itSkipsEmptyMetrics
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByClassName
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByClassNameFallingBackToFileForNamespaceLevelFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByFile
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByNamespaceName
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByNamespaceNameUsingGlobalForEmptyNamespace
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsByNoneReturningSingleGroup
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itGroupsBySeverity
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsClassNameGroupByClassThenSeverityThenLine
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsEmptyArrayToEmptyArray
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsFileGroupByFileThenSeverityThenLine
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsNamespaceNameGroupByNamespaceThenSeverityThenLine
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsNoneGroupBySeverityThenFileThenLine
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsRuleGroupByRuleThenFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterPosixSeparatorTest::itEmitsPosixSeparatorsForArtifactLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterPosixSeparatorTest::itEmitsPosixSeparatorsForRelatedLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects
@@ -9000,47 +9043,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itRespectsLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itSkipsRenderingWhenLimitIsZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\TopIssuesRendererTest::itSkipsRenderingWhenNoTopIssues
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itDescribesAMagnitudeBreachWithTheCurrentValue
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itDescribesAnOccurrenceBreachAsACountWithoutInventingANowValue
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itIgnoresAMetricValuePresentOnAnOccurrenceChannel
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itListsMultipleAcceptedMagnitudesForAGroupOfMoreThanOne
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itOmitsNowWhenTheCurrentMetricValueIsNonFinite
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itOmitsNowWhenTheMagnitudeChannelHasNoCurrentMetricValue
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itReturnsNullWhenNoAcceptedLevelIsPresent
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itSingularizesASingleOccurrence
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AcceptedLevelNarratorTest::itTrimsTrailingZerosOnBothSides
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AnsiColorTest::itReturnsAnsiWrappedTextWhenEnabled
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AnsiColorTest::itReturnsCombinedAnsiCodes
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\AnsiColorTest::itReturnsPlainTextWhenDisabled
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itFallsBackToMessageWhenHumanMessageNull
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itGroupsByFileByDefaultInDetailMode
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itGroupsByRuleWhenGroupByRuleIsExplicit
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itOmitsTheAcceptedLevelFragmentWhenAbsent
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itRendersFlatWhenGroupByNoneIsExplicit
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsDebtBreakdownByRule
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsNoFindingsFoundForEmptyFindings
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsProjectLevelFindingGroupHeader
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsRuleCodeOnFinding
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsScopedMessageForEmptyFindingsWithClassFilter
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsScopedMessageForEmptyFindingsWithNamespaceFilter
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsSeverityTagOnFinding
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsSymbolNameOnFinding
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itShowsTheAcceptedLevelOnABreach
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itUsesAllFindingsForDebtBreakdownWhenProvided
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\DetailedFindingRendererTest::itUsesHumanMessageWhenAvailable
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByClassName
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByClassNameFallingBackToFileForNamespaceLevelFinding
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByFile
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByNamespaceName
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByNamespaceNameUsingGlobalForEmptyNamespace
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsByNoneReturningSingleGroup
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itGroupsBySeverity
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsClassNameGroupByClassThenSeverityThenLine
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsEmptyArrayToEmptyArray
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsFileGroupByFileThenSeverityThenLine
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsNamespaceNameGroupByNamespaceThenSeverityThenLine
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsNoneGroupBySeverityThenFileThenLine
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Support\FindingSorterTest::itSortsRuleGroupByRuleThenFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Suppressed\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
