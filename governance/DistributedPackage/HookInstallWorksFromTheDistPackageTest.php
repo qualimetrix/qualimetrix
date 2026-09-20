@@ -7,7 +7,6 @@ namespace Qualimetrix\Governance\DistributedPackage;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
-use RuntimeException;
 
 require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
@@ -218,17 +217,23 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      * control's twin, reaches the same module the same way.
      *
      * That the module sits under `scripts/`, which `export-ignore` keeps out of
-     * the package this control measures, is not an obstacle and was once
-     * written down as one. The package is this control's *subject*, never its
-     * runtime: the file you are reading runs from the checkout, and
-     * `governance/` is `export-ignore`d too, so a control restricted to what
-     * the package carries could not exist at all.
+     * the package this control measures, is no obstacle. The package is this
+     * control's *subject*, never its runtime: the file you are reading runs
+     * from the checkout, and `governance/` is `export-ignore`d too, so a
+     * control restricted to what the package carries could not exist at all.
+     *
+     * A failure is left to surface with the module's own wording, as the twin
+     * leaves it. `run()` fails three distinguishable ways and publishes a
+     * prefix per way precisely because the last two started the child and left
+     * its work half-done; catching all three to relabel them "could not start"
+     * would say the one thing the module's own docblock forbids saying.
      *
      * One difference from a bespoke runner is worth naming. The child gets a
-     * stdin pipe closed at once rather than inheriting this process's stdin.
-     * Nothing started here reads stdin — the generated hook's only `read` takes
-     * its input from a process substitution — so EOF is both unobserved and the
-     * safer answer.
+     * stdin pipe closed at once rather than inheriting this process's stdin, so
+     * a command that did read stdin would see EOF rather than block on a
+     * terminal nobody is attending. That direction is the load-bearing half:
+     * the enumeration behind "nothing started here reads stdin" was made once,
+     * and nothing re-makes it.
      *
      * @param list<string> $command
      *
@@ -236,13 +241,7 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      */
     private static function execute(array $command, ?string $workingDirectory = null): array
     {
-        try {
-            $result = ChildProcess::run($command, $workingDirectory);
-        } catch (RuntimeException $failure) {
-            // Same vocabulary as the `assertIsResource()` this replaced: only
-            // run()'s own message says which of its failures this was.
-            self::fail('Could not start ' . $command[0] . ', so nothing here was checked: ' . $failure->getMessage());
-        }
+        $result = ChildProcess::run($command, $workingDirectory);
 
         return [$result['exitCode'], $result['stdout'] . $result['stderr']];
     }

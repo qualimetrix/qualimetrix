@@ -200,11 +200,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * reader's sake, and matching it mechanically would be a second gate nobody
      * designed; the line anchor already keeps an entry attached to a real
      * occurrence. What that leaves open is an entry that anchors correctly and
-     * still says something untrue, and it has happened once: the dist-package
-     * control's entry claimed its site *could not* reach the module, because
-     * the composer distribution excludes it — while three controls in that same
-     * directory measured that same distribution and reached the module anyway.
-     * A reason is checked only by a reader holding it against the tree it
+     * still says something untrue — one did, excusing a site on the ground that
+     * it could not reach the module, while its own directory reached it. A
+     * reason is checked only by a reader holding it against the tree it
      * describes, so write reasons that can lose.
      *
      * @var array<string, string>
