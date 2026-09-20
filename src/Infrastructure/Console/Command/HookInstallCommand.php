@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
-use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

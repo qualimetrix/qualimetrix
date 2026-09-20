@@ -9,17 +9,26 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
-use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * No fixture here creates `scripts/pre-commit-hook.sh`, and that absence is
- * the point. The version of this file that did create one reported a working
- * command for two years while `hook:install` from an installed package exited
- * 1: the fixture supplied the very file `.gitattributes` keeps out of the dist
- * package, so the test measured a tree no consumer has.
+ * These cases cannot see the defect that motivated the change, and saying so
+ * is worth more than a case that pretends otherwise.
+ *
+ * The command used to look for `scripts/pre-commit-hook.sh` in two places:
+ * relative to the working directory, and relative to the package root. The
+ * second one found the file in any checkout of this repository no matter what
+ * the working directory was, so nothing running inside the source tree could
+ * ever observe the miss. What a consumer receives has no `scripts/` at all,
+ * and that tree is judged by
+ * {@see \Qualimetrix\Governance\DistributedPackage\HookInstallWorksFromTheDistPackageTest}.
+ *
+ * What is checked here is the shape of the installed hook — a regular file
+ * naming the binary that wrote it — and the states an earlier release can
+ * leave behind.
  */
 #[CoversClass(HookInstallCommand::class)]
 final class HookInstallCommandTest extends TestCase
@@ -80,8 +89,12 @@ final class HookInstallCommandTest extends TestCase
         self::assertStringContainsString(self::BINARY, $contents);
     }
 
+    /**
+     * Installing reads nothing and writes nothing outside the hooks
+     * directory.
+     */
     #[Test]
-    public function itNeedsNoScriptOnDiskToInstallFrom(): void
+    public function itReadsNoScriptAndLeavesNoneBehind(): void
     {
         self::assertDirectoryDoesNotExist($this->tempDir . '/scripts');
 
@@ -204,6 +217,11 @@ final class HookInstallCommandTest extends TestCase
             public function path(): ?string
             {
                 return $this->binary;
+            }
+
+            public function hint(): string
+            {
+                return $this->binary ?? 'qmx';
             }
         };
     }

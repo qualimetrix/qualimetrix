@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,6 +21,7 @@ final class HookStatusCommand extends Command
 {
     public function __construct(
         private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
+        private readonly RunningBinaryLocatorInterface $runningBinaryLocator,
     ) {
         parent::__construct();
     }
@@ -49,7 +51,7 @@ final class HookStatusCommand extends Command
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');
-            $output->writeln('  bin/qmx hook:install');
+            $output->writeln(\sprintf('  %s hook:install', $this->runningBinaryLocator->hint()));
 
             return self::SUCCESS;
         }
@@ -88,7 +90,7 @@ final class HookStatusCommand extends Command
             $output->writeln('');
             $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
             $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
-            $output->writeln('Reinstall it: bin/qmx hook:install --force');
+            $output->writeln(\sprintf('Reinstall it: %s hook:install --force', $this->runningBinaryLocator->hint()));
 
             return null;
         }
@@ -165,6 +167,6 @@ final class HookStatusCommand extends Command
         }
 
         $output->writeln('To install Qualimetrix hook, run:');
-        $output->writeln('  bin/qmx hook:install --force');
+        $output->writeln(\sprintf('  %s hook:install --force', $this->runningBinaryLocator->hint()));
     }
 }

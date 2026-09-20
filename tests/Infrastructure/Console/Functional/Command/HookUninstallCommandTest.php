@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -56,7 +57,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -76,7 +77,7 @@ final class HookUninstallCommandTest extends TestCase
     #[Test]
     public function itReportsNothingToUninstallWhenHookNotFound(): void
     {
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -99,7 +100,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -129,7 +130,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -161,7 +162,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -188,7 +189,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -214,7 +215,7 @@ final class HookUninstallCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -240,7 +241,7 @@ final class HookUninstallCommandTest extends TestCase
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $hookPath);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
 
         $application = new Application();
         $application->addCommand($command);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\Console\Hook;
+namespace Qualimetrix\Infrastructure\Console;
 
 final class RunningBinaryLocator implements RunningBinaryLocatorInterface
 {
@@ -29,5 +29,10 @@ final class RunningBinaryLocator implements RunningBinaryLocatorInterface
         }
 
         return null;
+    }
+
+    public function hint(): string
+    {
+        return $this->path() ?? 'qmx';
     }
 }

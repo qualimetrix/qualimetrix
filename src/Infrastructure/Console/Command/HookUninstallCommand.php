@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,6 +22,7 @@ final class HookUninstallCommand extends Command
 {
     public function __construct(
         private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
+        private readonly RunningBinaryLocatorInterface $runningBinaryLocator,
     ) {
         parent::__construct();
     }
@@ -81,7 +83,7 @@ final class HookUninstallCommand extends Command
         if (is_link($hookPath) && !file_exists($hookPath)) {
             $output->writeln('<error>Pre-commit hook is a symlink that leads nowhere.</error>');
             $output->writeln('Nothing identifies it, so it is left alone.');
-            $output->writeln('Replace it with a working hook: bin/qmx hook:install --force');
+            $output->writeln(\sprintf('Replace it with a working hook: %s hook:install --force', $this->runningBinaryLocator->hint()));
             $output->writeln('Or remove it by hand: rm ' . $hookPath);
 
             return self::FAILURE;
