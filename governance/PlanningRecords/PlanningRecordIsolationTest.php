@@ -399,7 +399,9 @@ final class PlanningRecordIsolationTest extends TestCase
         try {
             $result = ChildProcess::run(['git', 'ls-files', '-z'], self::$projectRoot);
         } catch (RuntimeException $exception) {
-            throw new LogicException('Cannot start git ls-files: ' . $exception->getMessage(), 0, $exception);
+            // Carried whole rather than restated: only run()'s own message
+            // says which of its failures this was.
+            throw new LogicException('git ls-files did not complete: ' . $exception->getMessage(), 0, $exception);
         }
 
         // Failure is the exit code. git writes environment advice to stderr at

@@ -327,7 +327,7 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
         try {
             $result = ChildProcess::run($command);
         } catch (RuntimeException $failure) {
-            self::fail('Could not run ' . implode(' ', $command) . ': ' . $failure->getMessage());
+            self::fail(implode(' ', $command) . ' did not complete: ' . $failure->getMessage());
         }
 
         if ($result['exitCode'] !== 0) {

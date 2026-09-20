@@ -191,7 +191,7 @@ final class OutputFormatObservation
             $result = ChildProcess::run($command, $cwd);
         } catch (RuntimeException $exception) {
             throw new RuntimeException(
-                \sprintf('Could not run %s in %s: %s', implode(' ', $command), $cwd, $exception->getMessage()),
+                \sprintf('%s did not complete in %s: %s', implode(' ', $command), $cwd, $exception->getMessage()),
                 0,
                 $exception,
             );

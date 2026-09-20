@@ -314,9 +314,16 @@ final class Runner
             // DeclarationError, not the bare RuntimeException run() throws:
             // Stand::run() catches DeclarationError by name around a call
             // that reaches here ($this->runner->observe(...)), to turn one
-            // row's failed launch into a reported verdict instead of an
-            // uncaught crash of the whole grid.
-            throw new DeclarationError('cannot start ' . implode(' ', $argv) . ': ' . $error->getMessage());
+            // row's failed run into a reported verdict instead of an uncaught
+            // crash of the whole grid.
+            //
+            // Carried whole rather than restated: only run()'s own message
+            // says which of its failures this was.
+            throw new DeclarationError(
+                implode(' ', $argv) . ' did not complete: ' . $error->getMessage(),
+                0,
+                $error,
+            );
         }
 
         $stdout = $result['stdout'];

@@ -183,7 +183,9 @@ final class HtmlReportShipsOnlyWhatItReadsTest extends TestCase
         try {
             $result = ChildProcess::run($command, null, $input);
         } catch (RuntimeException $exception) {
-            self::fail('Could not start ' . $command[0] . ', so nothing here was checked: ' . $exception->getMessage());
+            // Carried whole rather than restated: only run()'s own message
+            // says which of its failures this was.
+            self::fail($command[0] . ' did not complete, so nothing here was checked: ' . $exception->getMessage());
         }
 
         self::assertSame(

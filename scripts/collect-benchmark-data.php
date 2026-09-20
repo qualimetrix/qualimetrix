@@ -172,8 +172,8 @@ foreach ($projects as $project) {
     try {
         $result = ChildProcess::run($cmd, $neutralDir);
     } catch (RuntimeException $exception) {
-        fprintf(STDERR, "FAILED (could not run analysis): %s\n", $exception->getMessage());
-        $failures[] = sprintf('%s: could not run analysis (%s)', $id, $exception->getMessage());
+        fprintf(STDERR, "FAILED (analysis did not complete): %s\n", $exception->getMessage());
+        $failures[] = sprintf('%s: analysis did not complete (%s)', $id, $exception->getMessage());
         continue;
     }
     $json = $result['stdout'];

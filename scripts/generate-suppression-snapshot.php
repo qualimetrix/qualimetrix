@@ -182,7 +182,7 @@ function generateSuppressionSnapshot(): int
 
 /**
  * Composition TSV, inert TSV, row count, inert count, measured exit code — or an error message
- * on infrastructure failure (process could not start, output was not the
+ * on infrastructure failure (the process did not complete, output was not the
  * expected JSON), never a finding-level exit code, which `bin/qmx check`
  * uses even on a clean, fully measured run.
  *
@@ -217,7 +217,9 @@ function measureSuppressionComposition(
     try {
         $result = ChildProcess::run($arguments, $root);
     } catch (\RuntimeException $error) {
-        return "Could not start `$cmd`: {$error->getMessage()}\n";
+        // Carried whole rather than restated: only run()'s own message
+        // says which of its failures this was.
+        return "`$cmd` did not complete: {$error->getMessage()}\n";
     }
 
     $stdout = $result['stdout'];
