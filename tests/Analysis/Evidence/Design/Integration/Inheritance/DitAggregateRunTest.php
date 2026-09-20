@@ -73,22 +73,28 @@ final class DitAggregateRunTest extends TestCase
     #[Test]
     public function itAggregatesTheDepthItPublishesPerClass(): void
     {
-        $project = $this->projectMetrics();
+        // Both levels, separately: they are two definition entries, and a
+        // definition that lost one of them still satisfies the other.
+        foreach (['project', 'namespace'] as $level) {
+            $metrics = $this->metricsOfLevel($level);
 
-        // Base 0, Middle 1, Leaf 2 -- the chain crosses three files.
-        self::assertSame(2, $project['design.dit.max']);
-        // Delta, not identity: the document is JSON, so a whole average
-        // arrives as an int and an exact-match assertion would fail on 1 vs 1.0.
-        self::assertEqualsWithDelta(1.0, $project['design.dit.avg'], 1.0e-9);
-        self::assertEqualsWithDelta(1.9, $project['design.dit.p95'], 1.0e-9);
+            // Base 0, Middle 1, Leaf 2 -- the chain crosses three files.
+            self::assertSame(2, $metrics['design.dit.max'], $level);
+            self::assertEqualsWithDelta(1.0, $metrics['design.dit.avg'], 1.0e-9, $level);
+            self::assertEqualsWithDelta(1.9, $metrics['design.dit.p95'], 1.0e-9, $level);
+        }
     }
 
     #[Test]
     public function itCountsClassesRatherThanEveryClassLevelSymbol(): void
     {
-        $project = $this->projectMetrics();
+        $project = $this->metricsOfLevel('project');
 
         self::assertSame(3, $project['design.dit.count']);
+        // The two counts are keyed differently -- declarations against logical
+        // FQCNs -- so they coincide only while each name is declared once, as
+        // in this fixture. Here that makes the class count a usable witness
+        // for DIT's population.
         self::assertSame(
             $project['size.class-count.sum'],
             $project['design.dit.count'],
@@ -97,9 +103,17 @@ final class DitAggregateRunTest extends TestCase
     }
 
     /**
+     * The metrics of the one symbol published at `$level`.
+     *
+     * Addressed by the level the document names, not by "a node carrying DIT
+     * keys": project and namespace both carry them, so a search that takes the
+     * last match reads whichever the serializer happened to emit later, and a
+     * definition that lost its project entry still satisfies an assertion
+     * pointed at the namespace.
+     *
      * @return array<string, float|int>
      */
-    private function projectMetrics(): array
+    private function metricsOfLevel(string $level): array
     {
         $process = new Process([
             \PHP_BINARY,
@@ -121,49 +135,29 @@ final class DitAggregateRunTest extends TestCase
             self::fail('The run produced no metrics document: ' . $process->getErrorOutput());
         }
 
-        /** @var array<string, mixed>|null $document */
+        /** @var array{symbols?: list<array{type?: string, metrics?: array<string, float|int>}>}|null $document */
         $document = json_decode(substr($output, $start), true);
 
-        if (!\is_array($document)) {
-            self::fail('The metrics document did not parse');
+        if (!\is_array($document) || !isset($document['symbols'])) {
+            self::fail('The metrics document did not parse, or carries no symbols');
         }
 
-        return self::projectSection($document);
-    }
+        $matches = array_values(array_filter(
+            $document['symbols'],
+            static fn(array $symbol): bool => ($symbol['type'] ?? null) === $level,
+        ));
 
-    /**
-     * The project section is the one node carrying `design.dit.count`
-     * alongside a project-level class count; addressing it by shape keeps this
-     * test independent of the document's nesting.
-     *
-     * @param array<string, mixed> $document
-     *
-     * @return array<string, float|int>
-     */
-    private static function projectSection(array $document): array
-    {
-        $found = null;
-        $walk = static function (mixed $node) use (&$walk, &$found): void {
-            if (!\is_array($node)) {
-                return;
-            }
+        self::assertCount(1, $matches, \sprintf('Expected exactly one %s symbol', $level));
 
-            if (isset($node['design.dit.count'], $node['size.class-count.sum'])) {
-                $found = $node;
-            }
+        $metrics = $matches[0]['metrics'] ?? [];
 
-            foreach ($node as $child) {
-                $walk($child);
-            }
-        };
-        $walk($document);
+        self::assertArrayHasKey(
+            'design.dit.count',
+            $metrics,
+            \sprintf('The %s symbol carries no DIT aggregate at all', $level),
+        );
 
-        if ($found === null) {
-            self::fail('The metrics document carries no project-level DIT aggregate');
-        }
-
-        /** @var array<string, float|int> $found */
-        return $found;
+        return $metrics;
     }
 
     private function write(string $name, string $body): void

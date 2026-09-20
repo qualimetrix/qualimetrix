@@ -72,7 +72,10 @@ belong to no family is the signal that a fifth family is being named.
   collectors declare (ADR 0069). The per-file pass still decides DIT's
   population: `DitGlobalCollector` corrects the depth of symbols that already
   carry a per-file `design.dit` and leaves the rest alone, which is what keeps
-  interfaces, traits and enums out of the metric and its aggregates.
+  interfaces, traits and enums out of the metric and its aggregates. That makes
+  the global pass depend on the file pass's keys, which `requires()` cannot
+  express — it orders global collectors against each other. Removing the
+  per-file write would empty DIT rather than fail.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
   semantics.

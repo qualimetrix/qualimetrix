@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionException;
 use SplFileInfo;
 
 /**
@@ -28,11 +29,20 @@ use SplFileInfo;
  * `design.dit` reached a release in exactly that state, its definition left on
  * the per-file collector by a comment saying the metric was "already declared".
  *
- * What this control does NOT check: that a declaration is *adequate*. A
- * definition carrying the right name but the wrong `collectedAt`, or missing a
- * level's aggregation strategies, satisfies this test while still leaving that
- * level unaggregated. There is no declared spec of required levels to check a
- * definition against, so the gap is named here rather than papered over.
+ * What this control reads are two DECLARATIONS -- `provides()` and
+ * `getMetricDefinitions()` -- and it holds them to each other. It does not
+ * watch `calculate()` write anything, so it cannot see a collector whose
+ * `addScalar()` names a key neither declaration mentions. What observes the
+ * write is the collector's own unit test, which runs `calculate()` against a
+ * seeded repository and reads the value back; this control makes the pair of
+ * declarations agree so that the aggregation phase, which consults only
+ * `getMetricDefinitions()`, covers what `provides()` promises.
+ *
+ * It also cannot judge whether a declaration is *adequate*: a definition with
+ * the right name but the wrong `collectedAt`, or missing a level's aggregation
+ * strategies, satisfies this test while leaving that level unaggregated. There
+ * is no declared spec of required levels to check against, so the gap is named
+ * rather than papered over.
  *
  * The definitions are read by calling the methods, not by reading the source:
  * neither `provides()` nor `getMetricDefinitions()` is required to return
@@ -51,7 +61,14 @@ final class GlobalCollectorDeclaresWhatItWritesTest extends TestCase
         $undeclared = [];
 
         foreach ($collectors as $class) {
-            $collector = (new ReflectionClass($class))->newInstanceWithoutConstructor();
+            // Constructed without its constructor because these two methods
+            // answer from the class, not from injected state. If that ever
+            // stops being true the failure lands here, so it names the class.
+            try {
+                $collector = (new ReflectionClass($class))->newInstanceWithoutConstructor();
+            } catch (ReflectionException $failure) {
+                self::fail($class . ' could not be instantiated for inspection: ' . $failure->getMessage());
+            }
 
             $declared = array_map(
                 static fn(MetricDefinition $definition): string => $definition->name,
@@ -60,6 +77,13 @@ final class GlobalCollectorDeclaresWhatItWritesTest extends TestCase
 
             foreach (array_diff($collector->provides(), $declared) as $metric) {
                 $undeclared[] = $class . ' writes ' . $metric . ' but does not declare it';
+            }
+
+            // The other direction: a definition for a metric the collector does
+            // not claim to write is a declaration with no writer, and the
+            // aggregation phase will roll it up from whatever else touched it.
+            foreach (array_diff($declared, $collector->provides()) as $metric) {
+                $undeclared[] = $class . ' declares ' . $metric . ' but does not write it';
             }
         }
 
@@ -75,9 +99,13 @@ final class GlobalCollectorDeclaresWhatItWritesTest extends TestCase
     #[Test]
     public function itGivesEveryMetricASingleDeclaringCollector(): void
     {
+        $collectors = self::collectorsDeclaringMetrics();
+
+        self::assertNotSame([], $collectors, 'No collectors were discovered, so this control proves nothing');
+
         $owners = [];
 
-        foreach (self::collectorsDeclaringMetrics() as $class) {
+        foreach ($collectors as $class) {
             $reflection = new ReflectionClass($class);
             $method = $reflection->getMethod('getMetricDefinitions');
 
@@ -91,6 +119,8 @@ final class GlobalCollectorDeclaresWhatItWritesTest extends TestCase
                 $owners[$definition->name][$class] = true;
             }
         }
+
+        self::assertNotSame([], $owners, 'No metric declarations were discovered, so this control proves nothing');
 
         $shared = [];
 
@@ -157,6 +187,12 @@ final class GlobalCollectorDeclaresWhatItWritesTest extends TestCase
     }
 
     /**
+     * Every class under `src/` whose file path spells its FQCN, which is how
+     * PSR-4 registers them. A production class that does NOT follow that
+     * spelling is invisible here and would be skipped in silence rather than
+     * reported -- the enumeration cannot distinguish "not a collector" from
+     * "not found".
+     *
      * @return list<class-string>
      */
     private static function productionClasses(): array

@@ -55,6 +55,15 @@ answers *how deep each one is*. This is the `MetricSubject`/`SymbolPath` seam of
 Critical Rule 4 showing up in aggregation: the two passes stood on opposite
 sides of it.
 
+This makes the global pass depend on the file pass for more than ordering: it
+now needs the file pass's *keys*, not just its values. `requires()` cannot
+express that — it orders global collectors against each other and is checked
+against the metrics earlier phases provide, not against which symbols carry
+them. The dependency is therefore carried by the collectors' tests and by this
+record rather than by a declaration the container could enforce. A future pass
+that rebuilds the repository without the per-file DIT keys would empty the
+metric silently, and nothing in the wiring would object.
+
 The invariant is checked rather than remembered, by
 `governance/MeasurementIdentity/GlobalCollectorDeclaresWhatItWritesTest`:
 every global collector declares each metric its `provides()` names, and no
@@ -72,14 +81,27 @@ implying coverage.
 
 Aggregate DIT rises wherever inheritance crosses files, which is the ordinary
 case. Per-class DIT is unchanged except that interfaces, traits and enums no
-longer receive one. `design.dit.count` now equals `size.class-count.sum` by
-construction.
+longer receive one.
 
-Nothing downstream re-calibrates: `design.dit` appears in no health formula
-(`ComputedMetricDefaults` has no DIT term), in no benchmark range, and in no
-entry of `qmx-baseline.json`. The `design.dit` rule judges class-level values,
-so findings do not move; only the `metrics` and `html` formats carry the
-aggregate.
+`design.dit.count` and `size.class-count.sum` agree on every tree measured
+here, but not *by construction*: the class count is taken over declarations
+while DIT's population is keyed by logical FQCN, so a name declared twice —
+the `class_exists()`-guarded polyfill pattern, which is ordinary PHP rather
+than broken code — counts twice in one and once in the other. The two numbers
+answer slightly different questions and only coincide while each FQCN is
+declared once.
+
+Nothing downstream re-calibrates *by default*: `design.dit` appears in no
+built-in health formula (`ComputedMetricDefaults` has no DIT term), in no
+benchmark range, and in no entry of `qmx-baseline.json`. The `design.dit` rule
+judges class-level values, and of the shipped formats only `metrics` and `html`
+carry the aggregate.
+
+That is a statement about the defaults, not about every configuration. A
+user-defined computed metric may read any published key, `design.dit.avg`
+among them, because the formula validator accepts the whole published
+catalogue. Where someone has written such a formula, its score moves with
+these aggregates and a finding it drives can move with it.
 
 Declaring a metric in two collectors is now refused rather than merely
 discouraged. That is not pedantry: the first aggregation pass iterates

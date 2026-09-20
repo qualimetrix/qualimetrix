@@ -226,7 +226,8 @@ is inside what you analysed, the value does not depend on the install.
 
 DIT is reported for classes. Interfaces, traits and enums do not receive one,
 and they are not part of the population the namespace and project aggregates
-average over --- that population is exactly what `size.class-count` counts.
+average over. That population is the named classes of the analysed path, which
+is what `size.class-count` counts wherever each class name is declared once.
 
 The aggregates summarise the per-class depths the same report publishes,
 including chains that cross files: a class whose parent is declared in another

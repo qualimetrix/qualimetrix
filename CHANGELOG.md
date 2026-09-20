@@ -81,8 +81,9 @@ remove a link it cannot identify rather than deleting someone else's hook.
 - `design.dit` is no longer reported for interfaces, traits and enums. They were
   given a class-level depth of 0 while being excluded from the aggregate's
   population, so the metric and its own denominator disagreed about what counts
-  as a class. DIT is now denominated in exactly what `size.class-count`
-  counts.
+  as a class. DIT is now denominated in the named classes the per-file pass
+  measures, which is what `size.class-count` counts wherever each class name is
+  declared once.
 - Analysing a project that shares a class name with one of the tool's own
   packages no longer breaks the run. A standalone install (the Docker image, a
   global `composer global require`) ships packages without the dependencies only
