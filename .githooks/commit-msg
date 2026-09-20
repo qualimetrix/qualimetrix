@@ -4,47 +4,23 @@
 # Validates commit message format
 
 COMMIT_MSG_FILE=$1
-COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+HOOK_DIR="$(dirname "$0")"
 
 # Private disclosure guard. A commit message is not covered by the file-content
 # check, and scrubbing one afterwards needs a full history rewrite — so refuse
 # before the commit exists.
-if ! bash "$(dirname "$0")/../scripts/check-private-leaks.sh" --message "$COMMIT_MSG_FILE"; then
+if ! bash "$HOOK_DIR/../scripts/check-private-leaks.sh" --message "$COMMIT_MSG_FILE"; then
     echo ""
     echo "❌ Refusing to commit: private term in the commit message"
     exit 1
 fi
 
-# Pattern for conventional commits: type: description
-# Allowed types: feat, fix, refactor, test, docs, chore, style, perf, ci, build
-PATTERN="^(feat|fix|refactor|test|docs|chore|style|perf|ci|build)(\(.+\))?: .+"
-
-# Check first line
-FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
-
-if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
-    echo ""
-    echo "❌ Invalid commit message format!"
-    echo ""
-    echo "Expected format: <type>: <description>"
-    echo "or:              <type>(scope): <description>"
-    echo ""
-    echo "Types: feat, fix, refactor, test, docs, chore, style, perf, ci, build"
-    echo ""
-    echo "Examples:"
-    echo "  feat: add cyclomatic complexity collector"
-    echo "  fix(parser): handle anonymous classes correctly"
-    echo "  docs: update ARCHITECTURE.md"
-    echo ""
-    echo "Your message: $FIRST_LINE"
+# Conventional Commits. The rule lives in the script because CI applies the same
+# one to the commits a pull request adds; the script also decides which subjects
+# a hook may judge at all, which is not the same question as which subjects are
+# valid. See the header of scripts/check-commit-subject.sh.
+if ! bash "$HOOK_DIR/../scripts/check-commit-subject.sh" --message "$COMMIT_MSG_FILE"; then
     exit 1
-fi
-
-# Check first line length (recommended <= 72 characters)
-if [ ${#FIRST_LINE} -gt 72 ]; then
-    echo ""
-    echo "⚠️  Warning: commit message first line is longer than 72 characters (${#FIRST_LINE})"
-    echo "Consider making it shorter for better readability in git log"
 fi
 
 exit 0

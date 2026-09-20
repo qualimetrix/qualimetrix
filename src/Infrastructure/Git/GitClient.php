@@ -52,7 +52,7 @@ final class GitClient
      */
     public function getRoot(): AbsolutePath
     {
-        return AbsolutePath::fromString(trim($this->exec('git rev-parse --show-toplevel')));
+        return AbsolutePath::fromString(trim($this->exec(['git', 'rev-parse', '--show-toplevel'])));
     }
 
     /**
@@ -146,7 +146,7 @@ final class GitClient
      */
     private function getStagedFiles(): array
     {
-        $output = $this->exec('git diff --cached --name-status');
+        $output = $this->exec(['git', 'diff', '--cached', '--name-status']);
 
         return $this->parseNameStatus($output);
     }
@@ -158,7 +158,7 @@ final class GitClient
      */
     private function getUncommittedFiles(): array
     {
-        $output = $this->exec('git diff --name-status HEAD');
+        $output = $this->exec(['git', 'diff', '--name-status', 'HEAD']);
 
         return $this->parseNameStatus($output);
     }
@@ -170,7 +170,7 @@ final class GitClient
      */
     private function getTwoDotDiff(string $range): array
     {
-        $output = $this->exec(\sprintf('git diff --name-status %s', escapeshellarg($range)));
+        $output = $this->exec(['git', 'diff', '--name-status', $range]);
 
         return $this->parseNameStatus($output);
     }
@@ -182,7 +182,7 @@ final class GitClient
      */
     private function getThreeDotDiff(string $range): array
     {
-        $output = $this->exec(\sprintf('git diff --name-status %s', escapeshellarg($range)));
+        $output = $this->exec(['git', 'diff', '--name-status', $range]);
 
         return $this->parseNameStatus($output);
     }
@@ -194,8 +194,7 @@ final class GitClient
      */
     private function getDiffFrom(string $ref): array
     {
-        $range = \sprintf('%s..HEAD', $ref);
-        $output = $this->exec(\sprintf('git diff --name-status %s', escapeshellarg($range)));
+        $output = $this->exec(['git', 'diff', '--name-status', \sprintf('%s..HEAD', $ref)]);
 
         return $this->parseNameStatus($output);
     }
@@ -305,13 +304,20 @@ final class GitClient
     }
 
     /**
-     * Executes a git command and returns the output.
+     * Executes a git command and returns its standard output.
+     *
+     * The command is an argument vector, so every element reaches git as one
+     * literal argument. A ref or range is user input arriving from
+     * `--report=git:...`, and git accepts refnames containing `;`, `|`, `&`,
+     * `$(` and `>` — none of which this class has to quote.
+     *
+     * @param list<string> $command
      *
      * @throws RuntimeException if the command fails
      */
-    private function exec(string $command): string
+    private function exec(array $command): string
     {
-        $process = Process::fromShellCommandline(
+        $process = new Process(
             $command,
             $this->projectRoot->value(),
         );

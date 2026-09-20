@@ -130,16 +130,41 @@ require_once __DIR__ . '/PhpFilePopulation.php';
  * `file:line`, and reviewed — and that a new call on a new line in an
  * already-entered file is refused by default.
  *
- * The price of the line anchor is paid by edits that have nothing to do with
- * subprocesses. Inserting anything *above* an entered occurrence moves it, and
- * the entry then refuses as stale until someone re-anchors it — this has already
- * happened once, when two test cases were added above an entered call and the
- * whole group went red for a change that touched no read discipline. That red is
- * the mechanism working, not a defect in it: the same anchor is what makes a
- * *second* call added to an already-entered file refuse by default, which a
- * file-level entry could never do. Re-take the number from this control's own
- * refusal message, which reports where the occurrence sits now, rather than
- * counting lines by hand.
+ * ## The price of the line anchor, measured
+ *
+ * Inserting anything *above* an entered occurrence moves it, and the entry then
+ * refuses as stale until someone re-anchors it — for a change that touched no
+ * read discipline. That is not rare, and the size of it is a measurement rather
+ * than an impression. Replaying every commit since 2026-06-01 that touched a file
+ * holding an entry gives 40 commit-to-commit transitions, of which nine moved an
+ * occurrence without changing the text of its line, and none changed that text.
+ * So this anchor would have been re-taken nine times over that window, where one
+ * keyed on the line's *content* would have been re-taken none.
+ *
+ * One of the nine was paid twice, though not by breaking twice: `10978986` put a
+ * seven-line comment above the second call in `PseudoTerminalRun.php`, and two
+ * concurrent sessions each re-took the same 78 → 85 within half an hour. What
+ * doubled the bill there was the visibility of the red, not the anchor.
+ *
+ * The form is kept anyway, and not out of inertia. Four cheaper anchors were
+ * weighed by the question this control is judged on — what does each stop
+ * refusing — and every one of them is wider, because **an anchor's churn and its
+ * specificity are the same property**: a form survives an unrelated edit exactly
+ * when it names an occurrence by something a *different* occurrence can also
+ * carry, which is also what lets one reviewed entry come to permit two. ADR 0070
+ * lists the four and what each loses. Two of those losses are present in today's
+ * tree rather than hypothetical: keyed on the enclosing symbol, eight of the
+ * twenty-two occurrences outside the module sit four-to-a-function in two data
+ * providers, so the six entries covering them would collapse into two; and two
+ * more sit in a class constant array with no enclosing function to name at all.
+ *
+ * So the red is the mechanism working, not a defect in it: the same anchor is
+ * what makes a *second* call added to an already-entered file refuse by default,
+ * which a file-level entry could never do. Re-take the number from this
+ * control's own refusal message, which reports where the occurrence sits now,
+ * rather than counting lines by hand. Re-opening the question costs a fresh
+ * measurement — the numbers above are the case for changing the form, and it has
+ * already been made and lost.
  *
  * One gap is named rather than covered: a dynamically assembled name
  * (`$f = 'proc_' . 'open'; $f(…)`) is invisible to any textual gate, and the
@@ -171,9 +196,14 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * as stale, so the list cannot decay into permission for whatever moves
      * into that path later.
      *
-     * The enclosing function is named in the reason for the reader's sake and
-     * is deliberately not verified: matching it mechanically would be a second
-     * gate nobody designed, and the line anchor already does the work.
+     * Nothing verifies the prose. The enclosing function is named for the
+     * reader's sake, and matching it mechanically would be a second gate nobody
+     * designed; the line anchor already keeps an entry attached to a real
+     * occurrence. What that leaves open is an entry that anchors correctly and
+     * still says something untrue — one did, excusing a site on the ground that
+     * it could not reach the module, while its own directory reached it. A
+     * reason is checked only by a reader holding it against the tree it
+     * describes, so write reasons that can lose.
      *
      * @var array<string, string>
      */
@@ -205,11 +235,6 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
-
-        'governance/DistributedPackage/HookInstallWorksFromTheDistPackageTest.php:231' => 'The dist-package '
-            . 'control\'s own runner: both of the child\'s streams go to files and it opens no pipe at all, so it '
-            . 'holds nothing to leave unserviced. It cannot use the module either — it measures what the composer '
-            . 'distribution carries, and the module is excluded from it.',
 
         'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:285' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '

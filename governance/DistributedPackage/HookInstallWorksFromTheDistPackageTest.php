@@ -6,6 +6,9 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * `hook:install` judged against what a consumer receives, not against this
@@ -40,13 +43,27 @@ use PHPUnit\Framework\TestCase;
  *
  * Measured at roughly three seconds on the tree that added it, almost all of
  * it the `vendor/` copy. That is the price of judging the artifact instead of
- * the source; a cheaper control would be judging the source again.
+ * the source; a cheaper control would be judging the source again. A real
+ * `composer install --no-dev` inside the extracted package would be more
+ * faithful still and is deliberately not done: it needs the network, and this
+ * group's cost is the reason it exists rather than an accident of it.
+ *
+ * Copying `vendor/` has a consequence the dump hides, and it is refused rather
+ * than accepted: {@see InstalledDependencyGraph} stops the run unless the graph
+ * it would apply is the one HEAD describes, from `composer.json` through the
+ * lock to `installed.json`. `dump-autoload --no-dev` takes the
+ * production/development split from the copied `installed.json` and never from
+ * the lock, which is what makes the disagreement invisible without the check.
  */
 final class HookInstallWorksFromTheDistPackageTest extends TestCase
 {
     #[Test]
     public function itInstallsAWorkingHookFromWhatTheDistPackageCarries(): void
     {
+        // Before anything this run would otherwise have to clean up: a graph
+        // that is not HEAD's makes this run a verdict about neither tree.
+        InstalledDependencyGraph::assertMatchesHead(self::projectRoot());
+
         $scratch = self::scratchDirectory();
         $package = $scratch . '/package';
         $consumer = $scratch . '/consumer';
@@ -208,13 +225,33 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     }
 
     /**
-     * Both streams go to files rather than pipes.
+     * The repository's one drain-free-of-deadlock child runner, rather than a
+     * private one: two pipes read in sequence is the defect its own governance
+     * control exists to refuse. `GitScopeWorksFromTheDistPackageTest`, this
+     * control's twin, reaches the same module the same way.
      *
-     * A parent that reads one pipe to EOF before touching the other deadlocks
-     * as soon as the child fills the OS pipe buffer on the stream read second:
-     * the child blocks mid-write, so it never exits and the first stream never
-     * reaches EOF. `git archive` over this repository is exactly the size where
-     * that starts to matter. Files have no such buffer.
+     * That the module sits under `scripts/`, which `export-ignore` keeps out of
+     * the package this control measures, is no obstacle. The package is this
+     * control's *subject*, never its runtime: the file you are reading runs
+     * from the checkout, and `governance/` is `export-ignore`d too, so a
+     * control restricted to what the package carries could not exist at all.
+     *
+     * A failure is left to surface with the module's own wording, as the twin
+     * leaves it. `run()` fails three distinguishable ways and publishes a
+     * prefix per way precisely because the last two started the child and left
+     * its work half-done; catching all three to relabel them "could not start"
+     * would say the one thing the module's own docblock forbids saying.
+     *
+     * One difference from a bespoke runner is worth naming. The child gets a
+     * stdin pipe closed at once rather than inheriting this process's stdin, so
+     * a command that did read stdin would see EOF rather than block on a
+     * terminal nobody is attending. That direction is the load-bearing half:
+     * the enumeration behind "nothing started here reads stdin" was made once,
+     * and nothing re-makes it.
+     *
+     * The streams are merged on return because every assertion below reads the
+     * command's output as one transcript: a message printed to stderr is still
+     * the command answering.
      *
      * @param list<string> $command
      *
@@ -222,28 +259,9 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
      */
     private static function execute(array $command, ?string $workingDirectory = null): array
     {
-        $outPath = tempnam(sys_get_temp_dir(), 'qmx-dist-out-');
-        $errPath = tempnam(sys_get_temp_dir(), 'qmx-dist-err-');
+        $result = ChildProcess::run($command, $workingDirectory);
 
-        self::assertIsString($outPath);
-        self::assertIsString($errPath);
-
-        $process = proc_open(
-            $command,
-            [1 => ['file', $outPath, 'w'], 2 => ['file', $errPath, 'w']],
-            $pipes,
-            $workingDirectory,
-        );
-
-        self::assertIsResource($process, 'Could not start ' . $command[0] . ', so nothing here was checked.');
-
-        $status = proc_close($process);
-        $output = (string) file_get_contents($outPath) . (string) file_get_contents($errPath);
-
-        unlink($outPath);
-        unlink($errPath);
-
-        return [$status, $output];
+        return [$result['exitCode'], $result['stdout'] . $result['stderr']];
     }
 
     private static function scratchDirectory(): string

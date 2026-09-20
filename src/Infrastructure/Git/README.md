@@ -111,10 +111,39 @@ fi
 ## Two ways of running git, on purpose
 
 `GitClient` uses Symfony Process; `GitRepositoryLocator` uses `proc_open`. The
-split is deliberate. The locator asks git one short question and discards
-stderr, which is what lets it read a single pipe safely. `GitClient` cannot do
-that: it distinguishes git's exit codes and reports git's error text, so it
-needs both streams, and it needs the timeout Process applies to every call.
+split is deliberate, and one support carries it: `GitClient` reports git's own
+error text. When a command fails, `exec()` wraps `ProcessFailedException`,
+whose message carries git's stderr, so a broken scope names the reason git
+gave. `askGit()` asks one short question, discards stderr and reads a single
+pipe safely; it has no such message to build.
+
+Two supports this section used to claim do not hold, and neither is the
+reason. `assertInsideWorkTree()` reads `isSuccessful()` and stdout, and needs
+no stderr at all. `assertCommitReference()` is worse than redundant. `--quiet`
+makes an unknown ref exit 1 with empty stderr, so its own `getErrorOutput()`
+report is reached only on some other exit code — and the reachable one is 128
+*inside* a healthy repository, for a reflog position git cannot walk
+(`HEAD@{999}`), where stderr is empty as well. The report therefore fires with
+nothing to say: it names the ref, then a bare colon. Meanwhile the one probe
+that does put text on stderr, a ref dereferencing to a tree (`HEAD^{tree}`),
+exits 1 and is reported without it. Measured, `LC_ALL=C`, in this repository.
+That branch is a defect to fix, not a support to cite.
+
+The timeout is the second support that does hold, and it cuts both ways.
+Process applies 60 s to every call by default, so a git that hangs is bounded.
+The same default is also a ceiling: `git diff --name-status` over a large range
+in a consumer's repository is aborted at 60 s, and what surfaces is a
+`ProcessTimedOutException` carrying no git stderr rather than the wrapped
+failure above. `askGit()`, bounded by nothing, has no such failure mode — it
+trades this one for hanging instead.
+
+Neither client builds a shell command. `exec()` takes an argument vector, so a
+ref or range reaches git as one literal argument; where Symfony falls back to a
+shell of its own — a `--enable-sigchild` build, or an array `proc_open` that
+failed — it quotes each element itself. That matters because a range is user
+input from `--report=git:...` and git accepts refnames holding `;`, `|`, `&`,
+`$(` and `>`; quoting them was previously `escapeshellarg`'s job at each call
+site, and is now nobody's.
 
 Symfony Process is therefore a production dependency. It once was not, and
 every git scope died with a class-not-found on the phar and on `--no-dev`

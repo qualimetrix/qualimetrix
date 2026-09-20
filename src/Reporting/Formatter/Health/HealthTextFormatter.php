@@ -9,11 +9,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
-use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;

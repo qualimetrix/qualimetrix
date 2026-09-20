@@ -1006,7 +1006,7 @@ architecture:
         - 'Qualimetrix\Reporting\Contract\OutputFormat'
         - 'Qualimetrix\Reporting\Contract\OutputFormatResolverInterface'
         - 'Qualimetrix\Reporting\CoverageFailure'
-        - 'Qualimetrix\Reporting\Filter\FindingFilter'
+        - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'
@@ -1025,13 +1025,20 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder'
         - 'Qualimetrix\Reporting\FindingProjection\SuppressionMechanism'
         - 'Qualimetrix\Reporting\FormatterContext'
+        - 'Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator'
+        - 'Qualimetrix\Reporting\Formatter\Ansi\AnsiColor'
         - 'Qualimetrix\Reporting\Formatter\CheckstyleFormatter'
+        - 'Qualimetrix\Reporting\Formatter\CoverageNarrator'
+        - 'Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer'
+        - 'Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer'
+        - 'Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer'
         - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
         - 'Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter'
         - 'Qualimetrix\Reporting\Formatter\GithubActionsFormatter'
+        - 'Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator'
         - 'Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
@@ -1045,6 +1052,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection'
         - 'Qualimetrix\Reporting\Formatter\Json\JsonSanitizer'
         - 'Qualimetrix\Reporting\Formatter\MetricsJsonFormatter'
+        - 'Qualimetrix\Reporting\Formatter\Ordering\FindingSorter'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector'
         - 'Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer'
@@ -1053,14 +1061,6 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer'
         - 'Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter'
         - 'Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer'
-        - 'Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator'
-        - 'Qualimetrix\Reporting\Formatter\Support\AnsiColor'
-        - 'Qualimetrix\Reporting\Formatter\Support\CoverageNarrator'
-        - 'Qualimetrix\Reporting\Formatter\Support\DebtBreakdownRenderer'
-        - 'Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer'
-        - 'Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer'
-        - 'Qualimetrix\Reporting\Formatter\Support\FindingSorter'
-        - 'Qualimetrix\Reporting\Formatter\Support\HealthCoverageNarrator'
         - 'Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextVerboseFormatter'
@@ -1429,6 +1429,31 @@ rules:
         # Inline contract dependencies. Exact channel scope keeps declaration
         # CBO, children, and every other coupling channel active.
         - '[Q]ualimetrix\Analysis\Policy\Inline\Contract'
+        # The Reporting vocabulary root, 16 against an inclusive 16. This is
+        # the same namespace-granularity artefact the
+        # `Analysis\Configuration\Contract` entry in this list records, and
+        # here the run says so outright: `coupling.cbo` moves 15 -> 16
+        # while `coupling.ca` (12) and `coupling.ce` (57) do not move at all.
+        # No class gained or lost an edge; only the number of namespaces those
+        # same edges are spread over changed. Measured with
+        # `bin/qmx check src/ --format=metrics`, both sides, on the commit this
+        # change starts from and on the result.
+        #
+        # The cause is retiring the `Formatter\Support` bucket, which replaced
+        # one importing namespace with two: `Formatter\Detail\FindingDetailRenderer`
+        # and `Formatter\Ordering\FindingSorter` named `GroupBy` and
+        # `FormatterContext` from inside `Support` before and name the same two
+        # types from their own subjects now. That part is counted from imports
+        # rather than read off the graph, so it is offered as the explanation
+        # of a delta the tool reports, not as a reconstruction of the metric.
+        #
+        # The counterfactual of removing this entry is putting the bucket back,
+        # so no refactoring is offered. Moving `GroupBy` down into `Ordering`
+        # was rejected on a count rather than a run: eleven namespaces name
+        # that enum, so it would turn a leaf into a hub and add an edge from
+        # this root besides. Exact channel scope keeps declaration-level class
+        # CBO, every child namespace, and every other coupling channel active.
+        - '[Q]ualimetrix\Reporting'
         # The configuration hub, union 16 against an inclusive 16. The one edge
         # that moved it from 15 is afferent, and it is X18's own cure:
         # `Evidence\Coupling\CouplingAnalysis` stopped throwing a bare
@@ -1560,7 +1585,6 @@ rules:
       - Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
       - Qualimetrix\Analysis\Evidence\Prioritization\Debt
       - Qualimetrix\Infrastructure\Serializer
-      - Qualimetrix\Reporting\Formatter\Support
       # Immutable score values form a stable concrete contract leaf. Its exact
       # namespace has A=0/I=0 by design; `[Q]` prevents descendant enrollment.
       - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
