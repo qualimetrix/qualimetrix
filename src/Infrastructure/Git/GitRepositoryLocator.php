@@ -80,10 +80,15 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      */
     private function askGit(array $arguments, AbsolutePath $workingDir): ?AbsolutePath
     {
+        // Exactly one pipe, and it is read. Nothing here consumes git's
+        // diagnostics, so handing them a pipe would be a deadlock waiting for
+        // a verbose git: once the unread pipe filled, the child would block on
+        // the write, never close its output stream, and this method would wait
+        // for an EOF that cannot arrive. `/dev/null` never fills.
         $descriptors = [
-            0 => ['pipe', 'r'],
+            0 => ['file', '/dev/null', 'r'],
             1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
+            2 => ['file', '/dev/null', 'w'],
         ];
 
         $process = @proc_open(
@@ -97,10 +102,8 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             return null;
         }
 
-        fclose($pipes[0]);
         $output = trim((string) stream_get_contents($pipes[1]));
         fclose($pipes[1]);
-        fclose($pipes[2]);
 
         $exitCode = proc_close($process);
 

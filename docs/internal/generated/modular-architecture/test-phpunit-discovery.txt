@@ -7966,6 +7966,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itSkipsUnknownGitStatusesLikeTypeChange
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itThrowsExceptionWhenGitCommandFails
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAcceptsAnExplicitWorkingDirectory
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAnswersForTheHooksDirWhenGitFloodsItsErrorStream
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itAnswersWhenGitFloodsItsErrorStream
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itDoesNotFallBackToTheAncestorRepositoryOnABrokenWorktreeLink
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itFindsTheGitDirInTheCurrentRepository
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitRepositoryLocatorTest::itResolvesAWorktreeLinkWithARelativeGitDirPath
