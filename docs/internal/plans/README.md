@@ -4,7 +4,6 @@ This index lists only work that is executable on the current tree.
 
 | Campaign                                                         | Status                                                                              |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [Closure package](closure-package-retirement/00-overview.md)     | Stage 01 done; stage 02 (`closes_in`) planned and measured, not started             |
 | [Control tooling](control-tooling/00-overview.md)                | Planned; three review rounds; stage 01 not started                                  |
 | [Health recalibration](health-recalibration/00-overview.md)      | In progress; three review rounds; instruments, corpus, model and calibration landed |
 | [Rules listing](rules-listing/01-one-declaration-two-readers.md) | Three review rounds; landed, pending review                                         |
