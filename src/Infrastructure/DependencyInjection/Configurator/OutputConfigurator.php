@@ -42,6 +42,7 @@ use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
@@ -293,6 +294,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheFactory::class),
                 new Reference(ParallelConfigurationStoreInterface::class),
                 new Reference(RuntimeLimitsController::class),
+                new Reference(AnalysedInstallAnchorInterface::class),
             ]);
 
         // ProfileSummaryRenderer (stateless, no dependencies)

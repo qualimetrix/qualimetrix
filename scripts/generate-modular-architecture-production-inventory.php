@@ -2399,6 +2399,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0071-an-anonymous-classs-declaration-edge-is-flagged-not-retyped.md' => 'Analysis.Evidence.DependencyModel',
         'docs/adr/0072-commit-subject-authority.md' => 'Architecture.Governance',
         'docs/adr/0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md' => 'Analysis.Evidence.Design',
+        'docs/adr/0073-dit-reads-the-ancestors-it-measures.md' => 'Analysis.Evidence.Design',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

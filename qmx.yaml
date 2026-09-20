@@ -286,7 +286,12 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassCriterionResult'
         - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalChainOutcome'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalDepth'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceClassInfo'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver'
@@ -826,6 +831,14 @@ architecture:
         - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface'
         - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface'
         - 'Qualimetrix\Infrastructure\Cache\FileCache'
+    - name: infrastructure-composer
+      patterns:
+        - 'Qualimetrix\Infrastructure\Composer\ClassmapPath'
+        - 'Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap'
+        - 'Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface'
+        - 'Qualimetrix\Infrastructure\Composer\DeclaredParentReader'
+        - 'Qualimetrix\Infrastructure\Composer\GeneratedClassmap'
+        - 'Qualimetrix\Infrastructure\Composer\InstallLocator'
     - name: infrastructure-console
       patterns:
         - 'Qualimetrix\Infrastructure\Console\AnalysisPreflight'
@@ -1259,6 +1272,9 @@ architecture:
       - core-path
       - infrastructure-serializer
       - external
+    infrastructure-composer:
+      - analysis-evidence-design
+      - external
     infrastructure-console:
       - analysis-configuration
       - analysis-evidence-cohesion
@@ -1277,6 +1293,7 @@ architecture:
       - core-profiler
       - core-symbol
       - infrastructure-cache
+      - infrastructure-composer
       - infrastructure-git
       - infrastructure-logging
       - infrastructure-parallel
@@ -1292,6 +1309,7 @@ architecture:
       - analysis-evidence-computedmetrics
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
+      - analysis-evidence-design
       - analysis-evidence-measurement
       - analysis-evidence-prioritization
       - analysis-finding
@@ -1303,6 +1321,7 @@ architecture:
       - core-profiler
       - infrastructure-ast
       - infrastructure-cache
+      - infrastructure-composer
       - infrastructure-console
       - infrastructure-git
       - infrastructure-logging

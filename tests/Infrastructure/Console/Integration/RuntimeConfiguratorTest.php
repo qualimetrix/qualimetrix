@@ -30,6 +30,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
@@ -168,6 +169,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->cacheFactory,
             $this->parallelStore,
             new RuntimeLimitsController(),
+            new ComposerAutoloadMap(),
         );
     }
 

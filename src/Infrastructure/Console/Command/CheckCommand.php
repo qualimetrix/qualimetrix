@@ -249,6 +249,12 @@ final class CheckCommand extends Command
         $scopedRunConfiguration = $resolvedScope->coversProjectScope
             ? $runConfiguration->coveringProjectScope($scopeResolution->paths)
             : $runConfiguration->narrowedTo($scopeResolution->paths);
+        // After narrowing, so the anchor is the paths this run actually reads.
+        $this->runtimeConfigurator->pointAutoloadMapAt(
+            (string) $scopedRunConfiguration->projectRoot,
+            array_map(static fn(object $path): string => (string) $path, $scopedRunConfiguration->paths),
+        );
+
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
         $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(

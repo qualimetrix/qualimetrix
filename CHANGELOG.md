@@ -23,6 +23,19 @@ declare each name once are unaffected, and so are the ones that declare a name
 twice in a **single** file: only the last body is measured there, which
 predates this change and is unchanged by it. See
 [ADR 0073](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md).
+- `design.dit` no longer measures inheritance depth by loading the analysed
+  project's classes. A parent outside the analysed path is now placed from that
+  project's own composer install and its `extends` is read by parsing, so
+  **DIT deepens wherever a chain leaves the analysed path and the install can be
+  read** — per-class values, the `.avg`/`.max`/`.p95` aggregates, and the
+  magnitude a `design.dit` finding reports all move. Old surface: the depth this
+  tool's autoloader could reach, which on a standalone install was usually none
+  and on a shared install was whatever version the tool itself had. New surface:
+  the depth the analysed project's own sources declare. A chain the run cannot
+  follow still reports the depth it did reach; it no longer reports the tool's
+  answer to a different question. See ADR 0073.
+
+### Breaking
 
 **`hook:install` writes a file where it used to write a symlink.** Every hook
 installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
@@ -89,6 +102,14 @@ remove a link it cannot identify rather than deleting someone else's hook.
   update any path that resolves these files directly.
 
 ### Fixed
+
+- Analysing a project no longer runs that project's code. Resolving an external
+  parent called `class_exists($fqcn, true)`, which includes the file and
+  executes its top-level statements; a `exit` or a fatal there ended the run
+  with no report and nothing caught it. Measured across ten benchmark projects,
+  the mechanism did this 326 times to change seven answers, and 170 of its 172
+  resolved answers came from the tool's own dependencies rather than the
+  project's.
 
 - A template layer's `attributes:`, `implements:` and `extends:` criteria now
   filter candidates while the template is expanded. The dependency graph was

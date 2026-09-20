@@ -2,9 +2,10 @@
 
 namespace Corpus\ExternalParent;
 
-// The parent is deliberately outside the analysed path and outside any install
-// this run can see, which is what makes it reach external resolution at all.
-// Stage 02 of the campaign gives the case an autoload map that can find it.
+// The parent is outside the analysed path -- only `src/` is analysed -- but
+// inside an install this case carries, so the walk can read its file without
+// loading it. Its own parent makes the external chain two deep, which is what
+// separates "followed the chain" from "found the first link and stopped".
 class LocalWidget extends \Corpus\Upstream\Widget
 {
 }

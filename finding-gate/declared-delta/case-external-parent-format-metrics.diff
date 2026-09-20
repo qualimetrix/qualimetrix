@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -147,3 +147,3 @@
+-                "design.dit.avg": 2,
+-                "design.dit.max": 2,
+-                "design.dit.p95": 2,
++                "design.dit.avg": 1,
++                "design.dit.max": 1,
++                "design.dit.p95": 1,
+@@ -327,3 +327,3 @@
+-                "design.dit.avg": 2,
+-                "design.dit.max": 2,
+-                "design.dit.p95": 2,
++                "design.dit.avg": 1,
++                "design.dit.max": 1,
++                "design.dit.p95": 1,
+@@ -497,3 +497,3 @@
+-                "design.dit.avg": 2,
+-                "design.dit.max": 2,
+-                "design.dit.p95": 2,
++                "design.dit.avg": 1,
++                "design.dit.max": 1,
++                "design.dit.p95": 1,
+@@ -556,1 +556,1 @@
+-                "design.dit": 2,
++                "design.dit": 1,

@@ -66,8 +66,16 @@ belong to no family is the signal that a fifth family is being named.
   percentage from those raw counts.
 - `InheritanceDepthCollector` provides per-file DIT evidence. Its visitor
   resolves local and imported parents; `DitGlobalCollector` recalculates DIT
-  through `DependencyGraphInterface` so cross-file inheritance and external
-  PHP parent fallback remain correct.
+  through `DependencyGraphInterface` so cross-file inheritance stays correct.
+- The external half of a chain is followed by `ExternalAncestry`, which counts
+  depth and decides where a chain ends. It reads through
+  `Contract\ExternalParentSourceInterface`; placing a class and parsing its
+  declaration are delivery and live in `Infrastructure\Composer` (ADR 0073).
+  Nothing here loads a class, which is what stopped the tool from executing the
+  code it measures.
+- A chain ends three ways -- it reaches a root, finds no install to read, or
+  breaks partway -- and `ExternalDepth` keeps them apart even though the metric
+  publishes one number.
 - DIT's `MetricDefinition` belongs to `DitGlobalCollector`, not to the per-file
   collector, because re-aggregation runs over the definitions the global
   collectors declare (ADR 0069). The per-file pass still decides DIT's
