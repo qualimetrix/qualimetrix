@@ -99,6 +99,7 @@ src/
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 html-report/           # The `--format=html` viewer: an npm project, not a PSR-4 root (ADR 0064)
+box.json               # The phar's include list, a third enumeration of what ships (ADR 0066)
 governance/            # Repository controls, grouped by guarded subject (PHPUnit suite `Governance`)
 scripts/               # Utility scripts; a tool with its own tests keeps them at scripts/<tool>/tests/
 tools/                 # Standalone dev tools (e.g. the PHPStan rule set); tests at tools/<tool>/tests/
@@ -613,6 +614,9 @@ composer directives:controls:coverage            # the cheap half on its own: re
 # HTML report (run when modifying html-report/)
 composer test:js        # JS tests for HTML report (vitest)
 composer build:js       # Rebuild HTML report JS bundle
+
+# Standalone archive (ADR 0066)
+composer phar           # Build build/qmx.phar; needs the GitHub CLI, which fetches the pinned box
 
 # Basic analysis
 bin/qmx check src/
