@@ -259,11 +259,11 @@ foreach ($projects as $id => $config) {
     } catch (RuntimeException $exception) {
         fprintf(
             STDERR,
-            "FAILED (could not run analysis, %.1fs): %s\n",
+            "FAILED (analysis did not complete, %.1fs): %s\n",
             round(microtime(true) - $start, 1),
             $exception->getMessage(),
         );
-        $message = sprintf('%s: could not run analysis (%s)', $id, $exception->getMessage());
+        $message = sprintf('%s: analysis did not complete (%s)', $id, $exception->getMessage());
         $failures[] = $message;
         $infrastructureFailures[] = $message;
 
