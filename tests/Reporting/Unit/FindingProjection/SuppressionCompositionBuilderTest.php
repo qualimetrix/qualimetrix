@@ -22,10 +22,10 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
@@ -319,7 +319,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     /**
      * Two overlapping global `--suppress-path` patterns both independently
      * match the same removed file. Crediting only the first-matched pattern
-     * (the shape {@see \Qualimetrix\Core\Util\PathMatcher::matches()} returns)
+     * (the shape {@see \Qualimetrix\Core\Pattern\PathMatcher::matches()} returns)
      * would report the second as inert even though it excludes findings of
      * its own.
      */

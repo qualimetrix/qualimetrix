@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 
 /**
  * Stores per-rule path exclusions and provides path matching.

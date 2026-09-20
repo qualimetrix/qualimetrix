@@ -2632,6 +2632,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\StringSet": {
+      "path": "src/Analysis/Evidence/DependencyModel/StringSet.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck": {
       "path": "src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php",
       "kind": "class",
@@ -12757,7 +12764,7 @@
         },
         {
           "owner": "Core.Neutral",
-          "source_fqcn": "Qualimetrix\\Core\\Util\\PathMatcher"
+          "source_fqcn": "Qualimetrix\\Core\\Pattern\\PathMatcher"
         },
         {
           "owner": "Core.Symbol",
@@ -14433,8 +14440,8 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\Util\\GlobSyntax": {
-      "path": "src/Core/Util/GlobSyntax.php",
+    "Qualimetrix\\Core\\Pattern\\GlobSyntax": {
+      "path": "src/Core/Pattern/GlobSyntax.php",
       "kind": "class",
       "owner": "Core.Neutral",
       "visibility": "contract",
@@ -14445,8 +14452,8 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\Util\\NamespaceMatcher": {
-      "path": "src/Core/Util/NamespaceMatcher.php",
+    "Qualimetrix\\Core\\Pattern\\NamespaceMatcher": {
+      "path": "src/Core/Pattern/NamespaceMatcher.php",
       "kind": "class",
       "owner": "Core.Neutral",
       "visibility": "contract",
@@ -14505,8 +14512,8 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\Util\\PathMatcher": {
-      "path": "src/Core/Util/PathMatcher.php",
+    "Qualimetrix\\Core\\Pattern\\PathMatcher": {
+      "path": "src/Core/Pattern/PathMatcher.php",
       "kind": "class",
       "owner": "Core.Neutral",
       "visibility": "contract",
@@ -14537,8 +14544,8 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\Util\\PatternMatch": {
-      "path": "src/Core/Util/PatternMatch.php",
+    "Qualimetrix\\Core\\Pattern\\PatternMatch": {
+      "path": "src/Core/Pattern/PatternMatch.php",
       "kind": "class",
       "owner": "Core.Neutral",
       "visibility": "contract",
@@ -14547,41 +14554,25 @@
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\PathExclusionFilter",
-          "carrier_fqcn": "Qualimetrix\\Core\\Util\\PathMatcher"
+          "carrier_fqcn": "Qualimetrix\\Core\\Pattern\\PathMatcher"
         },
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\RulePathExclusionProvider",
-          "carrier_fqcn": "Qualimetrix\\Core\\Util\\PathMatcher"
+          "carrier_fqcn": "Qualimetrix\\Core\\Pattern\\PathMatcher"
         },
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\NamespaceExclusionFilter",
-          "carrier_fqcn": "Qualimetrix\\Core\\Util\\NamespaceMatcher"
+          "carrier_fqcn": "Qualimetrix\\Core\\Pattern\\NamespaceMatcher"
         },
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\RuleNamespaceExclusionProvider",
-          "carrier_fqcn": "Qualimetrix\\Core\\Util\\NamespaceMatcher"
-        }
-      ]
-    },
-    "Qualimetrix\\Core\\Util\\StringSet": {
-      "path": "src/Core/Util/StringSet.php",
-      "kind": "class",
-      "owner": "Core.Neutral",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraph"
-        },
-        {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder"
+          "carrier_fqcn": "Qualimetrix\\Core\\Pattern\\NamespaceMatcher"
         }
       ]
     },

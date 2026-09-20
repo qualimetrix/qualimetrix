@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\StringSet;
 
 /**
  * In-memory implementation of DependencyGraphInterface.

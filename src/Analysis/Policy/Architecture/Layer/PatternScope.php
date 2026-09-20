@@ -22,7 +22,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * and the caller must then keep the diagnostic: a false alarm is cheap, a
  * missed shadow is not.
  *
- * Comparison mirrors {@see \Qualimetrix\Core\Util\NamespaceMatcher::matchesSingle()}:
+ * Comparison mirrors {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}:
  * a wildcard-free pattern matches the prefix itself and everything under it,
  * while a pattern ending in `\*` / `\**` matches only what lies under it.
  */

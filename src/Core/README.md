@@ -23,6 +23,11 @@ Core/
 │   ├── AbsolutePath.php                   # Absolute file path value object
 │   ├── PathFactory.php                    # Boundary factory creating absolute/relative paths
 │   └── RelativePath.php                   # Relative file path value object
+├── Pattern/
+│   ├── GlobSyntax.php                     # The one alphabet that makes a pattern a glob
+│   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
+│   ├── PathMatcher.php                    # Glob pattern matching for file paths
+│   └── PatternMatch.php                   # The pattern a matcher's matches() fired on
 ├── Profiler/
 │   └── Contract/
 │       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
@@ -45,12 +50,6 @@ Core/
 ├── Time/
 │   ├── ClockInterface.php                 # "What time is it?" contract
 │   └── SystemClock.php                    # Wall-clock reading of ClockInterface
-├── Util/
-│   ├── GlobSyntax.php                     # The one alphabet that makes a pattern a glob
-│   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
-│   ├── PathMatcher.php                    # Glob pattern matching for file paths
-│   ├── PatternMatch.php                   # The pattern a matcher's matches() fired on
-│   └── StringSet.php                      # Immutable set of unique strings
 └── Version.php                            # Package version at runtime
 ```
 
@@ -707,24 +706,7 @@ contracts to Console; no holder or public no-op implementation exists.
 
 ---
 
-## Utility Classes
-
-### StringSet
-
-An immutable set of unique strings with O(1) lookups. Implements `Countable` and `IteratorAggregate`.
-
-**Methods:**
-- `add(string $value): self` — new set with the value added
-- `addAll(iterable $values): self` — new set with multiple values added
-- `contains(string $value): bool` — check membership
-- `count(): int` — number of unique strings
-- `isEmpty(): bool` — whether set is empty
-- `toArray(): array<int, string>` — all strings as indexed array
-- `filter(callable $predicate): self` — filter by predicate
-- `union(self $other): self` — set union
-- `intersect(self $other): self` — set intersection
-- `diff(self $other): self` — set difference
-- `fromArray(array $values): self` — create from array (static)
+## Pattern Matching
 
 ### GlobSyntax
 
@@ -759,7 +741,7 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 
 **Methods:**
 - `matches(string $namespace): ?PatternMatch` — the pattern that matched, or `null`; when several patterns match, the first one in configuration order wins (returned with its trailing `\` stripped)
-- `matchesSingle(string $pattern, string $namespace): bool` (static) — single-pattern primitive other Core utilities delegate to
+- `matchesSingle(string $pattern, string $namespace): bool` (static) — single-pattern primitive every other caller delegates to
 - `isGlob(string $pattern): bool` (static)
 - `isEmpty(): bool` — whether no patterns are configured
 

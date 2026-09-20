@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
-use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Walks a {@see ClassSet} once and collects the distinct observed binding

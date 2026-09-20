@@ -28,15 +28,17 @@ DependencyModel/
 │   └── Handler/                  # one internal extraction family
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
-└── EmptyDependencyGraph.php
+├── EmptyDependencyGraph.php
+└── StringSet.php                 # unique-dependency counting for coupling
 ```
 
 ## Public surface
 
 The model's graph/value contracts and
 `DependencyTraversalParticipantInterface` are the declared public surface.
-`DependencyGraph`, `DependencyGraphBuilder`, `EmptyDependencyGraph`, and every
-type under `Extraction/` are internal implementation details.
+`DependencyGraph`, `DependencyGraphBuilder`, `EmptyDependencyGraph`,
+`StringSet`, and every type under `Extraction/` are internal implementation
+details.
 `DependencyLocationInterface` exposes a structured relative file and line so
 Finding consumers can project DependencyModel-owned extraction locations
 without parsing their wire representation. `Analysis\Finding\Contract\Location` also
@@ -66,6 +68,24 @@ are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`,
 `MeasurementAggregationInterface`. The threshold documents this stable query
 boundary; it is not a namespace exclusion or permission to import extraction
 internals.
+
+## StringSet
+
+An immutable set of unique strings, used by the builder to accumulate each
+namespace's efferent and afferent dependencies without counting a class twice.
+It lived in `Core` until its subject was named: `Core` holds primitives with no
+natural leaf owner, and this one has exactly one.
+
+It is immutable: `add`, `addAll`, `filter`, `union`, `intersect`, `diff` and
+the static `fromArray` never modify the receiver. They do not always allocate,
+though — `add` returns the receiver when the value is already present, and
+`addAll` returns it when every value is, which is what
+`itReturnsTheSameInstanceWhenAddingADuplicate` pins. Identity is therefore not
+a safe proxy for "nothing changed". It implements `Countable` and
+`IteratorAggregate`, and answers `contains`, `isEmpty` and `toArray`.
+
+A second consumer from another owner is not free: the manifest entry would have
+to go back to `contract` and gain that consumer, both halves in the same edit.
 
 ## Extraction and worker reconstruction
 

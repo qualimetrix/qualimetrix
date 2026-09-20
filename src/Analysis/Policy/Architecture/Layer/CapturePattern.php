@@ -33,22 +33,22 @@ use RuntimeException;
  * FQN patterns reserve {@code \} as the namespace separator only. PHP FQNs
  * never contain literal {@code &#123;} / {@code &#125;}, so the escape
  * affordance has no use case and is omitted to keep the grammar one-to-one
- * with {@see \Qualimetrix\Core\Util\NamespaceMatcher}'s glob syntax for any
+ * with {@see \Qualimetrix\Core\Pattern\NamespaceMatcher}'s glob syntax for any
  * pattern without capture variables.
  *
- * **Semantic note vs {@see \Qualimetrix\Core\Util\NamespaceMatcher}.** For
+ * **Semantic note vs {@see \Qualimetrix\Core\Pattern\NamespaceMatcher}.** For
  * patterns containing glob metacharacters ({@code *}, {@code ?}, {@code [}),
  * both engines produce equivalent results (CapturePattern's regex is a
  * straightforward translation of {@code fnmatch()} semantics for FQN-shaped
  * input). For NON-glob, non-capture patterns the two engines diverge:
- * {@see \Qualimetrix\Core\Util\NamespaceMatcher} treats {@code App\Foo} as
+ * {@see \Qualimetrix\Core\Pattern\NamespaceMatcher} treats {@code App\Foo} as
  * a namespace PREFIX (matches {@code App\Foo} and {@code App\Foo\Bar}),
  * whereas {@see CapturePattern} compiles {@code App\Foo} to an exact-match
  * regex ({@code /^App\\Foo$/}) — there is no prefix-expansion fallback
  * because a substituted concrete pattern produced by template expansion is
  * already a full pattern in its own right. Call sites that need Phase-1
  * prefix semantics for non-capture filter patterns route through
- * {@see \Qualimetrix\Core\Util\NamespaceMatcher} directly (see
+ * {@see \Qualimetrix\Core\Pattern\NamespaceMatcher} directly (see
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage}).
  *
  * **Variable name regex** ({@see VARIABLE_NAME_REGEX}) intentionally mirrors
@@ -247,7 +247,7 @@ final readonly class CapturePattern
 
     /**
      * Substitutes the bindings into the raw pattern, producing a concrete
-     * pattern string suitable for {@see \Qualimetrix\Core\Util\NamespaceMatcher::matchesSingle()}.
+     * pattern string suitable for {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}.
      *
      * The substitution preserves any non-capture glob metacharacters
      * ({@code **}, {@code *}, {@code ?}) verbatim — the result is still a
