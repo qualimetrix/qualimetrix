@@ -92,14 +92,17 @@ Permanent versus temporary was the *idea* the field expressed, and it outlived
 the field's spelling in places no sweep for `closes_in` reaches. With the
 distinction gone, the names that drew it go too:
 
-| Carrier                       | Before                                                                            | After                                                     |
-| ----------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| published summary row         | `permanent_composition_bindings`                                                  | removed — see below                                       |
-| published summary row         | `temporary_contract_consumer_entries`                                             | removed                                                   |
-| consumer refusal              | "must be permanent owner-wide, permanent exact-source, or temporary exact-source" | "must be owner-wide or exact-source"                      |
-| `composition_binding` refusal | "must permanently authorize an exact DI source to an internal target"             | "must authorize an exact DI source to an internal target" |
-| `contract_surface` refusal    | "must name a permanent exact source"                                              | "must name an exact source"                               |
-| governance test method        | `itPublishesOnlyPermanentExactCompositionBindingsForDiInternals`                  | `itPublishesOnlyExactCompositionBindingsForDiInternals`   |
+| Carrier                                   | Before                                                                            | After                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| published summary row                     | `permanent_composition_bindings`                                                  | removed — see below                                       |
+| published summary row                     | `temporary_contract_consumer_entries`                                             | removed                                                   |
+| consumer refusal                          | "must be permanent owner-wide, permanent exact-source, or temporary exact-source" | "must be owner-wide or exact-source"                      |
+| `composition_binding` refusal             | "must permanently authorize an exact DI source to an internal target"             | "must authorize an exact DI source to an internal target" |
+| `contract_surface` refusal                | "must name a permanent exact source"                                              | "must name an exact source"                               |
+| governance test method                    | `itPublishesOnlyPermanentExactCompositionBindingsForDiInternals`                  | `itPublishesOnlyExactCompositionBindingsForDiInternals`   |
+| `AGENTS.md`, `docs/ARCHITECTURE.md`       | "permanent exact composition bindings"                                            | "exact composition bindings"                              |
+| `qmx.yaml` header comment                 | "temporary source-to-target grants"                                               | "exact source-to-target grants"                           |
+| `docs/internal/MODULE_README_TEMPLATE.md` | four carriers, one of them a `P3` gate naming nothing in the tree                 | rewritten to the current rule                             |
 
 Dropping the qualifier from `permanent_composition_bindings` exposed something the
 qualifier had been hiding: the row counted the same array as
@@ -110,7 +113,14 @@ A word that stops distinguishing things is worth removing on its own; a word tha
 was the only reason two identical numbers looked like different measurements is
 worth removing twice.
 
-Two uses of the word were **kept**, and both would be wrong to rename:
+Records keep theirs. [ADR 0022](0022-capability-oriented-modular-monolith.md) and
+[ADR 0023](0023-p8-context-locality-and-composition-bindings.md) say "permanent"
+throughout, and correctly: they describe the model as it stood when they were
+accepted, and a record rewritten to match a later tree stops being a record. The
+distinction between a document that asserts what is true now and one that asserts
+what was true then is the whole reason the list above stops where it does.
+
+Two uses of the word were **kept** in live code, and both would be wrong to rename:
 
 - The production generator's `$temporary` in its atomic-write idiom (write to
   `.tmp.<pid>`, then `rename`). It is the ordinary meaning of the word and has
@@ -160,7 +170,9 @@ that the absence of an entry cannot be mistaken for an oversight.
 
 **What replaces the dictionary is nothing.** Declaration provenance is answered
 by history, and permission scope by the owner/source pair the manifest already
-carries; see [ADR 0023](0023-p8-context-locality-and-composition-bindings.md) for
-what an exact composition binding means. A future field expressing "this
+carries. [ADR 0023](0023-p8-context-locality-and-composition-bindings.md) is
+still the definition of an exact composition binding, and it spells that
+definition "permanent exact `composition_binding`" — read the qualifier there as
+the historical spelling of what this record now calls simply exact. A future field expressing "this
 permission expires" is not authorized by this record: it would be a new decision,
 and it would need data that exercises it.
