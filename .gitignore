@@ -52,8 +52,7 @@ website/site/
 website/.venv/
 __pycache__/
 
-# Test fixtures (generated)
-/tests/Fixtures/generated/
+# Analysis cache written into whatever tree is analysed
 .qmx-cache/
 
 # Demo/example files
@@ -72,7 +71,7 @@ examples/
 !/docs/internal/generated/input-doors/observations-before/**/*.json
 !/docs/internal/modular-architecture-manifest.json
 !/docs/internal/modular-architecture-manifest.schema.json
-!/tests/Fixtures/**/*.json
+!/tests/Reporting/Fixtures/**/*.json
 !/tests/Analysis/Evidence/Measurement/Fixtures/*.json
 !/tests/Analysis/Policy/Architecture/Fixtures/Sample/*.json
 !/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json

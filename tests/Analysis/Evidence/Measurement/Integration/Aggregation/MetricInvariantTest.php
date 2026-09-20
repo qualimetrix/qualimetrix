@@ -26,7 +26,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * These invariants should hold regardless of specific metric values,
  * catching aggregation bugs that golden-file tests might miss.
  *
- * Fixture directory: tests/Fixtures/GoldenMetrics/
+ * Fixture directory: tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/
  */
 #[Group('integration')]
 final class MetricInvariantTest extends TestCase
