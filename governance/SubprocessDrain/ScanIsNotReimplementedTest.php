@@ -23,9 +23,11 @@ require_once __DIR__ . '/PhpFilePopulation.php';
  * exactly the harm it was put there to stop.
  *
  * So the property is checked directly, by absence: outside the scan, no file in
- * this group folds a file's case or tokenizes PHP for itself. The two controls
- * went back to one mechanism because two copies drift; this is what keeps a
- * third from being written.
+ * this group folds a file's contents or finds the token a byte offset falls in.
+ * Not "does not tokenize" — the caller scan tokenizes, legitimately, for a
+ * different subject. The two controls went back to one mechanism because two
+ * copies drift; this is what keeps a third from being written in either of the
+ * forms that were actually written twice.
  *
  * One file is exempt by name rather than by pattern, because an exemption that
  * matched a shape would grow to fit whatever is written next.

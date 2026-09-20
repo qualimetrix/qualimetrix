@@ -185,6 +185,79 @@ final class ModuleIsLoadedByPathTest extends TestCase
         );
     }
 
+    /**
+     * The same rule, for this group's own support classes.
+     *
+     * They were autoloaded until the scan moved into one of them, and that put
+     * the mechanism back within reach of the hazard this control exists for: a
+     * scratch project symlinks `vendor/`, whose PSR-4 map holds absolute paths
+     * into the source tree, so an autoloaded class resolves there and the copy
+     * under test is never read. Measured on such a stand, a mutation of the
+     * copy was ignored and the stand was green on a broken scan.
+     *
+     * The `require_once` calls that fixed it were a convention nothing
+     * enforced, which is exactly the state this control was written to end for
+     * the module — four callers had already dropped it while three documents
+     * still said every caller carried it. A convention nothing enforces is a
+     * claim about a set that drifts, and the set is small enough here that
+     * there is no excuse for leaving it unchecked.
+     *
+     * A file is asked for the classes it actually names, so a control using
+     * only one of them owes only that one.
+     */
+    #[Test]
+    public function itRefusesAGroupFileThatDoesNotRequireItsSupportClassesByPath(): void
+    {
+        $group = 'governance/SubprocessDrain/';
+        $supportClasses = ['NameOccurrence', 'PhpFilePopulation'];
+        $refused = [];
+
+        foreach (PhpFilePopulation::paths() as $path) {
+            if (!str_starts_with($path, $group)) {
+                continue;
+            }
+
+            $absolute = PhpFilePopulation::root() . '/' . $path;
+            $contents = (string) file_get_contents($absolute);
+            $directory = \dirname($absolute);
+
+            $resolved = [];
+
+            foreach (self::requireOnceExpressions($contents) as $expression) {
+                $reached = self::resolve($expression, $directory);
+
+                if ($reached !== null) {
+                    $resolved[$reached] = true;
+                }
+            }
+
+            foreach ($supportClasses as $class) {
+                $file = $group . $class . '.php';
+
+                if ($path === $file || !str_contains($contents, $class . '::')) {
+                    continue;
+                }
+
+                $target = realpath(PhpFilePopulation::root() . '/' . $file);
+
+                if ($target === false || isset($resolved[$target])) {
+                    continue;
+                }
+
+                $refused[] = $path . ' names ' . $class . ' but requires no path that reaches ' . $file;
+            }
+        }
+
+        self::assertSame(
+            [],
+            $refused,
+            'A file in this group reaches one of the group\'s own support classes through the autoloader alone. '
+            . 'In an isolated scratch project that resolves back to this tree through a symlinked `vendor/`, so '
+            . 'the copy under test is never executed and a broken copy measures green. Add '
+            . '`require_once __DIR__ . \'/<Class>.php\';` beside the others.',
+        );
+    }
+
     #[Test]
     public function itRefusesACallerThatDoesNotRequireTheModuleByPath(): void
     {
