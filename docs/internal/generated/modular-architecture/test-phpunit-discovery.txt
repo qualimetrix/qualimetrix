@@ -8026,6 +8026,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesDeletedFiles
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesModifiedFiles
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itParsesRenamedFiles
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"chained command"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"command separator and redirection"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"command substitution"
+ - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itPassesAShellSignificantRangeToGitLiterally"pipe"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsFalseWhenGitDirectoryDoesNotExist
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsTrueWhenGitDirectoryExists
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itReturnsTrueWhenGitIsAFile

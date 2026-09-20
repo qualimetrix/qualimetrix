@@ -103,13 +103,6 @@ remove a link it cannot identify rather than deleting someone else's hook.
   40 such lookups on one package, and every one of them across the finding-gate
   corpus.
 
-- The `hook:*` commands can no longer deadlock on git's error stream. Locating
-  the hooks directory handed that stream a pipe nothing ever read, so a `git`
-  writing more to it than the pipe buffer holds blocks on the write, never
-  closes its output, and the command waits for an end-of-output that cannot
-  arrive — producing neither output nor an exit code. Stock `git rev-parse`
-  stays far under that threshold, so this was reachable through a wrapper or
-  replacement `git` on PATH rather than through ordinary use.
 - `hook:install` works for an installed package. `/scripts/` is excluded from
   the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
   in two places a consumer never has and exited 1 with `Hook script not found`.
@@ -174,11 +167,15 @@ remove a link it cannot identify rather than deleting someone else's hook.
   such run answered `Internal error: Class "Symfony\Component\Process\Process"
   not found`. That package is now declared, along with `composer-runtime-api`,
   `amphp/amp` and `amphp/sync`, which the product also used without asking for.
-- A `--report=git:...` run no longer risks hanging instead of failing. Locating
-  the repository opened descriptors nothing ever read, so a talkative enough
-  `git rev-parse` could block mid-write and leave the analysis waiting forever
-  with no output and no exit code. The same defect reached the `hook:*`
-  commands through the same locator, which the entry above records.
+- Locating the git repository can no longer hang instead of answering. Both
+  `--report=git:...` and the `hook:*` commands reach git through the one
+  locator, and it handed the subprocess pipes nothing ever read: a `git`
+  writing more to its error stream than the pipe buffer holds blocks on the
+  write, never closes its output, and the caller waits for an end-of-output
+  that cannot arrive — producing neither output nor an exit code. Stock
+  `git rev-parse` stays far under that threshold, so this was reachable
+  through a wrapper or replacement `git` on PATH rather than through ordinary
+  use.
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no

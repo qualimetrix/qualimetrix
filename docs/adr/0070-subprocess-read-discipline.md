@@ -194,6 +194,51 @@ tomorrow to an already-entered file is refused by default. An entry whose line
 stops matching is refused as stale, so the list cannot decay into permission
 for whatever moves into that path later.
 
+### Why `file:line` and not something that survives an unrelated edit
+
+The line anchor has a standing price, and it was re-opened on the strength of
+it. Measured rather than recalled: replaying every commit since 2026-06-01 that
+touched a file holding an entry gives 40 commit-to-commit transitions, of which
+**nine moved an occurrence without changing the text of its line** and **none
+changed that text**. Each of the nine reddens the group for a change that
+touches no read discipline. One was paid twice over, though it broke only once:
+`10978986` put a seven-line comment above the second `proc_open` in
+`PseudoTerminalRun.php`, and two concurrent sessions each re-took the same
+`78 → 85` within half an hour (`6ac2b6d1`, `9a85d431`) — the bill was doubled by
+the visibility of the red, not by the anchor. The tally is a floor taken at one
+point in time and is not maintained.
+
+Four cheaper forms were weighed by the question the control is judged on — what
+does each stop refusing? The cost column is over the same window.
+
+| Anchor form                                  | Re-anchorings     | What it stops refusing                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `file:line` — chosen                         | 9                 | Nothing beyond what the control already names: two occurrences sharing one line collapse to one key, and the shape on an entered line is unverified.                                                                                                                                                                                                                  |
+| Enclosing function or symbol                 | fewer, unmeasured | A second spawn inside an already-entered symbol. Present in the tree, not hypothetical: eight of the twenty-three occurrences outside the module sit four-to-a-function in two data providers, so the six reviewed entries covering them become two. Two more sit in a class constant array with no enclosing function to name, which the form cannot express at all. |
+| Normalized line content                      | 0                 | Two occurrences in one file whose lines read alike — one entry then permits both. No such pair exists today and the tree is one character away from one: `PseudoTerminalRun.php` carries `$process = @proc_open(` and `$process = proc_open(`. It is also silent on a swap, since an identical line written elsewhere in the file inherits the entry.                 |
+| `file` plus an occurrence count              | 0                 | The pairing between a reason and the call it describes. The reasons differ materially per call — `ProcessHandle.php` has a live handle on one line and a nowdoc literal on another — and a delete-plus-add that keeps the count is silent.                                                                                                                            |
+| A generator re-anchors, the diff is reviewed | 0                 | The refusal itself. Nothing textual distinguishes "this call moved" from "this call was replaced", so on a swap the tool carries a reviewed reason onto a different call and the build stays green. That converts a red into a rewrite, which is the inert-suppression shape with a step added.                                                                       |
+
+The four rejections are one finding rather than four: **an anchor's churn and
+its specificity are the same property.** A form survives an unrelated edit
+exactly when it identifies an occurrence by something a *different* occurrence
+can also carry — and that is precisely what lets one reviewed entry come to
+permit two. A hybrid keyed on content and disambiguated by line where the
+content repeats was considered and folds back into the line anchor on the only
+case where the two differ. The price is therefore accepted rather than reduced,
+and it is written into the control so that re-opening the question costs a fresh
+measurement instead of a fresh argument.
+
+What the form buys was re-confirmed on an isolated copy of the tree — its own
+`git init`, its own re-dumped autoloader, and each mutation read back out of the
+file before the run, because a stand that silently resolves back into the source
+tree has already produced false greens in this campaign. Four plantings, four
+reds: an undeclared spawn in a new untracked file; a second spawn appended to an
+already-entered file, refused by name and line; an entered call replaced by
+`ChildProcess::run()`, refused as a stale entry; and an entry moved one line off
+its occurrence, refused twice over — stale at the declared line and undeclared at
+the real one.
+
 ## Consequences
 
 - **A new subprocess call cannot enter the tree in silence.** Every one is
