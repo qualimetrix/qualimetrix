@@ -221,6 +221,15 @@ for whatever moves into that path later.
   file and line, the caller scan by file — and the standing cases are what keep
   that true afterwards.
 
+  The match itself is one class both controls read the tree through, beside the
+  population they already shared, and for the same reason that one is shared:
+  two copies agree today and drift apart on the next change to either. That was
+  not hypothetical — the copies were byte-identical when this fold landed, and
+  the follow-up fix had to be found twice, once per copy, because repairing one
+  said nothing about the other. Each control keeps its own case anyway, which
+  now proves something the shared class cannot prove about itself: that the
+  control still reaches it rather than searching on its own.
+
   Those cases pin the fold to `strtolower` rather than to lowercasing in
   general. Offsets are found in the folded copy and read back out of the
   original, so a fold that does not preserve byte length reads the wrong bytes.

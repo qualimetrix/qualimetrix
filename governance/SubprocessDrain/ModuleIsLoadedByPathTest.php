@@ -59,10 +59,12 @@ use Qualimetrix\Subprocess\ChildProcess;
  * to a textual needle, and so is a call reached through a variable class name.
  * Neither spelling exists in the tree today; the enumeration swept for them.
  *
- * A differently-cased spelling is *not* a gap: the scan folds case, because PHP
- * resolves class and method names without regard to it. The tree spells every
- * call in the class's own casing today, so the fold changes no answer here and
- * is measured on text this control writes instead.
+ * A differently-cased spelling is *not* a gap: the match belongs to
+ * {@see NameOccurrence} and folds case, because PHP resolves class and method
+ * names without regard to it. The tree spells every call in the class's own
+ * casing today, so the fold changes no answer here and is measured on text this
+ * control writes instead — which also measures that this control still reaches
+ * that scan rather than searching on its own.
  *
  * The comment exemption is unchanged, and it now reaches a docblock whatever
  * casing it uses. That widens the set of texts it could excuse rather than
@@ -261,38 +263,20 @@ final class ModuleIsLoadedByPathTest extends TestCase
     }
 
     /**
-     * Each call outside a comment, as the bytes the file actually carries.
-     *
-     * The spelling is read out of the original at the offset found in the
-     * folded copy, which is what makes a fold that does not preserve byte
-     * length observable: any shift at all reports the wrong bytes. The boolean
-     * above cannot show that on its own — a shifted offset still lands on some
-     * token, and whether the answer flips depends on how far the next token
-     * boundary happens to be.
+     * This control's own reading of {@see NameOccurrence}: it needs only the
+     * bytes each call is written with, because that is what makes a fold that
+     * does not preserve byte length observable — a spelling comes back shifted
+     * the moment an offset is off, while the boolean above would only flip once
+     * a shift crossed a token boundary.
      *
      * @return list<string>
      */
     private static function callOccurrencesIn(string $contents): array
     {
-        $folded = strtolower($contents);
-
-        if (!str_contains($folded, self::CALL_NEEDLE)) {
-            return [];
-        }
-
-        $tokens = PhpToken::tokenize($contents);
-        $offset = 0;
         $found = [];
 
-        while (($at = strpos($folded, self::CALL_NEEDLE, $offset)) !== false) {
-            $offset = $at + \strlen(self::CALL_NEEDLE);
-            $token = self::tokenAt($tokens, $at);
-
-            if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
-                continue;
-            }
-
-            $found[] = substr($contents, $at, \strlen(self::CALL_NEEDLE));
+        foreach (NameOccurrence::findIn($contents, [self::CALL_NEEDLE]) as $occurrence) {
+            $found[] = $occurrence->spelled;
         }
 
         return $found;
@@ -370,28 +354,5 @@ final class ModuleIsLoadedByPathTest extends TestCase
         $path = realpath($base . $matches['suffix']);
 
         return $path === false ? null : $path;
-    }
-
-    /**
-     * The token the byte at `$offset` belongs to. A token's own `line` is where
-     * it starts, which for a nowdoc is several lines above the text inside it,
-     * so the token is consulted only for what kind of thing the occurrence sits
-     * in.
-     *
-     * @param array<PhpToken> $tokens
-     */
-    private static function tokenAt(array $tokens, int $offset): ?PhpToken
-    {
-        foreach ($tokens as $token) {
-            if ($token->pos > $offset) {
-                return null;
-            }
-
-            if ($offset < $token->pos + \strlen($token->text)) {
-                return $token;
-            }
-        }
-
-        return null;
     }
 }
