@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Util;
+namespace Qualimetrix\Core\Pattern;
 
 /**
  * The pattern that matched, returned by {@see PathMatcher::matches()} and

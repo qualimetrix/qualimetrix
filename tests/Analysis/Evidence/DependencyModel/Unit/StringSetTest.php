@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Core\Unit\Util;
+namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Util\StringSet;
+use Qualimetrix\Analysis\Evidence\DependencyModel\StringSet;
 
 #[CoversClass(StringSet::class)]
 final class StringSetTest extends TestCase

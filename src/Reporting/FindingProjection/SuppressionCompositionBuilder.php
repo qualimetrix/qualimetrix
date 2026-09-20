@@ -8,8 +8,8 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 
 /**
  * Assembles {@see SuppressionComposition} from what a run's pipeline already

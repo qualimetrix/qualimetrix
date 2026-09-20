@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Util;
+namespace Qualimetrix\Core\Pattern;
 
 /**
  * The one alphabet that decides whether a pattern is a glob.

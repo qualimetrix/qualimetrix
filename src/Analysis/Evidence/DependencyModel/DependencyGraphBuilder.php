@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\StringSet;
 
 /**
  * Builds a DependencyGraph from a collection of dependencies.

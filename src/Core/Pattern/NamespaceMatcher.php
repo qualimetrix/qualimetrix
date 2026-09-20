@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Util;
+namespace Qualimetrix\Core\Pattern;
 
 /**
  * Matches namespaces against namespace patterns, naming the pattern that fired.

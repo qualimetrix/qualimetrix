@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**

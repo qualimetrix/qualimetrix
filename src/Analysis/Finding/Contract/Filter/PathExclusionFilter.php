@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Filter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 
 /**
  * Suppresses findings whose file path matches configured exclusion patterns.

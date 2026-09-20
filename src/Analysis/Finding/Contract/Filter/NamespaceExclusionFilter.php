@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Filter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Suppresses findings whose symbol namespace matches configured exclusion patterns.

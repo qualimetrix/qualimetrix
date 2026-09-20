@@ -16,6 +16,16 @@ is deleted; the link is now dangling and git runs nothing. Run
 state instead of calling the hook absent, and `hook:uninstall` refuses to
 remove a link it cannot identify rather than deleting someone else's hook.
 
+- `Qualimetrix\Core\Util` is gone; it was a directory name that answered
+  nothing while holding two unrelated subjects. `GlobSyntax`,
+  `NamespaceMatcher`, `PathMatcher` and `PatternMatch` moved to
+  `Qualimetrix\Core\Pattern`, and `StringSet` moved to
+  `Qualimetrix\Analysis\Evidence\DependencyModel`, its only consumer, where
+  it is now internal. **Nothing you write or read changes**: no channel name,
+  rule name, metric key, configuration key, CLI flag, output field, exit code
+  or baseline entry is affected. Only PHP code importing the five class names
+  has to change, and the change is the namespace alone.
+
 ### Changed
 
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and

@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Util\NamespaceMatcher;
 
 final class WorstOffenderBuilder
 {

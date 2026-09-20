@@ -201,7 +201,7 @@ final class LayerDefinitionTest extends TestCase
     }
 
     /**
-     * Pins delegation to {@see \Qualimetrix\Core\Util\NamespaceMatcher::matchesSingle()}:
+     * Pins delegation to {@see \Qualimetrix\Core\Pattern\NamespaceMatcher::matchesSingle()}:
      * if the underlying primitive's semantics ever drift from what
      * {@see LayerDefinition} expects, this test surfaces the mismatch.
      */

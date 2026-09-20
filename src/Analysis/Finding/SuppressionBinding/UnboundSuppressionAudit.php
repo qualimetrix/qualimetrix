@@ -13,10 +13,10 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
 
 /**
  * The question {@see UnboundSuppressionRule} names but cannot ask, and the

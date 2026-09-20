@@ -276,6 +276,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\StringSet'
     - name: analysis-evidence-design
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassExclusionCheck'
@@ -775,13 +776,12 @@ architecture:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
         - 'Qualimetrix\Core\Exception\ParseException'
         - 'Qualimetrix\Core\Observation\WorseDirection'
+        - 'Qualimetrix\Core\Pattern\GlobSyntax'
+        - 'Qualimetrix\Core\Pattern\NamespaceMatcher'
+        - 'Qualimetrix\Core\Pattern\PathMatcher'
+        - 'Qualimetrix\Core\Pattern\PatternMatch'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
-        - 'Qualimetrix\Core\Util\GlobSyntax'
-        - 'Qualimetrix\Core\Util\NamespaceMatcher'
-        - 'Qualimetrix\Core\Util\PathMatcher'
-        - 'Qualimetrix\Core\Util\PatternMatch'
-        - 'Qualimetrix\Core\Util\StringSet'
         - 'Qualimetrix\Core\Version'
     - name: core-path
       patterns:
@@ -1142,7 +1142,6 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-dependencymodel:
-      - core-neutral
       - core-path
       - core-symbol
       - external

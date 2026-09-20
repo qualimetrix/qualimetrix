@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
-use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
  * Stateless evaluator that walks the five criterion kinds (patterns,
