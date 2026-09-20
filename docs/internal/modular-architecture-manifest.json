@@ -2728,10 +2728,6 @@
       "visibility": "internal",
       "consumers": []
     },
-<<<<<<< HEAD
-    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver": {
-      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php",
-=======
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalAncestry": {
       "path": "src/Analysis/Evidence/Design/Inheritance/ExternalAncestry.php",
       "kind": "class",
@@ -2748,7 +2744,6 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalDepth": {
       "path": "src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php",
->>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -2763,6 +2758,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector": {
       "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Design",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -13562,19 +13564,15 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-<<<<<<< HEAD
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
-=======
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalAncestry"
         },
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
->>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         }
       ]
     },

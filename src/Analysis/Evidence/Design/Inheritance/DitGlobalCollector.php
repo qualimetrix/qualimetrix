@@ -32,6 +32,8 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
     private const NAME = 'dit-global';
 
+    public function __construct(private readonly ExternalAncestry $externalAncestry) {}
+
     public function getName(): string
     {
         return self::NAME;
@@ -88,7 +90,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
             $measured[$declaration->toCanonical()] = true;
         }
 
-        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured);
+        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured, $this->externalAncestry);
 
         /** @var array<string, non-empty-list<int>> $depthsByName */
         $depthsByName = [];

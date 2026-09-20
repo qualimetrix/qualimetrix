@@ -1,4 +1,4 @@
-# 0073. DIT Reads the Ancestors It Measures
+# 0074. DIT Reads the Ancestors It Measures
 
 **Date:** 2026-09-20
 **Status:** Accepted

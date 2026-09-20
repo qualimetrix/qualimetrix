@@ -1,23 +1,13 @@
 metric	count
-<<<<<<< HEAD
-declarations	964
-files	962
-semantic_owners	37
-contract_consumer_entries	2505
-exact_dependency_edges	4122
-cross_owner_imports	2497
-semantic_owner_layers	37
-=======
-declarations	974
-files	972
+declarations	975
+files	973
 semantic_owners	38
-contract_consumer_entries	2510
-exact_dependency_edges	4137
-cross_owner_imports	2502
+contract_consumer_entries	2513
+exact_dependency_edges	4142
+cross_owner_imports	2505
 semantic_owner_layers	38
->>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
 singleton_seams	0
 exact_composition_bindings	77
 coarse_composition_binding_edges	13
-internal_enforcement_layers	37
-declared_allow_edges	235
+internal_enforcement_layers	38
+declared_allow_edges	240

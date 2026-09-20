@@ -70,7 +70,7 @@ belong to no family is the signal that a fifth family is being named.
 - The external half of a chain is followed by `ExternalAncestry`, which counts
   depth and decides where a chain ends. It reads through
   `Contract\ExternalParentSourceInterface`; placing a class and parsing its
-  declaration are delivery and live in `Infrastructure\Composer` (ADR 0073).
+  declaration are delivery and live in `Infrastructure\Composer` (ADR 0074).
   Nothing here loads a class, which is what stopped the tool from executing the
   code it measures.
 - A chain ends three ways -- it reaches a root, finds no install to read, or

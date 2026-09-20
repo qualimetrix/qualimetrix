@@ -33,7 +33,7 @@ predates this change and is unchanged by it. See
   and on a shared install was whatever version the tool itself had. New surface:
   the depth the analysed project's own sources declare. A chain the run cannot
   follow still reports the depth it did reach; it no longer reports the tool's
-  answer to a different question. See ADR 0073.
+  answer to a different question. See ADR 0074.
 
 ### Breaking
 

@@ -3320,6 +3320,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itSkipsReadonlyClassesWhenExcluded
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itVetoesLcomCriterionWhenTccIsHigh
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itVetoesLcomWhenTccIsExactlyHalf
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itAsksNoAutoloaderAboutAnExternalParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitAcrossANamespaceCrossingInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitForAChainRootedInAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain
@@ -3340,7 +3341,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTerminatesACycleThroughADuplicatedNameWithoutGivingBothTheFallback
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itAnswersTheSameWayTwice
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itCountsEveryStepToTheRoot
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itRefusesToCallACycleADepth
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itReportsAChainThatStopsBeingReadable
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itScoresAClassWithNoParentAsZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itSeparatesHavingNoInstallFromHavingNoEntry
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itStopsAtAPhpBuiltin
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itAsksNoAutoloaderAboutAParentItCannotSee
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
@@ -7419,8 +7426,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itStoresComplexDataTypes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itUsesShardingForStorage
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itWritesSerializerMarkerOnFirstAccess
-<<<<<<< HEAD
-=======
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itDeclinesAClassmapTooLargeToParse
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassDeclaredOnlyByTheGeneratedClassmap
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\ComposerAutoloadMapTest::itPlacesAClassFromAnInstalledPackage
@@ -7440,7 +7445,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itRefusesToPlaceANameNoFileDeclares
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentImportedUnderAnAlias
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentWrittenWithoutItsNamespace
->>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCancelsExitCode255ForAnUncaughtPhpError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itCatchesTheSameErrorEvenWithoutSetCatchErrors

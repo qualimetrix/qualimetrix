@@ -28,10 +28,7 @@ src/Analysis/Evidence/DependencyModel/Extraction/DependencyResolver.php	Qualimet
 src/Analysis/Evidence/DependencyModel/Extraction/DependencyVisitor.php	Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor	Analysis.Evidence.DependencyModel	"per-file or derivation state"	-	anonymousClassDepth,currentClass,currentContext,declarationIndex,dependencies,file	reset
 src/Analysis/Evidence/DependencyModel/Extraction/Handler/DependencyContext.php	Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext	Analysis.Evidence.DependencyModel	"request scratch or mutable internal value"	-	dependencies,describesNestedAnonymousClass	addDependency
 src/Analysis/Evidence/DependencyModel/StringSet.php	Qualimetrix\Analysis\Evidence\DependencyModel\StringSet	Analysis.Evidence.DependencyModel	"request scratch or mutable internal value"	-	items	add,addAll
-<<<<<<< HEAD
 src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver	Analysis.Evidence.Design	"request scratch or mutable internal value"	-	depths	-
-=======
->>>>>>> f8ce447c (chore(gate): declare the baseline surface the aiming fix corrected)
 src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor	Analysis.Evidence.Design	"per-file or derivation state"	-	classInfo,currentNamespace,useImports	buildFqn,reset
 src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor	Analysis.Evidence.Design	"per-file or derivation state"	-	classInfos,classTypeInfo,currentNamespace	buildClassFqn,reset
 src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php	Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder	Analysis.Evidence.Duplication	"request scratch or mutable internal value"	-	hintExtractor,request,seen	-
@@ -87,6 +84,8 @@ src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\Cache
 src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	"adapter session or cache"	-	configuration	reset
 src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	"adapter session or cache"	-	cache	reset,resetConfiguration
 src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	"adapter session or cache"	-	serializerVerified	clear,set
+src/Infrastructure/Composer/ComposerAutoloadMap.php	Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap	Infrastructure.Composer	"adapter session or cache"	-	classmap,loaded,psr4,roots	addPsr4
+src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset

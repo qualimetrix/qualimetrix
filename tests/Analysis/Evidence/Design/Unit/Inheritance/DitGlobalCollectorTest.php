@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -24,6 +25,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Design\Support\FixedParentSource;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 use RuntimeException;
 
@@ -42,7 +44,9 @@ final class DitGlobalCollectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->collector = new DitGlobalCollector();
+        // No install to read: every external parent stays unresolved, which is
+        // what these cases assume unless they say otherwise.
+        $this->collector = new DitGlobalCollector(new ExternalAncestry(FixedParentSource::unconfigured()));
     }
 
     /**
@@ -130,12 +134,18 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     /**
-     * Nothing catches around this collector -- aggregation calls it directly --
-     * so an Error escaping the external lookup ends the entire run with an
-     * internal error rather than costing one class its DIT.
+     * The last load is gone: the global pass reads ancestors' files instead.
+     *
+     * The probe's reading inverts with the mechanism. It was built to show that
+     * a load was attempted and broke on the parent's absence -- the shape a
+     * standalone install hits, which used to end the whole run because nothing
+     * catches around this collector. Now the claim is that no autoloader is
+     * consulted at all, so `failedOnTheMissingParent()` is false precisely
+     * because nothing was tried, and only `queryCount()` can carry it: depth 1
+     * is what an unresolved parent scores either way.
      */
     #[Test]
-    public function itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun(): void
+    public function itAsksNoAutoloaderAboutAnExternalParent(): void
     {
         $probe = UnloadableClassProbe::start();
 
@@ -150,12 +160,8 @@ final class DitGlobalCollectorTest extends TestCase
 
             $this->collector->calculate($graph, $repository);
 
-            // Same reason as the per-file case: depth 1 says nothing about how
-            // the resolution ended, so assert the failure and its cause.
-            self::assertTrue(
-                $probe->failedOnTheMissingParent(),
-                'Loading the parent did not fail on its own missing parent',
-            );
+            self::assertSame(0, $probe->queryCount(), 'The collector consulted an autoloader');
+            self::assertFalse($probe->failedOnTheMissingParent(), 'A load was attempted, so foreign code ran');
             self::assertSame(1, $repository->get($path)->get('design.dit'));
         } finally {
             $probe->stop();
@@ -386,26 +392,27 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     /**
-     * A builtin reached through a real external class, rather than named
-     * directly as the parent. The per-file collector used to cover this by
-     * reflecting on the chain itself; that pass no longer resolves anything
-     * outside its own file, so the case belongs to the collector that does.
+     * A builtin reached through an external class, one step in. The chain is
+     * followed by reading, so the case states the parents rather than relying
+     * on a class this process happens to have loaded.
      */
     #[Test]
     public function itCountsABuiltinInsideAnExternalChain(): void
     {
+        $collector = new DitGlobalCollector(new ExternalAncestry(
+            new FixedParentSource(['Vendor\\Upstream' => 'RuntimeException']),
+        ));
+
         $repository = new InMemoryMetricRepository();
-        $graph = $this->graph([
-            $this->createExtends('App\\MyException', DitChainCustomException::class),
-        ]);
+        $graph = $this->graph([$this->createExtends('App\\MyException', 'Vendor\\Upstream')]);
 
         $path = SymbolPath::forClass('App', 'MyException');
         $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
-        $this->collector->calculate($graph, $repository);
+        $collector->calculate($graph, $repository);
 
-        // 1 for extending it, plus 1 for its own RuntimeException parent, which
-        // is builtin and ends the walk.
+        // 1 for extending Upstream, plus 1 for its RuntimeException parent,
+        // which is builtin and ends the walk.
         self::assertSame(2, $repository->get($path)->get('design.dit'));
     }
 
