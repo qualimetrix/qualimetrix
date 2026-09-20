@@ -7,8 +7,10 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
@@ -22,6 +24,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class RuntimeConfigurator
 {
+    /**
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=10 -- This class composes a run's unrelated per-run concerns (logging, progress, profiling, cache, parallelism, limits) and the eighth is the autoload anchor DIT's ancestor walk needs before the pipeline starts. Splitting the composition is its own subject, not this metric's campaign; the ceiling is one slot: a ninth parameter reports again.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
+     */
     public function __construct(
         private readonly RuntimeLoggerConfigurator $runtimeLoggerConfigurator,
         private readonly ProgressConfigurator $progressConfigurator,
@@ -30,6 +36,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ParallelConfigurationStoreInterface $parallelConfigurationStore,
         private readonly RuntimeLimitsController $runtimeLimitsController,
+        private readonly AnalysedInstallAnchorInterface $analysedAutoloadMap,
     ) {}
 
     /** Resets every mutable per-run seam before configuration resolution starts. */
@@ -48,12 +55,23 @@ final class RuntimeConfigurator
      */
     public function configure(
         ConfigurationDocument $document,
+        RunConfiguration $runConfiguration,
         FindingConfiguration $findingConfiguration,
         CacheConfiguration $cacheConfiguration,
         ParallelConfiguration $parallelConfiguration,
         InputInterface $input,
         OutputInterface $output,
     ): void {
+        // Every command that runs the pipeline passes through here, which is
+        // why the anchor lives in this call rather than at one call site: DIT's
+        // ancestor walk silently reports "no install" for any run that forgot
+        // to aim it, and `baseline:generate` forgetting it means the baseline
+        // records a magnitude `check` never produces.
+        $this->analysedAutoloadMap->pointAt(
+            (string) $runConfiguration->projectRoot,
+            array_map(static fn(object $path): string => (string) $path, $runConfiguration->paths),
+        );
+
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.
         $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);

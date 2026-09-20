@@ -26,10 +26,13 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
@@ -168,6 +171,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->cacheFactory,
             $this->parallelStore,
             new RuntimeLimitsController(),
+            new ComposerAutoloadMap(),
         );
     }
 
@@ -534,6 +538,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $document = $this->customDocument();
         $this->configurator->configure(
             $document,
+            $this->runConfigurationFor($document),
             (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
             (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)),
             (new ParallelConfigurationResolver())->resolve($document),
@@ -550,6 +555,7 @@ final class RuntimeConfiguratorTest extends TestCase
     ): void {
         $this->configurator->configure(
             $document,
+            $this->runConfigurationFor($document),
             (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
             (new CacheConfigurationResolver())->resolve($document, $projectRoot),
             (new ParallelConfigurationResolver())->resolve($document),
@@ -582,4 +588,12 @@ final class RuntimeConfiguratorTest extends TestCase
             new InputOption('no-progress', null, InputOption::VALUE_NONE),
         ]));
     }
+
+    private function runConfigurationFor(ConfigurationDocument $document): RunConfiguration
+    {
+        $root = $document->workingDirectory();
+
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+    }
+
 }

@@ -1,0 +1,35 @@
+--- candidate
++++ reference (mapped)
+@@ -129,3 +129,3 @@
+-            "design.dit.avg": 2,
+-            "design.dit.max": 2,
+-            "design.dit.p95": 2,
++            "design.dit.avg": 1,
++            "design.dit.max": 1,
++            "design.dit.p95": 1,
+@@ -294,3 +294,3 @@
+-                    "design.dit.avg": 2,
+-                    "design.dit.max": 2,
+-                    "design.dit.p95": 2,
++                    "design.dit.avg": 1,
++                    "design.dit.max": 1,
++                    "design.dit.p95": 1,
+@@ -483,3 +483,3 @@
+-                            "design.dit.avg": 2,
+-                            "design.dit.max": 2,
+-                            "design.dit.p95": 2,
++                            "design.dit.avg": 1,
++                            "design.dit.max": 1,
++                            "design.dit.p95": 1,
+@@ -544,1 +544,1 @@
+-                                    "design.dit": 2,
++                                    "design.dit": 1,
+@@ -587,4 +587,4 @@
+-                                        "message": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
+-                                        "recommendation": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
+-                                        "severity": "warning",
+-                                        "metricValue": 2,
++                                        "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
++                                        "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++                                        "severity": "warning",
++                                        "metricValue": 1,

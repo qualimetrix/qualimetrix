@@ -58,6 +58,7 @@ final readonly class AnalysisPreflight
 
         $this->runtimeConfigurator->configure(
             $document,
+            $runConfiguration,
             $findingConfiguration,
             $this->cacheConfigurationResolver->resolve($document, $runConfiguration->projectRoot),
             $this->parallelConfigurationResolver->resolve($document),

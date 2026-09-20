@@ -84,6 +84,8 @@ src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\Cache
 src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	"adapter session or cache"	-	configuration	reset
 src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	"adapter session or cache"	-	cache	reset,resetConfiguration
 src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	"adapter session or cache"	-	serializerVerified	clear,set
+src/Infrastructure/Composer/ComposerAutoloadMap.php	Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap	Infrastructure.Composer	"adapter session or cache"	-	classmap,loaded,psr4,roots	addPsr4
+src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset

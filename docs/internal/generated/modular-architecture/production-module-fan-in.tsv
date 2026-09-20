@@ -44,6 +44,8 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	7	4
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	7	4
+Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface	Analysis.Evidence.Design	2	2
+Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup	Analysis.Evidence.Design	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	21	8
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	32	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
@@ -207,7 +209,7 @@ Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	7	2
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	8	2
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	4	2
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface	Analysis.Run	7	3
 Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	6	3
@@ -242,7 +244,7 @@ Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	46	16
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
+Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	4	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	114	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
@@ -260,6 +262,7 @@ Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration	Infrastructure.Cach
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface	Infrastructure.Cache	5	2
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface	Infrastructure.Cache	4	3
 Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	1	1
+Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface	Infrastructure.Composer	3	2
 Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	2	2
 Qualimetrix\Infrastructure\Git\GitScope	Infrastructure.Git	1	1
 Qualimetrix\Infrastructure\Git\GitScopeResolution	Infrastructure.Git	2	1

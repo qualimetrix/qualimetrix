@@ -82,10 +82,27 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-An anonymous class contributes to NOC on neither side. It cannot be counted as
-a named parent's child -- it has no declaration identity of its own -- and its
-own `extends` is not counted as the enclosing named class's inheritance either,
-however deeply it is nested.
+A parent outside the analysed path is resolved by reading its file, not by
+loading it. The file is located through the analysed project's own composer
+install --- its `composer.json`, the psr-4 sections of
+`vendor/composer/installed.json`, and composer's generated classmap --- and its
+`extends` clause is parsed. Nothing from the analysed project is executed.
+
+So the depth beyond your own code is the depth your project's install declares.
+When dependencies are not installed, or the class sits in a package the install
+does not place, the chain stops there and the reported depth is what was
+actually walked --- a floor, not a measurement. A chain that stops early and a
+class that genuinely has no parent still report the same number.
+
+DIT is reported for classes. Interfaces, traits and enums do not receive one,
+and they are not part of the population the namespace and project aggregates
+average over. That population is the named classes of the analysed path, which
+is what `size.class-count` counts wherever each class name is declared once.
+
+The aggregates summarise the per-class depths the same report publishes,
+including chains that cross files: a class whose parent is declared in another
+file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
+`.p95` are computed from the resolved depths.
 
 A subclass declared in more than one file counts once: NOC counts distinct
 child names, not `extends` edges.

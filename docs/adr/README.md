@@ -103,6 +103,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0071 — An Anonymous Class's Declaration Edge Is Flagged, Not Retyped or Dropped](0071-an-anonymous-classs-declaration-edge-is-flagged-not-retyped.md) — a nested anonymous class's own `extends`/`implements`/attribute/`trait_use` edge is marked as not a declaration fact of its recorded source, so declaration readers (DIT, NOC, layer membership) skip it while dependency readers (coupling, ClassRank, cycles, `relations:`) keep reading it as before.
 - [0072 — The Commit-Subject Rule Names the Commits It Can Judge](0072-commit-subject-authority.md) — the commit-msg hook declines to judge subjects git itself writes, detected by `MERGE_HEAD`/`REVERT_HEAD`/`CHERRY_PICK_HEAD` rather than by the word "Merge", and CI judges a pull request's own commits so a conflict can no longer decide the verdict.
 - [0073 — A Depth Belongs to a Declaration, a Child Count to a Name](0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md) — `design.dit` is resolved and published per class declaration, because one name can be declared in two files with two parents; the parent side stays a name and takes the deepest of its declarations, and `design.noc` counts distinct child names rather than edges.
+- [0074 — DIT Reads the Ancestors It Measures](0074-dit-reads-the-ancestors-it-measures.md) — depth beyond the analysed path is followed by parsing the project's own sources, never by loading them; the port is Design's and the adapter is Infrastructure's.
 
 ## Superseded history
 

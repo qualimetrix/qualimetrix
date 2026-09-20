@@ -203,6 +203,7 @@ final class CheckCommand extends Command
         // Configure runtime using resolved config
         $this->runtimeConfigurator->configure(
             $document,
+            $runConfiguration,
             $findingConfiguration,
             $cacheConfiguration,
             $parallelConfiguration,

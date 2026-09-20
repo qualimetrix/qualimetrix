@@ -8,9 +8,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
-use ReflectionClass;
-use ReflectionException;
-use Throwable;
 
 /**
  * How deep one class declaration sits in the inheritance tree.
@@ -46,6 +43,7 @@ final class InheritanceDepthResolver
         private readonly array $declarationsByName,
         private readonly array $projectClasses,
         private readonly array $measured,
+        private readonly ExternalAncestry $externalAncestry,
     ) {}
 
     /**
@@ -68,8 +66,9 @@ final class InheritanceDepthResolver
      *
      * @param array<string, true> $projectClasses
      * @param array<string, true> $measured declaration canonicals carrying this metric
+     * @param ExternalAncestry $externalAncestry follows the part of a chain that leaves the analysed path, by reading rather than loading
      */
-    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses, array $measured): self
+    public static function fromGraph(DependencyGraphInterface $graph, array $projectClasses, array $measured, ExternalAncestry $externalAncestry): self
     {
         $parentOfDeclaration = [];
         $declarationsByName = [];
@@ -99,7 +98,7 @@ final class InheritanceDepthResolver
             }
         }
 
-        return new self($parentOfDeclaration, $declarationsByName, $projectClasses, $measured);
+        return new self($parentOfDeclaration, $declarationsByName, $projectClasses, $measured, $externalAncestry);
     }
 
     /**
@@ -164,7 +163,7 @@ final class InheritanceDepthResolver
         }
 
         // Genuinely outside the analysed path.
-        return $this->depths[$declaration] = 1 + self::resolveExternalClassDit($parentFqn);
+        return $this->depths[$declaration] = 1 + $this->externalAncestry->depthOf($parentFqn)->depth;
     }
 
     /**
@@ -201,51 +200,4 @@ final class InheritanceDepthResolver
         return PhpBuiltinClassRegistry::isBuiltin(ltrim($fqn, '\\'));
     }
 
-    /**
-     * Try to resolve DIT for an external class via reflection.
-     *
-     * The autoloader consulted here belongs to this tool, not to the analysed
-     * project, so an analysed FQCN can map onto the tool's own vendored copy.
-     * When that copy is reachable but names a parent the tool's install never
-     * ships, loading it throws instead of returning false. Nothing guards this
-     * resolver -- aggregation calls it directly -- so an escaping error ends
-     * the whole run rather than one file's metric.
-     *
-     * @return int DIT of the external class, or 0 if cannot resolve
-     */
-    private static function resolveExternalClassDit(string $classFqn): int
-    {
-        $normalized = ltrim($classFqn, '\\');
-
-        // Widest catch on the load step alone: it runs someone else's code and
-        // fails with a plain Error carrying nothing to match on. The walk below
-        // cannot autoload, so a throw there is this tool's own defect and keeps
-        // a narrow catch, staying loud.
-        try {
-            if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
-                return 0;
-            }
-        } catch (Throwable) {
-            return 0;
-        }
-
-        try {
-            $depth = 0;
-            $current = new ReflectionClass($normalized);
-
-            while (($parent = $current->getParentClass()) !== false) {
-                ++$depth;
-
-                if (self::isStandardPhpClass($parent->getName())) {
-                    break;
-                }
-
-                $current = $parent;
-            }
-
-            return $depth;
-        } catch (ReflectionException) {
-            return 0;
-        }
-    }
 }

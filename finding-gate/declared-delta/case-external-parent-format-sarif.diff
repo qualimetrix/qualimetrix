@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -35,1 +35,1 @@
+-                        "text": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance"
++                        "text": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance"

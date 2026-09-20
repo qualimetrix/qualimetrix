@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -12,1 +12,1 @@
+-                    2
++                    1

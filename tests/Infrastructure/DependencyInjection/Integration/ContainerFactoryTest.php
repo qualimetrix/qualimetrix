@@ -456,7 +456,9 @@ PHP;
         self::assertNotNull($analysisRuntimeConstructor);
         self::assertNotNull($runtimeConstructor);
         self::assertCount(7, $analysisRuntimeConstructor->getParameters());
-        self::assertCount(7, $runtimeConstructor->getParameters());
+        // Eight since the runtime gained the anchor that points DIT's ancestor
+        // walk at the tree being analysed.
+        self::assertCount(8, $runtimeConstructor->getParameters());
         $checkConstructor = (new ReflectionClass(CheckCommand::class))->getConstructor();
         $baselineRunConstructor = (new ReflectionClass(BaselineRun::class))->getConstructor();
         $measuredFindingSetConstructor = (new ReflectionClass(MeasuredFindingSet::class))->getConstructor();

@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -62,6 +64,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
         $runtimeConfigurator->configure(
             $customDocument,
+            $this->runConfigurationFor($customDocument),
             $ruleInputValidator->resolve($customDocument, new ArrayInput([], $command->getDefinition())),
             $this->cacheConfiguration($customDocument, $projectRoot),
             $this->parallelConfiguration($customDocument),
@@ -77,6 +80,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $defaultDocument = $this->document([]);
         $runtimeConfigurator->configure(
             $defaultDocument,
+            $this->runConfigurationFor($defaultDocument),
             $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())),
             $this->cacheConfiguration($defaultDocument, $projectRoot),
             $this->parallelConfiguration($defaultDocument),
@@ -100,6 +104,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         try {
             $runtimeConfigurator->configure(
                 $invalidDocument,
+                $this->runConfigurationFor($invalidDocument),
                 $ruleInputValidator->resolve($invalidDocument, new ArrayInput([], $command->getDefinition())),
                 $this->cacheConfiguration($invalidDocument, $projectRoot),
                 $this->parallelConfiguration($invalidDocument),
@@ -116,6 +121,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $defaultDocument = $this->document([]);
         $runtimeConfigurator->configure(
             $defaultDocument,
+            $this->runConfigurationFor($defaultDocument),
             $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())),
             $this->cacheConfiguration($defaultDocument, $projectRoot),
             $this->parallelConfiguration($defaultDocument),
@@ -141,6 +147,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         try {
             $runtimeConfigurator->configure(
                 $invalidDocument,
+                $this->runConfigurationFor($invalidDocument),
                 $ruleInputValidator->resolve($invalidDocument, $input),
                 $this->cacheConfiguration($invalidDocument, $projectRoot),
                 $this->parallelConfiguration($invalidDocument),
@@ -157,6 +164,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $defaultInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->configure(
             $defaultDocument,
+            $this->runConfigurationFor($defaultDocument),
             $ruleInputValidator->resolve($defaultDocument, $defaultInput),
             $this->cacheConfiguration($defaultDocument, $projectRoot),
             $this->parallelConfiguration($defaultDocument),
@@ -208,6 +216,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $runtimeConfigurator->resetRunState();
         $runtimeConfigurator->configure(
             $first,
+            $this->runConfigurationFor($first),
             $ruleInputValidator->resolve($first, $firstInput),
             $this->cacheConfiguration($first, $projectRoot),
             $this->parallelConfiguration($first),
@@ -224,6 +233,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $runtimeConfigurator->resetRunState();
         $runtimeConfigurator->configure(
             $second,
+            $this->runConfigurationFor($second),
             $ruleInputValidator->resolve($second, $secondInput),
             $this->cacheConfiguration($second, $projectRoot),
             $this->parallelConfiguration($second),
@@ -242,6 +252,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         try {
             $runtimeConfigurator->configure(
                 $invalid,
+                $this->runConfigurationFor($invalid),
                 $ruleInputValidator->resolve($invalid, $invalidInput),
                 $this->cacheConfiguration($invalid, $projectRoot),
                 $this->parallelConfiguration($invalid),
@@ -365,4 +376,11 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             $channels->channelsProducedBy('computed'),
         ));
     }
+    private function runConfigurationFor(ConfigurationDocument $document): RunConfiguration
+    {
+        $root = $document->workingDirectory();
+
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+    }
+
 }

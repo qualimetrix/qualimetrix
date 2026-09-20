@@ -32,6 +32,7 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
@@ -299,6 +300,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new CacheFactory($cacheStore),
             $parallelStore,
             new RuntimeLimitsController(),
+            new ComposerAutoloadMap(),
         );
     }
 
