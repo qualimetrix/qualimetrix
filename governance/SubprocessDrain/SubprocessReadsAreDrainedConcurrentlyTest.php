@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
 
+require_once __DIR__ . '/NameOccurrence.php';
+require_once __DIR__ . '/PhpFilePopulation.php';
+
 /**
  * Every occurrence of a subprocess-spawning function's name in a PHP file this
  * repository ships or runs must be either inside
@@ -60,20 +63,21 @@ use Qualimetrix\Subprocess\ChildProcess;
  *
  * ## The decision is textual; the tokenizer only finds comments
  *
- * The gate is a case-folded substring match: the file is lowercased once and
- * the needles are searched in that copy, so `Proc_Open(` and `PROC_OPEN(` are
- * seen exactly as `proc_open(` is. PHP resolves function names without regard
- * to case, so a case-sensitive gate would have been a spelling away from
- * blind. `strtolower` is the right fold and `mb_strtolower` is not: the offsets
- * found in the lowercased copy are read back out of the original — for the
- * line number, for the token, and for the spelling the refusal prints — and
- * only a fold that preserves byte length keeps them pointing at the same
- * bytes. Since PHP 8.2 `strtolower` maps `A`-`Z` and nothing else, so it cannot
- * change a length on any input; that is a language guarantee rather than a
- * property of this tree, and measuring the tree would not add to it. What is
- * measured instead is the substitution: the case below carries a codepoint
- * `mb_strtolower` shortens, and swapping the fold makes it read every spelling
- * off by the bytes that codepoint lost.
+ * The gate is a case-folded substring match, and the match itself belongs to
+ * {@see NameOccurrence}, which both controls in this group read the tree
+ * through: `Proc_Open(` and `PROC_OPEN(` are seen exactly as `proc_open(` is,
+ * because PHP resolves function names without regard to case and a
+ * case-sensitive gate would have been a spelling away from blind. Why the fold
+ * has to preserve byte length, and why only a comment is excused, are that
+ * class's subject rather than this one's.
+ *
+ * What stays here is what this control makes of an occurrence: the `file:line`
+ * it declares by, the label it prints, and the case below, which measures that
+ * the search behind this control still folds case and still reads the bytes
+ * back out of the original. It measures behaviour and not delegation — a copy
+ * of the scan pasted back in here would satisfy it, measured — so that the
+ * search is *this group's one scan* is refused separately, by
+ * {@see ScanIsNotReimplementedTest}.
  *
  * Folding widens the population of matches by exactly one occurrence today,
  * and that occurrence is not a call: a test method name whose camelCase seam
@@ -514,68 +518,26 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
     }
 
     /**
-     * The match itself, over one file's text, so that it can be measured on
-     * text this control chooses rather than only on whatever the tree happens
-     * to spell today.
+     * This control's own reading of {@see NameOccurrence}: the anchor it
+     * declares by, and the label it puts in a refusal.
      *
      * @return list<array{path: string, line: int, name: string, spelled: string, kind: string}>
      */
     private static function occurrencesIn(string $path, string $contents): array
     {
-        $folded = strtolower($contents);
         $found = [];
-        $tokens = null;
 
-        foreach (self::NEEDLES as $needle) {
-            if (!str_contains($folded, $needle)) {
-                continue;
-            }
-
-            $tokens ??= PhpToken::tokenize($contents);
-            $offset = 0;
-
-            while (($at = strpos($folded, $needle, $offset)) !== false) {
-                $offset = $at + \strlen($needle);
-                $token = self::tokenAt($tokens, $at);
-
-                if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
-                    continue;
-                }
-
-                $found[] = [
-                    'path' => $path,
-                    'line' => substr_count($contents, "\n", 0, $at) + 1,
-                    'name' => $needle,
-                    'spelled' => substr($contents, $at, \strlen($needle)),
-                    'kind' => self::kindOf($token),
-                ];
-            }
+        foreach (NameOccurrence::findIn($contents, self::NEEDLES) as $occurrence) {
+            $found[] = [
+                'path' => $path,
+                'line' => $occurrence->line,
+                'name' => $occurrence->name,
+                'spelled' => $occurrence->spelled,
+                'kind' => self::kindOf($occurrence->token),
+            ];
         }
 
         return $found;
-    }
-
-    /**
-     * The token's own `line` is the line the token *starts* on, which for a
-     * nowdoc is several lines above the occurrence inside it. The line is
-     * therefore counted from the byte offset, and the token is consulted only
-     * for what kind of thing the occurrence sits in.
-     *
-     * @param array<PhpToken> $tokens
-     */
-    private static function tokenAt(array $tokens, int $offset): ?PhpToken
-    {
-        foreach ($tokens as $token) {
-            if ($token->pos > $offset) {
-                return null;
-            }
-
-            if ($offset < $token->pos + \strlen($token->text)) {
-                return $token;
-            }
-        }
-
-        return null;
     }
 
     private static function kindOf(?PhpToken $token): string
