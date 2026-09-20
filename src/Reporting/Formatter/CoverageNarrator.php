@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Reporting\Formatter\Support;
+namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Reporting\ReportCoverage;
 

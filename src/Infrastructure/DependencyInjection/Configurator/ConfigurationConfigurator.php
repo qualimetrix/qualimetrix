@@ -62,6 +62,9 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
 
         // Auto-register all configuration stages from src/Analysis/Configuration/Pipeline/Stage/*
         // Classes implementing ConfigurationStageInterface will be auto-tagged via registerForAutoconfiguration
+        // No exclude: the directory holds stages only, and registerClasses() declines
+        // to make a service of an interface anyway -- it registers one as an abstract
+        // autoconfiguration entry whether or not an exclude names it.
         $prototype = (new Definition())
             ->setAutoconfigured(true)
             ->setAutowired(true);
@@ -69,7 +72,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
             $prototype,
             'Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\',
             $this->srcDir . '/Analysis/Configuration/Pipeline/Stage/*',
-            $this->srcDir . '/Analysis/Configuration/Pipeline/Stage/*Interface.php',
         );
         $container->getDefinition('Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\PresetStage')
             ->setArgument('$resolver', new Reference(self::PRESET_RESOLVER));

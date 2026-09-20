@@ -35,6 +35,22 @@ remove a link it cannot identify rather than deleting someone else's hook.
   entry or a baseline key naming the old namespace has to be respelled — this
   repository's own ratchet carried one, and renaming it was the whole edit.
 
+- `Qualimetrix\Reporting\Formatter\Support` is gone. It held four unrelated
+  subjects under a name that answered nothing. `AnsiColor` moved to
+  `...\Formatter\Ansi`, `FindingSorter` to `...\Formatter\Ordering`, and
+  `DetailedFindingRenderer`, `FindingDetailRenderer` and
+  `DebtBreakdownRenderer` — the `--detail` block — to `...\Formatter\Detail`.
+  `AcceptedLevelNarrator` and `CoverageNarrator` moved up into
+  `...\Formatter` itself, and `HealthCoverageNarrator` to
+  `Qualimetrix\Reporting\Health`, beside the contract it narrates. Class
+  names and behaviour are unchanged, and no channel name, rule name, metric
+  key, CLI flag, output field or exit code is affected. Two things a consumer
+  does have to respell, both for the same reason — the namespace they name no
+  longer exists: a `qmx.yaml` `suppress_namespaces` or `suppress_paths` entry
+  under the old namespace or `Formatter/Support/` path goes inert without
+  saying so, and a baseline entry keyed on one of the eight classes stops
+  matching and is reported as an entry that did not appear.
+
 ### Changed
 
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and

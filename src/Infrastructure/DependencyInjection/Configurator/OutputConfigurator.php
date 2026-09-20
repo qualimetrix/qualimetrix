@@ -133,7 +133,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerFormatters(ContainerBuilder $container): void
     {
-        $detailedFindingRenderer = 'Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer';
         $formatterRegistry = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
@@ -148,28 +147,28 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
-        // Exclude Support/ (utility classes, some not DI-compatible: AnsiColor takes bool $enabled)
+        // Ansi/ is excluded because AnsiColor takes a bool the container cannot supply. The
+        // other subject directories under Formatter/ are autowirable and register normally.
+        // A stale path in this exclude is silent: the extra services compile, autowiring
+        // failures are deferred to instantiation, and unused private services are removed
+        // before one can surface. RegisterClassesExcludesNameSomethingTest is what refuses one.
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Reporting\\Formatter\\',
             $this->srcDir . '/Reporting/Formatter/{*,**/*}',
-            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Support/**}',
+            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Ansi/**}',
         );
 
         // Auto-register health scoring services from src/Reporting/Health/
-        // Exclude VOs (scalar constructors, always instantiated via `new`)
+        // HealthCoverageNarrator is static-only prose about a contract value, not a service.
         $healthPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $healthPrototype,
             'Qualimetrix\\Reporting\\Health\\',
             $this->srcDir . '/Reporting/Health/*',
-            $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
+            $this->srcDir . '/Reporting/Health/HealthCoverageNarrator.php',
         );
-
-        // DetailedFindingRenderer (in Formatter/Support/, excluded from formatter glob)
-        $container->register($detailedFindingRenderer)
-            ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass
         $container->register($formatterRegistry)
