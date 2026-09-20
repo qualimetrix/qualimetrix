@@ -58,18 +58,35 @@ use Qualimetrix\Subprocess\ChildProcess;
  * An aliased import (`use …\ChildProcess as Child; Child::run(…)`) is invisible
  * to a textual needle, and so is a call reached through a variable class name.
  * Neither spelling exists in the tree today; the enumeration swept for them.
+ *
+ * A differently-cased spelling is *not* a gap: the scan folds case, because PHP
+ * resolves class and method names without regard to it. The tree spells every
+ * call in the class's own casing today, so the fold changes no answer here and
+ * is measured on text this control writes instead.
+ *
+ * The comment exemption is unchanged, and it now reaches a docblock whatever
+ * casing it uses. That widens the set of texts it could excuse rather than
+ * anything it does excuse today — the assertion keeping this file out of the
+ * caller set predates the fold and is not evidence for it.
  */
 final class ModuleIsLoadedByPathTest extends TestCase
 {
     private const MODULE_PATH = 'scripts/subprocess/ChildProcess.php';
 
     /**
+     * Lower case, because the scan folds the file it reads: PHP resolves class
+     * and method names without regard to case, so `childprocess::Run(` is a
+     * working call and a case-sensitive needle would not see it. Folding adds
+     * no caller to the tree today — measured — so it costs nothing and closes
+     * a spelling.
+     *
      * Spelled in halves for the same reason the sibling control spells its own
-     * needle in halves: this file is in the scanned population, and a whole
+     * needles in halves: this file is in the scanned population, and a whole
      * spelling in a string literal here would make this control a caller of
-     * the module it is judging.
+     * the module it is judging. The fold widens what counts as whole: any
+     * casing does now, not only the class's own.
      */
-    private const CALL_NEEDLE = 'ChildProcess' . '::run(';
+    private const CALL_NEEDLE = 'childprocess' . '::run(';
 
     public static function tearDownAfterClass(): void
     {
@@ -109,6 +126,50 @@ final class ModuleIsLoadedByPathTest extends TestCase
             $callers,
             'This file names the call only in its own documentation. Counting it means the comment exemption is '
             . 'gone, and every docblock mentioning the module has become a caller.',
+        );
+    }
+
+    /**
+     * The fold, measured on text this control writes. Without this nothing here
+     * would refuse a return to a case-sensitive needle: every call in the tree
+     * is written in the class's own casing, so the scan answers the same either
+     * way and the whole group stays green while the gate is blind again.
+     *
+     * The five Kelvin signs fix the fold to `strtolower`, and their number is
+     * load-bearing rather than decorative. `mb_strtolower` rewrites each from
+     * three bytes to one, so the offset found in the folded copy is read back
+     * out of the original ten bytes early; the docblock case is written so that
+     * ten bytes early lands outside the comment token, and the case that must
+     * answer false answers true instead. Measured: at two bytes it still lands
+     * inside the comment and the substitution passes unnoticed.
+     *
+     * Every spelling is assembled from halves: string literals in this file are
+     * not excused, so writing one whole would make this control a caller of the
+     * module it judges.
+     */
+    #[Test]
+    public function itSeesTheCallWhateverCaseItIsWrittenIn(): void
+    {
+        $mixedCase = '<?php' . "\n" . '$r = child' . 'process::Run($command, $directory);' . "\n";
+        $upperCase = '<?php' . "\n" . '$r = \CHILD' . 'PROCESS::RUN($command, $directory);' . "\n";
+        $documented = "<?php\n\$signs = '\u{212A}\u{212A}\u{212A}\u{212A}\u{212A}';\n"
+            . '/**{@see Child' . 'Process::run()}*/' . "\n"
+            . 'final class Documented {}' . "\n";
+
+        self::assertTrue(
+            self::callsModuleIn($mixedCase),
+            'A call written in another case is not seen. PHP resolves class and method names without regard to '
+            . 'case, so this is a working call, and a caller the scan misses is never asked for its '
+            . '`require_once` — which is the whole subject of this control.',
+        );
+        self::assertTrue(
+            self::callsModuleIn($upperCase),
+            'The same in upper case, reached through a fully qualified name.',
+        );
+        self::assertFalse(
+            self::callsModuleIn($documented),
+            'A file naming the call only in a docblock became a caller. Either the comment exemption is gone, or '
+            . 'the fold stopped preserving byte length and the offset no longer lands on the comment token.',
         );
     }
 
@@ -175,28 +236,42 @@ final class ModuleIsLoadedByPathTest extends TestCase
 
             $contents = (string) file_get_contents(PhpFilePopulation::root() . '/' . $path);
 
-            if (!str_contains($contents, self::CALL_NEEDLE)) {
-                continue;
-            }
-
-            $tokens = PhpToken::tokenize($contents);
-            $offset = 0;
-
-            while (($at = strpos($contents, self::CALL_NEEDLE, $offset)) !== false) {
-                $offset = $at + \strlen(self::CALL_NEEDLE);
-                $token = self::tokenAt($tokens, $at);
-
-                if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
-                    continue;
-                }
-
+            if (self::callsModuleIn($contents)) {
                 $callers[] = $path;
-
-                break;
             }
         }
 
         return $callers;
+    }
+
+    /**
+     * The match itself, over one file's text, so that what the scan does can be
+     * measured on text this control writes rather than only on the spellings
+     * the tree happens to carry.
+     */
+    private static function callsModuleIn(string $contents): bool
+    {
+        $folded = strtolower($contents);
+
+        if (!str_contains($folded, self::CALL_NEEDLE)) {
+            return false;
+        }
+
+        $tokens = PhpToken::tokenize($contents);
+        $offset = 0;
+
+        while (($at = strpos($folded, self::CALL_NEEDLE, $offset)) !== false) {
+            $offset = $at + \strlen(self::CALL_NEEDLE);
+            $token = self::tokenAt($tokens, $at);
+
+            if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -181,9 +181,13 @@ The rule deliberately parses no descriptor spec and counts nothing, because
 every counting mechanism proposed was refuted by the measurements above, and
 because counting is not fail-closed: a shape nobody has thought of yet is
 refused by default rather than permitted by an argument nobody has checked. The
-decision is a textual substring match; the tokenizer excuses exactly one kind
+decision is a textual substring match, folded to lower case because PHP
+resolves function names without regard to case and a case-sensitive gate would
+have been one spelling away from blind; the tokenizer excuses exactly one kind
 of occurrence — one inside a comment, because a docblock cannot execute — and
-otherwise only labels the refusal.
+otherwise only labels the refusal. The fold is `strtolower`, not
+`mb_strtolower`: offsets found in the lowercased copy are read back out of the
+original, so the fold has to preserve byte length.
 
 Entries are anchored at `file:line`, not at the file, so a second call added
 tomorrow to an already-entered file is refused by default. An entry whose line
@@ -200,10 +204,38 @@ for whatever moves into that path later.
   already has an entry. The shape is made undeclarable in silence, not
   mechanically impossible; what bounds the residual is that entries are few,
   line-anchored and reviewed.
-- **Two named gaps.** A dynamically assembled function name is invisible to a
-  textual gate (the tree has none today, and this was swept for). So is a
-  differently-cased spelling, since PHP resolves function names
-  case-insensitively and the gate does not.
+- **One named gap.** A dynamically assembled function name is invisible to a
+  textual gate (the tree has none today, and this was swept for), and no
+  textual gate can close it: the deciding text does not exist until run time.
+  The differently-cased spelling that was named beside it is closed — both
+  controls in the group fold case. PHP resolves function, class and method
+  names without regard to case, so a needle that did not was one spelling away
+  from blind. Each control carries its own standing case over text it writes
+  itself, because the tree supplies no off-canon spelling to witness the fold
+  with: a control whose fold was reverted would otherwise answer exactly as
+  before and stay green. Both were also confirmed once by planting
+  `Proc_Open(` and `childprocess::Run(` in a scratch repository and watching
+  each refuse its own by file and line, and the standing cases are what keep
+  that true.
+
+  Those cases pin the fold to `strtolower` rather than to lowercasing in
+  general. Offsets are found in the folded copy and read back out of the
+  original, so a fold that does not preserve byte length reads the wrong bytes;
+  each case carries a codepoint `mb_strtolower` shortens, positioned so that
+  the substitution changes an answer instead of passing unnoticed.
+
+  Folding added exactly one occurrence to the tree and none to the caller set.
+  That occurrence is not a call: a test method name whose camelCase seam spells
+  the single-stream spawner across two words. It is declared like any other.
+  The fold is witnessed directly, by a case the control runs over text it
+  writes itself, rather than only by that seam — a seam inside a test about
+  something else is evidence a rename can carry away.
+
+  The seam is also the fold's standing cost, and it was not reduced: the byte
+  before a match is not read, so any identifier spelling the same seam needs an
+  entry. Reading it would narrow a fail-closed gate on an argument, which is
+  the move this control has refused twice; the direct case above is what turns
+  red if a later change makes it anyway.
 - **The module is loaded two ways on purpose**, and both are load-bearing: the
   namespace is declared in `autoload-dev` so that the ban on production code
   importing development namespaces can see it at all, and every caller also
@@ -221,7 +253,12 @@ for whatever moves into that path later.
   convention had already drifted: four callers had stopped carrying the
   `require_once` while this document and two others still said every caller did.
   An aliased import or a variable class name is invisible to it, and neither
-  spelling exists in the tree.
+  spelling exists in the tree. A differently-cased one is not invisible: that
+  scan folds case too, which costs nothing — it adds no caller to the tree, so
+  the fold is measured on text the control writes itself rather than on a
+  spelling the tree supplies. The comment exemption is unchanged and now
+  reaches a docblock in any casing, which widens what it could excuse rather
+  than what it excuses today.
 - **One production behaviour changed.** The git repository locator no longer
   opens descriptors it never reads, so a `git`-scoped run fails instead of
   hanging when git is unusually talkative on stderr. Production code may not

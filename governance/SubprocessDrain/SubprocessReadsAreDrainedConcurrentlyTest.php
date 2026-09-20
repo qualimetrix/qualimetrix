@@ -60,8 +60,37 @@ use Qualimetrix\Subprocess\ChildProcess;
  *
  * ## The decision is textual; the tokenizer only finds comments
  *
- * The gate is a case-sensitive substring match. Two measurements say why it is
- * not a token-type check:
+ * The gate is a case-folded substring match: the file is lowercased once and
+ * the needles are searched in that copy, so `Proc_Open(` and `PROC_OPEN(` are
+ * seen exactly as `proc_open(` is. PHP resolves function names without regard
+ * to case, so a case-sensitive gate would have been a spelling away from
+ * blind. `strtolower` is the right fold and `mb_strtolower` is not: the offsets
+ * found in the lowercased copy are read back out of the original — for the
+ * line number, for the token, and for the spelling the refusal prints — and
+ * only a fold that preserves byte length keeps them pointing at the same
+ * bytes. Since PHP 8.2 `strtolower` maps `A`-`Z` and nothing else, so it cannot
+ * change a length on any input; that is a language guarantee rather than a
+ * property of this tree, and measuring the tree would not add to it. What is
+ * measured instead is the substitution: the case below carries a codepoint
+ * `mb_strtolower` shortens, and swapping the fold makes it read every spelling
+ * off by the bytes that codepoint lost.
+ *
+ * Folding widens the population of matches by exactly one occurrence today,
+ * and that occurrence is not a call: a test method name whose camelCase seam
+ * spells the single-stream spawner across two words. It is declared like any
+ * other. That the fold is live is measured twice over, deliberately: directly,
+ * on text this control writes itself, and incidentally, because removing the
+ * fold refuses that entry as stale. The direct measurement is the load-bearing
+ * one — the seam belongs to a test about something else and a rename there
+ * would carry the incidental witness away with it.
+ *
+ * The seam also states the price of folding a substring match, which nothing
+ * here reduces: the byte before a match is not read, so any identifier
+ * spelling the same seam matches and needs an entry. Reading that byte would
+ * narrow a fail-closed gate, and it is the direct measurement above, not this
+ * paragraph, that would go red if someone did.
+ *
+ * Two measurements say why the match is not a token-type check:
  *
  * - `\proc_open(` tokenizes as a single `T_NAME_FULLY_QUALIFIED`, not as
  *   `T_STRING` followed by `(`. A gate built on the latter would not see it,
@@ -108,11 +137,13 @@ use Qualimetrix\Subprocess\ChildProcess;
  * refusal message, which reports where the occurrence sits now, rather than
  * counting lines by hand.
  *
- * Two gaps are named rather than covered. A dynamically assembled name
- * (`$f = 'proc_' . 'open'; $f(…)`) is invisible; the enumeration swept for one
- * and found none. So is a differently-cased spelling: PHP resolves function
- * names case-insensitively, the gate does not, and nothing in the tree spells
- * either name any other way today.
+ * One gap is named rather than covered: a dynamically assembled name
+ * (`$f = 'proc_' . 'open'; $f(…)`) is invisible to any textual gate, and the
+ * enumeration swept for one and found none. A textual gate cannot close that
+ * one in principle — the deciding text does not exist until run time.
+ *
+ * The differently-cased spelling that used to sit beside it is closed: the
+ * match folds case, and a planted `Proc_Open(` is refused by name and line.
  *
  * The population is {@see PhpFilePopulation}: every PHP file the repository
  * ships or runs, untracked-but-not-ignored files included.
@@ -195,6 +226,12 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
             . 'case\'s fixture string — embedded source, never executed by this process.',
 
+        'tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php:363' => 'Not a spawn and not the '
+            . 'name: a test method whose camelCase seam spells the single-stream spawner once case is folded — the '
+            . '`p` ends one word and `Open` begins the next. It is the only occurrence in the tree that the '
+            . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '
+            . 'match back to case-sensitive and this entry refuses as stale.',
+
         'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:636' => 'The parent holds the '
             . 'lock the child blocks on, so the window opens before the parent is free to read anything and no read '
             . 'discipline closes it. Stderr goes to a file the failure message reads back, leaving stdout the only '
@@ -212,7 +249,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'drained from one `stream_select` loop.',
     ];
 
-    /** @var list<array{path: string, line: int, name: string, kind: string}>|null */
+    /** @var list<array{path: string, line: int, name: string, spelled: string, kind: string}>|null */
     private static ?array $occurrences = null;
 
     public static function tearDownAfterClass(): void
@@ -281,6 +318,64 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         }
     }
 
+    /**
+     * The fold, measured on text this control writes rather than on a spelling
+     * the tree happens to carry. Without this the only evidence that the match
+     * folds case is one camelCase seam in an unrelated test, and a rename there
+     * would take the evidence with it.
+     *
+     * The fourth case is the fold's cost and is pinned deliberately: a seam
+     * inside a longer identifier is an occurrence, because nothing here reads
+     * the byte before the match. That is why one `ENTRIES` row declares a
+     * method name. Narrowing the match to identifier boundaries would be a
+     * deliberate change to a fail-closed gate — it would turn this line red,
+     * which is the point.
+     *
+     * The fifth field is pinned for a reason of its own: a seam's token is the
+     * identifier it sits in, so the refusal labels it `a call` exactly as it
+     * labels a real one. After the fold that label means "a name PHP would
+     * resolve as a call", seam included, and pinning it here makes any change
+     * to that reading a decision rather than a side effect.
+     *
+     * Every spelling here is assembled from halves: string literals in this
+     * file are not excused, so writing one whole would make this control refuse
+     * itself.
+     */
+    #[Test]
+    public function itSeesANameWhateverCaseItIsWrittenIn(): void
+    {
+        $source = '<?php' . "\n"
+            . "\$kelvin = '\u{212A}'; // three bytes only a multi-byte fold rewrites\n"
+            . '$a = Proc_' . 'Open($command, $descriptors, $pipes);' . "\n"
+            . '$b = \PROC_' . 'OPEN($command, $descriptors, $pipes);' . "\n"
+            . '$c = P' . 'open($command, \'w\');' . "\n"
+            . '$d = keep' . 'Open();' . "\n"
+            . '// Proc_' . 'Open() named in a comment' . "\n";
+
+        $found = array_map(
+            static fn(array $occurrence): string => $occurrence['line'] . ' ' . $occurrence['spelled']
+                . ' → ' . $occurrence['name'] . ' (' . $occurrence['kind'] . ')',
+            self::occurrencesIn('fixture.php', $source),
+        );
+
+        self::assertSame(
+            [
+                '3 Proc_' . 'Open → ' . self::NEEDLES[0] . ' (a call)',
+                '4 PROC_' . 'OPEN → ' . self::NEEDLES[0] . ' (a call)',
+                '5 P' . 'open → ' . self::NEEDLES[1] . ' (a call)',
+                '6 p' . 'Open → ' . self::NEEDLES[1] . ' (a call)',
+            ],
+            $found,
+            'The match no longer folds case, or folds it differently. Lines 2-4 are working calls that PHP '
+            . 'resolves exactly as the lower-case spelling, and a gate that misses them is a spelling away from '
+            . 'blind. Line 6 is the cost of folding a substring match: a camelCase seam inside a longer '
+            . 'identifier matches too, which is why one `ENTRIES` row declares a method name. Line 7 must not '
+            . 'appear at all — it is inside a comment, the one kind of occurrence this control excuses. The '
+            . 'Kelvin sign on line 2 is what fixes the fold to `strtolower`: a multi-byte fold rewrites it to '
+            . 'one byte, and every spelling below is then read two bytes early.',
+        );
+    }
+
     #[Test]
     public function itRefusesEveryUndeclaredOccurrence(): void
     {
@@ -297,7 +392,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
                 continue;
             }
 
-            $undeclared[] = $anchor . ' — ' . $occurrence['name'] . ' (' . $occurrence['kind'] . ')';
+            $undeclared[] = $anchor . ' — ' . self::spelling($occurrence) . ' (' . $occurrence['kind'] . ')';
         }
 
         self::assertSame(
@@ -359,6 +454,20 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         self::assertSame([], $refused, 'An entry that cannot do the work an entry exists for.');
     }
 
+    /**
+     * The refusal names the bytes that are actually in the file, because the
+     * match is case-folded and "the needle `popen`" would send a reader
+     * looking for a spelling the line does not carry.
+     *
+     * @param array{path: string, line: int, name: string, spelled: string, kind: string} $occurrence
+     */
+    private static function spelling(array $occurrence): string
+    {
+        return $occurrence['spelled'] === $occurrence['name']
+            ? $occurrence['name']
+            : $occurrence['spelled'] . ', which folds to ' . $occurrence['name'];
+    }
+
     private static function whereItIsNow(string $anchor): string
     {
         $path = substr($anchor, 0, (int) strrpos($anchor, ':'));
@@ -375,7 +484,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             : 'the file now carries one at line ' . implode(', ', $lines);
     }
 
-    /** @return list<array{path: string, line: int, name: string, kind: string}> */
+    /** @return list<array{path: string, line: int, name: string, spelled: string, kind: string}> */
     private static function occurrences(): array
     {
         if (self::$occurrences !== null) {
@@ -386,35 +495,55 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
 
         foreach (PhpFilePopulation::paths() as $path) {
             $contents = (string) file_get_contents(PhpFilePopulation::root() . '/' . $path);
-            $tokens = null;
 
-            foreach (self::NEEDLES as $needle) {
-                if (!str_contains($contents, $needle)) {
-                    continue;
-                }
-
-                $tokens ??= PhpToken::tokenize($contents);
-                $offset = 0;
-
-                while (($at = strpos($contents, $needle, $offset)) !== false) {
-                    $offset = $at + \strlen($needle);
-                    $token = self::tokenAt($tokens, $at);
-
-                    if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
-                        continue;
-                    }
-
-                    $found[] = [
-                        'path' => $path,
-                        'line' => substr_count($contents, "\n", 0, $at) + 1,
-                        'name' => $needle,
-                        'kind' => self::kindOf($token),
-                    ];
-                }
+            foreach (self::occurrencesIn($path, $contents) as $occurrence) {
+                $found[] = $occurrence;
             }
         }
 
         return self::$occurrences = $found;
+    }
+
+    /**
+     * The match itself, over one file's text, so that it can be measured on
+     * text this control chooses rather than only on whatever the tree happens
+     * to spell today.
+     *
+     * @return list<array{path: string, line: int, name: string, spelled: string, kind: string}>
+     */
+    private static function occurrencesIn(string $path, string $contents): array
+    {
+        $folded = strtolower($contents);
+        $found = [];
+        $tokens = null;
+
+        foreach (self::NEEDLES as $needle) {
+            if (!str_contains($folded, $needle)) {
+                continue;
+            }
+
+            $tokens ??= PhpToken::tokenize($contents);
+            $offset = 0;
+
+            while (($at = strpos($folded, $needle, $offset)) !== false) {
+                $offset = $at + \strlen($needle);
+                $token = self::tokenAt($tokens, $at);
+
+                if ($token !== null && $token->is([\T_COMMENT, \T_DOC_COMMENT])) {
+                    continue;
+                }
+
+                $found[] = [
+                    'path' => $path,
+                    'line' => substr_count($contents, "\n", 0, $at) + 1,
+                    'name' => $needle,
+                    'spelled' => substr($contents, $at, \strlen($needle)),
+                    'kind' => self::kindOf($token),
+                ];
+            }
+        }
+
+        return $found;
     }
 
     /**
