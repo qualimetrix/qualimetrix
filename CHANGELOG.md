@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Analysing a project that shares a class name with one of the tool's own
+  packages no longer breaks the run. A standalone install (the Docker image, a
+  global `composer global require`) ships packages without the dependencies only
+  the development graph supplies, and DIT resolution asked the tool's own
+  autoloader to load the analysed class — so a file it could reach but not
+  finish loading was recorded as a processing failure. Analysing
+  `vendor/symfony/console` from such an install reported five failed files and
+  an incomplete, non-authoritative run; it now analyses all 132 and reports, for
+  that path, the same DIT values a full install reports. A parent that still
+  cannot be loaded counts as a root class, which is what the tool already did
+  for any external class it could not find — so depth that reaches outside the
+  analysed path still depends on what the installation can load, as
+  `website/docs/rules/design.md` now records.
+
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no

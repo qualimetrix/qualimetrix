@@ -17,6 +17,8 @@ governance/FormatOptionKeys/Fixtures/OutputFormats/suppressed/src	Architecture.G
 scripts/directive-audit/tests/Fixtures	Tooling/DirectiveAudit	"Retain at the materialized subject-owned path."
 scripts/phpunit-aggregate/tests/Fixtures	Tooling/PhpunitAggregate	"Retain at the materialized subject-owned path."
 tests/Analysis/Configuration/Fixtures	Analysis/Configuration	"Retain at the materialized subject-owned path."
+tests/Analysis/Evidence/Design/Fixtures	Analysis/Evidence/Design	"Move atomically with the owning subject."
+tests/Analysis/Evidence/Design/Fixtures/UnloadableParent	Analysis/Evidence/Design	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GlobalNamespaceOnly	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics	Analysis/Evidence/Measurement	"Move atomically with the owning subject."

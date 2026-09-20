@@ -37,7 +37,7 @@ coupling.distance	channel	?		29	91	2	2	1	40	0	45	0	0	0	0
 coupling.instability	channel	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		3	8	0	0	0	15	0	4	0	0	0	0
 design.data-class	channel	?		15	18	1	1	9	37	0	23	0	0	0	0
-design.dit	channel	?		12	106	2	2	0	27	0	15	0	0	0	0
+design.dit	channel	?		12	110	2	2	0	27	0	15	0	0	0	0
 design.god-class	channel	?		18	25	1	2	3	38	0	27	0	0	0	0
 design.noc	channel	?		12	37	2	2	0	26	0	11	0	0	0	0
 design.type-coverage.param	channel	?		8	55	2	1	1	30	0	14	0	0	0	0
@@ -86,7 +86,7 @@ coupling.instability	metric-key	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.rfc	metric-key	?		6	33	0	0	0	0	0	2	0	0	0	0
 coupling.rfc-external	metric-key	?		1	4	0	0	0	0	0	2	0	0	0	0
 coupling.rfc-own	metric-key	?		1	4	0	0	0	0	0	2	0	0	0	0
-design.dit	metric-key	?		12	106	2	2	0	27	0	15	0	0	0	0
+design.dit	metric-key	?		12	110	2	2	0	27	0	15	0	0	0	0
 design.is-abstract	metric-key	?		2	4	0	0	0	0	0	3	0	0	0	0
 design.is-data-class	metric-key	?		2	3	0	0	0	0	0	3	0	0	0	0
 design.is-exception	metric-key	?		2	5	0	0	0	0	0	3	0	0	0	0
@@ -169,7 +169,7 @@ coupling.distance	producer	?		29	91	2	2	1	40	0	45	0	0	0	0
 coupling.instability	producer	?		41	106	2	3	7	58	0	27	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		3	8	0	0	0	15	0	4	0	0	0	0
 design.data-class	producer	?		15	18	1	1	9	37	0	23	0	0	0	0
-design.dit	producer	?		12	106	2	2	0	27	0	15	0	0	0	0
+design.dit	producer	?		12	110	2	2	0	27	0	15	0	0	0	0
 design.god-class	producer	?		18	25	1	2	3	38	0	27	0	0	0	0
 design.noc	producer	?		12	37	2	2	0	26	0	11	0	0	0	0
 design.type-coverage.param	producer	?		8	55	2	1	1	30	0	14	0	0	0	0

@@ -20,6 +20,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 
 #[CoversClass(DitGlobalCollector::class)]
 final class DitGlobalCollectorTest extends TestCase
@@ -71,6 +72,37 @@ final class DitGlobalCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         self::assertSame(0, $repository->get($path)->get('design.dit'));
+    }
+
+    /**
+     * Nothing catches around this collector -- aggregation calls it directly --
+     * so an Error escaping the external lookup ends the entire run with an
+     * internal error rather than costing one class its DIT.
+     */
+    #[Test]
+    public function itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun(): void
+    {
+        $probe = UnloadableClassProbe::start();
+
+        try {
+            $repository = new InMemoryMetricRepository();
+            $graph = $this->graph([
+                $this->createExtends('App\\Local', $probe->childFqcn()),
+            ]);
+
+            $path = SymbolPath::forClass('App', 'Local');
+            $repository->add($path, new MetricBag(), RelativePath::fromString('local.php'), 1);
+
+            $this->collector->calculate($graph, $repository);
+
+            // Same reason as the per-file case: the metric is 1 whether the
+            // load threw or was never attempted, so assert the attempt too.
+            self::assertSame(1, $probe->queryCount(), 'The collector never tried to load the parent');
+            self::assertTrue($probe->stillUndeclared(), 'The parent loaded successfully, so nothing threw');
+            self::assertSame(1, $repository->get($path)->get('design.dit'));
+        } finally {
+            $probe->stop();
+        }
     }
 
     #[Test]

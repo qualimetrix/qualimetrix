@@ -3131,6 +3131,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSparesAClassWhoseComplexityExceedsTheWmcGate
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itTreatsTheThresholdItselfAsAFinding
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itConfirmsTheFixtureIsReachableAndStillCannotFinishLoading
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#2
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDetectsLowWocLowWmc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDisablesWhenLoadedFromEmptyArray
@@ -3188,6 +3192,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRequiresNoUpstreamMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingSplStack
@@ -3212,6 +3217,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itReturnsZeroForClassWithNoParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfFailingTheFile
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsUnqualifiedExceptionAsStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itAccumulatesDitAcrossAUseImportedChainInTheSameFile
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itLinksAnAliasedParentDeclaredInTheSameFile
