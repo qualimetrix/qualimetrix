@@ -169,7 +169,7 @@ commands and `graph:export` refuse incomplete input. See
 3. **Collectors are stateful per-file** — they reset between files via `reset()`
 4. **Atomic cache writes** — via tmp + rename (race condition protection)
 5. **Anonymous classes are ignored** — only named classes are counted
-6. **One way to run a child process** — `Qualimetrix\Subprocess\ChildProcess` at `scripts/subprocess/ChildProcess.php` drains every stream concurrently; any other spawn must be declared and justified in `governance/SubprocessDrain/` (see [ADR 0066](adr/0066-subprocess-read-discipline.md))
+6. **One way to run a child process** — `Qualimetrix\Subprocess\ChildProcess` at `scripts/subprocess/ChildProcess.php` drains every stream concurrently; any other spawn must be declared and justified in `governance/SubprocessDrain/` (see [ADR 0067](adr/0067-subprocess-read-discipline.md))
 
 ### Verification
 
