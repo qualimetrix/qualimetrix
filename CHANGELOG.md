@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+**`hook:install` writes a file where it used to write a symlink.** Every hook
+installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
+is deleted; the link is now dangling and git runs nothing. Run
+`qmx hook:install --force` to replace it. `hook:status` reports the dangling
+state instead of calling the hook absent, and `hook:uninstall` refuses to
+remove a link it cannot identify rather than deleting someone else's hook.
+
 ### Changed
 
 - Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
@@ -30,6 +39,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `hook:install` works for an installed package. `/scripts/` is excluded from
+  the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
+  in two places a consumer never has and exited 1 with `Hook script not found`.
+  It now generates the hook, which also makes it work outside a composer
+  layout. The two manual methods `quick-start` documented named the same
+  missing directory and are gone.
+- The hook names the binary that installed it, falling back to `vendor/bin/qmx`
+  and `bin/qmx` if that binary moves. Hook commands print that path in their
+  hints too, instead of `bin/qmx`, which is wrong for everyone who installed
+  the package.
 - Analysing a project that shares a class name with one of the tool's own
   packages no longer breaks the run. A standalone install (the Docker image, a
   global `composer global require`) ships packages without the dependencies only
@@ -43,7 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for any external class it could not find — so depth that reaches outside the
   analysed path still depends on what the installation can load, as
   `website/docs/rules/design.md` now records.
-
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no
