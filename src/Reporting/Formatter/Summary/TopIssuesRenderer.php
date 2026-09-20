@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 

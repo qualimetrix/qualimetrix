@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Support;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,7 +16,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
+use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 
 #[CoversClass(AcceptedLevelNarrator::class)]
 final class AcceptedLevelNarratorTest extends TestCase

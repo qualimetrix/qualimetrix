@@ -91,7 +91,7 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -133,7 +133,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerFormatters(ContainerBuilder $container): void
     {
-        $detailedFindingRenderer = 'Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer';
         $formatterRegistry = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
@@ -148,31 +147,35 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
-        // Exclude Support/ (utility classes, some not DI-compatible: AnsiColor takes bool $enabled)
+        //
+        // The exclusion criterion, so that it is applied rather than argued each
+        // time: a class is excluded only when the container cannot build it, or
+        // when it is built by hand below. `Ansi/` is the first — `AnsiColor`
+        // takes a bool nothing can supply — and `FormatterRegistry` is the
+        // second. A static-only helper is neither: registering one costs an
+        // unused private definition that is removed before compilation, which
+        // is why the narrators and the sorters are simply left alone.
+        //
+        // A stale path in this exclude is silent: the extra services compile,
+        // autowiring failures are deferred to instantiation, and unused private
+        // services are removed before one can surface.
+        // RegisterClassesExcludesNameSomethingTest is what refuses one.
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Reporting\\Formatter\\',
             $this->srcDir . '/Reporting/Formatter/{*,**/*}',
-            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Support/**}',
+            $this->srcDir . '/Reporting/Formatter/{FormatterRegistry.php,Ansi/**}',
         );
 
         // Auto-register health scoring services from src/Reporting/Health/
-        // Exclude VOs (scalar constructors, always instantiated via `new`)
+        // No exclude: every class here is an autowirable service.
         $healthPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $healthPrototype,
             'Qualimetrix\\Reporting\\Health\\',
             $this->srcDir . '/Reporting/Health/*',
-            $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
-
-        // FindingFilter (shared filtering logic for formatters)
-        $container->register(FindingFilter::class);
-
-        // DetailedFindingRenderer (in Formatter/Support/, excluded from formatter glob)
-        $container->register($detailedFindingRenderer)
-            ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass
         $container->register($formatterRegistry)
@@ -341,7 +344,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ExitCodeResolver::class)
             ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
 
-        // FindingFilter for --namespace/--class drill-down
+        // What --namespace/--class selects; ResultPresenter and the autowired
+        // formatter sections both resolve it from here.
         $container->register(FindingFilter::class);
 
         // ResultPresenter for formatting/output of analysis results

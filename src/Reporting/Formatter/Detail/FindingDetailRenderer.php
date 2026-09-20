@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Reporting\Formatter\Support;
+namespace Qualimetrix\Reporting\Formatter\Detail;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 

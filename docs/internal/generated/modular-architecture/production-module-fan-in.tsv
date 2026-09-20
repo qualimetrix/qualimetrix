@@ -281,7 +281,7 @@ Qualimetrix\Infrastructure\Serializer\SerializerSelector	Infrastructure.Serializ
 Qualimetrix\Reporting\Contract\OutputFormat	Reporting	2	1
 Qualimetrix\Reporting\Contract\OutputFormatResolverInterface	Reporting	2	2
 Qualimetrix\Reporting\CoverageFailure	Reporting	1	1
-Qualimetrix\Reporting\Filter\FindingFilter	Reporting	2	2
+Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	2	2
 Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	Reporting	2	1
 Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	Reporting	3	2
 Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface	Reporting	2	2

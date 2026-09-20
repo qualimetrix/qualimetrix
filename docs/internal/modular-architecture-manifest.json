@@ -1905,7 +1905,7 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -1946,7 +1946,7 @@
         {
           "owner": "Reporting",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Score\\HealthCoverage"
         },
         {
@@ -1969,7 +1969,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator"
         }
       ]
     },
@@ -4835,11 +4835,11 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\DebtBreakdownRenderer"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\DebtBreakdownRenderer"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\DetailedFindingRenderer"
         },
         {
           "owner": "Reporting",
@@ -4867,7 +4867,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\DebtBreakdownRenderer"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\DebtBreakdownRenderer"
         }
       ]
     },
@@ -5802,7 +5802,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\AcceptedLevelNarrator"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\AcceptedLevelNarrator"
         }
       ]
     },
@@ -6266,7 +6266,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -6310,15 +6310,15 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\AcceptedLevelNarrator"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\AcceptedLevelNarrator"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\FindingDetailRenderer"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter"
         },
         {
           "owner": "Reporting",
@@ -9511,11 +9511,11 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\FindingDetailRenderer"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter"
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter"
         },
         {
           "owner": "Reporting",
@@ -14379,7 +14379,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -14496,7 +14496,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         },
         {
           "owner": "Reporting",
@@ -16822,8 +16822,8 @@
         }
       ]
     },
-    "Qualimetrix\\Reporting\\Filter\\FindingFilter": {
-      "path": "src/Reporting/Filter/FindingFilter.php",
+    "Qualimetrix\\Reporting\\DrillDown\\FindingFilter": {
+      "path": "src/Reporting/DrillDown/FindingFilter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "contract",
@@ -17286,57 +17286,57 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\AcceptedLevelNarrator": {
-      "path": "src/Reporting/Formatter/Support/AcceptedLevelNarrator.php",
+    "Qualimetrix\\Reporting\\Formatter\\AcceptedLevelNarrator": {
+      "path": "src/Reporting/Formatter/AcceptedLevelNarrator.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\AnsiColor": {
-      "path": "src/Reporting/Formatter/Support/AnsiColor.php",
+    "Qualimetrix\\Reporting\\Formatter\\Ansi\\AnsiColor": {
+      "path": "src/Reporting/Formatter/Ansi/AnsiColor.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\CoverageNarrator": {
-      "path": "src/Reporting/Formatter/Support/CoverageNarrator.php",
+    "Qualimetrix\\Reporting\\Formatter\\CoverageNarrator": {
+      "path": "src/Reporting/Formatter/CoverageNarrator.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\HealthCoverageNarrator": {
-      "path": "src/Reporting/Formatter/Support/HealthCoverageNarrator.php",
+    "Qualimetrix\\Reporting\\Formatter\\Health\\HealthCoverageNarrator": {
+      "path": "src/Reporting/Formatter/Health/HealthCoverageNarrator.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\DebtBreakdownRenderer": {
-      "path": "src/Reporting/Formatter/Support/DebtBreakdownRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Detail\\DebtBreakdownRenderer": {
+      "path": "src/Reporting/Formatter/Detail/DebtBreakdownRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer": {
-      "path": "src/Reporting/Formatter/Support/DetailedFindingRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Detail\\DetailedFindingRenderer": {
+      "path": "src/Reporting/Formatter/Detail/DetailedFindingRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer": {
-      "path": "src/Reporting/Formatter/Support/FindingDetailRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Detail\\FindingDetailRenderer": {
+      "path": "src/Reporting/Formatter/Detail/FindingDetailRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter": {
-      "path": "src/Reporting/Formatter/Support/FindingSorter.php",
+    "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter": {
+      "path": "src/Reporting/Formatter/Ordering/FindingSorter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Support;
+namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 
 #[CoversClass(AnsiColor::class)]
 final class AnsiColorTest extends TestCase
