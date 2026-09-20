@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/external-parent",
+    "description": "Corpus case: a class whose parent lives outside the analysed path",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\ExternalParent\\": "src/"
+        }
+    }
+}

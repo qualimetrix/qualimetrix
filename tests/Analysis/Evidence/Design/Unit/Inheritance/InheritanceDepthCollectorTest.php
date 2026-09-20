@@ -444,42 +444,6 @@ PHP;
     }
 
     #[Test]
-    public function itCountsStandardPhpClassInReflectionDitChain(): void
-    {
-        // DitTestCustomException is defined at the bottom of this file.
-        // It extends \RuntimeException (a standard PHP class).
-        // When a class in the analyzed code extends DitTestCustomException,
-        // the collector resolves it via reflection and should count:
-        //   DitTestCustomException -> RuntimeException (standard, +1) -> Exception (standard, +1) = depth 2
-        //   Plus 1 for the analyzed class itself extending DitTestCustomException = DIT 3
-        //
-        // Before the fix, calculateReflectionDit would break BEFORE incrementing depth
-        // when hitting a standard class, producing DIT 1 instead of the correct value.
-        $fqn = '\\' . DitTestCustomException::class;
-        $code = <<<PHP
-<?php
-
-namespace App;
-
-class MyException extends {$fqn}
-{
-}
-PHP;
-
-        $metrics = $this->collectMetrics($code);
-
-        $dit = $metrics->get('design.dit:App\MyException');
-        self::assertIsInt($dit);
-        // DitTestCustomException extends RuntimeException extends Exception
-        // So: 1 (for extending DitTestCustomException) + reflectionDit(DitTestCustomException)
-        // reflectionDit: RuntimeException(+1, standard->break) = 1
-        // Total: 1 + 1 = 2
-        // Note: Exception is parent of RuntimeException but RuntimeException is already standard,
-        // so we stop there.
-        self::assertSame(2, $dit, 'DIT should count standard PHP class in external chain');
-    }
-
-    #[Test]
     public function itDoesNotTreatNamespacedExceptionAsStandardPhpClass(): void
     {
         // Bug 9: App\Exception should NOT match standard Exception
@@ -553,14 +517,18 @@ PHP;
     }
 
     /**
-     * A standalone install of the tool ships some packages without the
-     * dependencies only its own dev graph supplies, so an analysed FQCN can
-     * resolve to a vendored file the tool cannot finish loading. That used to
-     * escape as an Error and record the analysed file as a processing failure,
-     * making the whole run incomplete.
+     * The per-file pass no longer asks any autoloader about a parent it cannot
+     * see in this file, so it cannot execute the analysed project's code.
+     *
+     * The probe is the oracle for that, and its reading inverts: it used to
+     * assert the load was attempted and failed on the parent's absence, which
+     * was the shape a standalone install hit. Now the claim is that the load is
+     * never attempted, and `queryCount()` is what separates "was not asked"
+     * from "was asked and threw" -- the depth cannot, because an unresolved
+     * parent scores 1 either way.
      */
     #[Test]
-    public function itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfFailingTheFile(): void
+    public function itAsksNoAutoloaderAboutAParentItCannotSee(): void
     {
         $probe = UnloadableClassProbe::start();
 
@@ -570,12 +538,8 @@ PHP;
                 $probe->childFqcn(),
             ));
 
-            // Depth 1 is what any unresolvable parent scores, so assert the
-            // failure and whose absence caused it, not just that one occurred.
-            self::assertTrue(
-                $probe->failedOnTheMissingParent(),
-                'Loading the parent did not fail on its own missing parent',
-            );
+            self::assertSame(0, $probe->queryCount(), 'The collector still consulted an autoloader');
+            self::assertFalse($probe->failedOnTheMissingParent(), 'A load was attempted, so foreign code ran');
             self::assertSame(1, $metrics->get('design.dit:App\Local'));
         } finally {
             $probe->stop();
@@ -594,11 +558,3 @@ PHP;
         return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
     }
 }
-
-/**
- * Test fixture: a non-standard class extending a standard PHP class.
- * Used by testReflectionDitCountsStandardPhpClassInChain to verify
- * that calculateReflectionDit correctly increments depth before breaking
- * on standard classes.
- */
-class DitTestCustomException extends RuntimeException {}
