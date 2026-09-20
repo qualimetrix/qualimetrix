@@ -1,4 +1,4 @@
-# 0067. The Pre-commit Hook Is Generated, Not Shipped
+# 0068. The Pre-commit Hook Is Generated, Not Shipped
 
 **Date:** 2026-09-20
 **Status:** Accepted

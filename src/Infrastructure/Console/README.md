@@ -171,7 +171,7 @@ does not create a missing destination, and preserves an existing destination.
 
 The hook's contents are generated rather than shipped: `/scripts/` is excluded
 from the composer distribution, so a script living there reaches no consumer
-([ADR 0067](../../../docs/adr/0067-the-pre-commit-hook-is-generated-not-shipped.md)).
+([ADR 0068](../../../docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md)).
 All three commands test `is_link` before `file_exists`, because a hook
 installed by an earlier release is now a symlink leading nowhere, and
 `file_exists` follows the link and calls it absent.
