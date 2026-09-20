@@ -15,15 +15,17 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@code attributes}, {@code implements} and {@code extends} membership
  * criteria (Phase 2 direction 1).
  *
- * The factory owns the per-run binding to the analysis dependency graph:
+ * The factory owns the per-run binding to the analysis dependency graph, under
+ * one invariant: **every reader of a context runs after {@see bindGraph()}**.
+ * The invariant is stated rather than delegated to a list of today's readers,
+ * because a list is what rotted last time — it named a rule that had stopped
+ * binding and a pipeline that had stopped building, while a reader nobody had
+ * listed was quietly reading unbound answers.
  *
- * 1. {@see LayerViolationRule::analyze()} calls {@see bindGraph()} at the
- *    start of every run, passing {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext::$dependencyGraph}.
- * 2. {@see LayerRegistry::resolveAll()} calls {@see build()} for every class
- *    queried during evidence collection and edge resolution.
- * 3. After the rule run, the registry's cache holds layer matches keyed by
- *    {@see SymbolPath::toCanonical()}, and the factory's internal maps are
- *    rebuilt the next time {@see bindGraph()} is called.
+ * {@see LayerCriteriaMatcher::refuseUnbackedCriteria()} enforces it where it
+ * can be observed: a graph-backed criterion evaluated against an unbound
+ * context throws instead of reporting a non-match. Binding itself rebuilds the
+ * lookup maps and drops every cached context.
  *
  * **Data source.** Attribute, interface and parent-class relationships are
  * already captured during the dependency-collection phase as
@@ -46,12 +48,13 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * fallback is a follow-up if vendor base-class matching turns out to be
  * required in practice.
  *
- * **No-graph mode.** Before {@see bindGraph()} is called (e.g. during config
- * load, or in the {@code debug:layer-assignment} command which runs without
- * analysis), {@see build()} returns a minimal context with empty attribute /
- * interface / parent lists. Only the {@code patterns} and {@code suffix}
- * criteria can fire in that mode — sufficient for Phase-1-shape configs and
- * the debug command's pattern-only inspection.
+ * **No-graph mode.** Before {@see bindGraph()} is called (config load, and any
+ * caller that builds its own registry without a run behind it), {@see build()}
+ * returns a minimal context whose lists are empty and whose
+ * {@see ClassContext::$graphBacked} is false. {@code patterns} and
+ * {@code suffix} are answerable from the FQN and still fire; the three
+ * graph-backed criteria refuse rather than report a non-match, which is the
+ * difference between this mode and the bug it used to hide.
  */
 final class ClassContextFactory
 {
@@ -94,8 +97,9 @@ final class ClassContextFactory
     private ?array $attributesMap = null;
 
     /**
-     * Memoised contexts keyed by class FQN. Repeated lookups for the same
-     * class within one run share the transitive-walk result.
+     * Memoised contexts keyed by {@see SymbolPath::toCanonical()}. Repeated
+     * lookups for the same symbol within one run share the transitive-walk
+     * result.
      *
      * @var array<string, ClassContext>
      */
@@ -129,14 +133,22 @@ final class ClassContextFactory
             return new ClassContext('', '');
         }
 
-        if (isset($this->contextCache[$fqn])) {
-            return $this->contextCache[$fqn];
+        // Keyed by the whole path, not by the FQN: a class and the namespace
+        // of the same name share an FQN, and whichever was asked for first
+        // would otherwise answer for both.
+        $cacheKey = $class->toCanonical();
+        if (isset($this->contextCache[$cacheKey])) {
+            return $this->contextCache[$cacheKey];
         }
 
         $shortName = self::deriveShortName($fqn);
 
-        if ($this->graph === null || $class->type === null || $class->type === '') {
-            return $this->contextCache[$fqn] = new ClassContext($fqn, $shortName);
+        if ($this->graph === null) {
+            return $this->contextCache[$cacheKey] = new ClassContext($fqn, $shortName, graphBacked: false);
+        }
+
+        if ($class->type === null || $class->type === '') {
+            return $this->contextCache[$cacheKey] = new ClassContext($fqn, $shortName);
         }
 
         $this->ensureMapsBuilt();
@@ -145,7 +157,7 @@ final class ClassContextFactory
         $parents = $this->collectTransitiveParents($fqn);
         $interfaces = $this->collectTransitiveInterfaces($fqn, $parents);
 
-        return $this->contextCache[$fqn] = new ClassContext(
+        return $this->contextCache[$cacheKey] = new ClassContext(
             $fqn,
             $shortName,
             $attributes,

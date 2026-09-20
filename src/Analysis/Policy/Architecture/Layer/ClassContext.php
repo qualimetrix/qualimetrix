@@ -28,6 +28,12 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * For non-class symbols (pure-namespace {@see \Qualimetrix\Core\Symbol\SymbolPath}
  * or an empty FQN) the factory returns a minimal context with empty lists; only
  * the {@code patterns} criterion can match in that case.
+ *
+ * {@see $graphBacked} separates that case from the one that used to be
+ * indistinguishable from it: a context built before the factory was bound to a
+ * dependency graph. Both carry three empty lists, but the first is an answer
+ * and the second is the absence of one, and only the flag can tell an
+ * evaluator which it is holding.
  */
 final readonly class ClassContext
 {
@@ -73,6 +79,12 @@ final readonly class ClassContext
      * @param list<string> $parentClasses Parent-class FQNs in the transitive
      *                                    extends chain (immediate parent
      *                                    first, then grandparent, etc.).
+     * @param bool $graphBacked False only when the context was built without a
+     *                          dependency graph, so the three lists above say
+     *                          nothing about the class rather than saying it
+     *                          has no attributes, interfaces or parents.
+     *                          Evaluating a graph-backed criterion against such
+     *                          a context is a lifecycle error, not a non-match.
      */
     public function __construct(
         public string $fqn,
@@ -80,6 +92,7 @@ final readonly class ClassContext
         public array $attributeFqns = [],
         public array $interfaces = [],
         public array $parentClasses = [],
+        public bool $graphBacked = true,
     ) {
         $this->attributeFqnSet = $attributeFqns === [] ? [] : array_fill_keys($attributeFqns, true);
         $this->interfaceSet = $interfaces === [] ? [] : array_fill_keys($interfaces, true);

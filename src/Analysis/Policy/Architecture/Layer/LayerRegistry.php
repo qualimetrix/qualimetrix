@@ -37,13 +37,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * The registry holds a {@see ClassContextFactory} that produces the
  * {@see ClassContext} consumed by {@see LayerDefinition::matches()}. The
- * factory is per-analysis-run state: the rule binds the dependency graph at
- * the start of every {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule::analyze()}
- * call via {@see bindGraph()} and clears the registry's match cache via
- * {@see clearCache()} so the new graph's data is picked up. Before
- * {@see bindGraph()} is called the factory operates in no-graph mode (e.g.
- * during config load or in the {@code debug:layer-assignment} command) and
- * only the {@code patterns} and {@code suffix} criteria can fire.
+ * factory is per-analysis-run state:
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()}
+ * binds the run's dependency graph via {@see bindGraph()}, which also drops
+ * the match cache so the new graph's data is picked up. Before
+ * {@see bindGraph()} is called the factory operates in no-graph mode (config
+ * load, or a registry built without a run behind it): {@code patterns} and
+ * {@code suffix} still resolve, and a layer declaring {@code attributes},
+ * {@code implements} or {@code extends} refuses instead of resolving to
+ * nothing.
  *
  * There is intentionally no specificity scoring, no collision detection,
  * and no exception class for ambiguity — declaration order is the user's
@@ -106,9 +108,11 @@ final class LayerRegistry
     }
 
     /**
-     * Returns the underlying {@see ClassContextFactory} so callers (chiefly
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}) can bind it
-     * to the analysis-run dependency graph.
+     * Returns the underlying {@see ClassContextFactory} so a caller can hand
+     * the same instance to something that reads contexts outside the registry
+     * — which is what {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()}
+     * does for template expansion, and why a second factory beside this one
+     * is always a defect.
      */
     public function contextFactory(): ClassContextFactory
     {

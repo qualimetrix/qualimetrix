@@ -12,8 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -54,7 +52,7 @@ final class ProcessorBuilder
         $processor->bind($configuration);
         $processor->prepare(
             $graph ?? AdjacencyGraphBuilder::empty(),
-            self::classSetFromRepository($repository),
+            self::classPathsFromRepository($repository),
         );
 
         return $processor;
@@ -69,10 +67,13 @@ final class ProcessorBuilder
         );
     }
 
-    private static function classSetFromRepository(?MetricRepositoryInterface $repository): ClassSet
+    /**
+     * @return list<SymbolPath>
+     */
+    private static function classPathsFromRepository(?MetricRepositoryInterface $repository): array
     {
         if ($repository === null) {
-            return new ClassSet([], new ClassContextFactory());
+            return [];
         }
 
         /** @var list<SymbolPath> $paths */
@@ -81,7 +82,7 @@ final class ProcessorBuilder
             $paths[] = $symbol->symbolPath;
         }
 
-        return new ClassSet($paths, new ClassContextFactory());
+        return $paths;
     }
 
     /**

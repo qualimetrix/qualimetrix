@@ -5400,6 +5400,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itAppliesAGraphBackedExcludeDuringObservation"implements"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itExpandsBothModulesWithoutANonPatternCriterion
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itFiltersTemplateCandidatesByAGraphBackedCriterion"implements"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"attributes"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"extends"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\TemplateCriteriaExpansionIntegrationTest::itObservesNoTupleWhenAGraphBackedCriterionMatchesNothing"implements"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itDoesNotReportALayerWhosePositiveCriteriaMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\UnmatchedLayerExcludeIntegrationTest::itJudgesATemplateExcludeClauseOnceAcrossEveryInstance
@@ -5726,6 +5736,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDeduplicatesRepeatedAttributeAndRelationEdges
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIgnoresDependencyTypesOtherThanExtendsImplementsAndAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIncludesInterfacesInheritedFromAParentClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsAClassAndTheNamespaceOfItsOwnNameApart
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itMemoizesTheBuiltContextAcrossRepeatedCalls
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itResetsCachedContextsWhenTheGraphIsRebound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itSwitchesBackToAMinimalContextWhenTheGraphIsUnbound
@@ -5876,6 +5887,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itNamesTheLayersAnExcludeClauseRemovedAClassFrom
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPopulatesTheSharedMatchCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itPreservesDeclarationOrderInLayerNames
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itRefusesAGraphBackedCriterionAfterTheGraphIsUnbound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsEmptyForAnEmptyLayerList
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReportsNotEmptyWhenLayersArePresent
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itResolvesANamespaceOnlyPath
@@ -5890,10 +5902,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheConfiguredDefinitionsListInOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheInjectedContextFactoryInstance
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheLayerNameForASingleMatchingLayer
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheRegistryToNoGraphModeWhenBoundToNull
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itReturnsTheSameNegativeResultFromTheCache
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itRoutesANamespaceAndItsClassToTheSameLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itSharesTheSameCacheBetweenResolveAllAndResolveLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillAnswersAPatternLayerWithNoGraphBound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itStillResolvesAnExcludedClassToNoLayerAtAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\LayerRegistryTest::itThrowsOnConstructionWithDuplicateLayerNames
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::itAcceptsANameVariableBoundByOneOfMultiplePatterns
@@ -5991,7 +6003,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itIgnoresATrailingBackslashInANonCaptureFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itKeepsATupleWhenAtLeastOneClassSurvivesExclusion
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itNarrowsTheTupleSetBySuffixUnderMatchAll
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesAPatternOnlyTemplateWithAnUnboundFactory
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itObservesOnlyTheActualCombinationsForAMultiVariableTemplate
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRefusesAGraphBackedCriterionWhenTheFactoryIsUnbound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itRequiresEveryDeclaredExcludeKindToMatchUnderModeAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListForAnEmptyClassSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itReturnsAnEmptyListWhenNoClassMatches

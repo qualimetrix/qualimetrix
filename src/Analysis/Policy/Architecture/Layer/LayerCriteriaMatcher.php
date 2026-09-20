@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use LogicException;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 
 /**
@@ -23,7 +24,8 @@ use Qualimetrix\Core\Pattern\NamespaceMatcher;
  * {@see NamespaceMatcher::matchesSingle()} so this class shares a single
  * source of truth with the wider namespace-matching utility.
  *
- * @internal Consumed by {@see LayerDefinition}.
+ * @internal Consumed by {@see LayerDefinition} and, for the refusal alone,
+ * by {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor}.
  */
 final class LayerCriteriaMatcher
 {
@@ -53,6 +55,8 @@ final class LayerCriteriaMatcher
         array $implements,
         array $extends,
     ): array {
+        self::refuseUnbackedCriteria($context, $attributes, $implements, $extends);
+
         $matches = [
             self::matchPatterns($context, $patterns),
             self::matchSuffix($context, $suffix),
@@ -64,6 +68,54 @@ final class LayerCriteriaMatcher
         return array_values(array_filter(
             $matches,
             static fn(?MatchedCriterion $criterion): bool => $criterion !== null,
+        ));
+    }
+
+    /**
+     * Refuses the three criteria that can only be answered from a dependency
+     * graph when the context was built without one.
+     *
+     * Such a context carries three empty lists, which read as "this class has
+     * no parents, no interfaces, no attributes" — a plausible answer that no
+     * caller can tell from silence. That is how these criteria came to be
+     * evaluated during template expansion against a factory nothing had bound
+     * yet, and nothing anywhere went red. Patterns and suffix are derived from
+     * the FQN alone and stay answerable.
+     *
+     * @param list<string> $attributes
+     * @param list<string> $implements
+     * @param list<string> $extends
+     */
+    public static function refuseUnbackedCriteria(
+        ClassContext $context,
+        array $attributes,
+        array $implements,
+        array $extends,
+    ): void {
+        if ($context->graphBacked) {
+            return;
+        }
+
+        $declared = [];
+        if ($attributes !== []) {
+            $declared[] = 'attributes';
+        }
+        if ($implements !== []) {
+            $declared[] = 'implements';
+        }
+        if ($extends !== []) {
+            $declared[] = 'extends';
+        }
+
+        if ($declared === []) {
+            return;
+        }
+
+        throw new LogicException(\sprintf(
+            'Layer criteria %s were evaluated for "%s" against a ClassContext built without a dependency graph. '
+            . 'Bind the graph to the ClassContextFactory before anything reads a context from it.',
+            implode(', ', $declared),
+            $context->fqn,
         ));
     }
 

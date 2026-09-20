@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
@@ -75,7 +74,7 @@ final class ArchitectureProcessorTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/prepare.*bind/');
 
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
     }
 
     #[Test]
@@ -93,7 +92,7 @@ final class ArchitectureProcessorTest extends TestCase
         $config = self::configurationWithOneStaticLayer();
         $this->processor->reset();
         $this->processor->bind($config);
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
 
         $classPath = SymbolPath::forClass('App\\Controller', 'UserController');
         $matches = iterator_to_array($this->processor->classify([$classPath]));
@@ -107,7 +106,7 @@ final class ArchitectureProcessorTest extends TestCase
     public function itClearsStateOnResetAfterAFullRunSoAFurtherClassifyThrows(): void
     {
         $this->processor->bind(self::configurationWithOneStaticLayer());
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
         iterator_to_array($this->processor->classify([SymbolPath::forClass('App\\Controller', 'X')]));
 
         $this->processor->reset();
@@ -127,7 +126,7 @@ final class ArchitectureProcessorTest extends TestCase
     {
         // First analysis run reaches the prepared state.
         $this->processor->bind(self::configurationWithOneStaticLayer());
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
         self::assertNotNull($this->processor->getPreparedConfiguration());
 
         // Re-binding (e.g. configurator pivots mid-flow) invalidates the
@@ -149,7 +148,7 @@ final class ArchitectureProcessorTest extends TestCase
 
         $this->processor->bind($first);
         $this->processor->bind($second);
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
 
         // The second config has no layers, so classifying the controller now
         // yields no matches — proves the rebinding stuck.
@@ -183,7 +182,7 @@ final class ArchitectureProcessorTest extends TestCase
     {
         $config = self::configurationWithOneStaticLayer();
         $this->processor->bind($config);
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
 
         self::assertSame(
             $config,
@@ -208,7 +207,7 @@ final class ArchitectureProcessorTest extends TestCase
             maxExpandedLayers: 500,
         );
 
-        $classes = self::classSet([SymbolPath::forClass('App\\Module\\Order\\Domain', 'Customer')]);
+        $classes = [SymbolPath::forClass('App\\Module\\Order\\Domain', 'Customer')];
 
         $this->processor->bind($config);
         $this->processor->prepare(self::emptyGraph(), $classes);
@@ -226,11 +225,11 @@ final class ArchitectureProcessorTest extends TestCase
     public function itPreservesConfiguredPolicyAcrossPreparationReset(): void
     {
         $this->processor->bind(self::configurationWithOneStaticLayer());
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
         $this->processor->reset();
 
         self::assertNull($this->processor->getPreparedConfiguration());
-        $this->processor->prepare(self::emptyGraph(), self::emptyClassSet());
+        $this->processor->prepare(self::emptyGraph(), []);
         self::assertNotNull($this->processor->getPreparedConfiguration());
     }
 
@@ -284,19 +283,6 @@ final class ArchitectureProcessorTest extends TestCase
             new LayerPolicy([]),
             CoverageMode::Ignore,
         );
-    }
-
-    /**
-     * @param list<SymbolPath> $classes
-     */
-    private static function classSet(array $classes): ClassSet
-    {
-        return new ClassSet($classes, new ClassContextFactory());
-    }
-
-    private static function emptyClassSet(): ClassSet
-    {
-        return self::classSet([]);
     }
 
     private static function emptyGraph(): DependencyGraphInterface
