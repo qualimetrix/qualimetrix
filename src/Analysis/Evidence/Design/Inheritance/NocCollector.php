@@ -88,7 +88,7 @@ final class NocCollector implements GlobalContextCollectorInterface
         $childrenMap = $this->buildChildrenMapFromGraph($graph);
 
         // Step 2: Store NOC for each class that has children (only project classes)
-        foreach ($childrenMap as $parentKey => $children) {
+        foreach ($childrenMap as $children) {
             $parentPath = $children['symbolPath'];
 
             // Skip classes not in the repository (e.g. vendor classes)
@@ -96,7 +96,7 @@ final class NocCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $noc = $children['count'];
+            $noc = \count($children['children']);
 
             $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
         }
@@ -115,11 +115,16 @@ final class NocCollector implements GlobalContextCollectorInterface
     }
 
     /**
-     * Builds a map of parent canonical key → {symbolPath, count} from dependency graph.
+     * Builds a map of parent canonical key → {symbolPath, children} from dependency graph.
      *
      * Only counts DependencyType::Extends (not implements or trait use).
      *
-     * @return array<string, array{symbolPath: SymbolPath, count: int}>
+     * Children are collected as a set of names rather than counted as edges.
+     * A name declared in two files — the `class_exists()`-guarded polyfill
+     * shape — produces two edges, and a hierarchy in which only one of them
+     * can exist has one subclass by that name, not two.
+     *
+     * @return array<string, array{symbolPath: SymbolPath, children: array<string, true>}>
      */
     private function buildChildrenMapFromGraph(DependencyGraphInterface $graph): array
     {
@@ -145,10 +150,10 @@ final class NocCollector implements GlobalContextCollectorInterface
             if (!isset($childrenMap[$parentKey])) {
                 $childrenMap[$parentKey] = [
                     'symbolPath' => $dependency->targetLogical(),
-                    'count' => 0,
+                    'children' => [],
                 ];
             }
-            $childrenMap[$parentKey]['count']++;
+            $childrenMap[$parentKey]['children'][$dependency->sourceLogical()->toCanonical()] = true;
         }
 
         return $childrenMap;

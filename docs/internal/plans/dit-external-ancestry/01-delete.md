@@ -29,11 +29,13 @@ the one that does, and it runs it inside the parallel workers.
 > `"design.dit"` and concluded the resolver was unobservable; it was observable
 > through the aggregates. Any repeat reads every key.
 
-## The second defect, in `DitGlobalCollector::calculateDit()`
+## The second defect, in the global walk
 
-It treats "not a key in `$parentMap`" as "outside the project". A parent that
-is itself a root has no `parentMap` entry, so in-project classes are sent to
-`class_exists()`. This is not a corner:
+It treats "not a key in the child -> parent map" as "outside the project". A
+parent that is itself a root has no entry there, so in-project classes are sent
+to `class_exists()`. (That walk lives in `InheritanceDepthResolver::depthOf()`
+since ADR 0073; this page was written when it was
+`DitGlobalCollector::calculateDit()`.) This is not a corner:
 
 | tree                                    | external-resolution calls naming an in-project class |
 | --------------------------------------- | ---------------------------------------------------- |
@@ -52,8 +54,9 @@ InheritanceDepthCollector
   calculateReflectionDit()    deleted with it
   calculateDit()              a parent it cannot see in this file scores 1
 
-DitGlobalCollector::calculateDit(...)
-  parent in the class universe, absent from $parentMap
+InheritanceDepthResolver::depthOf(...)     (was DitGlobalCollector::calculateDit(),
+                                           moved and renamed by ADR 0073)
+  parent in the class universe, absent from the inheritance index
       -> in-project root: depth 0, no external resolution
   parent absent from the universe
       -> resolveExternalClassDit() still, its body replaced in stage 02

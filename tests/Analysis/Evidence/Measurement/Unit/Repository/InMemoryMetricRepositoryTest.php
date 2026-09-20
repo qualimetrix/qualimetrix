@@ -795,6 +795,73 @@ final class InMemoryMetricRepositoryTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itAddsOneScalarToAnExistingClassDeclarationAndItsProjection(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $logical = SymbolPath::forClass('App', 'Shim');
+        $declaration = DeclarationPath::of($logical, RelativePath::fromString('src/Shim.php'), DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($declaration);
+        $repository->addSubject($subject, (new MetricBag())->with('size.class-loc', 12), $declaration->file, 3);
+
+        $repository->addSubjectScalar($subject, 'design.dit', 2);
+
+        // Both views: the declaration answers exactly, and the logical class --
+        // which aggregation and the metrics export read -- follows the write.
+        self::assertSame(2, $repository->getSubject($subject)->get('design.dit'));
+        self::assertSame(12, $repository->getSubject($subject)->get('size.class-loc'));
+        self::assertSame(2, $repository->get($logical)->get('design.dit'));
+    }
+
+    #[Test]
+    public function itLeavesTheRepositoryAloneForASubjectItDoesNotHold(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $declaration = DeclarationPath::of(
+            SymbolPath::forClass('App', 'Absent'),
+            RelativePath::fromString('src/Absent.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $subject = MetricSubject::declaration($declaration);
+
+        $repository->addSubjectScalar($subject, 'design.dit', 7);
+
+        // Same contract as addScalar(): enriching what is not there creates
+        // nothing, so a collector cannot invent a subject by writing to it.
+        self::assertFalse($repository->hasSubject($subject));
+        self::assertNull($repository->getSubject($subject)->get('design.dit'));
+    }
+
+    #[Test]
+    public function itAddsOneScalarToACallableDeclarationWithoutTouchingAClassProjection(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $method = SymbolPath::forMethod('App', 'Service', 'handle');
+        $declaration = DeclarationPath::of($method, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($declaration);
+        $repository->addSubject($subject, (new MetricBag())->with('complexity.ccn', 3), $declaration->file, 10);
+
+        $repository->addSubjectScalar($subject, 'complexity.cognitive', 5);
+
+        // A callable has no logical-class projection to refresh, so the write
+        // must stop at its own subject.
+        self::assertSame(5, $repository->getSubject($subject)->get('complexity.cognitive'));
+        self::assertSame(3, $repository->getSubject($subject)->get('complexity.ccn'));
+        self::assertNull($repository->get(SymbolPath::forClass('App', 'Service'))->get('complexity.cognitive'));
+    }
+
+    #[Test]
+    public function itRoutesAnAggregateSubjectScalarToItsAggregatePath(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $namespacePath = SymbolPath::forNamespace('App');
+        $repository->add($namespacePath, (new MetricBag())->with('design.dit.max', 1), null, null);
+
+        $repository->addSubjectScalar(MetricSubject::aggregate($namespacePath), 'design.dit.max', 4);
+
+        self::assertSame(4, $repository->get($namespacePath)->get('design.dit.max'));
+    }
+
     private function assertLocationFreeLogicalClassProjection(InMemoryMetricRepository $repository): void
     {
         $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);

@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,5 @@
+-src/Base.php: warning[design.noc]: NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance (Base)
+-src/Consumer.php: warning[design.dit]: DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance (Consumer)
+-src/Middle.php: warning[design.dit]: DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance (Middle)
+-src/Middle.php: warning[design.noc]: NOC (Number of Children) is 1, exceeds threshold of 1. Consider using interfaces instead of inheritance (Middle)
+-src/ShimNative.php: warning[design.dit]: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance (Shim)
++src/Base.php: warning[design.noc]: NOC (Number of Children) is 4, exceeds threshold of 1. Consider using interfaces instead of inheritance (Base)
++src/Consumer.php: warning[design.dit]: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance (Consumer)
++src/Middle.php: warning[design.dit]: DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance (Middle)
++src/Middle.php: warning[design.noc]: NOC (Number of Children) is 1, exceeds threshold of 1. Consider using interfaces instead of inheritance (Middle)
++src/ShimNative.php: warning[design.dit]: DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance (Shim)
+@@ -14,1 +14,1 @@
+-Technical debt: 4h 25min
++Technical debt: 4h 28min

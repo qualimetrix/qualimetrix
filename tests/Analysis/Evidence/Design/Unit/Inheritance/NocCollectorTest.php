@@ -18,6 +18,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
@@ -342,6 +343,63 @@ final class NocCollectorTest extends TestCase
         self::assertSame(2, $parentMetrics->get('design.dit'));
         self::assertSame(10, $parentMetrics->get('complexity.wmc'));
         self::assertSame(1, $parentMetrics->get('design.noc'));
+    }
+
+    #[Test]
+    public function itCountsASubclassDeclaredInTwoFilesOnce(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // The `class_exists()`-guarded polyfill shape: one subclass name, two
+        // files, and only one of them alive in any run.
+        $graph = $this->graph([
+            $this->createExtends('App\\Shim', 'App\\BaseClass', 'polyfill.php', 20),
+            $this->createExtends('App\\Shim', 'App\\BaseClass', 'native.php', 30),
+        ]);
+
+        $parentPath = SymbolPath::forClass('App', 'BaseClass');
+        $repository->add($parentPath, new MetricBag(), RelativePath::fromString('base.php'), 10);
+
+        $childPath = SymbolPath::forClass('App', 'Shim');
+        $repository->add($childPath, new MetricBag(), RelativePath::fromString('native.php'), 30);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->get($parentPath)->get('design.noc'));
+    }
+
+    /**
+     * NOC stays a fact about a name, deliberately: `extends` records which name
+     * a class inherits from, never which file declared it, so there is nothing
+     * to attach a per-declaration count to.
+     */
+    #[Test]
+    public function itReportsOneCountForAParentNameDeclaredInTwoFiles(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $graph = $this->graph([
+            $this->createExtends('App\\ChildA', 'App\\BaseClass', 'child-a.php', 20),
+            $this->createExtends('App\\ChildB', 'App\\BaseClass', 'child-b.php', 30),
+        ]);
+
+        $parentPath = SymbolPath::forClass('App', 'BaseClass');
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-one.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('base-one.php'),
+            10,
+        );
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-two.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('base-two.php'),
+            10,
+        );
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(2, $repository->get($parentPath)->get('design.noc'));
     }
 
     /** @param list<Dependency> $dependencies */

@@ -64,7 +64,10 @@ final class InheritanceRule extends AbstractRule
             if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
-            $metrics = $context->metrics->get($subject->toSymbolPath());
+            // The exact declaration, not its logical projection: one name can
+            // be declared in more than one file with a different parent each
+            // time, and the projection keeps a single value for the name.
+            $metrics = $context->metrics->getSubject($subject);
             $dit = $metrics->get(MetricName::DESIGN_DIT);
 
             if ($dit === null) {

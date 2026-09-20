@@ -87,6 +87,9 @@ a named parent's child -- it has no declaration identity of its own -- and its
 own `extends` is not counted as the enclosing named class's inheritance either,
 however deeply it is nested.
 
+A subclass declared in more than one file counts once: NOC counts distinct
+child names, not `extends` edges.
+
 <!-- llms:skip-end -->
 
 ### Configuration
@@ -249,6 +252,16 @@ class's DIT. `class Host { public function make() { return new class extends
 Base {}; } }` reports `Host.design.dit = 0`: the anonymous class's parent
 chain belongs to an anonymous class, which has no declaration identity of its
 own, not to `Host`. This holds however deeply the anonymous class is nested.
+
+One name declared in more than one file -- the shape a `class_exists()`-guarded
+polyfill produces -- gets one depth per declaration, so two findings on that
+name can report two different depths, each measured from the parent its own
+declaration extends. A parent named by `extends` stays a name: when its
+declarations disagree about depth, the deepest is used, both for a child's
+depth and for the single value the class carries in `--format=metrics`, in the
+HTML tree and in the aggregates. Two declarations of one name inside a single
+file are measured as one -- only the last is -- and the depth follows that
+measurement, so those files report exactly what they reported before.
 
 <!-- llms:skip-end -->
 

@@ -1,0 +1,57 @@
+--- candidate
++++ reference (mapped)
+@@ -15,2 +15,2 @@
+-        "techDebtMinutes": 265,
+-        "debtPer1kLoc": 4076.9
++        "techDebtMinutes": 268,
++        "debtPer1kLoc": 4123.1
+@@ -37,4 +37,4 @@
+-            "message": "NOC: 3 (threshold: 1) — too many direct subclasses",
+-            "impactScore": 9.34,
+-            "coupling.class-rank": 0.4243,
+-            "debtMinutes": 22
++            "message": "NOC: 4 (threshold: 1) — too many direct subclasses",
++            "impactScore": 11.88,
++            "coupling.class-rank": 0.4243,
++            "debtMinutes": 28
+@@ -49,1 +49,1 @@
+-            "message": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "message": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
+@@ -121,4 +121,4 @@
+-            "message": "DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy",
+-            "impactScore": 3.37,
+-            "coupling.class-rank": 0.1021,
+-            "debtMinutes": 33
++            "message": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "impactScore": 3.06,
++            "coupling.class-rank": 0.1021,
++            "debtMinutes": 30
+@@ -164,5 +164,5 @@
+-            "message": "DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy",
+-            "metricValue": 3,
+-            "threshold": 1,
+-            "techDebtMinutes": 33,
++            "message": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
++            "recommendation": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "metricValue": 2,
++            "threshold": 1,
++            "techDebtMinutes": 30,
+@@ -202,3 +202,3 @@
+-            "message": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy",
+-            "metricValue": 2,
++            "message": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
++            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
++            "metricValue": 1,
+@@ -278,5 +278,5 @@
+-            "message": "NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance",
+-            "recommendation": "NOC: 3 (threshold: 1) — too many direct subclasses",
+-            "metricValue": 3,
+-            "threshold": 1,
+-            "techDebtMinutes": 22,
++            "message": "NOC (Number of Children) is 4, exceeds threshold of 1. Consider using interfaces instead of inheritance",
++            "recommendation": "NOC: 4 (threshold: 1) — too many direct subclasses",
++            "metricValue": 4,
++            "threshold": 1,
++            "techDebtMinutes": 28,

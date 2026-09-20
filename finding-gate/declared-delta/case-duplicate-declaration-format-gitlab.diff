@@ -1,0 +1,11 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,1 @@
+-        "description": "DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance",
++        "description": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
+@@ -27,1 +27,1 @@
+-        "description": "DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance",
++        "description": "DIT (Depth of Inheritance) is 1, exceeds threshold of 1. Prefer composition over deep inheritance",
+@@ -75,1 +75,1 @@
+-        "description": "NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance",
++        "description": "NOC (Number of Children) is 4, exceeds threshold of 1. Consider using interfaces instead of inheritance",

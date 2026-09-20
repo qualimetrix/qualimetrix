@@ -1,0 +1,21 @@
+--- candidate
++++ reference (mapped)
+@@ -3,5 +3,5 @@
+-    NOC: 3 (threshold: 1) — too many direct subclasses  [design.noc]
+-
+-src/Consumer.php (1 violation)
+-  WARN  Consumer
+-    DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy  [design.dit]
++    NOC: 4 (threshold: 1) — too many direct subclasses  [design.noc]
++
++src/Consumer.php (1 violation)
++  WARN  Consumer
++    DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy  [design.dit]
+@@ -18,1 +18,1 @@
+-    DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy  [design.dit]
++    DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy  [design.dit]
+@@ -39,2 +39,2 @@
+-  design.dit                               ~3h 3min  (6 violations)
+-  design.noc                               ~1h 22min (4 violations)
++  design.dit                               ~3h       (6 violations)
++  design.noc                               ~1h 28min (4 violations)

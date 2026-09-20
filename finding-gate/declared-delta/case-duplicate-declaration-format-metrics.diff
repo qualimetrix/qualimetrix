@@ -1,0 +1,53 @@
+--- candidate
++++ reference (mapped)
+@@ -255,3 +255,3 @@
+-                "design.dit.avg": 1.4,
+-                "design.dit.max": 3,
+-                "design.dit.p95": 2.8,
++                "design.dit.avg": 1,
++                "design.dit.max": 2,
++                "design.dit.p95": 1.7999999999999998,
+@@ -284,3 +284,3 @@
+-                "design.noc.sum": 5,
+-                "design.noc.avg": 1,
+-                "design.noc.max": 3,
++                "design.noc.sum": 6,
++                "design.noc.avg": 1.2,
++                "design.noc.max": 4,
+@@ -435,3 +435,3 @@
+-                "design.dit.avg": 1.4,
+-                "design.dit.max": 3,
+-                "design.dit.p95": 2.8,
++                "design.dit.avg": 1,
++                "design.dit.max": 2,
++                "design.dit.p95": 1.7999999999999998,
+@@ -473,3 +473,3 @@
+-                "design.noc.sum": 5,
+-                "design.noc.avg": 1,
+-                "design.noc.max": 3,
++                "design.noc.sum": 6,
++                "design.noc.avg": 1.2,
++                "design.noc.max": 4,
+@@ -605,3 +605,3 @@
+-                "design.dit.avg": 1.4,
+-                "design.dit.max": 3,
+-                "design.dit.p95": 2.8,
++                "design.dit.avg": 1,
++                "design.dit.max": 2,
++                "design.dit.p95": 1.7999999999999998,
+@@ -643,3 +643,3 @@
+-                "design.noc.sum": 5,
+-                "design.noc.avg": 1,
+-                "design.noc.max": 3,
++                "design.noc.sum": 6,
++                "design.noc.avg": 1.2,
++                "design.noc.max": 4,
+@@ -699,1 +699,1 @@
+-                "design.noc": 3,
++                "design.noc": 4,
+@@ -714,1 +714,1 @@
+-                "design.dit": 3,
++                "design.dit": 2,
+@@ -814,1 +814,1 @@
+-                "design.dit": 2,
++                "design.dit": 1,
