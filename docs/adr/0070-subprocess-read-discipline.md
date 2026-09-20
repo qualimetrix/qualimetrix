@@ -211,18 +211,26 @@ for whatever moves into that path later.
   controls in the group fold case. PHP resolves function, class and method
   names without regard to case, so a needle that did not was one spelling away
   from blind. Each control carries its own standing case over text it writes
-  itself, because the tree supplies no off-canon spelling to witness the fold
-  with: a control whose fold was reverted would otherwise answer exactly as
-  before and stay green. Both were also confirmed once by planting
-  `Proc_Open(` and `childprocess::Run(` in a scratch repository and watching
-  each refuse its own by file and line, and the standing cases are what keep
-  that true.
+  itself, for reasons that differ by control. The caller scan has no witness in
+  the tree at all — every call is spelled in the class's own casing, so a
+  reverted fold there answers exactly as before and the group stays green. The
+  occurrence scan does have one, a camelCase seam the fold newly matches, but
+  it sits in a test about something else and a rename would carry it away.
+  Both were also confirmed once by planting `Proc_Open(` and
+  `childprocess::Run(` in a scratch repository — the occurrence scan refuses by
+  file and line, the caller scan by file — and the standing cases are what keep
+  that true afterwards.
 
   Those cases pin the fold to `strtolower` rather than to lowercasing in
   general. Offsets are found in the folded copy and read back out of the
-  original, so a fold that does not preserve byte length reads the wrong bytes;
-  each case carries a codepoint `mb_strtolower` shortens, positioned so that
-  the substitution changes an answer instead of passing unnoticed.
+  original, so a fold that does not preserve byte length reads the wrong bytes.
+  Each case therefore *asserts the bytes it read*, with a codepoint
+  `mb_strtolower` shortens placed ahead of them. Asserting an answer instead of
+  the bytes was tried and is worse: a shifted offset still lands on some token,
+  so whether the answer flips depends on how far the next token boundary
+  happens to be — measured, that form needed five copies of the codepoint to
+  speak at all, four were silent, and one space added to the fixture would have
+  silenced five.
 
   Folding added exactly one occurrence to the tree and none to the caller set.
   That occurrence is not a call: a test method name whose camelCase seam spells

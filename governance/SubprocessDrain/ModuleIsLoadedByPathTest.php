@@ -135,13 +135,15 @@ final class ModuleIsLoadedByPathTest extends TestCase
      * is written in the class's own casing, so the scan answers the same either
      * way and the whole group stays green while the gate is blind again.
      *
-     * The five Kelvin signs fix the fold to `strtolower`, and their number is
-     * load-bearing rather than decorative. `mb_strtolower` rewrites each from
-     * three bytes to one, so the offset found in the folded copy is read back
-     * out of the original ten bytes early; the docblock case is written so that
-     * ten bytes early lands outside the comment token, and the case that must
-     * answer false answers true instead. Measured: at two bytes it still lands
-     * inside the comment and the substitution passes unnoticed.
+     * The Kelvin sign fixes the fold to `strtolower`. `mb_strtolower` rewrites
+     * it from three bytes to one, so every offset after it is read back out of
+     * the original two bytes early and the spelling asserted below comes back
+     * shifted. It sits in a case that *reports* a spelling for that reason: an
+     * earlier form put it in the docblock case instead, where the only
+     * observable is a boolean, and a boolean only flips once the shift crosses
+     * a token boundary — measured, that needed five signs, four were silent,
+     * and one added space in the fixture would have silenced five. Asserting
+     * the bytes needs no such arithmetic.
      *
      * Every spelling is assembled from halves: string literals in this file are
      * not excused, so writing one whole would make this control a caller of the
@@ -150,26 +152,30 @@ final class ModuleIsLoadedByPathTest extends TestCase
     #[Test]
     public function itSeesTheCallWhateverCaseItIsWrittenIn(): void
     {
-        $mixedCase = '<?php' . "\n" . '$r = child' . 'process::Run($command, $directory);' . "\n";
+        $mixedCase = "<?php\n\$sign = '\u{212A}';\n" . '$r = child' . 'process::Run($command, $directory);' . "\n";
         $upperCase = '<?php' . "\n" . '$r = \CHILD' . 'PROCESS::RUN($command, $directory);' . "\n";
-        $documented = "<?php\n\$signs = '\u{212A}\u{212A}\u{212A}\u{212A}\u{212A}';\n"
-            . '/**{@see Child' . 'Process::run()}*/' . "\n"
+        $documented = '<?php' . "\n"
+            . '/** Names the call only here: {@see Child' . 'Process::run()}. */' . "\n"
             . 'final class Documented {}' . "\n";
 
-        self::assertTrue(
-            self::callsModuleIn($mixedCase),
-            'A call written in another case is not seen. PHP resolves class and method names without regard to '
-            . 'case, so this is a working call, and a caller the scan misses is never asked for its '
-            . '`require_once` — which is the whole subject of this control.',
+        self::assertSame(
+            ['child' . 'process::Run('],
+            self::callOccurrencesIn($mixedCase),
+            'A call written in another case is not seen, or its bytes are read back wrong. PHP resolves class '
+            . 'and method names without regard to case, so this is a working call, and a caller the scan misses '
+            . 'is never asked for its `require_once` — which is the whole subject of this control. A spelling '
+            . 'that comes back shifted instead means the fold stopped preserving byte length.',
         );
-        self::assertTrue(
-            self::callsModuleIn($upperCase),
+        self::assertSame(
+            ['CHILD' . 'PROCESS::RUN('],
+            self::callOccurrencesIn($upperCase),
             'The same in upper case, reached through a fully qualified name.',
         );
-        self::assertFalse(
-            self::callsModuleIn($documented),
-            'A file naming the call only in a docblock became a caller. Either the comment exemption is gone, or '
-            . 'the fold stopped preserving byte length and the offset no longer lands on the comment token.',
+        self::assertSame(
+            [],
+            self::callOccurrencesIn($documented),
+            'A file naming the call only in a docblock became a caller, so the comment exemption is gone and '
+            . 'every docblock mentioning the module is now a caller.',
         );
     }
 
@@ -251,14 +257,32 @@ final class ModuleIsLoadedByPathTest extends TestCase
      */
     private static function callsModuleIn(string $contents): bool
     {
+        return self::callOccurrencesIn($contents) !== [];
+    }
+
+    /**
+     * Each call outside a comment, as the bytes the file actually carries.
+     *
+     * The spelling is read out of the original at the offset found in the
+     * folded copy, which is what makes a fold that does not preserve byte
+     * length observable: any shift at all reports the wrong bytes. The boolean
+     * above cannot show that on its own — a shifted offset still lands on some
+     * token, and whether the answer flips depends on how far the next token
+     * boundary happens to be.
+     *
+     * @return list<string>
+     */
+    private static function callOccurrencesIn(string $contents): array
+    {
         $folded = strtolower($contents);
 
         if (!str_contains($folded, self::CALL_NEEDLE)) {
-            return false;
+            return [];
         }
 
         $tokens = PhpToken::tokenize($contents);
         $offset = 0;
+        $found = [];
 
         while (($at = strpos($folded, self::CALL_NEEDLE, $offset)) !== false) {
             $offset = $at + \strlen(self::CALL_NEEDLE);
@@ -268,10 +292,10 @@ final class ModuleIsLoadedByPathTest extends TestCase
                 continue;
             }
 
-            return true;
+            $found[] = substr($contents, $at, \strlen(self::CALL_NEEDLE));
         }
 
-        return false;
+        return $found;
     }
 
     /**
