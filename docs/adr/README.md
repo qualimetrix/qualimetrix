@@ -95,6 +95,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0063 — One Declaration Answers About a Rule's Options](0063-one-declaration-answers-about-a-rules-options.md) — the rules listing and the option refusal read one declaration.
 - [0064 — The HTML Viewer Lives Outside the PSR-4 Root](0064-the-html-viewer-lives-outside-the-psr-4-root.md) — the HTML report's browser program is a root-level subject, not a PSR-4 path.
 - [0065 — The Manifest Records Ownership, Not a Migration Schedule](0065-the-manifest-records-ownership-not-a-migration-schedule.md) — the migration's package labels leave the manifest; a consumer is owner-wide or exact, and never dated.
+- [0066 — Subprocess Read Discipline](0066-subprocess-read-discipline.md) — one drain-safe way to run a child process and capture its output, with supervision left where it is.
 
 ## Superseded history
 

@@ -1,0 +1,236 @@
+# 0066. Subprocess Read Discipline
+
+**Date:** 2026-09-20
+**Status:** Accepted
+
+## Context
+
+A parent that opens a child with two pipe descriptors and reads them one after
+the other — stdout to EOF, then stderr — hangs as soon as the child writes more
+than the operating system's pipe buffer (64 KB on both macOS and Linux) to the
+stream the parent reads *second*. The child blocks mid-write, so it never exits
+and never closes the first stream, so the parent's blocking read of the first
+stream never reaches EOF. Both sides then wait forever.
+
+The failure is a hang, not a red. In CI it burns the job timeout and names no
+cause, which is strictly worse than failing: a red test says what broke, a hung
+job says only that something did. One instance was confirmed in a governance
+test whose child wrote ~2.6 MB to stderr in a single `fwrite()` when handed a
+schema-invalid manifest, and it was fixed in place. A sweep of every
+`proc_open` in tracked PHP afterwards found thirty call sites spread over four
+roots: repository controls, development tooling under `scripts/`, the test
+suite, and one production file.
+
+It also found that the discipline had *already been implemented correctly three
+times*, independently, by parties that could not share it. That is a
+measurement rather than an argument, and it is the counterfactual-ownership
+test passing: "read everything a child writes without deadlocking on a buffer"
+has its own semantics (buffer capacity, EOF, non-blocking reads) and its own
+lifecycle — it changes when the read discipline changes, never when a caller's
+purpose changes.
+
+### What was measured
+
+Recorded here so a future reader does not have to re-measure any of it. Taken
+on macOS 25.6.0 with this repository's PHP, 2026-09-20.
+
+| Shape                                                                                                          | Result                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Two read pipes, read sequentially, child floods the second                                                     | **deadlock** — reproduced three times plus a three-line standalone repro                                                                                                                                                |
+| One read pipe, never read, then `proc_close()`, child floods it                                                | **no deadlock** — the child died with `errno=32 Broken pipe` and the parent returned exit 255 at once, because `proc_close()` closes the pipes it created *before* waiting, so the child gets EPIPE instead of blocking |
+| One **write** (stdin) pipe, parent writes 1 MB, child never reads stdin                                        | **deadlock** — the parent was still blocked in `fwrite()` at 5 s and had to be SIGKILLed (exit 137)                                                                                                                     |
+| `[1 => ['pipe','w'], 2 => ['pty']]`, child floods the pty, parent reads the stdout pipe to EOF                 | **deadlock** — parent still blocked at 5 s, SIGKILLed (exit 137). The child filled the pty master's kernel buffer and blocked mid-write, so it never closed stdout                                                      |
+| `popen($cmd, 'w')` — one stream, write direction — parent writes 1 MB, child never reads stdin                 | **deadlock** — after the first 64 KB the parent sat inside `fwrite()` for the child's entire 30 s life, released only by the child's exit turning the write into `EPIPE`. A child that never exits blocks it forever    |
+| `run(['/bin/sh','-c','( sleep 6 ) & echo parent-done'])` — child exits at once, grandchild inherits its stdout | **returns at 6.01 s**, not at the child's exit: `run()` waits for pipe EOF, and the grandchild holds the descriptor open                                                                                                |
+| `run([…,'bin/qmx','check','src/Core','--workers=4'])` — the product's own parallel workers                     | **0.70 s**, 158 KB on stdout: amphp's workers do not hold the parent's stdout, so the row above reaches no caller in this tree                                                                                          |
+
+Three consequences follow, and each killed a mechanism that had looked
+reasonable:
+
+- **The single-pipe deadlock is in the write direction, not the read
+  direction.** "At most one pipe cannot deadlock" is unsound as a rule, but not
+  for the reason first proposed: an undrained single stdout pipe does *not*
+  hang. Stdin does. A rule that counted pipes without distinguishing direction
+  would have been wrong for a reason nobody had measured.
+- **A pty is not a pipe and deadlocks anyway.** Any rule that counts `['pipe'`
+  occurrences is therefore unsound: `[1 => ['pipe','w'], 2 => ['pty']]` has one
+  such occurrence and two blocking streams. "Blocking stream" means `pipe`,
+  `pty` or `socket`; `file`, a passthrough constant, and no descriptor at all
+  are safe.
+- **A token-level detector must not exempt anything.** `\proc_open(` tokenizes
+  as a single `T_NAME_FULLY_QUALIFIED`, *not* as `T_STRING` followed by `(`, so
+  a gate keyed on the latter would not see the spelling this repository's house
+  style actually uses (`\sprintf(` occurs 1,716 times in tracked PHP). And a
+  token scan finds 29 calls where the hand enumeration found 30 sites: the
+  missing one sits inside a nowdoc handed to a spawned `php -r`, a string
+  literal in one file and a real call in the child. A detector that exempted
+  literals would have exempted precisely the live one.
+
+## Decision
+
+### The read discipline is a subject, and it lives outside `src/`
+
+`Qualimetrix\Subprocess\ChildProcess`, one file at
+`scripts/subprocess/ChildProcess.php`, is the repository's one way to start a
+child process and capture everything it writes. Its API is not restated here;
+it rots faster than the code it would describe.
+
+Three constraints picked that home, and the third is the binding one:
+
+1. **Not `src/`.** That is the product's PSR-4 root and ships in the composer
+   dist package. This is tooling; the product does not run it.
+2. **Not a new top-level root.** A new root owes a long table of registration
+   addresses, most of which fail silently when missed. `scripts/` is an
+   existing root already declared to static analysis, the style fixer, the
+   pre-commit path filter and the dist export rules, and it already houses
+   library-shaped directories.
+3. **It must work without `vendor/`.** Named by consumer rather than counted:
+   five callers of the module load no `vendor/autoload.php` at all —
+   `generate-suppression-snapshot.php`, `generate-modular-architecture.php`,
+   `generate-modular-architecture-test-inventory.php`,
+   `benchmark-regression.php` and `collect-benchmark-data.php`. Anything
+   reachable only through Composer's autoloader therefore cannot be the
+   repository's one safe way, and one such consumer is enough to settle it.
+   (Sized rather than named, this set has been wrong twice: there are three
+   modular-architecture generators, not two, and the third —
+   `generate-modular-architecture-production-inventory.php` — does load
+   `vendor/`.)
+
+Constraint 3 is also what rules out the otherwise obvious candidate,
+`Symfony\Component\Process`: it drains correctly and is already on disk, but it
+is unavailable to those callers — and it is a dev-only transitive dependency
+here, not a production one.
+
+The same constraint decides the failure shape: the module throws the built-in
+`\RuntimeException` rather than a named exception class. PSR-4 would put a named
+class in a second file, which the vendor-less callers have no autoloader to
+find, and it would then be missing exactly on the error path, where nothing
+exercises it. A non-zero exit code is not a failure; it is returned in the
+result.
+
+### "One safe way" scopes to flat capture
+
+Four independent read loops survive this decision, and that is deliberate. The
+module owns *flat capture*: start a child, feed it stdin, drain both streams,
+wait, return. It does not own supervision — process groups, deadlines,
+descendant kills — and it has no timeout parameter.
+
+The reason is **not** that every caller needing a bounded wait already belongs
+to a layer that owns one; an earlier draft said so and it is false. No
+flat-capture caller is bounded by anything. `CorpusCaseRun`,
+`DuplicationMemoryLimitProcessTest` and the governance controls run under
+PHPUnit, which this repository configures without `enforceTimeLimit`, so
+nothing bounds them short of the CI job timeout; `benchmark-regression.php`,
+`collect-benchmark-data.php` and `generate-suppression-snapshot.php` are
+standalone scripts bounded by nothing at all. The reason is that none of them
+*needs* a deadline — their children are the product and `git`, which terminate
+on their own — and that adding one would owe a termination protocol (which
+signal, whether descriptors close, whether `proc_close()` runs) that nothing in
+the tree would exercise. The callers that genuinely need a bounded wait keep
+their own, and they are the supervision families named below.
+
+**What that leaves open, named rather than covered.** `run()` returns when both
+pipes reach EOF, not when the child exits, so a *descendant* that inherits the
+child's stdout holds the call open after the child is gone. Measured:
+`['/bin/sh', '-c', '( sleep 6 ) & echo parent-done']` returned at 6.01 s rather
+than at the shell's own immediate exit, and a descendant that never exits would
+hold it forever. Nothing in this tree touches that: measured separately, a
+`bin/qmx check --workers=4` through `run()` returned in 0.70 s, because amphp's
+workers do not hold the parent's stdout. A caller that backgrounds a
+long-running descendant needs supervision, not this module.
+
+Two families therefore keep their own implementations:
+
+- The finding-gate's process handle and its controls' shell layer a *different*
+  subject on the read discipline: process-group isolation via `posix_setsid`,
+  `pgrep`-based descendant termination, launcher-disappearance detection and a
+  bounded parallel scheduler. Their behaviour is what `composer gate:controls`
+  measures; folding them changes what those measurements cover.
+- The console tests' pseudo-terminal runner reads pty masters, which report EIO
+  where pipes report EOF. That is a different read discipline, not a caller of
+  this one.
+
+**The condition that would fold them:** a fourth family needing supervision
+rather than plain capture. At that point the supervision layer has two
+independent consumers and becomes its own subject. Until then, extracting it
+would bind the gate's lifecycle to a second consumer for no measured gain. This
+exception is written down because an unnamed exception is read by the next
+person as a settled answer, and the next person's instinct will be to move
+supervision into the module.
+
+### The governance control counts nothing
+
+`governance/SubprocessDrain/` refuses every occurrence of `proc_open` or
+`popen` in a PHP file the repository ships or runs, unless the occurrence is
+inside the module or carries a declared entry anchored at its line and giving
+its reason.
+
+Those two names and not the other five. `exec`, `shell_exec`, `system`,
+`passthru` and backticks hand the caller no live stream at all — PHP drains the
+child's output itself or passes it straight through — so the shape cannot
+occur. `popen` hands over exactly one stream and its mode decides the
+direction, which is what the earlier reasoning missed: "at most one stream,
+therefore safe" is the same unsound rule the measurements above already killed
+for pipes. Opened for writing, `popen` carries this defect in full (see the
+table). The gate does not read the mode argument, for the same reason it parses
+no descriptor spec; both names are refused outright, which today costs four
+entries for the command-injection rule's data and fixtures and no migration at
+all, since the tree holds no live `popen` call.
+
+The rule deliberately parses no descriptor spec and counts nothing, because
+every counting mechanism proposed was refuted by the measurements above, and
+because counting is not fail-closed: a shape nobody has thought of yet is
+refused by default rather than permitted by an argument nobody has checked. The
+decision is a textual substring match; the tokenizer excuses exactly one kind
+of occurrence — one inside a comment, because a docblock cannot execute — and
+otherwise only labels the refusal.
+
+Entries are anchored at `file:line`, not at the file, so a second call added
+tomorrow to an already-entered file is refused by default. An entry whose line
+stops matching is refused as stale, so the list cannot decay into permission
+for whatever moves into that path later.
+
+## Consequences
+
+- **A new subprocess call cannot enter the tree in silence.** Every one is
+  either the module or a line a reviewer agreed to.
+- **What this does not guarantee:** the control does not verify the read
+  discipline *inside* an entered line. A two-pipe sequential read filed with a
+  plausible reason would pass, and so would a descriptor change on a line that
+  already has an entry. The shape is made undeclarable in silence, not
+  mechanically impossible; what bounds the residual is that entries are few,
+  line-anchored and reviewed.
+- **Two named gaps.** A dynamically assembled function name is invisible to a
+  textual gate (the tree has none today, and this was swept for). So is a
+  differently-cased spelling, since PHP resolves function names
+  case-insensitively and the gate does not.
+- **The module is loaded two ways on purpose**, and both are load-bearing: the
+  namespace is declared in `autoload-dev` so that the ban on production code
+  importing development namespaces can see it at all, and every caller also
+  `require_once`s the file by path so that isolated scratch-project controls
+  execute their own copy rather than resolving through a symlinked `vendor/` to
+  this tree. Adding a second class beside it would make that class autoloadable
+  by declaration but not isolation-safe; the declaration makes the second
+  `require_once` possible to forget, not automatic.
+
+  That second half is now a control rather than a convention, in the same
+  governance group: every file calling `ChildProcess::run(` outside a comment
+  must carry a `require_once` whose expression *resolves* to the module — the
+  resolution is computed from `__DIR__` or `dirname(__DIR__, N)`, and a form the
+  resolver cannot read is refused rather than passed. It exists because the
+  convention had already drifted: four callers had stopped carrying the
+  `require_once` while this document and two others still said every caller did.
+  An aliased import or a variable class name is invisible to it, and neither
+  spelling exists in the tree.
+- **One production behaviour changed.** The git repository locator no longer
+  opens descriptors it never reads, so a `git`-scoped run fails instead of
+  hanging when git is unusually talkative on stderr. Production code may not
+  import a development namespace, so that site removes the hazard by
+  construction rather than by using the module.
+
+## Related
+
+- [0016 — Subject Cohesion](0016-subject-cohesion.md) — a directory is a
+  subject, not a role; the counterfactual-ownership test applied above.
+- [0022 — Capability-Oriented Modular Monolith](0022-capability-oriented-modular-monolith.md) —
+  why tooling lives outside the product's PSR-4 root.
