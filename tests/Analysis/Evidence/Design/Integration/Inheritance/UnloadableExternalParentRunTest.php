@@ -21,15 +21,15 @@ use Symfony\Component\Process\Process;
  * analysed source. A standalone install ships packages without the
  * dependencies only its development graph supplies, so the file it finds can
  * name a parent that is absent -- and then `class_exists()` throws instead of
- * returning false. Both collectors that resolve an external parent are covered
- * here, because only one of them is reachable at a time: while the per-file
- * collector still lets the error escape, the file is dropped before the global
- * collector ever sees it in the graph. Reverting either one alone reddens these
- * cases, which is how that claim is measured rather than assumed.
+ * returning false. One collector resolves an external parent now: the per-file
+ * pass no longer consults any autoloader, so the only load left in a run is the
+ * global pass's, and that is what these cases cover. The claim is measured
+ * rather than assumed -- reverting the global pass's catch reddens them.
  *
- * The unit tests assert that each collector survives the throw. This asserts
- * the property a user actually reads -- the run reports complete coverage --
- * through the real binary and the real autoloader.
+ * The unit tests assert that the global collector survives the throw, and that
+ * the per-file one never provokes it. This asserts the property a user actually
+ * reads -- the run reports complete coverage -- through the real binary and the
+ * real autoloader.
  *
  * The run happens in an empty directory, with the binary addressed absolutely.
  * Run from the repository root it would instead pick up this repository's own

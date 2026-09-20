@@ -46,6 +46,18 @@ remove a link it cannot identify rather than deleting someone else's hook.
   duplication detection and LOC counting need `tokenizer`,
   `--format=checkstyle` needs `xmlwriter`, and `mbstring` is not built by
   default.
+- Analysing a project no longer loads its classes twice over. The per-file DIT
+  pass asked this tool's autoloader to load a parent it could not see in the
+  current file — which includes that file and runs its top-level code — and then
+  the global pass overwrote every depth it produced. Measured at 195 such loads
+  on one package against the global pass's 40, all inside the parallel workers.
+  No reported value changes; the tool simply stops running code it was never
+  going to use the result of.
+- A parent that belongs to the analysed project is no longer looked up as though
+  it were somebody else's. A class with no parent of its own has no entry in a
+  map keyed by child, and absence from that map was read as foreignness: 25 of
+  40 such lookups on one package, and every one of them across the finding-gate
+  corpus.
 
 - The `hook:*` commands can no longer deadlock on git's error stream. Locating
   the hooks directory handed that stream a pipe nothing ever read, so a `git`
