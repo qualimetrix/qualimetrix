@@ -83,7 +83,7 @@ belong to no family is the signal that a fifth family is being named.
   `describesNestedAnonymousClass`: an anonymous class's own `extends` edge is
   recorded with the enclosing named class as source (it has no declaration
   identity of its own to attach to), so counting it would give the enclosing
-  class a parent, and the parent a child, neither has (ADR 0070).
+  class a parent, and the parent a child, neither has (ADR 0071).
 - `ParamTypeCoverageRule`, `ReturnTypeCoverageRule` and
   `PropertyTypeCoverageRule` judge one dimension each, one channel each, and
   share `AbstractTypeCoverageRule` for the walk and the emission plus one

@@ -39,6 +39,21 @@ remove a link it cannot identify rather than deleting someone else's hook.
 
 ### Fixed
 
+- `composer.json` now declares the PHP extensions the tool uses (`ctype`,
+  `filter`, `hash`, `json`, `mbstring`, `tokenizer`, `xmlwriter`). Installing
+  on a PHP built without one now fails at install time naming the missing
+  extension, instead of at run time inside whichever feature needed it --
+  duplication detection and LOC counting need `tokenizer`,
+  `--format=checkstyle` needs `xmlwriter`, and `mbstring` is not built by
+  default.
+
+- The `hook:*` commands can no longer deadlock on git's error stream. Locating
+  the hooks directory handed that stream a pipe nothing ever read, so a `git`
+  writing more to it than the pipe buffer holds blocks on the write, never
+  closes its output, and the command waits for an end-of-output that cannot
+  arrive — producing neither output nor an exit code. Stock `git rev-parse`
+  stays far under that threshold, so this was reachable through a wrapper or
+  replacement `git` on PATH rather than through ordinary use.
 - `hook:install` works for an installed package. `/scripts/` is excluded from
   the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
   in two places a consumer never has and exited 1 with `Hook script not found`.
@@ -97,6 +112,17 @@ remove a link it cannot identify rather than deleting someone else's hook.
   for any external class it could not find — so depth that reaches outside the
   analysed path still depends on what the installation can load, as
   `website/docs/rules/design.md` now records.
+- Installing without development dependencies no longer breaks git-scoped runs.
+  `--report=git:...` reached `symfony/process`, which arrived only through a
+  development tool, so `composer install --no-dev` left it out and the first
+  such run answered `Internal error: Class "Symfony\Component\Process\Process"
+  not found`. That package is now declared, along with `composer-runtime-api`,
+  `amphp/amp` and `amphp/sync`, which the product also used without asking for.
+- A `--report=git:...` run no longer risks hanging instead of failing. Locating
+  the repository opened descriptors nothing ever read, so a talkative enough
+  `git rev-parse` could block mid-write and leave the analysis waiting forever
+  with no output and no exit code. The same defect reached the `hook:*`
+  commands through the same locator, which the entry above records.
 - `docker run qmx` with no arguments prints usage instead of failing. The image
   declared a default command named `analyze`, which has never existed, so the
   invocation exited 3 with `Command "analyze" is not defined.` There is now no

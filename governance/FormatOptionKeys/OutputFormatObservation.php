@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\FormatOptionKeys;
 
+use Qualimetrix\Subprocess\ChildProcess;
 use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * Runs `bin/qmx check` for one scenario and one format, and refuses anything
@@ -184,16 +187,16 @@ final class OutputFormatObservation
      */
     private static function run(array $command, string $cwd): array
     {
-        $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $cwd);
-
-        if ($process === false) {
-            throw new RuntimeException(\sprintf('Could not run %s in %s.', implode(' ', $command), $cwd));
+        try {
+            $result = ChildProcess::run($command, $cwd);
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException(
+                \sprintf('%s did not complete in %s: %s', implode(' ', $command), $cwd, $exception->getMessage()),
+                0,
+                $exception,
+            );
         }
 
-        $stdout = (string) stream_get_contents($pipes[1]);
-        $stderr = (string) stream_get_contents($pipes[2]);
-        array_map(fclose(...), $pipes);
-
-        return [$stdout, $stderr, proc_close($process)];
+        return [$result['stdout'], $result['stderr'], $result['exitCode']];
     }
 }

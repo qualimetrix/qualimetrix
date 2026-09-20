@@ -57,7 +57,7 @@ nothing about the edge's `DependencyType`, coupling, ClassRank, or `graph:export
 representation: dependency readers keep reading it as-is. Declaration readers
 outside this module (`Design\Inheritance\DitGlobalCollector`, `NocCollector`,
 `Policy\Architecture\Layer\ClassContextFactory`) skip a flagged edge instead.
-See ADR 0070.
+See ADR 0071.
 
 `DependencyGraphInterface` has raw CBO 27 and the inclusive point threshold 28,
 so one additional edge fails rather than being absorbed. Its five net consumers

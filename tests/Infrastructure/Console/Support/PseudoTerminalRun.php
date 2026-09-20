@@ -23,12 +23,23 @@ final readonly class PseudoTerminalRun
         public int $exitCode,
     ) {}
 
-    /** Whether this PHP build can allocate a pseudo-terminal at all. */
+    /**
+     * Whether this PHP build can allocate a pseudo-terminal at all.
+     *
+     * Only stderr is a blocking stream here (`pty`); stdin and stdout are
+     * redirected to `/dev/null` rather than opened as pipes, and the pty is
+     * read to EOF instead of closed unread. A single blocking stream that is
+     * actually drained is safe by construction — the deadlock this class
+     * exists to avoid needs a second blocking stream the parent leaves
+     * unattended while the child blocks writing it, and there is only one
+     * here. Below one pty, the question "can this build allocate a
+     * pseudo-terminal" would no longer be exercised at all.
+     */
     public static function isSupported(): bool
     {
         $process = @proc_open(
             \PHP_BINARY . ' -r ' . escapeshellarg('exit(0);'),
-            [0 => ['pty'], 1 => ['pipe', 'w'], 2 => ['pty']],
+            [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['pty']],
             $pipes,
         );
 
@@ -36,10 +47,16 @@ final readonly class PseudoTerminalRun
             return false;
         }
 
-        foreach ($pipes as $pipe) {
-            if (\is_resource($pipe)) {
-                fclose($pipe);
-            }
+        if (isset($pipes[2]) && \is_resource($pipes[2])) {
+            // Suppressed for the same reason execute() suppresses its read: a
+            // pty master reports EIO once the child is gone, where a pipe --
+            // and the same master on macOS -- reports plain EOF. Here the
+            // child is `exit(0)`, so there is never anything to lose, and the
+            // notice would otherwise fail the suite on Linux under
+            // failOnNotice while passing on macOS. Measured: this line was
+            // green locally and red on both CI runners.
+            @stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
         }
         proc_close($process);
 

@@ -1,4 +1,4 @@
-# 0070. An Anonymous Class's Declaration Edge Is Flagged, Not Retyped or Dropped
+# 0071. An Anonymous Class's Declaration Edge Is Flagged, Not Retyped or Dropped
 
 **Date:** 2026-09-20
 **Status:** Accepted

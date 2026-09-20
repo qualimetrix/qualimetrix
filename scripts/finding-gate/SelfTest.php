@@ -2619,10 +2619,11 @@ final class SelfTest
             );
             chmod($shadow . '/git', 0o755);
 
-            $child = self::startHoldingChild($repository, fatal: false, pathPrefix: $shadow, announceBeforeCheckout: true);
+            $child = self::startHoldingChild($repository, fatal: false, pathPrefix: $shadow, announceBeforeCheckout: true, diagnostic: $diagnostic);
 
             if ($child === null) {
-                $this->failures[] = 'the mid-checkout case starts a run that reaches git worktree add';
+                $this->failures[] = 'the mid-checkout case starts a run that reaches git worktree add'
+                    . ($diagnostic === '' ? '' : ' (stderr: ' . $diagnostic . ')');
 
                 return;
             }
@@ -2812,10 +2813,11 @@ final class SelfTest
             $repository = $this->throwawayRepository(withVendor: true);
 
             try {
-                $child = self::startHoldingChild($repository, $signal === null);
+                $child = self::startHoldingChild($repository, $signal === null, diagnostic: $diagnostic);
 
                 if ($child === null) {
-                    $this->failures[] = \sprintf('the %s case starts a run that takes a reference tree', $name);
+                    $this->failures[] = \sprintf('the %s case starts a run that takes a reference tree', $name)
+                        . ($diagnostic === '' ? '' : ' (stderr: ' . $diagnostic . ')');
 
                     continue;
                 }
@@ -2846,6 +2848,22 @@ final class SelfTest
      * which is where an interrupt is acted on; or fatals, which is where only
      * the shutdown backstop is.
      *
+     * Reads two announcement lines from stdout under a deadline and must
+     * return the child *alive*, with its stdout handle, while the child runs
+     * `Process::run(['/bin/sleep', '30'], ...)` — {@see ChildProcess::run()}
+     * waits for exit and cannot stand in here. Stderr is therefore never a
+     * pipe: a child that writes more to it than a caller reads before the two
+     * announcement lines arrive would otherwise block the parent's stdout
+     * read forever instead of failing this case. It goes to a file inside the
+     * same scratch directory as `$file`, so {@see Scratch}'s own release
+     * cleans it up with everything else this call allocated — nothing here
+     * unlinks it directly.
+     *
+     * @param-out string $diagnostic the child's stderr, captured whether this
+     *                               call succeeds or returns null, so a
+     *                               caller reporting a failure is not left
+     *                               guessing what the child said
+     *
      * @return array{pid: int, handle: resource, stdout: resource, paths: list<string>}|null
      */
     private static function startHoldingChild(
@@ -2853,7 +2871,9 @@ final class SelfTest
         bool $fatal,
         ?string $pathPrefix = null,
         bool $announceBeforeCheckout = false,
+        ?string &$diagnostic = null,
     ): ?array {
+        $diagnostic = '';
         $source = <<<'PHP'
             <?php
             namespace QmxFindingGate;
@@ -2882,9 +2902,11 @@ final class SelfTest
             }
             PHP;
 
-        $file = Fs::temporaryDirectory('self-test-interrupt-') . '/run.php';
+        $directory = Fs::temporaryDirectory('self-test-interrupt-');
+        $file = $directory . '/run.php';
+        $stderrFile = $directory . '/stderr.log';
         Fs::write($file, $source);
-        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $descriptors = [1 => ['pipe', 'w'], 2 => ['file', $stderrFile, 'w']];
         $environment = null;
 
         if ($pathPrefix !== null) {
@@ -2907,6 +2929,8 @@ final class SelfTest
         );
 
         if (!\is_resource($handle)) {
+            $diagnostic = self::readHeldChildStderr($stderrFile);
+
             return null;
         }
 
@@ -2928,7 +2952,6 @@ final class SelfTest
             }
         }
 
-        fclose($pipes[2]);
         $pid = proc_get_status($handle)['pid'];
 
         if (\count($paths) !== 2) {
@@ -2937,11 +2960,26 @@ final class SelfTest
             @posix_kill($pid, \SIGKILL);
             fclose($pipes[1]);
             proc_close($handle);
+            $diagnostic = self::readHeldChildStderr($stderrFile);
 
             return null;
         }
 
+        $diagnostic = self::readHeldChildStderr($stderrFile);
+
         return ['pid' => $pid, 'handle' => $handle, 'stdout' => $pipes[1], 'paths' => $paths];
+    }
+
+    /** Best-effort: a missing or unreadable file is not itself a failure worth reporting here. */
+    private static function readHeldChildStderr(string $path): string
+    {
+        if (!is_file($path)) {
+            return '';
+        }
+
+        $contents = @file_get_contents($path);
+
+        return $contents === false ? '' : trim($contents);
     }
 
     /** @param array{pid: int, handle: resource, stdout: resource, paths: list<string>} $child */

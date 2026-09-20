@@ -6,6 +6,10 @@ namespace Qualimetrix\Governance\DistributedPackage;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
+
+require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * `box.json`'s payload against the dist package's, so the two enumerations of
@@ -320,27 +324,16 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
     /** @param list<string> $command */
     private static function capture(array $command): string
     {
-        $process = proc_open(
-            $command,
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-        );
-
-        if (!\is_resource($process)) {
-            self::fail('Could not run ' . implode(' ', $command));
+        try {
+            $result = ChildProcess::run($command);
+        } catch (RuntimeException $failure) {
+            self::fail(implode(' ', $command) . ' did not complete: ' . $failure->getMessage());
         }
 
-        $stdout = (string) stream_get_contents($pipes[1]);
-        $stderr = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        $status = proc_close($process);
-
-        if ($status !== 0) {
-            self::fail(\sprintf("%s exited %d:\n%s", implode(' ', $command), $status, $stderr));
+        if ($result['exitCode'] !== 0) {
+            self::fail(\sprintf("%s exited %d:\n%s", implode(' ', $command), $result['exitCode'], $result['stderr']));
         }
 
-        return $stdout;
+        return $result['stdout'];
     }
 }

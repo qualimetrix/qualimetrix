@@ -126,6 +126,23 @@ final class BenchmarkCoverageRefusalTest extends TestCase
         if (!copy($source, $fixtureRoot . '/scripts/' . $script)) {
             throw new RuntimeException('Failed to copy benchmark script');
         }
+        $this->copySubprocessModule($fixtureRoot);
+    }
+
+    /**
+     * Both benchmark scripts require_once the subprocess module by path, so the
+     * fixture root needs its own copy: without it the script dies before it can
+     * reach the coverage-refusal behaviour each case below exercises.
+     */
+    private function copySubprocessModule(string $fixtureRoot): void
+    {
+        if (!mkdir($fixtureRoot . '/scripts/subprocess', recursive: true)) {
+            throw new RuntimeException('Failed to create scripts/subprocess directory');
+        }
+        $source = \dirname(__DIR__, 3) . '/scripts/subprocess/ChildProcess.php';
+        if (!copy($source, $fixtureRoot . '/scripts/subprocess/ChildProcess.php')) {
+            throw new RuntimeException('Failed to copy ChildProcess.php');
+        }
     }
 
     private function writeFakeQmx(string $fixtureRoot, string $artifact): void

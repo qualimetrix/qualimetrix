@@ -67,6 +67,7 @@ scripts/rename-enumeration/tests/
 scripts/health-calibration/tests/
 scripts/benchmark/tests/
 scripts/modular-architecture/tests/
+scripts/subprocess/tests/
 scripts/cross-tool-comparison/tests/
 scripts/phpunit-aggregate/tests/
 html-report/tests/

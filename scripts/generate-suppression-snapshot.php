@@ -109,6 +109,10 @@ declare(strict_types=1);
  * seven values itself.
  */
 
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once __DIR__ . '/subprocess/ChildProcess.php';
+
 const SUPPRESSION_SNAPSHOT_WORKERS = 4;
 const SUPPRESSION_SNAPSHOT_CONTROL_TARGET = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl';
 const SUPPRESSION_SNAPSHOT_CONTROL_CONFIG = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml';
@@ -178,7 +182,7 @@ function generateSuppressionSnapshot(): int
 
 /**
  * Composition TSV, inert TSV, row count, inert count, measured exit code — or an error message
- * on infrastructure failure (process could not start, output was not the
+ * on infrastructure failure (the process did not complete, output was not the
  * expected JSON), never a finding-level exit code, which `bin/qmx check`
  * uses even on a clean, fully measured run.
  *
@@ -205,30 +209,33 @@ function measureSuppressionComposition(
         $arguments[] = '--config=' . $configuration;
     }
 
+    // The command line, kept only for the messages below: run() takes the
+    // argument list directly, so nothing here is shell-escaped or joined
+    // into a string that a shell would re-parse.
     $cmd = implode(' ', array_map(escapeshellarg(...), $arguments));
 
-    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
-
-    if (!is_resource($process)) {
-        return "Could not start `$cmd`.\n";
+    try {
+        $result = ChildProcess::run($arguments, $root);
+    } catch (\RuntimeException $error) {
+        // Carried whole rather than restated: only run()'s own message
+        // says which of its failures this was.
+        return "`$cmd` did not complete: {$error->getMessage()}\n";
     }
 
-    $stdout = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
-    $exitCode = proc_close($process);
+    $stdout = $result['stdout'];
+    $stderr = $result['stderr'];
+    $exitCode = $result['exitCode'];
 
     // 0 = clean, 1 = warnings, 2 = errors — all three are a complete,
     // successfully measured run (see CheckCommandDefinition's --fail-on
     // doc). Anything else is a config/input failure this snapshot cannot
     // measure through.
-    if ($exitCode > 2 || $stdout === false) {
+    if ($exitCode > 2) {
         return sprintf(
             "`%s` exited %d, which is not a measured run (0-2). stderr:\n%s\n",
             $cmd,
             $exitCode,
-            $stderr === false ? '(none)' : $stderr,
+            $stderr === '' ? '(none)' : $stderr,
         );
     }
 

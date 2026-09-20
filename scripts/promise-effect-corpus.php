@@ -27,18 +27,20 @@ declare(strict_types=1);
  * Usage: php scripts/promise-effect-corpus.php
  * Exit: 0 when the legitimate-refusal count is zero, 1 when it is greater
  * than zero (offending documents are named), 2 on a probe-protocol failure
- * (a cache directory was ignored, or a process could not be started).
+ * (a cache directory was ignored, or a process did not complete).
  */
 
 namespace Qualimetrix\PromiseEffectCorpus;
 
 use FilesystemIterator;
+use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 
 $repositoryRoot = \dirname(__DIR__);
 require $repositoryRoot . '/vendor/autoload.php';
+require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 final class Document
 {
@@ -220,21 +222,28 @@ function buildCorpus(string $repositoryRoot): array
  */
 function runProcess(array $command, string $workingDirectory): array
 {
-    $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-    $handle = proc_open($command, $descriptors, $pipes, $workingDirectory);
-
-    if (!\is_resource($handle)) {
-        throw new ProbeProtocolFailure(\sprintf('Cannot start %s in %s.', implode(' ', $command), $workingDirectory));
+    try {
+        $result = ChildProcess::run($command, $workingDirectory);
+    } catch (RuntimeException $error) {
+        // ProbeProtocolFailure, not the bare RuntimeException run() throws:
+        // main() catches ProbeProtocolFailure by name to stop the corpus run
+        // cleanly (exit 2) instead of crashing on an uncaught exception.
+        //
+        // Carried whole rather than restated: only run()'s own message
+        // says which of its failures this was.
+        throw new ProbeProtocolFailure(
+            \sprintf(
+                '%s did not complete in %s: %s.',
+                implode(' ', $command),
+                $workingDirectory,
+                $error->getMessage(),
+            ),
+            0,
+            $error,
+        );
     }
 
-    $stdoutRaw = stream_get_contents($pipes[1]);
-    $stderrRaw = stream_get_contents($pipes[2]);
-    $stdout = $stdoutRaw !== false ? $stdoutRaw : '';
-    $stderr = $stderrRaw !== false ? $stderrRaw : '';
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-
-    return ['exit' => proc_close($handle), 'stdout' => $stdout, 'stderr' => $stderr];
+    return ['exit' => $result['exitCode'], 'stdout' => $result['stdout'], 'stderr' => $result['stderr']];
 }
 
 function removeRecursively(string $path): void

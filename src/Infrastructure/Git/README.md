@@ -108,6 +108,21 @@ if [ $? -ne 0 ]; then
 fi
 ```
 
+## Two ways of running git, on purpose
+
+`GitClient` uses Symfony Process; `GitRepositoryLocator` uses `proc_open`. The
+split is deliberate. The locator asks git one short question and discards
+stderr, which is what lets it read a single pipe safely. `GitClient` cannot do
+that: it distinguishes git's exit codes and reports git's error text, so it
+needs both streams, and it needs the timeout Process applies to every call.
+
+Symfony Process is therefore a production dependency. It once was not, and
+every git scope died with a class-not-found on the phar and on `--no-dev`
+installs while the dev-graph suite stayed green.
+`governance/DeclaredDependencies/` refuses that statically;
+`governance/DistributedPackage/GitScopeWorksFromTheDistPackageTest` and the
+phar job's git-scope step refuse it by running the thing.
+
 ## Definition of Done
 
 - `GitClient` with support for all scope formats (staged, HEAD, two-dot, three-dot)

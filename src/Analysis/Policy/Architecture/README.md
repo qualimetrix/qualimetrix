@@ -68,7 +68,7 @@ and `attributesMap`: that edge is a declaration fact about an anonymous class
 nested inside the source, not about the source itself, so counting it would
 match the enclosing class — including transitively, since membership walks
 `extendsMap` as a BFS closure — into a layer whose criteria describe the
-nested anonymous class instead (ADR 0070). The dependency the edge still
+nested anonymous class instead (ADR 0071). The dependency the edge still
 represents is unaffected; only its reading as a declaration fact about its
 recorded source is narrowed.
 
