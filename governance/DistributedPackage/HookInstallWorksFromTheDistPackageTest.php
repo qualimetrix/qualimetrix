@@ -227,12 +227,31 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
     /**
      * The repository's one drain-free-of-deadlock child runner, rather than a
      * private one: two pipes read in sequence is the defect its own governance
-     * control exists to refuse, and a second implementation of the cure is a
-     * second thing that can lose it.
+     * control exists to refuse. `GitScopeWorksFromTheDistPackageTest`, this
+     * control's twin, reaches the same module the same way.
+     *
+     * That the module sits under `scripts/`, which `export-ignore` keeps out of
+     * the package this control measures, is no obstacle. The package is this
+     * control's *subject*, never its runtime: the file you are reading runs
+     * from the checkout, and `governance/` is `export-ignore`d too, so a
+     * control restricted to what the package carries could not exist at all.
+     *
+     * A failure is left to surface with the module's own wording, as the twin
+     * leaves it. `run()` fails three distinguishable ways and publishes a
+     * prefix per way precisely because the last two started the child and left
+     * its work half-done; catching all three to relabel them "could not start"
+     * would say the one thing the module's own docblock forbids saying.
+     *
+     * One difference from a bespoke runner is worth naming. The child gets a
+     * stdin pipe closed at once rather than inheriting this process's stdin, so
+     * a command that did read stdin would see EOF rather than block on a
+     * terminal nobody is attending. That direction is the load-bearing half:
+     * the enumeration behind "nothing started here reads stdin" was made once,
+     * and nothing re-makes it.
      *
      * The streams are merged on return because every assertion below reads the
-     * command's output as one transcript -- a message printed to stderr is
-     * still the command answering.
+     * command's output as one transcript: a message printed to stderr is still
+     * the command answering.
      *
      * @param list<string> $command
      *

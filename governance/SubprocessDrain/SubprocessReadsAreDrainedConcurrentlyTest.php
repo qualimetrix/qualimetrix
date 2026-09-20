@@ -154,7 +154,7 @@ require_once __DIR__ . '/PhpFilePopulation.php';
  * carry, which is also what lets one reviewed entry come to permit two. ADR 0070
  * lists the four and what each loses. Two of those losses are present in today's
  * tree rather than hypothetical: keyed on the enclosing symbol, eight of the
- * twenty-three occurrences outside the module sit four-to-a-function in two data
+ * twenty-two occurrences outside the module sit four-to-a-function in two data
  * providers, so the six entries covering them would collapse into two; and two
  * more sit in a class constant array with no enclosing function to name at all.
  *
@@ -196,9 +196,14 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * as stale, so the list cannot decay into permission for whatever moves
      * into that path later.
      *
-     * The enclosing function is named in the reason for the reader's sake and
-     * is deliberately not verified: matching it mechanically would be a second
-     * gate nobody designed, and the line anchor already does the work.
+     * Nothing verifies the prose. The enclosing function is named for the
+     * reader's sake, and matching it mechanically would be a second gate nobody
+     * designed; the line anchor already keeps an entry attached to a real
+     * occurrence. What that leaves open is an entry that anchors correctly and
+     * still says something untrue — one did, excusing a site on the ground that
+     * it could not reach the module, while its own directory reached it. A
+     * reason is checked only by a reader holding it against the tree it
+     * describes, so write reasons that can lose.
      *
      * @var array<string, string>
      */
