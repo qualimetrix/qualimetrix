@@ -94,12 +94,21 @@ distinction gone, the names that drew it go too:
 
 | Carrier                       | Before                                                                            | After                                                     |
 | ----------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| published summary row         | `permanent_composition_bindings`                                                  | `composition_bindings`                                    |
+| published summary row         | `permanent_composition_bindings`                                                  | removed — see below                                       |
 | published summary row         | `temporary_contract_consumer_entries`                                             | removed                                                   |
 | consumer refusal              | "must be permanent owner-wide, permanent exact-source, or temporary exact-source" | "must be owner-wide or exact-source"                      |
 | `composition_binding` refusal | "must permanently authorize an exact DI source to an internal target"             | "must authorize an exact DI source to an internal target" |
 | `contract_surface` refusal    | "must name a permanent exact source"                                              | "must name an exact source"                               |
 | governance test method        | `itPublishesOnlyPermanentExactCompositionBindingsForDiInternals`                  | `itPublishesOnlyExactCompositionBindingsForDiInternals`   |
+
+Dropping the qualifier from `permanent_composition_bindings` exposed something the
+qualifier had been hiding: the row counted the same array as
+`exact_composition_bindings`, by construction rather than by coincidence — one
+`count()` of one array under two names, with nothing asserting they agreed. The
+rename was therefore not the end of it, and the row is gone rather than renamed.
+A word that stops distinguishing things is worth removing on its own; a word that
+was the only reason two identical numbers looked like different measurements is
+worth removing twice.
 
 Two uses of the word were **kept**, and both would be wrong to rename:
 
