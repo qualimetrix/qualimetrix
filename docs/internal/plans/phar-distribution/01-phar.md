@@ -8,13 +8,16 @@ item names a property; the executor states how it checked and shows the check re
 
 ## It already works
 
-A phar built from this tree runs the tool and produces the same findings as the source tree —
-measured over 957 files with four workers, identical summaries. That is the single most important
-fact about this stage and it was established by reading and building rather than by planning, so
-nothing below is a bet on whether the approach is viable.
+A phar built from this tree runs the tool and publishes what the tree publishes. P0 established it
+properly: 132 files with four workers and the parallel path confirmed engaged, the whole JSON report
+equal field for field to a `composer install --no-dev` tree's. That is the single most important
+fact about this stage, so nothing below is a bet on whether the approach is viable.
 
-That target is `src/`, which is 957 `*.php` files today. Naming it matters, because DoD 3 says
-`src/` is the one target that cannot serve as evidence for this stage — see there.
+The earlier draft's version of this claim — 957 files, identical summaries — was measured against the
+**development** tree, and that comparison is now known to be the wrong one: it disagrees with the
+phar for a reason that has nothing to do with phars (problem 5). The number also named `src/`, which
+DoD 3 disqualifies as evidence for a different reason. Both replaced rather than corrected, because
+the claim was right by luck.
 
 Two questions the first draft of this plan called open are answered, both by reading the vendored
 tree rather than by experiment:
@@ -51,7 +54,7 @@ and each exists because it changes an acceptance item below.
 | parallel threshold              | `AmphpParallelStrategy::DEFAULT_MIN_FILES_FOR_PARALLEL` = **100**, applied inside the strategy, not the selector |
 | `docker-image` job's target     | `src/Core` with `--workers=0` — below the threshold and sequential by flag as well                               |
 | the repository's own comparator | `finding-gate`: largest corpus case is 12 `*.php` files; locates the product as `<root>/bin/qmx`                 |
-| tool version, resolved          | `Version::get()` → `InstalledVersions::getPrettyVersion('qualimetrix/qualimetrix')`; prints `dev-main` here      |
+| tool version, resolved          | `Version::get()` → `InstalledVersions::getPrettyVersion(...)`; `dev-main` here, `1.0.0+no-version-set` in a copy |
 | analysed project's label        | `HtmlTreeBuilder` → the `project-name` format option, falling back to `InstalledVersions::getRootPackage()`      |
 | `realpath()` under `phar://`    | returns **`false`**; `file_exists()` on the same path returns `true`                                             |
 | `humbug/box` today              | refused outright without `-W`; the newest releases constrain `symfony/finder` to `^6.4 \|\| ^7.0`                |
@@ -59,7 +62,7 @@ and each exists because it changes an acceptance item below.
 
 Re-take these before executing.
 
-## The four real problems
+## The five real problems
 
 **1. `humbug/box` cannot simply be added.** Measured on this lock: `composer require --dev humbug/box`
 is **refused**, not merely lossy — the newest box releases constrain `symfony/finder` to
@@ -81,8 +84,10 @@ running archive's path does not end in `.phar`** — copies the entire archive t
 removed by shutdown handlers, which do not run when the process is killed.
 
 So the artifact's **filename is a design decision, not a label**: ending it in `.phar` avoids
-copying the whole archive per run. Record that reason next to the name, or the next person who
-renames it for tidiness will reintroduce a per-run multi-megabyte copy with nothing to say why.
+copying the whole archive per run. P0 measured the copy rather than citing it — 11,124,518 bytes in
+the temp directory per run, the archive byte for byte, present without the suffix and absent with it.
+Record that reason next to the name, or the next person who renames it for tidiness will reintroduce
+it with nothing to say why.
 
 **3. The parallel path is not observable in a small run, and nothing in the repository observes it.**
 `AmphpParallelStrategy` falls back to sequential when `count($files)` is below
@@ -112,6 +117,25 @@ Other `realpath()` callers in `src/` were swept and are not exposed: they canoni
 tree or the working directory, both on a real filesystem. Swept with grep over `src/` and `bin/qmx`
 for `realpath(`, `__DIR__` and `__FILE__`; blind to a path assembled through a variable and to
 `vendor/`.
+
+**5. The shipped dependency graph is incomplete, and the tool trips over it.** Found by P0 and not
+caused by the phar. `symfony/console` is a production dependency; its `Event/` classes extend
+`Symfony\Contracts\EventDispatcher\Event`, which `symfony/event-dispatcher-contracts` provides — and
+that package is **not** in the production graph. A normal install never notices, because the tool
+never dispatches a console event.
+
+`InheritanceDepthCollector` does notice. It resolves an external class's DIT with
+`class_exists($fqcn, true)`, so the tool's **own** autoloader answers for any analysed class whose
+name it happens to map. Measured on a `composer install --no-dev` tree over 132 files of
+`symfony/console`: five files fail, the run is reported incomplete, and the exit code is 4 — from a
+tree with no phar involved. The development tree analyses all 132, which is why the defect has never
+been seen here.
+
+The reach is every standalone install shape: the Docker image, which runs exactly this
+`composer install --no-dev`, a global composer install, and the phar. A consumer installing the tool
+as a project dependency is unaffected, because their own graph supplies the missing package. **This
+is a product defect, not a stage-01 obligation** — recorded here because P0 found it and because a
+phar comparison that does not know about it will read it as a phar regression.
 
 ## The include list, and how many lists there are
 
@@ -143,24 +167,40 @@ but a fixture directory under it would need the `.gitignore` negation and the `p
 
 ## Packages
 
-**P0 — the questions that remain.** Small, because most of what it was going to ask is answered
-above. Build a phar with box in whatever isolated form P1 is considering, and establish: that
-`phar.readonly` does not block the build on the machine that will run it, that an analysis over a
-target above the parallel threshold produces the same findings as the source tree, and that
-`--format=html` from the phar yields a report with its assets inlined.
+**P0 — done; what it measured.** Built with box 4.7.0 fetched as its own phar rather than required,
+so the project's dependency graph was never touched — problem 1's isolated-graph option exercised
+instead of argued. Everything below is a measurement on this tree.
 
-Two further questions P0 answers because they decide P1's shape, not merely its detail:
+- `phar.readonly` is `1` and `php -d phar.readonly=0` builds. Nothing else obstructed the build.
+- 10.61 MB over 2488 files uncompacted; **6.82 MB with box's `Php` and `Json` compactors**, whose
+  output produced a byte-identical report and a byte-identical `qmx rules` listing. The compactor
+  question is closed: safe, and worth about a third of the size.
+- **Equivalence above the threshold.** `vendor/symfony/console`, 132 files, `--workers=4`, with the
+  parallel path confirmed by the run's own log rather than by the flag. The phar's whole JSON report
+  equals the tree's field for field, except `meta.timestamp`, `meta.version`, and the text of the
+  coverage failure messages, which carry `phar://` paths inside their stack traces.
+- **The reference must be a `--no-dev` tree, and this is the trap the stage nearly fell into.**
+  Against the development tree the phar looked broken: 127 files where the tree analysed 132, six
+  findings fewer. It is not the phar. A `composer install --no-dev` tree reproduces the phar's
+  numbers exactly — so a comparison whose reference carries dev dependencies measures the dev/prod
+  split and reports it as a phar defect. DoD 1's reference is the shipped graph, not the developed
+  one.
+- **`--format=html`** inlined `report.css`, `d3.min.js` and `report.min.js` verbatim, and the
+  document is identical to the tree's once `generatedAt` and `qmxVersion` are normalised.
+- **The filename decision is now a measurement, not a citation.** Run from a copy whose path lacks
+  the `.phar` suffix, the process leaves an **11,124,518-byte** file in the temp directory — the
+  archive, byte for byte. With the suffix, only amphp's process runner appears.
 
-- **Can the finding gate be pointed at a phar?** It is the only thing in the repository that compares
-  two products across findings, the twelve formats, exit codes, `qmx rules` and `baseline:explain`,
-  and that breadth is what DoD 1a asks for. But it takes a **tree root**, not a binary: it runs
-  `<root>/bin/qmx` and reads its corpus from `<root>/finding-gate/cases`. Either a shim root satisfies
-  it, or DoD 1a's comparison is narrower and says which surfaces it dropped.
-- **Does box's comment-stripping compactor have to stay off?** Every `ReflectionClass` use in `src/`
-  reads names, constants, methods and attributes; the only two `getDocComment()` calls read
-  php-parser nodes of the analysed tree, not the tool's own source. So the compactor looks safe and
-  P0 confirms it by running with it on. Swept with grep over `src/`; blind to `vendor/`, where a
-  dependency reading its own docblocks would not show.
+One question P0 leaves to P1 because answering it is design, not measurement:
+
+**Can the finding gate be pointed at a phar?** It is the only thing in the repository that compares
+two products across findings, the twelve formats, exit codes, `qmx rules` and `baseline:explain`, and
+that breadth is what DoD 1a asks for. It takes a **tree root**, not a binary: it runs `<root>/bin/qmx`,
+reads its corpus from `<root>/finding-gate/cases`, and — deliberately, so the answer comes from the
+tree under test — boots the candidate's own container in-process through the candidate's autoloader.
+A shim root would therefore have to supply three things, not one: a `bin/qmx` that execs the phar, a
+`vendor/autoload.php` that delegates into it, and the corpus. P1 chooses that or a narrower
+comparison that says which surfaces it dropped.
 
 **P1 — tooling, the dependency decision, and the include list.** The box decision and the include
 list decision, both recorded. The artifact's name and the reason for its suffix. The `hook:install`
@@ -178,8 +218,9 @@ the required-context list, and a job absent from it does not block a merge.
 
 ## Definition of Done
 
-1. **(a) The phar publishes what the source tree publishes**, across the surfaces the comparison
-   names — findings at minimum, and every further format, exit code and command the chosen
+1. **(a) The phar publishes what the source tree publishes**, where "the source tree" means a
+   `composer install --no-dev` one — P0 measured the development tree disagreeing with the phar for
+   a reason that is not the phar — across the surfaces the comparison names — findings at minimum, and every further format, exit code and command the chosen
    comparator covers. *Green for the wrong reason if:* only findings were compared, so a defect in a
    format that was never rendered ships.
    **(b) The phar's parallel path produces the same findings as the source tree**, over a target of
