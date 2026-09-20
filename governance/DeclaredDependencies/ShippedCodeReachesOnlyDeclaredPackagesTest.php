@@ -11,9 +11,6 @@ use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * Whether the PHP a consumer installs can name a class the install does not
@@ -84,7 +81,7 @@ final class ShippedCodeReachesOnlyDeclaredPackagesTest extends TestCase
     {
         $root = self::repositoryRoot();
         $verdict = self::judge(
-            self::shippedFiles($root),
+            ShippedTree::files($root),
             $root,
             self::prefixMap($root . '/vendor/composer/installed.json'),
             self::declaredPackages($root . '/composer.json'),
@@ -112,7 +109,7 @@ final class ShippedCodeReachesOnlyDeclaredPackagesTest extends TestCase
     public function itReadsTheShippedTreeItJudges(): void
     {
         $root = self::repositoryRoot();
-        $files = self::shippedFiles($root);
+        $files = ShippedTree::files($root);
 
         self::assertGreaterThan(500, \count($files));
         self::assertContains($root . '/bin/qmx', $files, 'The console entry point is outside src/ and ships.');
@@ -472,44 +469,6 @@ final class ShippedCodeReachesOnlyDeclaredPackagesTest extends TestCase
         self::assertNotSame([], $roots, 'Read no PSR-4 root out of ' . $composerJson);
 
         return $roots;
-    }
-
-    /**
-     * Every PHP file the dist package ships and the consumer runs: the PSR-4
-     * root, plus the console entry points, which carry no `.php` suffix and
-     * would therefore be invisible to the walk.
-     *
-     * @return list<string>
-     */
-    private static function shippedFiles(string $root): array
-    {
-        $files = [];
-        $walk = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-            $root . '/src',
-            RecursiveDirectoryIterator::SKIP_DOTS,
-        ));
-
-        /** @var SplFileInfo $entry */
-        foreach ($walk as $entry) {
-            if ($entry->isFile() && $entry->getExtension() === 'php') {
-                $files[] = $entry->getPathname();
-            }
-        }
-
-        $contents = file_get_contents($root . '/composer.json');
-        self::assertIsString($contents);
-        $manifest = json_decode($contents, true);
-        self::assertIsArray($manifest);
-        self::assertIsArray($manifest['bin'] ?? null);
-
-        foreach ($manifest['bin'] as $entryPoint) {
-            self::assertIsString($entryPoint);
-            $files[] = $root . '/' . $entryPoint;
-        }
-
-        sort($files);
-
-        return $files;
     }
 
     private static function plantedTree(string $source): string
