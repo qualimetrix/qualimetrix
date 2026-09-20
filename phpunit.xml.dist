@@ -87,6 +87,7 @@
             <directory>scripts/health-calibration/tests</directory>
             <directory>scripts/benchmark/tests</directory>
             <directory>scripts/modular-architecture/tests</directory>
+            <directory>scripts/subprocess/tests</directory>
         </testsuite>
         <testsuite name="Governance">
             <directory>governance/TestSuiteHygiene</directory>
@@ -118,6 +119,8 @@
             <directory>governance/FindingVocabulary</directory>
             <directory>governance/LayerPolicyVocabulary</directory>
             <directory>governance/SymbolVocabulary</directory>
+            <directory>governance/SubprocessDrain</directory>
+            <directory>governance/DeclaredDependencies</directory>
         </testsuite>
     </testsuites>
 

@@ -3,9 +3,9 @@
 
 declare(strict_types=1);
 
-use Qualimetrix\ModularArchitecture\ProcessOutput;
+use Qualimetrix\Subprocess\ChildProcess;
 
-require_once __DIR__ . '/modular-architecture/ProcessOutput.php';
+require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 /**
  * Generates test-topology evidence for modular-architecture governance.
@@ -126,6 +126,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/health-calibration/tests/' => 'Tooling/HealthCalibration',
     'scripts/benchmark/tests/' => 'Tooling/Benchmark',
     'scripts/modular-architecture/tests/' => 'Tooling/ModularArchitecture',
+    'scripts/subprocess/tests/' => 'Tooling/Subprocess',
     'scripts/cross-tool-comparison/tests/' => 'Tooling/CrossToolComparison',
     'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
@@ -587,29 +588,25 @@ function commandLines(array $command, string $workingDirectory): array
  */
 function runCommand(array $command, string $workingDirectory): string
 {
-    $descriptorSpec = [
-        0 => ['pipe', 'r'],
-        1 => ['pipe', 'w'],
-        2 => ['pipe', 'w'],
-    ];
-    $process = proc_open($command, $descriptorSpec, $pipes, $workingDirectory);
-    if (!is_resource($process)) {
-        fail('Cannot start command: ' . implode(' ', $command));
+    try {
+        $result = ChildProcess::run($command, $workingDirectory);
+    } catch (RuntimeException $exception) {
+        // Restated through fail(): an escaping exception would exit 255 with a
+        // trace, where every other refusal here is one line on stderr and
+        // exit 1.
+        fail($exception->getMessage());
     }
 
-    fclose($pipes[0]);
-    [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], fail(...));
-    $exitCode = proc_close($process);
-    if ($exitCode !== 0) {
+    if ($result['exitCode'] !== 0) {
         fail(sprintf(
             "Command failed with exit %d: %s\n%s",
-            $exitCode,
+            $result['exitCode'],
             implode(' ', $command),
-            trim($stderr),
+            trim($result['stderr']),
         ));
     }
 
-    return $stdout;
+    return $result['stdout'];
 }
 
 /**
@@ -1190,6 +1187,8 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/SymbolVocabulary/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/SubprocessDrain/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/DeclaredDependencies/', 'suite' => 'Governance'],
         ['prefix' => 'tools/phpstan/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/promise-effect/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit/tests/', 'suite' => 'Tooling'],
@@ -1201,6 +1200,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'scripts/health-calibration/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/benchmark/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/modular-architecture/tests/', 'suite' => 'Tooling'],
+        ['prefix' => 'scripts/subprocess/tests/', 'suite' => 'Tooling'],
     ];
 }
 

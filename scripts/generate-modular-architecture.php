@@ -3,9 +3,9 @@
 
 declare(strict_types=1);
 
-use Qualimetrix\ModularArchitecture\ProcessOutput;
+use Qualimetrix\Subprocess\ChildProcess;
 
-require_once __DIR__ . '/modular-architecture/ProcessOutput.php';
+require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const GENERATED_ARTIFACTS = [
     'documentation-ownership.tsv',
@@ -134,23 +134,17 @@ if ($failure !== null) {
 /** @param list<string> $command */
 function runGenerator(array $command, string $workingDirectory): string
 {
-    $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $workingDirectory);
-    if (!is_resource($process)) {
-        fail('Cannot start generator: ' . implode(' ', $command));
-    }
-    fclose($pipes[0]);
-    [$stdout, $stderr] = ProcessOutput::drain($pipes[1], $pipes[2], fail(...));
-    $exitCode = proc_close($process);
-    if ($stdout === false || $stderr === false || $exitCode !== 0) {
+    $result = ChildProcess::run($command, $workingDirectory);
+    if ($result['exitCode'] !== 0) {
         fail(sprintf(
             "Generator failed with exit %d: %s\n%s",
-            $exitCode,
+            $result['exitCode'],
             implode(' ', $command),
-            trim(($stdout === false ? '' : $stdout) . ($stderr === false ? '' : $stderr)),
+            trim($result['stdout'] . $result['stderr']),
         ));
     }
 
-    return $stdout;
+    return $result['stdout'];
 }
 
 /** @param list<string> $expected */
