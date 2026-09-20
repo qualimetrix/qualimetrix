@@ -48,7 +48,14 @@ final readonly class PseudoTerminalRun
         }
 
         if (isset($pipes[2]) && \is_resource($pipes[2])) {
-            stream_get_contents($pipes[2]);
+            // Suppressed for the same reason execute() suppresses its read: a
+            // pty master reports EIO once the child is gone, where a pipe --
+            // and the same master on macOS -- reports plain EOF. Here the
+            // child is `exit(0)`, so there is never anything to lose, and the
+            // notice would otherwise fail the suite on Linux under
+            // failOnNotice while passing on macOS. Measured: this line was
+            // green locally and red on both CI runners.
+            @stream_get_contents($pipes[2]);
             fclose($pipes[2]);
         }
         proc_close($process);
