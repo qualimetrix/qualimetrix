@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/duplicate-declaration",
+    "description": "Corpus case: one class name declared in two files, the shape a class_exists-guarded polyfill produces",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\DuplicateDeclaration\\": "src/"
+        }
+    }
+}

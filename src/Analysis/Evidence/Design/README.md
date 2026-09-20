@@ -30,6 +30,7 @@ Design/
 │   ├── DitGlobalCollector.php
 │   ├── InheritanceClassInfo.php
 │   ├── InheritanceDepthCollector.php
+│   ├── InheritanceDepthResolver.php
 │   ├── InheritanceDepthVisitor.php
 │   ├── InheritanceOptions.php
 │   ├── InheritanceRule.php
@@ -76,9 +77,24 @@ belong to no family is the signal that a fifth family is being named.
   the global pass depend on the file pass's keys, which `requires()` cannot
   express — it orders global collectors against each other. Removing the
   per-file write would empty DIT rather than fail.
+- `InheritanceDepthResolver` owns the walk: it indexes the graph's `extends`
+  edges by declaration and by name, and answers the depth of one declaration.
+  It was split out of `DitGlobalCollector`, which the product's own god-class
+  rule flagged once the walk grew a second index — the collector now keeps the
+  protocol and the repository pass, and the campaign that replaces external
+  ancestry has one class to replace instead of a method inside a collector.
+- `DitGlobalCollector` resolves and writes a depth per class **declaration**,
+  and only then writes one value per name onto the logical class — the maximum
+  over that name's declarations. One name can be declared in two files with two
+  different parents, and the name-keyed map it used before let the file read
+  last decide for all of them. `InheritanceRule` reads the declaration subject
+  it iterates, because the logical projection cannot hold two answers
+  (ADR 0073).
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
-  semantics.
+  semantics. It counts distinct child **names**: a subclass declared in two
+  files is one subclass, and the parent side is a name in any case, since
+  `extends` does not say which file declared the parent.
 - Both global collectors skip a `Dependency` flagged
   `describesNestedAnonymousClass`: an anonymous class's own `extends` edge is
   recorded with the enclosing named class as source (it has no declaration
@@ -124,8 +140,13 @@ Fixtures/
     ├── ReadonlyDto.php
     └── SmallClass.php
 Integration/
-└── DataClass/
-    └── DataClassDetectionTest.php
+├── DataClass/
+│   └── DataClassDetectionTest.php
+└── Inheritance/
+    ├── AnonymousClassDeclarationEdgeRunTest.php
+    ├── DitAggregateRunTest.php
+    ├── DuplicateDeclarationDepthRunTest.php
+    └── UnloadableExternalParentRunTest.php
 Unit/
 ├── DataClass/
 │   └── DataClassRuleTest.php

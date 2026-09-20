@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -9,4 +9,4 @@
+-  1. [WRN] 9.34  src/Base.php  [22min]
+-         design.noc: NOC: 3 (threshold: 1) — too many direct subclasses
+-  2. [WRN] 5.67  src/ShimNative.php  [30min]
+-         design.dit: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
++  1. [WRN] 11.9  src/Base.php  [28min]
++         design.noc: NOC: 4 (threshold: 1) — too many direct subclasses
++  2. [WRN] 5.67  src/ShimNative.php  [30min]
++         design.dit: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+@@ -23,2 +23,2 @@
+-  8. [WRN] 3.37  src/Consumer.php  [33min]
+-         design.dit: DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy
++  8. [WRN] 3.06  src/Consumer.php  [30min]
++         design.dit: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
+@@ -29,1 +29,1 @@
+-10 violations (10 warnings) | Tech debt: 4h 25min (4076.9 min/kLOC to fix)
++10 violations (10 warnings) | Tech debt: 4h 28min (4123.1 min/kLOC to fix)

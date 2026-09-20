@@ -676,6 +676,8 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
 
     public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void {}
 
+    public function addSubjectScalar(MetricSubject $subject, string $key, int|float $value): void {}
+
     public function addCallable(CallableWithMetrics $callable): void {}
 
     public function allDeclarations(): iterable

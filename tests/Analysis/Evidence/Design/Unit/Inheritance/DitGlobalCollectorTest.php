@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -19,6 +20,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
@@ -26,6 +28,7 @@ use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 use RuntimeException;
 
 #[CoversClass(DitGlobalCollector::class)]
+#[CoversClass(InheritanceDepthResolver::class)]
 final class DitGlobalCollectorTest extends TestCase
 {
     /**
@@ -42,15 +45,56 @@ final class DitGlobalCollectorTest extends TestCase
         $this->collector = new DitGlobalCollector();
     }
 
-    private function createExtends(string $childFqn, string $parentFqn, bool $describesNestedAnonymousClass = false): Dependency
+    /**
+     * Deterministic from the FQN so a call site that omits `$file` always
+     * agrees with another that also omits it: the identity an edge names and
+     * the identity a seed writes cannot drift apart by construction.
+     */
+    private function declarationFor(string $fqn, ?RelativePath $file = null, int $ordinal = 0): DeclarationPath
     {
+        $file ??= RelativePath::fromString(strtr($fqn, '\\', '/') . '.php');
+
+        return DeclarationPath::of(SymbolPath::fromClassFqn($fqn), $file, DeclarationOrdinal::fromRank($ordinal));
+    }
+
+    private function createExtends(
+        string $childFqn,
+        string $parentFqn,
+        bool $describesNestedAnonymousClass = false,
+        ?RelativePath $file = null,
+        int $ordinal = 0,
+    ): Dependency {
+        $declaration = $this->declarationFor($childFqn, $file, $ordinal);
+
         return new Dependency(
-            source: DeclarationPath::of(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            source: $declaration,
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
-            location: new Location(RelativePath::fromString('test.php'), 1),
+            location: new Location($declaration->file, 1),
             describesNestedAnonymousClass: $describesNestedAnonymousClass,
         );
+    }
+
+    /**
+     * Seeds one class declaration through the same {@see declarationFor()}
+     * helper `createExtends()` uses for the edge source. The collector
+     * matches an edge to a repository entry by that identity alone, so
+     * seeding through any other path risks a file/ordinal mismatch that
+     * would silently zero every DIT in the test instead of failing loudly.
+     */
+    private function seedDeclaration(
+        InMemoryMetricRepository $repository,
+        string $fqn,
+        MetricBag $bag,
+        ?RelativePath $file = null,
+        int $ordinal = 0,
+        int $line = 1,
+    ): MetricSubject {
+        $declaration = $this->declarationFor($fqn, $file, $ordinal);
+        $subject = MetricSubject::declaration($declaration);
+        $repository->addSubject($subject, $bag, $declaration->file, $line);
+
+        return $subject;
     }
 
     #[Test]
@@ -78,7 +122,7 @@ final class DitGlobalCollectorTest extends TestCase
         $graph = $this->graph([]);
 
         $path = SymbolPath::forClass('App', 'Root');
-        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('root.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -102,7 +146,7 @@ final class DitGlobalCollectorTest extends TestCase
             ]);
 
             $path = SymbolPath::forClass('App', 'Local');
-            $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('local.php'), 1);
+            $this->seedDeclaration($repository, 'App\\Local', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
             $this->collector->calculate($graph, $repository);
 
@@ -127,7 +171,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('ex.php'), 1);
+        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -145,14 +189,14 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('gp.php'), 1);
+        $this->seedDeclaration($repository, 'App\\GrandParent', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('p.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Parent', (new MetricBag())->with('design.dit', 1));
 
         $childPath = SymbolPath::forClass('App', 'Child');
         // The per-file collector would have set dit=1 (can't see grandparent)
-        $repository->add($childPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', 1));
 
         $this->collector->calculate($graph, $repository);
 
@@ -172,16 +216,16 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $repository->add($aPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('a.php'), 1);
+        $this->seedDeclaration($repository, 'App\\A', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('b.php'), 1);
+        $this->seedDeclaration($repository, 'App\\B', (new MetricBag())->with('design.dit', 1));
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
+        $this->seedDeclaration($repository, 'App\\C', (new MetricBag())->with('design.dit', 1));
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('d.php'), 1);
+        $this->seedDeclaration($repository, 'App\\D', (new MetricBag())->with('design.dit', 1));
 
         $this->collector->calculate($graph, $repository);
 
@@ -203,13 +247,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('b.php'), 1);
+        $this->seedDeclaration($repository, 'App\\B', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('c.php'), 1);
+        $this->seedDeclaration($repository, 'App\\C', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('d.php'), 1);
+        $this->seedDeclaration($repository, 'App\\D', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -227,10 +271,10 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', self::UNWRITTEN), RelativePath::fromString('p.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Parent', (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', self::UNWRITTEN));
 
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, (new MetricBag())->with('complexity.wmc', 5)->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 5)->with('design.dit', 1));
 
         $this->collector->calculate($graph, $repository);
 
@@ -251,13 +295,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $componentPath = SymbolPath::forClass('Vendor\\Core', 'Component');
-        $repository->add($componentPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('comp.php'), 1);
+        $this->seedDeclaration($repository, 'Vendor\\Core\\Component', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $abstractPath = SymbolPath::forClass('Vendor\\Base', 'AbstractHandler');
-        $repository->add($abstractPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('abs.php'), 1);
+        $this->seedDeclaration($repository, 'Vendor\\Base\\AbstractHandler', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $handlerPath = SymbolPath::forClass('App\\Service', 'Handler');
-        $repository->add($handlerPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('handler.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Service\\Handler', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -283,13 +327,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $l0Path = SymbolPath::forClass('An', 'L0');
-        $repository->add($l0Path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('l0.php'), 1);
+        $this->seedDeclaration($repository, 'An\\L0', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $l1Path = SymbolPath::forClass('An', 'L1');
-        $repository->add($l1Path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('l1.php'), 1);
+        $this->seedDeclaration($repository, 'An\\L1', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $hostPath = SymbolPath::forClass('An', 'Host');
-        $repository->add($hostPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('host.php'), 1);
+        $this->seedDeclaration($repository, 'An\\Host', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -330,10 +374,10 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $measured = SymbolPath::forClass('App', 'Impl');
-        $repository->add($measured, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('impl.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Impl', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $unmeasured = SymbolPath::forClass('App', 'Contract');
-        $repository->add($unmeasured, new MetricBag(), RelativePath::fromString('contract.php'), 1);
+        $this->seedDeclaration($repository, 'App\\Contract', new MetricBag());
 
         $this->collector->calculate($graph, $repository);
 
@@ -356,7 +400,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $repository->add($path, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('e.php'), 1);
+        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
         $this->collector->calculate($graph, $repository);
 
@@ -383,12 +427,12 @@ final class DitGlobalCollectorTest extends TestCase
             ]);
 
             $childPath = SymbolPath::forClass('App', 'Child');
-            $repository->add($childPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('child.php'), 1);
+            $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
             // The parent is measured by this run, so it belongs to the project
             // even though nothing records a parent for it.
             $rootPath = SymbolPath::fromClassFqn($probe->childFqcn());
-            $repository->add($rootPath, (new MetricBag())->with('design.dit', self::UNWRITTEN), RelativePath::fromString('root.php'), 1);
+            $this->seedDeclaration($repository, $probe->childFqcn(), (new MetricBag())->with('design.dit', self::UNWRITTEN));
 
             $this->collector->calculate($graph, $repository);
 
@@ -398,6 +442,148 @@ final class DitGlobalCollectorTest extends TestCase
         } finally {
             $probe->stop();
         }
+    }
+
+    /**
+     * One name declared in two files, each extending a parent of its own
+     * depth. The child-side map is keyed by the exact `DeclarationPath`, so
+     * the two declarations must not collapse onto a single answer.
+     */
+    #[Test]
+    public function itGivesEachDeclarationOfADuplicatedNameItsOwnDepth(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $fileA = RelativePath::fromString('a.php');
+        $fileB = RelativePath::fromString('b.php');
+
+        $graph = $this->graph([
+            $this->createExtends('App\\Dup', 'App\\Root', file: $fileA),
+            $this->createExtends('App\\Dup', 'App\\Mid', file: $fileB),
+            $this->createExtends('App\\Mid', 'App\\Root2'),
+        ]);
+
+        $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
+        $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->getSubject($declarationA)->get('design.dit'));
+        self::assertSame(2, $repository->getSubject($declarationB)->get('design.dit'));
+    }
+
+    /**
+     * The logical projection is the one view left for readers that only know
+     * a name -- aggregates, `format:metrics`, a user formula -- so it carries
+     * the max over that name's declarations, not whichever was written last.
+     */
+    #[Test]
+    public function itProjectsTheDuplicatedNameToTheMaximumDepthAcrossDeclarations(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $fileA = RelativePath::fromString('a.php');
+        $fileB = RelativePath::fromString('b.php');
+
+        $graph = $this->graph([
+            $this->createExtends('App\\Dup', 'App\\Root', file: $fileA),
+            $this->createExtends('App\\Dup', 'App\\Mid', file: $fileB),
+            $this->createExtends('App\\Mid', 'App\\Root2'),
+        ]);
+
+        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
+        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(2, $repository->get(SymbolPath::fromClassFqn('App\\Dup'))->get('design.dit'));
+    }
+
+    /**
+     * `extends Dup` names a name, not a declaration, so a child of that name
+     * cannot pick a side: it takes 1 + the deeper of the two declarations.
+     */
+    #[Test]
+    public function itScoresAChildOfADuplicatedParentNameAtMaxPlusOne(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $fileA = RelativePath::fromString('a.php');
+        $fileB = RelativePath::fromString('b.php');
+
+        $graph = $this->graph([
+            $this->createExtends('App\\Dup', 'App\\Root', file: $fileA),
+            $this->createExtends('App\\Dup', 'App\\Mid', file: $fileB),
+            $this->createExtends('App\\Mid', 'App\\Root2'),
+            $this->createExtends('App\\GrandChild', 'App\\Dup'),
+        ]);
+
+        $grandChild = $this->seedDeclaration($repository, 'App\\GrandChild', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(3, $repository->getSubject($grandChild)->get('design.dit'));
+    }
+
+    /**
+     * The parent map and the per-name index both come from the graph's edges,
+     * not from repository iteration -- so seeding the same four declarations
+     * in reverse of the inheritance chain must publish the same four depths.
+     */
+    #[Test]
+    public function itGivesTheSameDitRegardlessOfDeclarationInsertionOrder(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\Order\\D', 'App\\Order\\C'),
+            $this->createExtends('App\\Order\\C', 'App\\Order\\B'),
+            $this->createExtends('App\\Order\\B', 'App\\Order\\A'),
+        ]);
+
+        $aPath = SymbolPath::forClass('App\\Order', 'A');
+        $bPath = SymbolPath::forClass('App\\Order', 'B');
+        $cPath = SymbolPath::forClass('App\\Order', 'C');
+        $dPath = SymbolPath::forClass('App\\Order', 'D');
+
+        // Reverse of the chain on purpose: D first, A last.
+        $this->seedDeclaration($repository, 'App\\Order\\D', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Order\\C', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Order\\B', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Order\\A', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($aPath)->get('design.dit'));
+        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
+        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
+        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
+    }
+
+    /**
+     * A cycle through a duplicated name cannot escape through `max`: every
+     * branch the recursion reaches is itself cycle-marked, so the walk falls
+     * back to the "no depth could be established" default of 1. Which of the
+     * two declarations is marked first -- and therefore which one still gets
+     * a real answer from the other -- is a named, accepted limitation of
+     * ordinary cycles (see the plan's "cycles remain order-dependent"), so
+     * this test pins the repository order instead of leaving it to chance.
+     */
+    #[Test]
+    public function itTerminatesACycleThroughADuplicatedNameAndYieldsTheDefaultDepth(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $fileX = RelativePath::fromString('x.php');
+        $fileY = RelativePath::fromString('y.php');
+
+        $graph = $this->graph([
+            $this->createExtends('App\\Cyclic', 'App\\Cyclic', file: $fileX),
+            $this->createExtends('App\\Cyclic', 'App\\Cyclic', file: $fileY),
+        ]);
+
+        $declarationX = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileX);
+        $declarationY = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileY);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(2, $repository->getSubject($declarationX)->get('design.dit'));
+        self::assertSame(1, $repository->getSubject($declarationY)->get('design.dit'));
     }
 
     /** @param list<Dependency> $dependencies */

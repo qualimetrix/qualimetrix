@@ -137,7 +137,8 @@ mapping is written out rather than assumed:
 map has no entry for this name"; the first is a property of the run, the second
 of one lookup.
 
-`DitGlobalCollector::resolveExternalClassDit()` loses `class_exists()`,
+`InheritanceDepthResolver::resolveExternalClassDit()` — moved there from
+`DitGlobalCollector` by ADR 0073, body unchanged — loses `class_exists()`,
 `ReflectionClass` and the wide `catch (Throwable)` that existed only because
 loading ran someone else's code. Nothing left can execute foreign code, so
 #108's narrow-catch discipline applies to the whole method.
@@ -197,6 +198,9 @@ where the map consumes it — and with it two addresses that are easy to miss:
    corpus case present**, the delta declared, the derived diff read line by line.
 3. `benchmark:check`; ADR; `Breaking` entry naming old and new surface.
 4. The DIT "Implementation notes" on the website rewritten, EN and RU together.
-5. Re-check `@qmx-ignore health.cohesion` on `DitGlobalCollector`: injecting a
-   collaborator may lift cohesion above the threshold and make the suppression
-   inert, which `bin/qmx directives` fails with exit 2 inside `composer check`.
+5. The `@qmx-ignore health.cohesion` this step was written against is gone:
+   ADR 0073 split the walk into `InheritanceDepthResolver`, which made the
+   suppression inert, and the directive audit said so. What survives of the
+   step is the same check one class along — injecting a collaborator into the
+   resolver may lift its cohesion, and an inert directive fails
+   `bin/qmx directives` with exit 2 inside `composer check`.

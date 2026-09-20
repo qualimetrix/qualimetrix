@@ -3199,6 +3199,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\AnonymousClassDeclarationEdgeRunTest::itPreservesCouplingForTheEdgeTheFlagMustNotHide
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itAggregatesTheDepthItPublishesPerClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itCountsClassesRatherThanEveryClassLevelSymbol
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itDoesNotMoveWhenTheTwoDeclarationsSwapFileNames
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itGivesEachDeclarationOfOneNameItsOwnDepth
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itPublishesTheGlobalDepthOfACrossFileChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itConfirmsTheFixtureIsReachableAndStillCannotFinishLoading
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
@@ -3256,15 +3259,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsABuiltinInsideAnExternalChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itDoesNotLookOutsideForAParentTheProjectDeclares
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesEachDeclarationOfADuplicatedNameItsOwnDepth
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesTheSameDitRegardlessOfDeclarationInsertionOrder
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIgnoresAnExtendsEdgeFlaggedAsANestedAnonymousClassDeclaration
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIsNamedDitGlobal
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itLeavesSymbolsTheFilePassNeverMeasuredAlone
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOwnsTheDitMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPreservesOtherMetricsWhileUpdatingDit
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProjectsTheDuplicatedNameToTheMaximumDepthAcrossDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProvidesTheDitMetric
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRequiresNoUpstreamMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresAChildOfADuplicatedParentNameAtMaxPlusOne
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTerminatesACycleThroughADuplicatedNameAndYieldsTheDefaultDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTreatsAnUnloadableExternalParentAsUnresolvedInsteadOfEndingTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itAsksNoAutoloaderAboutAParentItCannotSee
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
@@ -3307,7 +3315,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itHasCorrectOptionDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itLoadsOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itProducesNoFindingForShallowDit
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itReportsEachDeclarationOfOneNameWithItsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"above error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"above warning, below error"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"at error threshold"
@@ -3322,12 +3330,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itAssignsNocZeroToAClassWithoutChildren
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itAssignsTheNocMetricToEveryClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itCountsAChildExtendingAGlobalNamespaceParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itCountsASubclassDeclaredInTwoFilesOnce
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itCountsChildrenDeclaredInOtherFiles
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itDoesNotAssignNocToAParentOutsideTheRepository
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itDoesNotCountAFlaggedExtendsEdgeAsAChild
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itDoesNotCountIndirectDescendantsTowardNoc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itPreservesExistingMetricsWhenAddingNoc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itProvidesTheDesignNocMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itReportsOneCountForAParentNameDeclaredInTwoFiles
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itRequiresNoOtherMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itReturnsNocAsItsName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itAppliesAnExactSubjectOverrideAtEquality
@@ -3891,6 +3901,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarDoesNotDuplicateDataBagEntries
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarIgnoresNonExistentSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarUpdatesExistingMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddsOneScalarToAnExistingClassDeclarationAndItsProjection
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAnswersTheCallableLevelWithExactlyTheCallableEnumeration
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itChecksExistence
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itIteratesOverCallables
@@ -3900,6 +3911,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsCallableOnlyOwnerProjectionsLocationFreeWithoutDuplicateIndexesInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsLogicalClassProjectionsLocationFreeForExactClassDeclarationsInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsPositiveLineWhenSubsequentAddHasZero
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itLeavesTheRepositoryAloneForASubjectItDoesNotHold
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesMetricsForSameSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesOverlappingSymbols
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesPlainAndTypedCallableSubjectsIndependentlyOfRepositoryOrder
@@ -3914,6 +3926,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsAllNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsEmptyMetricBagForUnknownSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsSymbolsForNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRoutesAnAggregateSubjectScalarToItsAggregatePath
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itStoresAndRetrievesMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itSynchronizesMixedPlainAndTypedAggregateMergesInBothOrders
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itUpdatesLineFromZeroToPositiveDuringMergeWith

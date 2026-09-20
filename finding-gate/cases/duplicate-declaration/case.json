@@ -1,0 +1,27 @@
+{
+    "id": "duplicate-declaration",
+    "description": "Auxiliary: the only case where one class name is declared in two files, so the gate sees depth and child counts that a name-keyed map collapses.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=design.dit:warning=1",
+        "--rule-opt=design.dit:error=9",
+        "--rule-opt=design.noc:warning=1",
+        "--rule-opt=design.noc:error=9"
+    ],
+    "channels": [
+        "design.dit@class",
+        "design.noc@class"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\DuplicateDeclaration\\Shim@src/ShimPolyfill.php",
+        "declaration:class:Corpus\\DuplicateDeclaration\\Shim@src/ShimNative.php"
+    ]
+}

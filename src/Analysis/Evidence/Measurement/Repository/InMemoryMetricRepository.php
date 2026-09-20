@@ -268,6 +268,30 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         return $merged;
     }
 
+    public function addSubjectScalar(MetricSubject $subject, string $key, int|float $value): void
+    {
+        $aggregate = $subject->aggregatePath();
+        if ($aggregate !== null) {
+            $this->addScalar($aggregate, $key, $value);
+
+            return;
+        }
+
+        if (!$this->subjectIndex->has($subject)) {
+            return;
+        }
+
+        $this->subjectIndex->add($subject, (new MetricBag())->with($key, $value), null, null);
+
+        $declaration = $subject->declarationPath();
+        if ($declaration?->logical->getType() === SymbolType::Class_) {
+            // Same reason addSubject() does it: the logical projection is the
+            // class-facing view aggregation reads, and it would otherwise keep
+            // a value this write has just replaced.
+            $this->addLogicalClassProjection($declaration->logical, (new MetricBag())->with($key, $value));
+        }
+    }
+
     private function addLogicalClassProjection(SymbolPath $symbol, MetricBag $metrics): void
     {
         $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, null, null);

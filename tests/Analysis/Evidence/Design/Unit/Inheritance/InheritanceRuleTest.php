@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(InheritanceRule::class)]
@@ -103,7 +104,7 @@ final class InheritanceRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -132,7 +133,7 @@ final class InheritanceRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -157,7 +158,7 @@ final class InheritanceRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,7 +181,7 @@ final class InheritanceRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -246,7 +247,7 @@ final class InheritanceRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -283,27 +284,44 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame('warning', $aliases['dit-warning']);
         self::assertSame('error', $aliases['dit-error']);
     }
+    /**
+     * Two declarations of one name are two subjects with two depths.
+     *
+     * The stub answers per subject rather than with one bag for both: with one
+     * bag this passes whether the rule reads the declaration or the name, which
+     * is exactly the confusion that let a collapsed depth reach the report.
+     */
     #[Test]
-    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    public function itReportsEachDeclarationOfOneNameWithItsOwnDepth(): void
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $shallow = self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100);
+        $deep = self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200);
+
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
-            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
-            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
-        ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('design.dit', 5));
+        $repository->method('allDeclarations')->willReturn([$shallow, $deep]);
+        $repository->method('getSubject')->willReturnCallback(
+            static fn(MetricSubject $subject): MetricBag => (new MetricBag())->with(
+                'design.dit',
+                str_contains($subject->toCanonical(), 'src/A.php') ? 5 : 9,
+            ),
+        );
 
         $findings = (new InheritanceRule(new InheritanceOptions()))
             ->analyze(new AnalysisContext($repository));
 
         self::assertCount(2, $findings);
-        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
-        sort($subjects);
+
+        $reported = [];
+        foreach ($findings as $finding) {
+            $reported[$finding->subject->toCanonical()] = $finding->metricValue;
+        }
+        ksort($reported);
+
         self::assertSame([
-            'declaration:class:App\\Service\\Twin@src/A.php',
-            'declaration:class:App\\Service\\Twin@src/B.php',
-        ], $subjects);
+            'declaration:class:App\\Service\\Twin@src/A.php' => 5,
+            'declaration:class:App\\Service\\Twin@src/B.php' => 9,
+        ], $reported);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

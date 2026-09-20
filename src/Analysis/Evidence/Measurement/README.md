@@ -92,6 +92,18 @@ projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
 namespace aggregation.
 
+Enriching one of those subjects with a single computed value is
+`addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.
+It exists so that a global collector writing one number per declaration does
+not have to build a `MetricBag` to do it: that would make every such collector
+a dependent of a class this repository already keeps on a point CBO threshold,
+and the first one to try it turned the threshold red (ADR 0073). Like
+`addScalar()`, it ignores a subject the repository does not hold. A write onto
+a class declaration also refreshes that class's logical projection, because the
+projection is the class-facing view aggregation reads; when a name has several
+declarations, whichever value should survive there is the collector's decision
+to make afterwards, not this method's.
+
 ## Collection and worker reconstruction
 
 `FileMeasurementCollectorInterface` supplies collectors and derived collectors.

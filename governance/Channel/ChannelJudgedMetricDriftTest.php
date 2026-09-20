@@ -96,6 +96,18 @@ use RuntimeException;
  * The first four and the sixth are outside by construction: they publish no
  * catalog metric, or none this repository declares. Only the fifth is a
  * standing trade, and it is recorded in ADR 0017 rather than overlooked.
+ *
+ * **A seventh, narrower than a channel: one subject at a time.** A finding on
+ * a class name that the case declares in more than one file is compared
+ * against a metric export that has one row per name, carrying the deepest of
+ * that name's declarations (ADR 0073). The oracle cannot say which
+ * declaration the row describes, so it stops short of calling the difference a
+ * disagreement — and only then. The declared key must still exist on the name,
+ * so a channel publishing a number its declaration never named fails here
+ * whether the name is duplicated or not, and every subject of a
+ * singly-declared name is compared exactly as before. Closing it needs a
+ * declaration-addressable metric export, which is a change to what
+ * `--format=metrics` publishes rather than to this guard.
  */
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelJudgedMetricDriftTest extends TestCase
@@ -147,6 +159,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      */
     private static ?array $judging = null;
 
+    /**
+     * Case directory => class symbol name => the declaration subjects seen carrying it.
+     *
+     * Built from every finding of the case, not only the judging ones, because
+     * it answers a question about the corpus rather than about a channel: is
+     * this name declared once, or in several files?
+     *
+     * @var array<string, array<string, array<string, true>>>|null
+     */
+    private static ?array $classDeclarations = null;
+
     #[Test]
     public function itRequiresEveryFindingToPublishOneOfTheMetricsItsChannelDeclares(): void
     {
@@ -167,6 +190,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
                 if (abs($measured[$key] - $finding['value']) <= self::MAGNITUDE_TOLERANCE) {
                     continue 2;
                 }
+            }
+
+            // A class name declared in two files has one row in the metric
+            // export, carrying the deepest of its declarations (ADR 0073), so
+            // this oracle cannot say which declaration that row describes and
+            // must not read a disagreement into it. The excuse is deliberately
+            // narrow: the declared key has to exist on the name, so a channel
+            // publishing a number its declaration never named still fails
+            // here, duplicated name or not.
+            if ($candidates !== [] && self::nameCarriesSeveralDeclarations($finding)) {
+                continue;
             }
 
             self::fail(\sprintf(
@@ -272,6 +306,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         $judging = self::judgingChannels();
         $observed = [];
         $catalog = [];
+        $classDeclarations = [];
 
         foreach (CorpusCaseRun::cases() as $directory => $case) {
             $catalog[$directory] = self::indexMetrics($directory, $case);
@@ -279,13 +314,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
             foreach (CorpusCaseRun::findings($directory, $case) as $finding) {
                 $channel = $finding['channel'] ?? null;
 
-                if (!\is_string($channel) || !isset($judging[$channel])) {
-                    continue;
-                }
-
                 $subject = $finding['subject'] ?? null;
                 $symbol = $finding['symbol'] ?? null;
                 $value = $finding['metricValue'] ?? null;
+
+                if (\is_string($subject) && \is_string($symbol) && str_starts_with($subject, 'declaration:class:')) {
+                    $classDeclarations[$directory][$symbol][$subject] = true;
+                }
+
+                if (!\is_string($channel) || !isset($judging[$channel])) {
+                    continue;
+                }
 
                 if (!\is_string($subject) || !\is_string($symbol)) {
                     throw new RuntimeException(\sprintf(
@@ -317,6 +356,24 @@ final class ChannelJudgedMetricDriftTest extends TestCase
 
         self::$catalog = $catalog;
         self::$observed = $observed;
+        self::$classDeclarations = $classDeclarations;
+    }
+
+    /**
+     * Whether this finding's class name is declared in more than one file.
+     *
+     * @param array{case: string, channel: string, subject: string, symbol: string, value: int|float} $finding
+     */
+    private static function nameCarriesSeveralDeclarations(array $finding): bool
+    {
+        self::measure();
+        \assert(self::$classDeclarations !== null);
+
+        if (!str_starts_with($finding['subject'], 'declaration:class:')) {
+            return false;
+        }
+
+        return \count(self::$classDeclarations[$finding['case']][$finding['symbol']] ?? []) > 1;
     }
 
     /**

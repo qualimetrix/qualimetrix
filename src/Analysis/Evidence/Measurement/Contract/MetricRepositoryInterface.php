@@ -93,6 +93,19 @@ interface MetricRepositoryInterface
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void;
 
     /**
+     * Adds a single scalar metric to an existing exact subject.
+     *
+     * The declaration-addressed counterpart of {@see self::addScalar()}, and
+     * the reason it exists rather than callers passing a one-key bag: a global
+     * collector enriching declarations would otherwise have to build a
+     * {@see MetricBag} per declaration, which makes every such collector a
+     * dependent of that class for no other reason.
+     *
+     * If the subject does not exist, the metric is silently ignored.
+     */
+    public function addSubjectScalar(MetricSubject $subject, string $key, int|float $value): void;
+
+    /**
      * Returns all namespaces that have metrics.
      *
      * @return list<string>

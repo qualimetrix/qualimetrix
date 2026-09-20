@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use ReflectionClass;
-use ReflectionException;
-use Throwable;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Recalculates DIT (Depth of Inheritance Tree) using the global dependency graph.
@@ -26,10 +23,9 @@ use Throwable;
  * collector builds a complete parent map from the dependency graph and recalculates
  * DIT correctly for all project classes.
  *
- * For classes whose parents are outside the project (not in the dependency graph),
- * PHP reflection is used as a fallback to traverse the external chain.
- *
- * @qmx-ignore health.cohesion -- Global-collector protocol operations are independent by contract, and the class holds no state for them to share.
+ * How a depth is resolved belongs to {@see InheritanceDepthResolver}; what is
+ * left here is the collector protocol and the repository walk — which
+ * declarations carry this metric, and where each answer is written.
  */
 final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
@@ -79,210 +75,93 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        // Step 1: Build class FQN → parent FQN map from dependency graph
-        $parentMap = $this->buildParentMapFromGraph($graph);
+        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository));
 
-        // The analysed project's own classes, collected once. A parent absent
-        // from $parentMap is only "external" when it is absent from here too:
-        // a class that has no parent of its own has no entry in a map keyed by
-        // child, so without this set every in-project root was sent out to be
-        // resolved as though it belonged to somebody else. Measured before the
-        // fix: 25 of 40 such lookups on symfony/http-kernel, and 3 of 3 across
-        // the whole finding-gate corpus.
-        $projectClasses = [];
+        /** @var array<string, non-empty-list<int>> $depthsByName */
+        $depthsByName = [];
+
+        foreach ($this->measuredClassDeclarations($repository) as $classFqn => $subject) {
+            $declaration = $subject->declarationPath();
+            \assert($declaration !== null);
+
+            $dit = $resolver->depthOf($declaration);
+
+            $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT, $dit);
+
+            $depthsByName[$classFqn][] = $dit;
+        }
+
+        // One value per name for the readers that only know names --
+        // the aggregates, the metrics export and a user formula. It is written
+        // after the per-declaration pass on purpose: `addSubject` projects each
+        // declaration onto the shared logical bag, so without this the name
+        // would again carry whichever declaration was stored last.
+        foreach ($depthsByName as $classFqn => $depths) {
+            // The resolver's answer, not the maximum of what was written: a
+            // file declaring one name twice produces two `extends` edges but
+            // only one measured declaration, and publishing the written half
+            // would leave a child reporting a greater depth than its parent.
+            $repository->addScalar(
+                SymbolPath::fromClassFqn($classFqn),
+                MetricName::DESIGN_DIT,
+                $resolver->deepestForName($classFqn) ?? max($depths),
+            );
+        }
+    }
+
+    /**
+     * The analysed project's own class names.
+     *
+     * A parent absent from the inheritance index is only "external" when it is
+     * absent from here too: a class that has no parent of its own has no entry
+     * in an index built from `extends` edges, so without this set every
+     * in-project root was sent out to be resolved as though it belonged to
+     * somebody else. Measured before the fix: 25 of 40 such lookups on
+     * symfony/http-kernel, and 3 of 3 across the whole finding-gate corpus.
+     *
+     * @return array<string, true>
+     */
+    private function projectClassNames(MetricRepositoryInterface $repository): array
+    {
+        $names = [];
+
         foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
-            $fqn = $this->symbolPathToFqn($classSymbol->symbolPath);
-            if ($fqn !== null) {
-                $projectClasses[$fqn] = true;
-            }
+            $names[$classSymbol->symbolPath->toString()] = true;
         }
 
-        // Step 2: Recalculate DIT for all project classes
-        /** @var array<string, int> $ditCache */
-        $ditCache = [];
-
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
-            $classFqn = $this->symbolPathToFqn($classSymbol->symbolPath);
-            if ($classFqn === null) {
-                continue;
-            }
-
-            // The per-file pass measures named class declarations only, so its
-            // keys are DIT's population. Correcting every class-level symbol
-            // instead would silently enrol interfaces, traits and enums and
-            // move the denominator of every aggregate.
-            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::DESIGN_DIT)) {
-                continue;
-            }
-
-            $dit = $this->calculateDit($classFqn, $parentMap, $projectClasses, $ditCache);
-
-            $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_DIT, $dit);
-        }
+        return $names;
     }
 
     /**
-     * Build class FQN → parent FQN map from the dependency graph.
+     * Every class declaration this metric is measured on, keyed by its name.
      *
-     * @return array<string, string> child FQN → parent FQN
+     * The key repeats for a name declared more than once, which is the point:
+     * the subjects are distinct and each gets its own depth.
+     *
+     * The per-file pass measures named class declarations only, so its keys
+     * are DIT's population. Correcting every class-level symbol instead would
+     * silently enrol interfaces, traits and enums and move the denominator of
+     * every aggregate.
+     *
+     * @return iterable<string, MetricSubject>
      */
-    private function buildParentMapFromGraph(DependencyGraphInterface $graph): array
+    private function measuredClassDeclarations(MetricRepositoryInterface $repository): iterable
     {
-        $parentMap = [];
+        foreach ($repository->allDeclarations() as $declarationSymbol) {
+            $subject = $declarationSymbol->subject;
+            // The enumeration also carries methods and global functions.
+            $declaration = $subject?->declarationPath();
 
-        foreach ($graph->getAllDependencies() as $dependency) {
-            if ($dependency->type !== DependencyType::Extends) {
+            if ($subject === null || $declaration === null || $declaration->logical->getType() !== SymbolType::Class_) {
                 continue;
             }
 
-            // An anonymous class's own `extends` is recorded with the
-            // enclosing class as source (it has no declaration identity of
-            // its own) — not a fact about the enclosing class's ancestry.
-            if ($dependency->describesNestedAnonymousClass) {
+            if (!$repository->getSubject($subject)->has(MetricName::DESIGN_DIT)) {
                 continue;
             }
 
-            $childFqn = $this->symbolPathToFqn($dependency->sourceLogical());
-            $parentFqn = $this->symbolPathToFqn($dependency->targetLogical());
-
-            if ($childFqn !== null && $parentFqn !== null) {
-                $parentMap[$childFqn] = $parentFqn;
-            }
-        }
-
-        return $parentMap;
-    }
-
-    /**
-     * Calculate DIT for a class using the global parent map.
-     *
-     * @param array<string, string> $parentMap child FQN → parent FQN
-     * @param array<string, true> $projectClasses the analysed project's classes
-     * @param array<string, int> $ditCache FQN → computed DIT (memoization)
-     */
-    private function calculateDit(string $classFqn, array $parentMap, array $projectClasses, array &$ditCache): int
-    {
-        if (isset($ditCache[$classFqn])) {
-            return $ditCache[$classFqn];
-        }
-
-        $parentFqn = $parentMap[$classFqn] ?? null;
-
-        // No parent in project graph
-        if ($parentFqn === null) {
-            $ditCache[$classFqn] = 0;
-
-            return 0;
-        }
-
-        // Standard PHP class
-        if ($this->isStandardPhpClass($parentFqn)) {
-            $ditCache[$classFqn] = 1;
-
-            return 1;
-        }
-
-        // Prevent infinite loops (mark as computing)
-        $ditCache[$classFqn] = -1;
-
-        // Parent is in project graph → recurse
-        if (isset($parentMap[$parentFqn])) {
-            $parentDit = $this->calculateDit($parentFqn, $parentMap, $projectClasses, $ditCache);
-
-            if ($parentDit === -1) {
-                // Cycle detected
-                $ditCache[$classFqn] = 1;
-
-                return 1;
-            }
-
-            $dit = 1 + $parentDit;
-            $ditCache[$classFqn] = $dit;
-
-            return $dit;
-        }
-
-        // In the project and carrying no parent of its own: a root, and none of
-        // this tool's business to go looking for it elsewhere.
-        if (isset($projectClasses[$parentFqn])) {
-            $ditCache[$classFqn] = 1;
-
-            return 1;
-        }
-
-        // Genuinely outside the analysed path.
-        $parentDit = $this->resolveExternalClassDit($parentFqn);
-        $dit = 1 + $parentDit;
-        $ditCache[$classFqn] = $dit;
-
-        return $dit;
-    }
-
-    private function isStandardPhpClass(string $fqn): bool
-    {
-        $normalized = ltrim($fqn, '\\');
-
-        return PhpBuiltinClassRegistry::isBuiltin($normalized);
-    }
-
-    /**
-     * Try to resolve DIT for an external class via reflection.
-     *
-     * The autoloader consulted here belongs to this tool, not to the analysed
-     * project, so an analysed FQCN can map onto the tool's own vendored copy.
-     * When that copy is reachable but names a parent the tool's install never
-     * ships, loading it throws instead of returning false. Nothing guards this
-     * collector -- aggregation calls it directly -- so an escaping error ends
-     * the whole run rather than one file's metric.
-     *
-     * @return int DIT of the external class, or 0 if cannot resolve
-     */
-    private function resolveExternalClassDit(string $classFqn): int
-    {
-        $normalized = ltrim($classFqn, '\\');
-
-        // Widest catch on the load step alone: it runs someone else's code and
-        // fails with a plain Error carrying nothing to match on. The walk below
-        // cannot autoload, so a throw there is this tool's own defect and keeps
-        // a narrow catch, staying loud.
-        try {
-            if (!class_exists($normalized, true) && !interface_exists($normalized, true)) {
-                return 0;
-            }
-        } catch (Throwable) {
-            return 0;
-        }
-
-        try {
-            $depth = 0;
-            $current = new ReflectionClass($normalized);
-
-            while (($parent = $current->getParentClass()) !== false) {
-                ++$depth;
-
-                if ($this->isStandardPhpClass($parent->getName())) {
-                    break;
-                }
-
-                $current = $parent;
-            }
-
-            return $depth;
-        } catch (ReflectionException) {
-            return 0;
+            yield $declaration->logical->toString() => $subject;
         }
     }
 
-    private function symbolPathToFqn(SymbolPath $path): ?string
-    {
-        if ($path->type === null) {
-            return null;
-        }
-
-        if ($path->namespace !== null && $path->namespace !== '') {
-            return $path->namespace . '\\' . $path->type;
-        }
-
-        return $path->type;
-    }
 }

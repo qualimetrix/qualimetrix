@@ -2364,6 +2364,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
         },
         {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
+        },
+        {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService"
         },
@@ -2485,11 +2489,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         },
         {
           "owner": "Analysis.Finding",
@@ -2690,6 +2694,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector": {
       "path": "src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Design",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -13359,11 +13370,11 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         }
       ]
     },
@@ -14344,6 +14355,10 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
