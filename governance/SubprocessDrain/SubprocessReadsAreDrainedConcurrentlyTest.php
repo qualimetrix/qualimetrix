@@ -207,7 +207,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'can allocate a pseudo-terminal at all, so it must open one. Stdin and stdout go to `/dev/null` and '
             . 'the single pty is read to EOF rather than closed unread.',
 
-        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:78' => 'A pty master reports EIO where a pipe '
+        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:85' => 'A pty master reports EIO where a pipe '
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
     ];
